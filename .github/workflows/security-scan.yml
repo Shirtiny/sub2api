@@ -2,9 +2,11 @@ name: Security Scan
 
 on:
   push:
+    branches:
+      - custom-prod
   pull_request:
-  schedule:
-    - cron: '0 3 * * 1'
+    branches:
+      - custom-prod
 
 permissions:
   contents: read

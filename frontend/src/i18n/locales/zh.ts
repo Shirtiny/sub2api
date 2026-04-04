@@ -14,7 +14,7 @@ export default {
     heroSubtitle: '一个密钥，畅用多个 AI 模型',
     heroDescription: '无需管理多个订阅账号，一站式接入 Claude、GPT、Gemini 等主流 AI 服务',
     tags: {
-      subscriptionToApi: '订阅转 API',
+      subscriptionToApi: '稳定订阅',
       stickySession: '会话保持',
       realtimeBilling: '按量计费'
     },
