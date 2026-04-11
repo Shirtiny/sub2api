@@ -284,11 +284,13 @@ func (s *TokenRefreshService) refreshWithRetry(ctx context.Context, account *Acc
 		// 不可重试错误（invalid_grant/invalid_client 等）直接标记 error 状态并返回
 		if isNonRetryableRefreshError(err) {
 			errorMsg := fmt.Sprintf("Token refresh failed (non-retryable): %v", err)
-			if setErr := s.accountRepo.SetError(ctx, account.ID, errorMsg); setErr != nil {
-				slog.Error("token_refresh.set_error_status_failed",
-					"account_id", account.ID,
-					"error", setErr,
-				)
+			if !account.IsPoolMode() {
+				if setErr := s.accountRepo.SetError(ctx, account.ID, errorMsg); setErr != nil {
+					slog.Error("token_refresh.set_error_status_failed",
+						"account_id", account.ID,
+						"error", setErr,
+					)
+				}
 			}
 			// 刷新失败但 access_token 可能仍有效，尝试设置隐私
 			s.ensureOpenAIPrivacy(ctx, account)

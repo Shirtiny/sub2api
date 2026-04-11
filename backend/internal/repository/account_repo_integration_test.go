@@ -272,6 +272,55 @@ func (s *AccountRepoSuite) TestListWithFilters() {
 			},
 		},
 		{
+			name: "filter_by_status_active_includes_pool_mode_with_rate_limit_timestamp",
+			setup: func(client *dbent.Client) {
+				mustCreateAccount(s.T(), client, &service.Account{Name: "active-normal", Status: service.StatusActive})
+				poolMode := mustCreateAccount(s.T(), client, &service.Account{
+					Name:        "pool-mode-active",
+					Status:      service.StatusActive,
+					Type:        service.AccountTypeAPIKey,
+					Platform:    service.PlatformOpenAI,
+					Credentials: map[string]any{"pool_mode": true},
+				})
+				err := client.Account.UpdateOneID(poolMode.ID).
+					SetRateLimitResetAt(time.Now().Add(10 * time.Minute)).
+					Exec(context.Background())
+				s.Require().NoError(err)
+			},
+			status:    service.StatusActive,
+			wantCount: 2,
+			validate: func(accounts []service.Account) {
+				names := []string{accounts[0].Name, accounts[1].Name}
+				s.ElementsMatch([]string{"active-normal", "pool-mode-active"}, names)
+			},
+		},
+		{
+			name: "filter_by_status_rate_limited_excludes_pool_mode_with_rate_limit_timestamp",
+			setup: func(client *dbent.Client) {
+				rateLimited := mustCreateAccount(s.T(), client, &service.Account{Name: "normal-rate-limited", Status: service.StatusActive})
+				poolMode := mustCreateAccount(s.T(), client, &service.Account{
+					Name:        "pool-mode-rate-limit-ts",
+					Status:      service.StatusActive,
+					Type:        service.AccountTypeAPIKey,
+					Platform:    service.PlatformOpenAI,
+					Credentials: map[string]any{"pool_mode": true},
+				})
+				err := client.Account.UpdateOneID(rateLimited.ID).
+					SetRateLimitResetAt(time.Now().Add(10 * time.Minute)).
+					Exec(context.Background())
+				s.Require().NoError(err)
+				err = client.Account.UpdateOneID(poolMode.ID).
+					SetRateLimitResetAt(time.Now().Add(10 * time.Minute)).
+					Exec(context.Background())
+				s.Require().NoError(err)
+			},
+			status:    "rate_limited",
+			wantCount: 1,
+			validate: func(accounts []service.Account) {
+				s.Require().Equal("normal-rate-limited", accounts[0].Name)
+			},
+		},
+		{
 			name: "filter_by_search",
 			setup: func(client *dbent.Client) {
 				mustCreateAccount(s.T(), client, &service.Account{Name: "alpha-account"})
@@ -462,11 +511,150 @@ func (s *AccountRepoSuite) TestListSchedulable() {
 	overloaded := mustCreateAccount(s.T(), s.client, &service.Account{Name: "over", Schedulable: true, OverloadUntil: &future})
 	mustBindAccountToGroup(s.T(), s.client, overloaded.ID, group.ID, 1)
 
+	poolModeOverloaded := mustCreateAccount(s.T(), s.client, &service.Account{
+		Name:          "pool-over",
+		Schedulable:   true,
+		Status:        service.StatusError,
+		Credentials:   map[string]any{"pool_mode": true},
+		OverloadUntil: &future,
+	})
+	mustBindAccountToGroup(s.T(), s.client, poolModeOverloaded.ID, group.ID, 1)
+
 	sched, err := s.repo.ListSchedulable(s.ctx)
 	s.Require().NoError(err, "ListSchedulable")
 	ids := idsOfAccounts(sched)
 	s.Require().Contains(ids, okAcc.ID)
+	s.Require().Contains(ids, poolModeOverloaded.ID)
 	s.Require().NotContains(ids, overloaded.ID)
+}
+
+func (s *AccountRepoSuite) TestListWithFilters_PoolModeErrorExcludedFromErrorStatus() {
+	poolModeErr := mustCreateAccount(s.T(), s.client, &service.Account{
+		Name:         "pool-err",
+		Status:       service.StatusError,
+		ErrorMessage: "boom",
+		Type:         service.AccountTypeAPIKey,
+		Platform:     service.PlatformOpenAI,
+		Credentials:  map[string]any{"pool_mode": true},
+	})
+	normalErr := mustCreateAccount(s.T(), s.client, &service.Account{
+		Name:         "normal-err",
+		Status:       service.StatusError,
+		ErrorMessage: "boom",
+	})
+
+	accounts, _, err := s.repo.ListWithFilters(s.ctx, pagination.PaginationParams{Page: 1, PageSize: 10}, "", "", service.StatusError, "", 0, "")
+	s.Require().NoError(err)
+	names := make([]string, 0, len(accounts))
+	for _, account := range accounts {
+		names = append(names, account.Name)
+	}
+	s.Require().Contains(names, normalErr.Name)
+	s.Require().NotContains(names, poolModeErr.Name)
+}
+
+func (s *AccountRepoSuite) TestListWithFilters_PoolModeErrorIncludedInActiveStatus() {
+	poolModeErr := mustCreateAccount(s.T(), s.client, &service.Account{
+		Name:         "pool-err-active",
+		Status:       service.StatusError,
+		ErrorMessage: "boom",
+		Type:         service.AccountTypeAPIKey,
+		Platform:     service.PlatformOpenAI,
+		Credentials:  map[string]any{"pool_mode": true},
+	})
+
+	accounts, _, err := s.repo.ListWithFilters(s.ctx, pagination.PaginationParams{Page: 1, PageSize: 10}, "", "", service.StatusActive, "", 0, "")
+	s.Require().NoError(err)
+	names := make([]string, 0, len(accounts))
+	for _, account := range accounts {
+		names = append(names, account.Name)
+	}
+	s.Require().Contains(names, poolModeErr.Name)
+}
+
+func (s *AccountRepoSuite) TestListWithFilters_PoolModeOverloadedIncludedInActiveStatus() {
+	future := time.Now().Add(10 * time.Minute)
+	poolModeOverloaded := mustCreateAccount(s.T(), s.client, &service.Account{
+		Name:          "pool-over-active",
+		Status:        service.StatusActive,
+		Schedulable:   true,
+		Type:          service.AccountTypeAPIKey,
+		Platform:      service.PlatformOpenAI,
+		Credentials:   map[string]any{"pool_mode": true},
+		OverloadUntil: &future,
+	})
+
+	accounts, _, err := s.repo.ListWithFilters(s.ctx, pagination.PaginationParams{Page: 1, PageSize: 10}, "", "", service.StatusActive, "", 0, "")
+	s.Require().NoError(err)
+	names := make([]string, 0, len(accounts))
+	for _, account := range accounts {
+		names = append(names, account.Name)
+	}
+	s.Require().Contains(names, poolModeOverloaded.Name)
+}
+
+func (s *AccountRepoSuite) TestListSchedulableByPlatform_PoolModeErrorIncludedReal() {
+	poolModeErr := mustCreateAccount(s.T(), s.client, &service.Account{
+		Name:        "pool-platform-err",
+		Status:      service.StatusError,
+		Schedulable: true,
+		Type:        service.AccountTypeAPIKey,
+		Platform:    service.PlatformOpenAI,
+		Credentials: map[string]any{"pool_mode": true},
+	})
+
+	accounts, err := s.repo.ListSchedulableByPlatform(s.ctx, service.PlatformOpenAI)
+	s.Require().NoError(err)
+	ids := idsOfAccounts(accounts)
+	s.Require().Contains(ids, poolModeErr.ID)
+}
+
+func (s *AccountRepoSuite) TestListSchedulableUngroupedByPlatform_PoolModeErrorIncluded() {
+	poolModeErr := mustCreateAccount(s.T(), s.client, &service.Account{
+		Name:        "pool-ungrouped-err",
+		Status:      service.StatusError,
+		Schedulable: true,
+		Type:        service.AccountTypeAPIKey,
+		Platform:    service.PlatformOpenAI,
+		Credentials: map[string]any{"pool_mode": true},
+	})
+
+	accounts, err := s.repo.ListSchedulableUngroupedByPlatform(s.ctx, service.PlatformOpenAI)
+	s.Require().NoError(err)
+	ids := idsOfAccounts(accounts)
+	s.Require().Contains(ids, poolModeErr.ID)
+}
+
+func (s *AccountRepoSuite) TestListSchedulableByPlatforms_PoolModeErrorIncluded() {
+	poolModeErr := mustCreateAccount(s.T(), s.client, &service.Account{
+		Name:        "pool-platforms-err",
+		Status:      service.StatusError,
+		Schedulable: true,
+		Type:        service.AccountTypeAPIKey,
+		Platform:    service.PlatformOpenAI,
+		Credentials: map[string]any{"pool_mode": true},
+	})
+
+	accounts, err := s.repo.ListSchedulableByPlatforms(s.ctx, []string{service.PlatformOpenAI})
+	s.Require().NoError(err)
+	ids := idsOfAccounts(accounts)
+	s.Require().Contains(ids, poolModeErr.ID)
+}
+
+func (s *AccountRepoSuite) TestListSchedulableUngroupedByPlatforms_PoolModeErrorIncluded() {
+	poolModeErr := mustCreateAccount(s.T(), s.client, &service.Account{
+		Name:        "pool-ungrouped-platforms-err",
+		Status:      service.StatusError,
+		Schedulable: true,
+		Type:        service.AccountTypeAPIKey,
+		Platform:    service.PlatformOpenAI,
+		Credentials: map[string]any{"pool_mode": true},
+	})
+
+	accounts, err := s.repo.ListSchedulableUngroupedByPlatforms(s.ctx, []string{service.PlatformOpenAI})
+	s.Require().NoError(err)
+	ids := idsOfAccounts(accounts)
+	s.Require().Contains(ids, poolModeErr.ID)
 }
 
 func (s *AccountRepoSuite) TestListSchedulableByGroupID_TimeBoundaries_And_StatusUpdates() {

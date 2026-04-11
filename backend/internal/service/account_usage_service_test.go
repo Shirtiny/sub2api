@@ -124,8 +124,9 @@ func TestAccountUsageService_PersistOpenAICodexProbeSnapshotSetsRateLimit(t *tes
 	}
 	svc := &AccountUsageService{accountRepo: repo}
 	resetAt := time.Now().Add(2 * time.Hour).UTC().Truncate(time.Second)
+	account := &Account{ID: 321, Platform: PlatformOpenAI, Type: AccountTypeOAuth}
 
-	svc.persistOpenAICodexProbeSnapshot(321, map[string]any{
+	svc.persistOpenAICodexProbeSnapshot(account, map[string]any{
 		"codex_7d_used_percent": 100.0,
 		"codex_7d_reset_at":     resetAt.Format(time.RFC3339),
 	}, &resetAt)
@@ -146,6 +147,42 @@ func TestAccountUsageService_PersistOpenAICodexProbeSnapshotSetsRateLimit(t *tes
 		}
 	case <-time.After(2 * time.Second):
 		t.Fatal("waiting for codex probe rate limit persistence timed out")
+	}
+}
+
+func TestAccountUsageService_PersistOpenAICodexProbeSnapshotPoolModeSkipsRateLimit(t *testing.T) {
+	t.Parallel()
+
+	repo := &accountUsageCodexProbeRepo{
+		updateExtraCh: make(chan map[string]any, 1),
+		rateLimitCh:   make(chan time.Time, 1),
+	}
+	svc := &AccountUsageService{accountRepo: repo}
+	resetAt := time.Now().Add(2 * time.Hour).UTC().Truncate(time.Second)
+	account := &Account{
+		ID:       322,
+		Platform: PlatformOpenAI,
+		Type:     AccountTypeAPIKey,
+		Credentials: map[string]any{
+			"pool_mode": true,
+		},
+	}
+
+	svc.persistOpenAICodexProbeSnapshot(account, map[string]any{
+		"codex_7d_used_percent": 100.0,
+		"codex_7d_reset_at":     resetAt.Format(time.RFC3339),
+	}, &resetAt)
+
+	select {
+	case <-repo.updateExtraCh:
+	case <-time.After(2 * time.Second):
+		t.Fatal("waiting for codex probe extra persistence timed out")
+	}
+
+	select {
+	case got := <-repo.rateLimitCh:
+		t.Fatalf("unexpected rate limit persistence for pool mode account: %v", got)
+	case <-time.After(200 * time.Millisecond):
 	}
 }
 

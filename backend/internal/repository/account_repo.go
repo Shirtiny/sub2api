@@ -470,14 +470,11 @@ func (r *accountRepository) ListWithFilters(ctx context.Context, params paginati
 		switch status {
 		case service.StatusActive:
 			q = q.Where(
-				dbaccount.StatusEQ(status),
-				dbaccount.Or(
-					dbaccount.RateLimitResetAtIsNil(),
-					dbaccount.RateLimitResetAtLTE(time.Now()),
-				),
+				activeOrPoolModeErrorStatusPredicate(),
+				nonPoolModeRateLimitAvailablePredicate(time.Now()),
 			)
 		case "rate_limited":
-			q = q.Where(dbaccount.RateLimitResetAtGT(time.Now()))
+			q = q.Where(nonPoolModeRateLimitedPredicate(time.Now()))
 		case "temp_unschedulable":
 			q = q.Where(dbpredicate.Account(func(s *entsql.Selector) {
 				col := s.C("temp_unschedulable_until")
@@ -487,7 +484,11 @@ func (r *accountRepository) ListWithFilters(ctx context.Context, params paginati
 				))
 			}))
 		default:
-			q = q.Where(dbaccount.StatusEQ(status))
+			if status == service.StatusError {
+				q = q.Where(nonPoolModeErrorStatusPredicate())
+			} else {
+				q = q.Where(dbaccount.StatusEQ(status))
+			}
 		}
 	}
 	if search != "" {
@@ -546,7 +547,7 @@ func (r *accountRepository) ListByGroup(ctx context.Context, groupID int64) ([]s
 
 func (r *accountRepository) ListActive(ctx context.Context) ([]service.Account, error) {
 	accounts, err := r.client.Account.Query().
-		Where(dbaccount.StatusEQ(service.StatusActive)).
+		Where(activeOrPoolModeErrorStatusPredicate()).
 		Order(dbent.Asc(dbaccount.FieldPriority)).
 		All(ctx)
 	if err != nil {
@@ -559,7 +560,7 @@ func (r *accountRepository) ListByPlatform(ctx context.Context, platform string)
 	accounts, err := r.client.Account.Query().
 		Where(
 			dbaccount.PlatformEQ(platform),
-			dbaccount.StatusEQ(service.StatusActive),
+			activeOrPoolModeErrorStatusPredicate(),
 		).
 		Order(dbent.Asc(dbaccount.FieldPriority)).
 		All(ctx)
@@ -825,12 +826,12 @@ func (r *accountRepository) ListSchedulable(ctx context.Context) ([]service.Acco
 	now := time.Now()
 	accounts, err := r.client.Account.Query().
 		Where(
-			dbaccount.StatusEQ(service.StatusActive),
+			activeOrPoolModeErrorStatusPredicate(),
 			dbaccount.SchedulableEQ(true),
 			tempUnschedulablePredicate(),
 			notExpiredPredicate(now),
-			dbaccount.Or(dbaccount.OverloadUntilIsNil(), dbaccount.OverloadUntilLTE(now)),
-			dbaccount.Or(dbaccount.RateLimitResetAtIsNil(), dbaccount.RateLimitResetAtLTE(now)),
+			nonPoolModeOverloadAvailablePredicate(now),
+			nonPoolModeRateLimitAvailablePredicate(now),
 		).
 		Order(dbent.Asc(dbaccount.FieldPriority)).
 		All(ctx)
@@ -852,12 +853,12 @@ func (r *accountRepository) ListSchedulableByPlatform(ctx context.Context, platf
 	accounts, err := r.client.Account.Query().
 		Where(
 			dbaccount.PlatformEQ(platform),
-			dbaccount.StatusEQ(service.StatusActive),
+			activeOrPoolModeErrorStatusPredicate(),
 			dbaccount.SchedulableEQ(true),
 			tempUnschedulablePredicate(),
 			notExpiredPredicate(now),
-			dbaccount.Or(dbaccount.OverloadUntilIsNil(), dbaccount.OverloadUntilLTE(now)),
-			dbaccount.Or(dbaccount.RateLimitResetAtIsNil(), dbaccount.RateLimitResetAtLTE(now)),
+			nonPoolModeOverloadAvailablePredicate(now),
+			nonPoolModeRateLimitAvailablePredicate(now),
 		).
 		Order(dbent.Asc(dbaccount.FieldPriority)).
 		All(ctx)
@@ -886,12 +887,12 @@ func (r *accountRepository) ListSchedulableByPlatforms(ctx context.Context, plat
 	accounts, err := r.client.Account.Query().
 		Where(
 			dbaccount.PlatformIn(platforms...),
-			dbaccount.StatusEQ(service.StatusActive),
+			activeOrPoolModeErrorStatusPredicate(),
 			dbaccount.SchedulableEQ(true),
 			tempUnschedulablePredicate(),
 			notExpiredPredicate(now),
-			dbaccount.Or(dbaccount.OverloadUntilIsNil(), dbaccount.OverloadUntilLTE(now)),
-			dbaccount.Or(dbaccount.RateLimitResetAtIsNil(), dbaccount.RateLimitResetAtLTE(now)),
+			nonPoolModeOverloadAvailablePredicate(now),
+			nonPoolModeRateLimitAvailablePredicate(now),
 		).
 		Order(dbent.Asc(dbaccount.FieldPriority)).
 		All(ctx)
@@ -906,13 +907,13 @@ func (r *accountRepository) ListSchedulableUngroupedByPlatform(ctx context.Conte
 	accounts, err := r.client.Account.Query().
 		Where(
 			dbaccount.PlatformEQ(platform),
-			dbaccount.StatusEQ(service.StatusActive),
+			activeOrPoolModeErrorStatusPredicate(),
 			dbaccount.SchedulableEQ(true),
 			dbaccount.Not(dbaccount.HasAccountGroups()),
 			tempUnschedulablePredicate(),
 			notExpiredPredicate(now),
-			dbaccount.Or(dbaccount.OverloadUntilIsNil(), dbaccount.OverloadUntilLTE(now)),
-			dbaccount.Or(dbaccount.RateLimitResetAtIsNil(), dbaccount.RateLimitResetAtLTE(now)),
+			nonPoolModeOverloadAvailablePredicate(now),
+			nonPoolModeRateLimitAvailablePredicate(now),
 		).
 		Order(dbent.Asc(dbaccount.FieldPriority)).
 		All(ctx)
@@ -930,13 +931,13 @@ func (r *accountRepository) ListSchedulableUngroupedByPlatforms(ctx context.Cont
 	accounts, err := r.client.Account.Query().
 		Where(
 			dbaccount.PlatformIn(platforms...),
-			dbaccount.StatusEQ(service.StatusActive),
+			activeOrPoolModeErrorStatusPredicate(),
 			dbaccount.SchedulableEQ(true),
 			dbaccount.Not(dbaccount.HasAccountGroups()),
 			tempUnschedulablePredicate(),
 			notExpiredPredicate(now),
-			dbaccount.Or(dbaccount.OverloadUntilIsNil(), dbaccount.OverloadUntilLTE(now)),
-			dbaccount.Or(dbaccount.RateLimitResetAtIsNil(), dbaccount.RateLimitResetAtLTE(now)),
+			nonPoolModeOverloadAvailablePredicate(now),
+			nonPoolModeRateLimitAvailablePredicate(now),
 		).
 		Order(dbent.Asc(dbaccount.FieldPriority)).
 		All(ctx)
@@ -1404,7 +1405,13 @@ func (r *accountRepository) queryAccountsByGroup(ctx context.Context, groupID in
 	preds := make([]dbpredicate.Account, 0, 6)
 	preds = append(preds, dbaccount.DeletedAtIsNil())
 	if opts.status != "" {
-		preds = append(preds, dbaccount.StatusEQ(opts.status))
+		if opts.status == service.StatusActive {
+			preds = append(preds, activeOrPoolModeErrorStatusPredicate())
+		} else if opts.status == service.StatusError {
+			preds = append(preds, nonPoolModeErrorStatusPredicate())
+		} else {
+			preds = append(preds, dbaccount.StatusEQ(opts.status))
+		}
 	}
 	if len(opts.platforms) > 0 {
 		preds = append(preds, dbaccount.PlatformIn(opts.platforms...))
@@ -1415,8 +1422,8 @@ func (r *accountRepository) queryAccountsByGroup(ctx context.Context, groupID in
 			dbaccount.SchedulableEQ(true),
 			tempUnschedulablePredicate(),
 			notExpiredPredicate(now),
-			dbaccount.Or(dbaccount.OverloadUntilIsNil(), dbaccount.OverloadUntilLTE(now)),
-			dbaccount.Or(dbaccount.RateLimitResetAtIsNil(), dbaccount.RateLimitResetAtLTE(now)),
+			nonPoolModeOverloadAvailablePredicate(now),
+			nonPoolModeRateLimitAvailablePredicate(now),
 		)
 	}
 
@@ -1523,6 +1530,85 @@ func notExpiredPredicate(now time.Time) dbpredicate.Account {
 		dbaccount.ExpiresAtGT(now),
 		dbaccount.AutoPauseOnExpiredEQ(false),
 	)
+}
+
+func nonPoolModeRateLimitAvailablePredicate(now time.Time) dbpredicate.Account {
+	return dbpredicate.Account(func(s *entsql.Selector) {
+		rateLimitCol := s.C("rate_limit_reset_at")
+		poolModePath := sqljson.Path("pool_mode")
+		poolModeDisabled := entsql.Or(
+			entsql.Not(sqljson.HasKey(dbaccount.FieldCredentials, poolModePath)),
+			sqljson.ValueEQ(dbaccount.FieldCredentials, false, poolModePath),
+			sqljson.ValueEQ(dbaccount.FieldCredentials, "false", poolModePath),
+		)
+		s.Where(entsql.Or(
+			entsql.IsNull(rateLimitCol),
+			entsql.LTE(rateLimitCol, entsql.Expr("NOW()")),
+			poolModeDisabled,
+		))
+	})
+}
+
+func nonPoolModeRateLimitedPredicate(now time.Time) dbpredicate.Account {
+	return dbpredicate.Account(func(s *entsql.Selector) {
+		rateLimitCol := s.C("rate_limit_reset_at")
+		poolModePath := sqljson.Path("pool_mode")
+		s.Where(entsql.And(
+			entsql.Not(entsql.IsNull(rateLimitCol)),
+			entsql.GT(rateLimitCol, entsql.Expr("NOW()")),
+			entsql.Or(
+				entsql.Not(sqljson.HasKey(dbaccount.FieldCredentials, poolModePath)),
+				sqljson.ValueEQ(dbaccount.FieldCredentials, false, poolModePath),
+				sqljson.ValueEQ(dbaccount.FieldCredentials, "false", poolModePath),
+			),
+		))
+	})
+}
+
+func activeOrPoolModeErrorStatusPredicate() dbpredicate.Account {
+	return dbpredicate.Account(func(s *entsql.Selector) {
+		statusCol := s.C("status")
+		poolModePath := sqljson.Path("pool_mode")
+		s.Where(entsql.Or(
+			entsql.EQ(statusCol, service.StatusActive),
+			entsql.And(
+				entsql.EQ(statusCol, service.StatusError),
+				sqljson.ValueEQ(dbaccount.FieldCredentials, true, poolModePath),
+			),
+		))
+	})
+}
+
+func nonPoolModeOverloadAvailablePredicate(now time.Time) dbpredicate.Account {
+	return dbpredicate.Account(func(s *entsql.Selector) {
+		overloadCol := s.C("overload_until")
+		poolModePath := sqljson.Path("pool_mode")
+		poolModeDisabled := entsql.Or(
+			entsql.Not(sqljson.HasKey(dbaccount.FieldCredentials, poolModePath)),
+			sqljson.ValueEQ(dbaccount.FieldCredentials, false, poolModePath),
+			sqljson.ValueEQ(dbaccount.FieldCredentials, "false", poolModePath),
+		)
+		s.Where(entsql.Or(
+			entsql.IsNull(overloadCol),
+			entsql.LTE(overloadCol, entsql.Expr("NOW()")),
+			poolModeDisabled,
+		))
+	})
+}
+
+func nonPoolModeErrorStatusPredicate() dbpredicate.Account {
+	return dbpredicate.Account(func(s *entsql.Selector) {
+		statusCol := s.C("status")
+		poolModePath := sqljson.Path("pool_mode")
+		s.Where(entsql.And(
+			entsql.EQ(statusCol, service.StatusError),
+			entsql.Or(
+				entsql.Not(sqljson.HasKey(dbaccount.FieldCredentials, poolModePath)),
+				sqljson.ValueEQ(dbaccount.FieldCredentials, false, poolModePath),
+				sqljson.ValueEQ(dbaccount.FieldCredentials, "false", poolModePath),
+			),
+		))
+	})
 }
 
 func (r *accountRepository) loadProxies(ctx context.Context, proxyIDs []int64) (map[int64]*service.Proxy, error) {
@@ -1634,7 +1720,7 @@ func accountEntityToService(m *dbent.Account) *service.Account {
 
 	rateMultiplier := m.RateMultiplier
 
-	return &service.Account{
+	account := &service.Account{
 		ID:                      m.ID,
 		Name:                    m.Name,
 		Notes:                   m.Notes,
@@ -1664,6 +1750,12 @@ func accountEntityToService(m *dbent.Account) *service.Account {
 		SessionWindowEnd:        m.SessionWindowEnd,
 		SessionWindowStatus:     derefString(m.SessionWindowStatus),
 	}
+	if account.IsPoolMode() {
+		account.Status = account.EffectiveStatus()
+		account.ErrorMessage = ""
+		account.OverloadUntil = nil
+	}
+	return account
 }
 
 func normalizeJSONMap(in map[string]any) map[string]any {

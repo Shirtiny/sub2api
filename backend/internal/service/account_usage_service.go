@@ -511,7 +511,7 @@ func (s *AccountUsageService) getOpenAIUsage(ctx context.Context, account *Accou
 	if shouldRefreshOpenAICodexSnapshot(account, usage, now) && s.shouldProbeOpenAICodexSnapshot(account.ID, now) {
 		if updates, resetAt, err := s.probeOpenAICodexSnapshot(ctx, account); err == nil && (len(updates) > 0 || resetAt != nil) {
 			mergeAccountExtra(account, updates)
-			if resetAt != nil {
+			if resetAt != nil && !account.IsPoolMode() {
 				account.RateLimitResetAt = resetAt
 			}
 			if usage.UpdatedAt == nil {
@@ -655,14 +655,14 @@ func (s *AccountUsageService) probeOpenAICodexSnapshot(ctx context.Context, acco
 		return nil, nil, err
 	}
 	if len(updates) > 0 || resetAt != nil {
-		s.persistOpenAICodexProbeSnapshot(account.ID, updates, resetAt)
+		s.persistOpenAICodexProbeSnapshot(account, updates, resetAt)
 		return updates, resetAt, nil
 	}
 	return nil, nil, nil
 }
 
-func (s *AccountUsageService) persistOpenAICodexProbeSnapshot(accountID int64, updates map[string]any, resetAt *time.Time) {
-	if s == nil || s.accountRepo == nil || accountID <= 0 {
+func (s *AccountUsageService) persistOpenAICodexProbeSnapshot(account *Account, updates map[string]any, resetAt *time.Time) {
+	if s == nil || s.accountRepo == nil || account == nil || account.ID <= 0 {
 		return
 	}
 	if len(updates) == 0 && resetAt == nil {
@@ -673,10 +673,10 @@ func (s *AccountUsageService) persistOpenAICodexProbeSnapshot(accountID int64, u
 		updateCtx, updateCancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer updateCancel()
 		if len(updates) > 0 {
-			_ = s.accountRepo.UpdateExtra(updateCtx, accountID, updates)
+			_ = s.accountRepo.UpdateExtra(updateCtx, account.ID, updates)
 		}
-		if resetAt != nil {
-			_ = s.accountRepo.SetRateLimited(updateCtx, accountID, *resetAt)
+		if resetAt != nil && !account.IsPoolMode() {
+			_ = s.accountRepo.SetRateLimited(updateCtx, account.ID, *resetAt)
 		}
 	}()
 }

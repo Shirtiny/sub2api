@@ -38,6 +38,11 @@ func (s *AntigravityGatewayService) applyInternal500Penalty(
 	switch {
 	case count >= int64(internal500PenaltyTier3Threshold):
 		reason := fmt.Sprintf("INTERNAL 500 consecutive failures: %d rounds", count)
+		if account.IsPoolMode() {
+			slog.Warn("internal500_pool_mode_error_skipped",
+				"account_id", account.ID, "account_name", account.Name, "consecutive_count", count)
+			return
+		}
 		if err := s.accountRepo.SetError(ctx, account.ID, reason); err != nil {
 			slog.Error("internal500_set_error_failed", "account_id", account.ID, "error", err)
 			return

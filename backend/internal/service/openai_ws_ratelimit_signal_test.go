@@ -473,6 +473,35 @@ func TestOpenAIGatewayService_GetSchedulableAccount_ExhaustedCodexExtraSetsRateL
 	}
 }
 
+func TestOpenAIGatewayService_GetSchedulableAccount_PoolModeExhaustedCodexExtraSkipsRateLimitPersistence(t *testing.T) {
+	resetAt := time.Now().Add(6 * 24 * time.Hour)
+	account := Account{
+		ID:          703,
+		Platform:    PlatformOpenAI,
+		Type:        AccountTypeAPIKey,
+		Status:      StatusActive,
+		Schedulable: true,
+		Concurrency: 1,
+		Credentials: map[string]any{"pool_mode": true},
+		Extra: map[string]any{
+			"codex_7d_used_percent": 100.0,
+			"codex_7d_reset_at":     resetAt.UTC().Format(time.RFC3339),
+		},
+	}
+	repo := &openAICodexExtraListRepo{stubOpenAIAccountRepo: stubOpenAIAccountRepo{accounts: []Account{account}}, rateLimitCh: make(chan time.Time, 1)}
+	svc := &OpenAIGatewayService{accountRepo: repo}
+
+	fresh, err := svc.getSchedulableAccount(context.Background(), account.ID)
+	require.NoError(t, err)
+	require.NotNil(t, fresh)
+	require.Nil(t, fresh.RateLimitResetAt)
+	select {
+	case persisted := <-repo.rateLimitCh:
+		t.Fatalf("unexpected persisted rate limit for pool mode account: %v", persisted)
+	case <-time.After(200 * time.Millisecond):
+	}
+}
+
 func TestAdminService_ListAccounts_ExhaustedCodexExtraReturnsRateLimitedAccount(t *testing.T) {
 	resetAt := time.Now().Add(4 * 24 * time.Hour)
 	repo := &openAICodexExtraListRepo{

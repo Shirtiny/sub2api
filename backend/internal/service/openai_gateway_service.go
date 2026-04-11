@@ -4796,7 +4796,7 @@ func codexRateLimitResetAtFromExtra(extra map[string]any, now time.Time) *time.T
 }
 
 func applyOpenAICodexRateLimitFromExtra(account *Account, now time.Time) (*time.Time, bool) {
-	if account == nil || !account.IsOpenAI() {
+	if account == nil || !account.IsOpenAI() || account.IsPoolMode() {
 		return nil, false
 	}
 	resetAt := codexRateLimitResetAtFromExtra(account.Extra, now)
@@ -4812,7 +4812,7 @@ func applyOpenAICodexRateLimitFromExtra(account *Account, now time.Time) (*time.
 
 func syncOpenAICodexRateLimitFromExtra(ctx context.Context, repo AccountRepository, account *Account, now time.Time) *time.Time {
 	resetAt, changed := applyOpenAICodexRateLimitFromExtra(account, now)
-	if !changed || resetAt == nil || repo == nil || account == nil || account.ID <= 0 {
+	if !changed || resetAt == nil || repo == nil || account == nil || account.ID <= 0 || account.IsPoolMode() {
 		return resetAt
 	}
 	_ = repo.SetRateLimited(ctx, account.ID, *resetAt)
@@ -4845,10 +4845,21 @@ func (s *OpenAIGatewayService) updateCodexUsageSnapshot(ctx context.Context, acc
 		if shouldPersistUpdates {
 			_ = s.accountRepo.UpdateExtra(updateCtx, accountID, updates)
 		}
-		if resetAt != nil {
+		if resetAt != nil && !accountIsPoolMode(updateCtx, s.accountRepo, accountID) {
 			_ = s.accountRepo.SetRateLimited(updateCtx, accountID, *resetAt)
 		}
 	}()
+}
+
+func accountIsPoolMode(ctx context.Context, repo AccountRepository, accountID int64) bool {
+	if repo == nil || accountID <= 0 {
+		return false
+	}
+	account, err := repo.GetByID(ctx, accountID)
+	if err != nil || account == nil {
+		return false
+	}
+	return account.IsPoolMode()
 }
 
 func (s *OpenAIGatewayService) UpdateCodexUsageSnapshotFromHeaders(ctx context.Context, accountID int64, headers http.Header) {

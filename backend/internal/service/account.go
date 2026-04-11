@@ -73,7 +73,7 @@ type TempUnschedulableRule struct {
 }
 
 func (a *Account) IsActive() bool {
-	return a.Status == StatusActive
+	return a.EffectiveStatus() == StatusActive
 }
 
 // BillingRateMultiplier 返回账号计费倍率。
@@ -111,10 +111,10 @@ func (a *Account) IsSchedulable() bool {
 	if a.AutoPauseOnExpired && a.ExpiresAt != nil && !now.Before(*a.ExpiresAt) {
 		return false
 	}
-	if a.OverloadUntil != nil && now.Before(*a.OverloadUntil) {
+	if a.IsOverloaded() {
 		return false
 	}
-	if a.RateLimitResetAt != nil && now.Before(*a.RateLimitResetAt) {
+	if a.IsRateLimited() {
 		return false
 	}
 	if a.TempUnschedulableUntil != nil && now.Before(*a.TempUnschedulableUntil) {
@@ -124,17 +124,34 @@ func (a *Account) IsSchedulable() bool {
 }
 
 func (a *Account) IsRateLimited() bool {
-	if a.RateLimitResetAt == nil {
+	if a == nil || a.RateLimitResetAt == nil || a.IsPoolMode() {
 		return false
 	}
 	return time.Now().Before(*a.RateLimitResetAt)
 }
 
 func (a *Account) IsOverloaded() bool {
-	if a.OverloadUntil == nil {
+	if a == nil || a.OverloadUntil == nil || a.IsPoolMode() {
 		return false
 	}
 	return time.Now().Before(*a.OverloadUntil)
+}
+
+func (a *Account) HasBlockingError() bool {
+	if a == nil || a.Status != StatusError {
+		return false
+	}
+	return !a.IsPoolMode()
+}
+
+func (a *Account) EffectiveStatus() string {
+	if a != nil && a.IsPoolMode() && a.Status == StatusError {
+		return StatusActive
+	}
+	if a == nil {
+		return ""
+	}
+	return a.Status
 }
 
 func (a *Account) IsOAuth() bool {

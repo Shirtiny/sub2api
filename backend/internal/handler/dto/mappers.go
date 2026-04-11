@@ -187,29 +187,39 @@ func AccountFromServiceShallow(a *service.Account) *Account {
 		return nil
 	}
 	out := &Account{
-		ID:                      a.ID,
-		Name:                    a.Name,
-		Notes:                   a.Notes,
-		Platform:                a.Platform,
-		Type:                    a.Type,
-		Credentials:             a.Credentials,
-		Extra:                   a.Extra,
-		ProxyID:                 a.ProxyID,
-		Concurrency:             a.Concurrency,
-		LoadFactor:              a.LoadFactor,
-		Priority:                a.Priority,
-		RateMultiplier:          a.BillingRateMultiplier(),
-		Status:                  a.Status,
-		ErrorMessage:            a.ErrorMessage,
-		LastUsedAt:              a.LastUsedAt,
-		ExpiresAt:               timeToUnixSeconds(a.ExpiresAt),
-		AutoPauseOnExpired:      a.AutoPauseOnExpired,
-		CreatedAt:               a.CreatedAt,
-		UpdatedAt:               a.UpdatedAt,
-		Schedulable:             a.Schedulable,
-		RateLimitedAt:           a.RateLimitedAt,
-		RateLimitResetAt:        a.RateLimitResetAt,
-		OverloadUntil:           a.OverloadUntil,
+		ID:             a.ID,
+		Name:           a.Name,
+		Notes:          a.Notes,
+		Platform:       a.Platform,
+		Type:           a.Type,
+		Credentials:    a.Credentials,
+		Extra:          a.Extra,
+		ProxyID:        a.ProxyID,
+		Concurrency:    a.Concurrency,
+		LoadFactor:     a.LoadFactor,
+		Priority:       a.Priority,
+		RateMultiplier: a.BillingRateMultiplier(),
+		Status:         a.EffectiveStatus(),
+		ErrorMessage: func() string {
+			if a.IsPoolMode() {
+				return ""
+			}
+			return a.ErrorMessage
+		}(),
+		LastUsedAt:         a.LastUsedAt,
+		ExpiresAt:          timeToUnixSeconds(a.ExpiresAt),
+		AutoPauseOnExpired: a.AutoPauseOnExpired,
+		CreatedAt:          a.CreatedAt,
+		UpdatedAt:          a.UpdatedAt,
+		Schedulable:        a.Schedulable,
+		RateLimitedAt:      a.RateLimitedAt,
+		RateLimitResetAt:   a.RateLimitResetAt,
+		OverloadUntil: func() *time.Time {
+			if a.IsPoolMode() {
+				return nil
+			}
+			return a.OverloadUntil
+		}(),
 		TempUnschedulableUntil:  a.TempUnschedulableUntil,
 		TempUnschedulableReason: a.TempUnschedulableReason,
 		SessionWindowStart:      a.SessionWindowStart,
