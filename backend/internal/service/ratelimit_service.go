@@ -638,7 +638,7 @@ func (s *RateLimitService) GeminiCooldown(ctx context.Context, account *Account)
 
 // handleAuthError 处理认证类错误(401/403)，停止账号调度
 func (s *RateLimitService) handleAuthError(ctx context.Context, account *Account, errorMsg string) {
-	if account != nil && account.IsPoolMode() {
+	if account != nil && account.IsPoolMode() && !account.IsCustomErrorCodesEnabled() {
 		slog.Warn("pool_mode_auth_error_skipped", "account_id", account.ID, "error", errorMsg)
 		return
 	}
@@ -708,7 +708,7 @@ func (s *RateLimitService) handleAntigravity403(ctx context.Context, account *Ac
 // handleCustomErrorCode 处理自定义错误码，停止账号调度
 func (s *RateLimitService) handleCustomErrorCode(ctx context.Context, account *Account, statusCode int, errorMsg string) {
 	msg := "Custom error code " + strconv.Itoa(statusCode) + ": " + errorMsg
-	if account != nil && account.IsPoolMode() {
+	if account != nil && account.IsPoolMode() && !account.IsCustomErrorCodesEnabled() {
 		slog.Warn("pool_mode_custom_error_skipped", "account_id", account.ID, "status_code", statusCode, "error", errorMsg)
 		return
 	}

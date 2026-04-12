@@ -1,0 +1,5 @@
+{"file": ".trellis/workflow.md", "reason": "Project workflow and conventions"}
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend development guide"}
+{"file": "/Users/air/dev/sub2api/.trellis/spec/backend/error-handling.md", "reason": "panic handling should degrade and log rather than crash"}
+{"file": "/Users/air/dev/sub2api/.trellis/spec/backend/logging-guidelines.md", "reason": "background worker failures should be logged with context"}
+{"file": "/Users/air/dev/sub2api/.trellis/spec/backend/quality-guidelines.md", "reason": "backend tests and minimal targeted fix"}

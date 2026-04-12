@@ -1,66 +1,283 @@
-# Finish Work - Pre-Commit Checklist
+# Finish Work - Executable Pre-Submit Check
 
-Before submitting or committing, use this checklist to ensure work completeness.
+Before submitting or committing, run this workflow to execute the required validation commands, then complete the final readiness checklist.
 
-**Timing**: After code is written and tested, before commit
+**Timing**: After code is written and before commit
 
 ---
 
-## Checklist
+## Core Rule
 
-### 1. Code Quality
+> **This is not a passive checklist. Run the required commands first. If any required command fails, stop and fix the issue before committing.**
+
+---
+
+## Step 1: Inspect Changed Areas
+
+Start by checking what changed:
 
 ```bash
-# Must pass
-pnpm lint
-pnpm type-check
-pnpm test
+git status
+git diff --name-only
 ```
 
-- [ ] `pnpm lint` passes with 0 errors?
-- [ ] `pnpm type-check` passes with no type errors?
-- [ ] Tests pass?
-- [ ] No `console.log` statements (use logger)?
-- [ ] No non-null assertions (the `x!` operator)?
-- [ ] No `any` types?
+Classify the change set using the rules below.
 
-### 1.5. Test Coverage
+### Decision Priority
 
-Check if your change needs new or updated tests (see `.trellis/spec/unit-test/conventions.md`):
+Use the **first matching stricter rule** and do not downgrade afterward:
 
-- [ ] New pure function → unit test added?
-- [ ] Bug fix → regression test added in `test/regression.test.ts`?
-- [ ] Changed init/update behavior → integration test added/updated?
-- [ ] No logic change (text/data only) → no test needed
+1. **Build-affecting / dependency / config changes**
+2. **Backend source/runtime changes**
+3. **Frontend source/runtime changes**
+4. **Fullstack / uncertain changes**
+5. **Tests-only changes**
+6. **Docs / metadata only**
+
+If multiple categories match, choose the stricter command set.
+
+Examples:
+- `frontend/package.json` + docs change -> frontend runtime checks still required
+- `backend/go.mod` + backend tests change -> backend runtime checks still required
+- `backend/**` + `frontend/**` -> run both
+- `Dockerfile` changed -> treat as build-affecting; do not skip owning runtime checks
+
+Do not rely on intuition alone. Base the decision on changed paths.
+
+---
+
+## Step 1.5: Change Classification Matrix
+
+### A. Backend source or backend dependency/runtime changes
+
+Examples:
+- `backend/internal/**`
+- `backend/cmd/**`
+- `backend/ent/**`
+- `backend/migrations/**`
+- `backend/go.mod`
+- `backend/go.sum`
+- `backend/Makefile`
+- `.github/workflows/backend-ci.yml`
+
+### B. Frontend source or frontend dependency/runtime changes
+
+Examples:
+- `frontend/src/**`
+- `frontend/package.json`
+- `frontend/pnpm-lock.yaml`
+- `frontend/vite.config.*`
+- `frontend/tsconfig*.json`
+- `Dockerfile`
+- `.github/workflows/release.yml`
+- `.github/workflows/custom-prod-image.yml`
+
+### C. Tests-only changes
+
+Examples:
+- backend tests only: `backend/**/*_test.go`
+- frontend tests only: `frontend/**/*.spec.ts`
+
+### D. Docs / workflow / metadata only
+
+Examples:
+- `.trellis/**`
+- `.claude/commands/**`
+- markdown/docs only, with no runtime/build-affecting file changes
+
+### E. Fullstack / uncertain
+
+If both backend and frontend source/runtime files changed, or if you are unsure whether a change affects release/build behavior, treat it as fullstack.
+
+---
+
+## Step 1.6: Non-Downgrade Rule
+
+Never downgrade a required command set just because the change looks small.
+
+Examples:
+- A one-line frontend type change still requires `cd frontend && pnpm run build`
+- A tiny backend repository fix still requires backend lint plus `cd backend && go test ./...`
+- A lockfile-only change still requires the relevant runtime/build check
+
+The goal is to catch build and type failures before commit, not to optimize for the shortest command list.
+
+---
+
+## Step 2: Select Commands Deterministically
+
+Use this order:
+
+1. Detect whether any build-affecting files changed
+2. Detect whether backend runtime files changed
+3. Detect whether frontend runtime files changed
+4. If both backend and frontend are touched, run both
+5. Only allow docs-only skip when no runtime/build-affecting files changed
+
+Once the command set is selected, state it explicitly before running anything.
+
+Example report lines:
+- `Detected frontend runtime changes in frontend/src/** -> running cd frontend && pnpm run build`
+- `Detected backend + frontend changes -> running backend golangci-lint, backend go test, and frontend pnpm run build`
+
+---
+
+## Step 2.5: Hard Rule For Build-Affecting Files
+
+Always run checks if any of these changed:
+
+- `backend/go.mod`
+- `backend/go.sum`
+- `backend/Makefile`
+- `frontend/package.json`
+- `frontend/pnpm-lock.yaml`
+- `frontend/tsconfig*.json`
+- `frontend/vite.config.*`
+- `Dockerfile`
+- CI workflow files that affect build/test behavior
+
+These files are high-leverage and can break CI, Docker, or release builds even when application source changes look small.
+
+---
+
+## Step 3: Run Required Validation Commands
+
+Run commands in this order:
+1. Backend command first (if required)
+2. Frontend command second (if required)
+
+### Backend source/runtime changes
+
+First confirm the linter is available. If it is missing, stop and install it before committing:
+
+```bash
+command -v golangci-lint
+```
+
+Then run:
+
+```bash
+cd backend && golangci-lint run --path-mode=abs --timeout=30m ./...
+cd backend && go test ./...
+```
+
+This is the required backend validation path for pre-submit review:
+- `golangci-lint run --path-mode=abs --timeout=30m ./...`
+- `go test ./...`
+
+Do not treat backend lint as optional or as something CI will catch later.
+
+### Frontend source/runtime changes
+
+Run:
+
+```bash
+cd frontend && pnpm run build
+```
+
+This is the minimum reliable frontend gate because it runs:
+- `vue-tsc -b`
+- `vite build`
+
+This catches real release/build failures that lint-only checks may miss.
+
+### Fullstack or uncertain changes
+
+Run all required commands:
+
+```bash
+command -v golangci-lint
+cd backend && golangci-lint run --path-mode=abs --timeout=30m ./...
+cd backend && go test ./...
+cd frontend && pnpm run build
+```
+
+### Tests-only changes
+
+Use judgment, but default to the owning runtime command unless you are certain the change is isolated.
+
+Recommended default:
+- backend tests changed -> `command -v golangci-lint && cd backend && golangci-lint run --path-mode=abs --timeout=30m ./... && cd backend && go test ./...`
+- frontend tests changed -> `cd frontend && pnpm run build`
+
+### Docs / metadata only changes
+
+Heavy runtime checks may be skipped **only if** no backend/frontend source, dependency, config, or build-affecting files changed.
+
+If uncertain, do not skip — run the owning command set.
+
+If the first required command fails, stop immediately and report the failure before running any further readiness steps.
+
+Do not mark the work as ready while a required command is still pending.
+
+---
+
+## Step 4: Guideline Review By Changed Area
+
+After commands pass, review the changed code against project guidance.
+
+### Backend files changed
+
+Reference:
+- `.trellis/spec/backend/index.md`
+- relevant backend spec files
+- `/trellis:check-backend`
+
+### Frontend files changed
+
+Reference:
+- `.trellis/spec/frontend/index.md`
+- relevant frontend spec files
+- `/trellis:check-frontend`
+
+### Cross-layer changes
+
+Reference:
+- `.trellis/spec/guides/cross-layer-thinking-guide.md`
+- `/trellis:check-cross-layer`
+
+---
+
+## Step 5: Hard Stop Rules
+
+Do **not** proceed to commit if any of these are true:
+
+- [ ] `golangci-lint run --path-mode=abs --timeout=30m ./...` failed
+- [ ] `go test ./...` failed
+- [ ] `pnpm run build` failed
+- [ ] Required checks were skipped
+- [ ] Code-spec / contract changes are not synced
+- [ ] Known regressions remain unresolved
+
+If a command fails, report:
+- command run
+- exact failure
+- whether the failure is backend, frontend, or cross-layer
+
+Then fix the issue before retrying.
+
+---
+
+## Step 6: Final Readiness Checklist
+
+### 1. Validation Commands
+
+- [ ] Required backend/frontend commands were run based on changed files
+- [ ] Backend lint was run whenever backend validation was required
+- [ ] All required commands passed
+- [ ] No failing build, typecheck, lint, or test issues remain
 
 ### 2. Code-Spec Sync
 
 **Code-Spec Docs**:
 - [ ] Does `.trellis/spec/backend/` need updates?
-  - New patterns, new modules, new conventions
 - [ ] Does `.trellis/spec/frontend/` need updates?
-  - New components, new hooks, new patterns
 - [ ] Does `.trellis/spec/guides/` need updates?
-  - New cross-layer flows, lessons from bugs
 
-**Key Question**: 
+**Key Question**:
 > "If I fixed a bug or discovered something non-obvious, should I document it so future me (or others) won't hit the same issue?"
 
-If YES -> Update the relevant code-spec doc.
-
-### 2.5. Code-Spec Hard Block (Infra/Cross-Layer)
-
-If this change touches infra or cross-layer contracts, this is a blocking checklist:
-
-- [ ] Spec content is executable (real signatures/contracts), not principle-only text
-- [ ] Includes file path + command/API name + payload field names
-- [ ] Includes validation and error matrix
-- [ ] Includes Good/Base/Bad cases
-- [ ] Includes required tests and assertion points
-
-**Block Rule**:
-In pipeline mode, the finish agent will automatically detect and execute spec updates when gaps are found.
-If running this checklist manually, ensure spec sync is complete before committing — run `/trellis:update-spec` if needed.
+If yes -> update the relevant spec doc.
 
 ### 3. API Changes
 
@@ -98,56 +315,72 @@ If the change spans multiple layers:
 
 ---
 
-## Quick Check Flow
+## Minimum Reliable Command Set
 
-```bash
-# 1. Code checks
-pnpm lint && pnpm type-check
+Use this table when in doubt:
 
-# 2. View changes
-git status
-git diff --name-only
-
-# 3. Based on changed files, check relevant items above
-```
+| Changed area | Required command |
+|--------------|------------------|
+| `backend/**` | `command -v golangci-lint && cd backend && golangci-lint run --path-mode=abs --timeout=30m ./... && cd backend && go test ./...` |
+| `frontend/**` | `cd frontend && pnpm run build` |
+| Both / uncertain | Run both commands |
+| Docs / metadata only | May skip heavy checks only when clearly isolated |
+| Dependency / build config files | Never skip relevant checks |
 
 ---
 
-## Common Oversights
+## Output Format
 
-| Oversight | Consequence | Check |
-|-----------|-------------|-------|
-| Code-spec docs not updated | Others don't know the change | Check .trellis/spec/ |
-| Spec text is abstract only | Easy regressions in infra/cross-layer changes | Require signature/contract/matrix/cases/tests |
-| Migration not created | Schema out of sync | Check db/migrations/ |
-| Types not synced | Runtime errors | Check shared types |
-| Tests not updated | False confidence | Run full test suite |
-| Console.log left in | Noisy production logs | Search for console.log |
+When this workflow is run, always report in this format:
+
+```markdown
+## Pre-Submit Check
+
+### Changed Files Summary
+- [key changed paths or groups]
+
+### Detected Change Class
+- [build-affecting / backend runtime / frontend runtime / fullstack / tests-only / docs-only]
+
+### Commands Selected
+- [why each command was selected]
+
+### Commands Run
+- [command]: [pass/fail]
+
+### Guideline Review
+- [backend/frontend/cross-layer checks performed]
+
+### Blocking Issues
+- [none / list]
+
+### Ready To Commit
+- [yes/no]
+```
+
+If the answer is `Ready To Commit: no`, explicitly say what must be fixed before rerunning `/trellis:finish-work`.
 
 ---
 
 ## Relationship to Other Commands
 
-```
+```bash
 Development Flow:
   Write code -> Test -> /trellis:finish-work -> git commit -> /trellis:record-session
-                          |                              |
-                   Ensure completeness              Record progress
-                   
-Debug Flow:
-  Hit bug -> Fix -> /trellis:break-loop -> Knowledge capture
-                       |
-                  Deep analysis
+                          |
+                 Execute real validation first
 ```
 
-- `/trellis:finish-work` - Check work completeness (this command)
-- `/trellis:record-session` - Record session and commits
-- `/trellis:break-loop` - Deep analysis after debugging
+- `/trellis:finish-work` - executable pre-submit validation (this command)
+- `/trellis:record-session` - record session and commits
+- `/trellis:check-backend` - backend guideline review
+- `/trellis:check-frontend` - frontend guideline review
+- `/trellis:check-cross-layer` - cross-layer verification
 
 ---
 
 ## Core Principle
 
-> **Delivery includes not just code, but also documentation, verification, and knowledge capture.**
+> **Readiness to commit is proven by executed checks, not inferred from confidence.**
 
-Complete work = Code + Docs + Tests + Verification
+Complete work = Passing commands + Guideline review + Docs sync + Verification

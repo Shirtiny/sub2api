@@ -1,0 +1,5 @@
+{"file": ".claude/commands/trellis/finish-work.md", "reason": "Finish work checklist"}
+{"file": ".claude/commands/trellis/check-backend.md", "reason": "Backend check spec"}
+{"file": "/Users/air/dev/sub2api/.trellis/spec/backend/error-handling.md", "reason": "panic handling should degrade and log rather than crash"}
+{"file": "/Users/air/dev/sub2api/.trellis/spec/backend/logging-guidelines.md", "reason": "background worker failures should be logged with context"}
+{"file": "/Users/air/dev/sub2api/.trellis/spec/backend/quality-guidelines.md", "reason": "backend tests and minimal targeted fix"}

@@ -22,10 +22,13 @@
               <Icon name="x" size="sm" />
               <span>{{ t('payment.orders.cancel') }}</span>
             </button>
+            <!-- Temporarily hide refund action on user orders page. Keep code commented for future restore. -->
+            <!--
             <button v-if="row.status === 'COMPLETED'" @click="openRefundDialog(row)" class="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-purple-600 hover:bg-purple-50 dark:text-purple-400 dark:hover:bg-purple-900/20">
               <Icon name="dollar" size="sm" />
               <span>{{ t('payment.orders.requestRefund') }}</span>
             </button>
+            -->
           </div>
         </template>
       </OrderTable>

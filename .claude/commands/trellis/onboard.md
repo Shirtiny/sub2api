@@ -180,16 +180,17 @@ Most bugs don't come from lack of technical skill - they come from "didn't think
 
 ---
 
-### /trellis:finish-work - Holistic Pre-Commit Review
+### /trellis:finish-work - Executable Pre-Submit Review
 
 **WHY IT EXISTS**:
-The `/check-*` commands focus on code quality within a single layer. But real changes often have cross-cutting concerns.
+The `/check-*` commands focus on code quality within a single layer. But real changes often have cross-cutting concerns, and some failures only appear in real build/test commands.
 
 **WHAT IT ACTUALLY DOES**:
-1. Reviews all changes holistically
-2. Checks cross-layer consistency
-3. Identifies broader impacts
-4. Checks if new patterns should be documented
+1. Inspects which areas changed
+2. Runs the required validation commands (`command -v golangci-lint`, `cd backend && golangci-lint run --path-mode=abs --timeout=30m ./...`, `cd backend && go test ./...`, `frontend pnpm run build`, or the required combination)
+3. Stops on failures before commit
+4. Reviews changes holistically after command checks pass
+5. Checks if broader impacts or documentation updates are needed
 
 ---
 
