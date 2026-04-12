@@ -1609,15 +1609,14 @@ func nonPoolModeRateLimitAvailablePredicate(now time.Time) dbpredicate.Account {
 	return dbpredicate.Account(func(s *entsql.Selector) {
 		rateLimitCol := s.C("rate_limit_reset_at")
 		poolModePath := sqljson.Path("pool_mode")
-		poolModeDisabled := entsql.Or(
-			entsql.Not(sqljson.HasKey(dbaccount.FieldCredentials, poolModePath)),
-			sqljson.ValueEQ(dbaccount.FieldCredentials, false, poolModePath),
-			sqljson.ValueEQ(dbaccount.FieldCredentials, "false", poolModePath),
+		poolModeEnabled := entsql.Or(
+			sqljson.ValueEQ(dbaccount.FieldCredentials, true, poolModePath),
+			sqljson.ValueEQ(dbaccount.FieldCredentials, "true", poolModePath),
 		)
 		s.Where(entsql.Or(
 			entsql.IsNull(rateLimitCol),
 			entsql.LTE(rateLimitCol, entsql.Expr("NOW()")),
-			poolModeDisabled,
+			poolModeEnabled,
 		))
 	})
 }
@@ -1656,15 +1655,14 @@ func nonPoolModeOverloadAvailablePredicate(now time.Time) dbpredicate.Account {
 	return dbpredicate.Account(func(s *entsql.Selector) {
 		overloadCol := s.C("overload_until")
 		poolModePath := sqljson.Path("pool_mode")
-		poolModeDisabled := entsql.Or(
-			entsql.Not(sqljson.HasKey(dbaccount.FieldCredentials, poolModePath)),
-			sqljson.ValueEQ(dbaccount.FieldCredentials, false, poolModePath),
-			sqljson.ValueEQ(dbaccount.FieldCredentials, "false", poolModePath),
+		poolModeEnabled := entsql.Or(
+			sqljson.ValueEQ(dbaccount.FieldCredentials, true, poolModePath),
+			sqljson.ValueEQ(dbaccount.FieldCredentials, "true", poolModePath),
 		)
 		s.Where(entsql.Or(
 			entsql.IsNull(overloadCol),
 			entsql.LTE(overloadCol, entsql.Expr("NOW()")),
-			poolModeDisabled,
+			poolModeEnabled,
 		))
 	})
 }
