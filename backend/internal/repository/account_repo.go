@@ -1477,11 +1477,12 @@ func (r *accountRepository) queryAccountsByGroup(ctx context.Context, groupID in
 	preds := make([]dbpredicate.Account, 0, 6)
 	preds = append(preds, dbaccount.DeletedAtIsNil())
 	if opts.status != "" {
-		if opts.status == service.StatusActive {
+		switch opts.status {
+		case service.StatusActive:
 			preds = append(preds, activeOrPoolModeErrorStatusPredicate())
-		} else if opts.status == service.StatusError {
+		case service.StatusError:
 			preds = append(preds, nonPoolModeErrorStatusPredicate())
-		} else {
+		default:
 			preds = append(preds, dbaccount.StatusEQ(opts.status))
 		}
 	}
