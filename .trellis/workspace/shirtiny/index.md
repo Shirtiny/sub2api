@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 2
+- **Total Sessions**: 3
 - **Last Active**: 2026-04-12
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~101 | Active |
+| `journal-1.md` | ~154 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits |
 |---|------|-------|---------|
+| 3 | 2026-04-12 | Refactor pre-submit workflow and stabilize rate-limit tests | `496bf76279069e809a926db661f182ec6f23391f` |
 | 2 | 2026-04-12 | Fix pool mode account top-level statuses | `88f4376f`, `0c91adff` |
 | 1 | 2026-04-11 | Bootstrap Guidelines Initialization | `0efe9009`, `a3a52b3f` |
 <!-- @@@/auto:session-history -->

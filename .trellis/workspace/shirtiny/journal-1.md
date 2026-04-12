@@ -99,3 +99,56 @@ Filled Trellis backend/frontend guideline documents from actual repository patte
 ### Next Steps
 
 - None - task complete
+
+
+## Session 3: Refactor pre-submit workflow and stabilize rate-limit tests
+
+**Date**: 2026-04-12
+**Task**: Refactor pre-submit workflow and stabilize rate-limit tests
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+| Area | Description |
+|------|-------------|
+| Trellis workflow | Refactored `/trellis:finish-work` into an executable pre-submit validation workflow with deterministic change classification and required command selection. |
+| Backend tests | Fixed OpenAI account test snapshot/rate-limit handling so pool-mode accounts still update in-memory reset state and usage snapshots without persisting local rate-limit state. |
+| Backend policy | Fixed pool-mode + custom error code behavior so explicitly configured custom error handling still applies instead of being skipped. |
+| UI adjustments | Included committed frontend payment/order view tweaks that were part of the same commit. |
+
+**Updated Files**:
+- `.claude/commands/trellis/finish-work.md`
+- `.claude/commands/trellis/onboard.md`
+- `backend/internal/service/account_test_service.go`
+- `backend/internal/service/account_test_service_openai_test.go`
+- `backend/internal/service/ratelimit_service.go`
+- `frontend/src/components/payment/SubscriptionPlanCard.vue`
+- `frontend/src/views/user/PaymentView.vue`
+- `frontend/src/views/user/UserOrdersView.vue`
+
+**Summary**:
+- Added deterministic pre-submit rules for backend/frontend/build-affecting changes.
+- Restored passing backend unit coverage around OpenAI pool-mode 429 handling and custom error-code policy behavior.
+- Recorded the combined workflow, backend, and frontend updates from commit `496bf76279069e809a926db661f182ec6f23391f`.
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `496bf76279069e809a926db661f182ec6f23391f` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
