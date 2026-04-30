@@ -152,3 +152,52 @@ Filled Trellis backend/frontend guideline documents from actual repository patte
 ### Next Steps
 
 - None - task complete
+
+
+## Session 4: Merge main into custom-prod
+
+**Date**: 2026-05-01
+**Task**: Merge main into custom-prod
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+| Area | Summary |
+|------|---------|
+| Merge | Merged `origin/main` (`48912014`) into `custom-prod` and created merge commit `a2bcb5ab`. |
+| Conflict resolution | Resolved conflicts in backend service files, `.gitignore`, and `frontend/src/views/user/UserOrdersView.vue`. |
+| Custom behavior preserved | Kept `custom-prod` Codex exhausted snapshot/extra runtime rate-limit behavior for non-pool OpenAI accounts while skipping pool mode. |
+| Upstream behavior preserved | Kept upstream 429 reconciliation, `IsSchedulable()` sticky-session clearing, and upstream `canRequestRefund(row)` condition inside the commented restore block. |
+| Validation | Conflict marker checks and focused backend tests passed; full `/trellis:finish-work` later stopped at `golangci-lint` because another parallel lint process was running. |
+
+**Key Files**:
+- `backend/internal/service/account_test_service.go`
+- `backend/internal/service/account_usage_service.go`
+- `backend/internal/service/admin_service.go`
+- `backend/internal/service/gateway_service.go`
+- `backend/internal/service/openai_gateway_service.go`
+- `backend/internal/service/openai_ws_ratelimit_signal_test.go`
+- `frontend/src/views/user/UserOrdersView.vue`
+- `.gitignore`
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `a2bcb5ab` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
