@@ -359,7 +359,6 @@ func TestOpenAIGatewayService_UpdateCodexUsageSnapshot_ExhaustedSnapshotSetsRate
 		SecondaryResetAfterSeconds: ptrIntWS(1200),
 		SecondaryWindowMinutes:     ptrIntWS(300),
 	}
-	before := time.Now()
 	svc.updateCodexUsageSnapshot(context.Background(), 601, snapshot)
 
 	select {
@@ -371,9 +370,9 @@ func TestOpenAIGatewayService_UpdateCodexUsageSnapshot_ExhaustedSnapshotSetsRate
 
 	select {
 	case resetAt := <-repo.rateLimitCh:
-		require.WithinDuration(t, before.Add(time.Hour), resetAt, 2*time.Second)
+		require.WithinDuration(t, time.Now().Add(time.Hour), resetAt, 2*time.Second)
 	case <-time.After(2 * time.Second):
-		t.Fatal("等待 codex 100% 自动切换限流超时")
+		t.Fatal("等待 exhausted codex 快照写入运行时限流状态超时")
 	}
 }
 
@@ -401,7 +400,7 @@ func TestOpenAIGatewayService_UpdateCodexUsageSnapshot_NonExhaustedSnapshotDoesN
 
 	select {
 	case resetAt := <-repo.rateLimitCh:
-		t.Fatalf("unexpected rate limit reset at: %v", resetAt)
+		t.Fatalf("不应写入运行时限流时间: %v", resetAt)
 	case <-time.After(200 * time.Millisecond):
 	}
 }
@@ -409,7 +408,6 @@ func TestOpenAIGatewayService_UpdateCodexUsageSnapshot_NonExhaustedSnapshotDoesN
 func TestOpenAIGatewayService_UpdateCodexUsageSnapshot_ThrottlesExtraWrites(t *testing.T) {
 	repo := &openAICodexSnapshotAsyncRepo{
 		updateExtraCh: make(chan map[string]any, 2),
-		rateLimitCh:   make(chan time.Time, 2),
 	}
 	svc := &OpenAIGatewayService{
 		accountRepo:           repo,
@@ -531,7 +529,7 @@ func TestAdminService_ListAccounts_ExhaustedCodexExtraReturnsRateLimitedAccount(
 	case persisted := <-repo.rateLimitCh:
 		require.WithinDuration(t, resetAt.UTC(), persisted, time.Second)
 	case <-time.After(2 * time.Second):
-		t.Fatal("等待列表补写限流状态超时")
+		t.Fatal("等待账号列表补写限流状态超时")
 	}
 }
 
