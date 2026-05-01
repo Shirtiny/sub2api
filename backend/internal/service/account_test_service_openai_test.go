@@ -323,7 +323,7 @@ func TestAccountTestService_OpenAI429PoolModeSkipsRateLimitPersistence(t *testin
 		Credentials: map[string]any{"api_key": "test-key", "pool_mode": true},
 	}
 
-	err := svc.testOpenAIAccountConnection(ctx, account, "gpt-5.4")
+	err := svc.testOpenAIAccountConnection(ctx, account, "gpt-5.4", "", "")
 	require.Error(t, err)
 	require.NotEmpty(t, repo.updatedExtra)
 	require.Equal(t, int64(0), repo.rateLimitedID)
