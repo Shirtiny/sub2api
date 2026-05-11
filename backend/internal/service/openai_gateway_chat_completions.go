@@ -61,6 +61,13 @@ func (s *OpenAIGatewayService) ForwardAsChatCompletions(
 	promptCacheKey string,
 	defaultMappedModel string,
 ) (*OpenAIForwardResult, error) {
+	// Account-level passthrough means "forward the client protocol shape as-is".
+	// For API Key accounts this sends Chat Completions requests to the upstream
+	// /v1/chat/completions endpoint instead of converting them to Responses.
+	if account.Type == AccountTypeAPIKey && account.IsOpenAIPassthroughEnabled() {
+		return s.forwardAsRawChatCompletions(ctx, c, account, body, defaultMappedModel)
+	}
+
 	// 入口分流：APIKey 账号 + 已探测且确认上游不支持 Responses，走 CC 直转。
 	// 标记缺失（未探测）按"现状即证据"原则继续走下方原 Responses 转换路径。
 	if account.Type == AccountTypeAPIKey && !openai_compat.ShouldUseResponsesAPI(account.Extra) {

@@ -201,3 +201,41 @@ Filled Trellis backend/frontend guideline documents from actual repository patte
 ### Next Steps
 
 - None - task complete
+
+
+## Session 5: Account pass-through toggle
+
+**Date**: 2026-05-11
+**Task**: Account pass-through toggle
+
+### Summary
+
+OpenAI API Key account passthrough now preserves Chat Completions format; frontend edit modal save path is covered.
+
+### Main Changes
+
+- Updated OpenAI Chat Completions forwarding so `extra.openai_passthrough=true` on API Key accounts sends the original Chat Completions body to the upstream `/v1/chat/completions` endpoint without converting to Responses.
+- Added a backend regression test that verifies the passthrough request keeps `messages`, omits generated `input`, and targets the raw chat endpoint.
+- Updated OpenAI Messages forwarding so the same account passthrough switch sends Anthropic Messages bodies directly to the upstream `/v1/messages` endpoint without converting to Responses.
+- Added a backend regression test for Messages passthrough URL, authorization, body shape, response passthrough, and usage extraction.
+- Added a stable test id to the existing OpenAI passthrough toggle in the edit account modal.
+- Added a frontend component test that toggles passthrough and verifies `extra.openai_passthrough=true` is submitted.
+
+
+### Git Commits
+
+(No commits)
+
+### Testing
+
+- [OK] `env GOCACHE=/private/tmp/sub2api-go-build-cache go test -tags unit ./internal/service -run 'TestForwardAsChatCompletions_OpenAIAPIKeyPassthroughUsesRawChatEndpoint|TestForwardAsRawChatCompletions|TestAccount_IsOpenAIPassthroughEnabled'`
+- [OK] `env GOCACHE=/private/tmp/sub2api-go-build-cache go test -tags unit ./internal/service -run 'TestForwardAsAnthropic_OpenAIAPIKeyPassthroughUsesRawMessagesEndpoint|TestForwardAsChatCompletions_OpenAIAPIKeyPassthroughUsesRawChatEndpoint|TestAccount_IsOpenAIPassthroughEnabled'`
+- [OK] `npm test -- --run src/components/account/__tests__/EditAccountModal.spec.ts`
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
