@@ -183,6 +183,59 @@ func TestForwardAsAnthropic_NormalizesRoutingAndEffortForGpt54XHigh(t *testing.T
 	t.Logf("response body: %s", rec.Body.String())
 }
 
+func TestForwardAsAnthropic_OpenAIAPIKeyPassthroughUsesRawMessagesEndpoint(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	body := []byte(`{"model":"claude-sonnet-4-5","max_tokens":32,"messages":[{"role":"user","content":"hello"}],"stream":false}`)
+	c.Request = httptest.NewRequest(http.MethodPost, "/v1/messages", bytes.NewReader(body))
+	c.Request.Header.Set("Content-Type", "application/json")
+	c.Request.Header.Set("anthropic-version", "2023-06-01")
+
+	upstream := &httpUpstreamRecorder{resp: &http.Response{
+		StatusCode: http.StatusOK,
+		Header:     http.Header{"Content-Type": []string{"application/json"}, "x-request-id": []string{"rid_messages_passthrough"}},
+		Body:       io.NopCloser(strings.NewReader(`{"id":"msg_1","type":"message","role":"assistant","model":"claude-sonnet-4-5","content":[{"type":"text","text":"ok"}],"usage":{"input_tokens":11,"output_tokens":4}}`)),
+	}}
+
+	svc := &OpenAIGatewayService{
+		httpUpstream: upstream,
+		cfg: &config.Config{Security: config.SecurityConfig{URLAllowlist: config.URLAllowlistConfig{
+			Enabled:           false,
+			AllowInsecureHTTP: true,
+		}}},
+	}
+	account := &Account{
+		ID:          2,
+		Name:        "openai-apikey",
+		Platform:    PlatformOpenAI,
+		Type:        AccountTypeAPIKey,
+		Concurrency: 1,
+		Credentials: map[string]any{
+			"api_key":  "sk-test",
+			"base_url": "http://upstream.example",
+		},
+		Extra: map[string]any{
+			"openai_passthrough": true,
+		},
+	}
+
+	result, err := svc.ForwardAsAnthropic(context.Background(), c, account, body, "", "")
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	require.NotNil(t, upstream.lastReq)
+	require.Equal(t, "http://upstream.example/v1/messages", upstream.lastReq.URL.String())
+	require.Equal(t, "Bearer sk-test", upstream.lastReq.Header.Get("authorization"))
+	require.Equal(t, "claude-sonnet-4-5", gjson.GetBytes(upstream.lastBody, "model").String())
+	require.True(t, gjson.GetBytes(upstream.lastBody, "messages").Exists())
+	require.False(t, gjson.GetBytes(upstream.lastBody, "input").Exists())
+	require.Equal(t, 11, result.Usage.InputTokens)
+	require.Equal(t, 4, result.Usage.OutputTokens)
+	require.Equal(t, http.StatusOK, rec.Code)
+	require.Equal(t, "msg_1", gjson.GetBytes(rec.Body.Bytes(), "id").String())
+}
+
 func TestForwardAsAnthropic_InjectsPromptCacheKeyForAPIKeyMessagesDispatch(t *testing.T) {
 	t.Parallel()
 	gin.SetMode(gin.TestMode)

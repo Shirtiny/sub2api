@@ -18,6 +18,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
 	"github.com/Wei-Shaw/sub2api/internal/util/responseheaders"
 	"github.com/gin-gonic/gin"
+	"github.com/tidwall/gjson"
 	"go.uber.org/zap"
 )
 
@@ -49,6 +50,9 @@ func (s *OpenAIGatewayService) ForwardAsAnthropic(
 	// 2. Model mapping
 	billingModel := resolveOpenAIForwardModel(account, normalizedModel, defaultMappedModel)
 	upstreamModel := normalizeOpenAIModelForUpstream(account, billingModel)
+	if account.Type == AccountTypeAPIKey && account.IsOpenAIPassthroughEnabled() {
+		return s.forwardOpenAIMessagesPassthrough(ctx, c, account, body, originalModel, billingModel, upstreamModel, clientStream, startTime)
+	}
 	promptCacheKey = strings.TrimSpace(promptCacheKey)
 	apiKeyID := getAPIKeyIDFromContext(c)
 	anthropicDigestChain := ""
@@ -405,6 +409,347 @@ func ensureCodexOAuthInstructionsField(reqBody map[string]any) {
 	}
 	if _, ok := reqBody["instructions"].(string); !ok {
 		reqBody["instructions"] = ""
+	}
+}
+
+func (s *OpenAIGatewayService) forwardOpenAIMessagesPassthrough(
+	ctx context.Context,
+	c *gin.Context,
+	account *Account,
+	body []byte,
+	originalModel string,
+	billingModel string,
+	upstreamModel string,
+	reqStream bool,
+	startTime time.Time,
+) (*OpenAIForwardResult, error) {
+	if upstreamModel != "" && upstreamModel != originalModel {
+		body = ReplaceModelInBody(body, upstreamModel)
+	}
+
+	updatedBody, policyErr := s.applyOpenAIFastPolicyToBody(ctx, account, upstreamModel, body)
+	if policyErr != nil {
+		var blocked *OpenAIFastBlockedError
+		if errors.As(policyErr, &blocked) {
+			writeAnthropicError(c, http.StatusForbidden, "forbidden_error", blocked.Message)
+		}
+		return nil, policyErr
+	}
+	body = updatedBody
+
+	token, _, err := s.GetAccessToken(ctx, account)
+	if err != nil {
+		return nil, fmt.Errorf("get access token: %w", err)
+	}
+
+	upstreamCtx, releaseUpstreamCtx := detachStreamUpstreamContext(ctx, reqStream)
+	upstreamReq, err := s.buildUpstreamRequestOpenAIMessagesPassthrough(upstreamCtx, c, account, body, token)
+	releaseUpstreamCtx()
+	if err != nil {
+		return nil, err
+	}
+
+	proxyURL := ""
+	if account.ProxyID != nil && account.Proxy != nil {
+		proxyURL = account.Proxy.URL()
+	}
+	setOpsUpstreamRequestBody(c, body)
+	if c != nil {
+		c.Set("openai_messages_passthrough", true)
+	}
+
+	upstreamStart := time.Now()
+	resp, err := s.httpUpstream.Do(upstreamReq, proxyURL, account.ID, account.Concurrency)
+	SetOpsLatencyMs(c, OpsUpstreamLatencyMsKey, time.Since(upstreamStart).Milliseconds())
+	if err != nil {
+		safeErr := sanitizeUpstreamErrorMessage(err.Error())
+		setOpsUpstreamError(c, 0, safeErr, "")
+		appendOpsUpstreamError(c, OpsUpstreamErrorEvent{
+			Platform:           account.Platform,
+			AccountID:          account.ID,
+			AccountName:        account.Name,
+			UpstreamStatusCode: 0,
+			Kind:               "request_error",
+			Message:            safeErr,
+			Passthrough:        true,
+		})
+		writeAnthropicError(c, http.StatusBadGateway, "api_error", "Upstream request failed")
+		return nil, fmt.Errorf("upstream request failed: %s", safeErr)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode >= 400 {
+		respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 2<<20))
+		_ = resp.Body.Close()
+		resp.Body = io.NopCloser(bytes.NewReader(respBody))
+
+		upstreamMsg := sanitizeUpstreamErrorMessage(strings.TrimSpace(extractUpstreamErrorMessage(respBody)))
+		if s.shouldFailoverOpenAIUpstreamResponse(resp.StatusCode, upstreamMsg, respBody) {
+			appendOpsUpstreamError(c, OpsUpstreamErrorEvent{
+				Platform:           account.Platform,
+				AccountID:          account.ID,
+				AccountName:        account.Name,
+				UpstreamStatusCode: resp.StatusCode,
+				UpstreamRequestID:  resp.Header.Get("x-request-id"),
+				Kind:               "failover",
+				Message:            upstreamMsg,
+				Passthrough:        true,
+			})
+			if s.rateLimitService != nil {
+				s.rateLimitService.HandleUpstreamError(ctx, account, resp.StatusCode, resp.Header, respBody)
+			}
+			return nil, &UpstreamFailoverError{
+				StatusCode:             resp.StatusCode,
+				ResponseBody:           respBody,
+				RetryableOnSameAccount: account.IsPoolMode() && (isPoolModeRetryableStatus(resp.StatusCode) || isOpenAITransientProcessingError(resp.StatusCode, upstreamMsg, respBody)),
+			}
+		}
+		return s.handleAnthropicErrorResponse(resp, c, account)
+	}
+
+	var usage *OpenAIUsage
+	var firstTokenMs *int
+	var clientDisconnected bool
+	if reqStream {
+		streamResult, err := s.handleOpenAIMessagesPassthroughStreamingResponse(ctx, resp, c, account, startTime)
+		if err != nil {
+			return nil, err
+		}
+		usage = streamResult.usage
+		firstTokenMs = streamResult.firstTokenMs
+		clientDisconnected = streamResult.clientDisconnect
+	} else {
+		usage, err = s.handleOpenAIMessagesPassthroughNonStreamingResponse(ctx, resp, c)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if usage == nil {
+		usage = &OpenAIUsage{}
+	}
+
+	result := &OpenAIForwardResult{
+		RequestID:     resp.Header.Get("x-request-id"),
+		Usage:         *usage,
+		Model:         originalModel,
+		BillingModel:  billingModel,
+		UpstreamModel: upstreamModel,
+		Stream:        reqStream,
+		Duration:      time.Since(startTime),
+		FirstTokenMs:  firstTokenMs,
+	}
+	if clientDisconnected {
+		result.ResponseHeaders = http.Header{"x-client-disconnected": []string{"true"}}
+	}
+	return result, nil
+}
+
+func buildOpenAIMessagesURL(base string) string {
+	normalized := strings.TrimRight(strings.TrimSpace(base), "/")
+	if strings.HasSuffix(normalized, "/messages") {
+		return normalized
+	}
+	if strings.HasSuffix(normalized, "/v1") {
+		return normalized + "/messages"
+	}
+	return normalized + "/v1/messages"
+}
+
+func (s *OpenAIGatewayService) buildUpstreamRequestOpenAIMessagesPassthrough(
+	ctx context.Context,
+	c *gin.Context,
+	account *Account,
+	body []byte,
+	token string,
+) (*http.Request, error) {
+	baseURL := account.GetOpenAIBaseURL()
+	if baseURL == "" {
+		baseURL = "https://api.openai.com"
+	}
+	validatedURL, err := s.validateUpstreamBaseURL(baseURL)
+	if err != nil {
+		return nil, err
+	}
+	targetURL := buildOpenAIMessagesURL(validatedURL)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, targetURL, bytes.NewReader(body))
+	if err != nil {
+		return nil, err
+	}
+
+	allowTimeoutHeaders := s.isOpenAIPassthroughTimeoutHeadersAllowed()
+	if c != nil && c.Request != nil {
+		for key, values := range c.Request.Header {
+			lower := strings.ToLower(strings.TrimSpace(key))
+			if !isOpenAIPassthroughAllowedRequestHeader(lower, allowTimeoutHeaders) {
+				continue
+			}
+			for _, v := range values {
+				req.Header.Add(key, v)
+			}
+		}
+	}
+	req.Header.Del("authorization")
+	req.Header.Del("x-api-key")
+	req.Header.Del("x-goog-api-key")
+	req.Header.Set("authorization", "Bearer "+token)
+	if req.Header.Get("content-type") == "" {
+		req.Header.Set("content-type", "application/json")
+	}
+	if req.Header.Get("anthropic-version") == "" {
+		req.Header.Set("anthropic-version", "2023-06-01")
+	}
+	return req, nil
+}
+
+type openAIMessagesPassthroughStreamResult struct {
+	usage            *OpenAIUsage
+	firstTokenMs     *int
+	clientDisconnect bool
+}
+
+func (s *OpenAIGatewayService) handleOpenAIMessagesPassthroughStreamingResponse(
+	ctx context.Context,
+	resp *http.Response,
+	c *gin.Context,
+	account *Account,
+	startTime time.Time,
+) (*openAIMessagesPassthroughStreamResult, error) {
+	responseheaders.WriteFilteredHeaders(c.Writer.Header(), resp.Header, s.responseHeaderFilter)
+	contentType := strings.TrimSpace(resp.Header.Get("Content-Type"))
+	if contentType == "" {
+		contentType = "text/event-stream"
+	}
+	c.Header("Content-Type", contentType)
+	if c.Writer.Header().Get("Cache-Control") == "" {
+		c.Header("Cache-Control", "no-cache")
+	}
+	c.Header("X-Accel-Buffering", "no")
+
+	flusher, ok := c.Writer.(http.Flusher)
+	if !ok {
+		return nil, errors.New("streaming not supported")
+	}
+
+	usage := &OpenAIUsage{}
+	var firstTokenMs *int
+	clientDisconnected := false
+	scanner := bufio.NewScanner(resp.Body)
+	maxLineSize := defaultMaxLineSize
+	if s.cfg != nil && s.cfg.Gateway.MaxLineSize > 0 {
+		maxLineSize = s.cfg.Gateway.MaxLineSize
+	}
+	scanner.Buffer(make([]byte, 0, 64*1024), maxLineSize)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if data, ok := extractAnthropicSSEDataLine(line); ok {
+			if firstTokenMs == nil && strings.TrimSpace(data) != "" && strings.TrimSpace(data) != "[DONE]" {
+				ms := int(time.Since(startTime).Milliseconds())
+				firstTokenMs = &ms
+			}
+			parseOpenAIUsageFromAnthropicSSEData(data, usage)
+		}
+		if !clientDisconnected {
+			if _, err := io.WriteString(c.Writer, line); err != nil {
+				clientDisconnected = true
+			} else if _, err := io.WriteString(c.Writer, "\n"); err != nil {
+				clientDisconnected = true
+			} else if line == "" {
+				flusher.Flush()
+			}
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		if clientDisconnected || errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+			return &openAIMessagesPassthroughStreamResult{usage: usage, firstTokenMs: firstTokenMs, clientDisconnect: true}, nil
+		}
+		if errors.Is(err, bufio.ErrTooLong) {
+			logger.LegacyPrintf("service.openai_gateway", "[OpenAI messages passthrough] SSE line too long: account=%d max_size=%d error=%v", account.ID, maxLineSize, err)
+		}
+		return &openAIMessagesPassthroughStreamResult{usage: usage, firstTokenMs: firstTokenMs, clientDisconnect: clientDisconnected}, err
+	}
+	if !clientDisconnected {
+		flusher.Flush()
+	}
+	return &openAIMessagesPassthroughStreamResult{usage: usage, firstTokenMs: firstTokenMs, clientDisconnect: clientDisconnected}, nil
+}
+
+func (s *OpenAIGatewayService) handleOpenAIMessagesPassthroughNonStreamingResponse(
+	ctx context.Context,
+	resp *http.Response,
+	c *gin.Context,
+) (*OpenAIUsage, error) {
+	body, err := ReadUpstreamResponseBody(resp.Body, s.cfg, c, openAITooLargeError)
+	if err != nil {
+		return nil, err
+	}
+	usage := parseOpenAIUsageFromAnthropicMessagesBody(body)
+	responseheaders.WriteFilteredHeaders(c.Writer.Header(), resp.Header, s.responseHeaderFilter)
+	contentType := strings.TrimSpace(resp.Header.Get("Content-Type"))
+	if contentType == "" {
+		contentType = "application/json"
+	}
+	c.Data(resp.StatusCode, contentType, body)
+	return usage, nil
+}
+
+func parseOpenAIUsageFromAnthropicMessagesBody(body []byte) *OpenAIUsage {
+	usage := &OpenAIUsage{}
+	if len(body) == 0 || !gjson.ValidBytes(body) {
+		return usage
+	}
+	node := gjson.GetBytes(body, "usage")
+	if !node.Exists() {
+		return usage
+	}
+	fillOpenAIUsageFromAnthropicUsageNode(node, usage)
+	return usage
+}
+
+func parseOpenAIUsageFromAnthropicSSEData(data string, usage *OpenAIUsage) {
+	if usage == nil || strings.TrimSpace(data) == "" || strings.TrimSpace(data) == "[DONE]" {
+		return
+	}
+	parsed := gjson.Parse(data)
+	switch parsed.Get("type").String() {
+	case "message_start":
+		if node := parsed.Get("message.usage"); node.Exists() {
+			fillOpenAIUsageFromAnthropicUsageNode(node, usage)
+		}
+	case "message_delta":
+		if node := parsed.Get("usage"); node.Exists() {
+			fillOpenAIUsageFromAnthropicUsageNode(node, usage)
+		}
+	}
+}
+
+func fillOpenAIUsageFromAnthropicUsageNode(node gjson.Result, usage *OpenAIUsage) {
+	if usage == nil {
+		return
+	}
+	if v := node.Get("input_tokens").Int(); v > 0 {
+		usage.InputTokens = int(v)
+	}
+	if v := node.Get("output_tokens").Int(); v > 0 {
+		usage.OutputTokens = int(v)
+	}
+	if v := node.Get("cache_creation_input_tokens").Int(); v > 0 {
+		usage.CacheCreationInputTokens = int(v)
+	}
+	if v := node.Get("cache_read_input_tokens").Int(); v > 0 {
+		usage.CacheReadInputTokens = int(v)
+	}
+	if usage.CacheReadInputTokens == 0 {
+		if cached := node.Get("cached_tokens").Int(); cached > 0 {
+			usage.CacheReadInputTokens = int(cached)
+		}
+	}
+	if usage.CacheCreationInputTokens == 0 {
+		cc5m := node.Get("cache_creation.ephemeral_5m_input_tokens").Int()
+		cc1h := node.Get("cache_creation.ephemeral_1h_input_tokens").Int()
+		if cc5m > 0 || cc1h > 0 {
+			usage.CacheCreationInputTokens = int(cc5m + cc1h)
+		}
 	}
 }
 

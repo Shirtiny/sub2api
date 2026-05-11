@@ -217,6 +217,22 @@ describe('EditAccountModal', () => {
     })
   })
 
+  it('submits the OpenAI account passthrough toggle in extra', async () => {
+    const account = buildAccount()
+    updateAccountMock.mockReset()
+    checkMixedChannelRiskMock.mockReset()
+    checkMixedChannelRiskMock.mockResolvedValue({ has_risk: false })
+    updateAccountMock.mockResolvedValue(account)
+
+    const wrapper = mountModal(account)
+
+    await wrapper.get('[data-testid="edit-openai-passthrough-toggle"]').trigger('click')
+    await wrapper.get('form#edit-account-form').trigger('submit.prevent')
+
+    expect(updateAccountMock).toHaveBeenCalledTimes(1)
+    expect(updateAccountMock.mock.calls[0]?.[1]?.extra?.openai_passthrough).toBe(true)
+  })
+
   it('submits account-level Codex image generation bridge override', async () => {
     const account = buildAccount()
     account.extra = {
