@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__ace-tool__search_context",
+      "Skill(lead-team)",
+      "Bash(cargo test *)",
+      "Bash(git *)",
+      "PowerShell(git *)",
+      "PowerShell(cargo test *)",
+      "PowerShell(docker compose *)",
+      "Bash(cargo fmt *)",
+      "PowerShell(rustup show *)",
+      "PowerShell(cargo *)"
+    ]
+  }
+}
