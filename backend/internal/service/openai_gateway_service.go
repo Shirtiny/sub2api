@@ -79,6 +79,7 @@ var openaiPassthroughAllowedHeaders = map[string]bool{
 	"content-type":          true,
 	"conversation_id":       true,
 	"openai-beta":           true,
+	"anthropic-beta":        true,
 	"user-agent":            true,
 	"originator":            true,
 	"session_id":            true,
