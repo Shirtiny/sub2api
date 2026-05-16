@@ -1179,6 +1179,42 @@ func TestParseGatewayRequest_OutputEffort(t *testing.T) {
 	}
 }
 
+func TestParseGatewayRequest_RequestReasoningEffort(t *testing.T) {
+	tests := []struct {
+		name       string
+		body       string
+		wantEffort string
+	}{
+		{
+			name:       "reasoning.effort present",
+			body:       `{"model":"claude-opus-4-6","reasoning":{"effort":"high"},"messages":[]}`,
+			wantEffort: "high",
+		},
+		{
+			name:       "flat reasoning_effort fallback",
+			body:       `{"model":"claude-opus-4-6","reasoning_effort":"x-high","messages":[]}`,
+			wantEffort: "x-high",
+		},
+		{
+			name:       "reasoning.effort wins over flat fallback",
+			body:       `{"model":"claude-opus-4-6","reasoning":{"effort":"medium"},"reasoning_effort":"xhigh","messages":[]}`,
+			wantEffort: "medium",
+		},
+		{
+			name:       "no reasoning effort",
+			body:       `{"model":"claude-opus-4-6","messages":[]}`,
+			wantEffort: "",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			parsed, err := ParseGatewayRequest([]byte(tt.body), "")
+			require.NoError(t, err)
+			require.Equal(t, tt.wantEffort, parsed.RequestReasoningEffort)
+		})
+	}
+}
+
 func TestNormalizeClaudeOutputEffort(t *testing.T) {
 	tests := []struct {
 		input string
@@ -1296,6 +1332,11 @@ func TestDeriveClaudeReasoningEffort(t *testing.T) {
 			want:   strPtr("max"),
 		},
 		{
+			name:   "OpenAI-style reasoning effort wins over budget",
+			parsed: &ParsedRequest{RequestReasoningEffort: "x-high", ThinkingBudgetTokens: 1000},
+			want:   strPtr("xhigh"),
+		},
+		{
 			name:   "fallback to budget when effort empty",
 			parsed: &ParsedRequest{OutputEffort: "", ThinkingBudgetTokens: 5000},
 			want:   strPtr("high"),
@@ -1304,6 +1345,11 @@ func TestDeriveClaudeReasoningEffort(t *testing.T) {
 			name:   "fallback to budget when effort invalid",
 			parsed: &ParsedRequest{OutputEffort: "bogus", ThinkingBudgetTokens: 2048},
 			want:   strPtr("medium"),
+		},
+		{
+			name:   "fallback to model suffix",
+			parsed: &ParsedRequest{Model: "gpt-5.4-xhigh"},
+			want:   strPtr("xhigh"),
 		},
 		{
 			name:   "no effort no budget",
@@ -1344,6 +1390,16 @@ func TestPassthroughFallback_DeriveReasoningEffortFromBudgetTokens(t *testing.T)
 			name:       "output_config.effort wins when both present",
 			body:       `{"model":"claude-sonnet-4-5","max_tokens":8192,"thinking":{"type":"enabled","budget_tokens":1000},"output_config":{"effort":"max"},"messages":[{"role":"user","content":"hi"}]}`,
 			wantEffort: strPtr("max"),
+		},
+		{
+			name:       "OpenAI-style reasoning.effort maps to xhigh",
+			body:       `{"model":"claude-sonnet-4-5","max_tokens":8192,"reasoning":{"effort":"x-high"},"messages":[{"role":"user","content":"hi"}]}`,
+			wantEffort: strPtr("xhigh"),
+		},
+		{
+			name:       "flat reasoning_effort maps to high",
+			body:       `{"model":"claude-sonnet-4-5","max_tokens":8192,"reasoning_effort":"high","messages":[{"role":"user","content":"hi"}]}`,
+			wantEffort: strPtr("high"),
 		},
 		{
 			name:       "thinking budget at minimum maps to low",
