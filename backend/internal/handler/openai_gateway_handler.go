@@ -796,6 +796,14 @@ func (h *OpenAIGatewayHandler) Messages(c *gin.Context) {
 		inboundEndpoint := GetInboundEndpoint(c)
 		upstreamEndpoint := GetUpstreamEndpoint(c, account.Platform)
 
+		// 透传路径不做 Anthropic→Responses 转换、不会预设 result.ReasoningEffort，
+		// 这里从原始请求体兜底解析（与 Gateway.Messages 行为一致）。
+		if result.ReasoningEffort == nil {
+			if parsed, perr := service.ParseGatewayRequest(body, ""); perr == nil {
+				result.ReasoningEffort = service.DeriveClaudeReasoningEffort(parsed)
+			}
+		}
+
 		h.submitOpenAIUsageRecordTask(result, func(ctx context.Context) {
 			if err := h.gatewayService.RecordUsage(ctx, &service.OpenAIRecordUsageInput{
 				Result:             result,
