@@ -63,17 +63,18 @@ type SessionContext struct {
 // 2. 将解析结果 ParsedRequest 传递给 Service 层
 // 3. 避免重复 json.Unmarshal，减少 CPU 和内存开销
 type ParsedRequest struct {
-	Body            []byte          // 原始请求体（保留用于转发）
-	Model           string          // 请求的模型名称
-	Stream          bool            // 是否为流式请求
-	MetadataUserID  string          // metadata.user_id（用于会话亲和）
-	System          any             // system 字段内容
-	Messages        []any           // messages 数组
-	HasSystem       bool            // 是否包含 system 字段（包含 null 也视为显式传入）
-	ThinkingEnabled bool            // 是否开启 thinking（部分平台会影响最终模型名）
-	OutputEffort    string          // output_config.effort（Claude API 的推理强度控制）
-	MaxTokens       int             // max_tokens 值（用于探测请求拦截）
-	SessionContext  *SessionContext // 可选：请求上下文区分因子（nil 时行为不变）
+	Body                 []byte          // 原始请求体（保留用于转发）
+	Model                string          // 请求的模型名称
+	Stream               bool            // 是否为流式请求
+	MetadataUserID       string          // metadata.user_id（用于会话亲和）
+	System               any             // system 字段内容
+	Messages             []any           // messages 数组
+	HasSystem            bool            // 是否包含 system 字段（包含 null 也视为显式传入）
+	ThinkingEnabled      bool            // 是否开启 thinking（部分平台会影响最终模型名）
+	OutputEffort         string          // output_config.effort（Claude API 的推理强度控制）
+	ThinkingBudgetTokens int             // thinking.budget_tokens（传统 Anthropic 思考强度，>0 才生效）
+	MaxTokens            int             // max_tokens 值（用于探测请求拦截）
+	SessionContext       *SessionContext // 可选：请求上下文区分因子（nil 时行为不变）
 
 	// GroupID 请求所属分组 ID（来自 API Key）
 	GroupID *int64
@@ -176,6 +177,14 @@ func ParseGatewayRequest(body []byte, protocol string) (*ParsedRequest, error) {
 
 	// output_config.effort: Claude API 的推理强度控制参数
 	parsed.OutputEffort = strings.TrimSpace(gjson.Get(jsonStr, "output_config.effort").String())
+
+	// thinking.budget_tokens: 传统 Anthropic 思考预算（仅当 output_config.effort 缺失时用作兜底映射）
+	if budget := gjson.Get(jsonStr, "thinking.budget_tokens"); budget.Exists() && budget.Type == gjson.Number {
+		f := budget.Float()
+		if !math.IsNaN(f) && !math.IsInf(f, 0) && f == math.Trunc(f) && f > 0 && f <= float64(math.MaxInt) {
+			parsed.ThinkingBudgetTokens = int(f)
+		}
+	}
 
 	// max_tokens: 仅接受整数值
 	maxTokensResult := gjson.Get(jsonStr, "max_tokens")
@@ -967,6 +976,41 @@ func NormalizeClaudeOutputEffort(raw string) *string {
 	default:
 		return nil
 	}
+}
+
+// MapThinkingBudgetToReasoningEffort maps Claude's thinking.budget_tokens to an
+// OpenAI-style reasoning effort level. The band edges mirror aether's reverse
+// mapping (~midpoints between aether's forward values 1280/2048/4096/8192) so
+// round-trips stay stable. Returns nil for non-positive budgets.
+func MapThinkingBudgetToReasoningEffort(budget int) *string {
+	if budget <= 0 {
+		return nil
+	}
+	var v string
+	switch {
+	case budget <= 1664:
+		v = "low"
+	case budget <= 3072:
+		v = "medium"
+	case budget <= 6144:
+		v = "high"
+	default:
+		v = "xhigh"
+	}
+	return &v
+}
+
+// DeriveClaudeReasoningEffort picks the reasoning effort to record for a Claude
+// /v1/messages request. It prefers the explicit output_config.effort field and
+// falls back to mapping thinking.budget_tokens when effort is absent.
+func DeriveClaudeReasoningEffort(parsed *ParsedRequest) *string {
+	if parsed == nil {
+		return nil
+	}
+	if effort := NormalizeClaudeOutputEffort(parsed.OutputEffort); effort != nil {
+		return effort
+	}
+	return MapThinkingBudgetToReasoningEffort(parsed.ThinkingBudgetTokens)
 }
 
 // =========================

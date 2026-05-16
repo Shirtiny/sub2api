@@ -1209,6 +1209,174 @@ func TestNormalizeClaudeOutputEffort(t *testing.T) {
 	}
 }
 
+func TestParseGatewayRequest_ThinkingBudgetTokens(t *testing.T) {
+	tests := []struct {
+		name       string
+		body       string
+		wantBudget int
+	}{
+		{
+			name:       "thinking enabled with budget",
+			body:       `{"model":"claude-opus-4-6","thinking":{"type":"enabled","budget_tokens":5000},"messages":[]}`,
+			wantBudget: 5000,
+		},
+		{
+			name:       "no thinking field",
+			body:       `{"model":"claude-opus-4-6","messages":[]}`,
+			wantBudget: 0,
+		},
+		{
+			name:       "thinking without budget",
+			body:       `{"model":"claude-opus-4-6","thinking":{"type":"enabled"},"messages":[]}`,
+			wantBudget: 0,
+		},
+		{
+			name:       "non-positive budget rejected",
+			body:       `{"model":"claude-opus-4-6","thinking":{"type":"enabled","budget_tokens":0},"messages":[]}`,
+			wantBudget: 0,
+		},
+		{
+			name:       "fractional budget rejected",
+			body:       `{"model":"claude-opus-4-6","thinking":{"type":"enabled","budget_tokens":1024.5},"messages":[]}`,
+			wantBudget: 0,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			parsed, err := ParseGatewayRequest([]byte(tt.body), "")
+			require.NoError(t, err)
+			require.Equal(t, tt.wantBudget, parsed.ThinkingBudgetTokens)
+		})
+	}
+}
+
+func TestMapThinkingBudgetToReasoningEffort(t *testing.T) {
+	tests := []struct {
+		budget int
+		want   *string
+	}{
+		{0, nil},
+		{-1, nil},
+		{1, strPtr("low")},
+		{1280, strPtr("low")},
+		{1664, strPtr("low")},
+		{1665, strPtr("medium")},
+		{2048, strPtr("medium")},
+		{3072, strPtr("medium")},
+		{3073, strPtr("high")},
+		{4096, strPtr("high")},
+		{6144, strPtr("high")},
+		{6145, strPtr("xhigh")},
+		{8192, strPtr("xhigh")},
+		{32000, strPtr("xhigh")},
+	}
+	for _, tt := range tests {
+		t.Run(fmt.Sprintf("budget=%d", tt.budget), func(t *testing.T) {
+			got := MapThinkingBudgetToReasoningEffort(tt.budget)
+			if tt.want == nil {
+				require.Nil(t, got)
+			} else {
+				require.NotNil(t, got)
+				require.Equal(t, *tt.want, *got)
+			}
+		})
+	}
+}
+
+func TestDeriveClaudeReasoningEffort(t *testing.T) {
+	tests := []struct {
+		name   string
+		parsed *ParsedRequest
+		want   *string
+	}{
+		{"nil parsed", nil, nil},
+		{
+			name:   "output_config.effort wins over budget",
+			parsed: &ParsedRequest{OutputEffort: "max", ThinkingBudgetTokens: 1000},
+			want:   strPtr("max"),
+		},
+		{
+			name:   "fallback to budget when effort empty",
+			parsed: &ParsedRequest{OutputEffort: "", ThinkingBudgetTokens: 5000},
+			want:   strPtr("high"),
+		},
+		{
+			name:   "fallback to budget when effort invalid",
+			parsed: &ParsedRequest{OutputEffort: "bogus", ThinkingBudgetTokens: 2048},
+			want:   strPtr("medium"),
+		},
+		{
+			name:   "no effort no budget",
+			parsed: &ParsedRequest{},
+			want:   nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := DeriveClaudeReasoningEffort(tt.parsed)
+			if tt.want == nil {
+				require.Nil(t, got)
+			} else {
+				require.NotNil(t, got)
+				require.Equal(t, *tt.want, *got)
+			}
+		})
+	}
+}
+
+// TestPassthroughFallback_DeriveReasoningEffortFromBudgetTokens 复现 Anthropic API Key
+// 透传链路上的兜底：透传不做格式转换，service 层不会填 ForwardResult.ReasoningEffort，
+// 因此 handler 用 DeriveClaudeReasoningEffort 从请求体兜底。
+// 该测试以最小代价覆盖 ParseGatewayRequest + DeriveClaudeReasoningEffort 的组合，
+// 与 gateway_handler.go 里两处 `if result.ReasoningEffort == nil` 分支等价。
+func TestPassthroughFallback_DeriveReasoningEffortFromBudgetTokens(t *testing.T) {
+	tests := []struct {
+		name       string
+		body       string
+		wantEffort *string
+	}{
+		{
+			name:       "thinking budget only maps to high",
+			body:       `{"model":"claude-sonnet-4-5","max_tokens":8192,"thinking":{"type":"enabled","budget_tokens":5000},"messages":[{"role":"user","content":"hi"}]}`,
+			wantEffort: strPtr("high"),
+		},
+		{
+			name:       "output_config.effort wins when both present",
+			body:       `{"model":"claude-sonnet-4-5","max_tokens":8192,"thinking":{"type":"enabled","budget_tokens":1000},"output_config":{"effort":"max"},"messages":[{"role":"user","content":"hi"}]}`,
+			wantEffort: strPtr("max"),
+		},
+		{
+			name:       "thinking budget at minimum maps to low",
+			body:       `{"model":"claude-sonnet-4-5","max_tokens":8192,"thinking":{"type":"enabled","budget_tokens":1024},"messages":[{"role":"user","content":"hi"}]}`,
+			wantEffort: strPtr("low"),
+		},
+		{
+			name:       "no thinking and no output_config leaves effort nil",
+			body:       `{"model":"claude-sonnet-4-5","max_tokens":1024,"messages":[{"role":"user","content":"hi"}]}`,
+			wantEffort: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			parsed, err := ParseGatewayRequest([]byte(tt.body), "")
+			require.NoError(t, err)
+
+			// 模拟 handler 兜底：result.ReasoningEffort 为 nil 时调用 DeriveClaudeReasoningEffort。
+			var resultEffort *string
+			if resultEffort == nil {
+				resultEffort = DeriveClaudeReasoningEffort(parsed)
+			}
+
+			if tt.wantEffort == nil {
+				require.Nil(t, resultEffort)
+			} else {
+				require.NotNil(t, resultEffort)
+				require.Equal(t, *tt.wantEffort, *resultEffort)
+			}
+		})
+	}
+}
+
 func BenchmarkParseGatewayRequest_New_Large(b *testing.B) {
 	data := buildLargeJSON()
 	b.SetBytes(int64(len(data)))
