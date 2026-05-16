@@ -101,6 +101,14 @@
             >
               <Icon name="refresh" size="md" :class="loading ? 'animate-spin' : ''" />
             </button>
+            <button
+              @click="handleBulkResetQuota"
+              :disabled="bulkResettingQuota"
+              class="btn btn-danger"
+            >
+              <Icon name="refresh" size="md" class="mr-2" :class="bulkResettingQuota ? 'animate-spin' : ''" />
+              {{ t('admin.subscriptions.bulkResetQuota') }}
+            </button>
             <!-- Column Settings Dropdown -->
             <div class="relative" ref="columnDropdownRef">
               <button
@@ -655,6 +663,17 @@
       @confirm="confirmResetQuota"
       @cancel="showResetQuotaConfirm = false"
     />
+
+    <ConfirmDialog
+      :show="showBulkResetQuotaConfirm"
+      :title="t('admin.subscriptions.bulkResetQuotaTitle')"
+      :message="t('admin.subscriptions.bulkResetQuotaConfirm')"
+      :confirm-text="t('admin.subscriptions.bulkResetQuota')"
+      :cancel-text="t('common.cancel')"
+      :danger="true"
+      @confirm="confirmBulkResetQuota"
+      @cancel="showBulkResetQuotaConfirm = false"
+    />
     <!-- Subscription Guide Modal -->
     <teleport to="body">
       <transition name="modal">
@@ -940,9 +959,11 @@ const showAssignModal = ref(false)
 const showExtendModal = ref(false)
 const showRevokeDialog = ref(false)
 const showResetQuotaConfirm = ref(false)
+const showBulkResetQuotaConfirm = ref(false)
 const submitting = ref(false)
 const resettingSubscription = ref<UserSubscription | null>(null)
 const resettingQuota = ref(false)
+const bulkResettingQuota = ref(false)
 const extendingSubscription = ref<UserSubscription | null>(null)
 const revokingSubscription = ref<UserSubscription | null>(null)
 
@@ -1280,6 +1301,26 @@ const confirmResetQuota = async () => {
     console.error('Error resetting quota:', error)
   } finally {
     resettingQuota.value = false
+  }
+}
+
+const handleBulkResetQuota = () => {
+  showBulkResetQuotaConfirm.value = true
+}
+
+const confirmBulkResetQuota = async () => {
+  if (bulkResettingQuota.value) return
+  bulkResettingQuota.value = true
+  try {
+    const result = await adminAPI.subscriptions.bulkResetQuota({ daily: true, weekly: true, monthly: true })
+    appStore.showSuccess(t('admin.subscriptions.bulkQuotaResetSuccess', { count: result.count }))
+    showBulkResetQuotaConfirm.value = false
+    await loadSubscriptions()
+  } catch (error: any) {
+    appStore.showError(error.response?.data?.detail || t('admin.subscriptions.failedToBulkResetQuota'))
+    console.error('Error resetting all subscription quotas:', error)
+  } finally {
+    bulkResettingQuota.value = false
   }
 }
 

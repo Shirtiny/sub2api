@@ -431,6 +431,51 @@ func (s *UserSubscriptionRepoSuite) TestResetMonthlyUsage() {
 	s.Require().WithinDuration(resetAt, *got.MonthlyWindowStart, time.Microsecond)
 }
 
+func (s *UserSubscriptionRepoSuite) TestResetActiveUsage() {
+	activeUser := s.mustCreateUser("reset-active@test.com", service.RoleUser)
+	expiredUser := s.mustCreateUser("reset-expired@test.com", service.RoleUser)
+	suspendedUser := s.mustCreateUser("reset-suspended@test.com", service.RoleUser)
+	group := s.mustCreateGroup("g-reset-active")
+	active := s.mustCreateSubscription(activeUser.ID, group.ID, func(c *dbent.UserSubscriptionCreate) {
+		c.SetDailyUsageUsd(10.0)
+		c.SetWeeklyUsageUsd(20.0)
+		c.SetMonthlyUsageUsd(30.0)
+		c.SetExpiresAt(time.Now().Add(24 * time.Hour))
+	})
+	expired := s.mustCreateSubscription(expiredUser.ID, group.ID, func(c *dbent.UserSubscriptionCreate) {
+		c.SetDailyUsageUsd(10.0)
+		c.SetWeeklyUsageUsd(20.0)
+		c.SetMonthlyUsageUsd(30.0)
+		c.SetExpiresAt(time.Now().Add(-24 * time.Hour))
+	})
+	suspended := s.mustCreateSubscription(suspendedUser.ID, group.ID, func(c *dbent.UserSubscriptionCreate) {
+		c.SetDailyUsageUsd(10.0)
+		c.SetWeeklyUsageUsd(20.0)
+		c.SetMonthlyUsageUsd(30.0)
+		c.SetStatus(service.SubscriptionStatusSuspended)
+	})
+
+	resetAt := time.Date(2025, 3, 1, 0, 0, 0, 0, time.UTC)
+	count, err := s.repo.ResetActiveUsage(s.ctx, true, true, true, resetAt)
+	s.Require().NoError(err, "ResetActiveUsage")
+	s.Require().Equal(int64(1), count)
+
+	gotActive, err := s.repo.GetByID(s.ctx, active.ID)
+	s.Require().NoError(err)
+	s.Require().InDelta(0.0, gotActive.DailyUsageUSD, 1e-6)
+	s.Require().InDelta(0.0, gotActive.WeeklyUsageUSD, 1e-6)
+	s.Require().InDelta(0.0, gotActive.MonthlyUsageUSD, 1e-6)
+	s.Require().WithinDuration(resetAt, *gotActive.DailyWindowStart, time.Microsecond)
+
+	gotExpired, err := s.repo.GetByID(s.ctx, expired.ID)
+	s.Require().NoError(err)
+	s.Require().InDelta(10.0, gotExpired.DailyUsageUSD, 1e-6)
+
+	gotSuspended, err := s.repo.GetByID(s.ctx, suspended.ID)
+	s.Require().NoError(err)
+	s.Require().InDelta(10.0, gotSuspended.DailyUsageUSD, 1e-6)
+}
+
 // --- UpdateStatus / ExtendExpiry / UpdateNotes ---
 
 func (s *UserSubscriptionRepoSuite) TestUpdateStatus() {

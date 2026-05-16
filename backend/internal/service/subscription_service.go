@@ -722,18 +722,51 @@ func (s *SubscriptionService) AdminResetQuota(ctx context.Context, subscriptionI
 			return nil, err
 		}
 	}
+	s.invalidateSubscriptionCaches(ctx, sub.UserID, sub.GroupID)
+	// Return the refreshed subscription from DB
+	return s.userSubRepo.GetByID(ctx, subscriptionID)
+}
+
+func (s *SubscriptionService) AdminBulkResetQuota(ctx context.Context, resetDaily, resetWeekly, resetMonthly bool) (int64, error) {
+	if !resetDaily && !resetWeekly && !resetMonthly {
+		return 0, ErrInvalidInput
+	}
+	params := pagination.PaginationParams{Page: 1, PageSize: 1000}
+	subs, pag, err := s.userSubRepo.List(ctx, params, nil, nil, SubscriptionStatusActive, "", "created_at", "asc")
+	if err != nil {
+		return 0, fmt.Errorf("list active subscriptions: %w", err)
+	}
+	if pag != nil {
+		for page := 2; page <= pag.Pages; page++ {
+			params.Page = page
+			pageSubs, _, pageErr := s.userSubRepo.List(ctx, params, nil, nil, SubscriptionStatusActive, "", "created_at", "asc")
+			if pageErr != nil {
+				return 0, fmt.Errorf("list active subscriptions page %d: %w", page, pageErr)
+			}
+			subs = append(subs, pageSubs...)
+		}
+	}
+	count, err := s.userSubRepo.ResetActiveUsage(ctx, resetDaily, resetWeekly, resetMonthly, startOfDay(time.Now()))
+	if err != nil {
+		return 0, fmt.Errorf("reset active subscription usage: %w", err)
+	}
+	for i := range subs {
+		s.invalidateSubscriptionCaches(ctx, subs[i].UserID, subs[i].GroupID)
+	}
+	return count, nil
+}
+
+func (s *SubscriptionService) invalidateSubscriptionCaches(ctx context.Context, userID, groupID int64) {
 	// Invalidate L1 ristretto cache. Ristretto's Del() is asynchronous by design,
 	// so call Wait() immediately after to flush pending operations and guarantee
 	// the deleted key is not returned on the very next Get() call.
-	s.InvalidateSubCache(sub.UserID, sub.GroupID)
+	s.InvalidateSubCache(userID, groupID)
 	if s.subCacheL1 != nil {
 		s.subCacheL1.Wait()
 	}
 	if s.billingCacheService != nil {
-		_ = s.billingCacheService.InvalidateSubscription(ctx, sub.UserID, sub.GroupID)
+		_ = s.billingCacheService.InvalidateSubscription(ctx, userID, groupID)
 	}
-	// Return the refreshed subscription from DB
-	return s.userSubRepo.GetByID(ctx, subscriptionID)
 }
 
 // CheckAndResetWindows 检查并重置过期的窗口

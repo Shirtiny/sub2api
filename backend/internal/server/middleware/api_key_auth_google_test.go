@@ -180,6 +180,9 @@ func (f fakeGoogleSubscriptionRepo) ResetMonthlyUsage(ctx context.Context, id in
 	}
 	return errors.New("not implemented")
 }
+func (f fakeGoogleSubscriptionRepo) ResetActiveUsage(ctx context.Context, resetDaily, resetWeekly, resetMonthly bool, start time.Time) (int64, error) {
+	return 0, errors.New("not implemented")
+}
 func (f fakeGoogleSubscriptionRepo) IncrementUsage(ctx context.Context, id int64, costUSD float64) error {
 	return errors.New("not implemented")
 }
