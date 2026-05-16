@@ -538,6 +538,10 @@ func (s *OpenAIGatewayService) forwardOpenAIMessagesPassthrough(
 		Duration:      time.Since(startTime),
 		FirstTokenMs:  firstTokenMs,
 	}
+	if c != nil && containsBetaToken(c.GetHeader("anthropic-beta"), claude.BetaFastMode) {
+		tier := "priority"
+		result.ServiceTier = &tier
+	}
 	if clientDisconnected {
 		result.ResponseHeaders = http.Header{"x-client-disconnected": []string{"true"}}
 	}
