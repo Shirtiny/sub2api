@@ -806,6 +806,22 @@ func (s *BillingCacheService) checkBalanceEligibility(ctx context.Context, userI
 
 // checkSubscriptionEligibility 检查订阅模式资格
 func (s *BillingCacheService) checkSubscriptionEligibility(ctx context.Context, userID int64, group *Group, subscription *UserSubscription) error {
+	if err := checkSubscriptionSnapshotEligibility(subscription, group); err != nil {
+		return err
+	}
+	dailyReset, weeklyReset, monthlyReset := subscriptionRelevantWindowResets(subscription, group)
+	if dailyReset || weeklyReset || monthlyReset {
+		if s.cache != nil {
+			if cacheData, cacheErr := s.cache.GetSubscriptionCache(ctx, userID, group.ID); cacheErr == nil && cacheData != nil {
+				if err := checkSubscriptionCacheLimits(s.convertFromPortsData(cacheData), group, dailyReset, weeklyReset, monthlyReset); err != nil {
+					return err
+				}
+			}
+		}
+		_ = s.InvalidateSubscription(ctx, userID, group.ID)
+		return nil
+	}
+
 	// 获取订阅缓存数据
 	subData, err := s.GetSubscriptionStatus(ctx, userID, group.ID)
 	if err != nil {
@@ -819,26 +835,60 @@ func (s *BillingCacheService) checkSubscriptionEligibility(ctx context.Context, 
 		s.circuitBreaker.OnSuccess()
 	}
 
-	// 检查订阅状态
-	if subData.Status != SubscriptionStatusActive {
-		return ErrSubscriptionInvalid
+	if err := checkSubscriptionCacheLimits(subData, group, false, false, false); err != nil {
+		return err
 	}
 
-	// 检查是否过期
-	if time.Now().After(subData.ExpiresAt) {
+	return nil
+}
+
+func subscriptionRelevantWindowResets(subscription *UserSubscription, group *Group) (daily, weekly, monthly bool) {
+	if subscription == nil || group == nil {
+		return false, false, false
+	}
+	return group.HasDailyLimit() && subscription.NeedsDailyReset(),
+		group.HasWeeklyLimit() && subscription.NeedsWeeklyReset(),
+		group.HasMonthlyLimit() && subscription.NeedsMonthlyReset()
+}
+
+func checkSubscriptionSnapshotEligibility(subscription *UserSubscription, group *Group) error {
+	if subscription == nil || group == nil {
 		return ErrSubscriptionInvalid
 	}
-
-	// 检查限额（使用传入的Group限额配置）
-	if group.HasDailyLimit() && subData.DailyUsage >= *group.DailyLimitUSD {
+	if subscription.Status != SubscriptionStatusActive {
+		return ErrSubscriptionInvalid
+	}
+	if subscription.IsExpired() {
+		return ErrSubscriptionInvalid
+	}
+	if !subscription.CheckDailyLimit(group, 0) {
 		return ErrDailyLimitExceeded
 	}
-
-	if group.HasWeeklyLimit() && subData.WeeklyUsage >= *group.WeeklyLimitUSD {
+	if !subscription.CheckWeeklyLimit(group, 0) {
 		return ErrWeeklyLimitExceeded
 	}
+	if !subscription.CheckMonthlyLimit(group, 0) {
+		return ErrMonthlyLimitExceeded
+	}
+	return nil
+}
 
-	if group.HasMonthlyLimit() && subData.MonthlyUsage >= *group.MonthlyLimitUSD {
+func checkSubscriptionCacheLimits(cacheData *subscriptionCacheData, group *Group, ignoreDaily, ignoreWeekly, ignoreMonthly bool) error {
+	if cacheData == nil || group == nil {
+		return nil
+	}
+
+	if cacheData.Status != SubscriptionStatusActive || time.Now().After(cacheData.ExpiresAt) {
+		return ErrSubscriptionInvalid
+	}
+
+	if !ignoreDaily && group.HasDailyLimit() && cacheData.DailyUsage >= *group.DailyLimitUSD {
+		return ErrDailyLimitExceeded
+	}
+	if !ignoreWeekly && group.HasWeeklyLimit() && cacheData.WeeklyUsage >= *group.WeeklyLimitUSD {
+		return ErrWeeklyLimitExceeded
+	}
+	if !ignoreMonthly && group.HasMonthlyLimit() && cacheData.MonthlyUsage >= *group.MonthlyLimitUSD {
 		return ErrMonthlyLimitExceeded
 	}
 

@@ -1776,6 +1776,12 @@ func billingErrorDetails(err error) (status int, code, message string, retryAfte
 		}
 		return http.StatusServiceUnavailable, "billing_service_error", msg, 0
 	}
+	if errors.Is(err, service.ErrDailyLimitExceeded) ||
+		errors.Is(err, service.ErrWeeklyLimitExceeded) ||
+		errors.Is(err, service.ErrMonthlyLimitExceeded) {
+		msg := pkgerrors.Message(err)
+		return http.StatusTooManyRequests, "usage_limit_exceeded", msg, 0
+	}
 	if errors.Is(err, service.ErrAPIKeyRateLimit5hExceeded) {
 		msg := pkgerrors.Message(err)
 		return http.StatusTooManyRequests, "rate_limit_exceeded", msg, 0
