@@ -78,9 +78,37 @@ func (b *billingCacheWorkerStub) InvalidateAPIKeyRateLimit(ctx context.Context, 
 	return nil
 }
 
+func (b *billingCacheWorkerStub) GetUserPlatformQuotaCache(ctx context.Context, userID int64, platform string) (*UserPlatformQuotaCacheEntry, bool, error) {
+	return nil, false, nil
+}
+
+func (b *billingCacheWorkerStub) SetUserPlatformQuotaCache(ctx context.Context, userID int64, platform string, entry *UserPlatformQuotaCacheEntry, ttl time.Duration) error {
+	return nil
+}
+
+func (b *billingCacheWorkerStub) DeleteUserPlatformQuotaCache(ctx context.Context, userID int64, platform string) error {
+	return nil
+}
+
+func (b *billingCacheWorkerStub) IncrUserPlatformQuotaUsageCache(ctx context.Context, userID int64, platform string, cost float64, ttl time.Duration, markDirty bool) error {
+	return nil
+}
+
+func (b *billingCacheWorkerStub) PopDirtyUserPlatformQuotaKeys(ctx context.Context, n int) ([]UserPlatformQuotaKey, error) {
+	return nil, nil
+}
+
+func (b *billingCacheWorkerStub) ReaddDirtyUserPlatformQuotaKeys(ctx context.Context, keys []UserPlatformQuotaKey) error {
+	return nil
+}
+
+func (b *billingCacheWorkerStub) BatchGetUserPlatformQuotaCache(ctx context.Context, keys []UserPlatformQuotaKey) ([]*UserPlatformQuotaCacheEntry, error) {
+	return nil, nil
+}
+
 func TestBillingCacheServiceQueueHighLoad(t *testing.T) {
 	cache := &billingCacheWorkerStub{}
-	svc := NewBillingCacheService(cache, nil, nil, nil, nil, nil, &config.Config{})
+	svc := NewBillingCacheService(cache, nil, nil, nil, nil, nil, &config.Config{}, nil)
 	t.Cleanup(svc.Stop)
 
 	start := time.Now()
@@ -102,7 +130,7 @@ func TestBillingCacheServiceQueueHighLoad(t *testing.T) {
 
 func TestBillingCacheServiceEnqueueAfterStopReturnsFalse(t *testing.T) {
 	cache := &billingCacheWorkerStub{}
-	svc := NewBillingCacheService(cache, nil, nil, nil, nil, nil, &config.Config{})
+	svc := NewBillingCacheService(cache, nil, nil, nil, nil, nil, &config.Config{}, nil)
 	svc.Stop()
 
 	enqueued := svc.enqueueCacheWrite(cacheWriteTask{
@@ -127,7 +155,7 @@ func TestCheckBillingEligibility_InvalidatesStaleDailyUsageCacheAfterWindowReset
 			Version:      1,
 		},
 	}
-	svc := NewBillingCacheService(cache, nil, nil, nil, nil, nil, &config.Config{})
+	svc := NewBillingCacheService(cache, nil, nil, nil, nil, nil, &config.Config{}, nil)
 	t.Cleanup(svc.Stop)
 
 	err := svc.CheckBillingEligibility(
@@ -149,6 +177,7 @@ func TestCheckBillingEligibility_InvalidatesStaleDailyUsageCacheAfterWindowReset
 			DailyWindowStart: &oldWindowStart,
 			DailyUsageUSD:    0,
 		},
+		"",
 	)
 
 	require.NoError(t, err)
@@ -169,7 +198,7 @@ func TestCheckBillingEligibility_RejectsCacheDailyLimitInCurrentWindow(t *testin
 			Version:      time.Now().Unix(),
 		},
 	}
-	svc := NewBillingCacheService(cache, nil, nil, nil, nil, nil, &config.Config{})
+	svc := NewBillingCacheService(cache, nil, nil, nil, nil, nil, &config.Config{}, nil)
 	t.Cleanup(svc.Stop)
 
 	err := svc.CheckBillingEligibility(
@@ -191,6 +220,7 @@ func TestCheckBillingEligibility_RejectsCacheDailyLimitInCurrentWindow(t *testin
 			DailyWindowStart: &windowStart,
 			DailyUsageUSD:    0,
 		},
+		"",
 	)
 
 	require.ErrorIs(t, err, ErrDailyLimitExceeded)
@@ -201,7 +231,7 @@ func TestCheckBillingEligibility_RejectsCurrentSubscriptionDailyLimit(t *testing
 	dailyLimit := 300.0
 	expiresAt := time.Now().Add(24 * time.Hour)
 	cache := &billingCacheWorkerStub{}
-	svc := NewBillingCacheService(cache, nil, nil, nil, nil, nil, &config.Config{})
+	svc := NewBillingCacheService(cache, nil, nil, nil, nil, nil, &config.Config{}, nil)
 	t.Cleanup(svc.Stop)
 
 	err := svc.CheckBillingEligibility(
@@ -222,6 +252,7 @@ func TestCheckBillingEligibility_RejectsCurrentSubscriptionDailyLimit(t *testing
 			ExpiresAt:     expiresAt,
 			DailyUsageUSD: dailyLimit + 0.01,
 		},
+		"",
 	)
 
 	require.ErrorIs(t, err, ErrDailyLimitExceeded)

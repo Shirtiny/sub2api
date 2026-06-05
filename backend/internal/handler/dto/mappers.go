@@ -30,6 +30,7 @@ func UserFromServiceShallow(u *service.User) *User {
 		BalanceNotifyExtraEmails:   NotifyEmailEntriesFromService(u.BalanceNotifyExtraEmails),
 		TotalRecharged:             u.TotalRecharged,
 		RPMLimit:                   u.RPMLimit,
+		DeletedAt:                  u.DeletedAt,
 	}
 }
 
@@ -147,6 +148,7 @@ func GroupFromServiceAdmin(g *service.Group) *AdminGroup {
 		MCPXMLInject:                g.MCPXMLInject,
 		DefaultMappedModel:          g.DefaultMappedModel,
 		MessagesDispatchModelConfig: g.MessagesDispatchModelConfig,
+		ModelsListConfig:            g.ModelsListConfig,
 		SupportedModelScopes:        g.SupportedModelScopes,
 		AccountCount:                g.AccountCount,
 		ActiveAccountCount:          g.ActiveAccountCount,
@@ -198,20 +200,22 @@ func AccountFromServiceShallow(a *service.Account) *Account {
 	if a == nil {
 		return nil
 	}
+	redactedCreds, credsStatus := RedactCredentials(a.Credentials)
 	out := &Account{
-		ID:             a.ID,
-		Name:           a.Name,
-		Notes:          a.Notes,
-		Platform:       a.Platform,
-		Type:           a.Type,
-		Credentials:    a.Credentials,
-		Extra:          a.Extra,
-		ProxyID:        a.ProxyID,
-		Concurrency:    a.Concurrency,
-		LoadFactor:     a.LoadFactor,
-		Priority:       a.Priority,
-		RateMultiplier: a.BillingRateMultiplier(),
-		Status:         a.EffectiveStatus(),
+		ID:                a.ID,
+		Name:              a.Name,
+		Notes:             a.Notes,
+		Platform:          a.Platform,
+		Type:              a.Type,
+		Credentials:       redactedCreds,
+		CredentialsStatus: credsStatus,
+		Extra:             a.Extra,
+		ProxyID:           a.ProxyID,
+		Concurrency:       a.Concurrency,
+		LoadFactor:        a.LoadFactor,
+		Priority:          a.Priority,
+		RateMultiplier:    a.BillingRateMultiplier(),
+		Status:            a.EffectiveStatus(),
 		ErrorMessage: func() string {
 			if a.IsPoolMode() {
 				return ""
@@ -541,10 +545,14 @@ func redeemCodeFromServiceBase(rc *service.RedeemCode) RedeemCode {
 		UsedBy:       rc.UsedBy,
 		UsedAt:       rc.UsedAt,
 		CreatedAt:    rc.CreatedAt,
+		ExpiresAt:    rc.ExpiresAt,
 		GroupID:      rc.GroupID,
 		ValidityDays: rc.ValidityDays,
 		User:         UserFromServiceShallow(rc.User),
 		Group:        GroupFromServiceShallow(rc.Group),
+	}
+	if rc.IsExpired() {
+		out.Status = service.StatusExpired
 	}
 
 	// For admin_balance/admin_concurrency types, include notes so users can see
@@ -610,6 +618,10 @@ func usageLogFromServiceUser(l *service.UsageLog) UsageLog {
 		FirstTokenMs:          l.FirstTokenMs,
 		ImageCount:            l.ImageCount,
 		ImageSize:             l.ImageSize,
+		ImageInputSize:        l.ImageInputSize,
+		ImageOutputSize:       l.ImageOutputSize,
+		ImageSizeSource:       l.ImageSizeSource,
+		ImageSizeBreakdown:    l.ImageSizeBreakdown,
 		MediaType:             l.MediaType,
 		UserAgent:             l.UserAgent,
 		CacheTTLOverridden:    l.CacheTTLOverridden,
