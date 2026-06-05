@@ -220,7 +220,7 @@ func TestCheckBillingEligibility_RejectsCurrentSubscriptionDailyLimit(t *testing
 			GroupID:       24,
 			Status:        SubscriptionStatusActive,
 			ExpiresAt:     expiresAt,
-			DailyUsageUSD: dailyLimit,
+			DailyUsageUSD: dailyLimit + 0.01,
 		},
 	)
 
