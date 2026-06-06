@@ -58,7 +58,7 @@
                   @click="selectFilterUser(user)"
                   class="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700"
                 >
-                  <span class="font-medium text-gray-900 dark:text-white">{{ user.email }}</span>
+                  <span class="font-medium text-content-primary">{{ user.email }}</span>
                   <span class="ml-2 text-gray-500 dark:text-gray-400">#{{ user.id }}</span>
                 </button>
               </div>
@@ -198,7 +198,7 @@
                   }}
                 </span>
               </div>
-              <span class="font-medium text-gray-900 dark:text-white">
+              <span class="font-medium text-content-primary">
                 {{ userColumnMode === 'email'
                   ? (row.user?.email || t('admin.redeem.userPrefix', { id: row.user_id }))
                   : (row.user?.username || '-')
@@ -216,7 +216,7 @@
               :rate-multiplier="row.group.rate_multiplier"
               :show-rate="false"
             />
-            <span v-else class="text-sm text-gray-400 dark:text-dark-500">-</span>
+            <span v-else class="text-sm text-content-tertiary">-</span>
           </template>
 
           <template #cell-usage="{ row }">
@@ -356,7 +356,7 @@
                 :class="
                   isExpiringSoon(value)
                     ? 'text-orange-600 dark:text-orange-400'
-                    : 'text-gray-700 dark:text-gray-300'
+                    : 'text-content-secondary'
                 "
               >
                 {{ formatDateOnly(value) }}
@@ -494,7 +494,7 @@
                 @click="selectUser(user)"
                 class="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700"
               >
-                <span class="font-medium text-gray-900 dark:text-white">{{ user.email }}</span>
+                <span class="font-medium text-content-primary">{{ user.email }}</span>
                 <span class="ml-2 text-gray-500 dark:text-gray-400">#{{ user.id }}</span>
               </button>
             </div>
@@ -587,15 +587,15 @@
         class="space-y-5"
       >
         <div class="rounded-lg bg-gray-50 p-4 dark:bg-dark-700">
-          <p class="text-sm text-gray-600 dark:text-gray-400">
+          <p class="text-sm text-content-secondary">
             {{ t('admin.subscriptions.adjustingFor') }}
-            <span class="font-medium text-gray-900 dark:text-white">{{
+            <span class="font-medium text-content-primary">{{
               extendingSubscription.user?.email
             }}</span>
           </p>
-          <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+          <p class="mt-1 text-sm text-content-secondary">
             {{ t('admin.subscriptions.currentExpiration') }}:
-            <span class="font-medium text-gray-900 dark:text-white">
+            <span class="font-medium text-content-primary">
               {{
                 extendingSubscription.expires_at
                   ? formatDateOnly(extendingSubscription.expires_at)
@@ -603,9 +603,9 @@
               }}
             </span>
           </p>
-          <p v-if="extendingSubscription.expires_at" class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+          <p v-if="extendingSubscription.expires_at" class="mt-1 text-sm text-content-secondary">
             {{ t('admin.subscriptions.remainingDays') }}:
-            <span class="font-medium text-gray-900 dark:text-white">
+            <span class="font-medium text-content-primary">
               {{ getDaysRemaining(extendingSubscription.expires_at) ?? 0 }}
             </span>
           </p>
@@ -684,12 +684,12 @@
               <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
 
-            <h2 class="mb-4 text-lg font-bold text-gray-900 dark:text-white">{{ t('admin.subscriptions.guide.title') }}</h2>
+            <h2 class="mb-4 text-lg font-bold text-content-primary">{{ t('admin.subscriptions.guide.title') }}</h2>
             <p class="mb-5 text-sm text-gray-500 dark:text-gray-400">{{ t('admin.subscriptions.guide.subtitle') }}</p>
 
             <!-- Step 1 -->
             <div class="mb-5">
-              <h3 class="mb-2 flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
+              <h3 class="mb-2 flex items-center gap-2 text-sm font-semibold text-content-primary">
                 <span class="flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 text-xs font-bold text-primary-700 dark:bg-primary-900/40 dark:text-primary-300">1</span>
                 {{ t('admin.subscriptions.guide.step1.title') }}
               </h3>
@@ -712,7 +712,7 @@
 
             <!-- Step 2 -->
             <div class="mb-5">
-              <h3 class="mb-2 flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
+              <h3 class="mb-2 flex items-center gap-2 text-sm font-semibold text-content-primary">
                 <span class="flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 text-xs font-bold text-primary-700 dark:bg-primary-900/40 dark:text-primary-300">2</span>
                 {{ t('admin.subscriptions.guide.step2.title') }}
               </h3>
@@ -725,16 +725,16 @@
 
             <!-- Step 3 -->
             <div class="mb-5">
-              <h3 class="mb-2 flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
+              <h3 class="mb-2 flex items-center gap-2 text-sm font-semibold text-content-primary">
                 <span class="flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 text-xs font-bold text-primary-700 dark:bg-primary-900/40 dark:text-primary-300">3</span>
                 {{ t('admin.subscriptions.guide.step3.title') }}
               </h3>
               <div class="ml-8 overflow-hidden rounded-lg border border-gray-200 dark:border-dark-600">
                 <table class="w-full text-sm">
                   <tbody>
-                    <tr v-for="(row, i) in guideActionRows" :key="i" class="border-b border-gray-100 dark:border-dark-700 last:border-0">
+                    <tr v-for="(row, i) in guideActionRows" :key="i" class="border-b border-stroke-subtle last:border-0">
                       <td class="whitespace-nowrap bg-gray-50 px-3 py-2 font-medium text-gray-700 dark:bg-dark-700 dark:text-gray-300">{{ row.action }}</td>
-                      <td class="px-3 py-2 text-gray-600 dark:text-gray-400">{{ row.desc }}</td>
+                      <td class="px-3 py-2 text-content-secondary">{{ row.desc }}</td>
                     </tr>
                   </tbody>
                 </table>

@@ -13,7 +13,7 @@
       class="space-y-4"
       @submit.prevent="handlePreview"
     >
-      <div class="text-sm text-gray-600 dark:text-dark-300">
+      <div class="text-sm text-content-secondary">
         {{ t('admin.accounts.syncFromCrsDesc') }}
       </div>
       <div
@@ -80,7 +80,7 @@
           {{ t('admin.accounts.crsExistingAccounts') }}
           <span class="ml-1 text-xs text-gray-400">({{ previewResult.existing_accounts.length }})</span>
         </div>
-        <div class="max-h-32 overflow-auto text-xs text-gray-500 dark:text-dark-400">
+        <div class="max-h-32 overflow-auto text-xs text-content-tertiary">
           <div
             v-for="acc in previewResult.existing_accounts"
             :key="acc.crs_account_id"
@@ -97,7 +97,7 @@
       <!-- New accounts (selectable) -->
       <div v-if="previewResult.new_accounts.length">
         <div class="mb-2 flex items-center justify-between">
-          <div class="text-sm font-medium text-gray-900 dark:text-white">
+          <div class="text-sm font-medium text-content-primary">
             {{ t('admin.accounts.crsNewAccounts') }}
             <span class="ml-1 text-xs text-gray-400">({{ previewResult.new_accounts.length }})</span>
           </div>
@@ -109,7 +109,7 @@
             >{{ t('admin.accounts.crsSelectAll') }}</button>
             <button
               type="button"
-              class="text-xs text-gray-500 hover:text-gray-600 dark:text-gray-400"
+              class="text-xs text-gray-500 hover:text-content-secondary"
               @click="selectNone"
             >{{ t('admin.accounts.crsSelectNone') }}</button>
           </div>
@@ -140,9 +140,9 @@
       </div>
 
       <!-- Sync options summary -->
-      <div class="flex items-center gap-2 text-xs text-gray-500 dark:text-dark-400">
+      <div class="flex items-center gap-2 text-xs text-content-tertiary">
         <span>{{ t('admin.accounts.syncProxies') }}:</span>
-        <span :class="form.sync_proxies ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-dark-500'">
+        <span :class="form.sync_proxies ? 'text-green-600 dark:text-green-400' : 'text-content-tertiary'">
           {{ form.sync_proxies ? t('common.yes') : t('common.no') }}
         </span>
       </div>
@@ -164,7 +164,7 @@
       <div
         class="space-y-2 rounded-xl border border-gray-200 p-4 dark:border-dark-700"
       >
-        <div class="text-sm font-medium text-gray-900 dark:text-white">
+        <div class="text-sm font-medium text-content-primary">
           {{ t('admin.accounts.syncResult') }}
         </div>
         <div class="text-sm text-gray-700 dark:text-dark-300">

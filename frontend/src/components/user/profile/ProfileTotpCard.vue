@@ -1,7 +1,7 @@
 <template>
   <div class="card">
     <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
-      <h2 class="text-lg font-medium text-gray-900 dark:text-white">
+      <h2 class="text-lg font-medium text-content-primary">
         {{ t('profile.totp.title') }}
       </h2>
       <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
@@ -22,7 +22,7 @@
           </svg>
         </div>
         <div>
-          <p class="font-medium text-gray-700 dark:text-gray-300">
+          <p class="font-medium text-content-secondary">
             {{ t('profile.totp.featureDisabled') }}
           </p>
           <p class="text-sm text-gray-500 dark:text-gray-400">
@@ -40,7 +40,7 @@
             </svg>
           </div>
           <div>
-            <p class="font-medium text-gray-900 dark:text-white">
+            <p class="font-medium text-content-primary">
               {{ t('profile.totp.enabled') }}
             </p>
             <p v-if="status.enabled_at" class="text-sm text-gray-500 dark:text-gray-400">
@@ -66,7 +66,7 @@
             </svg>
           </div>
           <div>
-            <p class="font-medium text-gray-700 dark:text-gray-300">
+            <p class="font-medium text-content-secondary">
               {{ t('profile.totp.notEnabled') }}
             </p>
             <p class="text-sm text-gray-500 dark:text-gray-400">

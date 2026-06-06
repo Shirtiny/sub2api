@@ -34,12 +34,12 @@
               </div>
 
               <!-- Title -->
-              <h2 class="mb-2 text-2xl font-bold leading-tight text-gray-900 dark:text-white">
+              <h2 class="mb-2 text-2xl font-bold leading-tight text-content-primary">
                 {{ announcementStore.currentPopup.title }}
               </h2>
 
               <!-- Time -->
-              <div class="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-400">
+              <div class="flex items-center gap-1.5 text-sm text-content-secondary">
                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>

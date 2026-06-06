@@ -10,31 +10,31 @@
       <template v-else-if="detail">
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <div class="card p-5">
-            <p class="flex items-center gap-1.5 text-sm text-gray-500 dark:text-dark-400">
+            <p class="flex items-center gap-1.5 text-sm text-content-tertiary">
               <Icon name="dollar" size="sm" class="text-primary-500" />
               {{ t('affiliate.stats.rebateRate') }}
             </p>
-            <p class="mt-2 text-2xl font-semibold text-primary-600 dark:text-primary-400">
+            <p class="mt-2 text-2xl font-semibold text-primary-600 dark:text-primary-600">
               {{ formattedRebateRate }}<span class="ml-0.5 text-base font-medium">%</span>
             </p>
-            <p class="mt-1 text-xs text-gray-400 dark:text-dark-500">
+            <p class="mt-1 text-xs text-content-tertiary">
               {{ t('affiliate.stats.rebateRateHint') }}
             </p>
-            <p v-if="detail.can_invite" class="mt-1 text-xs font-medium text-primary-500 dark:text-primary-400">
+            <p v-if="detail.can_invite" class="mt-1 text-xs font-medium text-primary-600 dark:text-primary-600">
               {{ t('affiliate.stats.rebateCap', { amount: formatPoints(rebatePerInviteeCap) }) }}
             </p>
           </div>
           <div class="card relative p-5">
-            <p class="text-sm text-gray-500 dark:text-dark-400">{{ t('affiliate.stats.invitedUsers') }}</p>
-            <p class="mt-2 text-2xl font-semibold text-gray-900 dark:text-white">
+            <p class="text-sm text-content-tertiary">{{ t('affiliate.stats.invitedUsers') }}</p>
+            <p class="mt-2 text-2xl font-semibold text-content-primary">
               {{ formatCount(detail.aff_count) }}
             </p>
-            <p class="absolute bottom-3 right-4 text-xs text-gray-400 dark:text-dark-500">
+            <p class="absolute bottom-3 right-4 text-xs text-content-tertiary">
               {{ inviteLimitLabel }}
             </p>
           </div>
           <div class="card p-5">
-            <p class="text-sm text-gray-500 dark:text-dark-400">{{ t('affiliate.stats.availablePoints') }}</p>
+            <p class="text-sm text-content-tertiary">{{ t('affiliate.stats.availablePoints') }}</p>
             <p class="mt-2 text-2xl font-semibold text-emerald-600 dark:text-emerald-400">
               <button
                 type="button"
@@ -44,24 +44,24 @@
                 {{ formatPoints(availableRebatePoints) }}
               </button>
             </p>
-            <p class="mt-1 text-xs text-gray-400 dark:text-dark-500">
+            <p class="mt-1 text-xs text-content-tertiary">
               {{ t('affiliate.stats.pointsHint') }}
             </p>
           </div>
         </div>
 
         <div class="card p-6">
-          <h3 class="text-base font-semibold text-gray-900 dark:text-white">{{ t('affiliate.title') }}</h3>
-          <p class="mt-1 text-sm text-gray-500 dark:text-dark-400">{{ t('affiliate.description') }}</p>
+          <h3 class="text-base font-semibold text-content-primary">{{ t('affiliate.title') }}</h3>
+          <p class="mt-1 text-sm text-content-tertiary">{{ t('affiliate.description') }}</p>
 
           <div
             v-if="detail.can_invite"
             class="mt-5 grid gap-4 md:grid-cols-2"
           >
             <div class="space-y-2">
-              <p class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('affiliate.yourCode') }}</p>
-              <div class="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 dark:border-dark-700 dark:bg-dark-900">
-                <code class="flex-1 truncate text-sm font-semibold text-gray-900 dark:text-white">{{ detail.aff_code }}</code>
+              <p class="text-sm font-medium text-content-secondary">{{ t('affiliate.yourCode') }}</p>
+              <div class="flex items-center gap-2 rounded-xl border border-stroke-default bg-surface-secondary px-3 py-2">
+                <code class="flex-1 truncate text-sm font-semibold text-content-primary">{{ detail.aff_code }}</code>
                 <button class="btn btn-secondary btn-sm" @click="copyCode">
                   <Icon name="copy" size="sm" />
                   <span>{{ t('affiliate.copyCode') }}</span>
@@ -70,9 +70,9 @@
             </div>
 
             <div class="space-y-2">
-              <p class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('affiliate.inviteLink') }}</p>
-              <div class="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 dark:border-dark-700 dark:bg-dark-900">
-                <code class="flex-1 truncate text-sm text-gray-700 dark:text-gray-300">{{ inviteLink }}</code>
+              <p class="text-sm font-medium text-content-secondary">{{ t('affiliate.inviteLink') }}</p>
+              <div class="flex items-center gap-2 rounded-xl border border-stroke-default bg-surface-secondary px-3 py-2">
+                <code class="flex-1 truncate text-sm text-content-secondary">{{ inviteLink }}</code>
                 <button class="btn btn-secondary btn-sm" @click="copyInviteLink">
                   <Icon name="copy" size="sm" />
                   <span>{{ t('affiliate.copyLink') }}</span>
@@ -87,9 +87,9 @@
             {{ t('affiliate.unavailable') }}
           </div>
 
-          <div class="mt-5 rounded-xl border border-primary-200 bg-primary-50 p-4 dark:border-primary-900/40 dark:bg-primary-900/20">
-            <p class="text-sm font-medium text-primary-800 dark:text-primary-200">{{ t('affiliate.tips.title') }}</p>
-            <ol class="mt-2 list-decimal space-y-1 pl-5 text-sm text-primary-700 dark:text-primary-300">
+          <div class="mt-5 rounded-xl border border-stroke-brand bg-primary-50 p-4 dark:bg-primary-400/20">
+            <p class="text-sm font-medium text-content-primary">{{ t('affiliate.tips.title') }}</p>
+            <ol class="mt-2 list-decimal space-y-1 pl-5 text-sm text-content-secondary">
               <li>{{ t('affiliate.tips.line1') }}</li>
               <li>{{ t('affiliate.tips.line2', { rate: `${formattedRebateRate}%` }) }}</li>
               <li>{{ t('affiliate.tips.line3') }}</li>
@@ -102,8 +102,8 @@
         <div class="card p-6">
           <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h3 class="text-base font-semibold text-gray-900 dark:text-white">{{ t('affiliate.redeem.title') }}</h3>
-              <p class="mt-1 text-sm text-gray-500 dark:text-dark-400">{{ t('affiliate.redeem.description') }}</p>
+              <h3 class="text-base font-semibold text-content-primary">{{ t('affiliate.redeem.title') }}</h3>
+              <p class="mt-1 text-sm text-content-tertiary">{{ t('affiliate.redeem.description') }}</p>
             </div>
             <button
               class="btn btn-primary"
@@ -121,14 +121,14 @@
         </div>
 
         <div class="card p-6">
-          <h3 class="text-base font-semibold text-gray-900 dark:text-white">{{ t('affiliate.invitees.title') }}</h3>
-          <div v-if="detail.invitees.length === 0" class="mt-4 rounded-xl border border-dashed border-gray-300 p-6 text-center text-sm text-gray-500 dark:border-dark-700 dark:text-dark-400">
+          <h3 class="text-base font-semibold text-content-primary">{{ t('affiliate.invitees.title') }}</h3>
+          <div v-if="detail.invitees.length === 0" class="mt-4 rounded-xl border border-dashed border-stroke-strong p-6 text-center text-sm text-content-tertiary">
             {{ t('affiliate.invitees.empty') }}
           </div>
           <div v-else class="mt-4 overflow-x-auto">
             <table class="w-full min-w-[560px] text-left text-sm">
               <thead>
-                <tr class="border-b border-gray-200 text-gray-500 dark:border-dark-700 dark:text-dark-400">
+                <tr class="border-b border-stroke-default text-content-tertiary">
                   <th class="px-3 py-2 font-medium">{{ t('affiliate.invitees.columns.email') }}</th>
                   <th class="px-3 py-2 font-medium">{{ t('affiliate.invitees.columns.username') }}</th>
                   <th class="px-3 py-2 font-medium text-right">{{ t('affiliate.invitees.columns.rebate') }}</th>
@@ -139,14 +139,14 @@
                 <tr
                   v-for="item in detail.invitees"
                   :key="item.user_id"
-                  class="border-b border-gray-100 last:border-b-0 dark:border-dark-800"
+                  class="border-b border-stroke-subtle last:border-b-0"
                 >
-                  <td class="px-3 py-3 text-gray-900 dark:text-white">{{ formatPrivateAccount(item.email || item.username) }}</td>
-                  <td class="px-3 py-3 text-gray-700 dark:text-gray-300">{{ item.username || '-' }}</td>
+                  <td class="px-3 py-3 text-content-primary">{{ formatPrivateAccount(item.email || item.username) }}</td>
+                  <td class="px-3 py-3 text-content-secondary">{{ item.username || '-' }}</td>
                   <td class="px-3 py-3 text-right font-medium text-emerald-600 dark:text-emerald-400">
                     {{ formatPoints(inviteeRebatePoints(item)) }}
                   </td>
-                  <td class="px-3 py-3 text-gray-700 dark:text-gray-300">{{ formatDateTime(item.created_at) || '-' }}</td>
+                  <td class="px-3 py-3 text-content-secondary">{{ formatDateTime(item.created_at) || '-' }}</td>
                 </tr>
               </tbody>
             </table>
@@ -165,12 +165,12 @@
         <div v-if="ledgerLoading" class="flex justify-center py-8">
           <div class="h-6 w-6 animate-spin rounded-full border-2 border-primary-500 border-t-transparent"></div>
         </div>
-        <div v-else-if="ledgerRecords.length === 0" class="rounded-xl border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500 dark:border-dark-700 dark:text-dark-400">
+        <div v-else-if="ledgerRecords.length === 0" class="rounded-xl border border-dashed border-stroke-strong p-8 text-center text-sm text-content-tertiary">
           {{ t('affiliate.ledger.empty') }}
         </div>
-        <div v-else class="overflow-x-auto rounded-xl border border-gray-200 dark:border-dark-700">
+        <div v-else class="overflow-x-auto rounded-xl border border-stroke-default">
           <table class="w-full min-w-[720px] text-left text-sm">
-            <thead class="bg-gray-50 text-gray-500 dark:bg-dark-800 dark:text-dark-400">
+            <thead class="bg-surface-secondary text-content-tertiary">
               <tr>
                 <th class="px-3 py-2 font-medium">{{ t('affiliate.ledger.columns.time') }}</th>
                 <th class="px-3 py-2 font-medium">{{ t('affiliate.ledger.columns.action') }}</th>
@@ -180,16 +180,16 @@
                 <th class="px-3 py-2 text-right font-medium">{{ t('affiliate.ledger.columns.availableAfter') }}</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-gray-100 dark:divide-dark-800">
+            <tbody class="divide-y divide-stroke-subtle">
               <tr v-for="item in ledgerRecords" :key="item.ledger_id">
-                <td class="px-3 py-3 text-gray-700 dark:text-gray-300">{{ formatDateTime(item.created_at) || '-' }}</td>
-                <td class="px-3 py-3 text-gray-900 dark:text-white">{{ formatLedgerAction(item) }}</td>
+                <td class="px-3 py-3 text-content-secondary">{{ formatDateTime(item.created_at) || '-' }}</td>
+                <td class="px-3 py-3 text-content-primary">{{ formatLedgerAction(item) }}</td>
                 <td class="px-3 py-3 text-right font-semibold" :class="ledgerAmountClass(item.action)">
                   {{ formatSignedLedgerAmount(item) }}
                 </td>
-                <td class="px-3 py-3 text-gray-700 dark:text-gray-300">{{ formatLedgerSource(item) }}</td>
-                <td class="px-3 py-3 text-gray-700 dark:text-gray-300">{{ formatLedgerGroup(item) }}</td>
-                <td class="px-3 py-3 text-right text-gray-700 dark:text-gray-300">{{ formatNullablePoints(item.available_points_after) }}</td>
+                <td class="px-3 py-3 text-content-secondary">{{ formatLedgerSource(item) }}</td>
+                <td class="px-3 py-3 text-content-secondary">{{ formatLedgerGroup(item) }}</td>
+                <td class="px-3 py-3 text-right text-content-secondary">{{ formatNullablePoints(item.available_points_after) }}</td>
               </tr>
             </tbody>
           </table>
@@ -219,34 +219,34 @@
         </div>
 
         <div>
-          <p class="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+          <p class="mb-2 text-sm font-medium text-content-secondary">
             {{ t('affiliate.redeem.targetLabel') }}
           </p>
           <div class="grid gap-3 sm:grid-cols-2">
             <label class="flex cursor-pointer gap-3 rounded-xl border p-3 dark:border-dark-700" :class="redeemForm.target_type === 'balance' ? 'border-primary-300 bg-primary-50 dark:border-primary-700 dark:bg-primary-900/20' : 'border-gray-200'">
               <input v-model="redeemForm.target_type" type="radio" value="balance" class="mt-1" />
               <span>
-                <span class="block text-sm font-medium text-gray-900 dark:text-white">{{ t('affiliate.redeem.balanceTarget') }}</span>
-                <span class="mt-1 block text-xs text-gray-500 dark:text-dark-400">{{ t('affiliate.redeem.balanceTargetHint') }}</span>
+                <span class="block text-sm font-medium text-content-primary">{{ t('affiliate.redeem.balanceTarget') }}</span>
+                <span class="mt-1 block text-xs text-content-tertiary">{{ t('affiliate.redeem.balanceTargetHint') }}</span>
               </span>
             </label>
             <label class="flex cursor-pointer gap-3 rounded-xl border p-3 dark:border-dark-700" :class="redeemForm.target_type === 'subscription' ? 'border-primary-300 bg-primary-50 dark:border-primary-700 dark:bg-primary-900/20' : 'border-gray-200'">
               <input v-model="redeemForm.target_type" type="radio" value="subscription" class="mt-1" />
               <span>
-                <span class="block text-sm font-medium text-gray-900 dark:text-white">{{ t('affiliate.redeem.subscriptionTarget') }}</span>
-                <span class="mt-1 block text-xs text-gray-500 dark:text-dark-400">{{ t('affiliate.redeem.subscriptionHint') }}</span>
+                <span class="block text-sm font-medium text-content-primary">{{ t('affiliate.redeem.subscriptionTarget') }}</span>
+                <span class="mt-1 block text-xs text-content-tertiary">{{ t('affiliate.redeem.subscriptionHint') }}</span>
               </span>
             </label>
           </div>
         </div>
 
         <div v-if="redeemForm.target_type === 'balance'">
-          <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+          <label class="mb-2 block text-sm font-medium text-content-secondary">
             {{ t('affiliate.redeem.pointsLabel') }}
           </label>
           <div class="flex gap-2">
             <div class="relative flex-1">
-              <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 dark:text-dark-400">¥</span>
+              <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-content-tertiary">¥</span>
               <input
                 v-model.number="redeemForm.points"
                 type="number"
@@ -261,13 +261,13 @@
               {{ t('affiliate.redeem.maxButton') }}
             </button>
           </div>
-          <p class="mt-2 text-xs text-gray-500 dark:text-dark-400">
+          <p class="mt-2 text-xs text-content-tertiary">
             {{ t('affiliate.redeem.balanceEstimate', { balance: formatCurrency(estimatedBalanceCredit) }) }}
           </p>
         </div>
 
         <div v-if="redeemForm.target_type === 'subscription'" class="space-y-3">
-          <div v-if="redemptionContextLoading" class="flex items-center gap-2 text-sm text-gray-500 dark:text-dark-400">
+          <div v-if="redemptionContextLoading" class="flex items-center gap-2 text-sm text-content-tertiary">
             <Icon name="refresh" size="sm" class="animate-spin" />
             {{ t('common.loading') }}
           </div>
@@ -276,7 +276,7 @@
               {{ t('affiliate.redeem.noSubscriptions') }}
             </div>
             <div v-else>
-              <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label class="mb-2 block text-sm font-medium text-content-secondary">
                 {{ t('affiliate.redeem.subscriptionLabel') }}
               </label>
               <select v-model.number="redeemForm.plan_id" class="input">
@@ -289,7 +289,7 @@
                   {{ formatSubscriptionOption(option) }}
                 </option>
               </select>
-              <p v-if="selectedSubscriptionOption" class="mt-2 text-xs text-gray-500 dark:text-dark-400">
+              <p v-if="selectedSubscriptionOption" class="mt-2 text-xs text-content-tertiary">
                 {{ selectedSubscriptionDetail }}
               </p>
             </div>
@@ -466,7 +466,7 @@ function formatNullablePoints(value: number | null | undefined): string {
 }
 
 function isLedgerDebit(action: string): boolean {
-  return action === 'transfer' || action === 'transfer_subscription'
+  return action === 'transfer' || action === 'transfer_subscription' || action === 'clawback'
 }
 
 function ledgerAmountClass(action: string): string {
@@ -489,12 +489,14 @@ function formatLedgerAction(item: AffiliateLedgerRecord): string {
     return t('affiliate.ledger.actions.transferSubscription')
   }
   if (item.action === 'transfer') return t('affiliate.ledger.actions.transferBalance')
+  if (item.action === 'clawback') return t('affiliate.ledger.actions.clawback')
   return item.action || '-'
 }
 
 function formatPrivateAccount(value: string | null | undefined): string {
   const account = String(value || '').trim()
   if (!account) return '-'
+  if (account.includes('***')) return account
   const atIndex = account.indexOf('@')
   if (atIndex > 0) {
     const local = account.slice(0, atIndex)

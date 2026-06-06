@@ -58,11 +58,11 @@
           @sort="handleSort"
         >
           <template #cell-name="{ value }">
-            <span class="font-medium text-gray-900 dark:text-white">{{ value }}</span>
+            <span class="font-medium text-content-primary">{{ value }}</span>
           </template>
 
           <template #cell-description="{ value }">
-            <span class="text-sm text-gray-600 dark:text-gray-400">{{ value || '-' }}</span>
+            <span class="text-sm text-content-secondary">{{ value || '-' }}</span>
           </template>
 
           <template #cell-status="{ row }">
@@ -91,7 +91,7 @@
           </template>
 
           <template #cell-created_at="{ value }">
-            <span class="text-sm text-gray-600 dark:text-gray-400">
+            <span class="text-sm text-content-secondary">
               {{ formatDate(value) }}
             </span>
           </template>
@@ -147,7 +147,7 @@
     >
       <div class="channel-dialog-body">
         <!-- Tab Bar -->
-        <div class="flex items-center border-b border-gray-200 dark:border-dark-700 flex-shrink-0 -mx-4 sm:-mx-6 px-4 sm:px-6 -mt-3 sm:-mt-4">
+        <div class="flex items-center border-b border-stroke-default flex-shrink-0 -mx-4 sm:-mx-6 px-4 sm:px-6 -mt-3 sm:-mt-4">
           <!-- Basic Settings Tab -->
           <button
             type="button"
@@ -256,7 +256,7 @@
             <div class="border-t border-gray-200 pt-4 dark:border-dark-700">
               <div class="flex items-center justify-between">
                 <div>
-                  <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label class="text-sm font-medium text-content-secondary">
                     {{ t('admin.channels.form.applyPricingToAccountStats') }}
                   </label>
                   <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
@@ -328,7 +328,7 @@
             <div v-if="section.platform === 'anthropic' && webSearchGlobalEnabled" class="border-t border-gray-200 pt-3 dark:border-dark-600">
               <div class="flex items-center justify-between">
                 <div>
-                  <label class="text-xs font-medium text-gray-700 dark:text-gray-300">
+                  <label class="text-xs font-medium text-content-secondary">
                     {{ t('admin.channels.form.webSearchEmulation') }}
                   </label>
                   <p class="mt-0.5 text-[11px] text-red-500 dark:text-red-400">
@@ -343,7 +343,7 @@
             <div v-if="section.platform === 'openai'" class="border-t border-gray-200 pt-3 dark:border-dark-600">
               <div class="flex items-center justify-between gap-4">
                 <div>
-                  <label class="text-xs font-medium text-gray-700 dark:text-gray-300">
+                  <label class="text-xs font-medium text-content-secondary">
                     {{ t('admin.channels.form.codexImageGenerationBridge') }}
                   </label>
                   <p class="mt-0.5 text-[11px] text-amber-600 dark:text-amber-400">
@@ -358,7 +358,7 @@
             <div v-if="section.platform === 'anthropic'" class="border-t border-gray-200 pt-3 dark:border-dark-600">
               <div class="flex items-center justify-between gap-4">
                 <div>
-                  <label class="text-xs font-medium text-gray-700 dark:text-gray-300">
+                  <label class="text-xs font-medium text-content-secondary">
                     {{ t('admin.channels.form.bedrockCCCompat') }}
                   </label>
                   <p class="mt-0.5 text-[11px] text-amber-600 dark:text-amber-400">
@@ -456,7 +456,7 @@
             <!-- Account Stats Pricing Rules (per-platform, always visible) -->
             <div class="mt-4 border-t border-gray-200 pt-4 dark:border-dark-700 space-y-3">
               <div class="flex items-center justify-between">
-                <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                <h4 class="text-sm font-medium text-content-secondary">
                   {{ t('admin.channels.form.accountStatsPricingRules') }}
                 </h4>
                 <button
@@ -547,7 +547,7 @@
                         :key="account.id"
                         type="button"
                         @click="selectRuleAccount(rule, account, section.platform, ruleIndex)"
-                        class="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-dark-700"
+                        class="w-full px-3 py-2 text-left text-sm hover:bg-surface-hover"
                         :class="{ 'opacity-50': rule.account_ids.includes(account.id) }"
                         :disabled="rule.account_ids.includes(account.id)"
                       >

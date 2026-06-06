@@ -7,7 +7,7 @@
     @close="handleClose"
   >
     <form id="import-proxy-data-form" class="space-y-4" @submit.prevent="handleImport">
-      <div class="text-sm text-gray-600 dark:text-dark-300">
+      <div class="text-sm text-content-secondary">
         {{ t('admin.proxies.dataImportHint') }}
       </div>
       <div
@@ -25,7 +25,7 @@
             <div class="truncate text-sm text-gray-700 dark:text-dark-200">
               {{ fileName || t('admin.proxies.dataImportSelectFile') }}
             </div>
-            <div class="text-xs text-gray-500 dark:text-dark-400">JSON (.json)</div>
+            <div class="text-xs text-content-tertiary">JSON (.json)</div>
           </div>
           <button type="button" class="btn btn-secondary shrink-0" @click="openFilePicker">
             {{ t('common.chooseFile') }}
@@ -44,7 +44,7 @@
         v-if="result"
         class="space-y-2 rounded-xl border border-gray-200 p-4 dark:border-dark-700"
       >
-        <div class="text-sm font-medium text-gray-900 dark:text-white">
+        <div class="text-sm font-medium text-content-primary">
           {{ t('admin.proxies.dataImportResult') }}
         </div>
         <div class="text-sm text-gray-700 dark:text-dark-300">

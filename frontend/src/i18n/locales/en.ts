@@ -255,7 +255,7 @@ export default {
     highestHint: 'LV.3 is the highest membership level.',
     remainingHint: 'Earn {amount} more points to unlock LV.{level}.',
     affiliateRebate: 'Membership benefits',
-    subscriptionReward: 'Invite registration: {limit} invitee(s), membership points rebate {rate}%',
+    subscriptionReward: 'Invite registration: {limit} invitee(s), membership points rebate {rate}%, per-invitee cap ¥{cap}',
     subscriptionRewardUnavailable: 'Invite registration: unavailable for normal users; rebates available from LV.1',
     consumptionDiscount: 'Consumption discount: coming soon...'
   },
@@ -935,6 +935,9 @@ export default {
     imageSizeUnknown: 'unknown',
     cacheRead: 'Read',
     cacheWrite: 'Write',
+    cacheHit: 'Cache Hit',
+    cacheCreate: 'Cache Create',
+    cacheHitRate: 'Cache Hit Rate',
     serviceTier: 'Service tier',
     serviceTierPriority: 'Fast',
     serviceTierFlex: 'Flex',
@@ -1179,7 +1182,8 @@ export default {
         accrue: 'Rebate credited',
         accrueFrozen: 'Rebate frozen',
         transferBalance: 'Redeemed to balance',
-        transferSubscription: 'Redeemed to subscription'
+        transferSubscription: 'Redeemed to subscription',
+        clawback: 'Rebate clawed back'
       }
     }
   },

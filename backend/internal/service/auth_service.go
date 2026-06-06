@@ -234,7 +234,20 @@ func (s *AuthService) RegisterWithVerification(ctx context.Context, email, passw
 		Status:       StatusActive,
 	}
 
-	if err := s.userRepo.Create(ctx, user); err != nil {
+	registrationCtx := ctx
+	var registrationTx *dbent.Tx
+	if s.entClient != nil && (invitationRedeemCode != nil || affiliateCode != "") {
+		tx, err := s.entClient.Tx(ctx)
+		if err != nil {
+			logger.LegacyPrintf("service.auth", "[Auth] Failed to begin transaction for email registration: %v", err)
+			return "", nil, ErrServiceUnavailable
+		}
+		registrationTx = tx
+		registrationCtx = dbent.NewTxContext(ctx, tx)
+		defer func() { _ = tx.Rollback() }()
+	}
+
+	if err := s.userRepo.Create(registrationCtx, user); err != nil {
 		// 优先检查邮箱冲突错误（竞态条件下可能发生）
 		if errors.Is(err, ErrEmailExists) {
 			return "", nil, ErrEmailExists
@@ -242,29 +255,50 @@ func (s *AuthService) RegisterWithVerification(ctx context.Context, email, passw
 		logger.LegacyPrintf("service.auth", "[Auth] Database error creating user: %v", err)
 		return "", nil, ErrServiceUnavailable
 	}
-	s.postAuthUserBootstrap(ctx, user, "email", true)
-	s.assignSubscriptions(ctx, user.ID, grantPlan.Subscriptions, "auto assigned by signup defaults")
-	// snapshot user × platform quota（fail-open）
-	_ = s.snapshotPlatformQuotaDefaults(ctx, user.ID, &grantPlan)
+
+	rollbackCreatedUser := func(reason error) (string, *User, error) {
+		if registrationTx == nil && user.ID > 0 {
+			if deleteErr := s.userRepo.Delete(ctx, user.ID); deleteErr != nil {
+				logger.LegacyPrintf("service.auth", "[Auth] Failed to rollback email registration user %d after admission failure %v: %v", user.ID, reason, deleteErr)
+			}
+		}
+		return "", nil, reason
+	}
+
 	if s.affiliateService != nil {
-		if _, err := s.affiliateService.EnsureUserAffiliate(ctx, user.ID); err != nil {
+		if _, err := s.affiliateService.EnsureUserAffiliate(registrationCtx, user.ID); err != nil {
+			if affiliateCode != "" {
+				return rollbackCreatedUser(err)
+			}
 			logger.LegacyPrintf("service.auth", "[Auth] Failed to initialize affiliate profile for user %d: %v", user.ID, err)
 		}
 		if code := affiliateCode; code != "" {
-			if err := s.affiliateService.BindInviterByCode(ctx, user.ID, code); err != nil {
-				// 邀请返利码绑定失败不影响注册，只记录日志
-				logger.LegacyPrintf("service.auth", "[Auth] Failed to bind affiliate inviter for user %d: %v", user.ID, err)
+			if err := s.affiliateService.BindInviterByCode(registrationCtx, user.ID, code); err != nil {
+				return rollbackCreatedUser(err)
 			}
 		}
 	}
 
-	// 标记邀请码为已使用（如果使用了邀请码）
+	// 标记邀请码为已使用（如果使用了邀请码）。邀请码/aff_code 作为注册准入凭证时必须 fail-closed。
 	if invitationRedeemCode != nil {
-		if err := s.redeemRepo.Use(ctx, invitationRedeemCode.ID, user.ID); err != nil {
-			// 邀请码标记失败不影响注册，只记录日志
-			logger.LegacyPrintf("service.auth", "[Auth] Failed to mark invitation code as used for user %d: %v", user.ID, err)
+		if s.redeemRepo == nil {
+			return rollbackCreatedUser(ErrServiceUnavailable)
+		}
+		if err := s.redeemRepo.Use(registrationCtx, invitationRedeemCode.ID, user.ID); err != nil {
+			return rollbackCreatedUser(ErrInvitationCodeInvalid)
 		}
 	}
+	if registrationTx != nil {
+		if err := registrationTx.Commit(); err != nil {
+			logger.LegacyPrintf("service.auth", "[Auth] Failed to commit email registration transaction: %v", err)
+			return "", nil, ErrServiceUnavailable
+		}
+	}
+
+	s.postAuthUserBootstrap(ctx, user, "email", true)
+	s.assignSubscriptions(ctx, user.ID, grantPlan.Subscriptions, "auto assigned by signup defaults")
+	// snapshot user × platform quota（fail-open）
+	_ = s.snapshotPlatformQuotaDefaults(ctx, user.ID, &grantPlan)
 	// 应用优惠码（如果提供且功能已启用）
 	if promoCode != "" && s.promoService != nil && s.settingService != nil && s.settingService.IsPromoCodeEnabled(ctx) {
 		if err := s.promoService.ApplyPromoCode(ctx, user.ID, promoCode); err != nil {

@@ -14,7 +14,7 @@
       <div class="flex items-center gap-3">
         <div :class="[
           'rounded-md p-1.5',
-          provider.enabled && enabled ? 'bg-green-100 dark:bg-green-900/30' : 'bg-gray-100 dark:bg-dark-700',
+          provider.enabled && enabled ? 'bg-green-100 dark:bg-green-900/30' : 'bg-surface-hover',
         ]">
           <Icon
             name="server"
@@ -22,7 +22,7 @@
             :class="provider.enabled && enabled ? 'text-green-600 dark:text-green-400' : 'text-gray-400'"
           />
         </div>
-        <span class="text-sm font-medium text-gray-900 dark:text-white">{{ provider.name }}</span>
+        <span class="text-sm font-medium text-content-primary">{{ provider.name }}</span>
         <span class="text-xs text-gray-400 dark:text-gray-500">{{ keyLabel }}</span>
         <span v-if="provider.payment_mode" class="text-xs text-gray-400 dark:text-gray-500">· {{ modeLabel }}</span>
         <span v-if="enabled && availableTypes.length" class="text-xs text-gray-300 dark:text-gray-600">|</span>

@@ -1,6 +1,6 @@
 <template>
   <div class="card p-4">
-    <h3 class="mb-4 text-sm font-semibold text-gray-900 dark:text-white">
+    <h3 class="mb-4 text-sm font-semibold text-content-primary">
       {{ t('payment.admin.topUsers') }}
     </h3>
     <div
@@ -24,9 +24,9 @@
           >
             {{ idx + 1 }}
           </span>
-          <span class="text-sm text-gray-700 dark:text-gray-300">{{ user.email }}</span>
+          <span class="text-sm text-content-secondary">{{ user.email }}</span>
         </div>
-        <span class="text-sm font-medium text-gray-900 dark:text-white">
+        <span class="text-sm font-medium text-content-primary">
           ${{ user.amount.toFixed(2) }}
         </span>
       </div>

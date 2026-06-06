@@ -41,8 +41,8 @@
             <Icon name="document" size="sm" />
           </span>
           <div>
-            <h1 class="text-lg font-semibold text-gray-900 dark:text-white">文档不存在</h1>
-            <p class="mt-2 text-sm leading-6 text-gray-600 dark:text-dark-300">
+            <h1 class="text-lg font-semibold text-content-primary">文档不存在</h1>
+            <p class="mt-2 text-sm leading-6 text-content-secondary">
               当前条款文档不存在或已被管理员移除。
             </p>
           </div>
@@ -60,7 +60,7 @@
               <h1 class="mt-2 break-words text-2xl font-bold tracking-normal text-gray-950 dark:text-white sm:text-3xl">
                 {{ currentDocument.title }}
               </h1>
-              <p v-if="updatedAt" class="mt-3 text-sm text-gray-500 dark:text-dark-400">
+              <p v-if="updatedAt" class="mt-3 text-sm text-content-tertiary">
                 更新日期：{{ updatedAt }}
               </p>
             </div>
@@ -236,6 +236,6 @@ onMounted(async () => {
 }
 
 .legal-document-content :deep(hr) {
-  @apply my-7 border-gray-200 dark:border-dark-700;
+  @apply my-7 border-stroke-default;
 }
 </style>

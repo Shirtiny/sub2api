@@ -57,7 +57,7 @@
           <tr
             v-for="(row, i) in rows"
             :key="i"
-            class="border-t border-gray-100 dark:border-dark-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-dark-800"
+            class="border-t border-stroke-subtle cursor-pointer hover:bg-surface-hover"
             @click="openDetail(row.id)"
           >
             <td class="px-4 py-2">{{ row.model || '-' }}</td>

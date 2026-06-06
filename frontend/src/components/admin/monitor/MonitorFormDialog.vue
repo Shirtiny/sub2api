@@ -116,7 +116,7 @@
 
       <!-- 高级设置区：请求模板 + 自定义 headers/body -->
       <details class="rounded-lg border border-gray-200 bg-gray-50/50 p-3 dark:border-dark-700 dark:bg-dark-900/30">
-        <summary class="cursor-pointer text-sm font-medium text-gray-700 dark:text-gray-300">
+        <summary class="cursor-pointer text-sm font-medium text-content-secondary">
           {{ t('admin.channelMonitor.advanced.section') }}
         </summary>
         <p class="mt-1 text-xs text-gray-400">{{ t('admin.channelMonitor.advanced.sectionHint') }}</p>

@@ -331,9 +331,12 @@ func (r *affiliateRepoThresholdStub) BindInviter(ctx context.Context, userID, in
 	return true, nil
 }
 
-func (r *affiliateRepoThresholdStub) AccrueQuota(ctx context.Context, inviterID, inviteeUserID int64, amount float64, freezeHours int, sourceOrderID *int64) (bool, error) {
+func (r *affiliateRepoThresholdStub) AccrueQuota(ctx context.Context, inviterID, inviteeUserID int64, amount float64, freezeHours int, sourceOrderID *int64, perInviteeCap float64) (float64, error) {
 	r.accrueCalls++
-	return true, nil
+	if perInviteeCap > 0 && amount > perInviteeCap {
+		return perInviteeCap, nil
+	}
+	return amount, nil
 }
 
 func (r *affiliateRepoThresholdStub) AccrueSubscriptionRebate(ctx context.Context, inviterID, inviteeUserID, groupID int64, days, freezeHours int, sourceOrderID *int64) (bool, error) {
@@ -342,6 +345,10 @@ func (r *affiliateRepoThresholdStub) AccrueSubscriptionRebate(ctx context.Contex
 
 func (r *affiliateRepoThresholdStub) TransferSubscriptionRebateToSubscription(ctx context.Context, userID, groupID int64) (*AffiliateSubscriptionTransferResult, error) {
 	return &AffiliateSubscriptionTransferResult{GroupID: groupID, TransferredDays: 1}, nil
+}
+
+func (r *affiliateRepoThresholdStub) ClawbackQuotaForOrder(ctx context.Context, sourceOrderID int64, ratio float64) (float64, error) {
+	return 0, nil
 }
 
 func (r *affiliateRepoThresholdStub) ListSubscriptionRebateBalances(ctx context.Context, userID int64) ([]AffiliateSubscriptionRebateBalance, error) {
@@ -401,6 +408,10 @@ func (r *affiliateRepoThresholdStub) ListAffiliateRebateRecords(ctx context.Cont
 }
 
 func (r *affiliateRepoThresholdStub) ListAffiliateTransferRecords(ctx context.Context, filter AffiliateRecordFilter) ([]AffiliateTransferRecord, int64, error) {
+	return nil, 0, nil
+}
+
+func (r *affiliateRepoThresholdStub) ListAffiliateLedgerRecords(ctx context.Context, userID int64, filter AffiliateRecordFilter) ([]AffiliateLedgerRecord, int64, error) {
 	return nil, 0, nil
 }
 

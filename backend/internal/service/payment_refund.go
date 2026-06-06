@@ -406,8 +406,18 @@ func (s *PaymentService) markRefundOk(ctx context.Context, p *RefundPlan) (*Refu
 	if err != nil {
 		return nil, fmt.Errorf("mark refund: %w", err)
 	}
-	s.writeAuditLog(ctx, p.OrderID, "REFUND_SUCCESS", "admin", map[string]any{"refundAmount": p.RefundAmount, "reason": p.Reason, "balanceDeducted": p.BalanceToDeduct, "force": p.Force})
-	return &RefundResult{Success: true, BalanceDeducted: p.BalanceToDeduct, SubDaysDeducted: p.SubDaysToDeduct}, nil
+
+	var clawedBack float64
+	if s.affiliateService != nil {
+		clawedBack, err = s.affiliateService.ClawbackInviteRebateForRefund(ctx, p.OrderID, p.RefundAmount, p.Order.Amount)
+		if err != nil {
+			s.writeAuditLog(ctx, p.OrderID, "AFFILIATE_REBATE_CLAWBACK_FAILED", "admin", map[string]any{"refundAmount": p.RefundAmount, "error": psErrMsg(err)})
+			return nil, fmt.Errorf("affiliate rebate clawback: %w", err)
+		}
+	}
+
+	s.writeAuditLog(ctx, p.OrderID, "REFUND_SUCCESS", "admin", map[string]any{"refundAmount": p.RefundAmount, "reason": p.Reason, "balanceDeducted": p.BalanceToDeduct, "force": p.Force, "affiliateRebateClawedBack": clawedBack})
+	return &RefundResult{Success: true, BalanceDeducted: p.BalanceToDeduct, SubDaysDeducted: p.SubDaysToDeduct, AffiliateRebateClawedBack: clawedBack}, nil
 }
 
 func (s *PaymentService) RollbackRefund(ctx context.Context, p *RefundPlan, gErr error) bool {

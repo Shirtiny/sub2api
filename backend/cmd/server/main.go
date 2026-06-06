@@ -179,10 +179,3 @@ func runMainServer() {
 
 	log.Println("Server exited")
 }
-
-func h2cProtocols() *http.Protocols {
-	protocols := new(http.Protocols)
-	protocols.SetHTTP1(true)
-	protocols.SetUnencryptedHTTP2(true)
-	return protocols
-}

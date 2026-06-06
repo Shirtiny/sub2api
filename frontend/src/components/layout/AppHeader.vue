@@ -1,5 +1,5 @@
 <template>
-  <header class="glass sticky top-0 z-30 border-b border-gray-200/50 dark:border-dark-700/50">
+  <header class="glass sticky top-0 z-30 border-b border-stroke-subtle/50">
     <div class="flex h-16 items-center justify-between px-4 md:px-6">
       <!-- Left: Mobile Menu Toggle + Page Title -->
       <div class="flex items-center gap-4">
@@ -12,10 +12,10 @@
         </button>
 
         <div class="hidden lg:block">
-          <h1 class="text-lg font-semibold text-gray-900 dark:text-white">
+          <h1 class="text-lg font-semibold text-content-primary">
             {{ pageTitle }}
           </h1>
-          <p v-if="pageDescription" class="text-xs text-gray-500 dark:text-dark-400">
+          <p v-if="pageDescription" class="text-xs text-content-tertiary">
             {{ pageDescription }}
           </p>
         </div>
@@ -32,7 +32,7 @@
           :href="docUrl"
           target="_blank"
           rel="noopener noreferrer"
-          class="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-dark-400 dark:hover:bg-dark-800 dark:hover:text-white"
+          class="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium text-content-secondary transition-colors hover:bg-surface-hover hover:text-content-primary"
         >
           <Icon name="book" size="sm" />
           <span class="hidden sm:inline">{{ t('nav.docs') }}</span>
@@ -46,9 +46,9 @@
 
         <!-- Balance + Membership Display -->
         <div v-if="user" class="relative hidden sm:block" ref="membershipRef">
-          <div class="flex items-center gap-2 rounded-xl bg-primary-50 px-3 py-1.5 dark:bg-primary-900/20">
+          <div class="flex items-center gap-2 rounded-xl bg-primary-50 px-3 py-1.5 dark:bg-primary-400/25">
             <svg
-              class="h-4 w-4 text-primary-600 dark:text-primary-400"
+              class="h-4 w-4 text-primary-600 dark:text-primary-600"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -60,10 +60,10 @@
                 d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z"
               />
             </svg>
-            <span class="text-sm font-semibold text-primary-700 dark:text-primary-300">
+            <span class="text-sm font-semibold text-primary-700 dark:text-primary-600">
               ${{ user.balance?.toFixed(2) || '0.00' }}
             </span>
-            <span class="h-4 w-px bg-primary-200 dark:bg-primary-700/60"></span>
+            <span class="h-4 w-px bg-primary-200 dark:bg-primary-600/50"></span>
             <button
               type="button"
               class="membership-flash-badge relative overflow-visible rounded bg-purple-600 px-1.5 py-0.5 text-[11px] font-bold leading-4 text-white shadow-sm transition-colors hover:bg-purple-700 dark:bg-purple-600 dark:text-white dark:hover:bg-purple-500"
@@ -77,15 +77,15 @@
           <transition name="dropdown">
             <div
               v-if="membershipPopoverOpen"
-              class="absolute right-0 z-50 mt-2 w-[360px] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl dark:border-dark-700 dark:bg-dark-800"
+              class="absolute right-0 z-50 mt-2 w-[360px] overflow-hidden rounded-xl border border-stroke-default bg-surface-card shadow-xl"
             >
-              <div class="border-b border-gray-100 p-3 dark:border-dark-700">
+              <div class="border-b border-[#EFE6D8] p-3 dark:border-[#3D2E2A]">
                 <div class="flex items-start justify-between gap-3">
                   <div>
-                    <h3 class="text-sm font-semibold text-primary-600 dark:text-primary-400">
+                    <h3 class="text-sm font-semibold text-[#3D2E2A] dark:text-[#F5C66B]">
                       {{ t('membership.title') }}
                     </h3>
-                    <p class="mt-0.5 text-xs text-gray-500 dark:text-dark-400">
+                    <p class="mt-0.5 text-xs text-[#8E8E93] dark:text-[#9DA3AF]">
                       {{ t('membership.totalRecharged', { amount: totalRecharged.toFixed(2) }) }}
                     </p>
                   </div>
@@ -98,31 +98,31 @@
               <div class="space-y-3 p-3">
                 <div>
                   <div class="mb-1.5 flex items-center justify-between">
-                    <span class="text-xs font-medium text-gray-700 dark:text-gray-300">
+                    <span class="text-xs font-medium text-[#3D2E2A] dark:text-[#F0E9DF]">
                       {{ membershipProgressTitle }}
                     </span>
-                    <span class="text-xs text-gray-500 dark:text-dark-400">
+                    <span class="text-xs text-[#8E8E93] dark:text-[#9DA3AF]">
                       {{ membershipProgressText }}
                     </span>
                   </div>
-                  <div class="h-2 rounded-full bg-gray-300/70 dark:bg-dark-700">
+                  <div class="h-2 rounded-full bg-[#E5E5E5] dark:bg-[#3C3C3C]">
                     <div
-                      class="h-2 rounded-full bg-gradient-to-r from-primary-500 to-purple-500 transition-all"
+                      class="h-2 rounded-full bg-[linear-gradient(90deg,#F5A552_0%,#7A4DFF_100%)] transition-all dark:bg-[linear-gradient(90deg,#F5C66B_0%,#7A4DFF_100%)]"
                       :style="{ width: membershipProgressWidth }"
                     ></div>
                   </div>
-                  <p class="mt-1.5 text-[11px] text-gray-500 dark:text-dark-400">
+                  <p class="mt-1.5 text-[11px] text-[#8E8E93] dark:text-[#9DA3AF]">
                     {{ membershipHint }}
                   </p>
                 </div>
 
-                <div v-if="affiliateFeatureEnabled && membershipLevel > 0" class="rounded-lg bg-gradient-to-r from-purple-50 to-amber-50 px-3 py-2 dark:from-purple-900/20 dark:to-amber-900/20">
-                  <div class="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                <div v-if="affiliateFeatureEnabled && membershipLevel > 0" class="rounded-lg border border-[#EFE6D8] bg-gradient-to-br from-[#F7F4F1] via-[#F7F4F1] to-[#EFE6D8] px-3 py-2 dark:border-[#3D2E2A]/70 dark:from-[#1E293B] dark:via-[#1E293B] dark:to-[#2B1F3A]">
+                  <div class="mb-2 text-sm font-semibold text-[#3D2E2A] dark:text-[#F5C66B]">
                     {{ t('membership.affiliateRebate') }}
                   </div>
-                  <div class="space-y-0.5 text-[12px] font-semibold leading-4 text-purple-700 dark:text-purple-300">
-                    <div><span>1. </span><span v-html="highlightBenefitNumbers(membershipBenefitText)"></span></div>
-                    <div><span>2. </span><span v-html="highlightBenefitNumbers(t('membership.consumptionDiscount'))"></span></div>
+                  <div class="space-y-0.5 text-[12px] font-semibold leading-4 text-[#7A5AE6] dark:text-[#F0E9DF]">
+                    <div><span class="text-[#7A5AE6] dark:text-[#F5C66B]">1. </span><span v-html="highlightBenefitText(membershipBenefitText)"></span></div>
+                    <div><span class="text-[#7A5AE6] dark:text-[#F5C66B]">2. </span><span v-html="highlightBenefitText(t('membership.consumptionDiscount'))"></span></div>
                   </div>
                 </div>
               </div>
@@ -147,10 +147,10 @@
               <span v-else>{{ userInitials }}</span>
             </div>
             <div class="hidden text-left md:block">
-              <div class="text-sm font-medium text-gray-900 dark:text-white">
+              <div class="text-sm font-medium text-content-primary">
                 {{ displayName }}
               </div>
-              <div class="text-xs capitalize text-gray-500 dark:text-dark-400">
+              <div class="text-xs capitalize text-content-tertiary">
                 {{ user.role }}
               </div>
             </div>
@@ -161,19 +161,19 @@
           <transition name="dropdown">
             <div v-if="dropdownOpen" class="dropdown right-0 mt-2 w-56">
               <!-- User Info -->
-              <div class="border-b border-gray-100 px-4 py-3 dark:border-dark-700">
-                <div class="text-sm font-medium text-gray-900 dark:text-white">
+              <div class="border-b border-stroke-subtle px-4 py-3">
+                <div class="text-sm font-medium text-content-primary">
                   {{ displayName }}
                 </div>
-                <div class="text-xs text-gray-500 dark:text-dark-400">{{ user.email }}</div>
+                <div class="text-xs text-content-tertiary">{{ user.email }}</div>
               </div>
 
               <!-- Balance (mobile only) -->
-              <div class="border-b border-gray-100 px-4 py-2 dark:border-dark-700 sm:hidden">
-                <div class="text-xs text-gray-500 dark:text-dark-400">
+              <div class="border-b border-stroke-subtle px-4 py-2 sm:hidden">
+                <div class="text-xs text-content-tertiary">
                   {{ t('common.balance') }}
                 </div>
-                <div class="text-sm font-semibold text-primary-600 dark:text-primary-400">
+                <div class="text-sm font-semibold text-primary-600 dark:text-primary-600">
                   ${{ user.balance?.toFixed(2) || '0.00' }}
                 </div>
               </div>
@@ -212,7 +212,7 @@
               <!-- Contact Support (only show if configured) -->
               <div
                 v-if="contactInfo"
-                class="border-t border-gray-100 px-4 py-2.5 dark:border-dark-700"
+                class="border-t border-stroke-subtle px-4 py-2.5"
               >
                 <div class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                   <svg
@@ -229,13 +229,13 @@
                     />
                   </svg>
                   <span>{{ t('common.contactSupport') }}:</span>
-                  <span class="font-medium text-gray-700 dark:text-gray-300">{{
+                  <span class="font-medium text-content-secondary">{{
                     contactInfo
                   }}</span>
                 </div>
               </div>
 
-              <div v-if="showOnboardingButton" class="border-t border-gray-100 py-1 dark:border-dark-700">
+              <div v-if="showOnboardingButton" class="border-t border-stroke-subtle py-1">
                 <button @click="handleReplayGuide" class="dropdown-item w-full">
                   <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
                     <path
@@ -246,7 +246,7 @@
                 </button>
               </div>
 
-              <div class="border-t border-gray-100 py-1 dark:border-dark-700">
+              <div class="border-t border-stroke-subtle py-1">
                 <button
                   @click="handleLogout"
                   class="dropdown-item w-full text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
@@ -357,8 +357,23 @@ const membershipInviteLimit = computed(() => {
   return settings?.affiliate_invite_limit_level0 ?? 0
 })
 const membershipInviteLimitText = computed(() => String(membershipInviteLimit.value))
+function positiveOrDefault(value: number | undefined, fallback: number): number {
+  const n = Number(value || 0)
+  return n > 0 ? n : fallback
+}
+
+const membershipRebateCap = computed(() => {
+  const settings = appStore.cachedPublicSettings
+  if (membershipLevel.value >= 3) return positiveOrDefault(settings?.affiliate_rebate_per_invitee_cap_level3, 1000)
+  if (membershipLevel.value >= 2) return positiveOrDefault(settings?.affiliate_rebate_per_invitee_cap_level2, 300)
+  if (membershipLevel.value >= 1) return positiveOrDefault(settings?.affiliate_rebate_per_invitee_cap_level1, 100)
+  return positiveOrDefault(settings?.affiliate_rebate_per_invitee_cap_level0, 0)
+})
+const membershipRebateCapText = computed(() => Number(membershipRebateCap.value || 0).toLocaleString(undefined, {
+  maximumFractionDigits: 2
+}))
 const membershipBenefitText = computed(() => {
-  const params = { rate: affiliateRebateRate.value, limit: membershipInviteLimitText.value }
+  const params = { rate: affiliateRebateRate.value, limit: membershipInviteLimitText.value, cap: membershipRebateCapText.value }
   return membershipLevel.value > 0
     ? t('membership.subscriptionReward', params)
     : t('membership.subscriptionRewardUnavailable', params)
@@ -374,9 +389,9 @@ const membershipBadgeClass = computed(() => {
     return 'bg-purple-100 text-purple-700 hover:bg-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:hover:bg-purple-900/40'
   }
   if (membershipLevel.value === 1) {
-    return 'bg-primary-100 text-primary-700 hover:bg-primary-200 dark:bg-primary-900/30 dark:text-primary-300 dark:hover:bg-primary-900/40'
+    return 'bg-primary-100 text-primary-700 hover:bg-primary-200 dark:bg-primary-400/25 dark:text-primary-600 dark:hover:bg-primary-400/35'
   }
-  return 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-dark-700 dark:text-dark-300 dark:hover:bg-dark-600'
+  return 'bg-surface-secondary text-content-secondary hover:bg-surface-hover'
 })
 
 // 只在标准模式的管理员下显示新手引导按钮
@@ -447,8 +462,8 @@ function closeMembershipPopover() {
   membershipPopoverOpen.value = false
 }
 
-function highlightBenefitNumbers(text: string) {
-  return text.replace(/\d+(?:\.\d+)?%?/g, '<span class="font-bold text-primary-600 dark:text-primary-300">$&</span>')
+function highlightBenefitText(text: string) {
+  return text.replace(/\d+(?:\.\d+)?%?/g, '<span class="font-bold text-[#3D2E2A] dark:text-white">$&</span>')
 }
 
 function resolveMembershipLevel(total: number) {

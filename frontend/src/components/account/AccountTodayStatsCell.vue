@@ -19,7 +19,7 @@
         <span class="text-gray-500 dark:text-gray-400"
           >{{ t('admin.accounts.stats.requests') }}:</span
         >
-        <span class="font-medium text-gray-700 dark:text-gray-300">{{
+        <span class="font-medium text-content-secondary">{{
           formatNumber(props.stats.requests)
         }}</span>
       </div>
@@ -28,7 +28,7 @@
         <span class="text-gray-500 dark:text-gray-400"
           >{{ t('admin.accounts.stats.tokens') }}:</span
         >
-        <span class="font-medium text-gray-700 dark:text-gray-300">{{
+        <span class="font-medium text-content-secondary">{{
           formatTokens(props.stats.tokens)
         }}</span>
       </div>
@@ -42,7 +42,7 @@
       <!-- Cost (User/API Key) -->
       <div v-if="props.stats.user_cost != null" class="flex items-center gap-1">
         <span class="text-gray-500 dark:text-gray-400">{{ t('usage.userBilled') }}:</span>
-        <span class="font-medium text-gray-700 dark:text-gray-300">{{
+        <span class="font-medium text-content-secondary">{{
           formatCurrency(props.stats.user_cost)
         }}</span>
       </div>

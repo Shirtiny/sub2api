@@ -458,16 +458,6 @@ func (s *PaymentService) hasAuditLog(ctx context.Context, orderID int64, action 
 	return c > 0
 }
 
-func (s *PaymentService) applyAffiliateSubscriptionRebateForOrder(ctx context.Context, o *dbent.PaymentOrder) {
-	// Legacy subscription-day rebates are no longer accrued. Subscription orders
-	// now use applyAffiliateRebateForOrder, which accrues unified points from the
-	// provider-paid amount with the same freeze/duration/cap rules as balance orders.
-}
-
-func (s *PaymentService) applyAffiliateSubscriptionRebate(ctx context.Context, o *dbent.PaymentOrder) error {
-	return nil
-}
-
 func (s *PaymentService) applyAffiliateRebateForOrder(ctx context.Context, o *dbent.PaymentOrder) error {
 	if o == nil || o.PayAmount <= 0 {
 		return nil
@@ -604,64 +594,6 @@ func (s *PaymentService) updateClaimedAffiliateRebateAudit(ctx context.Context, 
 	}
 	if updated == 0 {
 		return errors.New("affiliate rebate claim log not found")
-	}
-	return nil
-}
-
-func (s *PaymentService) tryClaimAffiliateSubscriptionRebateAudit(ctx context.Context, client *dbent.Client, orderID int64, detail map[string]any) (bool, error) {
-	if client == nil {
-		return false, errors.New("nil payment client")
-	}
-	oid := strconv.FormatInt(orderID, 10)
-	detailJSON, _ := json.Marshal(detail)
-	rows, err := client.QueryContext(ctx, `
-INSERT INTO payment_audit_logs (order_id, action, detail, operator, created_at)
-SELECT $1::text, 'AFFILIATE_SUBSCRIPTION_REBATE_APPLIED', $2::text, 'system', NOW()
-WHERE NOT EXISTS (
-	SELECT 1
-	FROM payment_audit_logs
-	WHERE order_id = $1::text
-	  AND action IN ('AFFILIATE_SUBSCRIPTION_REBATE_APPLIED', 'AFFILIATE_SUBSCRIPTION_REBATE_ACCRUED', 'AFFILIATE_SUBSCRIPTION_REBATE_SKIPPED', 'AFFILIATE_SUBSCRIPTION_REBATE_FAILED')
-)
-ON CONFLICT (order_id, action) DO NOTHING
-RETURNING id`, oid, string(detailJSON))
-	if err != nil {
-		return false, err
-	}
-	defer func() { _ = rows.Close() }()
-	if !rows.Next() {
-		if err := rows.Err(); err != nil {
-			return false, err
-		}
-		return false, nil
-	}
-	var claimID int64
-	if err := rows.Scan(&claimID); err != nil {
-		return false, err
-	}
-	return true, nil
-}
-
-func (s *PaymentService) updateClaimedAffiliateSubscriptionRebateAudit(ctx context.Context, client *dbent.Client, orderID int64, action string, detail map[string]any) error {
-	if client == nil {
-		return errors.New("nil payment client")
-	}
-	oid := strconv.FormatInt(orderID, 10)
-	detailJSON, _ := json.Marshal(detail)
-	updated, err := client.PaymentAuditLog.Update().
-		Where(
-			paymentauditlog.OrderIDEQ(oid),
-			paymentauditlog.ActionEQ("AFFILIATE_SUBSCRIPTION_REBATE_APPLIED"),
-		).
-		SetAction(action).
-		SetDetail(string(detailJSON)).
-		SetOperator("system").
-		Save(ctx)
-	if err != nil {
-		return err
-	}
-	if updated == 0 {
-		return errors.New("affiliate subscription rebate claim log not found")
 	}
 	return nil
 }

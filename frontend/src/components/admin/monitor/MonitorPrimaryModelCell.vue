@@ -1,6 +1,6 @@
 <template>
   <div class="flex items-center gap-2">
-    <span class="text-sm text-gray-900 dark:text-gray-100">{{ row.primary_model }}</span>
+    <span class="text-sm text-content-primary">{{ row.primary_model }}</span>
     <HelpTooltip>
       <template #trigger>
         <span

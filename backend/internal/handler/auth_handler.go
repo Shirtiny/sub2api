@@ -165,8 +165,9 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	// Turnstile 验证（邮箱验证码注册场景避免重复校验一次性 token）
-	if err := h.authService.VerifyTurnstileForRegister(c.Request.Context(), req.TurnstileToken, ip.GetClientIP(c), req.VerifyCode); err != nil {
+	// Turnstile 验证（邮箱验证码注册场景避免重复校验一次性 token）。
+	// 安全敏感的 remote IP 使用 Gin 可信代理链解析结果，避免直接信任可伪造转发头。
+	if err := h.authService.VerifyTurnstileForRegister(c.Request.Context(), req.TurnstileToken, ip.GetTrustedClientIP(c), req.VerifyCode); err != nil {
 		response.ErrorFrom(c, err)
 		return
 	}
@@ -520,12 +521,16 @@ type ValidateInvitationCodeResponse struct {
 // ValidateInvitationCode 验证邀请码（公开接口，注册前调用）
 // POST /api/v1/auth/validate-invitation-code
 func (h *AuthHandler) ValidateInvitationCode(c *gin.Context) {
-	// 检查邀请码功能是否启用
-	if h.settingSvc == nil || !h.settingSvc.IsInvitationCodeEnabled(c.Request.Context()) {
+	genericInvalid := func() {
 		response.Success(c, ValidateInvitationCodeResponse{
 			Valid:     false,
-			ErrorCode: "INVITATION_CODE_DISABLED",
+			ErrorCode: "INVITATION_CODE_INVALID",
 		})
+	}
+
+	// 检查邀请码功能是否启用。公开验证接口不区分具体不可用状态，避免成为邀请码状态 oracle。
+	if h.settingSvc == nil || !h.settingSvc.IsInvitationCodeEnabled(c.Request.Context()) {
+		genericInvalid()
 		return
 	}
 
@@ -538,27 +543,13 @@ func (h *AuthHandler) ValidateInvitationCode(c *gin.Context) {
 	// 验证邀请码
 	redeemCode, err := h.redeemService.GetByCode(c.Request.Context(), req.Code)
 	if err != nil {
-		response.Success(c, ValidateInvitationCodeResponse{
-			Valid:     false,
-			ErrorCode: "INVITATION_CODE_NOT_FOUND",
-		})
+		genericInvalid()
 		return
 	}
 
 	// 检查类型和状态
-	if redeemCode.Type != service.RedeemTypeInvitation {
-		response.Success(c, ValidateInvitationCodeResponse{
-			Valid:     false,
-			ErrorCode: "INVITATION_CODE_INVALID",
-		})
-		return
-	}
-
-	if redeemCode.Status != service.StatusUnused {
-		response.Success(c, ValidateInvitationCodeResponse{
-			Valid:     false,
-			ErrorCode: "INVITATION_CODE_USED",
-		})
+	if redeemCode.Type != service.RedeemTypeInvitation || redeemCode.Status != service.StatusUnused {
+		genericInvalid()
 		return
 	}
 

@@ -118,11 +118,11 @@
           <!-- Left: Text Content -->
           <div class="flex-1 text-center lg:text-left">
             <h1
-              class="mb-4 text-4xl font-bold text-gray-900 dark:text-white md:text-5xl lg:text-6xl"
+              class="mb-4 text-4xl font-bold text-content-primary md:text-5xl lg:text-6xl"
             >
               {{ siteName }}
             </h1>
-            <p class="mb-8 text-lg text-gray-600 dark:text-dark-300 md:text-xl">
+            <p class="mb-8 text-lg text-content-secondary md:text-xl">
               {{ siteSubtitle }}
             </p>
 
@@ -215,7 +215,7 @@
             >
               <Icon name="server" size="lg" class="text-white" />
             </div>
-            <h3 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">
+            <h3 class="mb-2 text-lg font-semibold text-content-primary">
               {{ t('home.features.unifiedGateway') }}
             </h3>
             <p class="text-sm leading-relaxed text-gray-600 dark:text-dark-400">
@@ -244,7 +244,7 @@
                 />
               </svg>
             </div>
-            <h3 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">
+            <h3 class="mb-2 text-lg font-semibold text-content-primary">
               {{ t('home.features.multiAccount') }}
             </h3>
             <p class="text-sm leading-relaxed text-gray-600 dark:text-dark-400">
@@ -273,7 +273,7 @@
                 />
               </svg>
             </div>
-            <h3 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">
+            <h3 class="mb-2 text-lg font-semibold text-content-primary">
               {{ t('home.features.balanceQuota') }}
             </h3>
             <p class="text-sm leading-relaxed text-gray-600 dark:text-dark-400">
@@ -284,7 +284,7 @@
 
         <!-- Supported Providers -->
         <div class="mb-8 text-center">
-          <h2 class="mb-3 text-2xl font-bold text-gray-900 dark:text-white">
+          <h2 class="mb-3 text-2xl font-bold text-content-primary">
             {{ t('home.providers.title') }}
           </h2>
           <p class="text-sm text-gray-600 dark:text-dark-400">
@@ -347,7 +347,7 @@
       <div
         class="mx-auto flex max-w-6xl flex-col items-center justify-center gap-4 text-center sm:flex-row sm:text-left"
       >
-        <p class="text-sm text-gray-500 dark:text-dark-400">
+        <p class="text-sm text-content-tertiary">
           &copy; {{ currentYear }} {{ siteName }}. {{ t('home.footer.allRightsReserved') }}
         </p>
         <div class="flex items-center gap-4">

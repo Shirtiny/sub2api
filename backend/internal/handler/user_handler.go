@@ -312,17 +312,27 @@ func (h *UserHandler) RedeemAffiliatePoints(c *gin.Context) {
 		svcReq.PlanID = *req.PlanID
 	}
 
-	result, err := h.affiliateService.RedeemAffiliatePoints(c.Request.Context(), subject.UserID, svcReq)
-	if err != nil {
-		response.ErrorFrom(c, err)
+	if normalizedKey, keyErr := service.NormalizeIdempotencyKey(c.GetHeader("Idempotency-Key")); keyErr != nil {
+		response.ErrorFrom(c, keyErr)
+		return
+	} else if normalizedKey == "" {
+		response.ErrorFrom(c, service.ErrIdempotencyKeyRequired)
 		return
 	}
-	response.Success(c, result)
+
+	executeUserIdempotentJSON(
+		c,
+		"user_affiliate_redeem",
+		svcReq,
+		service.DefaultWriteIdempotencyTTL(),
+		func(ctx context.Context) (any, error) {
+			return h.affiliateService.RedeemAffiliatePoints(ctx, subject.UserID, svcReq)
+		},
+	)
 }
 
 type TransferAffiliateSubscriptionRequest struct {
 	GroupID int64 `json:"group_id" binding:"required"`
-	PlanID  int64 `json:"plan_id"`
 }
 
 // TransferAffiliateSubscriptionRebate transfers available affiliate subscription-day rebate into a subscription.
@@ -345,7 +355,7 @@ func (h *UserHandler) TransferAffiliateSubscriptionRebate(c *gin.Context) {
 		return
 	}
 
-	result, err := h.affiliateService.TransferAffiliateQuotaToSubscription(c.Request.Context(), subject.UserID, req.GroupID, req.PlanID)
+	result, err := h.affiliateService.TransferAffiliateSubscriptionRebate(c.Request.Context(), subject.UserID, req.GroupID)
 	if err != nil {
 		response.ErrorFrom(c, err)
 		return

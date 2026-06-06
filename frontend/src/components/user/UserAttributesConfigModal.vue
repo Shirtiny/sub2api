@@ -3,7 +3,7 @@
     <div class="space-y-4">
       <!-- Header with Add Button -->
       <div class="flex items-center justify-between">
-        <p class="text-sm text-gray-500 dark:text-dark-400">
+        <p class="text-sm text-content-tertiary">
           {{ t('admin.users.attributes.description') }}
         </p>
         <button @click="openCreateModal" class="btn btn-primary btn-sm">
@@ -26,10 +26,10 @@
           <path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z" />
           <path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6z" />
         </svg>
-        <p class="mt-2 text-sm text-gray-500 dark:text-dark-400">
+        <p class="mt-2 text-sm text-content-tertiary">
           {{ t('admin.users.attributes.noAttributes') }}
         </p>
-        <p class="text-xs text-gray-400 dark:text-dark-500">
+        <p class="text-xs text-content-tertiary">
           {{ t('admin.users.attributes.noAttributesHint') }}
         </p>
       </div>
@@ -49,7 +49,7 @@
           <!-- Attribute Info -->
           <div class="min-w-0 flex-1">
             <div class="flex items-center gap-2">
-              <span class="font-medium text-gray-900 dark:text-white">{{ attr.name }}</span>
+              <span class="font-medium text-content-primary">{{ attr.name }}</span>
               <span class="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-xs text-gray-500 dark:bg-dark-700 dark:text-dark-400">
                 {{ attr.key }}
               </span>
@@ -60,7 +60,7 @@
                 {{ t('common.disabled') }}
               </span>
             </div>
-            <div class="mt-0.5 flex items-center gap-2 text-xs text-gray-500 dark:text-dark-400">
+            <div class="mt-0.5 flex items-center gap-2 text-xs text-content-tertiary">
               <span class="badge badge-gray">{{ t(`admin.users.attributes.types.${attr.type}`) }}</span>
               <span v-if="attr.description" class="truncate">{{ attr.description }}</span>
             </div>
@@ -198,11 +198,11 @@
       <div class="flex items-center gap-6">
         <label class="flex items-center gap-2">
           <input v-model="form.required" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-primary-600" />
-          <span class="text-sm text-gray-700 dark:text-gray-300">{{ t('admin.users.attributes.required') }}</span>
+          <span class="text-sm text-content-secondary">{{ t('admin.users.attributes.required') }}</span>
         </label>
         <label class="flex items-center gap-2">
           <input v-model="form.enabled" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-primary-600" />
-          <span class="text-sm text-gray-700 dark:text-gray-300">{{ t('admin.users.attributes.enabled') }}</span>
+          <span class="text-sm text-content-secondary">{{ t('admin.users.attributes.enabled') }}</span>
         </label>
       </div>
     </form>

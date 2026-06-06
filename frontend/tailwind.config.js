@@ -1,51 +1,93 @@
 /** @type {import('tailwindcss').Config} */
+const withOpacity = (variable) => `rgb(var(${variable}) / <alpha-value>)`
+
 export default {
   content: ['./index.html', './src/**/*.{vue,js,ts,jsx,tsx}'],
   darkMode: 'class',
   theme: {
     extend: {
       colors: {
-        // 主色调 - Teal/Cyan 青色系
+        // Semantic tokens backed by CSS variables in src/style.css.
+        surface: {
+          page: withOpacity('--color-surface-page'),
+          card: withOpacity('--color-surface-card'),
+          secondary: withOpacity('--color-surface-secondary'),
+          hover: withOpacity('--color-surface-hover')
+        },
+        content: {
+          primary: withOpacity('--color-content-primary'),
+          secondary: withOpacity('--color-content-secondary'),
+          tertiary: withOpacity('--color-content-tertiary'),
+          inverse: withOpacity('--color-content-inverse')
+        },
+        stroke: {
+          subtle: withOpacity('--color-stroke-subtle'),
+          default: withOpacity('--color-stroke-default'),
+          DEFAULT: withOpacity('--color-stroke-default'),
+          strong: withOpacity('--color-stroke-strong'),
+          brand: withOpacity('--color-stroke-brand')
+        },
+        status: {
+          success: withOpacity('--color-status-success'),
+          warning: withOpacity('--color-status-warning'),
+          error: withOpacity('--color-status-error'),
+          info: withOpacity('--color-status-info')
+        },
+        // 主色 / 品牌色 - 暖棕色系，由 CSS 变量在 Light/Dark 间切换
         primary: {
-          50: '#f0fdfa',
-          100: '#ccfbf1',
-          200: '#99f6e4',
-          300: '#5eead4',
-          400: '#2dd4bf',
-          500: '#14b8a6',
-          600: '#0d9488',
-          700: '#0f766e',
-          800: '#115e59',
-          900: '#134e4a',
-          950: '#042f2e'
+          50: withOpacity('--color-primary-50'),
+          100: withOpacity('--color-primary-100'),
+          200: withOpacity('--color-primary-200'),
+          300: withOpacity('--color-primary-300'),
+          400: withOpacity('--color-primary-400'),
+          500: withOpacity('--color-primary-500'),
+          600: withOpacity('--color-primary-600'),
+          700: withOpacity('--color-primary-700'),
+          800: withOpacity('--color-primary-800'),
+          900: withOpacity('--color-primary-900'),
+          950: withOpacity('--color-primary-950')
         },
-        // 辅助色 - 深蓝灰
+        // 中性色 - Light Mode 设计稿色阶，兼容既有 gray-* utility
+        gray: {
+          50: withOpacity('--color-gray-50'),
+          100: withOpacity('--color-gray-100'),
+          200: withOpacity('--color-gray-200'),
+          300: withOpacity('--color-gray-300'),
+          400: withOpacity('--color-gray-400'),
+          500: withOpacity('--color-gray-500'),
+          600: withOpacity('--color-gray-600'),
+          700: withOpacity('--color-gray-700'),
+          800: withOpacity('--color-gray-800'),
+          900: withOpacity('--color-gray-900'),
+          950: withOpacity('--color-gray-950')
+        },
+        // 辅助色沿用品牌色，兼容既有 text-gradient 等用法
         accent: {
-          50: '#f8fafc',
-          100: '#f1f5f9',
-          200: '#e2e8f0',
-          300: '#cbd5e1',
-          400: '#94a3b8',
-          500: '#64748b',
-          600: '#475569',
-          700: '#334155',
-          800: '#1e293b',
-          900: '#0f172a',
-          950: '#020617'
+          50: withOpacity('--color-primary-50'),
+          100: withOpacity('--color-primary-100'),
+          200: withOpacity('--color-primary-200'),
+          300: withOpacity('--color-primary-300'),
+          400: withOpacity('--color-primary-400'),
+          500: withOpacity('--color-primary-500'),
+          600: withOpacity('--color-primary-600'),
+          700: withOpacity('--color-primary-700'),
+          800: withOpacity('--color-primary-800'),
+          900: withOpacity('--color-primary-900'),
+          950: withOpacity('--color-primary-950')
         },
-        // 深色模式背景
+        // 深色模式背景 / 中性色，兼容既有 dark:* utility
         dark: {
-          50: '#f8fafc',
-          100: '#f1f5f9',
-          200: '#e2e8f0',
-          300: '#cbd5e1',
-          400: '#94a3b8',
-          500: '#64748b',
-          600: '#475569',
-          700: '#334155',
-          800: '#1e293b',
-          900: '#0f172a',
-          950: '#020617'
+          50: withOpacity('--color-dark-50'),
+          100: withOpacity('--color-dark-100'),
+          200: withOpacity('--color-dark-200'),
+          300: withOpacity('--color-dark-300'),
+          400: withOpacity('--color-dark-400'),
+          500: withOpacity('--color-dark-500'),
+          600: withOpacity('--color-dark-600'),
+          700: withOpacity('--color-dark-700'),
+          800: withOpacity('--color-dark-800'),
+          900: withOpacity('--color-dark-900'),
+          950: withOpacity('--color-dark-950')
         }
       },
       fontFamily: {
@@ -65,22 +107,24 @@ export default {
         mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace']
       },
       boxShadow: {
-        glass: '0 8px 32px rgba(0, 0, 0, 0.08)',
-        'glass-sm': '0 4px 16px rgba(0, 0, 0, 0.06)',
-        glow: '0 0 20px rgba(20, 184, 166, 0.25)',
-        'glow-lg': '0 0 40px rgba(20, 184, 166, 0.35)',
-        card: '0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06)',
-        'card-hover': '0 10px 40px rgba(0, 0, 0, 0.08)',
+        glass: '0 8px 32px rgba(33, 22, 13, 0.08)',
+        'glass-sm': '0 4px 16px rgba(33, 22, 13, 0.06)',
+        glow: '0 0 20px rgb(var(--color-primary-500) / 0.25)',
+        'glow-lg': '0 0 40px rgb(var(--color-primary-500) / 0.35)',
+        card: '0 1px 3px rgb(var(--shadow-color) / 0.04), 0 1px 2px rgb(var(--shadow-color) / 0.06)',
+        'card-hover': '0 10px 40px rgb(var(--shadow-color) / 0.08)',
         'inner-glow': 'inset 0 1px 0 rgba(255, 255, 255, 0.1)'
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-        'gradient-primary': 'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)',
-        'gradient-dark': 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+        'gradient-primary':
+          'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-600)) 100%)',
+        'gradient-dark':
+          'linear-gradient(135deg, rgb(var(--color-surface-card)) 0%, rgb(var(--color-surface-secondary)) 100%)',
         'gradient-glass':
           'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)',
         'mesh-gradient':
-          'radial-gradient(at 40% 20%, rgba(20, 184, 166, 0.12) 0px, transparent 50%), radial-gradient(at 80% 0%, rgba(6, 182, 212, 0.08) 0px, transparent 50%), radial-gradient(at 0% 50%, rgba(20, 184, 166, 0.08) 0px, transparent 50%)'
+          'radial-gradient(at 40% 20%, rgb(var(--color-primary-300) / 0.16) 0px, transparent 50%), radial-gradient(at 80% 0%, rgb(var(--color-primary-500) / 0.1) 0px, transparent 50%), radial-gradient(at 0% 50%, rgb(var(--color-primary-400) / 0.1) 0px, transparent 50%)'
       },
       animation: {
         'fade-in': 'fadeIn 0.3s ease-out',
@@ -118,8 +162,8 @@ export default {
           '100%': { backgroundPosition: '200% 0' }
         },
         glow: {
-          '0%': { boxShadow: '0 0 20px rgba(20, 184, 166, 0.25)' },
-          '100%': { boxShadow: '0 0 30px rgba(20, 184, 166, 0.4)' }
+          '0%': { boxShadow: '0 0 20px rgb(var(--color-primary-500) / 0.25)' },
+          '100%': { boxShadow: '0 0 30px rgb(var(--color-primary-500) / 0.4)' }
         }
       },
       backdropBlur: {

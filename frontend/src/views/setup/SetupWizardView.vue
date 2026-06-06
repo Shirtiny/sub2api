@@ -10,8 +10,8 @@
         >
           <Icon name="cog" size="xl" class="text-white" />
         </div>
-        <h1 class="text-3xl font-bold text-gray-900 dark:text-white">{{ t('setup.title') }}</h1>
-        <p class="mt-2 text-gray-500 dark:text-dark-400">{{ t('setup.description') }}</p>
+        <h1 class="text-3xl font-bold text-content-primary">{{ t('setup.title') }}</h1>
+        <p class="mt-2 text-content-tertiary">{{ t('setup.description') }}</p>
       </div>
 
       <!-- Progress Steps -->
@@ -41,8 +41,8 @@
                 class="ml-2 text-sm font-medium"
                 :class="
                   currentStep >= index
-                    ? 'text-gray-900 dark:text-white'
-                    : 'text-gray-400 dark:text-dark-500'
+                    ? 'text-content-primary'
+                    : 'text-content-tertiary'
                 "
               >
                 {{ step.title }}
@@ -51,7 +51,7 @@
             <div
               v-if="index < steps.length - 1"
               class="mx-3 h-0.5 w-12"
-              :class="currentStep > index ? 'bg-primary-500' : 'bg-gray-200 dark:bg-dark-700'"
+              :class="currentStep > index ? 'bg-primary-500' : 'bg-stroke-subtle'"
             ></div>
           </template>
         </div>
@@ -62,10 +62,10 @@
         <!-- Step 1: Database -->
         <div v-if="currentStep === 0" class="space-y-6">
           <div class="mb-6 text-center">
-            <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+            <h2 class="text-xl font-semibold text-content-primary">
               {{ t('setup.database.title') }}
             </h2>
-            <p class="mt-1 text-sm text-gray-500 dark:text-dark-400">
+            <p class="mt-1 text-sm text-content-tertiary">
               {{ t('setup.database.description') }}
             </p>
           </div>
@@ -93,10 +93,10 @@
 
           <div class="flex items-center justify-between rounded-xl border border-gray-200 p-3 dark:border-dark-700">
             <div>
-              <p class="text-sm font-medium text-gray-900 dark:text-white">
+              <p class="text-sm font-medium text-content-primary">
                 {{ t("setup.redis.enableTls") }}
               </p>
-              <p class="text-xs text-gray-500 dark:text-dark-400">
+              <p class="text-xs text-content-tertiary">
                 {{ t("setup.redis.enableTlsHint") }}
               </p>
             </div>
@@ -187,10 +187,10 @@
         <!-- Step 2: Redis -->
         <div v-if="currentStep === 1" class="space-y-6">
           <div class="mb-6 text-center">
-            <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+            <h2 class="text-xl font-semibold text-content-primary">
               {{ t('setup.redis.title') }}
             </h2>
-            <p class="mt-1 text-sm text-gray-500 dark:text-dark-400">
+            <p class="mt-1 text-sm text-content-tertiary">
               {{ t('setup.redis.description') }}
             </p>
           </div>
@@ -239,10 +239,10 @@
 
           <div class="flex items-center justify-between rounded-xl border border-gray-200 p-3 dark:border-dark-700">
             <div>
-              <p class="text-sm font-medium text-gray-900 dark:text-white">
+              <p class="text-sm font-medium text-content-primary">
                 {{ t("setup.redis.enableTls") }}
               </p>
-              <p class="text-xs text-gray-500 dark:text-dark-400">
+              <p class="text-xs text-content-tertiary">
                 {{ t("setup.redis.enableTlsHint") }}
               </p>
             </div>
@@ -294,10 +294,10 @@
         <!-- Step 3: Admin -->
         <div v-if="currentStep === 2" class="space-y-6">
           <div class="mb-6 text-center">
-            <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+            <h2 class="text-xl font-semibold text-content-primary">
               {{ t('setup.admin.title') }}
             </h2>
-            <p class="mt-1 text-sm text-gray-500 dark:text-dark-400">
+            <p class="mt-1 text-sm text-content-tertiary">
               {{ t('setup.admin.description') }}
             </p>
           </div>
@@ -342,20 +342,20 @@
         <!-- Step 4: Complete -->
         <div v-if="currentStep === 3" class="space-y-6">
           <div class="mb-6 text-center">
-            <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+            <h2 class="text-xl font-semibold text-content-primary">
               {{ t('setup.ready.title') }}
             </h2>
-            <p class="mt-1 text-sm text-gray-500 dark:text-dark-400">
+            <p class="mt-1 text-sm text-content-tertiary">
               {{ t('setup.ready.description') }}
             </p>
           </div>
 
           <div class="space-y-4">
             <div class="rounded-xl bg-gray-50 p-4 dark:bg-dark-700">
-              <h3 class="mb-2 text-sm font-medium text-gray-500 dark:text-dark-400">
+              <h3 class="mb-2 text-sm font-medium text-content-tertiary">
                 {{ t('setup.ready.database') }}
               </h3>
-              <p class="text-gray-900 dark:text-white">
+              <p class="text-content-primary">
                 {{ formData.database.user }}@{{ formData.database.host }}:{{
                   formData.database.port
                 }}/{{ formData.database.dbname }}
@@ -363,19 +363,19 @@
             </div>
 
             <div class="rounded-xl bg-gray-50 p-4 dark:bg-dark-700">
-              <h3 class="mb-2 text-sm font-medium text-gray-500 dark:text-dark-400">
+              <h3 class="mb-2 text-sm font-medium text-content-tertiary">
                 {{ t('setup.ready.redis') }}
               </h3>
-              <p class="text-gray-900 dark:text-white">
+              <p class="text-content-primary">
                 {{ formData.redis.host }}:{{ formData.redis.port }}
               </p>
             </div>
 
             <div class="rounded-xl bg-gray-50 p-4 dark:bg-dark-700">
-              <h3 class="mb-2 text-sm font-medium text-gray-500 dark:text-dark-400">
+              <h3 class="mb-2 text-sm font-medium text-content-tertiary">
                 {{ t('setup.ready.adminEmail') }}
               </h3>
-              <p class="text-gray-900 dark:text-white">{{ formData.admin.email }}</p>
+              <p class="text-content-primary">{{ formData.admin.email }}</p>
             </div>
           </div>
         </div>

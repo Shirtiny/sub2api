@@ -59,7 +59,7 @@
             {{ noPricingLabel }}
           </div>
 
-          <div v-else class="space-y-2 text-gray-700 dark:text-gray-300">
+          <div v-else class="space-y-2 text-content-secondary">
             <div class="flex justify-between">
               <span class="text-gray-500 dark:text-gray-400">{{ t(prefixKey('billingMode')) }}</span>
               <span>{{ billingModeLabel }}</span>
@@ -126,7 +126,7 @@
               class="mt-2 border-t pt-2"
               :class="[popoverBorderClass]"
             >
-              <div class="mb-1 font-medium text-gray-600 dark:text-gray-400">
+              <div class="mb-1 font-medium text-content-secondary">
                 {{ t(prefixKey('intervals')) }}
               </div>
               <div class="space-y-1">

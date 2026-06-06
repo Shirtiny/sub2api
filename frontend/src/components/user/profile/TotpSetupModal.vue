@@ -6,7 +6,7 @@
       <div class="relative w-full max-w-md transform rounded-xl bg-white p-6 shadow-xl transition-all dark:bg-dark-800">
         <!-- Header -->
         <div class="mb-6 text-center">
-          <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
+          <h3 class="text-xl font-semibold text-content-primary">
             {{ t('profile.totp.setupTitle') }}
           </h3>
           <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
@@ -97,7 +97,7 @@
                 </code>
                 <button
                   type="button"
-                  class="rounded p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-dark-700"
+                  class="rounded p-1.5 text-gray-500 hover:bg-surface-hover"
                   @click="copySecret"
                 >
                   <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">

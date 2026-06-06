@@ -218,10 +218,20 @@ export interface AffiliateRedeemResponse {
   expires_at?: string
 }
 
+function createIdempotencyKey(prefix: string): string {
+  const random = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+    ? crypto.randomUUID()
+    : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`
+  return `${prefix}-${random}`
+}
+
 export async function redeemAffiliatePoints(
   payload: AffiliateRedeemRequest,
+  idempotencyKey = createIdempotencyKey('affiliate-redeem'),
 ): Promise<AffiliateRedeemResponse> {
-  const { data } = await apiClient.post<AffiliateRedeemResponse>('/user/aff/redeem', payload)
+  const { data } = await apiClient.post<AffiliateRedeemResponse>('/user/aff/redeem', payload, {
+    headers: { 'Idempotency-Key': idempotencyKey },
+  })
   return data
 }
 
@@ -233,11 +243,10 @@ export async function redeemAffiliatePoints(
 
 export async function transferAffiliateSubscriptionRebate(
   groupId: number,
-  planId: number,
 ): Promise<AffiliateSubscriptionTransferResponse> {
   const { data } = await apiClient.post<AffiliateSubscriptionTransferResponse>(
     '/user/aff/transfer-subscription',
-    { group_id: groupId, plan_id: planId },
+    { group_id: groupId },
   )
   return data
 }

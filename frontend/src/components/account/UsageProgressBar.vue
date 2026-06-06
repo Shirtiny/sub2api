@@ -125,7 +125,7 @@ const textClass = computed(() => {
   } else if (props.utilization >= 80) {
     return 'text-amber-600 dark:text-amber-400'
   } else {
-    return 'text-gray-600 dark:text-gray-400'
+    return 'text-content-secondary'
   }
 })
 

@@ -9,18 +9,18 @@
       :key="row.platform"
       class="flex items-center gap-2 whitespace-nowrap"
     >
-      <span class="w-20 shrink-0 font-mono text-gray-700 dark:text-gray-300">{{ row.platform }}</span>
+      <span class="w-20 shrink-0 font-mono text-content-secondary">{{ row.platform }}</span>
       <span class="text-gray-500 dark:text-gray-400">
         {{ t('admin.users.platformQuota.windowDaily') }}
-        <span class="text-gray-900 dark:text-white">{{ fmtUsd(row.daily_usage_usd) }}/{{ fmtLimit(row.daily_limit_usd) }}</span>
+        <span class="text-content-primary">{{ fmtUsd(row.daily_usage_usd) }}/{{ fmtLimit(row.daily_limit_usd) }}</span>
       </span>
       <span class="text-gray-500 dark:text-gray-400">
         {{ t('admin.users.platformQuota.windowWeekly') }}
-        <span class="text-gray-900 dark:text-white">{{ fmtUsd(row.weekly_usage_usd) }}/{{ fmtLimit(row.weekly_limit_usd) }}</span>
+        <span class="text-content-primary">{{ fmtUsd(row.weekly_usage_usd) }}/{{ fmtLimit(row.weekly_limit_usd) }}</span>
       </span>
       <span class="text-gray-500 dark:text-gray-400">
         {{ t('admin.users.platformQuota.windowMonthly') }}
-        <span class="text-gray-900 dark:text-white">{{ fmtUsd(row.monthly_usage_usd) }}/{{ fmtLimit(row.monthly_limit_usd) }}</span>
+        <span class="text-content-primary">{{ fmtUsd(row.monthly_usage_usd) }}/{{ fmtLimit(row.monthly_limit_usd) }}</span>
       </span>
     </div>
   </div>

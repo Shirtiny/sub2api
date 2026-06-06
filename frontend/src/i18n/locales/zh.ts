@@ -255,7 +255,7 @@ export default {
     highestHint: 'LV.3 是当前最高会员等级。',
     remainingHint: '再获得 {amount} 点可升级到 LV.{level}。',
     affiliateRebate: '会员权益',
-    subscriptionReward: '邀请注册：可邀请{limit}人，会员积分返利{rate}%',
+    subscriptionReward: '邀请注册：可邀请{limit}人，会员积分返利{rate}%，上限 ¥{cap}',
     subscriptionRewardUnavailable: '邀请注册：普通用户暂不可邀请，LV.1 及以上可获得返利权益',
     consumptionDiscount: '消费折扣：敬请期待...'
   },
@@ -939,6 +939,9 @@ export default {
     imageSizeUnknown: '未知',
     cacheRead: '读取',
     cacheWrite: '写入',
+    cacheHit: '缓存命中',
+    cacheCreate: '缓存创建',
+    cacheHitRate: '缓存命中率',
     serviceTier: '服务档位',
     serviceTierPriority: 'Fast',
     serviceTierFlex: 'Flex',
@@ -1183,7 +1186,8 @@ export default {
         accrue: '返利入账',
         accrueFrozen: '返利冻结中',
         transferBalance: '兑换余额',
-        transferSubscription: '兑换订阅'
+        transferSubscription: '兑换订阅',
+        clawback: '返利退款回收'
       }
     }
   },

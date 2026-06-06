@@ -25,12 +25,12 @@
         v-if="showAddForm"
         class="rounded-xl border border-primary-200 bg-primary-50/50 p-4 dark:border-primary-800 dark:bg-primary-900/20"
       >
-        <div class="mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">
+        <div class="mb-3 text-sm font-medium text-content-secondary">
           {{ t('admin.scheduledTests.addPlan') }}
         </div>
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
-            <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
+            <label class="mb-1 block text-xs font-medium text-content-secondary">
               {{ t('admin.scheduledTests.model') }}
             </label>
             <Select
@@ -41,7 +41,7 @@
             />
           </div>
           <div>
-            <label class="mb-1 flex items-center gap-1 text-xs font-medium text-gray-600 dark:text-gray-400">
+            <label class="mb-1 flex items-center gap-1 text-xs font-medium text-content-secondary">
               {{ t('admin.scheduledTests.cronExpression') }}
               <HelpTooltip>
                 <template #trigger>
@@ -67,7 +67,7 @@
             />
           </div>
           <div>
-            <label class="mb-1 flex items-center gap-1 text-xs font-medium text-gray-600 dark:text-gray-400">
+            <label class="mb-1 flex items-center gap-1 text-xs font-medium text-content-secondary">
               {{ t('admin.scheduledTests.maxResults') }}
               <HelpTooltip>
                 <template #trigger>
@@ -91,14 +91,14 @@
             />
           </div>
           <div class="flex items-end">
-            <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+            <label class="flex items-center gap-2 text-sm text-content-secondary">
               <Toggle v-model="newPlan.enabled" />
               {{ t('admin.scheduledTests.enabled') }}
             </label>
           </div>
           <div class="flex items-end">
             <div>
-              <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+              <label class="flex items-center gap-2 text-sm text-content-secondary">
                 <Toggle v-model="newPlan.auto_recover" />
                 {{ t('admin.scheduledTests.autoRecover') }}
               </label>
@@ -158,7 +158,7 @@
             <div class="flex flex-1 items-center gap-4">
               <!-- Model -->
               <div class="min-w-0">
-                <div class="text-sm font-medium text-gray-900 dark:text-gray-100">
+                <div class="text-sm font-medium text-content-primary">
                   {{ plan.model_id }}
                 </div>
                 <div class="mt-0.5 font-mono text-xs text-gray-500 dark:text-gray-400">
@@ -235,12 +235,12 @@
             class="border-t border-blue-100 bg-blue-50/50 px-4 py-3 dark:border-blue-900 dark:bg-blue-900/10"
             @click.stop
           >
-            <div class="mb-2 text-xs font-medium text-gray-600 dark:text-gray-400">
+            <div class="mb-2 text-xs font-medium text-content-secondary">
               {{ t('admin.scheduledTests.editPlan') }}
             </div>
             <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
-                <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
+                <label class="mb-1 block text-xs font-medium text-content-secondary">
                   {{ t('admin.scheduledTests.model') }}
                 </label>
                 <Select
@@ -251,7 +251,7 @@
                 />
               </div>
               <div>
-                <label class="mb-1 flex items-center gap-1 text-xs font-medium text-gray-600 dark:text-gray-400">
+                <label class="mb-1 flex items-center gap-1 text-xs font-medium text-content-secondary">
                   {{ t('admin.scheduledTests.cronExpression') }}
                   <HelpTooltip>
                     <template #trigger>
@@ -277,7 +277,7 @@
                 />
               </div>
               <div>
-                <label class="mb-1 flex items-center gap-1 text-xs font-medium text-gray-600 dark:text-gray-400">
+                <label class="mb-1 flex items-center gap-1 text-xs font-medium text-content-secondary">
                   {{ t('admin.scheduledTests.maxResults') }}
                   <HelpTooltip>
                     <template #trigger>
@@ -301,14 +301,14 @@
                 />
               </div>
               <div class="flex items-end">
-                <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                <label class="flex items-center gap-2 text-sm text-content-secondary">
                   <Toggle v-model="editForm.enabled" />
                   {{ t('admin.scheduledTests.enabled') }}
                 </label>
               </div>
               <div class="flex items-end">
                 <div>
-                  <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                  <label class="flex items-center gap-2 text-sm text-content-secondary">
                     <Toggle v-model="editForm.auto_recover" />
                     {{ t('admin.scheduledTests.autoRecover') }}
                   </label>
@@ -341,7 +341,7 @@
             v-if="expandedPlanId === plan.id"
             class="border-t border-gray-100 px-4 py-3 dark:border-dark-700"
           >
-            <div class="mb-2 text-xs font-medium text-gray-600 dark:text-gray-400">
+            <div class="mb-2 text-xs font-medium text-content-secondary">
               {{ t('admin.scheduledTests.results') }}
             </div>
 
@@ -423,7 +423,7 @@
                 </div>
                 <div v-else-if="result.response_text" class="mt-2">
                   <div
-                    class="cursor-pointer text-xs font-medium text-gray-600 dark:text-gray-400"
+                    class="cursor-pointer text-xs font-medium text-content-secondary"
                     @click="toggleResultDetail(result.id)"
                   >
                     {{ t('admin.scheduledTests.responseText') }}

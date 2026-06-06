@@ -12,7 +12,7 @@
       >
         {{ t('admin.users.platformQuota.subscriptionWarning') }}
       </div>
-      <p class="text-sm text-gray-600 dark:text-gray-400">
+      <p class="text-sm text-content-secondary">
         {{ t('admin.users.platformQuota.subtitle', { email: user.email }) }}
       </p>
       <div v-if="loading" class="py-10 text-center text-gray-500">{{ t('common.loading') }}</div>
@@ -28,8 +28,8 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="row in quotas" :key="row.platform" class="border-b border-gray-100 dark:border-dark-800">
-              <td class="px-3 py-2 font-mono text-gray-900 dark:text-white">{{ row.platform }}</td>
+            <tr v-for="row in quotas" :key="row.platform" class="border-b border-stroke-subtle">
+              <td class="px-3 py-2 font-mono text-content-primary">{{ row.platform }}</td>
               <td class="px-3 py-2">
                 <div class="flex items-center gap-1">
                   <input

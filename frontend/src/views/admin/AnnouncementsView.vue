@@ -51,9 +51,9 @@
           <template #cell-title="{ value, row }">
             <div class="min-w-0">
               <div class="flex items-center gap-2">
-                <span class="truncate font-medium text-gray-900 dark:text-white">{{ value }}</span>
+                <span class="truncate font-medium text-content-primary">{{ value }}</span>
               </div>
-              <div class="mt-1 flex items-center gap-2 text-xs text-gray-500 dark:text-dark-400">
+              <div class="mt-1 flex items-center gap-2 text-xs text-content-tertiary">
                 <span>#{{ row.id }}</span>
                 <span class="text-gray-300 dark:text-dark-700">·</span>
                 <span>{{ formatDateTime(row.created_at) }}</span>
@@ -109,7 +109,7 @@
           </template>
 
           <template #cell-created_at="{ value }">
-            <span class="text-sm text-gray-500 dark:text-dark-400">{{ formatDateTime(value) }}</span>
+            <span class="text-sm text-content-tertiary">{{ formatDateTime(value) }}</span>
           </template>
 
           <template #cell-actions="{ row }">

@@ -37,7 +37,7 @@
           <p class="text-xs text-gray-500 dark:text-gray-400">
             {{ t('admin.accounts.tempUnschedulable.accountName') }}
           </p>
-          <p class="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100">
+          <p class="mt-1 text-sm font-medium text-content-primary">
             {{ account?.name || '-' }}
           </p>
         </div>
@@ -47,7 +47,7 @@
             <p class="text-xs text-gray-500 dark:text-gray-400">
               {{ t('admin.accounts.tempUnschedulable.triggeredAt') }}
             </p>
-            <p class="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100">
+            <p class="mt-1 text-sm font-medium text-content-primary">
               {{ triggeredAtText }}
             </p>
           </div>
@@ -55,7 +55,7 @@
             <p class="text-xs text-gray-500 dark:text-gray-400">
               {{ t('admin.accounts.tempUnschedulable.until') }}
             </p>
-            <p class="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100">
+            <p class="mt-1 text-sm font-medium text-content-primary">
               {{ untilText }}
             </p>
           </div>
@@ -63,7 +63,7 @@
             <p class="text-xs text-gray-500 dark:text-gray-400">
               {{ t('admin.accounts.tempUnschedulable.remaining') }}
             </p>
-            <p class="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100">
+            <p class="mt-1 text-sm font-medium text-content-primary">
               {{ remainingText }}
             </p>
           </div>
@@ -71,7 +71,7 @@
             <p class="text-xs text-gray-500 dark:text-gray-400">
               {{ t('admin.accounts.tempUnschedulable.errorCode') }}
             </p>
-            <p class="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100">
+            <p class="mt-1 text-sm font-medium text-content-primary">
               {{ state?.status_code || '-' }}
             </p>
           </div>
@@ -79,7 +79,7 @@
             <p class="text-xs text-gray-500 dark:text-gray-400">
               {{ t('admin.accounts.tempUnschedulable.matchedKeyword') }}
             </p>
-            <p class="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100">
+            <p class="mt-1 text-sm font-medium text-content-primary">
               {{ state?.matched_keyword || '-' }}
             </p>
           </div>
@@ -87,7 +87,7 @@
             <p class="text-xs text-gray-500 dark:text-gray-400">
               {{ t('admin.accounts.tempUnschedulable.ruleOrder') }}
             </p>
-            <p class="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100">
+            <p class="mt-1 text-sm font-medium text-content-primary">
               {{ ruleIndexDisplay }}
             </p>
           </div>

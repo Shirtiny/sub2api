@@ -89,7 +89,7 @@
 
           <template #cell-code="{ value }">
             <div class="flex items-center space-x-2">
-              <code class="font-mono text-sm text-gray-900 dark:text-gray-100">{{ value }}</code>
+              <code class="font-mono text-sm text-content-primary">{{ value }}</code>
               <button
                 @click="copyToClipboard(value)"
                 :class="[
@@ -129,7 +129,7 @@
           </template>
 
           <template #cell-value="{ value, row }">
-            <span class="text-sm font-medium text-gray-900 dark:text-white">
+            <span class="text-sm font-medium text-content-primary">
               <template v-if="row.type === 'balance'">${{ value.toFixed(2) }}</template>
               <template v-else-if="row.type === 'subscription'">
                 {{ row.validity_days || 30 }} {{ t('admin.redeem.days') }}
@@ -157,13 +157,13 @@
           </template>
 
           <template #cell-used_by="{ value, row }">
-            <span class="text-sm text-gray-500 dark:text-dark-400">
+            <span class="text-sm text-content-tertiary">
               {{ row.user?.email || (value ? t('admin.redeem.userPrefix', { id: value }) : '-') }}
             </span>
           </template>
 
           <template #cell-used_at="{ value }">
-            <span class="text-sm text-gray-500 dark:text-dark-400">{{
+            <span class="text-sm text-content-tertiary">{{
               value ? formatDateTime(value) : '-'
             }}</span>
           </template>
@@ -174,7 +174,7 @@
                 'text-sm',
                 row.status === 'expired'
                   ? 'text-red-600 dark:text-red-400'
-                  : 'text-gray-500 dark:text-dark-400'
+                  : 'text-content-tertiary'
               ]"
             >
               {{ value ? formatDateTime(value) : t('admin.redeem.neverExpires') }}
@@ -198,7 +198,7 @@
                 </svg>
                 <span class="text-xs">{{ t('common.delete') }}</span>
               </button>
-              <span v-else class="text-gray-400 dark:text-dark-500">-</span>
+              <span v-else class="text-content-tertiary">-</span>
             </div>
           </template>
         </DataTable>
@@ -279,7 +279,7 @@
         <div
           class="relative z-10 w-full max-w-md rounded-xl bg-white p-6 shadow-xl dark:bg-dark-800"
         >
-          <h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+          <h2 class="mb-4 text-lg font-semibold text-content-primary">
             {{ t('admin.redeem.generateCodesTitle') }}
           </h2>
           <form @submit.prevent="handleGenerateCodes" class="space-y-4">
@@ -419,7 +419,7 @@
         <div
           class="relative z-10 w-full max-w-lg rounded-xl bg-white p-6 shadow-xl dark:bg-dark-800"
         >
-          <h2 class="mb-1 text-lg font-semibold text-gray-900 dark:text-white">
+          <h2 class="mb-1 text-lg font-semibold text-content-primary">
             {{ t('admin.redeem.batchUpdateTitle') }}
           </h2>
           <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">
@@ -428,7 +428,7 @@
 
           <form data-test="batch-update-form" class="space-y-4" @submit.prevent="handleBatchUpdate">
             <div class="space-y-2">
-              <label class="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label class="flex items-center gap-2 text-sm font-medium text-content-secondary">
                 <input
                   data-test="batch-field-status"
                   v-model="batchUpdateForm.update_status"
@@ -446,7 +446,7 @@
             </div>
 
             <div class="space-y-2">
-              <label class="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label class="flex items-center gap-2 text-sm font-medium text-content-secondary">
                 <input
                   v-model="batchUpdateForm.update_expires_at"
                   type="checkbox"
@@ -466,7 +466,7 @@
             </div>
 
             <div class="space-y-2">
-              <label class="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label class="flex items-center gap-2 text-sm font-medium text-content-secondary">
                 <input
                   data-test="batch-field-notes"
                   v-model="batchUpdateForm.update_notes"
@@ -486,7 +486,7 @@
             </div>
 
             <div class="space-y-2">
-              <label class="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label class="flex items-center gap-2 text-sm font-medium text-content-secondary">
                 <input
                   v-model="batchUpdateForm.update_group_id"
                   type="checkbox"
@@ -548,7 +548,7 @@
                 </svg>
               </div>
               <div>
-                <h2 class="text-base font-semibold text-gray-900 dark:text-white">
+                <h2 class="text-base font-semibold text-content-primary">
                   {{ t('admin.redeem.generatedSuccessfully') }}
                 </h2>
                 <p class="text-sm text-gray-500 dark:text-gray-400">

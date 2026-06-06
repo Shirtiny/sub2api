@@ -156,7 +156,7 @@ function onNextPage() {
 <template>
   <section class="card p-4 md:p-5">
     <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
-      <h3 class="text-sm font-bold text-gray-900 dark:text-white">
+      <h3 class="text-sm font-bold text-content-primary">
         {{ t('admin.ops.openaiTokenStats.title') }}
       </h3>
       <div class="flex flex-wrap items-center gap-2">
@@ -209,10 +209,10 @@ function onNextPage() {
     />
 
     <div v-else class="space-y-3">
-      <div class="overflow-hidden rounded-xl border border-gray-200 dark:border-dark-700">
+      <div class="overflow-hidden rounded-xl border border-stroke-default">
         <div class="max-h-[420px] overflow-auto">
           <table class="min-w-full text-left text-xs md:text-sm">
-            <thead class="sticky top-0 z-10 bg-white dark:bg-dark-800">
+            <thead class="sticky top-0 z-10 bg-surface-card">
               <tr class="border-b border-gray-200 text-gray-500 dark:border-dark-700 dark:text-gray-400">
                 <th class="px-2 py-2 font-semibold">{{ t('admin.ops.openaiTokenStats.table.model') }}</th>
                 <th class="px-2 py-2 font-semibold">{{ t('admin.ops.openaiTokenStats.table.requestCount') }}</th>

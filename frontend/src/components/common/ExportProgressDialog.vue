@@ -1,14 +1,14 @@
 <template>
   <BaseDialog :show="show" :title="t('usage.exporting')" width="narrow" @close="handleCancel">
     <div class="space-y-4">
-      <div class="text-sm text-gray-600 dark:text-gray-400">
+      <div class="text-sm text-content-secondary">
         {{ t('usage.exportingProgress') }}
       </div>
-      <div class="flex items-center justify-between text-sm text-gray-700 dark:text-gray-300">
+      <div class="flex items-center justify-between text-sm text-content-secondary">
         <span>{{ t('usage.exportedCount', { current, total }) }}</span>
-        <span class="font-medium text-gray-900 dark:text-white">{{ normalizedProgress }}%</span>
+        <span class="font-medium text-content-primary">{{ normalizedProgress }}%</span>
       </div>
-      <div class="h-2 w-full rounded-full bg-gray-200 dark:bg-dark-700">
+      <div class="h-2 w-full rounded-full bg-stroke-subtle">
         <div
           role="progressbar"
           :aria-valuenow="normalizedProgress"

@@ -91,7 +91,7 @@
           @sort="handleSort"
         >
           <template #cell-name="{ value }">
-            <span class="font-medium text-gray-900 dark:text-white">{{
+            <span class="font-medium text-content-primary">{{
               value
             }}</span>
           </template>
@@ -180,7 +180,7 @@
           </template>
 
           <template #cell-rate_multiplier="{ value }">
-            <span class="text-sm text-gray-700 dark:text-gray-300"
+            <span class="text-sm text-content-secondary"
               >{{ value }}x</span
             >
           </template>
@@ -226,7 +226,7 @@
                   t("admin.groups.accountsTotal")
                 }}</span>
                 <span
-                  class="ml-1 font-medium text-gray-700 dark:text-gray-300"
+                  class="ml-1 font-medium text-content-secondary"
                   >{{ row.account_count || 0 }}</span
                 >
                 <span
@@ -257,7 +257,7 @@
                 <span class="text-gray-400 dark:text-gray-500">{{
                   t("admin.groups.usageToday")
                 }}</span>
-                <span class="ml-1 font-medium text-gray-700 dark:text-gray-300"
+                <span class="ml-1 font-medium text-content-secondary"
                   >${{
                     formatCost(usageMap.get(row.id)?.today_cost ?? 0)
                   }}</span
@@ -267,7 +267,7 @@
                 <span class="text-gray-400 dark:text-gray-500">{{
                   t("admin.groups.usageTotal")
                 }}</span>
-                <span class="ml-1 font-medium text-gray-700 dark:text-gray-300"
+                <span class="ml-1 font-medium text-content-secondary"
                   >${{
                     formatCost(usageMap.get(row.id)?.total_cost ?? 0)
                   }}</span
@@ -396,7 +396,7 @@
         <!-- 从分组复制账号 -->
         <div v-if="copyAccountsGroupOptions.length > 0">
           <div class="mb-1.5 flex items-center gap-1">
-            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label class="text-sm font-medium text-content-secondary">
               {{ t("admin.groups.copyAccounts.title") }}
             </label>
             <div class="group relative inline-flex">
@@ -514,7 +514,7 @@
           data-tour="group-form-exclusive"
         >
           <div class="mb-1.5 flex items-center gap-1">
-            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label class="text-sm font-medium text-content-secondary">
               {{ t("admin.groups.form.exclusive") }}
             </label>
             <!-- Help Tooltip -->
@@ -649,7 +649,7 @@
         <div class="border-t pt-4">
           <div class="mb-3 flex items-center justify-between gap-3">
             <div>
-              <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label class="text-sm font-medium text-content-secondary">
                 {{ t("admin.groups.modelsList.title") }}
               </label>
               <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
@@ -725,7 +725,7 @@
                   type="checkbox"
                   class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
                 />
-                <span class="min-w-0 flex-1 break-all text-sm text-gray-700 dark:text-gray-300">
+                <span class="min-w-0 flex-1 break-all text-sm text-content-secondary">
                   {{ item.id }}
                 </span>
                 <button
@@ -759,7 +759,7 @@
           class="border-t pt-4"
         >
           <label
-            class="block mb-2 font-medium text-gray-700 dark:text-gray-300"
+            class="block mb-2 font-medium text-content-secondary"
           >
             {{ t("admin.groups.imagePricing.title") }}
           </label>
@@ -767,7 +767,7 @@
             {{ t("admin.groups.imagePricing.description") }}
           </p>
           <div class="mb-4 grid grid-cols-1 gap-3 md:grid-cols-2">
-            <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+            <label class="flex items-center gap-2 text-sm text-content-secondary">
               <input
                 v-model="createForm.allow_image_generation"
                 type="checkbox"
@@ -775,7 +775,7 @@
               />
               {{ t("admin.groups.imagePricing.allowImageGeneration") }}
             </label>
-            <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+            <label class="flex items-center gap-2 text-sm text-content-secondary">
               <input
                 v-model="createForm.image_rate_independent"
                 type="checkbox"
@@ -856,7 +856,7 @@
         <!-- 支持的模型系列（仅 antigravity 平台） -->
         <div v-if="createForm.platform === 'antigravity'" class="border-t pt-4">
           <div class="mb-1.5 flex items-center gap-1">
-            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label class="text-sm font-medium text-content-secondary">
               {{ t("admin.groups.supportedScopes.title") }}
             </label>
             <!-- Help Tooltip -->
@@ -891,7 +891,7 @@
                 @change="toggleCreateScope('claude')"
                 class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-dark-600 dark:bg-dark-700"
               />
-              <span class="text-sm text-gray-700 dark:text-gray-300">{{
+              <span class="text-sm text-content-secondary">{{
                 t("admin.groups.supportedScopes.claude")
               }}</span>
             </label>
@@ -904,7 +904,7 @@
                 @change="toggleCreateScope('gemini_text')"
                 class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-dark-600 dark:bg-dark-700"
               />
-              <span class="text-sm text-gray-700 dark:text-gray-300">{{
+              <span class="text-sm text-content-secondary">{{
                 t("admin.groups.supportedScopes.geminiText")
               }}</span>
             </label>
@@ -917,7 +917,7 @@
                 @change="toggleCreateScope('gemini_image')"
                 class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-dark-600 dark:bg-dark-700"
               />
-              <span class="text-sm text-gray-700 dark:text-gray-300">{{
+              <span class="text-sm text-content-secondary">{{
                 t("admin.groups.supportedScopes.geminiImage")
               }}</span>
             </label>
@@ -930,7 +930,7 @@
         <!-- MCP XML 协议注入（仅 antigravity 平台） -->
         <div v-if="createForm.platform === 'antigravity'" class="border-t pt-4">
           <div class="mb-1.5 flex items-center gap-1">
-            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label class="text-sm font-medium text-content-secondary">
               {{ t("admin.groups.mcpXml.title") }}
             </label>
             <div class="group relative inline-flex">
@@ -987,7 +987,7 @@
         <!-- Claude Code 客户端限制（仅 anthropic 平台） -->
         <div v-if="createForm.platform === 'anthropic'" class="border-t pt-4">
           <div class="mb-1.5 flex items-center gap-1">
-            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label class="text-sm font-medium text-content-secondary">
               {{ t("admin.groups.claudeCode.title") }}
             </label>
             <!-- Help Tooltip -->
@@ -1065,13 +1065,13 @@
           v-if="createForm.platform === 'openai'"
           class="border-t border-gray-200 dark:border-dark-400 pt-4 mt-4"
         >
-          <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+          <h4 class="text-sm font-medium text-content-secondary mb-3">
             {{ t("admin.groups.openaiMessages.title") }}
           </h4>
 
           <!-- 允许 Messages 调度开关 -->
           <div class="flex items-center justify-between">
-            <label class="text-sm text-gray-600 dark:text-gray-400">{{
+            <label class="text-sm text-content-secondary">{{
               t("admin.groups.openaiMessages.allowDispatch")
             }}</label>
             <button
@@ -1111,7 +1111,7 @@
                 <div class="flex items-center gap-2">
                   <div class="h-2 w-2 rounded-full bg-blue-500"></div>
                   <label
-                    class="text-sm font-medium text-gray-900 dark:text-white"
+                    class="text-sm font-medium text-content-primary"
                     >{{
                       t("admin.groups.openaiMessages.familyMappingTitle")
                     }}</label
@@ -1232,7 +1232,7 @@
                                 'admin.groups.openaiMessages.claudeModelPlaceholder',
                               )
                             "
-                            class="input bg-gray-50 focus:bg-white dark:bg-dark-800 dark:focus:bg-dark-900"
+                            class="input bg-gray-50 focus:bg-surface-card dark:focus:bg-dark-900"
                           />
                         </div>
                         <div
@@ -1256,7 +1256,7 @@
                                 'admin.groups.openaiMessages.targetModelPlaceholder',
                               )
                             "
-                            class="input bg-gray-50 focus:bg-white dark:bg-dark-800 dark:focus:bg-dark-900"
+                            class="input bg-gray-50 focus:bg-surface-card dark:focus:bg-dark-900"
                           />
                         </div>
                       </div>
@@ -1296,14 +1296,14 @@
           "
           class="border-t border-gray-200 dark:border-dark-400 pt-4 mt-4 space-y-4"
         >
-          <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+          <h4 class="text-sm font-medium text-content-secondary mb-3">
             账号过滤控制
           </h4>
 
           <!-- require_oauth_only toggle -->
           <div class="flex items-center justify-between">
             <div>
-              <label class="text-sm text-gray-600 dark:text-gray-400"
+              <label class="text-sm text-content-secondary"
                 >仅允许 OAuth 账号</label
               >
               <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
@@ -1340,7 +1340,7 @@
           <!-- require_privacy_set toggle -->
           <div class="flex items-center justify-between">
             <div>
-              <label class="text-sm text-gray-600 dark:text-gray-400"
+              <label class="text-sm text-content-secondary"
                 >仅允许隐私保护已设置的账号</label
               >
               <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
@@ -1399,7 +1399,7 @@
         <!-- 模型路由配置（仅 anthropic 平台） -->
         <div v-if="createForm.platform === 'anthropic'" class="border-t pt-4">
           <div class="mb-1.5 flex items-center gap-1">
-            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label class="text-sm font-medium text-content-secondary">
               {{ t("admin.groups.modelRouting.title") }}
             </label>
             <!-- Help Tooltip -->
@@ -1545,7 +1545,7 @@
                           :key="account.id"
                           type="button"
                           @click="selectAccount(rule, account)"
-                          class="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-dark-700"
+                          class="w-full px-3 py-2 text-left text-sm hover:bg-surface-hover"
                           :class="{
                             'opacity-50': rule.accounts.some(
                               (a) => a.id === account.id,
@@ -1681,7 +1681,7 @@
         <!-- 从分组复制账号（编辑时） -->
         <div v-if="copyAccountsGroupOptionsForEdit.length > 0">
           <div class="mb-1.5 flex items-center gap-1">
-            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label class="text-sm font-medium text-content-secondary">
               {{ t("admin.groups.copyAccounts.title") }}
             </label>
             <div class="group relative inline-flex">
@@ -1797,7 +1797,7 @@
         </div>
         <div v-if="editForm.subscription_type !== 'subscription'">
           <div class="mb-1.5 flex items-center gap-1">
-            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label class="text-sm font-medium text-content-secondary">
               {{ t("admin.groups.form.exclusive") }}
             </label>
             <!-- Help Tooltip -->
@@ -1937,7 +1937,7 @@
         <div class="border-t pt-4">
           <div class="mb-3 flex items-center justify-between gap-3">
             <div>
-              <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label class="text-sm font-medium text-content-secondary">
                 {{ t("admin.groups.modelsList.title") }}
               </label>
               <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
@@ -2013,7 +2013,7 @@
                   type="checkbox"
                   class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
                 />
-                <span class="min-w-0 flex-1 break-all text-sm text-gray-700 dark:text-gray-300">
+                <span class="min-w-0 flex-1 break-all text-sm text-content-secondary">
                   {{ item.id }}
                 </span>
                 <button
@@ -2047,7 +2047,7 @@
           class="border-t pt-4"
         >
           <label
-            class="block mb-2 font-medium text-gray-700 dark:text-gray-300"
+            class="block mb-2 font-medium text-content-secondary"
           >
             {{ t("admin.groups.imagePricing.title") }}
           </label>
@@ -2055,7 +2055,7 @@
             {{ t("admin.groups.imagePricing.description") }}
           </p>
           <div class="mb-4 grid grid-cols-1 gap-3 md:grid-cols-2">
-            <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+            <label class="flex items-center gap-2 text-sm text-content-secondary">
               <input
                 v-model="editForm.allow_image_generation"
                 type="checkbox"
@@ -2063,7 +2063,7 @@
               />
               {{ t("admin.groups.imagePricing.allowImageGeneration") }}
             </label>
-            <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+            <label class="flex items-center gap-2 text-sm text-content-secondary">
               <input
                 v-model="editForm.image_rate_independent"
                 type="checkbox"
@@ -2144,7 +2144,7 @@
         <!-- 支持的模型系列（仅 antigravity 平台） -->
         <div v-if="editForm.platform === 'antigravity'" class="border-t pt-4">
           <div class="mb-1.5 flex items-center gap-1">
-            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label class="text-sm font-medium text-content-secondary">
               {{ t("admin.groups.supportedScopes.title") }}
             </label>
             <!-- Help Tooltip -->
@@ -2179,7 +2179,7 @@
                 @change="toggleEditScope('claude')"
                 class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-dark-600 dark:bg-dark-700"
               />
-              <span class="text-sm text-gray-700 dark:text-gray-300">{{
+              <span class="text-sm text-content-secondary">{{
                 t("admin.groups.supportedScopes.claude")
               }}</span>
             </label>
@@ -2192,7 +2192,7 @@
                 @change="toggleEditScope('gemini_text')"
                 class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-dark-600 dark:bg-dark-700"
               />
-              <span class="text-sm text-gray-700 dark:text-gray-300">{{
+              <span class="text-sm text-content-secondary">{{
                 t("admin.groups.supportedScopes.geminiText")
               }}</span>
             </label>
@@ -2205,7 +2205,7 @@
                 @change="toggleEditScope('gemini_image')"
                 class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-dark-600 dark:bg-dark-700"
               />
-              <span class="text-sm text-gray-700 dark:text-gray-300">{{
+              <span class="text-sm text-content-secondary">{{
                 t("admin.groups.supportedScopes.geminiImage")
               }}</span>
             </label>
@@ -2218,7 +2218,7 @@
         <!-- MCP XML 协议注入（仅 antigravity 平台） -->
         <div v-if="editForm.platform === 'antigravity'" class="border-t pt-4">
           <div class="mb-1.5 flex items-center gap-1">
-            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label class="text-sm font-medium text-content-secondary">
               {{ t("admin.groups.mcpXml.title") }}
             </label>
             <div class="group relative inline-flex">
@@ -2275,7 +2275,7 @@
         <!-- Claude Code 客户端限制（仅 anthropic 平台） -->
         <div v-if="editForm.platform === 'anthropic'" class="border-t pt-4">
           <div class="mb-1.5 flex items-center gap-1">
-            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label class="text-sm font-medium text-content-secondary">
               {{ t("admin.groups.claudeCode.title") }}
             </label>
             <!-- Help Tooltip -->
@@ -2349,13 +2349,13 @@
           v-if="editForm.platform === 'openai'"
           class="border-t border-gray-200 dark:border-dark-400 pt-4 mt-4"
         >
-          <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+          <h4 class="text-sm font-medium text-content-secondary mb-3">
             {{ t("admin.groups.openaiMessages.title") }}
           </h4>
 
           <!-- 允许 Messages 调度开关 -->
           <div class="flex items-center justify-between">
-            <label class="text-sm text-gray-600 dark:text-gray-400">{{
+            <label class="text-sm text-content-secondary">{{
               t("admin.groups.openaiMessages.allowDispatch")
             }}</label>
             <button
@@ -2395,7 +2395,7 @@
                 <div class="flex items-center gap-2">
                   <div class="h-2 w-2 rounded-full bg-blue-500"></div>
                   <label
-                    class="text-sm font-medium text-gray-900 dark:text-white"
+                    class="text-sm font-medium text-content-primary"
                     >{{
                       t("admin.groups.openaiMessages.familyMappingTitle")
                     }}</label
@@ -2516,7 +2516,7 @@
                                 'admin.groups.openaiMessages.claudeModelPlaceholder',
                               )
                             "
-                            class="input bg-gray-50 focus:bg-white dark:bg-dark-800 dark:focus:bg-dark-900"
+                            class="input bg-gray-50 focus:bg-surface-card dark:focus:bg-dark-900"
                           />
                         </div>
                         <div
@@ -2540,7 +2540,7 @@
                                 'admin.groups.openaiMessages.targetModelPlaceholder',
                               )
                             "
-                            class="input bg-gray-50 focus:bg-white dark:bg-dark-800 dark:focus:bg-dark-900"
+                            class="input bg-gray-50 focus:bg-surface-card dark:focus:bg-dark-900"
                           />
                         </div>
                       </div>
@@ -2580,14 +2580,14 @@
           "
           class="border-t border-gray-200 dark:border-dark-400 pt-4 mt-4 space-y-4"
         >
-          <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+          <h4 class="text-sm font-medium text-content-secondary mb-3">
             账号过滤控制
           </h4>
 
           <!-- require_oauth_only toggle -->
           <div class="flex items-center justify-between">
             <div>
-              <label class="text-sm text-gray-600 dark:text-gray-400"
+              <label class="text-sm text-content-secondary"
                 >仅允许 OAuth 账号</label
               >
               <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
@@ -2624,7 +2624,7 @@
           <!-- require_privacy_set toggle -->
           <div class="flex items-center justify-between">
             <div>
-              <label class="text-sm text-gray-600 dark:text-gray-400"
+              <label class="text-sm text-content-secondary"
                 >仅允许隐私保护已设置的账号</label
               >
               <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
@@ -2683,7 +2683,7 @@
         <!-- 模型路由配置（仅 anthropic 平台） -->
         <div v-if="editForm.platform === 'anthropic'" class="border-t pt-4">
           <div class="mb-1.5 flex items-center gap-1">
-            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label class="text-sm font-medium text-content-secondary">
               {{ t("admin.groups.modelRouting.title") }}
             </label>
             <!-- Help Tooltip -->
@@ -2828,7 +2828,7 @@
                           :key="account.id"
                           type="button"
                           @click="selectAccount(rule, account, true)"
-                          class="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-dark-700"
+                          class="w-full px-3 py-2 text-left text-sm hover:bg-surface-hover"
                           :class="{
                             'opacity-50': rule.accounts.some(
                               (a) => a.id === account.id,
@@ -2953,7 +2953,7 @@
               <Icon name="menu" size="md" />
             </div>
             <div class="flex-1">
-              <div class="font-medium text-gray-900 dark:text-white">
+              <div class="font-medium text-content-primary">
                 {{ group.name }}
               </div>
               <div class="text-xs text-gray-500 dark:text-gray-400">

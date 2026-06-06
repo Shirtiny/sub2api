@@ -13,7 +13,7 @@
         <ProviderIcon :provider="item.provider" :size="20" />
       </span>
       <div class="flex-1 min-w-0">
-        <div class="text-base font-semibold truncate text-gray-900 dark:text-gray-100">
+        <div class="text-base font-semibold truncate text-content-primary">
           {{ item.name }}
         </div>
         <div class="mt-0.5 flex items-center gap-1.5 min-w-0">
@@ -55,7 +55,7 @@
     />
 
     <!-- Divider -->
-    <div class="mt-4 border-t border-gray-100 dark:border-dark-700/60"></div>
+    <div class="mt-4 border-t border-stroke-subtle/60"></div>
 
     <!-- Availability row -->
     <MonitorAvailabilityRow

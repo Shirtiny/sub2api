@@ -74,7 +74,7 @@
       <!-- Config fields -->
       <div class="border-t border-gray-200 pt-4 dark:border-dark-700">
         <div class="mb-3 flex items-center gap-2">
-          <h4 class="text-sm font-semibold text-gray-900 dark:text-white">
+          <h4 class="text-sm font-semibold text-content-primary">
             {{ t('admin.settings.payment.providerConfig') }}
           </h4>
           <HelpTooltip v-if="paymentGuide" trigger="click" width-class="w-80">
@@ -203,7 +203,7 @@
       <!-- Per-type limits (collapsible) -->
       <div v-if="limitableTypes.length" class="border-t border-gray-200 pt-4 dark:border-dark-700">
         <button type="button" @click="limitsExpanded = !limitsExpanded" class="flex w-full items-center justify-between">
-          <h4 class="text-sm font-semibold text-gray-900 dark:text-white">
+          <h4 class="text-sm font-semibold text-content-primary">
             {{ t('admin.settings.payment.limitsTitle') }}
           </h4>
           <svg :class="['h-4 w-4 text-gray-400 transition-transform', limitsExpanded && 'rotate-180']" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
@@ -214,7 +214,7 @@
             :key="lt.value"
             class="rounded-lg border border-gray-100 p-3 dark:border-dark-700"
           >
-            <p class="mb-2 text-xs font-medium text-gray-700 dark:text-gray-300">{{ lt.label }}</p>
+            <p class="mb-2 text-xs font-medium text-content-secondary">{{ lt.label }}</p>
             <div class="grid grid-cols-3 gap-3">
               <div>
                 <label class="text-xs text-gray-500 dark:text-gray-400">{{ t('admin.settings.payment.limitSingleMin') }}</label>

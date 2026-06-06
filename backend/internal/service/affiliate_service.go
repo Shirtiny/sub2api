@@ -169,13 +169,14 @@ type AffiliateRepository interface {
 	EnsureUserAffiliate(ctx context.Context, userID int64) (*AffiliateSummary, error)
 	GetAffiliateByCode(ctx context.Context, code string) (*AffiliateSummary, error)
 	BindInviter(ctx context.Context, userID, inviterID int64, inviteLimit int) (bool, error)
-	AccrueQuota(ctx context.Context, inviterID, inviteeUserID int64, amount float64, freezeHours int, sourceOrderID *int64) (bool, error)
+	AccrueQuota(ctx context.Context, inviterID, inviteeUserID int64, amount float64, freezeHours int, sourceOrderID *int64, perInviteeCap float64) (float64, error)
 	AccrueSubscriptionRebate(ctx context.Context, inviterID, inviteeUserID, groupID int64, days, freezeHours int, sourceOrderID *int64) (bool, error)
 	GetAccruedRebateFromInvitee(ctx context.Context, inviterID, inviteeUserID int64) (float64, error)
 	ThawFrozenQuota(ctx context.Context, userID int64) (float64, error)
 	TransferQuotaToBalance(ctx context.Context, userID int64, points float64, balanceMultiplier float64) (*AffiliateBalanceRedeemResult, error)
 	TransferQuotaToSubscription(ctx context.Context, userID, groupID, planID int64, points float64) (*AffiliateSubscriptionTransferResult, error)
 	TransferSubscriptionRebateToSubscription(ctx context.Context, userID, groupID int64) (*AffiliateSubscriptionTransferResult, error)
+	ClawbackQuotaForOrder(ctx context.Context, sourceOrderID int64, ratio float64) (float64, error)
 	ListInvitees(ctx context.Context, inviterID int64, limit int) ([]AffiliateInvitee, error)
 	ListSubscriptionRebateBalances(ctx context.Context, userID int64) ([]AffiliateSubscriptionRebateBalance, error)
 	ListAffiliateLedgerRecords(ctx context.Context, userID int64, filter AffiliateRecordFilter) ([]AffiliateLedgerRecord, int64, error)
@@ -641,20 +642,10 @@ func (s *AffiliateService) AccrueInviteRebateForOrder(ctx context.Context, invit
 		return 0, nil
 	}
 
-	// 单人上限检查：精确截断到当前邀请人会员等级的剩余额度；0 表示该等级不能获得返利。
+	// 单人上限检查在 repository 事务内重算并截断，避免并发订单突破 cap。
 	perInviteeCap := s.affiliateRebatePerInviteeCap(ctx, inviterSummary)
 	if perInviteeCap <= 0 {
 		return 0, nil
-	}
-	existing, err := s.repo.GetAccruedRebateFromInvitee(ctx, *inviteeSummary.InviterID, inviteeUserID)
-	if err != nil {
-		return 0, err
-	}
-	if existing >= perInviteeCap {
-		return 0, nil
-	}
-	if remaining := perInviteeCap - existing; rebate > remaining {
-		rebate = roundTo(remaining, 8)
 	}
 
 	var freezeHours int
@@ -662,14 +653,28 @@ func (s *AffiliateService) AccrueInviteRebateForOrder(ctx context.Context, invit
 		freezeHours = s.settingService.GetAffiliateRebateFreezeHours(ctx)
 	}
 
-	applied, err := s.repo.AccrueQuota(ctx, *inviteeSummary.InviterID, inviteeUserID, rebate, freezeHours, sourceOrderID)
+	appliedAmount, err := s.repo.AccrueQuota(ctx, *inviteeSummary.InviterID, inviteeUserID, rebate, freezeHours, sourceOrderID, perInviteeCap)
 	if err != nil {
 		return 0, err
 	}
-	if !applied {
+	return appliedAmount, nil
+}
+
+func (s *AffiliateService) ClawbackInviteRebateForRefund(ctx context.Context, sourceOrderID int64, refundAmount, orderAmount float64) (float64, error) {
+	if s == nil || s.repo == nil {
 		return 0, nil
 	}
-	return rebate, nil
+	if sourceOrderID <= 0 || refundAmount <= 0 || orderAmount <= 0 || math.IsNaN(refundAmount) || math.IsInf(refundAmount, 0) || math.IsNaN(orderAmount) || math.IsInf(orderAmount, 0) {
+		return 0, nil
+	}
+	ratio := refundAmount / orderAmount
+	if ratio > 1 {
+		ratio = 1
+	}
+	if ratio <= 0 {
+		return 0, nil
+	}
+	return s.repo.ClawbackQuotaForOrder(ctx, sourceOrderID, ratio)
 }
 
 func (s *AffiliateService) affiliateRebatePerInviteeCap(ctx context.Context, inviter *AffiliateSummary) float64 {
@@ -922,6 +927,14 @@ func maskSegment(s string) string {
 	return string(r[0]) + "***"
 }
 
+func maskAccountIdentifier(value string) string {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return ""
+	}
+	return maskSegment(value)
+}
+
 func (s *AffiliateService) invalidateAffiliateCaches(ctx context.Context, userID int64) {
 	if s.authCacheInvalidator != nil {
 		s.authCacheInvalidator.InvalidateAuthCacheByUserID(ctx, userID)
@@ -1053,7 +1066,15 @@ func (s *AffiliateService) ListAffiliateLedgerRecords(ctx context.Context, userI
 	if s == nil || s.repo == nil {
 		return nil, 0, infraerrors.ServiceUnavailable("SERVICE_UNAVAILABLE", "affiliate service unavailable")
 	}
-	return s.repo.ListAffiliateLedgerRecords(ctx, userID, normalizeAffiliateRecordFilter(filter))
+	items, total, err := s.repo.ListAffiliateLedgerRecords(ctx, userID, normalizeAffiliateRecordFilter(filter))
+	if err != nil {
+		return nil, 0, err
+	}
+	for i := range items {
+		items[i].SourceUserEmail = maskEmail(items[i].SourceUserEmail)
+		items[i].SourceUsername = maskAccountIdentifier(items[i].SourceUsername)
+	}
+	return items, total, nil
 }
 
 func (s *AffiliateService) AdminListInviteRecords(ctx context.Context, filter AffiliateRecordFilter) ([]AffiliateInviteRecord, int64, error) {

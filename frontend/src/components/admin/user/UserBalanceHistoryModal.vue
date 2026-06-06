@@ -12,7 +12,7 @@
           </div>
           <div class="min-w-0 flex-1">
             <div class="flex items-center gap-2">
-              <p class="truncate font-medium text-gray-900 dark:text-white">{{ user.email }}</p>
+              <p class="truncate font-medium text-content-primary">{{ user.email }}</p>
               <span v-if="user.deleted_at" class="flex-shrink-0 inline-flex items-center rounded px-1 py-px text-[10px] font-medium leading-tight bg-rose-100 text-rose-600 ring-1 ring-inset ring-rose-200 dark:bg-rose-500/20 dark:text-rose-400 dark:ring-rose-500/30">
                 {{ t('admin.usage.userDeletedBadge') }}
               </span>
@@ -23,25 +23,25 @@
                 {{ user.username }}
               </span>
             </div>
-            <p class="text-xs text-gray-400 dark:text-dark-500">
+            <p class="text-xs text-content-tertiary">
               {{ t('admin.users.createdAt') }}: {{ formatDateTime(user.created_at) }}
             </p>
           </div>
           <!-- Current balance: prominent display on the right -->
           <div class="flex-shrink-0 text-right">
-            <p class="text-xs text-gray-500 dark:text-dark-400">{{ t('admin.users.currentBalance') }}</p>
-            <p class="text-xl font-bold text-gray-900 dark:text-white">
+            <p class="text-xs text-content-tertiary">{{ t('admin.users.currentBalance') }}</p>
+            <p class="text-xl font-bold text-content-primary">
               ${{ user.balance?.toFixed(2) || '0.00' }}
             </p>
           </div>
         </div>
         <!-- Row 2: notes + total recharged -->
         <div class="mt-2.5 flex items-center justify-between border-t border-gray-200/60 pt-2.5 dark:border-dark-600/60">
-          <p class="min-w-0 flex-1 truncate text-xs text-gray-500 dark:text-dark-400" :title="user.notes || ''">
+          <p class="min-w-0 flex-1 truncate text-xs text-content-tertiary" :title="user.notes || ''">
             <template v-if="user.notes">{{ t('admin.users.notes') }}: {{ user.notes }}</template>
             <template v-else>&nbsp;</template>
           </p>
-          <p class="ml-4 flex-shrink-0 text-xs text-gray-500 dark:text-dark-400">
+          <p class="ml-4 flex-shrink-0 text-xs text-content-tertiary">
             {{ t('admin.users.totalRecharged') }}: <span class="font-semibold text-emerald-600 dark:text-emerald-400">${{ totalRecharged.toFixed(2) }}</span>
           </p>
         </div>
@@ -109,18 +109,18 @@
                 <Icon :name="getIconName(item)" size="sm" :class="getIconColor(item)" />
               </div>
               <div>
-                <p class="text-sm font-medium text-gray-900 dark:text-white">
+                <p class="text-sm font-medium text-content-primary">
                   {{ getItemTitle(item) }}
                 </p>
                 <!-- Notes (admin adjustment reason) -->
                 <p
                   v-if="item.notes"
-                  class="mt-0.5 text-xs text-gray-500 dark:text-dark-400"
+                  class="mt-0.5 text-xs text-content-tertiary"
                   :title="item.notes"
                 >
                   {{ item.notes.length > 60 ? item.notes.substring(0, 55) + '...' : item.notes }}
                 </p>
-                <p class="mt-0.5 text-xs text-gray-400 dark:text-dark-500">
+                <p class="mt-0.5 text-xs text-content-tertiary">
                   {{ formatDateTime(item.used_at || item.created_at) }}
                 </p>
               </div>
@@ -132,13 +132,13 @@
               </p>
               <p
                 v-if="isAdminType(item.type)"
-                class="text-xs text-gray-400 dark:text-dark-500"
+                class="text-xs text-content-tertiary"
               >
                 {{ t('redeem.adminAdjustment') }}
               </p>
               <p
                 v-else
-                class="font-mono text-xs text-gray-400 dark:text-dark-500"
+                class="font-mono text-xs text-content-tertiary"
               >
                 {{ item.code.slice(0, 8) }}...
               </p>
@@ -156,7 +156,7 @@
         >
           {{ t('pagination.previous') }}
         </button>
-        <span class="text-sm text-gray-500 dark:text-dark-400">
+        <span class="text-sm text-content-tertiary">
           {{ currentPage }} / {{ totalPages }}
         </span>
         <button

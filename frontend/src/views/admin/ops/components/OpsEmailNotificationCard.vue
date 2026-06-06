@@ -184,7 +184,7 @@ onMounted(() => {
   <div class="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5 dark:bg-dark-800 dark:ring-dark-700">
     <div class="mb-4 flex items-start justify-between gap-4">
       <div>
-        <h3 class="text-sm font-bold text-gray-900 dark:text-white">{{ t('admin.ops.email.title') }}</h3>
+        <h3 class="text-sm font-bold text-content-primary">{{ t('admin.ops.email.title') }}</h3>
         <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ t('admin.ops.email.description') }}</p>
       </div>
       <div class="flex items-center gap-2">
@@ -209,43 +209,43 @@ onMounted(() => {
 
     <div v-else class="space-y-6">
       <div class="rounded-2xl bg-gray-50 p-4 dark:bg-dark-700/50">
-        <h4 class="mb-2 text-sm font-semibold text-gray-900 dark:text-white">{{ t('admin.ops.email.alertTitle') }}</h4>
+        <h4 class="mb-2 text-sm font-semibold text-content-primary">{{ t('admin.ops.email.alertTitle') }}</h4>
         <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
           <div class="text-xs text-gray-600 dark:text-gray-300">
             {{ t('common.enabled') }}:
-            <span class="ml-1 font-medium text-gray-900 dark:text-white">
+            <span class="ml-1 font-medium text-content-primary">
               {{ config.alert.enabled ? t('common.enabled') : t('common.disabled') }}
             </span>
           </div>
           <div class="text-xs text-gray-600 dark:text-gray-300">
             {{ t('admin.ops.email.recipients') }}:
-            <span class="ml-1 font-medium text-gray-900 dark:text-white">{{ config.alert.recipients.length }}</span>
+            <span class="ml-1 font-medium text-content-primary">{{ config.alert.recipients.length }}</span>
           </div>
           <div class="text-xs text-gray-600 dark:text-gray-300">
             {{ t('admin.ops.email.minSeverity') }}:
-            <span class="ml-1 font-medium text-gray-900 dark:text-white">{{
+            <span class="ml-1 font-medium text-content-primary">{{
               config.alert.min_severity || t('admin.ops.email.minSeverityAll')
             }}</span>
           </div>
           <div class="text-xs text-gray-600 dark:text-gray-300">
             {{ t('admin.ops.email.rateLimitPerHour') }}:
-            <span class="ml-1 font-medium text-gray-900 dark:text-white">{{ config.alert.rate_limit_per_hour }}</span>
+            <span class="ml-1 font-medium text-content-primary">{{ config.alert.rate_limit_per_hour }}</span>
           </div>
         </div>
       </div>
 
       <div class="rounded-2xl bg-gray-50 p-4 dark:bg-dark-700/50">
-        <h4 class="mb-2 text-sm font-semibold text-gray-900 dark:text-white">{{ t('admin.ops.email.reportTitle') }}</h4>
+        <h4 class="mb-2 text-sm font-semibold text-content-primary">{{ t('admin.ops.email.reportTitle') }}</h4>
         <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
           <div class="text-xs text-gray-600 dark:text-gray-300">
             {{ t('common.enabled') }}:
-            <span class="ml-1 font-medium text-gray-900 dark:text-white">
+            <span class="ml-1 font-medium text-content-primary">
               {{ config.report.enabled ? t('common.enabled') : t('common.disabled') }}
             </span>
           </div>
           <div class="text-xs text-gray-600 dark:text-gray-300">
             {{ t('admin.ops.email.recipients') }}:
-            <span class="ml-1 font-medium text-gray-900 dark:text-white">{{ config.report.recipients.length }}</span>
+            <span class="ml-1 font-medium text-content-primary">{{ config.report.recipients.length }}</span>
           </div>
         </div>
       </div>
@@ -264,11 +264,11 @@ onMounted(() => {
         </ul>
       </div>
       <div class="rounded-2xl bg-gray-50 p-4 dark:bg-dark-700/50">
-        <h4 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">{{ t('admin.ops.email.alertTitle') }}</h4>
+        <h4 class="mb-3 text-sm font-semibold text-content-primary">{{ t('admin.ops.email.alertTitle') }}</h4>
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
             <div class="mb-1 text-xs font-medium text-gray-600 dark:text-gray-300">{{ t('common.enabled') }}</div>
-            <label class="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+            <label class="inline-flex items-center gap-2 text-sm text-content-secondary">
               <input v-model="draft.alert.enabled" type="checkbox" class="h-4 w-4 rounded border-gray-300" />
               <span>{{ draft.alert.enabled ? t('common.enabled') : t('common.disabled') }}</span>
             </label>
@@ -325,7 +325,7 @@ onMounted(() => {
 
           <div>
             <div class="mb-1 text-xs font-medium text-gray-600 dark:text-gray-300">{{ t('admin.ops.email.includeResolved') }}</div>
-            <label class="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+            <label class="inline-flex items-center gap-2 text-sm text-content-secondary">
               <input v-model="draft.alert.include_resolved_alerts" type="checkbox" class="h-4 w-4 rounded border-gray-300" />
               <span>{{ draft.alert.include_resolved_alerts ? t('common.enabled') : t('common.disabled') }}</span>
             </label>
@@ -334,11 +334,11 @@ onMounted(() => {
       </div>
 
       <div class="rounded-2xl bg-gray-50 p-4 dark:bg-dark-700/50">
-        <h4 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">{{ t('admin.ops.email.reportTitle') }}</h4>
+        <h4 class="mb-3 text-sm font-semibold text-content-primary">{{ t('admin.ops.email.reportTitle') }}</h4>
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
             <div class="mb-1 text-xs font-medium text-gray-600 dark:text-gray-300">{{ t('common.enabled') }}</div>
-            <label class="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+            <label class="inline-flex items-center gap-2 text-sm text-content-secondary">
               <input v-model="draft.report.enabled" type="checkbox" class="h-4 w-4 rounded border-gray-300" />
               <span>{{ draft.report.enabled ? t('common.enabled') : t('common.disabled') }}</span>
             </label>
@@ -382,7 +382,7 @@ onMounted(() => {
               <div>
                 <div class="mb-1 text-xs font-medium text-gray-600 dark:text-gray-300">{{ t('admin.ops.email.dailySummary') }}</div>
                 <div class="flex items-center gap-2">
-                  <label class="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                  <label class="inline-flex items-center gap-2 text-sm text-content-secondary">
                     <input v-model="draft.report.daily_summary_enabled" type="checkbox" class="h-4 w-4 rounded border-gray-300" />
                   </label>
                   <input v-model="draft.report.daily_summary_schedule" type="text" class="input" :placeholder="t('admin.ops.email.cronPlaceholder')" />
@@ -391,7 +391,7 @@ onMounted(() => {
               <div>
                 <div class="mb-1 text-xs font-medium text-gray-600 dark:text-gray-300">{{ t('admin.ops.email.weeklySummary') }}</div>
                 <div class="flex items-center gap-2">
-                  <label class="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                  <label class="inline-flex items-center gap-2 text-sm text-content-secondary">
                     <input v-model="draft.report.weekly_summary_enabled" type="checkbox" class="h-4 w-4 rounded border-gray-300" />
                   </label>
                   <input v-model="draft.report.weekly_summary_schedule" type="text" class="input" :placeholder="t('admin.ops.email.cronPlaceholder')" />
@@ -400,7 +400,7 @@ onMounted(() => {
               <div>
                 <div class="mb-1 text-xs font-medium text-gray-600 dark:text-gray-300">{{ t('admin.ops.email.errorDigest') }}</div>
                 <div class="flex items-center gap-2">
-                  <label class="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                  <label class="inline-flex items-center gap-2 text-sm text-content-secondary">
                     <input v-model="draft.report.error_digest_enabled" type="checkbox" class="h-4 w-4 rounded border-gray-300" />
                   </label>
                   <input v-model="draft.report.error_digest_schedule" type="text" class="input" :placeholder="t('admin.ops.email.cronPlaceholder')" />
@@ -413,7 +413,7 @@ onMounted(() => {
               <div>
                 <div class="mb-1 text-xs font-medium text-gray-600 dark:text-gray-300">{{ t('admin.ops.email.accountHealth') }}</div>
                 <div class="flex items-center gap-2">
-                  <label class="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                  <label class="inline-flex items-center gap-2 text-sm text-content-secondary">
                     <input v-model="draft.report.account_health_enabled" type="checkbox" class="h-4 w-4 rounded border-gray-300" />
                   </label>
                   <input v-model="draft.report.account_health_schedule" type="text" class="input" :placeholder="t('admin.ops.email.cronPlaceholder')" />

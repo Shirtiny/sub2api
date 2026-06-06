@@ -6,7 +6,7 @@
           <span class="text-lg font-medium text-primary-700">{{ user.email.charAt(0).toUpperCase() }}</span>
         </div>
         <div class="flex-1">
-          <p class="font-medium text-gray-900 dark:text-white">{{ user.email }}</p>
+          <p class="font-medium text-content-primary">{{ user.email }}</p>
           <p class="text-sm text-gray-500 dark:text-gray-400">
             {{ t('admin.users.currentMembershipPoints') }}: {{ formatPoints(currentPoints) }}
           </p>
@@ -42,12 +42,12 @@
 
       <div v-if="user" class="rounded-xl border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-950">
         <div class="flex items-center justify-between text-sm">
-          <span class="text-gray-700 dark:text-gray-300">{{ t('admin.users.newMembershipPoints') }}:</span>
-          <span class="font-bold text-gray-900 dark:text-gray-100">{{ formatPoints(nextPoints) }}</span>
+          <span class="text-content-secondary">{{ t('admin.users.newMembershipPoints') }}:</span>
+          <span class="font-bold text-content-primary">{{ formatPoints(nextPoints) }}</span>
         </div>
         <div class="mt-2 flex items-center justify-between text-sm">
-          <span class="text-gray-700 dark:text-gray-300">{{ t('admin.users.newMembershipLevel') }}:</span>
-          <span class="font-bold text-gray-900 dark:text-gray-100">{{ membershipLabel(nextLevel) }}</span>
+          <span class="text-content-secondary">{{ t('admin.users.newMembershipLevel') }}:</span>
+          <span class="font-bold text-content-primary">{{ membershipLabel(nextLevel) }}</span>
         </div>
       </div>
     </form>

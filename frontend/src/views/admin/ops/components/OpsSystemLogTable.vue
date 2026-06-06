@@ -360,7 +360,7 @@ onMounted(async () => {
   <section class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-dark-700 dark:bg-dark-900/60">
     <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
       <div>
-        <h3 class="text-sm font-bold text-gray-900 dark:text-white">系统日志</h3>
+        <h3 class="text-sm font-bold text-content-primary">系统日志</h3>
         <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">默认按最新时间倒序，支持筛选搜索与按条件清理。</p>
       </div>
       <div class="flex flex-wrap items-center gap-2 text-xs">
@@ -481,12 +481,12 @@ onMounted(async () => {
       <button type="button" class="btn btn-secondary btn-sm" @click="fetchHealth">刷新健康指标</button>
     </div>
 
-    <div class="overflow-hidden rounded-xl border border-gray-200 dark:border-dark-700">
+    <div class="overflow-hidden rounded-xl border border-stroke-default">
       <div v-if="loading" class="px-4 py-8 text-center text-sm text-gray-500">加载中...</div>
       <div v-else-if="!hasData" class="px-4 py-8 text-center text-sm text-gray-500">暂无系统日志</div>
       <div v-else class="overflow-auto">
-        <table class="min-w-full table-fixed divide-y divide-gray-200 dark:divide-dark-700">
-          <thead class="bg-gray-50 dark:bg-dark-900">
+        <table class="min-w-full table-fixed divide-y divide-stroke-default">
+          <thead class="bg-surface-secondary">
             <tr>
               <th class="w-[170px] px-3 py-2 text-left text-[11px] font-semibold text-gray-500">时间</th>
               <th class="w-[80px] px-3 py-2 text-left text-[11px] font-semibold text-gray-500">级别</th>
@@ -495,13 +495,13 @@ onMounted(async () => {
           </thead>
           <tbody class="divide-y divide-gray-100 dark:divide-dark-800">
             <tr v-for="row in logs" :key="row.id" class="align-top">
-              <td class="px-3 py-2 text-xs text-gray-700 dark:text-gray-300">{{ formatTime(row.created_at) }}</td>
+              <td class="px-3 py-2 text-xs text-content-secondary">{{ formatTime(row.created_at) }}</td>
               <td class="px-3 py-2 text-xs">
                 <span class="inline-flex rounded-full px-2 py-0.5 font-semibold" :class="levelBadgeClass(row.level)">
                   {{ row.level }}
                 </span>
               </td>
-              <td class="px-3 py-2 text-xs text-gray-700 dark:text-gray-300 whitespace-normal break-all">
+              <td class="px-3 py-2 text-xs text-content-secondary whitespace-normal break-all">
                 {{ formatSystemLogDetail(row) }}
               </td>
             </tr>

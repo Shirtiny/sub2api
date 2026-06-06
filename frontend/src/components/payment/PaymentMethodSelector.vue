@@ -1,6 +1,6 @@
 <template>
   <div>
-    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+    <label class="mb-2 block text-sm font-medium text-content-secondary">
       {{ t('payment.paymentMethod') }}
     </label>
     <div class="grid grid-cols-2 gap-3 sm:flex">
@@ -25,7 +25,7 @@
             <span class="text-base font-semibold">{{ t(`payment.methods.${method.type}`) }}</span>
             <span
               v-if="method.fee_rate > 0"
-              class="text-[10px] tracking-wide text-gray-500 dark:text-dark-400"
+              class="text-[10px] tracking-wide text-content-tertiary"
             >
               {{ t('payment.fee') }} {{ method.fee_rate }}%
             </span>

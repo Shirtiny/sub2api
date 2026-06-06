@@ -124,13 +124,72 @@ func (r *affiliateRepository) BindInviter(ctx context.Context, userID, inviterID
 	return bound, nil
 }
 
-func (r *affiliateRepository) AccrueQuota(ctx context.Context, inviterID, inviteeUserID int64, amount float64, freezeHours int, sourceOrderID *int64) (bool, error) {
-	if amount <= 0 {
-		return false, nil
+func (r *affiliateRepository) AccrueQuota(ctx context.Context, inviterID, inviteeUserID int64, amount float64, freezeHours int, sourceOrderID *int64, perInviteeCap float64) (float64, error) {
+	if amount <= 0 || perInviteeCap <= 0 || inviterID <= 0 || inviteeUserID <= 0 {
+		return 0, nil
 	}
 
-	var applied bool
+	var appliedAmount float64
 	err := r.withTx(ctx, func(txCtx context.Context, txClient *dbent.Client) error {
+		// Lock inviter row before cap calculation so concurrent orders for the same inviter/invitee
+		// cannot all observe the same pre-accrual total and exceed the per-invitee cap.
+		lockRows, err := txClient.QueryContext(txCtx, `SELECT user_id FROM user_affiliates WHERE user_id = $1 FOR UPDATE`, inviterID)
+		if err != nil {
+			return fmt.Errorf("lock affiliate inviter for accrue: %w", err)
+		}
+		locked := lockRows.Next()
+		if err := lockRows.Close(); err != nil {
+			return err
+		}
+		if !locked {
+			return nil
+		}
+
+		if sourceOrderID != nil && *sourceOrderID > 0 {
+			dupRows, err := txClient.QueryContext(txCtx, `
+SELECT 1
+FROM user_affiliate_ledger
+WHERE user_id = $1
+  AND source_user_id = $2
+  AND source_order_id = $3
+  AND action = 'accrue'
+LIMIT 1`, inviterID, inviteeUserID, *sourceOrderID)
+			if err != nil {
+				return fmt.Errorf("check affiliate accrue duplicate: %w", err)
+			}
+			duplicate := dupRows.Next()
+			if err := dupRows.Close(); err != nil {
+				return err
+			}
+			if duplicate {
+				return nil
+			}
+		}
+
+		existingRows, err := txClient.QueryContext(txCtx,
+			`SELECT COALESCE(SUM(CASE WHEN action = 'accrue' THEN amount WHEN action = 'clawback' THEN -amount ELSE 0 END), 0)::double precision FROM user_affiliate_ledger WHERE user_id = $1 AND source_user_id = $2 AND action IN ('accrue', 'clawback')`,
+			inviterID, inviteeUserID)
+		if err != nil {
+			return fmt.Errorf("query accrued rebate from invitee for capped accrue: %w", err)
+		}
+		var existing float64
+		if existingRows.Next() {
+			if err := existingRows.Scan(&existing); err != nil {
+				_ = existingRows.Close()
+				return err
+			}
+		}
+		if err := existingRows.Close(); err != nil {
+			return err
+		}
+		if existing >= perInviteeCap {
+			return nil
+		}
+		appliedAmount = roundAffiliateAmount(math.Min(amount, perInviteeCap-existing))
+		if appliedAmount <= 0 {
+			return nil
+		}
+
 		// freezeHours > 0: add to frozen quota; == 0: add to available quota directly
 		var updateSQL string
 		if freezeHours > 0 {
@@ -138,13 +197,13 @@ func (r *affiliateRepository) AccrueQuota(ctx context.Context, inviterID, invite
 		} else {
 			updateSQL = "UPDATE user_affiliates SET aff_quota = aff_quota + $1, aff_history_quota = aff_history_quota + $1, updated_at = NOW() WHERE user_id = $2"
 		}
-		res, err := txClient.ExecContext(txCtx, updateSQL, amount, inviterID)
+		res, err := txClient.ExecContext(txCtx, updateSQL, appliedAmount, inviterID)
 		if err != nil {
 			return err
 		}
 		affected, _ := res.RowsAffected()
 		if affected == 0 {
-			applied = false
+			appliedAmount = 0
 			return nil
 		}
 
@@ -152,24 +211,154 @@ func (r *affiliateRepository) AccrueQuota(ctx context.Context, inviterID, invite
 			if _, err = txClient.ExecContext(txCtx, `
 INSERT INTO user_affiliate_ledger (user_id, action, amount, source_user_id, source_order_id, frozen_until, created_at, updated_at)
 VALUES ($1, 'accrue', $2, $3, $4, NOW() + make_interval(hours => $5), NOW(), NOW())`,
-				inviterID, amount, inviteeUserID, nullableInt64Arg(sourceOrderID), freezeHours); err != nil {
+				inviterID, appliedAmount, inviteeUserID, nullableInt64Arg(sourceOrderID), freezeHours); err != nil {
 				return fmt.Errorf("insert affiliate accrue ledger: %w", err)
 			}
 		} else {
 			if _, err = txClient.ExecContext(txCtx, `
 INSERT INTO user_affiliate_ledger (user_id, action, amount, source_user_id, source_order_id, created_at, updated_at)
-VALUES ($1, 'accrue', $2, $3, $4, NOW(), NOW())`, inviterID, amount, inviteeUserID, nullableInt64Arg(sourceOrderID)); err != nil {
+VALUES ($1, 'accrue', $2, $3, $4, NOW(), NOW())`, inviterID, appliedAmount, inviteeUserID, nullableInt64Arg(sourceOrderID)); err != nil {
 				return fmt.Errorf("insert affiliate accrue ledger: %w", err)
 			}
 		}
 
-		applied = true
 		return nil
 	})
 	if err != nil {
-		return false, err
+		return 0, err
 	}
-	return applied, nil
+	return appliedAmount, nil
+}
+
+func (r *affiliateRepository) ClawbackQuotaForOrder(ctx context.Context, sourceOrderID int64, ratio float64) (float64, error) {
+	if sourceOrderID <= 0 || ratio <= 0 {
+		return 0, nil
+	}
+	if ratio > 1 {
+		ratio = 1
+	}
+
+	var clawedBack float64
+	err := r.withTx(ctx, func(txCtx context.Context, txClient *dbent.Client) error {
+		dupRows, err := txClient.QueryContext(txCtx, `
+SELECT COALESCE(SUM(amount), 0)::double precision
+FROM user_affiliate_ledger
+WHERE source_order_id = $1
+  AND action = 'clawback'`, sourceOrderID)
+		if err != nil {
+			return fmt.Errorf("query affiliate clawback duplicate: %w", err)
+		}
+		var alreadyClawedBack float64
+		if dupRows.Next() {
+			if err := dupRows.Scan(&alreadyClawedBack); err != nil {
+				_ = dupRows.Close()
+				return err
+			}
+		}
+		if err := dupRows.Close(); err != nil {
+			return err
+		}
+
+		rows, err := txClient.QueryContext(txCtx, `
+WITH locked AS (
+    SELECT user_id, amount, frozen_until
+    FROM user_affiliate_ledger
+    WHERE source_order_id = $1
+      AND action = 'accrue'
+    FOR UPDATE
+)
+SELECT user_id,
+       source_user_id,
+       COALESCE(SUM(amount), 0)::double precision,
+       COALESCE(SUM(CASE WHEN frozen_until IS NOT NULL AND frozen_until > NOW() THEN amount ELSE 0 END), 0)::double precision
+FROM locked
+GROUP BY user_id, source_user_id`, sourceOrderID)
+		if err != nil {
+			return fmt.Errorf("query affiliate accrue rows for clawback: %w", err)
+		}
+		defer func() { _ = rows.Close() }()
+		for rows.Next() {
+			var userID int64
+			var sourceUserID sql.NullInt64
+			var accrued float64
+			var stillFrozen float64
+			if err := rows.Scan(&userID, &sourceUserID, &accrued, &stillFrozen); err != nil {
+				return err
+			}
+			target := roundAffiliateAmount(accrued * ratio)
+			remaining := roundAffiliateAmount(target - alreadyClawedBack)
+			if remaining <= 0 {
+				continue
+			}
+
+			affRows, err := txClient.QueryContext(txCtx, `
+SELECT aff_frozen_quota::double precision
+FROM user_affiliates
+WHERE user_id = $1
+FOR UPDATE`, userID)
+			if err != nil {
+				return fmt.Errorf("lock affiliate row for clawback: %w", err)
+			}
+			var currentFrozen float64
+			if affRows.Next() {
+				if err := affRows.Scan(&currentFrozen); err != nil {
+					_ = affRows.Close()
+					return err
+				}
+			}
+			if err := affRows.Close(); err != nil {
+				return err
+			}
+
+			frozenDeduct := roundAffiliateAmount(math.Min(math.Min(stillFrozen, currentFrozen), remaining))
+			availableDeduct := roundAffiliateAmount(remaining - frozenDeduct)
+			if _, err = txClient.ExecContext(txCtx, `
+UPDATE user_affiliates
+SET aff_frozen_quota = GREATEST(aff_frozen_quota - $1, 0),
+    aff_quota = aff_quota - $2,
+    updated_at = NOW()
+WHERE user_id = $3`, frozenDeduct, availableDeduct, userID); err != nil {
+				return fmt.Errorf("deduct affiliate clawback: %w", err)
+			}
+
+			snapshot, err := queryAffiliateTransferSnapshot(txCtx, txClient, userID)
+			if err != nil {
+				return err
+			}
+			if _, err = txClient.ExecContext(txCtx, `
+INSERT INTO user_affiliate_ledger (
+    user_id,
+    action,
+    amount,
+    source_user_id,
+    source_order_id,
+    balance_after,
+    aff_quota_after,
+    aff_frozen_quota_after,
+    aff_history_quota_after,
+    created_at,
+    updated_at
+)
+VALUES ($1, 'clawback', $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())`,
+				userID,
+				remaining,
+				nullableInt64ValueArg(sourceUserID),
+				sourceOrderID,
+				snapshot.BalanceAfter,
+				snapshot.AvailableQuotaAfter,
+				snapshot.FrozenQuotaAfter,
+				snapshot.HistoryQuotaAfter,
+			); err != nil {
+				return fmt.Errorf("insert affiliate clawback ledger: %w", err)
+			}
+			clawedBack += remaining
+		}
+		return rows.Err()
+	})
+	if err != nil {
+		return 0, err
+	}
+	return clawedBack, nil
 }
 
 func (r *affiliateRepository) AccrueSubscriptionRebate(ctx context.Context, inviterID, inviteeUserID, groupID int64, days, freezeHours int, sourceOrderID *int64) (bool, error) {
@@ -496,6 +685,10 @@ func (r *affiliateRepository) TransferQuotaToSubscription(ctx context.Context, u
 		if redeemedPoints <= 0 {
 			return service.ErrAffiliateQuotaEmpty
 		}
+		requestedPoints := roundAffiliateAmount(points)
+		if requestedPoints > 0 && math.Abs(requestedPoints-redeemedPoints) > 0.00000001 {
+			return service.ErrAffiliateRedeemTargetInvalid
+		}
 		if available+1e-8 < redeemedPoints {
 			return service.ErrAffiliateQuotaInsufficient
 		}
@@ -625,11 +818,20 @@ func (r *affiliateRepository) TransferSubscriptionRebateToSubscription(ctx conte
 			return err
 		}
 
-		groupRows, err := txClient.QueryContext(txCtx, `SELECT COALESCE(name, '') FROM groups WHERE id = $1 AND deleted_at IS NULL LIMIT 1`, groupID)
+		groupRows, err := txClient.QueryContext(txCtx, `
+SELECT COALESCE(name, '')
+FROM groups
+WHERE id = $1
+  AND deleted_at IS NULL
+  AND status = 'active'
+  AND subscription_type = $2
+LIMIT 1`, groupID, service.SubscriptionTypeSubscription)
 		if err != nil {
 			return fmt.Errorf("query subscription rebate group: %w", err)
 		}
+		groupFound := false
 		if groupRows.Next() {
+			groupFound = true
 			if err := groupRows.Scan(&result.GroupName); err != nil {
 				_ = groupRows.Close()
 				return err
@@ -637,6 +839,9 @@ func (r *affiliateRepository) TransferSubscriptionRebateToSubscription(ctx conte
 		}
 		if err := groupRows.Close(); err != nil {
 			return err
+		}
+		if !groupFound {
+			return service.ErrSubscriptionNotFound
 		}
 
 		rows, err := txClient.QueryContext(txCtx, `
@@ -1762,6 +1967,13 @@ func nullableInt64Arg(v *int64) any {
 		return nil
 	}
 	return *v
+}
+
+func nullableInt64ValueArg(v sql.NullInt64) any {
+	if !v.Valid {
+		return nil
+	}
+	return v.Int64
 }
 
 // ListUsersWithCustomSettings 列出有专属配置（自定义码或专属比例）的用户。

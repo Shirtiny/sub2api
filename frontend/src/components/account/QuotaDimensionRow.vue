@@ -70,10 +70,10 @@ function getTimezoneOffsetLabel(tz: string): string {
   <div>
     <!-- Title row (only when global notify is enabled) -->
     <div v-if="quotaNotifyGlobalEnabled" class="flex items-center gap-2 mb-1">
-      <span class="text-xs font-medium text-gray-700 dark:text-gray-300 flex-1 min-w-0">{{ label }}</span>
-      <span v-if="limit && limit > 0" class="text-xs font-medium text-gray-700 dark:text-gray-300 flex-1 min-w-0">{{ t('admin.accounts.quotaNotify.alert') }}</span>
+      <span class="text-xs font-medium text-content-secondary flex-1 min-w-0">{{ label }}</span>
+      <span v-if="limit && limit > 0" class="text-xs font-medium text-content-secondary flex-1 min-w-0">{{ t('admin.accounts.quotaNotify.alert') }}</span>
     </div>
-    <label v-else class="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1 block">{{ label }}</label>
+    <label v-else class="text-xs font-medium text-content-secondary mb-1 block">{{ label }}</label>
 
     <!-- Input row -->
     <div class="flex items-center gap-2">

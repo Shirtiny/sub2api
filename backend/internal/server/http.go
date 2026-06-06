@@ -132,10 +132,7 @@ func ProvideHTTPServer(cfg *config.Config, router *gin.Engine) *http.Server {
 		}); err != nil {
 			log.Printf("Failed to configure HTTP/2 Cleartext (h2c): %v", err)
 		} else {
-			protocols := new(http.Protocols)
-			protocols.SetHTTP1(true)
-			protocols.SetUnencryptedHTTP2(true)
-			server.Protocols = protocols
+			server.Protocols = h2cProtocols()
 			log.Printf("HTTP/2 Cleartext (h2c) enabled: max_concurrent_streams=%d, idle_timeout=%ds, max_read_frame_size=%d, max_upload_buffer_per_connection=%d, max_upload_buffer_per_stream=%d",
 				h2cConfig.MaxConcurrentStreams,
 				h2cConfig.IdleTimeout,

@@ -13,7 +13,7 @@
               <p class="text-xs font-medium text-gray-500 dark:text-gray-400">
                 {{ t('usage.totalRequests') }}
               </p>
-              <p class="text-xl font-bold text-gray-900 dark:text-white">
+              <p class="text-xl font-bold text-content-primary">
                 {{ usageStats?.total_requests?.toLocaleString() || '0' }}
               </p>
               <p class="text-xs text-gray-500 dark:text-gray-400">
@@ -33,7 +33,7 @@
               <p class="text-xs font-medium text-gray-500 dark:text-gray-400">
                 {{ t('usage.totalTokens') }}
               </p>
-              <p class="text-xl font-bold text-gray-900 dark:text-white">
+              <p class="text-xl font-bold text-content-primary">
                 {{ formatTokens(usageStats?.total_tokens || 0) }}
               </p>
               <p class="text-xs text-gray-500 dark:text-gray-400">
@@ -91,7 +91,7 @@
               <p class="text-xs font-medium text-gray-500 dark:text-gray-400">
                 {{ t('usage.avgDuration') }}
               </p>
-              <p class="text-xl font-bold text-gray-900 dark:text-white">
+              <p class="text-xl font-bold text-content-primary">
                 {{ formatDuration(usageStats?.average_duration_ms || 0) }}
               </p>
               <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('usage.perRequest') }}</p>
@@ -190,17 +190,17 @@
           @sort="handleSort"
         >
           <template #cell-api_key="{ row }">
-            <span class="text-sm text-gray-900 dark:text-white">{{
+            <span class="text-sm text-content-primary">{{
               row.api_key?.name || '-'
             }}</span>
           </template>
 
           <template #cell-model="{ value }">
-            <span class="font-medium text-gray-900 dark:text-white">{{ value }}</span>
+            <span class="font-medium text-content-primary">{{ value }}</span>
           </template>
 
           <template #cell-reasoning_effort="{ row }">
-            <span class="text-sm text-gray-900 dark:text-white">
+            <span class="text-sm text-content-primary">
               {{ formatReasoningEffort(row.reasoning_effort) }}
             </span>
           </template>
@@ -243,7 +243,7 @@
                   d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
                 />
               </svg>
-              <span class="font-medium text-gray-900 dark:text-white">{{ row.image_count }}{{ t('usage.imageUnit') }}</span>
+              <span class="font-medium text-content-primary">{{ row.image_count }}{{ t('usage.imageUnit') }}</span>
               <span class="text-gray-400">({{ formatImageBillingSize(row, t) }})</span>
             </div>
             <!-- Token 请求 -->
@@ -254,14 +254,14 @@
                   <!-- Input -->
                   <div class="inline-flex items-center gap-1">
                     <Icon name="arrowDown" size="sm" class="text-emerald-500" />
-                    <span class="font-medium text-gray-900 dark:text-white">{{
+                    <span class="font-medium text-content-primary">{{
                       (row.input_tokens ?? 0).toLocaleString()
                     }}</span>
                   </div>
                   <!-- Output -->
                   <div class="inline-flex items-center gap-1">
                     <Icon name="arrowUp" size="sm" class="text-violet-500" />
-                    <span class="font-medium text-gray-900 dark:text-white">{{
+                    <span class="font-medium text-content-primary">{{
                       (row.output_tokens ?? 0).toLocaleString()
                     }}</span>
                   </div>
@@ -341,7 +341,7 @@
           <template #cell-first_token="{ row }">
             <span
               v-if="row.first_token_ms != null"
-              class="text-sm text-gray-600 dark:text-gray-400"
+              class="text-sm text-content-secondary"
             >
               {{ formatDuration(row.first_token_ms) }}
             </span>
@@ -349,19 +349,19 @@
           </template>
 
           <template #cell-duration="{ row }">
-            <span class="text-sm text-gray-600 dark:text-gray-400">{{
+            <span class="text-sm text-content-secondary">{{
               formatDuration(row.duration_ms)
             }}</span>
           </template>
 
           <template #cell-created_at="{ value }">
-            <span class="text-sm text-gray-600 dark:text-gray-400">{{
+            <span class="text-sm text-content-secondary">{{
               formatDateTime(value)
             }}</span>
           </template>
 
           <template #cell-user_agent="{ row }">
-            <span v-if="row.user_agent" class="text-sm text-gray-600 dark:text-gray-400 block max-w-[320px] whitespace-normal break-all" :title="row.user_agent">{{ formatUserAgent(row.user_agent) }}</span>
+            <span v-if="row.user_agent" class="text-sm text-content-secondary block max-w-[320px] whitespace-normal break-all" :title="row.user_agent">{{ formatUserAgent(row.user_agent) }}</span>
             <span v-else class="text-sm text-gray-400 dark:text-gray-500">-</span>
           </template>
 

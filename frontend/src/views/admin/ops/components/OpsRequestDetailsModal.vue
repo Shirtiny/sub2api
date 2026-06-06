@@ -187,10 +187,10 @@ const kindBadgeClass = (kind: string) => {
             <div class="mt-1 text-xs text-gray-400">{{ t('admin.ops.requestDetails.emptyHint') }}</div>
           </div>
 
-          <div v-else class="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-gray-200 dark:border-dark-700">
+          <div v-else class="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-stroke-default">
             <div class="min-h-0 flex-1 overflow-auto">
-              <table class="min-w-full divide-y divide-gray-200 dark:divide-dark-700">
-                <thead class="sticky top-0 z-10 bg-gray-50 dark:bg-dark-900">
+              <table class="min-w-full divide-y divide-stroke-default">
+                <thead class="sticky top-0 z-10 bg-surface-secondary">
                 <tr>
                   <th class="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
                     {{ t('admin.ops.requestDetails.table.time') }}
@@ -246,7 +246,7 @@ const kindBadgeClass = (kind: string) => {
                         {{ row.request_id }}
                       </span>
                       <button
-                        class="rounded-md bg-gray-100 px-2 py-1 text-[10px] font-bold text-gray-600 hover:bg-gray-200 dark:bg-dark-700 dark:text-gray-300 dark:hover:bg-dark-600"
+                        class="rounded-md bg-gray-100 px-2 py-1 text-[10px] font-bold text-gray-600 hover:bg-stroke-subtle dark:text-gray-300 dark:hover:bg-dark-600"
                         @click="handleCopyRequestId(row.request_id)"
                       >
                         {{ t('admin.ops.requestDetails.copy') }}

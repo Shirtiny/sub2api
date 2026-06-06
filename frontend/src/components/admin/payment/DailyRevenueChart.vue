@@ -1,6 +1,6 @@
 <template>
   <div class="card p-4">
-    <h3 class="mb-4 text-sm font-semibold text-gray-900 dark:text-white">
+    <h3 class="mb-4 text-sm font-semibold text-content-primary">
       {{ t('payment.admin.dailyRevenue') }}
     </h3>
     <div class="h-64">
