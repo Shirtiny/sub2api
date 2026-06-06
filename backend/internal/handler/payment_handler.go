@@ -130,10 +130,24 @@ func (h *PaymentHandler) GetCheckoutInfo(c *gin.Context) {
 		})
 	}
 
+	methods := limitsResp.Methods
+	globalMin := limitsResp.GlobalMin
+	globalMax := limitsResp.GlobalMax
+	if h.paymentService != nil && h.paymentService.IsDevAutoSuccessEnabled() && len(methods) == 0 {
+		methods = map[string]service.MethodLimits{
+			"alipay": {
+				PaymentType: "alipay",
+				Currency:    payment.DefaultPaymentCurrency,
+			},
+		}
+		globalMin = 0
+		globalMax = 0
+	}
+
 	response.Success(c, checkoutInfoResponse{
-		Methods:                   limitsResp.Methods,
-		GlobalMin:                 limitsResp.GlobalMin,
-		GlobalMax:                 limitsResp.GlobalMax,
+		Methods:                   methods,
+		GlobalMin:                 globalMin,
+		GlobalMax:                 globalMax,
 		Plans:                     planList,
 		BalanceDisabled:           cfg.BalanceDisabled,
 		BalanceRechargeMultiplier: cfg.BalanceRechargeMultiplier,

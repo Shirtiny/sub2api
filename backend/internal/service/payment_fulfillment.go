@@ -434,7 +434,9 @@ func (s *PaymentService) doSub(ctx context.Context, o *dbent.PaymentOrder) error
 	// Prevents double-extension on retry after markCompleted fails.
 	if s.hasAuditLog(ctx, o.ID, "SUBSCRIPTION_SUCCESS") {
 		slog.Info("subscription already assigned for order, skipping", "orderID", o.ID, "groupID", gid)
-		s.applyAffiliateSubscriptionRebateForOrder(ctx, o)
+		if err := s.applyAffiliateRebateForOrder(ctx, o); err != nil {
+			return err
+		}
 		return s.markCompleted(ctx, o, "SUBSCRIPTION_SUCCESS")
 	}
 	orderNote := fmt.Sprintf("payment order %d", o.ID)
@@ -442,7 +444,9 @@ func (s *PaymentService) doSub(ctx context.Context, o *dbent.PaymentOrder) error
 	if err != nil {
 		return fmt.Errorf("assign subscription: %w", err)
 	}
-	s.applyAffiliateSubscriptionRebateForOrder(ctx, o)
+	if err := s.applyAffiliateRebateForOrder(ctx, o); err != nil {
+		return err
+	}
 	return s.markCompleted(ctx, o, "SUBSCRIPTION_SUCCESS")
 }
 
@@ -455,91 +459,20 @@ func (s *PaymentService) hasAuditLog(ctx context.Context, orderID int64, action 
 }
 
 func (s *PaymentService) applyAffiliateSubscriptionRebateForOrder(ctx context.Context, o *dbent.PaymentOrder) {
-	if o == nil {
-		return
-	}
-	if err := s.applyAffiliateSubscriptionRebate(ctx, o); err != nil {
-		slog.Warn("affiliate subscription rebate failed", "orderID", o.ID, "error", err)
-	}
+	// Legacy subscription-day rebates are no longer accrued. Subscription orders
+	// now use applyAffiliateRebateForOrder, which accrues unified points from the
+	// provider-paid amount with the same freeze/duration/cap rules as balance orders.
 }
 
 func (s *PaymentService) applyAffiliateSubscriptionRebate(ctx context.Context, o *dbent.PaymentOrder) error {
-	if o == nil || o.OrderType != payment.OrderTypeSubscription || o.SubscriptionGroupID == nil || o.SubscriptionDays == nil {
-		return nil
-	}
-	if s.affiliateService == nil || s.subscriptionSvc == nil {
-		return nil
-	}
-
-	claimDetail := map[string]any{
-		"orderType":           o.OrderType,
-		"inviteeUserID":       o.UserID,
-		"subscriptionGroupID": *o.SubscriptionGroupID,
-		"subscriptionDays":    *o.SubscriptionDays,
-		"status":              "reserved",
-	}
-	claimed, err := s.tryClaimAffiliateSubscriptionRebateAudit(ctx, s.entClient, o.ID, claimDetail)
-	if err != nil {
-		return fmt.Errorf("claim affiliate subscription rebate audit: %w", err)
-	}
-	if !claimed {
-		return nil
-	}
-
-	rebate, err := s.affiliateService.ResolveSubscriptionInviteRebate(ctx, o.UserID, *o.SubscriptionDays)
-	if err != nil {
-		_ = s.updateClaimedAffiliateSubscriptionRebateAudit(ctx, s.entClient, o.ID, "AFFILIATE_SUBSCRIPTION_REBATE_FAILED", map[string]any{
-			"orderType":           o.OrderType,
-			"inviteeUserID":       o.UserID,
-			"subscriptionGroupID": *o.SubscriptionGroupID,
-			"subscriptionDays":    *o.SubscriptionDays,
-			"error":               err.Error(),
-		})
-		return fmt.Errorf("resolve affiliate subscription rebate: %w", err)
-	}
-	if rebate == nil || rebate.RebateDays <= 0 || rebate.InviterID <= 0 {
-		reason := "no inviter bound or rebate days <= 0"
-		if rebate != nil && rebate.Reason != "" {
-			reason = rebate.Reason
-		}
-		return s.updateClaimedAffiliateSubscriptionRebateAudit(ctx, s.entClient, o.ID, "AFFILIATE_SUBSCRIPTION_REBATE_SKIPPED", map[string]any{
-			"orderType":           o.OrderType,
-			"inviteeUserID":       o.UserID,
-			"subscriptionGroupID": *o.SubscriptionGroupID,
-			"subscriptionDays":    *o.SubscriptionDays,
-			"reason":              reason,
-		})
-	}
-
-	note := fmt.Sprintf("affiliate rebate from payment order %d", o.ID)
-	if _, _, err = s.subscriptionSvc.AssignOrExtendSubscription(ctx, &AssignSubscriptionInput{UserID: rebate.InviterID, GroupID: *o.SubscriptionGroupID, ValidityDays: rebate.RebateDays, AssignedBy: 0, Notes: note}); err != nil {
-		if auditErr := s.updateClaimedAffiliateSubscriptionRebateAudit(ctx, s.entClient, o.ID, "AFFILIATE_SUBSCRIPTION_REBATE_FAILED", map[string]any{
-			"orderType":           o.OrderType,
-			"inviteeUserID":       o.UserID,
-			"inviterID":           rebate.InviterID,
-			"subscriptionGroupID": *o.SubscriptionGroupID,
-			"subscriptionDays":    *o.SubscriptionDays,
-			"rebateDays":          rebate.RebateDays,
-			"error":               err.Error(),
-		}); auditErr != nil {
-			return fmt.Errorf("record affiliate subscription rebate failure: %w", auditErr)
-		}
-		return nil
-	}
-
-	return s.updateClaimedAffiliateSubscriptionRebateAudit(ctx, s.entClient, o.ID, "AFFILIATE_SUBSCRIPTION_REBATE_APPLIED", map[string]any{
-		"orderType":           o.OrderType,
-		"inviteeUserID":       o.UserID,
-		"inviterID":           rebate.InviterID,
-		"subscriptionGroupID": *o.SubscriptionGroupID,
-		"subscriptionDays":    *o.SubscriptionDays,
-		"rebateDays":          rebate.RebateDays,
-		"formula":             "monthly_subscription_days>=29; membership_level: 0/1=1 day, 2=3 days, 3=7 days",
-	})
+	return nil
 }
 
 func (s *PaymentService) applyAffiliateRebateForOrder(ctx context.Context, o *dbent.PaymentOrder) error {
-	if o == nil || o.OrderType != payment.OrderTypeBalance || o.Amount <= 0 {
+	if o == nil || o.PayAmount <= 0 {
+		return nil
+	}
+	if o.OrderType != payment.OrderTypeBalance && o.OrderType != payment.OrderTypeSubscription {
 		return nil
 	}
 	if s.affiliateService == nil {
@@ -556,7 +489,7 @@ func (s *PaymentService) applyAffiliateRebateForOrder(ctx context.Context, o *db
 	defer func() { _ = tx.Rollback() }()
 
 	txCtx := dbent.NewTxContext(ctx, tx)
-	claimed, err := s.tryClaimAffiliateRebateAudit(txCtx, tx.Client(), o.ID, o.Amount)
+	claimed, err := s.tryClaimAffiliateRebateAudit(txCtx, tx.Client(), o.ID, o.PayAmount)
 	if err != nil {
 		s.writeAuditLog(ctx, o.ID, "AFFILIATE_REBATE_FAILED", "system", map[string]any{
 			"error": err.Error(),
@@ -568,7 +501,7 @@ func (s *PaymentService) applyAffiliateRebateForOrder(ctx context.Context, o *db
 	}
 
 	sourceOrderID := o.ID
-	rebateAmount, err := s.affiliateService.AccrueInviteRebateForOrder(txCtx, o.UserID, o.Amount, &sourceOrderID)
+	rebateAmount, err := s.affiliateService.AccrueInviteRebateForOrder(txCtx, o.UserID, o.PayAmount, &sourceOrderID)
 	if err != nil {
 		s.writeAuditLog(ctx, o.ID, "AFFILIATE_REBATE_FAILED", "system", map[string]any{
 			"error": err.Error(),
@@ -578,7 +511,7 @@ func (s *PaymentService) applyAffiliateRebateForOrder(ctx context.Context, o *db
 
 	if rebateAmount <= 0 {
 		if err := s.updateClaimedAffiliateRebateAudit(txCtx, tx.Client(), o.ID, "AFFILIATE_REBATE_SKIPPED", map[string]any{
-			"baseAmount": o.Amount,
+			"baseAmount": o.PayAmount,
 			"reason":     "no inviter bound or rebate amount <= 0",
 		}); err != nil {
 			s.writeAuditLog(ctx, o.ID, "AFFILIATE_REBATE_FAILED", "system", map[string]any{
@@ -596,7 +529,7 @@ func (s *PaymentService) applyAffiliateRebateForOrder(ctx context.Context, o *db
 	}
 
 	if err := s.updateClaimedAffiliateRebateAudit(txCtx, tx.Client(), o.ID, "AFFILIATE_REBATE_APPLIED", map[string]any{
-		"baseAmount":   o.Amount,
+		"baseAmount":   o.PayAmount,
 		"rebateAmount": rebateAmount,
 	}); err != nil {
 		s.writeAuditLog(ctx, o.ID, "AFFILIATE_REBATE_FAILED", "system", map[string]any{
@@ -688,7 +621,7 @@ WHERE NOT EXISTS (
 	SELECT 1
 	FROM payment_audit_logs
 	WHERE order_id = $1::text
-	  AND action IN ('AFFILIATE_SUBSCRIPTION_REBATE_APPLIED', 'AFFILIATE_SUBSCRIPTION_REBATE_SKIPPED', 'AFFILIATE_SUBSCRIPTION_REBATE_FAILED')
+	  AND action IN ('AFFILIATE_SUBSCRIPTION_REBATE_APPLIED', 'AFFILIATE_SUBSCRIPTION_REBATE_ACCRUED', 'AFFILIATE_SUBSCRIPTION_REBATE_SKIPPED', 'AFFILIATE_SUBSCRIPTION_REBATE_FAILED')
 )
 ON CONFLICT (order_id, action) DO NOTHING
 RETURNING id`, oid, string(detailJSON))

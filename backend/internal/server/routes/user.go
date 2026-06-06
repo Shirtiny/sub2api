@@ -26,7 +26,11 @@ func RegisterUserRoutes(
 			user.PUT("/password", h.User.ChangePassword)
 			user.PUT("", h.User.UpdateProfile)
 			user.GET("/aff", h.User.GetAffiliate)
-			user.POST("/aff/transfer", h.User.TransferAffiliateQuota)
+			user.GET("/aff/ledger", h.User.ListAffiliateLedger)
+			user.POST("/aff/redeem", h.User.RedeemAffiliatePoints)
+			// RESTORE_AFFILIATE_TRANSFER_ALL: legacy one-click transfer-all endpoint is currently unused.
+			// user.POST("/aff/transfer", h.User.TransferAffiliateQuota)
+			user.POST("/aff/transfer-subscription", h.User.TransferAffiliateSubscriptionRebate)
 			user.POST("/account-bindings/email/send-code", h.User.SendEmailBindingCode)
 			user.POST("/account-bindings/email", h.User.BindEmailIdentity)
 			user.DELETE("/account-bindings/:provider", h.User.UnbindIdentity)

@@ -38,6 +38,7 @@ const EMAIL_OAUTH_PENDING_PROVIDER_KEY = 'email_oauth_pending_provider'
 
 const props = withDefaults(defineProps<{
   disabled?: boolean
+  affiliateEnabled?: boolean
   affCode?: string
   githubEnabled?: boolean
   googleEnabled?: boolean
@@ -72,7 +73,9 @@ function providerLabel(provider: EmailOAuthProvider): string {
 
 function startLogin(provider: EmailOAuthProvider): void {
   const redirectTo = (route.query.redirect as string) || '/dashboard'
-  const affiliateCode = resolveAffiliateReferralCode(props.affCode, route.query.aff, route.query.aff_code)
+  const affiliateCode = props.affiliateEnabled
+    ? resolveAffiliateReferralCode(props.affCode, route.query.aff, route.query.aff_code)
+    : ''
   storeOAuthAffiliateCode(affiliateCode)
   window.sessionStorage.setItem(EMAIL_OAUTH_PENDING_PROVIDER_KEY, provider)
   const apiBase = (import.meta.env.VITE_API_BASE_URL as string | undefined) || '/api/v1'

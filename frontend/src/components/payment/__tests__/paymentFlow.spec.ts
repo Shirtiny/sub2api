@@ -62,6 +62,21 @@ describe('getVisibleMethods', () => {
 })
 
 describe('decidePaymentLaunch', () => {
+  it('redirects to the result page when development auto-success completes payment immediately', () => {
+    const decision = decidePaymentLaunch(createOrderResult({
+      result_type: 'payment_completed',
+      status: 'completed',
+      out_trade_no: 'sub2_dev_success',
+    } as Partial<CreateOrderResult>), {
+      visibleMethod: 'alipay',
+      orderType: 'balance',
+      isMobile: false,
+    })
+
+    expect(decision.kind).toBe('completed')
+    expect(decision.paymentState.outTradeNo).toBe('sub2_dev_success')
+  })
+
   it('uses Stripe popup waiting flow for desktop Alipay client secret', () => {
     const decision = decidePaymentLaunch(createOrderResult({
       client_secret: 'cs_test',

@@ -214,7 +214,7 @@ func (s *emailCacheStub) IncrNotifyCodeUserRate(ctx context.Context, userID int6
 	return 0, nil
 }
 
-func newAuthService(repo *userRepoStub, settings map[string]string, emailCache EmailCache, quotaRepo UserPlatformQuotaRepository) *AuthService {
+func newAuthServiceWithAffiliate(repo *userRepoStub, settings map[string]string, emailCache EmailCache, quotaRepo UserPlatformQuotaRepository, affiliateService *AffiliateService) *AuthService {
 	cfg := &config.Config{
 		JWT: config.JWTConfig{
 			Secret:     "test-secret",
@@ -248,9 +248,13 @@ func newAuthService(repo *userRepoStub, settings map[string]string, emailCache E
 		nil,
 		nil, // promoService
 		nil, // defaultSubAssigner
-		nil, // affiliateService
+		affiliateService,
 		quotaRepo,
 	)
+}
+
+func newAuthService(repo *userRepoStub, settings map[string]string, emailCache EmailCache, quotaRepo UserPlatformQuotaRepository) *AuthService {
+	return newAuthServiceWithAffiliate(repo, settings, emailCache, quotaRepo, nil)
 }
 
 func TestAuthService_Register_Disabled(t *testing.T) {
@@ -313,6 +317,56 @@ func TestAuthService_Register_DoesNotSnapshotOnDisabled(t *testing.T) {
 	require.ErrorIs(t, err, ErrRegDisabled)
 
 	require.Empty(t, quotaRepo.bulkInsertCalls, "registration rejected before user creation must not snapshot")
+}
+
+func TestAuthService_Register_InvitationRequiredForNaturalSignup(t *testing.T) {
+	repo := &userRepoStub{}
+	service := newAuthService(repo, map[string]string{
+		SettingKeyRegistrationEnabled:   "true",
+		SettingKeyInvitationCodeEnabled: "true",
+	}, nil, nil)
+
+	_, _, err := service.RegisterWithVerification(context.Background(), "user@test.com", "password", "", "", "", "")
+	require.ErrorIs(t, err, ErrInvitationCodeRequired)
+}
+
+func TestAuthService_Register_AffiliateCodeBypassesInvitationRequirement(t *testing.T) {
+	repo := &userRepoStub{nextID: 12}
+	settings := map[string]string{
+		SettingKeyRegistrationEnabled:   "true",
+		SettingKeyInvitationCodeEnabled: "true",
+		SettingKeyAffiliateEnabled:      "true",
+	}
+	affiliateRepo := &affiliateRepoThresholdStub{summaries: map[int64]*AffiliateSummary{
+		88: {UserID: 88, AffCode: "NHRPKQKESRWT", TotalRecharged: MembershipLevel1Threshold + 1},
+	}}
+	settingService := NewSettingService(&settingRepoStub{values: settings}, &config.Config{})
+	affiliateService := NewAffiliateService(affiliateRepo, settingService, nil, nil, nil)
+	service := newAuthServiceWithAffiliate(repo, settings, nil, nil, affiliateService)
+
+	_, user, err := service.RegisterWithVerification(context.Background(), "user@test.com", "password", "", "", "", "NHRPKQKESRWT")
+	require.NoError(t, err)
+	require.NotNil(t, user)
+	require.Equal(t, int64(12), user.ID)
+}
+
+func TestAuthService_Register_AffiliateCodeDoesNotBypassInvitationWhenAffiliateDisabled(t *testing.T) {
+	repo := &userRepoStub{}
+	settings := map[string]string{
+		SettingKeyRegistrationEnabled:   "true",
+		SettingKeyInvitationCodeEnabled: "true",
+		SettingKeyAffiliateEnabled:      "false",
+	}
+	affiliateRepo := &affiliateRepoThresholdStub{summaries: map[int64]*AffiliateSummary{
+		88: {UserID: 88, AffCode: "NHRPKQKESRWT", TotalRecharged: MembershipLevel1Threshold + 1},
+	}}
+	settingService := NewSettingService(&settingRepoStub{values: settings}, &config.Config{})
+	affiliateService := NewAffiliateService(affiliateRepo, settingService, nil, nil, nil)
+	service := newAuthServiceWithAffiliate(repo, settings, nil, nil, affiliateService)
+
+	_, _, err := service.RegisterWithVerification(context.Background(), "user@test.com", "password", "", "", "", "NHRPKQKESRWT")
+
+	require.ErrorIs(t, err, ErrInvitationCodeRequired)
 }
 
 func TestAuthService_Register_EmailVerifyEnabledButServiceNotConfigured(t *testing.T) {

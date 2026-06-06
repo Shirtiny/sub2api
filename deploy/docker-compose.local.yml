@@ -138,6 +138,11 @@ services:
       - SECURITY_URL_ALLOWLIST_ALLOW_INSECURE_HTTP=${SECURITY_URL_ALLOWLIST_ALLOW_INSECURE_HTTP:-false}
       # Allow private IP addresses for upstream/pricing/CRS (for internal deployments)
       - SECURITY_URL_ALLOWLIST_ALLOW_PRIVATE_HOSTS=${SECURITY_URL_ALLOWLIST_ALLOW_PRIVATE_HOSTS:-false}
+
+      # Local development payment shortcut. Requires matching values in deploy/.env;
+      # backend still refuses this when APP_ENV/ENVIRONMENT/NODE_ENV/GO_ENV=production.
+      - PAYMENT_DEV_AUTO_SUCCESS=${PAYMENT_DEV_AUTO_SUCCESS:-}
+      - PAYMENT_DEV_ENVIRONMENT=${PAYMENT_DEV_ENVIRONMENT:-}
       # Upstream hosts whitelist (comma-separated, only used when enabled=true)
       - SECURITY_URL_ALLOWLIST_UPSTREAM_HOSTS=${SECURITY_URL_ALLOWLIST_UPSTREAM_HOSTS:-}
 

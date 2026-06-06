@@ -62,14 +62,24 @@
               <div class="max-w-56 truncate text-sm text-gray-500 dark:text-dark-400">{{ row.out_trade_no }}</div>
             </div>
           </template>
+          <template #cell-rebate_group="{ row }">
+            <span class="text-sm text-gray-700 dark:text-gray-300">{{ formatGroupName(row.subscription_group_name, row.subscription_group_id) }}</span>
+          </template>
+
           <template #cell-payment_type="{ row }">
             {{ t('payment.methods.' + row.payment_type, row.payment_type || '-') }}
+          </template>
+          <template #cell-transfer_action="{ row }">
+            <span class="text-sm text-gray-700 dark:text-gray-300">{{ formatTransferAction(row.action) }}</span>
+          </template>
+          <template #cell-transfer_group="{ row }">
+            <span class="text-sm text-gray-700 dark:text-gray-300">{{ formatGroupName(row.subscription_group_name, row.subscription_group_id) }}</span>
           </template>
           <template #cell-order_status="{ row }">
             <OrderStatusBadge :status="row.order_status" />
           </template>
-          <template #cell-total_rebate="{ row }">
-            <AmountText :value="row.total_rebate" />
+          <template #cell-total_rebate_points="{ row }">
+            <PointsText :value="row.total_rebate_points ?? row.total_rebate" />
           </template>
           <template #cell-order_amount="{ row }">
             <AmountText :value="row.order_amount" />
@@ -77,23 +87,27 @@
           <template #cell-pay_amount="{ row }">
             <span class="text-sm text-gray-900 dark:text-white">¥{{ formatAmount(row.pay_amount) }}</span>
           </template>
-          <template #cell-rebate_amount="{ row }">
-            <AmountText :value="row.rebate_amount" strong />
+          <template #cell-rebate_points="{ row }">
+            <div class="text-right">
+              <PointsText :value="row.rebate_points ?? row.rebate_amount" strong />
+            </div>
           </template>
           <template #cell-amount="{ row }">
-            <AmountText :value="row.amount" strong />
+            <span class="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+              {{ t('admin.affiliates.records.pointsValue', { points: formatPoints(row.redeemed_points ?? row.amount) }) }}
+            </span>
           </template>
           <template #cell-balance_after="{ row }">
             <NullableAmountText :value="row.balance_after" />
           </template>
-          <template #cell-available_quota_after="{ row }">
-            <NullableAmountText :value="row.available_quota_after" />
+          <template #cell-available_points_after="{ row }">
+            <NullablePointsText :value="row.available_points_after ?? row.available_quota_after" />
           </template>
-          <template #cell-frozen_quota_after="{ row }">
-            <NullableAmountText :value="row.frozen_quota_after" />
+          <template #cell-frozen_points_after="{ row }">
+            <NullablePointsText :value="row.frozen_points_after ?? row.frozen_quota_after" />
           </template>
-          <template #cell-history_quota_after="{ row }">
-            <NullableAmountText :value="row.history_quota_after" />
+          <template #cell-history_points_after="{ row }">
+            <NullablePointsText :value="row.history_points_after ?? row.history_quota_after" />
           </template>
           <template #cell-created_at="{ row }">
             <span class="text-sm text-gray-700 dark:text-gray-300">{{ formatDateTime(row.created_at) }}</span>
@@ -133,8 +147,8 @@
           <OverviewStat :label="t('admin.affiliates.overview.rebateRate')" :value="formatPercent(selectedOverview.rebate_rate_percent)" />
           <OverviewStat :label="t('admin.affiliates.overview.invitedCount')" :value="String(selectedOverview.invited_count)" />
           <OverviewStat :label="t('admin.affiliates.overview.rebatedInviteeCount')" :value="String(selectedOverview.rebated_invitee_count)" />
-          <OverviewStat :label="t('admin.affiliates.overview.availableQuota')" :value="'$' + formatAmount(selectedOverview.available_quota)" />
-          <OverviewStat :label="t('admin.affiliates.overview.historyQuota')" :value="'$' + formatAmount(selectedOverview.history_quota)" />
+          <OverviewStat :label="t('admin.affiliates.overview.availablePoints')" :value="formatPoints(selectedOverview.available_rebate_points ?? selectedOverview.available_quota)" />
+          <OverviewStat :label="t('admin.affiliates.overview.totalPoints')" :value="formatPoints(selectedOverview.total_rebate_points ?? selectedOverview.history_quota)" />
         </div>
       </div>
     </BaseDialog>
@@ -182,7 +196,7 @@ const columns = computed<Column[]>(() => {
       { key: 'inviter', label: t('admin.affiliates.records.inviter'), sortable: true },
       { key: 'invitee', label: t('admin.affiliates.records.invitee'), sortable: true },
       { key: 'aff_code', label: t('admin.affiliates.records.affCode'), sortable: true },
-      { key: 'total_rebate', label: t('admin.affiliates.records.totalRebate'), sortable: true },
+      { key: 'total_rebate_points', label: t('admin.affiliates.records.totalRebatePoints'), sortable: true },
       { key: 'created_at', label: t('admin.affiliates.records.invitedAt'), sortable: true },
     ]
   }
@@ -193,7 +207,8 @@ const columns = computed<Column[]>(() => {
       { key: 'invitee', label: t('admin.affiliates.records.invitee'), sortable: true },
       { key: 'order_amount', label: t('admin.affiliates.records.orderAmount'), sortable: true },
       { key: 'pay_amount', label: t('admin.affiliates.records.payAmount'), sortable: true },
-      { key: 'rebate_amount', label: t('admin.affiliates.records.rebateAmount') },
+      { key: 'rebate_points', label: t('admin.affiliates.records.rebatePoints') },
+      { key: 'rebate_group', label: t('admin.affiliates.records.subscriptionGroup') },
       { key: 'payment_type', label: t('admin.affiliates.records.paymentType'), sortable: true },
       { key: 'order_status', label: t('admin.affiliates.records.orderStatus'), sortable: true },
       { key: 'created_at', label: t('admin.affiliates.records.rebatedAt'), sortable: true },
@@ -201,11 +216,13 @@ const columns = computed<Column[]>(() => {
   }
   return [
     { key: 'user', label: t('admin.affiliates.records.user'), sortable: true },
+    { key: 'transfer_action', label: t('admin.affiliates.records.transferType'), sortable: true },
     { key: 'amount', label: t('admin.affiliates.records.transferAmount'), sortable: true },
+    { key: 'transfer_group', label: t('admin.affiliates.records.subscriptionGroup') },
     { key: 'balance_after', label: t('admin.affiliates.records.balanceAfter'), sortable: true },
-    { key: 'available_quota_after', label: t('admin.affiliates.records.availableQuotaAfter'), sortable: true },
-    { key: 'frozen_quota_after', label: t('admin.affiliates.records.frozenQuotaAfter'), sortable: true },
-    { key: 'history_quota_after', label: t('admin.affiliates.records.historyQuotaAfter'), sortable: true },
+    { key: 'available_points_after', label: t('admin.affiliates.records.availablePointsAfter'), sortable: true },
+    { key: 'frozen_points_after', label: t('admin.affiliates.records.frozenPointsAfter'), sortable: true },
+    { key: 'history_points_after', label: t('admin.affiliates.records.historyPointsAfter'), sortable: true },
     { key: 'created_at', label: t('admin.affiliates.records.transferredAt'), sortable: true },
   ]
 })
@@ -307,13 +324,34 @@ function formatAmount(value: number | null | undefined): string {
   return Number(value || 0).toFixed(2)
 }
 
+function formatPoints(value: number | null | undefined): string {
+  const amount = Number(value || 0)
+  const formatted = new Intl.NumberFormat(undefined, {
+    minimumFractionDigits: amount > 0 && amount < 0.01 ? 6 : 2,
+    maximumFractionDigits: amount > 0 && amount < 0.01 ? 6 : 2,
+  }).format(amount)
+  return `¥${formatted}`
+}
+
 function formatPercent(value: number | null | undefined): string {
   const rounded = Math.round(Number(value || 0) * 100) / 100
   return `${Number.isInteger(rounded) ? rounded.toString() : rounded.toString()}%`
 }
 
+
 function formatDateTime(value: string | null | undefined): string {
   return value ? formatDisplayDateTime(value) : '-'
+}
+
+function formatGroupName(name: string | null | undefined, id: number | null | undefined): string {
+  if (name) return name
+  if (id) return `#${id}`
+  return '-'
+}
+
+function formatTransferAction(action: string | null | undefined): string {
+  if (action === 'transfer_subscription' || action === 'redeem_subscription') return t('admin.affiliates.records.transferSubscription')
+  return t('admin.affiliates.records.transferBalance')
 }
 
 async function openUserOverview(userId: number) {
@@ -379,6 +417,35 @@ const NullableAmountText = defineComponent({
         return h('span', { class: 'text-sm text-gray-400 dark:text-dark-500' }, '-')
       }
       return h(AmountText, { value })
+    }
+  },
+})
+
+const PointsText = defineComponent({
+  props: {
+    value: { type: Number as PropType<number | null | undefined>, default: 0 },
+    strong: { type: Boolean, default: false },
+  },
+  setup(pointsProps) {
+    return () => h('span', {
+      class: pointsProps.strong
+        ? 'text-sm font-semibold text-emerald-600 dark:text-emerald-400'
+        : 'text-sm text-gray-900 dark:text-white',
+    }, t('admin.affiliates.records.pointsValue', { points: formatPoints(pointsProps.value) }))
+  },
+})
+
+const NullablePointsText = defineComponent({
+  props: {
+    value: { type: Number as PropType<number | null | undefined>, default: null },
+  },
+  setup(pointsProps) {
+    return () => {
+      const value = pointsProps.value
+      if (value === null || value === undefined) {
+        return h('span', { class: 'text-sm text-gray-400 dark:text-dark-500' }, '-')
+      }
+      return h(PointsText, { value })
     }
   },
 })

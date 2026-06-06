@@ -43,7 +43,8 @@ export interface AffiliateInviteRecord {
   invitee_email: string
   invitee_username: string
   aff_code: string
-  total_rebate: number
+  total_rebate_points?: number
+  total_subscription_rebate_days?: number
   created_at: string
 }
 
@@ -58,7 +59,12 @@ export interface AffiliateRebateRecord {
   invitee_username: string
   order_amount: number
   pay_amount: number
-  rebate_amount: number
+  rebate_points?: number
+  rebate_amount?: number
+  rebate_action: string
+  subscription_group_id?: number | null
+  subscription_group_name?: string
+  subscription_rebate_days?: number
   payment_type: string
   order_status: string
   created_at: string
@@ -69,8 +75,15 @@ export interface AffiliateTransferRecord {
   user_id: number
   user_email: string
   username: string
+  action: string
   amount: number
+  redeemed_points?: number
+  subscription_group_id?: number | null
+  subscription_group_name?: string
   balance_after?: number | null
+  available_points_after?: number | null
+  frozen_points_after?: number | null
+  history_points_after?: number | null
   available_quota_after?: number | null
   frozen_quota_after?: number | null
   history_quota_after?: number | null
@@ -86,8 +99,10 @@ export interface AffiliateUserOverview {
   rebate_rate_percent: number
   invited_count: number
   rebated_invitee_count: number
-  available_quota: number
-  history_quota: number
+  available_rebate_points?: number
+  total_rebate_points?: number
+  available_quota?: number
+  history_quota?: number
 }
 
 export interface UpdateAffiliateUserRequest {

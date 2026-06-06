@@ -203,6 +203,11 @@ func (h *UserHandler) GetAffiliate(c *gin.Context) {
 		return
 	}
 
+	if h.affiliateService == nil || !h.affiliateService.IsEnabled(c.Request.Context()) {
+		response.NotFound(c, "Affiliate feature is disabled")
+		return
+	}
+
 	detail, err := h.affiliateService.GetAffiliateDetail(c.Request.Context(), subject.UserID)
 	if err != nil {
 		response.ErrorFrom(c, err)
@@ -211,12 +216,47 @@ func (h *UserHandler) GetAffiliate(c *gin.Context) {
 	response.Success(c, detail)
 }
 
+// ListAffiliateLedger returns the current user's affiliate rebate ledger.
+// GET /api/v1/user/aff/ledger
+func (h *UserHandler) ListAffiliateLedger(c *gin.Context) {
+	subject, ok := middleware2.GetAuthSubjectFromContext(c)
+	if !ok {
+		response.Unauthorized(c, "User not authenticated")
+		return
+	}
+
+	if h.affiliateService == nil || !h.affiliateService.IsEnabled(c.Request.Context()) {
+		response.NotFound(c, "Affiliate feature is disabled")
+		return
+	}
+
+	page, pageSize := response.ParsePagination(c)
+	filter := service.AffiliateRecordFilter{
+		Search:   c.Query("search"),
+		Page:     page,
+		PageSize: pageSize,
+		SortBy:   c.Query("sort_by"),
+		SortDesc: c.Query("sort_order") != "asc",
+	}
+	items, total, err := h.affiliateService.ListAffiliateLedgerRecords(c.Request.Context(), subject.UserID, filter)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Paginated(c, items, total, filter.Page, filter.PageSize)
+}
+
 // TransferAffiliateQuota transfers all available affiliate quota into current balance.
 // POST /api/v1/user/aff/transfer
 func (h *UserHandler) TransferAffiliateQuota(c *gin.Context) {
 	subject, ok := middleware2.GetAuthSubjectFromContext(c)
 	if !ok {
 		response.Unauthorized(c, "User not authenticated")
+		return
+	}
+
+	if h.affiliateService == nil || !h.affiliateService.IsEnabled(c.Request.Context()) {
+		response.NotFound(c, "Affiliate feature is disabled")
 		return
 	}
 
@@ -230,6 +270,87 @@ func (h *UserHandler) TransferAffiliateQuota(c *gin.Context) {
 		"transferred_quota": transferred,
 		"balance":           balance,
 	})
+}
+
+type RedeemAffiliatePointsRequest struct {
+	TargetType string   `json:"target_type" binding:"required"`
+	Points     *float64 `json:"points"`
+	GroupID    *int64   `json:"group_id"`
+	PlanID     *int64   `json:"plan_id"`
+}
+
+// RedeemAffiliatePoints redeems affiliate rebate amount to balance or a subscription package.
+// POST /api/v1/user/aff/redeem
+func (h *UserHandler) RedeemAffiliatePoints(c *gin.Context) {
+	subject, ok := middleware2.GetAuthSubjectFromContext(c)
+	if !ok {
+		response.Unauthorized(c, "User not authenticated")
+		return
+	}
+
+	if h.affiliateService == nil || !h.affiliateService.IsEnabled(c.Request.Context()) {
+		response.NotFound(c, "Affiliate feature is disabled")
+		return
+	}
+
+	var req RedeemAffiliatePointsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+
+	svcReq := service.AffiliateRedeemRequest{
+		TargetType: service.AffiliateRedeemTargetType(req.TargetType),
+	}
+	if req.Points != nil {
+		svcReq.Points = *req.Points
+	}
+	if req.GroupID != nil {
+		svcReq.GroupID = *req.GroupID
+	}
+	if req.PlanID != nil {
+		svcReq.PlanID = *req.PlanID
+	}
+
+	result, err := h.affiliateService.RedeemAffiliatePoints(c.Request.Context(), subject.UserID, svcReq)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, result)
+}
+
+type TransferAffiliateSubscriptionRequest struct {
+	GroupID int64 `json:"group_id" binding:"required"`
+	PlanID  int64 `json:"plan_id"`
+}
+
+// TransferAffiliateSubscriptionRebate transfers available affiliate subscription-day rebate into a subscription.
+// POST /api/v1/user/aff/transfer-subscription
+func (h *UserHandler) TransferAffiliateSubscriptionRebate(c *gin.Context) {
+	subject, ok := middleware2.GetAuthSubjectFromContext(c)
+	if !ok {
+		response.Unauthorized(c, "User not authenticated")
+		return
+	}
+
+	if h.affiliateService == nil || !h.affiliateService.IsEnabled(c.Request.Context()) {
+		response.NotFound(c, "Affiliate feature is disabled")
+		return
+	}
+
+	var req TransferAffiliateSubscriptionRequest
+	if err := c.ShouldBindJSON(&req); err != nil || req.GroupID <= 0 {
+		response.BadRequest(c, "Invalid request")
+		return
+	}
+
+	result, err := h.affiliateService.TransferAffiliateQuotaToSubscription(c.Request.Context(), subject.UserID, req.GroupID, req.PlanID)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, result)
 }
 
 type StartIdentityBindingRequest struct {

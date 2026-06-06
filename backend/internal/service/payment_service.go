@@ -50,6 +50,16 @@ const (
 
 const paymentResumeSigningKeyEnv = "PAYMENT_RESUME_SIGNING_KEY"
 
+const (
+	// paymentDevAutoSuccessEnv enables a local-only development shortcut that
+	// marks newly-created payment orders as paid without contacting a provider.
+	// It requires the explicit paymentDevAutoSuccessToken value and a local
+	// environment marker so a casual "true" cannot bypass real payment collection.
+	paymentDevAutoSuccessEnv   = "PAYMENT_DEV_AUTO_SUCCESS"
+	paymentDevEnvironmentEnv   = "PAYMENT_DEV_ENVIRONMENT"
+	paymentDevAutoSuccessToken = "I_UNDERSTAND_THIS_BYPASSES_REAL_PAYMENTS"
+)
+
 // --- Types ---
 
 // generateOutTradeNo creates a unique external order ID for payment providers.

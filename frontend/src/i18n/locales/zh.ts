@@ -49,7 +49,7 @@ export default {
       unifiedGateway: '一键接入',
       unifiedGatewayDesc: '获取一个 API 密钥，即可调用所有已接入的 AI 模型，无需分别申请。',
       multiAccount: '稳定可靠',
-      multiAccountDesc: '稳定 Team & Plus 豆源，拒绝 Free，稳定续航，为您的专业工作注入纯粹动力',
+      multiAccountDesc: '稳定Pro豆源，为您的专业工作稳定注入纯粹动力。多种风味，也提供多种低价渠道供您选择。',
       balanceQuota: '用多少付多少',
       balanceQuotaDesc: '按实际使用量计费，支持设置配额上限，团队用量一目了然。'
     },
@@ -248,15 +248,16 @@ export default {
   },
 
   membership: {
-    title: 'Café LEVEL',
+    title: 'Café Level',
     totalRecharged: '累计点数：{amount}',
     progressTo: '距离 LV.{level}',
     highest: '已达最高等级',
     highestHint: 'LV.3 是当前最高会员等级。',
     remainingHint: '再获得 {amount} 点可升级到 LV.{level}。',
     affiliateRebate: '会员权益',
-    subscriptionReward: '邀请注册：余额返利{rate}%、月订阅套餐返利{days}天',
-    subscriptionRewardUnavailable: '邀请注册：LV.1 及以上可开启'
+    subscriptionReward: '邀请注册：可邀请{limit}人，会员积分返利{rate}%',
+    subscriptionRewardUnavailable: '邀请注册：普通用户暂不可邀请，LV.1 及以上可获得返利权益',
+    consumptionDiscount: '消费折扣：敬请期待...'
   },
 
   // Common
@@ -430,6 +431,7 @@ export default {
     loginFailed: '登录失败，请检查您的凭据后重试。',
     errors: {
       USER_NOT_ACTIVE: '账号已被禁用',
+      AFFILIATE_INVITE_LIMIT_REACHED: '此注册链接邀请人数已达到上限'
     },
     registrationFailed: '注册失败，请重试。',
     emailSuffixNotAllowed: '该邮箱域名不在允许注册范围内。',
@@ -1089,7 +1091,7 @@ export default {
 
   affiliate: {
     title: '邀请注册',
-    description: 'LV.1 及以上用户可邀请新用户注册，余额充值返额度，月订阅套餐返同套餐天数',
+    description: 'LV.1 及以上用户可邀请新用户注册，并按被邀请用户实际支付金额获得返利金额',
     yourCode: '我的邀请码',
     inviteLink: '邀请链接',
     copyCode: '复制邀请码',
@@ -1101,22 +1103,48 @@ export default {
     unavailable: 'LV.1 及以上用户可开启邀请返利；当前等级暂无邀请资格。',
     stats: {
       rebateRate: '我的返利比例',
-      rebateRateHint: '被邀请用户每次充值后你可获得的返利比例',
+      rebateRateHint: '按被邀请用户符合条件购买的实际支付金额计算',
+      rebateCap: '单人返利上限：{amount}',
       invitedUsers: '邀请人数',
       inviteLimit: '最多 {count} 人',
-      inviteLimitUnlimited: '不限制人数',
-      availableQuota: '可转返利额度',
-      frozenQuota: '冻结中',
+      inviteLimitUnavailable: '暂不可邀请',
+      availablePoints: '可用返利金额',
+      pointsHint: '按实际支付金额产生，可兑换到账户余额或订阅套餐',
+      frozenPoints: '冻结金额',
       frozenQuotaHint: '新产生的返利正在冻结期中',
-      totalQuota: '历史返利额度'
+      totalPoints: '历史返利金额'
     },
-    transfer: {
-      title: '返利额度转余额',
-      description: '将当前可用返利额度一键转入账户余额',
-      button: '转入余额',
-      transferring: '转入中...',
-      empty: '当前没有可转入额度',
-      success: '已转入余额：{amount}'
+    redeem: {
+      title: '返利金额兑换',
+      description: '将可用返利金额兑换到账户余额或订阅套餐',
+      button: '返利商店',
+      modalTitle: '兑换邀请返利金额',
+      empty: '当前没有可兑换金额',
+      available: '当前可用 {points}',
+      pointsLabel: '兑换金额',
+      pointsPlaceholder: '请输入金额',
+      maxButton: '最大',
+      targetLabel: '兑换目标',
+      balanceTarget: '账户余额',
+      balanceTargetHint: '输入要兑换的返利金额，每次兑换最大 ¥100',
+      balanceHint: '兑换余额按当前充值倍率（{multiplier}x）计算。预计到账：{balance}。',
+      balanceEstimate: '预计获得 {balance}',
+      subscriptionTarget: '订阅套餐',
+      subscriptionHint: '选择一个在售套餐；金额足够时可直接按套餐兑换。',
+      subscriptionLabel: '订阅套餐',
+      noSubscriptions: '当前没有可用于兑换的在售订阅套餐。',
+      unknownGroup: '订阅分组 #{id}',
+      packageCost: '需 {points} / {days} 天',
+      remainingPoints: '兑换后剩余 {points}',
+      insufficientPoints: '余额不足',
+      planPrice: '{price} / {days} 天',
+      currentExpiresAt: '当前到期：{time}',
+      daysUnit: '天',
+      confirm: '确认兑换',
+      redeeming: '兑换中...',
+      balanceSuccess: '已将 {points} 兑换到余额：{balance}',
+      subscriptionSuccess: '已将 {points} 兑换到 {group}：{days} 天',
+      failed: '兑换返利金额失败'
     },
     invitees: {
       title: '已邀请用户',
@@ -1124,17 +1152,39 @@ export default {
       columns: {
         email: '邮箱',
         username: '用户名',
-        rebate: '返利明细',
+        rebate: '返利金额',
         joinedAt: '注册时间'
       }
     },
     tips: {
       title: '使用说明',
       line1: 'LV.1 及以上用户可将邀请码或邀请链接分享给新用户。',
-      line2: '被邀请用户充值余额后，你可获得 {rate} 的返利额度。',
-      line3: '返利额度可随时转入账户余额。',
-      line4: '被邀请用户购买不少于 29 天的月订阅套餐后，你可按会员等级获得同套餐订阅天数返利：LV.1 返 1 天，LV.2 返 3 天，LV.3 返 7 天。',
-      line5: '新产生的返利需要经过冻结期后才能提现。'
+      line2: '被邀请用户完成符合条件的购买后，你可按其实际支付金额获得 {rate} 的返利金额。',
+      line3: '可用返利金额可兑换到账户余额或订阅套餐。',
+      line4: '兑换余额使用当前充值倍率；兑换订阅时按所选套餐价格扣除返利金额并发放对应套餐时长。',
+      line5: '新产生的返利需要经过冻结期后才能兑换。'
+    },
+    ledger: {
+      title: '返利金额历史记录',
+      empty: '暂无返利金额账本记录',
+      loadFailed: '加载返利金额历史记录失败',
+      columns: {
+        time: '时间',
+        action: '类型',
+        amount: '金额',
+        source: '来源用户',
+        order: '订单',
+        group: '订阅分组',
+        availableAfter: '可用金额',
+        frozenAfter: '冻结金额',
+        historyAfter: '历史金额'
+      },
+      actions: {
+        accrue: '返利入账',
+        accrueFrozen: '返利冻结中',
+        transferBalance: '兑换余额',
+        transferSubscription: '兑换订阅'
+      }
     }
   },
 
@@ -1773,9 +1823,9 @@ export default {
     },
 
     affiliates: {
-      invitesDescription: '查看全站邀请关系和被邀请用户累计返利',
-      rebatesDescription: '查看每一笔产生返利的充值订单',
-      transfersDescription: '查看返利额度转入账户余额的提取流水',
+      invitesDescription: '查看全站邀请关系和被邀请用户累计返利金额',
+      rebatesDescription: '查看每一笔产生返利金额的充值订单',
+      transfersDescription: '查看返利金额兑换到余额或订阅的流水',
       errors: {
         loadFailed: '加载邀请返利记录失败'
       },
@@ -1789,17 +1839,23 @@ export default {
         user: '用户',
         affCode: '邀请码',
         order: '订单',
-        totalRebate: '累计返利',
+        totalRebatePoints: '累计返利金额',
         orderAmount: '充值金额',
         payAmount: '支付金额',
-        rebateAmount: '返利金额',
+        rebatePoints: '返利金额',
+        pointsValue: '{points}',
+        subscriptionDays: '{days} 天订阅',
+        subscriptionGroup: '订阅分组',
+        transferType: '转入类型',
+        transferBalance: '转余额',
+        transferSubscription: '转订阅',
         paymentType: '支付方式',
         orderStatus: '订单状态',
-        transferAmount: '提取金额',
-        balanceAfter: '提取后余额',
-        availableQuotaAfter: '提取后可提',
-        frozenQuotaAfter: '提取后冻结',
-        historyQuotaAfter: '提取后历史返利',
+        transferAmount: '兑换金额',
+        balanceAfter: '兑换后余额',
+        availablePointsAfter: '兑换后可用金额',
+        frozenPointsAfter: '兑换后冻结金额',
+        historyPointsAfter: '兑换后历史金额',
         invitedAt: '邀请时间',
         rebatedAt: '返利时间',
         transferredAt: '提取时间'
@@ -1810,8 +1866,8 @@ export default {
         rebateRate: '返利比例',
         invitedCount: '邀请人数',
         rebatedInviteeCount: '已产生返利人数',
-        availableQuota: '可提余额',
-        historyQuota: '历史返利'
+        availablePoints: '可用金额',
+        totalPoints: '历史金额'
       }
     },
 
@@ -5571,11 +5627,12 @@ export default {
         },
         affiliate: {
           title: '邀请返利',
-          description: '老用户邀请新用户注册，新用户充值后老用户按比例获得返利额度。默认关闭。',
+          description: '老用户邀请新用户注册，新用户符合条件的购买会按实际支付金额为老用户产生人民币返利金额。默认关闭。',
+          pointsModeHint: '返利统一显示为人民币金额。兑换余额的价值取决于当前充值倍率；兑换订阅按套餐价格扣除返利金额并发放对应套餐时长。',
           enabled: '启用邀请返利',
           enabledHint: '关闭后用户菜单中的邀请页面入口隐藏、注册时忽略邀请码、新充值不再产生返利。已有返利额度仍可转入余额。',
           rebateRate: '会员等级返利比例',
-          rebateRateHint: '按邀请人的会员等级设置默认余额返利比例；LV.0 无邀请和返利资格，专属用户配置优先。默认：LV.1 5%，LV.2 10%，LV.3 25%。',
+          rebateRateHint: '按邀请人的会员等级设置默认金额返利比例；LV.0 无邀请和返利资格，专属用户配置优先。默认：LV.1 5%，LV.2 15%，LV.3 25%。',
           rebateRateLevel0: '普通用户 / LV.0（无资格）',
           rebateRateLevel1: 'LV.1',
           rebateRateLevel2: 'LV.2',
@@ -5585,9 +5642,17 @@ export default {
           durationDays: '返利有效期（天）',
           durationDaysDesc: '被邀请用户注册后多少天内的充值产生返利。0 = 永久有效。',
           perInviteeCap: '单人返利上限',
-          perInviteeCapDesc: '每个被邀请用户最多产生的返利总额。0 = 无上限。',
-          inviteLimit: '用户邀请人数上限',
-          inviteLimitDesc: '每个用户最多可邀请的人数。0 = 不限制；可在下方为指定用户单独覆盖。',
+          perInviteeCapDesc: '按邀请人的会员等级设置每个被邀请用户最多产生的返利总额。0 表示不能获得返利。默认：普通用户 0，LV.1 100，LV.2 300，LV.3 1000。',
+          perInviteeCapLevel0: '普通用户',
+          perInviteeCapLevel1: 'LV.1',
+          perInviteeCapLevel2: 'LV.2',
+          perInviteeCapLevel3: 'LV.3',
+          inviteLimit: '会员等级邀请人数上限',
+          inviteLimitDesc: '按邀请人的会员等级设置最大邀请人数。0 = 暂不可邀请；可在下方为指定用户单独覆盖。默认：普通用户 0，LV.1 1，LV.2 3，LV.3 5。',
+          inviteLimitLevel0: '普通用户',
+          inviteLimitLevel1: 'LV.1',
+          inviteLimitLevel2: 'LV.2',
+          inviteLimitLevel3: 'LV.3',
           customUsers: {
             title: '专属用户配置',
             description: '为指定用户设置专属邀请码、专属返利比例或专属邀请人数上限。仅展示已设置过专属配置的用户。',
@@ -5597,7 +5662,7 @@ export default {
             empty: '暂无专属配置用户',
             customBadge: '自定义',
             useGlobal: '沿用全局',
-            unlimited: '不限制',
+            unavailable: '暂不可邀请',
             resetTitle: '重置该用户的专属配置',
             resetMessage: '确认将 {email} 的专属配置全部重置为默认？\n• 专属返利比例和邀请人数上限将清除（沿用全局）\n• 邀请码将重新生成为系统随机码（已分发的旧邀请链接将失效）',
             totalLabel: '共 {total} 条',
@@ -5624,7 +5689,7 @@ export default {
             rateHint: '0-100%；留空（编辑模式下）表示清除专属比例并沿用全局。',
             inviteLimitLabel: '专属邀请人数上限（可选）',
             inviteLimitPlaceholder: '例如 100',
-            inviteLimitHint: '0 = 不限制；留空（编辑模式下）表示清除专属上限并沿用全局。',
+            inviteLimitHint: '0 = 暂不可邀请；留空（编辑模式下）表示清除专属上限并沿用全局。',
             errorBadRate: '请输入 0-100 之间的比例',
             errorBadInviteLimit: '请输入 0-100000 之间的整数',
             errorEmpty: '至少填写一项：专属邀请码、专属返利比例或专属邀请人数上限',

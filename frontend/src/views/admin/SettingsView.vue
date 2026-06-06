@@ -5308,6 +5308,9 @@
             </h2>
             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
               {{ t('admin.settings.features.affiliate.description') }}
+              <span class="mt-1 block text-xs text-primary-600 dark:text-primary-400">
+                {{ t('admin.settings.features.affiliate.pointsModeHint') }}
+              </span>
             </p>
           </div>
           <div class="space-y-5 p-6">
@@ -5425,13 +5428,24 @@
                 <label class="input-label">
                   {{ t('admin.settings.features.affiliate.perInviteeCap') }}
                 </label>
-                <input
-                  v-model.number="form.affiliate_rebate_per_invitee_cap"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  class="input"
-                />
+                <div class="grid gap-3 md:grid-cols-4">
+                  <label class="space-y-1">
+                    <span class="text-xs text-gray-500 dark:text-gray-400">{{ t('admin.settings.features.affiliate.perInviteeCapLevel0') }}</span>
+                    <input v-model.number="form.affiliate_rebate_per_invitee_cap_level0" type="number" step="0.01" min="0" class="input" />
+                  </label>
+                  <label class="space-y-1">
+                    <span class="text-xs text-gray-500 dark:text-gray-400">{{ t('admin.settings.features.affiliate.perInviteeCapLevel1') }}</span>
+                    <input v-model.number="form.affiliate_rebate_per_invitee_cap_level1" type="number" step="0.01" min="0" class="input" />
+                  </label>
+                  <label class="space-y-1">
+                    <span class="text-xs text-gray-500 dark:text-gray-400">{{ t('admin.settings.features.affiliate.perInviteeCapLevel2') }}</span>
+                    <input v-model.number="form.affiliate_rebate_per_invitee_cap_level2" type="number" step="0.01" min="0" class="input" />
+                  </label>
+                  <label class="space-y-1">
+                    <span class="text-xs text-gray-500 dark:text-gray-400">{{ t('admin.settings.features.affiliate.perInviteeCapLevel3') }}</span>
+                    <input v-model.number="form.affiliate_rebate_per_invitee_cap_level3" type="number" step="0.01" min="0" class="input" />
+                  </label>
+                </div>
                 <p class="mt-1 text-xs text-gray-400">
                   {{ t('admin.settings.features.affiliate.perInviteeCapDesc') }}
                 </p>
@@ -5441,13 +5455,24 @@
                 <label class="input-label">
                   {{ t('admin.settings.features.affiliate.inviteLimit') }}
                 </label>
-                <input
-                  v-model.number="form.affiliate_invite_limit"
-                  type="number"
-                  step="1"
-                  min="0"
-                  class="input"
-                />
+                <div class="grid gap-3 md:grid-cols-4">
+                  <label class="space-y-1">
+                    <span class="text-xs text-gray-500 dark:text-gray-400">{{ t('admin.settings.features.affiliate.inviteLimitLevel0') }}</span>
+                    <input v-model.number="form.affiliate_invite_limit_level0" type="number" step="1" min="0" class="input" />
+                  </label>
+                  <label class="space-y-1">
+                    <span class="text-xs text-gray-500 dark:text-gray-400">{{ t('admin.settings.features.affiliate.inviteLimitLevel1') }}</span>
+                    <input v-model.number="form.affiliate_invite_limit_level1" type="number" step="1" min="0" class="input" />
+                  </label>
+                  <label class="space-y-1">
+                    <span class="text-xs text-gray-500 dark:text-gray-400">{{ t('admin.settings.features.affiliate.inviteLimitLevel2') }}</span>
+                    <input v-model.number="form.affiliate_invite_limit_level2" type="number" step="1" min="0" class="input" />
+                  </label>
+                  <label class="space-y-1">
+                    <span class="text-xs text-gray-500 dark:text-gray-400">{{ t('admin.settings.features.affiliate.inviteLimitLevel3') }}</span>
+                    <input v-model.number="form.affiliate_invite_limit_level3" type="number" step="1" min="0" class="input" />
+                  </label>
+                </div>
                 <p class="mt-1 text-xs text-gray-400">
                   {{ t('admin.settings.features.affiliate.inviteLimitDesc') }}
                 </p>
@@ -5543,7 +5568,7 @@
                           <span v-else class="text-gray-400">{{ t('admin.settings.features.affiliate.customUsers.useGlobal') }}</span>
                         </td>
                         <td class="px-3 py-2 text-sm">
-                          <span v-if="entry.aff_invite_limit != null">{{ entry.aff_invite_limit === 0 ? t('admin.settings.features.affiliate.customUsers.unlimited') : entry.aff_invite_limit }}</span>
+                          <span v-if="entry.aff_invite_limit != null">{{ entry.aff_invite_limit === 0 ? t('admin.settings.features.affiliate.customUsers.unavailable') : entry.aff_invite_limit }}</span>
                           <span v-else class="text-gray-400">{{ t('admin.settings.features.affiliate.customUsers.useGlobal') }}</span>
                         </td>
                         <td class="px-3 py-2 text-sm">
@@ -7112,7 +7137,15 @@ const form = reactive<SettingsForm>({
   affiliate_rebate_freeze_hours: 0,
   affiliate_rebate_duration_days: 0,
   affiliate_rebate_per_invitee_cap: 0,
+  affiliate_rebate_per_invitee_cap_level0: 0,
+  affiliate_rebate_per_invitee_cap_level1: 100,
+  affiliate_rebate_per_invitee_cap_level2: 300,
+  affiliate_rebate_per_invitee_cap_level3: 1000,
   affiliate_invite_limit: 0,
+  affiliate_invite_limit_level0: 0,
+  affiliate_invite_limit_level1: 1,
+  affiliate_invite_limit_level2: 3,
+  affiliate_invite_limit_level3: 5,
   default_concurrency: 1,
   default_subscriptions: [],
   force_email_on_third_party_signup: false,
@@ -7906,6 +7939,16 @@ async function loadSettings() {
         (form as Record<string, unknown>)[key] = value;
       }
     }
+    if (
+      Number(settings.affiliate_rebate_per_invitee_cap_level1 || 0) <= 0 &&
+      Number(settings.affiliate_rebate_per_invitee_cap_level2 || 0) <= 0 &&
+      Number(settings.affiliate_rebate_per_invitee_cap_level3 || 0) <= 0
+    ) {
+      form.affiliate_rebate_per_invitee_cap_level0 = Math.max(0, Number(settings.affiliate_rebate_per_invitee_cap_level0 ?? settings.affiliate_rebate_per_invitee_cap) || 0);
+      form.affiliate_rebate_per_invitee_cap_level1 = 100;
+      form.affiliate_rebate_per_invitee_cap_level2 = 300;
+      form.affiliate_rebate_per_invitee_cap_level3 = 1000;
+    }
     form.login_agreement_mode =
       settings.login_agreement_mode === "checkbox" ? "checkbox" : "modal";
     form.login_agreement_updated_at =
@@ -8259,8 +8302,16 @@ async function saveSettings() {
       affiliate_rebate_rate_level3: Math.min(100, Math.max(0, Number(form.affiliate_rebate_rate_level3) || 0)),
       affiliate_rebate_freeze_hours: Math.max(0, Math.min(720, Number(form.affiliate_rebate_freeze_hours) || 0)),
       affiliate_rebate_duration_days: Math.max(0, Math.min(3650, Math.floor(Number(form.affiliate_rebate_duration_days) || 0))),
-      affiliate_rebate_per_invitee_cap: Math.max(0, Number(form.affiliate_rebate_per_invitee_cap) || 0),
-      affiliate_invite_limit: Math.max(0, Math.floor(Number(form.affiliate_invite_limit) || 0)),
+      affiliate_rebate_per_invitee_cap: Math.max(0, Number(form.affiliate_rebate_per_invitee_cap_level0) || 0),
+      affiliate_rebate_per_invitee_cap_level0: Math.max(0, Number(form.affiliate_rebate_per_invitee_cap_level0) || 0),
+      affiliate_rebate_per_invitee_cap_level1: Math.max(0, Number(form.affiliate_rebate_per_invitee_cap_level1) || 0),
+      affiliate_rebate_per_invitee_cap_level2: Math.max(0, Number(form.affiliate_rebate_per_invitee_cap_level2) || 0),
+      affiliate_rebate_per_invitee_cap_level3: Math.max(0, Number(form.affiliate_rebate_per_invitee_cap_level3) || 0),
+      affiliate_invite_limit: Math.max(0, Math.floor(Number(form.affiliate_invite_limit_level0) || 0)),
+      affiliate_invite_limit_level0: Math.max(0, Math.floor(Number(form.affiliate_invite_limit_level0) || 0)),
+      affiliate_invite_limit_level1: Math.max(0, Math.floor(Number(form.affiliate_invite_limit_level1) || 0)),
+      affiliate_invite_limit_level2: Math.max(0, Math.floor(Number(form.affiliate_invite_limit_level2) || 0)),
+      affiliate_invite_limit_level3: Math.max(0, Math.floor(Number(form.affiliate_invite_limit_level3) || 0)),
       default_concurrency: form.default_concurrency,
       default_subscriptions: normalizedDefaultSubscriptions,
       force_email_on_third_party_signup: form.force_email_on_third_party_signup,

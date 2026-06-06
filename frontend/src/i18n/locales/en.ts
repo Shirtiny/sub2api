@@ -255,8 +255,9 @@ export default {
     highestHint: 'LV.3 is the highest membership level.',
     remainingHint: 'Earn {amount} more points to unlock LV.{level}.',
     affiliateRebate: 'Membership benefits',
-    subscriptionReward: 'Affiliate rebate: balance {rate}%, monthly subscription {days} day(s)',
-    subscriptionRewardUnavailable: 'Affiliate rebate: available from LV.1'
+    subscriptionReward: 'Invite registration: {limit} invitee(s), membership points rebate {rate}%',
+    subscriptionRewardUnavailable: 'Invite registration: unavailable for normal users; rebates available from LV.1',
+    consumptionDiscount: 'Consumption discount: coming soon...'
   },
 
   // Common
@@ -430,6 +431,7 @@ export default {
     loginFailed: 'Login failed. Please check your credentials and try again.',
     errors: {
       USER_NOT_ACTIVE: 'Account has been disabled.',
+      AFFILIATE_INVITE_LIMIT_REACHED: 'Affiliate invite limit reached'
     },
     registrationFailed: 'Registration failed. Please try again.',
     emailSuffixNotAllowed: 'This email domain is not allowed for registration.',
@@ -1085,7 +1087,7 @@ export default {
 
   affiliate: {
     title: 'Affiliate Rebates',
-    description: 'LV.1+ users can invite new users, earn quota from balance recharges and subscription days from monthly plans',
+    description: 'LV.1+ users can invite new users and earn RMB rebate amounts based on the invitee’s real paid amount',
     yourCode: 'Your Affiliate Code',
     inviteLink: 'Invite Link',
     copyCode: 'Copy Code',
@@ -1097,22 +1099,48 @@ export default {
     unavailable: 'Affiliate invites are available to LV.1+ users. Your current level is not eligible.',
     stats: {
       rebateRate: 'My Rebate Rate',
-      rebateRateHint: 'What you earn each time an invitee recharges',
+      rebateRateHint: 'Applied to the invitee’s real paid amount for eligible purchases',
+      rebateCap: 'Per-invitee rebate cap: {amount}',
       invitedUsers: 'Invited Users',
       inviteLimit: 'Max {count}',
-      inviteLimitUnlimited: 'Unlimited',
-      availableQuota: 'Available Rebate Quota',
-      frozenQuota: 'Frozen',
+      inviteLimitUnavailable: 'Unavailable',
+      availablePoints: 'Available Rebate Amount',
+      pointsHint: 'Generated from real paid amount; redeem to balance or subscription packages',
+      frozenPoints: 'Frozen Amount',
       frozenQuotaHint: 'Recently earned rebates pending release',
-      totalQuota: 'Historical Rebate Quota'
+      totalPoints: 'Historical Rebate Amount'
     },
-    transfer: {
-      title: 'Transfer Rebate Quota',
-      description: 'Move available rebate quota into your account balance',
-      button: 'Transfer to Balance',
-      transferring: 'Transferring...',
-      empty: 'No available rebate quota',
-      success: '{amount} has been transferred to your balance'
+    redeem: {
+      title: 'Redeem Rebate Amount',
+      description: 'Redeem available rebate amount to balance or subscription packages',
+      button: 'Rebate Store',
+      modalTitle: 'Redeem Affiliate Rebate',
+      empty: 'No available rebate amount',
+      available: '{points} available',
+      pointsLabel: 'Amount to redeem',
+      pointsPlaceholder: 'Enter amount',
+      maxButton: 'Max',
+      targetLabel: 'Redeem target',
+      balanceTarget: 'Account balance',
+      balanceTargetHint: 'Enter the rebate amount to redeem. Max ¥100 per redemption.',
+      balanceHint: 'Balance credit uses the current recharge multiplier ({multiplier}x). Estimated credit: {balance}.',
+      balanceEstimate: 'Estimated credit: {balance}',
+      subscriptionTarget: 'Subscription package',
+      subscriptionHint: 'Select an available package; redeem it directly when your rebate amount is enough.',
+      subscriptionLabel: 'Subscription package',
+      noSubscriptions: 'No available subscription package can be redeemed.',
+      unknownGroup: 'Subscription group #{id}',
+      packageCost: '{points} / {days} day(s)',
+      remainingPoints: '{points} remaining after redemption',
+      insufficientPoints: 'Insufficient balance.',
+      planPrice: '{price} / {days} day(s)',
+      currentExpiresAt: 'Current expiry: {time}',
+      daysUnit: 'd',
+      confirm: 'Confirm redemption',
+      redeeming: 'Redeeming...',
+      balanceSuccess: '{points} redeemed to balance: {balance}',
+      subscriptionSuccess: '{points} redeemed to {group}: {days} day(s)',
+      failed: 'Failed to redeem affiliate rebate'
     },
     invitees: {
       title: 'Invited Users',
@@ -1120,17 +1148,39 @@ export default {
       columns: {
         email: 'Email',
         username: 'Username',
-        rebate: 'Rebate',
+        rebate: 'Rebate Amount',
         joinedAt: 'Joined At'
       }
     },
     tips: {
       title: 'How It Works',
       line1: 'LV.1+ users can share their affiliate code or invite link with new users.',
-      line2: 'When invitees recharge balance, you receive {rate} of the recharge as rebate quota.',
-      line3: 'Transfer rebate quota to balance at any time.',
-      line4: 'When invitees buy a monthly subscription plan of at least 29 days, your membership level decides same-plan rebate days: LV.1 grants 1 day, LV.2 grants 3 days, and LV.3 grants 7 days.',
-      line5: 'Newly earned rebates may have a waiting period before they can be transferred.'
+      line2: 'When invitees complete eligible purchases, you receive {rate} of their real paid amount as rebate amount.',
+      line3: 'Available rebate amount can be redeemed to account balance or subscription packages.',
+      line4: 'Balance redemption uses the current recharge multiplier; subscription redemption deducts the selected package price from rebate amount and grants that package duration.',
+      line5: 'Newly earned rebates may have a waiting period before they can be redeemed.'
+    },
+    ledger: {
+      title: 'Rebate Amount History',
+      empty: 'No rebate amount ledger records yet',
+      loadFailed: 'Failed to load rebate amount history',
+      columns: {
+        time: 'Time',
+        action: 'Type',
+        amount: 'Amount',
+        source: 'Source User',
+        order: 'Order',
+        group: 'Subscription Group',
+        availableAfter: 'Available Amount',
+        frozenAfter: 'Frozen Amount',
+        historyAfter: 'Historical Amount'
+      },
+      actions: {
+        accrue: 'Rebate credited',
+        accrueFrozen: 'Rebate frozen',
+        transferBalance: 'Redeemed to balance',
+        transferSubscription: 'Redeemed to subscription'
+      }
     }
   },
 
@@ -1753,8 +1803,8 @@ export default {
 
     affiliates: {
       invitesDescription: 'View site-wide inviter and invitee relationships',
-      rebatesDescription: 'View recharge orders that generated affiliate rebates',
-      transfersDescription: 'View affiliate quota transfers into account balance',
+      rebatesDescription: 'View recharge orders that generated affiliate rebate amounts',
+      transfersDescription: 'View affiliate rebate redemptions to balance or subscriptions',
       errors: {
         loadFailed: 'Failed to load affiliate records'
       },
@@ -1768,17 +1818,23 @@ export default {
         user: 'User',
         affCode: 'Invite Code',
         order: 'Order',
-        totalRebate: 'Total Rebate',
+        totalRebatePoints: 'Total Rebate Amount',
         orderAmount: 'Top-up Amount',
         payAmount: 'Paid Amount',
-        rebateAmount: 'Rebate Amount',
+        rebatePoints: 'Rebate Amount',
+        pointsValue: '{points}',
+        subscriptionDays: '{days} subscription day(s)',
+        subscriptionGroup: 'Subscription Group',
+        transferType: 'Transfer Type',
+        transferBalance: 'To Balance',
+        transferSubscription: 'To Subscription',
         paymentType: 'Payment Method',
         orderStatus: 'Order Status',
-        transferAmount: 'Transfer Amount',
+        transferAmount: 'Redeemed Amount',
         balanceAfter: 'Balance After',
-        availableQuotaAfter: 'Available After',
-        frozenQuotaAfter: 'Frozen After',
-        historyQuotaAfter: 'Historical Rebate After',
+        availablePointsAfter: 'Available Amount After',
+        frozenPointsAfter: 'Frozen Amount After',
+        historyPointsAfter: 'Historical Amount After',
         invitedAt: 'Invited At',
         rebatedAt: 'Rebated At',
         transferredAt: 'Transferred At'
@@ -1789,8 +1845,8 @@ export default {
         rebateRate: 'Rebate Rate',
         invitedCount: 'Invited Users',
         rebatedInviteeCount: 'Rebated Invitees',
-        availableQuota: 'Available Quota',
-        historyQuota: 'Historical Rebate'
+        availablePoints: 'Available Amount',
+        totalPoints: 'Historical Amount'
       }
     },
 
@@ -5411,11 +5467,12 @@ export default {
         },
         affiliate: {
           title: 'Affiliate (Invite Rebate)',
-          description: 'Existing users invite new ones; the inviter earns a percentage rebate on the invitee’s recharges. Disabled by default.',
+          description: 'Existing users invite new ones; the inviter earns RMB rebate amounts based on eligible invitee real paid amounts. Disabled by default.',
+          pointsModeHint: 'Rebates are displayed as RMB amounts. Balance redemption value depends on the current recharge multiplier; subscription redemption deducts rebate amount by package price and grants that package duration.',
           enabled: 'Enable Affiliate',
           enabledHint: 'When off, the affiliate menu is hidden, the aff parameter is ignored at signup, and new recharges generate no rebate. Existing rebate balances can still be transferred.',
           rebateRate: 'Membership Rebate Rates',
-          rebateRateHint: 'Default balance rebate rate by inviter membership level; LV.0 cannot invite or earn rebates, and per-user overrides take precedence. Defaults: LV.1 5%, LV.2 10%, LV.3 25%.',
+          rebateRateHint: 'Default amount rebate rate by inviter membership level; LV.0 cannot invite or earn rebates, and per-user overrides take precedence. Defaults: LV.1 5%, LV.2 15%, LV.3 25%.',
           rebateRateLevel0: 'Regular / LV.0 (not eligible)',
           rebateRateLevel1: 'LV.1',
           rebateRateLevel2: 'LV.2',
@@ -5424,10 +5481,18 @@ export default {
           freezeHoursDesc: 'New rebates will be frozen for this period before becoming available for withdrawal. 0 = no freeze.',
           durationDays: 'Rebate Duration (days)',
           durationDaysDesc: 'Rebate relationship expires after this many days since invitee registration. 0 = permanent.',
-          perInviteeCap: 'Per-Invitee Rebate Cap',
-          perInviteeCapDesc: 'Maximum total rebate from a single invitee. 0 = no limit.',
-          inviteLimit: 'Invite Limit Per User',
-          inviteLimitDesc: 'Maximum invitees each user can bind. 0 = unlimited; override specific users below.',
+          perInviteeCap: 'Per-Invitee Rebate Caps',
+          perInviteeCapDesc: 'Set the maximum total rebate from a single invitee by inviter membership level. 0 means no rebate can be earned. Defaults: Normal 0, LV.1 100, LV.2 300, LV.3 1000.',
+          perInviteeCapLevel0: 'Normal',
+          perInviteeCapLevel1: 'LV.1',
+          perInviteeCapLevel2: 'LV.2',
+          perInviteeCapLevel3: 'LV.3',
+          inviteLimit: 'Membership-level invite limits',
+          inviteLimitDesc: 'Set max invitees by inviter membership level. 0 = disabled/unavailable; override specific users below. Defaults: Normal 0, LV.1 1, LV.2 3, LV.3 5.',
+          inviteLimitLevel0: 'Normal',
+          inviteLimitLevel1: 'LV.1',
+          inviteLimitLevel2: 'LV.2',
+          inviteLimitLevel3: 'LV.3',
           customUsers: {
             title: 'Per-User Overrides',
             description: 'Set a custom invite code, exclusive rebate rate, or invite limit for specific users. Lists only users that have an override applied.',
@@ -5437,7 +5502,7 @@ export default {
             empty: 'No users with custom affiliate settings yet',
             customBadge: 'custom',
             useGlobal: 'use global',
-            unlimited: 'unlimited',
+            unavailable: 'unavailable',
             resetTitle: 'Reset Custom Settings',
             resetMessage: 'Reset all custom settings for {email}?\n• The exclusive rebate rate and invite limit will be cleared (fall back to global)\n• The invite code will be regenerated as a new system code (previously shared links will stop working)',
             totalLabel: '{total} total',
@@ -5464,7 +5529,7 @@ export default {
             rateHint: '0-100. Leave empty (in edit mode) to clear and fall back to the global rate.',
             inviteLimitLabel: 'Custom Invite Limit (optional)',
             inviteLimitPlaceholder: 'e.g. 100',
-            inviteLimitHint: '0 = unlimited. Leave empty (in edit mode) to clear and fall back to the global limit.',
+            inviteLimitHint: '0 = disabled/unavailable. Leave empty (in edit mode) to clear and fall back to the global limit.',
             errorBadRate: 'Please enter a number between 0 and 100',
             errorBadInviteLimit: 'Please enter an integer between 0 and 100000',
             errorEmpty: 'Fill at least one: custom invite code, exclusive rebate rate, or invite limit',

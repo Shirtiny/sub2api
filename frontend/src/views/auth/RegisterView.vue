@@ -87,8 +87,8 @@
           </p>
         </div>
 
-        <!-- Invitation Code Input (Required when enabled) -->
-        <div v-if="invitationCodeEnabled">
+        <!-- Invitation Code Input (Required for natural registration) -->
+        <div v-if="invitationCodeRequired">
           <label for="invitation_code" class="input-label">
             {{ t('auth.invitationCodeLabel') }}
           </label>
@@ -254,7 +254,8 @@
 
         <EmailOAuthButtons
           :disabled="registrationActionDisabled"
-          :aff-code="formData.aff_code"
+          :aff-code="affiliateEnabled ? formData.aff_code : ''"
+          :affiliate-enabled="affiliateEnabled"
           :github-enabled="githubOAuthEnabled"
           :google-enabled="googleOAuthEnabled"
           :show-divider="false"
@@ -263,20 +264,23 @@
         <LinuxDoOAuthSection
           v-if="linuxdoOAuthEnabled"
           :disabled="registrationActionDisabled"
-          :aff-code="formData.aff_code"
+          :aff-code="affiliateEnabled ? formData.aff_code : ''"
+          :affiliate-enabled="affiliateEnabled"
           :show-divider="false"
         />
         <WechatOAuthSection
           v-if="wechatOAuthEnabled"
           :disabled="registrationActionDisabled"
-          :aff-code="formData.aff_code"
+          :aff-code="affiliateEnabled ? formData.aff_code : ''"
+          :affiliate-enabled="affiliateEnabled"
           :show-divider="false"
         />
         <OidcOAuthSection
           v-if="oidcOAuthEnabled"
           :disabled="registrationActionDisabled"
           :provider-name="oidcOAuthProviderName"
-          :aff-code="formData.aff_code"
+          :aff-code="affiliateEnabled ? formData.aff_code : ''"
+          :affiliate-enabled="affiliateEnabled"
           :show-divider="false"
         />
       </div>
@@ -366,6 +370,7 @@ const loginAgreementMode = ref<'modal' | 'checkbox' | string>('modal')
 const loginAgreementUpdatedAt = ref<string>('')
 const loginAgreementRevision = ref<string>('')
 const loginAgreementDocuments = ref<LoginAgreementDocument[]>([])
+const affiliateEnabled = ref<boolean>(false)
 const agreementAccepted = ref<boolean>(false)
 const showAgreementModal = ref<boolean>(false)
 
@@ -434,6 +439,10 @@ const registrationActionDisabled = computed(
   () => isLoading.value || !settingsLoaded.value || agreementGateActive.value
 )
 
+const hasAffiliateReferralCode = computed(() => affiliateEnabled.value && Boolean(formData.aff_code.trim() || loadAffiliateReferralCode()))
+
+const invitationCodeRequired = computed(() => invitationCodeEnabled.value && !hasAffiliateReferralCode.value)
+
 watch(validationToastMessage, (value, previousValue) => {
   if (value && value !== previousValue) {
     appStore.showError(value)
@@ -441,6 +450,11 @@ watch(validationToastMessage, (value, previousValue) => {
 })
 
 function syncAffiliateReferralCode(): string {
+  if (!affiliateEnabled.value) {
+    formData.aff_code = ''
+    clearAffiliateReferralCode()
+    return ''
+  }
   const code = resolveAffiliateReferralCode(route.query.aff, route.query.aff_code)
   if (code) {
     formData.aff_code = code
@@ -468,6 +482,11 @@ onMounted(async () => {
     oidcOAuthProviderName.value = settings.oidc_oauth_provider_name || 'OIDC'
     githubOAuthEnabled.value = settings.github_oauth_enabled
     googleOAuthEnabled.value = settings.google_oauth_enabled
+    affiliateEnabled.value = settings.affiliate_enabled === true
+    if (!affiliateEnabled.value) {
+      formData.aff_code = ''
+      clearAffiliateReferralCode()
+    }
     registrationEmailSuffixWhitelist.value = normalizeRegistrationEmailSuffixWhitelist(
       settings.registration_email_suffix_whitelist || []
     )
@@ -787,8 +806,8 @@ function validateForm(): boolean {
     isValid = false
   }
 
-  // Invitation code validation (required when enabled)
-  if (invitationCodeEnabled.value) {
+  // Invitation code validation (required for natural registration; affiliate links can register without it)
+  if (invitationCodeRequired.value) {
     if (!formData.invitation_code.trim()) {
       errors.invitation_code = t('auth.invitationCodeRequired')
       isValid = false
@@ -829,8 +848,8 @@ async function handleRegister(): Promise<void> {
     }
   }
 
-  // Check invitation code validation status (if enabled and code provided)
-  if (invitationCodeEnabled.value) {
+  // Check invitation code validation status (only required for natural registration)
+  if (invitationCodeRequired.value) {
     // If still validating, wait
     if (invitationValidating.value) {
       errorMessage.value = t('auth.invitationCodeValidating')
@@ -856,7 +875,7 @@ async function handleRegister(): Promise<void> {
   isLoading.value = true
 
   try {
-    const affCode = formData.aff_code.trim() || loadAffiliateReferralCode()
+    const affCode = affiliateEnabled.value ? (formData.aff_code.trim() || loadAffiliateReferralCode()) : ''
     if (affCode) {
       formData.aff_code = affCode
     }
@@ -906,7 +925,9 @@ async function handleRegister(): Promise<void> {
 
     // Handle registration error
     errorMessage.value = buildAuthErrorMessage(error, {
-      fallback: t('auth.registrationFailed')
+      fallback: t('auth.registrationFailed'),
+      t,
+      namespace: 'auth.errors'
     })
 
     // Also show error toast

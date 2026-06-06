@@ -142,21 +142,29 @@ type SystemSettings struct {
 	CustomMenuItems             string // JSON array of custom menu items
 	CustomEndpoints             string // JSON array of custom endpoints
 
-	DefaultConcurrency           int
-	DefaultBalance               float64
-	RiskControlEnabled           bool
-	AffiliateEnabled             bool
-	AffiliateRebateRate          float64
-	AffiliateRebateRateLevel0    float64
-	AffiliateRebateRateLevel1    float64
-	AffiliateRebateRateLevel2    float64
-	AffiliateRebateRateLevel3    float64
-	AffiliateRebateFreezeHours   int
-	AffiliateRebateDurationDays  int
-	AffiliateRebatePerInviteeCap float64
-	AffiliateInviteLimit         int
-	DefaultUserRPMLimit          int
-	DefaultSubscriptions         []DefaultSubscriptionSetting
+	DefaultConcurrency                 int
+	DefaultBalance                     float64
+	RiskControlEnabled                 bool
+	AffiliateEnabled                   bool
+	AffiliateRebateRate                float64
+	AffiliateRebateRateLevel0          float64
+	AffiliateRebateRateLevel1          float64
+	AffiliateRebateRateLevel2          float64
+	AffiliateRebateRateLevel3          float64
+	AffiliateRebateFreezeHours         int
+	AffiliateRebateDurationDays        int
+	AffiliateRebatePerInviteeCap       float64
+	AffiliateRebatePerInviteeCapLevel0 float64
+	AffiliateRebatePerInviteeCapLevel1 float64
+	AffiliateRebatePerInviteeCapLevel2 float64
+	AffiliateRebatePerInviteeCapLevel3 float64
+	AffiliateInviteLimit               int
+	AffiliateInviteLimitLevel0         int
+	AffiliateInviteLimitLevel1         int
+	AffiliateInviteLimitLevel2         int
+	AffiliateInviteLimitLevel3         int
+	DefaultUserRPMLimit                int
+	DefaultSubscriptions               []DefaultSubscriptionSetting
 
 	// Model fallback configuration
 	EnableModelFallback      bool   `json:"enable_model_fallback"`
@@ -296,8 +304,17 @@ type PublicSettings struct {
 	// Available Channels feature (user-facing aggregate view)
 	AvailableChannelsEnabled bool `json:"available_channels_enabled"`
 
-	// Affiliate (邀请返利) feature toggle
-	AffiliateEnabled bool `json:"affiliate_enabled"`
+	// Affiliate (邀请返利) feature toggle and user-facing membership benefits
+	AffiliateEnabled                   bool    `json:"affiliate_enabled"`
+	AffiliateRebatePerInviteeCap       float64 `json:"affiliate_rebate_per_invitee_cap"`
+	AffiliateRebatePerInviteeCapLevel0 float64 `json:"affiliate_rebate_per_invitee_cap_level0"`
+	AffiliateRebatePerInviteeCapLevel1 float64 `json:"affiliate_rebate_per_invitee_cap_level1"`
+	AffiliateRebatePerInviteeCapLevel2 float64 `json:"affiliate_rebate_per_invitee_cap_level2"`
+	AffiliateRebatePerInviteeCapLevel3 float64 `json:"affiliate_rebate_per_invitee_cap_level3"`
+	AffiliateInviteLimitLevel0         int     `json:"affiliate_invite_limit_level0"`
+	AffiliateInviteLimitLevel1         int     `json:"affiliate_invite_limit_level1"`
+	AffiliateInviteLimitLevel2         int     `json:"affiliate_invite_limit_level2"`
+	AffiliateInviteLimitLevel3         int     `json:"affiliate_invite_limit_level3"`
 
 	// 风控中心功能开关
 	RiskControlEnabled bool `json:"risk_control_enabled"`

@@ -240,7 +240,7 @@ func TestGetAffiliateDetail_ExposesAffCodeForEligibleUser(t *testing.T) {
 	repo := &affiliateRepoThresholdStub{summaries: map[int64]*AffiliateSummary{
 		1: {UserID: 1, AffCode: "VISIBLE", TotalRecharged: MembershipLevel1Threshold + 0.01},
 	}}
-	svc := &AffiliateService{repo: repo}
+	svc := &AffiliateService{repo: repo, settingService: &SettingService{settingRepo: affiliateSettingRepoStub{}}}
 
 	got, err := svc.GetAffiliateDetail(context.Background(), 1)
 
@@ -248,6 +248,51 @@ func TestGetAffiliateDetail_ExposesAffCodeForEligibleUser(t *testing.T) {
 	require.NotNil(t, got)
 	require.True(t, got.CanInvite)
 	require.Equal(t, "VISIBLE", got.AffCode)
+}
+
+func TestGetAffiliateDetail_HidesAffCodeWhenFeatureDisabled(t *testing.T) {
+	t.Parallel()
+	repo := &affiliateRepoThresholdStub{summaries: map[int64]*AffiliateSummary{
+		1: {UserID: 1, AffCode: "HIDDEN", TotalRecharged: MembershipLevel1Threshold + 0.01},
+	}}
+	svc := &AffiliateService{repo: repo, settingService: &SettingService{settingRepo: affiliateDisabledSettingRepoStub{}}}
+
+	got, err := svc.GetAffiliateDetail(context.Background(), 1)
+
+	require.NoError(t, err)
+	require.NotNil(t, got)
+	require.False(t, got.CanInvite)
+	require.Empty(t, got.AffCode)
+	require.Zero(t, got.EffectiveInviteLimit)
+}
+
+func TestBindInviterByCode_ZeroInviteLimitBlocksInvite(t *testing.T) {
+	t.Parallel()
+	zero := 0
+	repo := &affiliateRepoThresholdStub{summaries: map[int64]*AffiliateSummary{
+		1: {UserID: 1},
+		2: {UserID: 2, AffCode: "ZERO", TotalRecharged: MembershipLevel1Threshold + 0.01, AffInviteLimit: &zero},
+	}}
+	svc := &AffiliateService{repo: repo, settingService: &SettingService{settingRepo: affiliateSettingRepoStub{}}}
+
+	err := svc.BindInviterByCode(context.Background(), 1, "ZERO")
+
+	require.ErrorIs(t, err, ErrAffiliateInviteLimitReached)
+	require.Nil(t, repo.summaries[1].InviterID)
+	require.Zero(t, repo.summaries[2].AffCount)
+}
+
+func TestCanUseCodeForSignup_ZeroInviteLimitBlocksInvite(t *testing.T) {
+	t.Parallel()
+	zero := 0
+	repo := &affiliateRepoThresholdStub{summaries: map[int64]*AffiliateSummary{
+		2: {UserID: 2, AffCode: "ZERO", TotalRecharged: MembershipLevel1Threshold + 0.01, AffInviteLimit: &zero},
+	}}
+	svc := &AffiliateService{repo: repo, settingService: &SettingService{settingRepo: affiliateSettingRepoStub{}}}
+
+	err := svc.CanUseCodeForSignup(context.Background(), "ZERO")
+
+	require.ErrorIs(t, err, ErrAffiliateInviteLimitReached)
 }
 
 type affiliateRepoThresholdStub struct {
@@ -265,16 +310,42 @@ func (r *affiliateRepoThresholdStub) EnsureUserAffiliate(ctx context.Context, us
 }
 
 func (r *affiliateRepoThresholdStub) GetAffiliateByCode(ctx context.Context, code string) (*AffiliateSummary, error) {
-	return nil, nil
+	for _, summary := range r.summaries {
+		if summary != nil && summary.AffCode == code {
+			return summary, nil
+		}
+	}
+	return nil, ErrAffiliateProfileNotFound
 }
 
 func (r *affiliateRepoThresholdStub) BindInviter(ctx context.Context, userID, inviterID int64, inviteLimit int) (bool, error) {
-	return false, nil
+	if inviteLimit <= 0 {
+		return false, ErrAffiliateInviteLimitReached
+	}
+	if summary := r.summaries[userID]; summary != nil {
+		summary.InviterID = &inviterID
+	}
+	if inviter := r.summaries[inviterID]; inviter != nil {
+		inviter.AffCount++
+	}
+	return true, nil
 }
 
 func (r *affiliateRepoThresholdStub) AccrueQuota(ctx context.Context, inviterID, inviteeUserID int64, amount float64, freezeHours int, sourceOrderID *int64) (bool, error) {
 	r.accrueCalls++
 	return true, nil
+}
+
+func (r *affiliateRepoThresholdStub) AccrueSubscriptionRebate(ctx context.Context, inviterID, inviteeUserID, groupID int64, days, freezeHours int, sourceOrderID *int64) (bool, error) {
+	return true, nil
+}
+
+func (r *affiliateRepoThresholdStub) TransferSubscriptionRebateToSubscription(ctx context.Context, userID, groupID int64) (*AffiliateSubscriptionTransferResult, error) {
+	return &AffiliateSubscriptionTransferResult{GroupID: groupID, TransferredDays: 1}, nil
+}
+
+func (r *affiliateRepoThresholdStub) ListSubscriptionRebateBalances(ctx context.Context, userID int64) ([]AffiliateSubscriptionRebateBalance, error) {
+	return nil, nil
 }
 
 func (r *affiliateRepoThresholdStub) GetAccruedRebateFromInvitee(ctx context.Context, inviterID, inviteeUserID int64) (float64, error) {
@@ -285,8 +356,12 @@ func (r *affiliateRepoThresholdStub) ThawFrozenQuota(ctx context.Context, userID
 	return 0, nil
 }
 
-func (r *affiliateRepoThresholdStub) TransferQuotaToBalance(ctx context.Context, userID int64) (float64, float64, error) {
-	return 0, 0, nil
+func (r *affiliateRepoThresholdStub) TransferQuotaToBalance(ctx context.Context, userID int64, points float64, balanceMultiplier float64) (*AffiliateBalanceRedeemResult, error) {
+	return &AffiliateBalanceRedeemResult{RedeemedPoints: points, CreditedBalance: points * balanceMultiplier, Balance: points * balanceMultiplier}, nil
+}
+
+func (r *affiliateRepoThresholdStub) TransferQuotaToSubscription(ctx context.Context, userID, groupID, planID int64, points float64) (*AffiliateSubscriptionTransferResult, error) {
+	return &AffiliateSubscriptionTransferResult{GroupID: groupID, TransferredDays: 1, RedeemedPoints: points}, nil
 }
 
 func (r *affiliateRepoThresholdStub) ListInvitees(ctx context.Context, inviterID int64, limit int) ([]AffiliateInvitee, error) {
@@ -355,3 +430,26 @@ func (affiliateSettingRepoStub) GetAll(ctx context.Context) (map[string]string, 
 	return nil, nil
 }
 func (affiliateSettingRepoStub) Delete(ctx context.Context, key string) error { return nil }
+
+type affiliateDisabledSettingRepoStub struct{}
+
+func (affiliateDisabledSettingRepoStub) Get(ctx context.Context, key string) (*Setting, error) {
+	return nil, ErrSettingNotFound
+}
+func (affiliateDisabledSettingRepoStub) GetValue(ctx context.Context, key string) (string, error) {
+	if key == SettingKeyAffiliateEnabled {
+		return "false", nil
+	}
+	return "", ErrSettingNotFound
+}
+func (affiliateDisabledSettingRepoStub) Set(ctx context.Context, key, value string) error { return nil }
+func (affiliateDisabledSettingRepoStub) GetMultiple(ctx context.Context, keys []string) (map[string]string, error) {
+	return nil, nil
+}
+func (affiliateDisabledSettingRepoStub) SetMultiple(ctx context.Context, settings map[string]string) error {
+	return nil
+}
+func (affiliateDisabledSettingRepoStub) GetAll(ctx context.Context) (map[string]string, error) {
+	return nil, nil
+}
+func (affiliateDisabledSettingRepoStub) Delete(ctx context.Context, key string) error { return nil }

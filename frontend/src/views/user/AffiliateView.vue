@@ -8,7 +8,7 @@
       </div>
 
       <template v-else-if="detail">
-        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <div class="card p-5">
             <p class="flex items-center gap-1.5 text-sm text-gray-500 dark:text-dark-400">
               <Icon name="dollar" size="sm" class="text-primary-500" />
@@ -19,6 +19,9 @@
             </p>
             <p class="mt-1 text-xs text-gray-400 dark:text-dark-500">
               {{ t('affiliate.stats.rebateRateHint') }}
+            </p>
+            <p v-if="detail.can_invite" class="mt-1 text-xs font-medium text-primary-500 dark:text-primary-400">
+              {{ t('affiliate.stats.rebateCap', { amount: formatPoints(rebatePerInviteeCap) }) }}
             </p>
           </div>
           <div class="card relative p-5">
@@ -31,18 +34,18 @@
             </p>
           </div>
           <div class="card p-5">
-            <p class="text-sm text-gray-500 dark:text-dark-400">{{ t('affiliate.stats.availableQuota') }}</p>
+            <p class="text-sm text-gray-500 dark:text-dark-400">{{ t('affiliate.stats.availablePoints') }}</p>
             <p class="mt-2 text-2xl font-semibold text-emerald-600 dark:text-emerald-400">
-              {{ formatCurrency(detail.aff_quota) }}
+              <button
+                type="button"
+                class="underline decoration-emerald-400 underline-offset-4 transition-colors hover:text-emerald-700 dark:decoration-emerald-500 dark:hover:text-emerald-300"
+                @click="openLedgerDialog"
+              >
+                {{ formatPoints(availableRebatePoints) }}
+              </button>
             </p>
-          </div>
-          <div class="card p-5">
-            <p class="text-sm text-gray-500 dark:text-dark-400">{{ t('affiliate.stats.totalQuota') }}</p>
-            <p class="mt-2 text-2xl font-semibold text-gray-900 dark:text-white">
-              {{ formatCurrency(detail.aff_history_quota) }}
-            </p>
-            <p v-if="detail.aff_frozen_quota > 0" class="mt-1 text-xs text-amber-600 dark:text-amber-400">
-              {{ t('affiliate.stats.frozenQuota') }}: {{ formatCurrency(detail.aff_frozen_quota) }}
+            <p class="mt-1 text-xs text-gray-400 dark:text-dark-500">
+              {{ t('affiliate.stats.pointsHint') }}
             </p>
           </div>
         </div>
@@ -91,7 +94,7 @@
               <li>{{ t('affiliate.tips.line2', { rate: `${formattedRebateRate}%` }) }}</li>
               <li>{{ t('affiliate.tips.line3') }}</li>
               <li>{{ t('affiliate.tips.line4') }}</li>
-              <li v-if="detail.aff_frozen_quota > 0">{{ t('affiliate.tips.line5') }}</li>
+              <li v-if="frozenRebatePoints > 0">{{ t('affiliate.tips.line5') }}</li>
             </ol>
           </div>
         </div>
@@ -99,21 +102,21 @@
         <div class="card p-6">
           <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h3 class="text-base font-semibold text-gray-900 dark:text-white">{{ t('affiliate.transfer.title') }}</h3>
-              <p class="mt-1 text-sm text-gray-500 dark:text-dark-400">{{ t('affiliate.transfer.description') }}</p>
+              <h3 class="text-base font-semibold text-gray-900 dark:text-white">{{ t('affiliate.redeem.title') }}</h3>
+              <p class="mt-1 text-sm text-gray-500 dark:text-dark-400">{{ t('affiliate.redeem.description') }}</p>
             </div>
             <button
               class="btn btn-primary"
-              :disabled="transferring || detail.aff_quota <= 0"
-              @click="transferQuota"
+              :disabled="redeeming || availableRebatePoints <= 0"
+              @click="openRedeemDialog"
             >
-              <Icon v-if="transferring" name="refresh" size="sm" class="animate-spin" />
+              <Icon v-if="redeeming" name="refresh" size="sm" class="animate-spin" />
               <Icon v-else name="dollar" size="sm" />
-              <span>{{ transferring ? t('affiliate.transfer.transferring') : t('affiliate.transfer.button') }}</span>
+              <span>{{ t('affiliate.redeem.button') }}</span>
             </button>
           </div>
-          <p v-if="detail.aff_quota <= 0" class="mt-3 text-sm text-amber-600 dark:text-amber-400">
-            {{ t('affiliate.transfer.empty') }}
+          <p v-if="availableRebatePoints <= 0" class="mt-3 text-sm text-amber-600 dark:text-amber-400">
+            {{ t('affiliate.redeem.empty') }}
           </p>
         </div>
 
@@ -138,9 +141,11 @@
                   :key="item.user_id"
                   class="border-b border-gray-100 last:border-b-0 dark:border-dark-800"
                 >
-                  <td class="px-3 py-3 text-gray-900 dark:text-white">{{ item.email || '-' }}</td>
+                  <td class="px-3 py-3 text-gray-900 dark:text-white">{{ formatPrivateAccount(item.email || item.username) }}</td>
                   <td class="px-3 py-3 text-gray-700 dark:text-gray-300">{{ item.username || '-' }}</td>
-                  <td class="px-3 py-3 text-right font-medium text-emerald-600 dark:text-emerald-400">{{ formatCurrency(item.total_rebate) }}</td>
+                  <td class="px-3 py-3 text-right font-medium text-emerald-600 dark:text-emerald-400">
+                    {{ formatPoints(inviteeRebatePoints(item)) }}
+                  </td>
                   <td class="px-3 py-3 text-gray-700 dark:text-gray-300">{{ formatDateTime(item.created_at) || '-' }}</td>
                 </tr>
               </tbody>
@@ -149,30 +154,219 @@
         </div>
       </template>
     </div>
+
+    <BaseDialog
+      :show="ledgerDialog"
+      :title="t('affiliate.ledger.title')"
+      width="extra-wide"
+      @close="ledgerDialog = false"
+    >
+      <div class="space-y-4">
+        <div v-if="ledgerLoading" class="flex justify-center py-8">
+          <div class="h-6 w-6 animate-spin rounded-full border-2 border-primary-500 border-t-transparent"></div>
+        </div>
+        <div v-else-if="ledgerRecords.length === 0" class="rounded-xl border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500 dark:border-dark-700 dark:text-dark-400">
+          {{ t('affiliate.ledger.empty') }}
+        </div>
+        <div v-else class="overflow-x-auto rounded-xl border border-gray-200 dark:border-dark-700">
+          <table class="w-full min-w-[720px] text-left text-sm">
+            <thead class="bg-gray-50 text-gray-500 dark:bg-dark-800 dark:text-dark-400">
+              <tr>
+                <th class="px-3 py-2 font-medium">{{ t('affiliate.ledger.columns.time') }}</th>
+                <th class="px-3 py-2 font-medium">{{ t('affiliate.ledger.columns.action') }}</th>
+                <th class="px-3 py-2 text-right font-medium">{{ t('affiliate.ledger.columns.amount') }}</th>
+                <th class="px-3 py-2 font-medium">{{ t('affiliate.ledger.columns.source') }}</th>
+                <th class="px-3 py-2 font-medium">{{ t('affiliate.ledger.columns.group') }}</th>
+                <th class="px-3 py-2 text-right font-medium">{{ t('affiliate.ledger.columns.availableAfter') }}</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 dark:divide-dark-800">
+              <tr v-for="item in ledgerRecords" :key="item.ledger_id">
+                <td class="px-3 py-3 text-gray-700 dark:text-gray-300">{{ formatDateTime(item.created_at) || '-' }}</td>
+                <td class="px-3 py-3 text-gray-900 dark:text-white">{{ formatLedgerAction(item) }}</td>
+                <td class="px-3 py-3 text-right font-semibold" :class="ledgerAmountClass(item.action)">
+                  {{ formatSignedLedgerAmount(item) }}
+                </td>
+                <td class="px-3 py-3 text-gray-700 dark:text-gray-300">{{ formatLedgerSource(item) }}</td>
+                <td class="px-3 py-3 text-gray-700 dark:text-gray-300">{{ formatLedgerGroup(item) }}</td>
+                <td class="px-3 py-3 text-right text-gray-700 dark:text-gray-300">{{ formatNullablePoints(item.available_points_after) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <Pagination
+          v-if="ledgerPagination.total > 0"
+          :page="ledgerPagination.page"
+          :total="ledgerPagination.total"
+          :page-size="ledgerPagination.page_size"
+          @update:page="handleLedgerPageChange"
+          @update:pageSize="handleLedgerPageSizeChange"
+        />
+      </div>
+    </BaseDialog>
+
+    <BaseDialog
+      :show="redeemDialog"
+      :title="t('affiliate.redeem.modalTitle')"
+      width="normal"
+      @close="closeRedeemDialog"
+    >
+      <div class="space-y-5">
+        <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-900/40 dark:bg-emerald-900/20">
+          <p class="text-sm text-emerald-700 dark:text-emerald-300">
+            {{ t('affiliate.redeem.available', { points: formatPoints(availableRebatePoints) }) }}
+          </p>
+        </div>
+
+        <div>
+          <p class="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+            {{ t('affiliate.redeem.targetLabel') }}
+          </p>
+          <div class="grid gap-3 sm:grid-cols-2">
+            <label class="flex cursor-pointer gap-3 rounded-xl border p-3 dark:border-dark-700" :class="redeemForm.target_type === 'balance' ? 'border-primary-300 bg-primary-50 dark:border-primary-700 dark:bg-primary-900/20' : 'border-gray-200'">
+              <input v-model="redeemForm.target_type" type="radio" value="balance" class="mt-1" />
+              <span>
+                <span class="block text-sm font-medium text-gray-900 dark:text-white">{{ t('affiliate.redeem.balanceTarget') }}</span>
+                <span class="mt-1 block text-xs text-gray-500 dark:text-dark-400">{{ t('affiliate.redeem.balanceTargetHint') }}</span>
+              </span>
+            </label>
+            <label class="flex cursor-pointer gap-3 rounded-xl border p-3 dark:border-dark-700" :class="redeemForm.target_type === 'subscription' ? 'border-primary-300 bg-primary-50 dark:border-primary-700 dark:bg-primary-900/20' : 'border-gray-200'">
+              <input v-model="redeemForm.target_type" type="radio" value="subscription" class="mt-1" />
+              <span>
+                <span class="block text-sm font-medium text-gray-900 dark:text-white">{{ t('affiliate.redeem.subscriptionTarget') }}</span>
+                <span class="mt-1 block text-xs text-gray-500 dark:text-dark-400">{{ t('affiliate.redeem.subscriptionHint') }}</span>
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <div v-if="redeemForm.target_type === 'balance'">
+          <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            {{ t('affiliate.redeem.pointsLabel') }}
+          </label>
+          <div class="flex gap-2">
+            <div class="relative flex-1">
+              <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 dark:text-dark-400">¥</span>
+              <input
+                v-model.number="redeemForm.points"
+                type="number"
+                min="0"
+                step="0.01"
+                class="input w-full pl-7"
+                :max="maxBalanceRedeemPoints"
+                :placeholder="t('affiliate.redeem.pointsPlaceholder')"
+              />
+            </div>
+            <button type="button" class="btn btn-secondary whitespace-nowrap" @click="fillMaxBalanceRedeemPoints">
+              {{ t('affiliate.redeem.maxButton') }}
+            </button>
+          </div>
+          <p class="mt-2 text-xs text-gray-500 dark:text-dark-400">
+            {{ t('affiliate.redeem.balanceEstimate', { balance: formatCurrency(estimatedBalanceCredit) }) }}
+          </p>
+        </div>
+
+        <div v-if="redeemForm.target_type === 'subscription'" class="space-y-3">
+          <div v-if="redemptionContextLoading" class="flex items-center gap-2 text-sm text-gray-500 dark:text-dark-400">
+            <Icon name="refresh" size="sm" class="animate-spin" />
+            {{ t('common.loading') }}
+          </div>
+          <template v-else>
+            <div v-if="subscriptionRedeemOptions.length === 0" class="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700 dark:border-amber-900/40 dark:bg-amber-900/20 dark:text-amber-300">
+              {{ t('affiliate.redeem.noSubscriptions') }}
+            </div>
+            <div v-else>
+              <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                {{ t('affiliate.redeem.subscriptionLabel') }}
+              </label>
+              <select v-model.number="redeemForm.plan_id" class="input">
+                <option :value="null">{{ t('common.selectOption') }}</option>
+                <option
+                  v-for="option in subscriptionRedeemOptions"
+                  :key="option.plan_id"
+                  :value="option.plan_id"
+                >
+                  {{ formatSubscriptionOption(option) }}
+                </option>
+              </select>
+              <p v-if="selectedSubscriptionOption" class="mt-2 text-xs text-gray-500 dark:text-dark-400">
+                {{ selectedSubscriptionDetail }}
+              </p>
+            </div>
+          </template>
+        </div>
+      </div>
+
+      <template #footer>
+        <button type="button" class="btn btn-secondary" :disabled="redeeming" @click="closeRedeemDialog">
+          {{ t('common.cancel') }}
+        </button>
+        <button type="button" class="btn btn-primary" :disabled="!canSubmitRedemption" @click="redeemPoints">
+          <Icon v-if="redeeming" name="refresh" size="sm" class="animate-spin" />
+          <span>{{ redeeming ? t('affiliate.redeem.redeeming') : t('affiliate.redeem.confirm') }}</span>
+        </button>
+      </template>
+    </BaseDialog>
   </AppLayout>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import AppLayout from '@/components/layout/AppLayout.vue'
+import BaseDialog from '@/components/common/BaseDialog.vue'
+import Pagination from '@/components/common/Pagination.vue'
 import Icon from '@/components/icons/Icon.vue'
-import userAPI from '@/api/user'
-import type { UserAffiliateDetail } from '@/types'
+import userAPI, { type AffiliateRedeemTargetType } from '@/api/user'
+import { paymentAPI } from '@/api/payment'
+import subscriptionsAPI from '@/api/subscriptions'
+import type { AffiliateInvitee, AffiliateLedgerRecord, SubscriptionPlan, UserAffiliateDetail, UserSubscription } from '@/types'
 import { useAppStore } from '@/stores/app'
 import { useAuthStore } from '@/stores/auth'
 import { useClipboard } from '@/composables/useClipboard'
 import { formatCurrency, formatDateTime } from '@/utils/format'
 import { extractApiErrorMessage } from '@/utils/apiError'
 
+interface SubscriptionRedeemOption {
+  group_id: number
+  plan_id?: number
+  group_name: string
+  expires_at?: string | null
+  plan_price?: number
+  validity_days?: number
+}
+
 const { t } = useI18n()
+const router = useRouter()
 const appStore = useAppStore()
 const authStore = useAuthStore()
 const { copyToClipboard } = useClipboard()
 
 const loading = ref(true)
-const transferring = ref(false)
+const redeeming = ref(false)
 const detail = ref<UserAffiliateDetail | null>(null)
+const ledgerDialog = ref(false)
+const ledgerLoading = ref(false)
+const ledgerRecords = ref<AffiliateLedgerRecord[]>([])
+const ledgerPagination = reactive({ page: 1, page_size: 10, total: 0 })
+const redeemDialog = ref(false)
+const redemptionContextLoading = ref(false)
+const redemptionContextLoaded = ref(false)
+const activeSubscriptions = ref<UserSubscription[]>([])
+const subscriptionPlans = ref<SubscriptionPlan[]>([])
+const rechargeMultiplier = ref<number | null>(null)
+const redeemForm = reactive<{
+  target_type: AffiliateRedeemTargetType
+  points: number | null
+  group_id: number | null
+  plan_id: number | null
+}>({
+  target_type: 'balance',
+  points: null,
+  group_id: null,
+  plan_id: null,
+})
 
 const inviteLink = computed(() => {
   if (!detail.value?.can_invite || !detail.value.aff_code) return ''
@@ -188,15 +382,176 @@ const formattedRebateRate = computed(() => {
   return Number.isInteger(rounded) ? String(rounded) : rounded.toString()
 })
 
+const availableRebatePoints = computed(() => detail.value?.available_points ?? detail.value?.available_rebate_points ?? detail.value?.aff_quota ?? 0)
+const frozenRebatePoints = computed(() => detail.value?.frozen_rebate_points ?? detail.value?.aff_frozen_quota ?? 0)
+const rebatePerInviteeCap = computed(() => {
+  const detailCap = detail.value?.affiliate_rebate_per_invitee_cap
+  if (Number(detailCap) > 0) return Number(detailCap)
+  return Number(appStore.cachedPublicSettings?.affiliate_rebate_per_invitee_cap || 0)
+})
+
 const inviteLimitLabel = computed(() => {
   const limit = detail.value?.effective_invite_limit ?? 0
   return limit > 0
     ? t('affiliate.stats.inviteLimit', { count: formatCount(limit) })
-    : t('affiliate.stats.inviteLimitUnlimited')
+    : t('affiliate.stats.inviteLimitUnavailable')
+})
+
+const subscriptionRedeemOptions = computed<SubscriptionRedeemOption[]>(() => {
+  return subscriptionPlans.value
+    .filter((plan) => plan.for_sale !== false)
+    .map((plan) => {
+      const subscription = activeSubscriptions.value.find((item) => item.group_id === plan.group_id)
+      return {
+        group_id: plan.group_id,
+        plan_id: plan.id,
+        group_name: plan.group_name || subscription?.group?.name || t('affiliate.redeem.unknownGroup', { id: plan.group_id }),
+        expires_at: subscription?.expires_at,
+        plan_price: plan.price,
+        validity_days: plan.validity_days,
+      }
+    })
+})
+
+const selectedSubscriptionOption = computed(() => {
+  if (!redeemForm.plan_id) return null
+  return subscriptionRedeemOptions.value.find((option) => option.plan_id === redeemForm.plan_id) ?? null
+})
+
+const subscriptionRedeemCost = computed(() => {
+  const price = selectedSubscriptionOption.value?.plan_price ?? 0
+  return Math.max(0, Number(price) || 0)
+})
+
+const selectedSubscriptionDetail = computed(() => {
+  if (!selectedSubscriptionOption.value) return ''
+  if (subscriptionRedeemCost.value > availableRebatePoints.value) {
+    return t('affiliate.redeem.insufficientPoints')
+  }
+  return t('affiliate.redeem.remainingPoints', {
+    points: formatPoints(availableRebatePoints.value - subscriptionRedeemCost.value),
+  })
+})
+
+const maxBalanceRedeemPoints = computed(() => Math.min(availableRebatePoints.value, 100))
+const redeemPointsValue = computed(() => Math.max(0, Number(redeemForm.points) || 0))
+const redemptionRequiredPoints = computed(() => {
+  if (redeemForm.target_type === 'subscription') return subscriptionRedeemCost.value
+  return redeemPointsValue.value
+})
+const estimatedBalanceCredit = computed(() => redeemPointsValue.value * (rechargeMultiplier.value ?? 1))
+const canSubmitRedemption = computed(() => {
+  if (redeeming.value || redemptionRequiredPoints.value <= 0 || redemptionRequiredPoints.value > availableRebatePoints.value) return false
+  if (redeemForm.target_type === 'balance' && redemptionRequiredPoints.value > maxBalanceRedeemPoints.value) return false
+  if (redeemForm.target_type === 'subscription') return !!selectedSubscriptionOption.value?.plan_id
+  return true
 })
 
 function formatCount(value: number): string {
   return value.toLocaleString()
+}
+
+function formatPoints(value: number | null | undefined): string {
+  const amount = Number(value || 0)
+  const formatted = new Intl.NumberFormat(undefined, {
+    minimumFractionDigits: amount > 0 && amount < 0.01 ? 6 : 2,
+    maximumFractionDigits: amount > 0 && amount < 0.01 ? 6 : 2,
+  }).format(amount)
+  return `¥${formatted}`
+}
+
+function formatNullablePoints(value: number | null | undefined): string {
+  if (value === null || value === undefined) return '-'
+  return formatPoints(value)
+}
+
+function isLedgerDebit(action: string): boolean {
+  return action === 'transfer' || action === 'transfer_subscription'
+}
+
+function ledgerAmountClass(action: string): string {
+  return isLedgerDebit(action)
+    ? 'text-rose-600 dark:text-rose-400'
+    : 'text-emerald-600 dark:text-emerald-400'
+}
+
+function formatSignedLedgerAmount(item: AffiliateLedgerRecord): string {
+  const prefix = isLedgerDebit(item.action) ? '-' : '+'
+  return `${prefix}${formatPoints(item.amount)}`
+}
+
+function formatLedgerAction(item: AffiliateLedgerRecord): string {
+  if (item.action === 'accrue') {
+    if (item.frozen_until) return t('affiliate.ledger.actions.accrueFrozen')
+    return t('affiliate.ledger.actions.accrue')
+  }
+  if (item.action === 'transfer_subscription' || (item.action === 'transfer' && item.subscription_group_id)) {
+    return t('affiliate.ledger.actions.transferSubscription')
+  }
+  if (item.action === 'transfer') return t('affiliate.ledger.actions.transferBalance')
+  return item.action || '-'
+}
+
+function formatPrivateAccount(value: string | null | undefined): string {
+  const account = String(value || '').trim()
+  if (!account) return '-'
+  const atIndex = account.indexOf('@')
+  if (atIndex > 0) {
+    const local = account.slice(0, atIndex)
+    const domain = account.slice(atIndex)
+    if (local.length <= 2) return `${local.slice(0, 1)}***${domain}`
+    return `${local.slice(0, 2)}***${domain}`
+  }
+  if (account.length <= 2) return `${account.slice(0, 1)}***`
+  return `${account.slice(0, 2)}***`
+}
+
+function formatLedgerSource(item: AffiliateLedgerRecord): string {
+  return formatPrivateAccount(item.source_user_email || item.source_username)
+}
+
+function formatLedgerOrder(item: AffiliateLedgerRecord): string {
+  if (!item.source_order_id && !item.out_trade_no) return '-'
+  const id = item.source_order_id ? `#${item.source_order_id}` : ''
+  return [id, item.out_trade_no].filter(Boolean).join(' · ')
+}
+
+function formatLedgerGroup(item: AffiliateLedgerRecord): string {
+  if (!item.subscription_group_id && !item.subscription_group_name) return '-'
+  return item.subscription_group_name || t('affiliate.redeem.unknownGroup', { id: item.subscription_group_id })
+}
+
+function formatEstimatedDays(value: number): string {
+  if (value < 0.1) {
+    return '<0.1'
+  }
+  const rounded = Math.round(value * 10) / 10
+  return Number.isInteger(rounded) ? String(rounded) : rounded.toString()
+}
+
+function fillMaxBalanceRedeemPoints(): void {
+  redeemForm.points = Math.round(maxBalanceRedeemPoints.value * 100) / 100
+}
+
+function inviteeRebatePoints(item: AffiliateInvitee): number {
+  return item.total_rebate_points ?? item.total_rebate ?? 0
+}
+
+function formatSubscriptionOption(option: SubscriptionRedeemOption): string {
+  const suffix = option.plan_price && option.validity_days
+    ? ` · ${formatCurrency(option.plan_price, 'CNY')} / ${formatCount(option.validity_days)}${t('affiliate.redeem.daysUnit')}`
+    : ''
+  return `${option.group_name}${suffix}`
+}
+
+async function ensureAffiliateEnabled(): Promise<boolean> {
+  const settings = await appStore.fetchPublicSettings(!appStore.publicSettingsLoaded)
+  const enabled = settings?.affiliate_enabled === true || appStore.cachedPublicSettings?.affiliate_enabled === true
+  if (!enabled) {
+    await router.replace('/dashboard')
+    return false
+  }
+  return true
 }
 
 async function loadAffiliateDetail(silent = false): Promise<void> {
@@ -214,6 +569,78 @@ async function loadAffiliateDetail(silent = false): Promise<void> {
   }
 }
 
+async function openLedgerDialog(): Promise<void> {
+  ledgerDialog.value = true
+  ledgerPagination.page = 1
+  await loadLedgerRecords()
+}
+
+async function loadLedgerRecords(): Promise<void> {
+  ledgerLoading.value = true
+  try {
+    const resp = await userAPI.getAffiliateLedger({
+      page: ledgerPagination.page,
+      page_size: ledgerPagination.page_size,
+      sort_by: 'created_at',
+      sort_order: 'desc',
+    })
+    ledgerRecords.value = resp.items || []
+    ledgerPagination.page = resp.page
+    ledgerPagination.page_size = resp.page_size
+    ledgerPagination.total = resp.total
+  } catch (error) {
+    appStore.showError(extractApiErrorMessage(error, t('affiliate.ledger.loadFailed')))
+  } finally {
+    ledgerLoading.value = false
+  }
+}
+
+function handleLedgerPageChange(page: number): void {
+  ledgerPagination.page = page
+  void loadLedgerRecords()
+}
+
+function handleLedgerPageSizeChange(pageSize: number): void {
+  ledgerPagination.page = 1
+  ledgerPagination.page_size = pageSize
+  void loadLedgerRecords()
+}
+
+async function loadRedemptionContext(): Promise<void> {
+  if (redemptionContextLoaded.value || redemptionContextLoading.value) return
+  redemptionContextLoading.value = true
+  try {
+    const [checkoutResult, subscriptionsResult] = await Promise.allSettled([
+      paymentAPI.getCheckoutInfo(),
+      subscriptionsAPI.getActiveSubscriptions(),
+    ])
+    if (checkoutResult.status === 'fulfilled') {
+      rechargeMultiplier.value = checkoutResult.value.data.balance_recharge_multiplier || 1
+      subscriptionPlans.value = checkoutResult.value.data.plans || []
+    }
+    if (subscriptionsResult.status === 'fulfilled') {
+      activeSubscriptions.value = subscriptionsResult.value || []
+    }
+    redemptionContextLoaded.value = true
+  } finally {
+    redemptionContextLoading.value = false
+  }
+}
+
+async function openRedeemDialog(): Promise<void> {
+  redeemForm.target_type = 'balance'
+  redeemForm.points = null
+  redeemForm.group_id = null
+  redeemForm.plan_id = null
+  redeemDialog.value = true
+  await loadRedemptionContext()
+}
+
+function closeRedeemDialog(): void {
+  if (redeeming.value) return
+  redeemDialog.value = false
+}
+
 async function copyCode(): Promise<void> {
   if (!detail.value?.can_invite || !detail.value.aff_code) return
   await copyToClipboard(detail.value.aff_code, t('affiliate.codeCopied'))
@@ -224,24 +651,46 @@ async function copyInviteLink(): Promise<void> {
   await copyToClipboard(inviteLink.value, t('affiliate.linkCopied'))
 }
 
-async function transferQuota(): Promise<void> {
-  if (!detail.value || detail.value.aff_quota <= 0 || transferring.value) return
-  transferring.value = true
+async function redeemPoints(): Promise<void> {
+  if (!canSubmitRedemption.value) return
+  redeeming.value = true
   try {
-    const resp = await userAPI.transferAffiliateQuota()
-    appStore.showSuccess(t('affiliate.transfer.success', { amount: formatCurrency(resp.transferred_quota) }))
+    const resp = await userAPI.redeemAffiliatePoints({
+      target_type: redeemForm.target_type,
+      points: redemptionRequiredPoints.value,
+      group_id: redeemForm.target_type === 'subscription' ? selectedSubscriptionOption.value?.group_id : undefined,
+      plan_id: redeemForm.target_type === 'subscription' ? selectedSubscriptionOption.value?.plan_id : undefined,
+    })
+    if (redeemForm.target_type === 'subscription') {
+      appStore.showSuccess(t('affiliate.redeem.subscriptionSuccess', {
+        points: formatPoints(resp.redeemed_points),
+        days: formatEstimatedDays(resp.transferred_days ?? 0),
+        group: resp.group_name || selectedSubscriptionOption.value?.group_name || '-',
+      }))
+    } else {
+      appStore.showSuccess(t('affiliate.redeem.balanceSuccess', {
+        points: formatPoints(resp.redeemed_points),
+        balance: formatCurrency(resp.credited_balance ?? 0),
+      }))
+    }
+    redeemDialog.value = false
     await Promise.all([
       loadAffiliateDetail(true),
       authStore.refreshUser().catch(() => undefined),
+      subscriptionsAPI.getActiveSubscriptions().then((items) => {
+        activeSubscriptions.value = items
+      }).catch(() => undefined),
     ])
   } catch (error) {
-    appStore.showError(extractApiErrorMessage(error, t('affiliate.transferFailed')))
+    appStore.showError(extractApiErrorMessage(error, t('affiliate.redeem.failed')))
   } finally {
-    transferring.value = false
+    redeeming.value = false
   }
 }
 
-onMounted(() => {
-  void loadAffiliateDetail()
+onMounted(async () => {
+  if (await ensureAffiliateEnabled()) {
+    await loadAffiliateDetail()
+  }
 })
 </script>

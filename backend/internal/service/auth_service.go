@@ -148,24 +148,38 @@ func (s *AuthService) RegisterWithVerification(ctx context.Context, email, passw
 		return "", nil, err
 	}
 
-	// 检查是否需要邀请码
+	// 检查是否需要邀请码：自然注册沿用注册邀请码要求；通过邀请返利链接注册时，aff_code 可作为进入资格，
+	// 但仅在邀请返利总开关开启时生效；关闭后 aff_code 不能绕过邀请码，也不会绑定邀请关系。
 	var invitationRedeemCode *RedeemCode
+	affiliateCode = strings.TrimSpace(affiliateCode)
+	if affiliateCode != "" && (s.affiliateService == nil || !s.affiliateService.IsEnabled(ctx)) {
+		affiliateCode = ""
+	}
 	if s.settingService != nil && s.settingService.IsInvitationCodeEnabled(ctx) {
-		if invitationCode == "" {
-			return "", nil, ErrInvitationCodeRequired
+		if affiliateCode != "" {
+			if s.affiliateService == nil {
+				return "", nil, ErrInvitationCodeRequired
+			}
+			if err := s.affiliateService.CanUseCodeForSignup(ctx, affiliateCode); err != nil {
+				return "", nil, err
+			}
+		} else {
+			if invitationCode == "" {
+				return "", nil, ErrInvitationCodeRequired
+			}
+			// 验证邀请码
+			redeemCode, err := s.redeemRepo.GetByCode(ctx, invitationCode)
+			if err != nil {
+				logger.LegacyPrintf("service.auth", "[Auth] Invalid invitation code: %s, error: %v", invitationCode, err)
+				return "", nil, ErrInvitationCodeInvalid
+			}
+			// 检查类型和状态
+			if redeemCode.Type != RedeemTypeInvitation || !redeemCode.CanUse() {
+				logger.LegacyPrintf("service.auth", "[Auth] Invitation code invalid: type=%s, status=%s", redeemCode.Type, redeemCode.Status)
+				return "", nil, ErrInvitationCodeInvalid
+			}
+			invitationRedeemCode = redeemCode
 		}
-		// 验证邀请码
-		redeemCode, err := s.redeemRepo.GetByCode(ctx, invitationCode)
-		if err != nil {
-			logger.LegacyPrintf("service.auth", "[Auth] Invalid invitation code: %s, error: %v", invitationCode, err)
-			return "", nil, ErrInvitationCodeInvalid
-		}
-		// 检查类型和状态
-		if redeemCode.Type != RedeemTypeInvitation || !redeemCode.CanUse() {
-			logger.LegacyPrintf("service.auth", "[Auth] Invitation code invalid: type=%s, status=%s", redeemCode.Type, redeemCode.Status)
-			return "", nil, ErrInvitationCodeInvalid
-		}
-		invitationRedeemCode = redeemCode
 	}
 
 	// 检查是否需要邮件验证
@@ -236,7 +250,7 @@ func (s *AuthService) RegisterWithVerification(ctx context.Context, email, passw
 		if _, err := s.affiliateService.EnsureUserAffiliate(ctx, user.ID); err != nil {
 			logger.LegacyPrintf("service.auth", "[Auth] Failed to initialize affiliate profile for user %d: %v", user.ID, err)
 		}
-		if code := strings.TrimSpace(affiliateCode); code != "" {
+		if code := affiliateCode; code != "" {
 			if err := s.affiliateService.BindInviterByCode(ctx, user.ID, code); err != nil {
 				// 邀请返利码绑定失败不影响注册，只记录日志
 				logger.LegacyPrintf("service.auth", "[Auth] Failed to bind affiliate inviter for user %d: %v", user.ID, err)

@@ -86,6 +86,10 @@ const detailTitle = computed(() => {
 })
 
 // ── Loaders ──
+function sortMonitorViewsByName(list: UserMonitorView[]): UserMonitorView[] {
+  return [...list].sort((a, b) => a.name.localeCompare(b.name))
+}
+
 async function reload(silent = false) {
   if (abortController) abortController.abort()
   const ctrl = new AbortController()
@@ -94,7 +98,7 @@ async function reload(silent = false) {
   try {
     const res = await listChannelMonitorViews({ signal: ctrl.signal })
     if (ctrl.signal.aborted || abortController !== ctrl) return
-    items.value = res.items || []
+    items.value = sortMonitorViewsByName(res.items || [])
   } catch (err: unknown) {
     const e = err as { name?: string; code?: string }
     if (e?.name === 'AbortError' || e?.code === 'ERR_CANCELED') return

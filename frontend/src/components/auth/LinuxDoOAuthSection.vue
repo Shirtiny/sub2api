@@ -46,6 +46,7 @@ import { resolveAffiliateReferralCode, storeOAuthAffiliateCode } from '@/utils/o
 
 const props = withDefaults(defineProps<{
   disabled?: boolean
+  affiliateEnabled?: boolean
   affCode?: string
   showDivider?: boolean
 }>(), {
@@ -57,7 +58,11 @@ const { t } = useI18n()
 
 function startLogin(): void {
   const redirectTo = (route.query.redirect as string) || '/dashboard'
-  storeOAuthAffiliateCode(resolveAffiliateReferralCode(props.affCode, route.query.aff, route.query.aff_code))
+  storeOAuthAffiliateCode(
+    props.affiliateEnabled
+      ? resolveAffiliateReferralCode(props.affCode, route.query.aff, route.query.aff_code)
+      : ''
+  )
   const apiBase = (import.meta.env.VITE_API_BASE_URL as string | undefined) || '/api/v1'
   const normalized = apiBase.replace(/\/$/, '')
   const startURL = `${normalized}/auth/oauth/linuxdo/start?redirect=${encodeURIComponent(redirectTo)}`

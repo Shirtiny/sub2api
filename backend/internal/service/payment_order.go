@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"math"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -71,6 +72,13 @@ func (s *PaymentService) CreateOrder(ctx context.Context, req CreateOrderRequest
 	if err != nil {
 		return nil, err
 	}
+	if s.paymentDevAutoSuccessEnabled() {
+		order, err := s.createOrderInTx(ctx, req, user, plan, cfg, orderAmount, limitAmount, feeRate, payAmount, nil)
+		if err != nil {
+			return nil, err
+		}
+		return s.completeDevAutoSuccessOrder(ctx, order, req, payAmount)
+	}
 	sel, err := s.selectCreateOrderInstance(ctx, req, cfg, payAmount)
 	if err != nil {
 		return nil, err
@@ -110,6 +118,61 @@ func (s *PaymentService) CreateOrder(ctx context.Context, req CreateOrderRequest
 		return nil, err
 	}
 	return resp, nil
+}
+
+func (s *PaymentService) IsDevAutoSuccessEnabled() bool {
+	return s.paymentDevAutoSuccessEnabled()
+}
+
+func (s *PaymentService) paymentDevAutoSuccessEnabled() bool {
+	if strings.TrimSpace(os.Getenv(paymentDevAutoSuccessEnv)) != paymentDevAutoSuccessToken {
+		return false
+	}
+	if paymentEnvironmentLooksProduction() {
+		return false
+	}
+	env := strings.ToLower(strings.TrimSpace(os.Getenv(paymentDevEnvironmentEnv)))
+	return env == "development" || env == "dev" || env == "local"
+}
+
+func paymentEnvironmentLooksProduction() bool {
+	for _, key := range []string{"APP_ENV", "ENVIRONMENT", "NODE_ENV", "GO_ENV"} {
+		if strings.EqualFold(strings.TrimSpace(os.Getenv(key)), "production") {
+			return true
+		}
+	}
+	return false
+}
+
+func (s *PaymentService) completeDevAutoSuccessOrder(ctx context.Context, order *dbent.PaymentOrder, req CreateOrderRequest, payAmount float64) (*CreateOrderResponse, error) {
+	if order == nil {
+		return nil, fmt.Errorf("dev payment auto-success: order is nil")
+	}
+	tradeNo := "dev-auto-success-" + order.OutTradeNo
+	s.writeAuditLog(ctx, order.ID, "DEV_PAYMENT_AUTO_SUCCESS", fmt.Sprintf("user:%d", req.UserID), map[string]any{
+		"env":         os.Getenv(paymentDevEnvironmentEnv),
+		"paymentType": req.PaymentType,
+		"orderType":   req.OrderType,
+		"payAmount":   payAmount,
+	})
+	if err := s.toPaid(ctx, order, tradeNo, payAmount, "dev_auto_success"); err != nil {
+		return nil, err
+	}
+	completed, err := s.entClient.PaymentOrder.Get(ctx, order.ID)
+	if err != nil {
+		return nil, fmt.Errorf("reload dev payment order: %w", err)
+	}
+	return &CreateOrderResponse{
+		OrderID:     completed.ID,
+		Amount:      completed.Amount,
+		PayAmount:   completed.PayAmount,
+		FeeRate:     completed.FeeRate,
+		Status:      completed.Status,
+		ResultType:  payment.CreatePaymentResultPaymentCompleted,
+		PaymentType: req.PaymentType,
+		OutTradeNo:  completed.OutTradeNo,
+		ExpiresAt:   completed.ExpiresAt,
+	}, nil
 }
 
 func (s *PaymentService) validateOrderInput(ctx context.Context, req CreateOrderRequest, cfg *PaymentConfig) (*dbent.SubscriptionPlan, error) {

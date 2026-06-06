@@ -10,7 +10,26 @@
       "PowerShell(docker compose *)",
       "Bash(cargo fmt *)",
       "PowerShell(rustup show *)",
-      "PowerShell(cargo *)"
+      "PowerShell(cargo *)",
+      "Bash(gofmt *)",
+      "Bash(go test *)",
+      "Bash(golangci-lint run *)",
+      "Bash(go *)",
+      "Bash(grep *)",
+      "Bash(pnpm *)",
+      "Bash(python3 *)",
+      "Bash(make *)",
+      "Bash(node *)",
+      "Bash(command -v go)",
+      "Bash(command -v node)",
+      "Bash(command -v npm)",
+      "Bash(npm -v)",
+      "Bash(command -v pnpm)",
+      "Bash(command -v python3)",
+      "Bash(command -v docker)",
+      "Bash(docker --version)",
+      "Bash(docker compose *)",
+      "Bash(rg *)"
     ]
   }
 }

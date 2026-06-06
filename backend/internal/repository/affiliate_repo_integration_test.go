@@ -62,10 +62,11 @@ INSERT INTO user_affiliates (user_id, aff_code, aff_quota, aff_history_quota, cr
 VALUES ($1, $2, $3, $3, NOW(), NOW())`, u.ID, affCode, 12.34)
 	require.NoError(t, err)
 
-	transferred, balance, err := repo.TransferQuotaToBalance(txCtx, u.ID)
+	result, err := repo.TransferQuotaToBalance(txCtx, u.ID, 0, 1)
 	require.NoError(t, err)
-	require.InDelta(t, 12.34, transferred, 1e-9)
-	require.InDelta(t, 17.84, balance, 1e-9)
+	require.InDelta(t, 12.34, result.RedeemedPoints, 1e-9)
+	require.InDelta(t, 12.34, result.CreditedBalance, 1e-9)
+	require.InDelta(t, 17.84, result.Balance, 1e-9)
 
 	affQuota := querySingleFloat(t, txCtx, client,
 		"SELECT aff_quota::double precision FROM user_affiliates WHERE user_id = $1", u.ID)
@@ -100,7 +101,83 @@ LIMIT 1`, u.ID)
 	require.InDelta(t, 12.34, historyAfter, 1e-9)
 }
 
-// TestAffiliateRepository_AccrueQuota_ReusesOuterTransaction guards the
+func TestAffiliateRepository_ThawFrozenQuota_IgnoresLegacySubscriptionRows(t *testing.T) {
+	ctx := context.Background()
+	tx := testEntTx(t)
+	txCtx := dbent.NewTxContext(ctx, tx)
+	client := tx.Client()
+
+	repo := NewAffiliateRepository(client, integrationDB)
+
+	u := mustCreateUser(t, client, &service.User{
+		Email:        fmt.Sprintf("affiliate-thaw-filter-%d@example.com", time.Now().UnixNano()),
+		PasswordHash: "hash",
+		Role:         service.RoleUser,
+		Status:       service.StatusActive,
+		Concurrency:  5,
+	})
+
+	affCode := fmt.Sprintf("AFF%09d", time.Now().UnixNano()%1_000_000_000)
+	_, err := client.ExecContext(txCtx, `
+	INSERT INTO user_affiliates (user_id, aff_code, aff_quota, aff_frozen_quota, aff_history_quota, created_at, updated_at)
+	VALUES ($1, $2, 0, 10, 10, NOW(), NOW())`, u.ID, affCode)
+	require.NoError(t, err)
+	_, err = client.ExecContext(txCtx, `
+	INSERT INTO user_affiliate_ledger (user_id, action, amount, frozen_until, created_at, updated_at)
+	VALUES ($1, 'accrue', 3, NOW() - INTERVAL '1 hour', NOW(), NOW()),
+	       ($1, 'accrue_subscription', 7, NOW() - INTERVAL '1 hour', NOW(), NOW())`, u.ID)
+	require.NoError(t, err)
+
+	thawed, err := repo.ThawFrozenQuota(txCtx, u.ID)
+	require.NoError(t, err)
+	require.InDelta(t, 3.0, thawed, 1e-9)
+
+	affQuota := querySingleFloat(t, txCtx, client,
+		"SELECT aff_quota::double precision FROM user_affiliates WHERE user_id = $1", u.ID)
+	require.InDelta(t, 3.0, affQuota, 1e-9)
+	frozenQuota := querySingleFloat(t, txCtx, client,
+		"SELECT aff_frozen_quota::double precision FROM user_affiliates WHERE user_id = $1", u.ID)
+	require.InDelta(t, 7.0, frozenQuota, 1e-9)
+
+	legacyFrozenCount := querySingleInt(t, txCtx, client,
+		"SELECT COUNT(*) FROM user_affiliate_ledger WHERE user_id = $1 AND action = 'accrue_subscription' AND frozen_until IS NOT NULL", u.ID)
+	require.Equal(t, 1, legacyFrozenCount)
+}
+
+func TestAffiliateRepository_TransferQuotaToBalance_AppliesRechargeMultiplier(t *testing.T) {
+	ctx := context.Background()
+	tx := testEntTx(t)
+	txCtx := dbent.NewTxContext(ctx, tx)
+	client := tx.Client()
+
+	repo := NewAffiliateRepository(client, integrationDB)
+
+	u := mustCreateUser(t, client, &service.User{
+		Email:        fmt.Sprintf("affiliate-transfer-multiplier-%d@example.com", time.Now().UnixNano()),
+		PasswordHash: "hash",
+		Role:         service.RoleUser,
+		Status:       service.StatusActive,
+		Balance:      1,
+		Concurrency:  5,
+	})
+
+	affCode := fmt.Sprintf("AFF%09d", time.Now().UnixNano()%1_000_000_000)
+	_, err := client.ExecContext(txCtx, `
+	INSERT INTO user_affiliates (user_id, aff_code, aff_quota, aff_history_quota, created_at, updated_at)
+	VALUES ($1, $2, $3, $3, NOW(), NOW())`, u.ID, affCode, 2.5)
+	require.NoError(t, err)
+
+	result, err := repo.TransferQuotaToBalance(txCtx, u.ID, 0, 4)
+	require.NoError(t, err)
+	require.InDelta(t, 2.5, result.RedeemedPoints, 1e-9)
+	require.InDelta(t, 10.0, result.CreditedBalance, 1e-9)
+	require.InDelta(t, 11.0, result.Balance, 1e-9)
+
+	persistedBalance := querySingleFloat(t, txCtx, client,
+		"SELECT balance::double precision FROM users WHERE id = $1", u.ID)
+	require.InDelta(t, 11.0, persistedBalance, 1e-9)
+}
+
 // cross-layer tx propagation invariant: when AccrueQuota is called with a ctx
 // that already carries a transaction (via dbent.NewTxContext), repo.withTx
 // must reuse that tx rather than opening a nested one. If this invariant
@@ -193,14 +270,77 @@ INSERT INTO user_affiliates (user_id, aff_code, aff_quota, aff_history_quota, cr
 VALUES ($1, $2, 0, 0, NOW(), NOW())`, u.ID, affCode)
 	require.NoError(t, err)
 
-	transferred, balance, err := repo.TransferQuotaToBalance(txCtx, u.ID)
+	result, err := repo.TransferQuotaToBalance(txCtx, u.ID, 0, 1)
 	require.ErrorIs(t, err, service.ErrAffiliateQuotaEmpty)
-	require.InDelta(t, 0.0, transferred, 1e-9)
-	require.InDelta(t, 0.0, balance, 1e-9)
+	require.Nil(t, result)
 
 	persistedBalance := querySingleFloat(t, txCtx, client,
 		"SELECT balance::double precision FROM users WHERE id = $1", u.ID)
 	require.InDelta(t, 3.21, persistedBalance, 1e-9)
+}
+
+func TestAffiliateRepository_TransferQuotaToSubscription_CreatesSubscriptionWithoutActiveSubscription(t *testing.T) {
+	ctx := context.Background()
+	tx := testEntTx(t)
+	txCtx := dbent.NewTxContext(ctx, tx)
+	client := tx.Client()
+
+	repo := NewAffiliateRepository(client, integrationDB)
+
+	u := mustCreateUser(t, client, &service.User{
+		Email:        fmt.Sprintf("affiliate-sub-create-%d@example.com", time.Now().UnixNano()),
+		PasswordHash: "hash",
+		Role:         service.RoleUser,
+		Status:       service.StatusActive,
+		Concurrency:  5,
+	})
+	group := mustCreateGroup(t, client, &service.Group{
+		Name:             fmt.Sprintf("affiliate-sub-group-%d", time.Now().UnixNano()),
+		Status:           service.StatusActive,
+		SubscriptionType: service.SubscriptionTypeSubscription,
+	})
+	plan, err := client.SubscriptionPlan.Create().
+		SetGroupID(group.ID).
+		SetName("Monthly affiliate package").
+		SetPrice(30).
+		SetValidityDays(30).
+		SetValidityUnit("days").
+		SetForSale(true).
+		Save(txCtx)
+	require.NoError(t, err)
+
+	affCode := fmt.Sprintf("AFF%09d", time.Now().UnixNano()%1_000_000_000)
+	_, err = client.ExecContext(txCtx, `
+	INSERT INTO user_affiliates (user_id, aff_code, aff_quota, aff_history_quota, created_at, updated_at)
+	VALUES ($1, $2, 40, 40, NOW(), NOW())`, u.ID, affCode)
+	require.NoError(t, err)
+
+	result, err := repo.TransferQuotaToSubscription(txCtx, u.ID, group.ID, plan.ID, 5)
+	require.NoError(t, err)
+	require.Equal(t, group.ID, result.GroupID)
+	require.Equal(t, group.Name, result.GroupName)
+	require.InDelta(t, 30.0, result.RedeemedPoints, 1e-9)
+	require.InDelta(t, 30.0, result.TransferredDays, 1e-9)
+	require.NotNil(t, result.ExpiresAt)
+	require.True(t, result.ExpiresAt.After(time.Now().Add(4*24*time.Hour)))
+
+	affQuota := querySingleFloat(t, txCtx, client,
+		"SELECT aff_quota::double precision FROM user_affiliates WHERE user_id = $1", u.ID)
+	require.InDelta(t, 10.0, affQuota, 1e-9)
+
+	rows, err := client.QueryContext(txCtx, `
+	SELECT status, expires_at > NOW()
+	FROM user_subscriptions
+	WHERE user_id = $1 AND group_id = $2 AND deleted_at IS NULL`, u.ID, group.ID)
+	require.NoError(t, err)
+	defer func() { _ = rows.Close() }()
+	require.True(t, rows.Next(), "expected subscription to be created")
+	var status string
+	var expiresInFuture bool
+	require.NoError(t, rows.Scan(&status, &expiresInFuture))
+	require.Equal(t, service.SubscriptionStatusActive, status)
+	require.True(t, expiresInFuture)
+	require.False(t, rows.Next(), "expected one active subscription row")
 }
 
 // TestAffiliateRepository_AdminCustomCode covers the success path of admin

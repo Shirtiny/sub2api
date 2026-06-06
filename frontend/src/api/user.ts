@@ -15,7 +15,10 @@ import type {
   NotifyEmailEntry,
   UserAuthProvider,
   UserAffiliateDetail,
+  AffiliateLedgerRecord,
   AffiliateTransferResponse,
+  AffiliateSubscriptionTransferResponse,
+  PaginatedResponse,
   PlatformQuotasResponse,
 } from '@/types'
 
@@ -181,8 +184,61 @@ export async function getAffiliateDetail(): Promise<UserAffiliateDetail> {
   return data
 }
 
-export async function transferAffiliateQuota(): Promise<AffiliateTransferResponse> {
-  const { data } = await apiClient.post<AffiliateTransferResponse>('/user/aff/transfer')
+export interface ListAffiliateLedgerParams {
+  page?: number
+  page_size?: number
+  sort_by?: string
+  sort_order?: 'asc' | 'desc'
+}
+
+export async function getAffiliateLedger(
+  params: ListAffiliateLedgerParams = {},
+): Promise<PaginatedResponse<AffiliateLedgerRecord>> {
+  const { data } = await apiClient.get<PaginatedResponse<AffiliateLedgerRecord>>('/user/aff/ledger', { params })
+  return data
+}
+
+export type AffiliateRedeemTargetType = 'balance' | 'subscription'
+
+export interface AffiliateRedeemRequest {
+  target_type: AffiliateRedeemTargetType
+  points?: number
+  group_id?: number
+  plan_id?: number
+}
+
+export interface AffiliateRedeemResponse {
+  target_type: AffiliateRedeemTargetType
+  redeemed_points: number
+  credited_balance?: number
+  balance?: number
+  group_id?: number
+  group_name?: string
+  transferred_days?: number
+  expires_at?: string
+}
+
+export async function redeemAffiliatePoints(
+  payload: AffiliateRedeemRequest,
+): Promise<AffiliateRedeemResponse> {
+  const { data } = await apiClient.post<AffiliateRedeemResponse>('/user/aff/redeem', payload)
+  return data
+}
+
+// RESTORE_AFFILIATE_TRANSFER_ALL: legacy one-click transfer-all API is currently unused.
+// export async function transferAffiliateQuota(): Promise<AffiliateTransferResponse> {
+//   const { data } = await apiClient.post<AffiliateTransferResponse>('/user/aff/transfer')
+//   return data
+// }
+
+export async function transferAffiliateSubscriptionRebate(
+  groupId: number,
+  planId: number,
+): Promise<AffiliateSubscriptionTransferResponse> {
+  const { data } = await apiClient.post<AffiliateSubscriptionTransferResponse>(
+    '/user/aff/transfer-subscription',
+    { group_id: groupId, plan_id: planId },
+  )
   return data
 }
 
@@ -208,7 +264,11 @@ export const userAPI = {
   buildOAuthBindingStartURL,
   startOAuthBinding,
   getAffiliateDetail,
-  transferAffiliateQuota,
+  getAffiliateLedger,
+  redeemAffiliatePoints,
+  // RESTORE_AFFILIATE_TRANSFER_ALL: legacy one-click transfer-all API is currently unused.
+  // transferAffiliateQuota,
+  transferAffiliateSubscriptionRebate,
   getMyPlatformQuotas,
 }
 

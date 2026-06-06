@@ -137,7 +137,7 @@ func TestEmailOAuthCallbackCreatesPasswordRegistrationSessionForNewEmail(t *test
 			service.SettingKeyAffiliateEnabled: "true",
 		},
 		affiliateFactory: func(_ *dbent.Client, settingSvc *service.SettingService) *service.AffiliateService {
-			return service.NewAffiliateService(affiliateRepo, settingSvc, nil, nil)
+			return service.NewAffiliateService(affiliateRepo, settingSvc, nil, nil, nil)
 		},
 	})
 	ctx := context.Background()
@@ -192,7 +192,7 @@ func TestCompleteEmailOAuthRegistrationUsesAffiliateCodeFromPendingSession(t *te
 			service.SettingKeyAffiliateEnabled: "true",
 		},
 		affiliateFactory: func(_ *dbent.Client, settingSvc *service.SettingService) *service.AffiliateService {
-			return service.NewAffiliateService(affiliateRepo, settingSvc, nil, nil)
+			return service.NewAffiliateService(affiliateRepo, settingSvc, nil, nil, nil)
 		},
 	})
 	ctx := context.Background()
@@ -352,6 +352,18 @@ func (r *oauthEmailAffiliateRepoStub) AccrueQuota(context.Context, int64, int64,
 	panic("unexpected AccrueQuota call")
 }
 
+func (r *oauthEmailAffiliateRepoStub) AccrueSubscriptionRebate(context.Context, int64, int64, int64, int, int, *int64) (bool, error) {
+	panic("unexpected AccrueSubscriptionRebate call")
+}
+
+func (r *oauthEmailAffiliateRepoStub) TransferSubscriptionRebateToSubscription(context.Context, int64, int64) (*service.AffiliateSubscriptionTransferResult, error) {
+	panic("unexpected TransferSubscriptionRebateToSubscription call")
+}
+
+func (r *oauthEmailAffiliateRepoStub) ListSubscriptionRebateBalances(context.Context, int64) ([]service.AffiliateSubscriptionRebateBalance, error) {
+	panic("unexpected ListSubscriptionRebateBalances call")
+}
+
 func (r *oauthEmailAffiliateRepoStub) GetAccruedRebateFromInvitee(context.Context, int64, int64) (float64, error) {
 	panic("unexpected GetAccruedRebateFromInvitee call")
 }
@@ -360,8 +372,12 @@ func (r *oauthEmailAffiliateRepoStub) ThawFrozenQuota(context.Context, int64) (f
 	panic("unexpected ThawFrozenQuota call")
 }
 
-func (r *oauthEmailAffiliateRepoStub) TransferQuotaToBalance(context.Context, int64) (float64, float64, error) {
+func (r *oauthEmailAffiliateRepoStub) TransferQuotaToBalance(context.Context, int64, float64, float64) (*service.AffiliateBalanceRedeemResult, error) {
 	panic("unexpected TransferQuotaToBalance call")
+}
+
+func (r *oauthEmailAffiliateRepoStub) TransferQuotaToSubscription(context.Context, int64, int64, int64, float64) (*service.AffiliateSubscriptionTransferResult, error) {
+	panic("unexpected TransferQuotaToSubscription call")
 }
 
 func (r *oauthEmailAffiliateRepoStub) ListInvitees(context.Context, int64, int) ([]service.AffiliateInvitee, error) {
@@ -398,6 +414,10 @@ func (r *oauthEmailAffiliateRepoStub) ListAffiliateInviteRecords(context.Context
 
 func (r *oauthEmailAffiliateRepoStub) ListAffiliateRebateRecords(context.Context, service.AffiliateRecordFilter) ([]service.AffiliateRebateRecord, int64, error) {
 	panic("unexpected ListAffiliateRebateRecords call")
+}
+
+func (r *oauthEmailAffiliateRepoStub) ListAffiliateLedgerRecords(context.Context, int64, service.AffiliateRecordFilter) ([]service.AffiliateLedgerRecord, int64, error) {
+	panic("unexpected ListAffiliateLedgerRecords call")
 }
 
 func (r *oauthEmailAffiliateRepoStub) ListAffiliateTransferRecords(context.Context, service.AffiliateRecordFilter) ([]service.AffiliateTransferRecord, int64, error) {

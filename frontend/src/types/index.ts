@@ -134,6 +134,8 @@ export interface AffiliateInvitee {
   username: string
   created_at?: string
   total_rebate: number
+  total_rebate_points?: number
+  total_subscription_rebate_days?: number
 }
 
 export interface UserAffiliateDetail {
@@ -141,9 +143,14 @@ export interface UserAffiliateDetail {
   aff_code?: string
   inviter_id?: number | null
   aff_count: number
-  aff_quota: number
-  aff_frozen_quota: number
-  aff_history_quota: number
+  available_rebate_points?: number
+  available_points?: number
+  frozen_rebate_points?: number
+  total_rebate_points?: number
+  affiliate_rebate_per_invitee_cap?: number
+  aff_quota?: number
+  aff_frozen_quota?: number
+  aff_history_quota?: number
   membership_level: number
   can_invite: boolean
   effective_invite_limit: number
@@ -152,9 +159,36 @@ export interface UserAffiliateDetail {
   invitees: AffiliateInvitee[]
 }
 
+export interface AffiliateLedgerRecord {
+  ledger_id: number
+  action: string
+  amount: number
+  source_user_id?: number | null
+  source_user_email?: string
+  source_username?: string
+  source_order_id?: number | null
+  out_trade_no?: string
+  subscription_group_id?: number | null
+  subscription_group_name?: string
+  balance_after?: number | null
+  available_points_after?: number | null
+  frozen_points_after?: number | null
+  history_points_after?: number | null
+  frozen_until?: string | null
+  transferred_at?: string | null
+  created_at: string
+}
+
 export interface AffiliateTransferResponse {
   transferred_quota: number
   balance: number
+}
+
+export interface AffiliateSubscriptionTransferResponse {
+  group_id: number
+  group_name: string
+  transferred_days: number
+  expires_at?: string
 }
 
 export interface SendVerifyCodeRequest {
@@ -240,6 +274,15 @@ export interface PublicSettings {
   available_channels_enabled: boolean
   service_quota_enabled: boolean
   affiliate_enabled: boolean
+  affiliate_rebate_per_invitee_cap?: number
+  affiliate_rebate_per_invitee_cap_level0?: number
+  affiliate_rebate_per_invitee_cap_level1?: number
+  affiliate_rebate_per_invitee_cap_level2?: number
+  affiliate_rebate_per_invitee_cap_level3?: number
+  affiliate_invite_limit_level0?: number
+  affiliate_invite_limit_level1?: number
+  affiliate_invite_limit_level2?: number
+  affiliate_invite_limit_level3?: number
   allow_user_view_error_requests?: boolean
 }
 

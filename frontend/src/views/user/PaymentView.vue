@@ -767,6 +767,11 @@ async function createOrder(orderAmount: number, orderType: OrderType, planId?: n
       return
     }
 
+    if (decision.kind === 'completed') {
+      await redirectToPaymentResult(decision.paymentState)
+      return
+    }
+
     paymentState.value = decision.paymentState
     paymentPhase.value = 'paying'
     persistRecoverySnapshot(decision.recovery)

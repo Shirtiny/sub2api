@@ -83,8 +83,16 @@ func (p *paymentOrderLifecycleQueryProvider) CancelPayment(_ context.Context, tr
 	return nil
 }
 
-func (r *paymentOrderLifecycleRedeemRepo) Create(context.Context, *RedeemCode) error {
-	panic("unexpected call")
+func (r *paymentOrderLifecycleRedeemRepo) Create(_ context.Context, code *RedeemCode) error {
+	if r.codesByCode == nil || code == nil {
+		panic("unexpected call")
+	}
+	cloned := *code
+	if cloned.ID == 0 {
+		cloned.ID = int64(len(r.codesByCode) + 1)
+	}
+	r.codesByCode[cloned.Code] = &cloned
+	return nil
 }
 
 func (r *paymentOrderLifecycleRedeemRepo) CreateBatch(context.Context, []RedeemCode) error {
@@ -160,6 +168,92 @@ func (r *paymentOrderLifecycleRedeemRepo) ListByUserPaginated(context.Context, i
 
 func (r *paymentOrderLifecycleRedeemRepo) SumPositiveBalanceByUser(context.Context, int64) (float64, error) {
 	panic("unexpected call")
+}
+
+func TestPaymentDevAutoSuccessRequiresExplicitLocalEnvironment(t *testing.T) {
+	svc := &PaymentService{}
+
+	t.Setenv(paymentDevAutoSuccessEnv, paymentDevAutoSuccessToken)
+	t.Setenv(paymentDevEnvironmentEnv, "production")
+	require.False(t, svc.paymentDevAutoSuccessEnabled())
+
+	t.Setenv(paymentDevAutoSuccessEnv, "true")
+	t.Setenv(paymentDevEnvironmentEnv, "development")
+	require.False(t, svc.paymentDevAutoSuccessEnabled())
+
+	t.Setenv(paymentDevAutoSuccessEnv, paymentDevAutoSuccessToken)
+	t.Setenv(paymentDevEnvironmentEnv, "development")
+	t.Setenv("APP_ENV", "production")
+	require.False(t, svc.paymentDevAutoSuccessEnabled())
+
+	t.Setenv("APP_ENV", "")
+	require.True(t, svc.paymentDevAutoSuccessEnabled())
+}
+
+func TestCreateOrderDevAutoSuccessCompletesBalanceOrderWithoutProvider(t *testing.T) {
+	ctx := context.Background()
+	client := newPaymentOrderLifecycleTestClient(t)
+
+	user, err := client.User.Create().
+		SetEmail("dev-pay@example.com").
+		SetPasswordHash("hash").
+		SetUsername("dev-pay-user").
+		Save(ctx)
+	require.NoError(t, err)
+
+	userRepo := &mockUserRepo{
+		getByIDUser: &User{
+			ID:       user.ID,
+			Email:    user.Email,
+			Username: user.Username,
+			Status:   payment.EntityStatusActive,
+			Balance:  0,
+		},
+	}
+	userRepo.updateBalanceFn = func(ctx context.Context, id int64, amount float64) error {
+		require.Equal(t, user.ID, id)
+		userRepo.getByIDUser.Balance += amount
+		return nil
+	}
+	redeemRepo := &paymentOrderLifecycleRedeemRepo{codesByCode: map[string]*RedeemCode{}}
+	redeemService := NewRedeemService(redeemRepo, userRepo, nil, nil, nil, client, nil, nil)
+	svc := &PaymentService{
+		entClient: client,
+		configService: &PaymentConfigService{
+			entClient: client,
+			settingRepo: &paymentConfigSettingRepoStub{values: map[string]string{
+				SettingPaymentEnabled:      "true",
+				SettingBalanceRechargeMult: "4",
+			}},
+		},
+		redeemService: redeemService,
+		userRepo:      userRepo,
+	}
+
+	t.Setenv(paymentDevAutoSuccessEnv, paymentDevAutoSuccessToken)
+	t.Setenv(paymentDevEnvironmentEnv, "development")
+
+	resp, err := svc.CreateOrder(ctx, CreateOrderRequest{
+		UserID:      user.ID,
+		Amount:      10,
+		PaymentType: payment.TypeAlipay,
+		OrderType:   payment.OrderTypeBalance,
+		ClientIP:    "127.0.0.1",
+		SrcHost:     "app.example.com",
+	})
+	require.NoError(t, err)
+	require.Equal(t, payment.CreatePaymentResultPaymentCompleted, resp.ResultType)
+	require.Equal(t, OrderStatusCompleted, resp.Status)
+	require.Equal(t, 40.0, resp.Amount)
+	require.Equal(t, 10.0, resp.PayAmount)
+	require.Equal(t, 40.0, userRepo.getByIDUser.Balance)
+
+	order, err := client.PaymentOrder.Get(ctx, resp.OrderID)
+	require.NoError(t, err)
+	require.Equal(t, OrderStatusCompleted, order.Status)
+	require.Equal(t, "dev-auto-success-"+order.OutTradeNo, order.PaymentTradeNo)
+	require.NotNil(t, order.PaidAt)
+	require.NotNil(t, order.CompletedAt)
 }
 
 func TestVerifyOrderByOutTradeNoBackfillsTradeNoFromPaidQuery(t *testing.T) {

@@ -66,8 +66,7 @@
             <span class="h-4 w-px bg-primary-200 dark:bg-primary-700/60"></span>
             <button
               type="button"
-              class="rounded-md px-1.5 py-0.5 text-[11px] font-bold leading-4 transition-colors"
-              :class="membershipBadgeClass"
+              class="membership-flash-badge relative overflow-visible rounded bg-purple-600 px-1.5 py-0.5 text-[11px] font-bold leading-4 text-white shadow-sm transition-colors hover:bg-purple-700 dark:bg-purple-600 dark:text-white dark:hover:bg-purple-500"
               :title="membershipTitle"
               @click.stop="toggleMembershipPopover"
             >
@@ -78,7 +77,7 @@
           <transition name="dropdown">
             <div
               v-if="membershipPopoverOpen"
-              class="absolute right-0 z-50 mt-2 w-[320px] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl dark:border-dark-700 dark:bg-dark-800"
+              class="absolute right-0 z-50 mt-2 w-[360px] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl dark:border-dark-700 dark:bg-dark-800"
             >
               <div class="border-b border-gray-100 p-3 dark:border-dark-700">
                 <div class="flex items-start justify-between gap-3">
@@ -91,7 +90,7 @@
                     </p>
                   </div>
                   <span class="rounded-md px-2 py-1 text-xs font-bold" :class="membershipBadgeClass">
-                    {{ membershipLabel }}
+                    {{ membershipLevelLabel }}
                   </span>
                 </div>
               </div>
@@ -117,12 +116,13 @@
                   </p>
                 </div>
 
-                <div class="rounded-lg bg-gradient-to-r from-purple-50 to-amber-50 px-3 py-2 dark:from-purple-900/20 dark:to-amber-900/20">
-                  <div class="text-xs font-medium text-gray-700 dark:text-gray-300">
+                <div v-if="affiliateFeatureEnabled && membershipLevel > 0" class="rounded-lg bg-gradient-to-r from-purple-50 to-amber-50 px-3 py-2 dark:from-purple-900/20 dark:to-amber-900/20">
+                  <div class="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                     {{ t('membership.affiliateRebate') }}
                   </div>
-                  <div class="mt-0.5 text-xs font-semibold text-purple-700 dark:text-purple-300">
-                    {{ membershipLevel > 0 ? t('membership.subscriptionReward', { rate: affiliateRebateRate, days: affiliateRebateDays }) : t('membership.subscriptionRewardUnavailable') }}
+                  <div class="space-y-0.5 text-[12px] font-semibold leading-4 text-purple-700 dark:text-purple-300">
+                    <div><span>1. </span><span v-html="highlightBenefitNumbers(membershipBenefitText)"></span></div>
+                    <div><span>2. </span><span v-html="highlightBenefitNumbers(t('membership.consumptionDiscount'))"></span></div>
                   </div>
                 </div>
               </div>
@@ -305,7 +305,8 @@ const docUrl = computed(() => appStore.docUrl)
 const avatarUrl = computed(() => user.value?.avatar_url?.trim() || '')
 const totalRecharged = computed(() => user.value?.total_recharged || 0)
 const membershipLevel = computed(() => user.value?.membership_level ?? resolveMembershipLevel(totalRecharged.value))
-const membershipLabel = computed(() => `LV.${membershipLevel.value}`)
+const membershipLabel = computed(() => membershipLevel.value > 0 ? `LV.${membershipLevel.value}` : 'LEVEL')
+const membershipLevelLabel = computed(() => `LV.${membershipLevel.value}`)
 const nextMembershipThreshold = computed(() => {
   if (membershipLevel.value === 0) return 20
   if (membershipLevel.value === 1) return 300
@@ -341,17 +342,26 @@ const membershipHint = computed(() => {
     level: membershipLevel.value + 1
   })
 })
-const affiliateRebateDays = computed(() => {
-  if (membershipLevel.value <= 0) return 0
-  if (membershipLevel.value >= 3) return 7
-  if (membershipLevel.value >= 2) return 3
-  return 1
-})
 const affiliateRebateRate = computed(() => {
   if (membershipLevel.value <= 0) return 0
   if (membershipLevel.value >= 3) return 25
   if (membershipLevel.value >= 2) return 10
   return 5
+})
+const affiliateFeatureEnabled = computed(() => appStore.cachedPublicSettings?.affiliate_enabled === true)
+const membershipInviteLimit = computed(() => {
+  const settings = appStore.cachedPublicSettings
+  if (membershipLevel.value >= 3) return settings?.affiliate_invite_limit_level3 ?? 5
+  if (membershipLevel.value >= 2) return settings?.affiliate_invite_limit_level2 ?? 3
+  if (membershipLevel.value >= 1) return settings?.affiliate_invite_limit_level1 ?? 1
+  return settings?.affiliate_invite_limit_level0 ?? 0
+})
+const membershipInviteLimitText = computed(() => String(membershipInviteLimit.value))
+const membershipBenefitText = computed(() => {
+  const params = { rate: affiliateRebateRate.value, limit: membershipInviteLimitText.value }
+  return membershipLevel.value > 0
+    ? t('membership.subscriptionReward', params)
+    : t('membership.subscriptionRewardUnavailable', params)
 })
 const membershipTitle = computed(() => {
   return `${membershipLabel.value} · ${totalRecharged.value.toFixed(2)}`
@@ -437,6 +447,10 @@ function closeMembershipPopover() {
   membershipPopoverOpen.value = false
 }
 
+function highlightBenefitNumbers(text: string) {
+  return text.replace(/\d+(?:\.\d+)?%?/g, '<span class="font-bold text-primary-600 dark:text-primary-300">$&</span>')
+}
+
 function resolveMembershipLevel(total: number) {
   if (total > 1000) return 3
   if (total > 300) return 2
@@ -489,5 +503,72 @@ onBeforeUnmount(() => {
 .dropdown-leave-to {
   opacity: 0;
   transform: scale(0.95) translateY(-4px);
+}
+
+.membership-flash-badge::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient(45deg, transparent 0%, transparent 42%, rgba(250, 204, 21, 0.95) 49%, rgba(255, 255, 255, 0.85) 52%, transparent 60%, transparent 100%);
+  background-size: 260% 260%;
+  background-position: 0% 100%;
+  filter: blur(0.25px);
+  opacity: 0;
+  animation: membership-flash-sweep 3.6s cubic-bezier(0.22, 0.61, 0.36, 1) infinite;
+}
+
+.membership-flash-badge::after {
+  content: '✦';
+  position: absolute;
+  right: 1px;
+  top: 1px;
+  pointer-events: none;
+  color: rgb(250 204 21 / 0.98);
+  font-size: 0.48rem;
+  line-height: 1;
+  text-shadow: 0 0 2px rgb(88 28 135 / 0.9), 0 0 6px rgb(250 204 21 / 0.85), 0 0 10px rgb(168 85 247 / 0.7);
+  opacity: 0;
+  transform: translate(42%, -42%) scale(0.35) rotate(-18deg);
+  transform-origin: center;
+  animation: membership-flash-star 3.6s ease-in-out infinite;
+}
+
+@keyframes membership-flash-sweep {
+  0%, 56% {
+    opacity: 0;
+    background-position: 100% 0%;
+  }
+  62% {
+    opacity: 0.55;
+  }
+  76% {
+    opacity: 0.75;
+    background-position: 0% 100%;
+  }
+  84%, 100% {
+    opacity: 0;
+    background-position: 0% 100%;
+  }
+}
+
+@keyframes membership-flash-star {
+  0%, 70% {
+    opacity: 0;
+    transform: translate(42%, -42%) scale(0.35) rotate(-18deg);
+  }
+  76% {
+    opacity: 0.95;
+    transform: translate(42%, -42%) scale(1.2) rotate(45deg);
+  }
+  90% {
+    opacity: 0.95;
+    transform: translate(42%, -42%) scale(1.08) rotate(58deg);
+  }
+  98%, 100% {
+    opacity: 0;
+    transform: translate(42%, -42%) scale(0.45) rotate(72deg);
+  }
 }
 </style>

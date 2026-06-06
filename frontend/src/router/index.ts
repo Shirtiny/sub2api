@@ -237,7 +237,8 @@ const routes: RouteRecordRaw[] = [
       requiresAdmin: false,
       title: 'Affiliate',
       titleKey: 'affiliate.title',
-      descriptionKey: 'affiliate.description'
+      descriptionKey: 'affiliate.description',
+      requiresAffiliate: true
     }
   },
   {
@@ -586,7 +587,8 @@ const routes: RouteRecordRaw[] = [
       requiresAdmin: true,
       title: 'Affiliate Invite Records',
       titleKey: 'nav.affiliateInviteRecords',
-      descriptionKey: 'admin.affiliates.invitesDescription'
+      descriptionKey: 'admin.affiliates.invitesDescription',
+      requiresAffiliate: true
     }
   },
   {
@@ -598,7 +600,8 @@ const routes: RouteRecordRaw[] = [
       requiresAdmin: true,
       title: 'Affiliate Rebate Records',
       titleKey: 'nav.affiliateRebateRecords',
-      descriptionKey: 'admin.affiliates.rebatesDescription'
+      descriptionKey: 'admin.affiliates.rebatesDescription',
+      requiresAffiliate: true
     }
   },
   {
@@ -610,7 +613,8 @@ const routes: RouteRecordRaw[] = [
       requiresAdmin: true,
       title: 'Affiliate Transfer Records',
       titleKey: 'nav.affiliateTransferRecords',
-      descriptionKey: 'admin.affiliates.transfersDescription'
+      descriptionKey: 'admin.affiliates.transfersDescription',
+      requiresAffiliate: true
     }
   },
 
@@ -820,6 +824,17 @@ router.beforeEach(async (to, _from, next) => {
   if (to.meta.requiresRiskControl) {
     const riskControlEnabled = appStore.cachedPublicSettings?.risk_control_enabled === true
     if (!riskControlEnabled) {
+      next(authStore.isAdmin ? '/admin/settings' : '/dashboard')
+      return
+    }
+  }
+
+  if (to.meta.requiresAffiliate) {
+    if (!appStore.publicSettingsLoaded || !appStore.cachedPublicSettings) {
+      await appStore.fetchPublicSettings()
+    }
+    const affiliateEnabled = appStore.cachedPublicSettings?.affiliate_enabled === true
+    if (!affiliateEnabled) {
       next(authStore.isAdmin ? '/admin/settings' : '/dashboard')
       return
     }
