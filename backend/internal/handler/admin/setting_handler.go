@@ -228,10 +228,15 @@ func (h *SettingHandler) GetSettings(c *gin.Context) {
 		DefaultConcurrency:                     settings.DefaultConcurrency,
 		DefaultBalance:                         settings.DefaultBalance,
 		RiskControlEnabled:                     settings.RiskControlEnabled,
-		AffiliateRebateRate:                    settings.AffiliateRebateRate,
+		AffiliateRebateRate:                    settings.AffiliateRebateRateLevel0,
+		AffiliateRebateRateLevel0:              settings.AffiliateRebateRateLevel0,
+		AffiliateRebateRateLevel1:              settings.AffiliateRebateRateLevel1,
+		AffiliateRebateRateLevel2:              settings.AffiliateRebateRateLevel2,
+		AffiliateRebateRateLevel3:              settings.AffiliateRebateRateLevel3,
 		AffiliateRebateFreezeHours:             settings.AffiliateRebateFreezeHours,
 		AffiliateRebateDurationDays:            settings.AffiliateRebateDurationDays,
 		AffiliateRebatePerInviteeCap:           settings.AffiliateRebatePerInviteeCap,
+		AffiliateInviteLimit:                   settings.AffiliateInviteLimit,
 		DefaultUserRPMLimit:                    settings.DefaultUserRPMLimit,
 		DefaultSubscriptions:                   defaultSubscriptions,
 		EnableModelFallback:                    settings.EnableModelFallback,
@@ -509,9 +514,14 @@ type UpdateSettingsRequest struct {
 	DefaultConcurrency                        int                               `json:"default_concurrency"`
 	DefaultBalance                            float64                           `json:"default_balance"`
 	AffiliateRebateRate                       *float64                          `json:"affiliate_rebate_rate"`
+	AffiliateRebateRateLevel0                 *float64                          `json:"affiliate_rebate_rate_level0"`
+	AffiliateRebateRateLevel1                 *float64                          `json:"affiliate_rebate_rate_level1"`
+	AffiliateRebateRateLevel2                 *float64                          `json:"affiliate_rebate_rate_level2"`
+	AffiliateRebateRateLevel3                 *float64                          `json:"affiliate_rebate_rate_level3"`
 	AffiliateRebateFreezeHours                *int                              `json:"affiliate_rebate_freeze_hours"`
 	AffiliateRebateDurationDays               *int                              `json:"affiliate_rebate_duration_days"`
 	AffiliateRebatePerInviteeCap              *float64                          `json:"affiliate_rebate_per_invitee_cap"`
+	AffiliateInviteLimit                      *int                              `json:"affiliate_invite_limit"`
 	DefaultUserRPMLimit                       int                               `json:"default_user_rpm_limit"`
 	DefaultSubscriptions                      []dto.DefaultSubscriptionSetting  `json:"default_subscriptions"`
 	AuthSourceDefaultEmailBalance             *float64                          `json:"auth_source_default_email_balance"`
@@ -687,16 +697,37 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 	if req.DefaultBalance < 0 {
 		req.DefaultBalance = 0
 	}
-	affiliateRebateRate := previousSettings.AffiliateRebateRate
-	if req.AffiliateRebateRate != nil {
-		affiliateRebateRate = *req.AffiliateRebateRate
+	clampAffiliateRate := func(value float64) float64 {
+		if value < service.AffiliateRebateRateMin {
+			return service.AffiliateRebateRateMin
+		}
+		if value > service.AffiliateRebateRateMax {
+			return service.AffiliateRebateRateMax
+		}
+		return value
 	}
-	if affiliateRebateRate < service.AffiliateRebateRateMin {
-		affiliateRebateRate = service.AffiliateRebateRateMin
+	affiliateRebateRateLevel0 := previousSettings.AffiliateRebateRateLevel0
+	if req.AffiliateRebateRateLevel0 != nil {
+		affiliateRebateRateLevel0 = *req.AffiliateRebateRateLevel0
+	} else if req.AffiliateRebateRate != nil {
+		affiliateRebateRateLevel0 = *req.AffiliateRebateRate
 	}
-	if affiliateRebateRate > service.AffiliateRebateRateMax {
-		affiliateRebateRate = service.AffiliateRebateRateMax
+	affiliateRebateRateLevel0 = clampAffiliateRate(affiliateRebateRateLevel0)
+	affiliateRebateRateLevel1 := previousSettings.AffiliateRebateRateLevel1
+	if req.AffiliateRebateRateLevel1 != nil {
+		affiliateRebateRateLevel1 = *req.AffiliateRebateRateLevel1
 	}
+	affiliateRebateRateLevel1 = clampAffiliateRate(affiliateRebateRateLevel1)
+	affiliateRebateRateLevel2 := previousSettings.AffiliateRebateRateLevel2
+	if req.AffiliateRebateRateLevel2 != nil {
+		affiliateRebateRateLevel2 = *req.AffiliateRebateRateLevel2
+	}
+	affiliateRebateRateLevel2 = clampAffiliateRate(affiliateRebateRateLevel2)
+	affiliateRebateRateLevel3 := previousSettings.AffiliateRebateRateLevel3
+	if req.AffiliateRebateRateLevel3 != nil {
+		affiliateRebateRateLevel3 = *req.AffiliateRebateRateLevel3
+	}
+	affiliateRebateRateLevel3 = clampAffiliateRate(affiliateRebateRateLevel3)
 	affiliateRebateFreezeHours := previousSettings.AffiliateRebateFreezeHours
 	if req.AffiliateRebateFreezeHours != nil {
 		affiliateRebateFreezeHours = *req.AffiliateRebateFreezeHours
@@ -723,6 +754,16 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 	}
 	if affiliateRebatePerInviteeCap < 0 {
 		affiliateRebatePerInviteeCap = service.AffiliateRebatePerInviteeCapDefault
+	}
+	affiliateInviteLimit := previousSettings.AffiliateInviteLimit
+	if req.AffiliateInviteLimit != nil {
+		affiliateInviteLimit = *req.AffiliateInviteLimit
+	}
+	if affiliateInviteLimit < 0 {
+		affiliateInviteLimit = service.AffiliateInviteLimitDefault
+	}
+	if affiliateInviteLimit > service.AffiliateInviteLimitMax {
+		affiliateInviteLimit = service.AffiliateInviteLimitMax
 	}
 	// 通用表格配置：兼容旧客户端未传字段时保留当前值。
 	if req.TableDefaultPageSize <= 0 {
@@ -1574,10 +1615,15 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		CustomEndpoints:                        customEndpointsJSON,
 		DefaultConcurrency:                     req.DefaultConcurrency,
 		DefaultBalance:                         req.DefaultBalance,
-		AffiliateRebateRate:                    affiliateRebateRate,
+		AffiliateRebateRate:                    affiliateRebateRateLevel0,
+		AffiliateRebateRateLevel0:              affiliateRebateRateLevel0,
+		AffiliateRebateRateLevel1:              affiliateRebateRateLevel1,
+		AffiliateRebateRateLevel2:              affiliateRebateRateLevel2,
+		AffiliateRebateRateLevel3:              affiliateRebateRateLevel3,
 		AffiliateRebateFreezeHours:             affiliateRebateFreezeHours,
 		AffiliateRebateDurationDays:            affiliateRebateDurationDays,
 		AffiliateRebatePerInviteeCap:           affiliateRebatePerInviteeCap,
+		AffiliateInviteLimit:                   affiliateInviteLimit,
 		DefaultUserRPMLimit:                    req.DefaultUserRPMLimit,
 		DefaultSubscriptions:                   defaultSubscriptions,
 		EnableModelFallback:                    req.EnableModelFallback,
@@ -2011,10 +2057,15 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		CustomEndpoints:                        dto.ParseCustomEndpoints(updatedSettings.CustomEndpoints),
 		DefaultConcurrency:                     updatedSettings.DefaultConcurrency,
 		DefaultBalance:                         updatedSettings.DefaultBalance,
-		AffiliateRebateRate:                    updatedSettings.AffiliateRebateRate,
+		AffiliateRebateRate:                    updatedSettings.AffiliateRebateRateLevel0,
+		AffiliateRebateRateLevel0:              updatedSettings.AffiliateRebateRateLevel0,
+		AffiliateRebateRateLevel1:              updatedSettings.AffiliateRebateRateLevel1,
+		AffiliateRebateRateLevel2:              updatedSettings.AffiliateRebateRateLevel2,
+		AffiliateRebateRateLevel3:              updatedSettings.AffiliateRebateRateLevel3,
 		AffiliateRebateFreezeHours:             updatedSettings.AffiliateRebateFreezeHours,
 		AffiliateRebateDurationDays:            updatedSettings.AffiliateRebateDurationDays,
 		AffiliateRebatePerInviteeCap:           updatedSettings.AffiliateRebatePerInviteeCap,
+		AffiliateInviteLimit:                   updatedSettings.AffiliateInviteLimit,
 		DefaultUserRPMLimit:                    updatedSettings.DefaultUserRPMLimit,
 		DefaultSubscriptions:                   updatedDefaultSubscriptions,
 		EnableModelFallback:                    updatedSettings.EnableModelFallback,
@@ -2413,6 +2464,18 @@ func diffSettings(before *service.SystemSettings, after *service.SystemSettings,
 	if before.AffiliateRebateRate != after.AffiliateRebateRate {
 		changed = append(changed, "affiliate_rebate_rate")
 	}
+	if before.AffiliateRebateRateLevel0 != after.AffiliateRebateRateLevel0 {
+		changed = append(changed, "affiliate_rebate_rate_level0")
+	}
+	if before.AffiliateRebateRateLevel1 != after.AffiliateRebateRateLevel1 {
+		changed = append(changed, "affiliate_rebate_rate_level1")
+	}
+	if before.AffiliateRebateRateLevel2 != after.AffiliateRebateRateLevel2 {
+		changed = append(changed, "affiliate_rebate_rate_level2")
+	}
+	if before.AffiliateRebateRateLevel3 != after.AffiliateRebateRateLevel3 {
+		changed = append(changed, "affiliate_rebate_rate_level3")
+	}
 	if before.AffiliateRebateFreezeHours != after.AffiliateRebateFreezeHours {
 		changed = append(changed, "affiliate_rebate_freeze_hours")
 	}
@@ -2421,6 +2484,9 @@ func diffSettings(before *service.SystemSettings, after *service.SystemSettings,
 	}
 	if before.AffiliateRebatePerInviteeCap != after.AffiliateRebatePerInviteeCap {
 		changed = append(changed, "affiliate_rebate_per_invitee_cap")
+	}
+	if before.AffiliateInviteLimit != after.AffiliateInviteLimit {
+		changed = append(changed, "affiliate_invite_limit")
 	}
 	if !equalDefaultSubscriptions(before.DefaultSubscriptions, after.DefaultSubscriptions) {
 		changed = append(changed, "default_subscriptions")

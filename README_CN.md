@@ -603,6 +603,7 @@ websocat -H="Sec-WebSocket-Protocol: sub2api-admin, jwt.<ADMIN_TOKEN>" ws://loca
 
 ```bash
 # 后端（支持热重载）
+$env:SERVER_PORT = "8080"
 cd backend
 go run ./cmd/server
 

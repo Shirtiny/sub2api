@@ -373,9 +373,14 @@ export interface SystemSettings {
   // Default settings
   default_balance: number;
   affiliate_rebate_rate: number;
+  affiliate_rebate_rate_level0: number;
+  affiliate_rebate_rate_level1: number;
+  affiliate_rebate_rate_level2: number;
+  affiliate_rebate_rate_level3: number;
   affiliate_rebate_freeze_hours: number;
   affiliate_rebate_duration_days: number;
   affiliate_rebate_per_invitee_cap: number;
+  affiliate_invite_limit: number;
   default_concurrency: number;
   default_user_rpm_limit: number;
   default_subscriptions: DefaultSubscriptionSetting[];
@@ -629,9 +634,14 @@ export interface UpdateSettingsRequest {
   login_agreement_documents?: LoginAgreementDocument[];
   default_balance?: number;
   affiliate_rebate_rate?: number;
+  affiliate_rebate_rate_level0?: number;
+  affiliate_rebate_rate_level1?: number;
+  affiliate_rebate_rate_level2?: number;
+  affiliate_rebate_rate_level3?: number;
   affiliate_rebate_freeze_hours?: number;
   affiliate_rebate_duration_days?: number;
   affiliate_rebate_per_invitee_cap?: number;
+  affiliate_invite_limit?: number;
   default_concurrency?: number;
   default_user_rpm_limit?: number;
   default_subscriptions?: DefaultSubscriptionSetting[];

@@ -161,4 +161,22 @@ func (s *UserRepoSuite) TestListWithFilters_SortByLastUsedAtDesc_UsesUsageLogsNo
 	s.Require().Equal(nilUsage.ID, users[2].ID)
 }
 
+func (s *UserRepoSuite) TestListWithFilters_SortByMembershipLevelDesc() {
+	s.mustCreateUser(&service.User{Email: "lv1@example.com", TotalRecharged: 21})
+	s.mustCreateUser(&service.User{Email: "lv3@example.com", TotalRecharged: 1001})
+	s.mustCreateUser(&service.User{Email: "lv0@example.com", TotalRecharged: 0})
+
+	users, _, err := s.repo.ListWithFilters(s.ctx, pagination.PaginationParams{
+		Page:      1,
+		PageSize:  10,
+		SortBy:    "membership_level",
+		SortOrder: "desc",
+	}, service.UserListFilters{})
+	s.Require().NoError(err)
+	s.Require().Len(users, 3)
+	s.Require().Equal("lv3@example.com", users[0].Email)
+	s.Require().Equal("lv1@example.com", users[1].Email)
+	s.Require().Equal("lv0@example.com", users[2].Email)
+}
+
 func TestUserRepoSortSuiteSmoke(_ *testing.T) {}

@@ -24,7 +24,11 @@ const (
 
 // Affiliate rebate settings
 const (
-	AffiliateRebateRateDefault          = 20.0
+	AffiliateRebateRateDefault          = 0.0
+	AffiliateRebateRateLevel0Default    = 0.0
+	AffiliateRebateRateLevel1Default    = 5.0
+	AffiliateRebateRateLevel2Default    = 10.0
+	AffiliateRebateRateLevel3Default    = 25.0
 	AffiliateRebateRateMin              = 0.0
 	AffiliateRebateRateMax              = 100.0
 	AffiliateEnabledDefault             = false // 邀请返利总开关默认关闭
@@ -33,6 +37,15 @@ const (
 	AffiliateRebateDurationDaysDefault  = 0     // 0 = 永久有效
 	AffiliateRebateDurationDaysMax      = 3650  // ~10 年
 	AffiliateRebatePerInviteeCapDefault = 0.0   // 0 = 无上限
+	AffiliateInviteLimitDefault         = 0     // 0 = 无上限
+	AffiliateInviteLimitMax             = 100000
+	MembershipLevel1Threshold           = 20.0
+	MembershipLevel2Threshold           = 300.0
+	MembershipLevel3Threshold           = 1000.0
+	AffiliateSubscriptionRebateMinDays  = 29
+	AffiliateSubscriptionRebateDaysBase = 1
+	AffiliateSubscriptionRebateDaysL2   = 3
+	AffiliateSubscriptionRebateDaysL3   = 7
 )
 
 // Platform constants
@@ -130,10 +143,15 @@ const (
 	SettingKeyFrontendURL                      = "frontend_url"                        // 前端基础URL，用于生成邮件中的重置密码链接
 	SettingKeyInvitationCodeEnabled            = "invitation_code_enabled"             // 是否启用邀请码注册
 	SettingKeyAffiliateEnabled                 = "affiliate_enabled"                   // 邀请返利功能总开关
-	SettingKeyAffiliateRebateRate              = "affiliate_rebate_rate"               // 邀请返利比例（百分比，0-100）
+	SettingKeyAffiliateRebateRate              = "affiliate_rebate_rate"               // 兼容旧版：普通用户邀请返利比例
+	SettingKeyAffiliateRebateRateLevel0        = "affiliate_rebate_rate_level0"        // 普通用户邀请返利比例
+	SettingKeyAffiliateRebateRateLevel1        = "affiliate_rebate_rate_level1"        // 1级会员邀请返利比例
+	SettingKeyAffiliateRebateRateLevel2        = "affiliate_rebate_rate_level2"        // 2级会员邀请返利比例
+	SettingKeyAffiliateRebateRateLevel3        = "affiliate_rebate_rate_level3"        // 3级会员邀请返利比例
 	SettingKeyAffiliateRebateFreezeHours       = "affiliate_rebate_freeze_hours"       // 返利冻结期（小时，0=不冻结）
 	SettingKeyAffiliateRebateDurationDays      = "affiliate_rebate_duration_days"      // 返利有效期（天，0=永久）
 	SettingKeyAffiliateRebatePerInviteeCap     = "affiliate_rebate_per_invitee_cap"    // 单人返利上限（0=无上限）
+	SettingKeyAffiliateInviteLimit             = "affiliate_invite_limit"              // 可邀请人数上限（0=无上限）
 	SettingKeyRiskControlEnabled               = "risk_control_enabled"                // 是否启用风控中心入口与审计链路
 	SettingKeyContentModerationConfig          = "content_moderation_config"           // 内容审计配置（JSON）
 	SettingKeyLoginAgreementEnabled            = "login_agreement_enabled"             // 登录前是否要求同意条款

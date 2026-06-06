@@ -340,10 +340,10 @@ func (r *oauthEmailAffiliateRepoStub) GetAffiliateByCode(_ context.Context, code
 	if !ok {
 		return nil, service.ErrAffiliateProfileNotFound
 	}
-	return &service.AffiliateSummary{UserID: userID, AffCode: strings.ToUpper(strings.TrimSpace(code))}, nil
+	return &service.AffiliateSummary{UserID: userID, AffCode: strings.ToUpper(strings.TrimSpace(code)), TotalRecharged: service.MembershipLevel1Threshold + 0.01}, nil
 }
 
-func (r *oauthEmailAffiliateRepoStub) BindInviter(_ context.Context, userID, inviterID int64) (bool, error) {
+func (r *oauthEmailAffiliateRepoStub) BindInviter(_ context.Context, userID, inviterID int64, _ int) (bool, error) {
 	r.bindCalls = append(r.bindCalls, oauthEmailAffiliateBindCall{userID: userID, inviterID: inviterID})
 	return true, nil
 }
@@ -378,6 +378,10 @@ func (r *oauthEmailAffiliateRepoStub) ResetUserAffCode(context.Context, int64) (
 
 func (r *oauthEmailAffiliateRepoStub) SetUserRebateRate(context.Context, int64, *float64) error {
 	panic("unexpected SetUserRebateRate call")
+}
+
+func (r *oauthEmailAffiliateRepoStub) SetUserInviteLimit(context.Context, int64, *int) error {
+	panic("unexpected SetUserInviteLimit call")
 }
 
 func (r *oauthEmailAffiliateRepoStub) BatchSetUserRebateRate(context.Context, []int64, *float64) error {

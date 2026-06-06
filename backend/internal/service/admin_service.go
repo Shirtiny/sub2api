@@ -38,6 +38,7 @@ type AdminService interface {
 	UpdateUser(ctx context.Context, id int64, input *UpdateUserInput) (*User, error)
 	DeleteUser(ctx context.Context, id int64) error
 	UpdateUserBalance(ctx context.Context, userID int64, balance float64, operation string, notes string) (*User, error)
+	UpdateUserMembershipPoints(ctx context.Context, userID int64, points float64, operation string, notes string) (*User, error)
 	BatchUpdateConcurrency(ctx context.Context, userIDs []int64, value int, mode string) (int, error)
 	GetUserAPIKeys(ctx context.Context, userID int64, page, pageSize int, sortBy, sortOrder string) ([]APIKey, int64, error)
 	GetUserUsageStats(ctx context.Context, userID int64, period string) (any, error)
@@ -939,6 +940,39 @@ func (s *adminServiceImpl) UpdateUserBalance(ctx context.Context, userID int64, 
 		}
 	}
 
+	return user, nil
+}
+
+func (s *adminServiceImpl) UpdateUserMembershipPoints(ctx context.Context, userID int64, points float64, operation string, notes string) (*User, error) {
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	oldPoints := user.TotalRecharged
+
+	switch operation {
+	case "set":
+		user.TotalRecharged = points
+	case "add":
+		user.TotalRecharged += points
+	case "subtract":
+		user.TotalRecharged -= points
+	}
+
+	if user.TotalRecharged < 0 {
+		return nil, fmt.Errorf("membership points cannot be negative, current points: %.2f, requested operation would result in: %.2f", oldPoints, user.TotalRecharged)
+	}
+
+	if err := s.userRepo.Update(ctx, user); err != nil {
+		return nil, err
+	}
+	pointsDiff := user.TotalRecharged - oldPoints
+	if s.authCacheInvalidator != nil && pointsDiff != 0 {
+		s.authCacheInvalidator.InvalidateAuthCacheByUserID(ctx, userID)
+	}
+
+	_ = notes
 	return user, nil
 }
 

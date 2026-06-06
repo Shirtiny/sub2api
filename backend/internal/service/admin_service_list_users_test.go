@@ -156,12 +156,12 @@ func TestAdminService_ListUsers_PassesSortParams(t *testing.T) {
 	}
 	svc := &adminServiceImpl{userRepo: userRepo}
 
-	_, _, err := svc.ListUsers(context.Background(), 2, 50, UserListFilters{}, "email", "ASC")
+	_, _, err := svc.ListUsers(context.Background(), 2, 50, UserListFilters{}, "membership_level", "ASC")
 	require.NoError(t, err)
 	require.Equal(t, pagination.PaginationParams{
 		Page:      2,
 		PageSize:  50,
-		SortBy:    "email",
+		SortBy:    "membership_level",
 		SortOrder: "ASC",
 	}, userRepo.listWithFiltersParams)
 }

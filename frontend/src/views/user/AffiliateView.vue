@@ -21,10 +21,13 @@
               {{ t('affiliate.stats.rebateRateHint') }}
             </p>
           </div>
-          <div class="card p-5">
+          <div class="card relative p-5">
             <p class="text-sm text-gray-500 dark:text-dark-400">{{ t('affiliate.stats.invitedUsers') }}</p>
             <p class="mt-2 text-2xl font-semibold text-gray-900 dark:text-white">
               {{ formatCount(detail.aff_count) }}
+            </p>
+            <p class="absolute bottom-3 right-4 text-xs text-gray-400 dark:text-dark-500">
+              {{ inviteLimitLabel }}
             </p>
           </div>
           <div class="card p-5">
@@ -48,7 +51,10 @@
           <h3 class="text-base font-semibold text-gray-900 dark:text-white">{{ t('affiliate.title') }}</h3>
           <p class="mt-1 text-sm text-gray-500 dark:text-dark-400">{{ t('affiliate.description') }}</p>
 
-          <div class="mt-5 grid gap-4 md:grid-cols-2">
+          <div
+            v-if="detail.can_invite"
+            class="mt-5 grid gap-4 md:grid-cols-2"
+          >
             <div class="space-y-2">
               <p class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('affiliate.yourCode') }}</p>
               <div class="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 dark:border-dark-700 dark:bg-dark-900">
@@ -71,15 +77,22 @@
               </div>
             </div>
           </div>
+          <div
+            v-else
+            class="mt-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700 dark:border-amber-900/40 dark:bg-amber-900/20 dark:text-amber-300"
+          >
+            {{ t('affiliate.unavailable') }}
+          </div>
 
           <div class="mt-5 rounded-xl border border-primary-200 bg-primary-50 p-4 dark:border-primary-900/40 dark:bg-primary-900/20">
             <p class="text-sm font-medium text-primary-800 dark:text-primary-200">{{ t('affiliate.tips.title') }}</p>
-            <ul class="mt-2 space-y-1 text-sm text-primary-700 dark:text-primary-300">
-              <li>1. {{ t('affiliate.tips.line1') }}</li>
-              <li>2. {{ t('affiliate.tips.line2', { rate: `${formattedRebateRate}%` }) }}</li>
-              <li>3. {{ t('affiliate.tips.line3') }}</li>
-              <li v-if="detail.aff_frozen_quota > 0">4. {{ t('affiliate.tips.line4') }}</li>
-            </ul>
+            <ol class="mt-2 list-decimal space-y-1 pl-5 text-sm text-primary-700 dark:text-primary-300">
+              <li>{{ t('affiliate.tips.line1') }}</li>
+              <li>{{ t('affiliate.tips.line2', { rate: `${formattedRebateRate}%` }) }}</li>
+              <li>{{ t('affiliate.tips.line3') }}</li>
+              <li>{{ t('affiliate.tips.line4') }}</li>
+              <li v-if="detail.aff_frozen_quota > 0">{{ t('affiliate.tips.line5') }}</li>
+            </ol>
           </div>
         </div>
 
@@ -162,7 +175,7 @@ const transferring = ref(false)
 const detail = ref<UserAffiliateDetail | null>(null)
 
 const inviteLink = computed(() => {
-  if (!detail.value) return ''
+  if (!detail.value?.can_invite || !detail.value.aff_code) return ''
   if (typeof window === 'undefined') return `/register?aff=${encodeURIComponent(detail.value.aff_code)}`
   return `${window.location.origin}/register?aff=${encodeURIComponent(detail.value.aff_code)}`
 })
@@ -173,6 +186,13 @@ const formattedRebateRate = computed(() => {
   const v = detail.value?.effective_rebate_rate_percent ?? 0
   const rounded = Math.round(v * 100) / 100
   return Number.isInteger(rounded) ? String(rounded) : rounded.toString()
+})
+
+const inviteLimitLabel = computed(() => {
+  const limit = detail.value?.effective_invite_limit ?? 0
+  return limit > 0
+    ? t('affiliate.stats.inviteLimit', { count: formatCount(limit) })
+    : t('affiliate.stats.inviteLimitUnlimited')
 })
 
 function formatCount(value: number): string {
@@ -195,7 +215,7 @@ async function loadAffiliateDetail(silent = false): Promise<void> {
 }
 
 async function copyCode(): Promise<void> {
-  if (!detail.value?.aff_code) return
+  if (!detail.value?.can_invite || !detail.value.aff_code) return
   await copyToClipboard(detail.value.aff_code, t('affiliate.codeCopied'))
 }
 

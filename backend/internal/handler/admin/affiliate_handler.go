@@ -53,9 +53,11 @@ func (h *AffiliateHandler) ListUsers(c *gin.Context) {
 type UpdateAffiliateUserRequest struct {
 	AffCode              *string  `json:"aff_code"`
 	AffRebateRatePercent *float64 `json:"aff_rebate_rate_percent"`
+	AffInviteLimit       *int     `json:"aff_invite_limit"`
 	// ClearRebateRate explicitly clears the per-user rate (sets it to NULL).
 	// Used to disambiguate from "field not provided".
-	ClearRebateRate bool `json:"clear_rebate_rate"`
+	ClearRebateRate  bool `json:"clear_rebate_rate"`
+	ClearInviteLimit bool `json:"clear_invite_limit"`
 }
 
 func (h *AffiliateHandler) UpdateUserSettings(c *gin.Context) {
@@ -90,6 +92,18 @@ func (h *AffiliateHandler) UpdateUserSettings(c *gin.Context) {
 		}
 	}
 
+	if req.ClearInviteLimit {
+		if err := h.affiliateService.AdminSetUserInviteLimit(c.Request.Context(), userID, nil); err != nil {
+			response.ErrorFrom(c, err)
+			return
+		}
+	} else if req.AffInviteLimit != nil {
+		if err := h.affiliateService.AdminSetUserInviteLimit(c.Request.Context(), userID, req.AffInviteLimit); err != nil {
+			response.ErrorFrom(c, err)
+			return
+		}
+	}
+
 	response.Success(c, gin.H{"user_id": userID})
 }
 
@@ -111,6 +125,10 @@ func (h *AffiliateHandler) ClearUserSettings(c *gin.Context) {
 		return
 	}
 	if _, err := h.affiliateService.AdminResetUserAffCode(c.Request.Context(), userID); err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	if err := h.affiliateService.AdminSetUserInviteLimit(c.Request.Context(), userID, nil); err != nil {
 		response.ErrorFrom(c, err)
 		return
 	}

@@ -558,6 +558,9 @@ func userListOrder(params pagination.PaginationParams) []func(*entsql.Selector) 
 	case "balance":
 		field = dbuser.FieldBalance
 		defaultField = false
+	case "membership_level", "total_recharged":
+		field = dbuser.FieldTotalRecharged
+		defaultField = false
 	case "concurrency":
 		field = dbuser.FieldConcurrency
 		defaultField = false
@@ -718,9 +721,9 @@ func (r *userRepository) filterUsersByAttributes(ctx context.Context, attrs map[
 func (r *userRepository) UpdateBalance(ctx context.Context, id int64, amount float64) error {
 	client := clientFromContext(ctx, r.client)
 	update := client.User.Update().Where(dbuser.IDEQ(id)).AddBalance(amount)
-	// Track cumulative recharge amount for percentage-based notifications
-	if amount > 0 {
-		update = update.AddTotalRecharged(amount)
+	// total_recharged stores membership points; callers opt in with an explicit factor.
+	if factor, ok := service.RechargePointsFactor(ctx); amount > 0 && ok {
+		update = update.AddTotalRecharged(amount * factor)
 	}
 	n, err := update.Save(ctx)
 	if err != nil {

@@ -95,3 +95,35 @@ func TestAdminService_UpdateUserBalance_NoChangeNoInvalidate(t *testing.T) {
 	require.Empty(t, invalidator.userIDs)
 	require.Empty(t, redeemRepo.created)
 }
+
+func TestAdminService_UpdateUserMembershipPoints_InvalidatesAuthCache(t *testing.T) {
+	baseRepo := &userRepoStub{user: &User{ID: 7, TotalRecharged: 10}}
+	repo := &balanceUserRepoStub{userRepoStub: baseRepo}
+	invalidator := &authCacheInvalidatorStub{}
+	svc := &adminServiceImpl{
+		userRepo:             repo,
+		authCacheInvalidator: invalidator,
+	}
+
+	got, err := svc.UpdateUserMembershipPoints(context.Background(), 7, 5, "add", "")
+	require.NoError(t, err)
+	require.Equal(t, 15.0, got.TotalRecharged)
+	require.Equal(t, []int64{7}, invalidator.userIDs)
+	require.Len(t, repo.updated, 1)
+}
+
+func TestAdminService_UpdateUserMembershipPoints_RejectsNegativeResult(t *testing.T) {
+	baseRepo := &userRepoStub{user: &User{ID: 7, TotalRecharged: 3}}
+	repo := &balanceUserRepoStub{userRepoStub: baseRepo}
+	invalidator := &authCacheInvalidatorStub{}
+	svc := &adminServiceImpl{
+		userRepo:             repo,
+		authCacheInvalidator: invalidator,
+	}
+
+	_, err := svc.UpdateUserMembershipPoints(context.Background(), 7, 5, "subtract", "")
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "membership points cannot be negative")
+	require.Empty(t, invalidator.userIDs)
+	require.Empty(t, repo.updated)
+}

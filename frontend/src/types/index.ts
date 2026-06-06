@@ -86,6 +86,8 @@ export interface User {
   wechat_bound?: boolean
   role: 'admin' | 'user' // User role for authorization
   balance: number // User balance for API usage
+  total_recharged?: number // Membership points
+  membership_level?: number // Membership level derived from points
   concurrency: number // Allowed concurrent requests
   rpm_limit?: number // User-level RPM cap (0 = unlimited); effective as fallback when group has no rpm_limit
   status: 'active' | 'disabled' // Account status
@@ -136,12 +138,15 @@ export interface AffiliateInvitee {
 
 export interface UserAffiliateDetail {
   user_id: number
-  aff_code: string
+  aff_code?: string
   inviter_id?: number | null
   aff_count: number
   aff_quota: number
   aff_frozen_quota: number
   aff_history_quota: number
+  membership_level: number
+  can_invite: boolean
+  effective_invite_limit: number
   /** 当前用户作为邀请人时实际生效的返利比例（专属覆盖全局）。0-100。 */
   effective_rebate_rate_percent: number
   invitees: AffiliateInvitee[]

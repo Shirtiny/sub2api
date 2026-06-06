@@ -147,9 +147,14 @@ type SystemSettings struct {
 	RiskControlEnabled           bool
 	AffiliateEnabled             bool
 	AffiliateRebateRate          float64
+	AffiliateRebateRateLevel0    float64
+	AffiliateRebateRateLevel1    float64
+	AffiliateRebateRateLevel2    float64
+	AffiliateRebateRateLevel3    float64
 	AffiliateRebateFreezeHours   int
 	AffiliateRebateDurationDays  int
 	AffiliateRebatePerInviteeCap float64
+	AffiliateInviteLimit         int
 	DefaultUserRPMLimit          int
 	DefaultSubscriptions         []DefaultSubscriptionSetting
 

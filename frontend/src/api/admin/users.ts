@@ -172,6 +172,28 @@ export async function updateBalance(
 }
 
 /**
+ * Update user membership points
+ * @param id - User ID
+ * @param points - Membership points to apply
+ * @param operation - Operation type ('set', 'add', 'subtract')
+ * @param notes - Optional notes for the adjustment
+ * @returns Updated user
+ */
+export async function updateMembershipPoints(
+  id: number,
+  points: number,
+  operation: 'set' | 'add' | 'subtract' = 'set',
+  notes?: string
+): Promise<AdminUser> {
+  const { data } = await apiClient.post<AdminUser>(`/admin/users/${id}/membership-points`, {
+    points,
+    operation,
+    notes: notes || ''
+  })
+  return data
+}
+
+/**
  * Update user concurrency
  * @param id - User ID
  * @param concurrency - New concurrency limit
@@ -381,6 +403,7 @@ export const usersAPI = {
   update,
   delete: deleteUser,
   updateBalance,
+  updateMembershipPoints,
   updateConcurrency,
   toggleStatus,
   getUserApiKeys,

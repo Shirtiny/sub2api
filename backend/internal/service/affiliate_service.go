@@ -12,11 +12,12 @@ import (
 )
 
 var (
-	ErrAffiliateProfileNotFound = infraerrors.NotFound("AFFILIATE_PROFILE_NOT_FOUND", "affiliate profile not found")
-	ErrAffiliateCodeInvalid     = infraerrors.BadRequest("AFFILIATE_CODE_INVALID", "invalid affiliate code")
-	ErrAffiliateCodeTaken       = infraerrors.Conflict("AFFILIATE_CODE_TAKEN", "affiliate code already in use")
-	ErrAffiliateAlreadyBound    = infraerrors.Conflict("AFFILIATE_ALREADY_BOUND", "affiliate inviter already bound")
-	ErrAffiliateQuotaEmpty      = infraerrors.BadRequest("AFFILIATE_QUOTA_EMPTY", "no affiliate quota available to transfer")
+	ErrAffiliateProfileNotFound    = infraerrors.NotFound("AFFILIATE_PROFILE_NOT_FOUND", "affiliate profile not found")
+	ErrAffiliateCodeInvalid        = infraerrors.BadRequest("AFFILIATE_CODE_INVALID", "invalid affiliate code")
+	ErrAffiliateCodeTaken          = infraerrors.Conflict("AFFILIATE_CODE_TAKEN", "affiliate code already in use")
+	ErrAffiliateAlreadyBound       = infraerrors.Conflict("AFFILIATE_ALREADY_BOUND", "affiliate inviter already bound")
+	ErrAffiliateInviteLimitReached = infraerrors.Conflict("AFFILIATE_INVITE_LIMIT_REACHED", "affiliate invite limit reached")
+	ErrAffiliateQuotaEmpty         = infraerrors.BadRequest("AFFILIATE_QUOTA_EMPTY", "no affiliate quota available to transfer")
 )
 
 const (
@@ -62,11 +63,13 @@ type AffiliateSummary struct {
 	AffCode              string    `json:"aff_code"`
 	AffCodeCustom        bool      `json:"aff_code_custom"`
 	AffRebateRatePercent *float64  `json:"aff_rebate_rate_percent,omitempty"`
+	AffInviteLimit       *int      `json:"aff_invite_limit,omitempty"`
 	InviterID            *int64    `json:"inviter_id,omitempty"`
 	AffCount             int       `json:"aff_count"`
 	AffQuota             float64   `json:"aff_quota"`
 	AffFrozenQuota       float64   `json:"aff_frozen_quota"`
 	AffHistoryQuota      float64   `json:"aff_history_quota"`
+	TotalRecharged       float64   `json:"total_recharged"`
 	CreatedAt            time.Time `json:"created_at"`
 	UpdatedAt            time.Time `json:"updated_at"`
 }
@@ -80,13 +83,16 @@ type AffiliateInvitee struct {
 }
 
 type AffiliateDetail struct {
-	UserID          int64   `json:"user_id"`
-	AffCode         string  `json:"aff_code"`
-	InviterID       *int64  `json:"inviter_id,omitempty"`
-	AffCount        int     `json:"aff_count"`
-	AffQuota        float64 `json:"aff_quota"`
-	AffFrozenQuota  float64 `json:"aff_frozen_quota"`
-	AffHistoryQuota float64 `json:"aff_history_quota"`
+	UserID               int64   `json:"user_id"`
+	AffCode              string  `json:"aff_code,omitempty"`
+	InviterID            *int64  `json:"inviter_id,omitempty"`
+	AffCount             int     `json:"aff_count"`
+	AffQuota             float64 `json:"aff_quota"`
+	AffFrozenQuota       float64 `json:"aff_frozen_quota"`
+	AffHistoryQuota      float64 `json:"aff_history_quota"`
+	MembershipLevel      int     `json:"membership_level"`
+	CanInvite            bool    `json:"can_invite"`
+	EffectiveInviteLimit int     `json:"effective_invite_limit"`
 	// EffectiveRebateRatePercent 是当前用户作为邀请人时实际生效的返利比例：
 	// 优先用户自己的专属比例（aff_rebate_rate_percent），否则回退到全局比例。
 	// 用于在用户的 /affiliate 页面直观展示「分享后能拿到多少」。
@@ -94,10 +100,16 @@ type AffiliateDetail struct {
 	Invitees                   []AffiliateInvitee `json:"invitees"`
 }
 
+type AffiliateSubscriptionRebate struct {
+	InviterID  int64
+	RebateDays int
+	Reason     string
+}
+
 type AffiliateRepository interface {
 	EnsureUserAffiliate(ctx context.Context, userID int64) (*AffiliateSummary, error)
 	GetAffiliateByCode(ctx context.Context, code string) (*AffiliateSummary, error)
-	BindInviter(ctx context.Context, userID, inviterID int64) (bool, error)
+	BindInviter(ctx context.Context, userID, inviterID int64, inviteLimit int) (bool, error)
 	AccrueQuota(ctx context.Context, inviterID, inviteeUserID int64, amount float64, freezeHours int, sourceOrderID *int64) (bool, error)
 	GetAccruedRebateFromInvitee(ctx context.Context, inviterID, inviteeUserID int64) (float64, error)
 	ThawFrozenQuota(ctx context.Context, userID int64) (float64, error)
@@ -108,6 +120,7 @@ type AffiliateRepository interface {
 	UpdateUserAffCode(ctx context.Context, userID int64, newCode string) error
 	ResetUserAffCode(ctx context.Context, userID int64) (string, error)
 	SetUserRebateRate(ctx context.Context, userID int64, ratePercent *float64) error
+	SetUserInviteLimit(ctx context.Context, userID int64, limit *int) error
 	BatchSetUserRebateRate(ctx context.Context, userIDs []int64, ratePercent *float64) error
 	ListUsersWithCustomSettings(ctx context.Context, filter AffiliateAdminFilter) ([]AffiliateAdminEntry, int64, error)
 	ListAffiliateInviteRecords(ctx context.Context, filter AffiliateRecordFilter) ([]AffiliateInviteRecord, int64, error)
@@ -131,6 +144,7 @@ type AffiliateAdminEntry struct {
 	AffCode              string   `json:"aff_code"`
 	AffCodeCustom        bool     `json:"aff_code_custom"`
 	AffRebateRatePercent *float64 `json:"aff_rebate_rate_percent,omitempty"`
+	AffInviteLimit       *int     `json:"aff_invite_limit,omitempty"`
 	AffCount             int      `json:"aff_count"`
 }
 
@@ -253,15 +267,26 @@ func (s *AffiliateService) GetAffiliateDetail(ctx context.Context, userID int64)
 	if err != nil {
 		return nil, err
 	}
+	level := CalculateMembershipLevel(summary.TotalRecharged)
+	canInvite := level > 0
+	affCode := ""
+	rebateRatePercent := 0.0
+	if canInvite {
+		affCode = summary.AffCode
+		rebateRatePercent = s.resolveRebateRatePercent(ctx, summary)
+	}
 	return &AffiliateDetail{
 		UserID:                     summary.UserID,
-		AffCode:                    summary.AffCode,
+		AffCode:                    affCode,
 		InviterID:                  summary.InviterID,
 		AffCount:                   summary.AffCount,
 		AffQuota:                   summary.AffQuota,
 		AffFrozenQuota:             summary.AffFrozenQuota,
 		AffHistoryQuota:            summary.AffHistoryQuota,
-		EffectiveRebateRatePercent: s.resolveRebateRatePercent(ctx, summary),
+		MembershipLevel:            level,
+		CanInvite:                  canInvite,
+		EffectiveInviteLimit:       s.resolveInviteLimit(ctx, summary),
+		EffectiveRebateRatePercent: rebateRatePercent,
 		Invitees:                   invitees,
 	}, nil
 }
@@ -300,8 +325,15 @@ func (s *AffiliateService) BindInviterByCode(ctx context.Context, userID int64, 
 	if inviterSummary == nil || inviterSummary.UserID <= 0 || inviterSummary.UserID == userID {
 		return ErrAffiliateCodeInvalid
 	}
+	if !canInviteByMembership(inviterSummary) {
+		return ErrAffiliateCodeInvalid
+	}
+	inviteLimit := s.resolveInviteLimit(ctx, inviterSummary)
+	if inviteLimit > 0 && inviterSummary.AffCount >= inviteLimit {
+		return ErrAffiliateInviteLimitReached
+	}
 
-	bound, err := s.repo.BindInviter(ctx, userID, inviterSummary.UserID)
+	bound, err := s.repo.BindInviter(ctx, userID, inviterSummary.UserID, inviteLimit)
 	if err != nil {
 		return err
 	}
@@ -309,6 +341,86 @@ func (s *AffiliateService) BindInviterByCode(ctx context.Context, userID int64, 
 		return ErrAffiliateAlreadyBound
 	}
 	return nil
+}
+
+func (s *AffiliateService) ResolveSubscriptionInviteRebate(ctx context.Context, inviteeUserID int64, subscriptionDays int) (*AffiliateSubscriptionRebate, error) {
+	result := &AffiliateSubscriptionRebate{Reason: "subscription rebate skipped"}
+	if s == nil || s.repo == nil {
+		result.Reason = "affiliate service unavailable"
+		return result, nil
+	}
+	if inviteeUserID <= 0 || subscriptionDays <= 0 {
+		result.Reason = "invalid invitee or subscription days"
+		return result, nil
+	}
+	if subscriptionDays < AffiliateSubscriptionRebateMinDays {
+		result.Reason = "subscription days below monthly rebate threshold"
+		return result, nil
+	}
+	if !s.IsEnabled(ctx) {
+		result.Reason = "affiliate disabled"
+		return result, nil
+	}
+
+	inviteeSummary, err := s.repo.EnsureUserAffiliate(ctx, inviteeUserID)
+	if err != nil {
+		return nil, err
+	}
+	if inviteeSummary.InviterID == nil || *inviteeSummary.InviterID <= 0 {
+		result.Reason = "no inviter bound"
+		return result, nil
+	}
+	if s.settingService != nil {
+		if durationDays := s.settingService.GetAffiliateRebateDurationDays(ctx); durationDays > 0 {
+			if time.Now().After(inviteeSummary.CreatedAt.AddDate(0, 0, durationDays)) {
+				result.Reason = "affiliate rebate duration expired"
+				return result, nil
+			}
+		}
+	}
+
+	inviterSummary, err := s.repo.EnsureUserAffiliate(ctx, *inviteeSummary.InviterID)
+	if err != nil {
+		return nil, err
+	}
+	if !canInviteByMembership(inviterSummary) {
+		result.Reason = "inviter membership level not eligible"
+		return result, nil
+	}
+	result.InviterID = *inviteeSummary.InviterID
+	result.RebateDays = calculateSubscriptionRebateDaysByMembership(CalculateMembershipLevel(inviterSummary.TotalRecharged))
+	result.Reason = ""
+	return result, nil
+}
+
+func CalculateMembershipLevel(totalRecharged float64) int {
+	switch {
+	case totalRecharged > MembershipLevel3Threshold:
+		return 3
+	case totalRecharged > MembershipLevel2Threshold:
+		return 2
+	case totalRecharged > MembershipLevel1Threshold:
+		return 1
+	default:
+		return 0
+	}
+}
+
+func canInviteByMembership(inviter *AffiliateSummary) bool {
+	return inviter != nil && CalculateMembershipLevel(inviter.TotalRecharged) > 0
+}
+
+func calculateSubscriptionRebateDaysByMembership(level int) int {
+	if level <= 0 {
+		return 0
+	}
+	if level >= 3 {
+		return AffiliateSubscriptionRebateDaysL3
+	}
+	if level == 2 {
+		return AffiliateSubscriptionRebateDaysL2
+	}
+	return AffiliateSubscriptionRebateDaysBase
 }
 
 func (s *AffiliateService) AccrueInviteRebate(ctx context.Context, inviteeUserID int64, baseRechargeAmount float64) (float64, error) {
@@ -339,6 +451,9 @@ func (s *AffiliateService) AccrueInviteRebateForOrder(ctx context.Context, invit
 	inviterSummary, err := s.repo.EnsureUserAffiliate(ctx, *inviteeSummary.InviterID)
 	if err != nil {
 		return 0, err
+	}
+	if !canInviteByMembership(inviterSummary) {
+		return 0, nil
 	}
 	// 有效期检查：超过返利有效期后不再产生返利
 	if s.settingService != nil {
@@ -386,26 +501,51 @@ func (s *AffiliateService) AccrueInviteRebateForOrder(ctx context.Context, invit
 	return rebate, nil
 }
 
+func (s *AffiliateService) resolveInviteLimit(ctx context.Context, inviter *AffiliateSummary) int {
+	if inviter != nil && inviter.AffInviteLimit != nil {
+		return clampAffiliateInviteLimit(*inviter.AffInviteLimit)
+	}
+	if s == nil || s.settingService == nil {
+		return AffiliateInviteLimitDefault
+	}
+	return s.settingService.GetAffiliateInviteLimit(ctx)
+}
+
 // resolveRebateRatePercent returns the inviter's exclusive rate when set,
-// otherwise the global setting value (clamped to [Min, Max]).
+// otherwise the membership-level default rate.
 func (s *AffiliateService) resolveRebateRatePercent(ctx context.Context, inviter *AffiliateSummary) float64 {
 	if inviter != nil && inviter.AffRebateRatePercent != nil {
 		v := *inviter.AffRebateRatePercent
 		if math.IsNaN(v) || math.IsInf(v, 0) {
-			return s.globalRebateRatePercent(ctx)
+			return s.membershipRebateRatePercent(ctx, inviter)
 		}
 		return clampAffiliateRebateRate(v)
 	}
-	return s.globalRebateRatePercent(ctx)
+	return s.membershipRebateRatePercent(ctx, inviter)
 }
 
-// globalRebateRatePercent reads the system-wide rebate rate via SettingService,
-// returning the documented default when SettingService is unavailable.
-func (s *AffiliateService) globalRebateRatePercent(ctx context.Context) float64 {
-	if s == nil || s.settingService == nil {
-		return AffiliateRebateRateDefault
+func (s *AffiliateService) membershipRebateRatePercent(ctx context.Context, inviter *AffiliateSummary) float64 {
+	level := 0
+	if inviter != nil {
+		level = CalculateMembershipLevel(inviter.TotalRecharged)
 	}
-	return s.settingService.GetAffiliateRebateRatePercent(ctx)
+	if s == nil || s.settingService == nil {
+		return defaultAffiliateRebateRateByMembership(level)
+	}
+	return s.settingService.GetAffiliateRebateRatePercentByLevel(ctx, level)
+}
+
+func defaultAffiliateRebateRateByMembership(level int) float64 {
+	switch {
+	case level >= 3:
+		return AffiliateRebateRateLevel3Default
+	case level == 2:
+		return AffiliateRebateRateLevel2Default
+	case level == 1:
+		return AffiliateRebateRateLevel1Default
+	default:
+		return AffiliateRebateRateLevel0Default
+	}
 }
 
 func (s *AffiliateService) TransferAffiliateQuota(ctx context.Context, userID int64) (float64, float64, error) {
@@ -508,6 +648,16 @@ func validateExclusiveRate(ratePercent *float64) error {
 	return nil
 }
 
+func validateInviteLimit(limit *int) error {
+	if limit == nil {
+		return nil
+	}
+	if *limit < 0 || *limit > AffiliateInviteLimitMax {
+		return infraerrors.BadRequest("INVALID_INVITE_LIMIT", "invite limit out of range")
+	}
+	return nil
+}
+
 // AdminUpdateUserAffCode 管理员改写用户的邀请码（专属邀请码）。
 func (s *AffiliateService) AdminUpdateUserAffCode(ctx context.Context, userID int64, rawCode string) error {
 	if s == nil || s.repo == nil {
@@ -537,6 +687,16 @@ func (s *AffiliateService) AdminSetUserRebateRate(ctx context.Context, userID in
 		return err
 	}
 	return s.repo.SetUserRebateRate(ctx, userID, ratePercent)
+}
+
+func (s *AffiliateService) AdminSetUserInviteLimit(ctx context.Context, userID int64, limit *int) error {
+	if s == nil || s.repo == nil {
+		return infraerrors.ServiceUnavailable("SERVICE_UNAVAILABLE", "affiliate service unavailable")
+	}
+	if err := validateInviteLimit(limit); err != nil {
+		return err
+	}
+	return s.repo.SetUserInviteLimit(ctx, userID, limit)
 }
 
 // AdminBatchSetUserRebateRate 批量设置/清除用户专属返利比例。
@@ -601,7 +761,11 @@ func (s *AffiliateService) AdminGetUserOverview(ctx context.Context, userID int6
 	}
 	if overview != nil {
 		if !overview.RebateRateCustom {
-			overview.RebateRatePercent = s.globalRebateRatePercent(ctx)
+			inviter, err := s.repo.EnsureUserAffiliate(ctx, userID)
+			if err != nil {
+				return nil, err
+			}
+			overview.RebateRatePercent = s.membershipRebateRatePercent(ctx, inviter)
 		}
 		overview.RebateRatePercent = clampAffiliateRebateRate(overview.RebateRatePercent)
 	}

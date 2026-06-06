@@ -44,27 +44,90 @@
         <!-- Subscription Progress (for users with active subscriptions) -->
         <SubscriptionProgressMini v-if="user" />
 
-        <!-- Balance Display -->
-        <div
-          v-if="user"
-          class="hidden items-center gap-2 rounded-xl bg-primary-50 px-3 py-1.5 dark:bg-primary-900/20 sm:flex"
-        >
-          <svg
-            class="h-4 w-4 text-primary-600 dark:text-primary-400"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            stroke-width="1.5"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z"
-            />
-          </svg>
-          <span class="text-sm font-semibold text-primary-700 dark:text-primary-300">
-            ${{ user.balance?.toFixed(2) || '0.00' }}
-          </span>
+        <!-- Balance + Membership Display -->
+        <div v-if="user" class="relative hidden sm:block" ref="membershipRef">
+          <div class="flex items-center gap-2 rounded-xl bg-primary-50 px-3 py-1.5 dark:bg-primary-900/20">
+            <svg
+              class="h-4 w-4 text-primary-600 dark:text-primary-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="1.5"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z"
+              />
+            </svg>
+            <span class="text-sm font-semibold text-primary-700 dark:text-primary-300">
+              ${{ user.balance?.toFixed(2) || '0.00' }}
+            </span>
+            <span class="h-4 w-px bg-primary-200 dark:bg-primary-700/60"></span>
+            <button
+              type="button"
+              class="rounded-md px-1.5 py-0.5 text-[11px] font-bold leading-4 transition-colors"
+              :class="membershipBadgeClass"
+              :title="membershipTitle"
+              @click.stop="toggleMembershipPopover"
+            >
+              {{ membershipLabel }}
+            </button>
+          </div>
+
+          <transition name="dropdown">
+            <div
+              v-if="membershipPopoverOpen"
+              class="absolute right-0 z-50 mt-2 w-[320px] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl dark:border-dark-700 dark:bg-dark-800"
+            >
+              <div class="border-b border-gray-100 p-3 dark:border-dark-700">
+                <div class="flex items-start justify-between gap-3">
+                  <div>
+                    <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
+                      {{ t('membership.title') }}
+                    </h3>
+                    <p class="mt-0.5 text-xs text-gray-500 dark:text-dark-400">
+                      {{ t('membership.totalRecharged', { amount: totalRecharged.toFixed(2) }) }}
+                    </p>
+                  </div>
+                  <span class="rounded-md px-2 py-1 text-xs font-bold" :class="membershipBadgeClass">
+                    {{ membershipLabel }}
+                  </span>
+                </div>
+              </div>
+
+              <div class="space-y-3 p-3">
+                <div>
+                  <div class="mb-1.5 flex items-center justify-between">
+                    <span class="text-xs font-medium text-gray-700 dark:text-gray-300">
+                      {{ membershipProgressTitle }}
+                    </span>
+                    <span class="text-xs text-gray-500 dark:text-dark-400">
+                      {{ membershipProgressText }}
+                    </span>
+                  </div>
+                  <div class="h-2 rounded-full bg-gray-300/70 dark:bg-dark-700">
+                    <div
+                      class="h-2 rounded-full bg-gradient-to-r from-primary-500 to-purple-500 transition-all"
+                      :style="{ width: membershipProgressWidth }"
+                    ></div>
+                  </div>
+                  <p class="mt-1.5 text-[11px] text-gray-500 dark:text-dark-400">
+                    {{ membershipHint }}
+                  </p>
+                </div>
+
+                <div class="rounded-lg bg-gradient-to-r from-purple-50 to-amber-50 px-3 py-2 dark:from-purple-900/20 dark:to-amber-900/20">
+                  <div class="text-xs font-medium text-gray-700 dark:text-gray-300">
+                    {{ t('membership.affiliateRebate') }}
+                  </div>
+                  <div class="mt-0.5 text-xs font-semibold text-purple-700 dark:text-purple-300">
+                    {{ membershipLevel > 0 ? t('membership.subscriptionReward', { rate: affiliateRebateRate, days: affiliateRebateDays }) : t('membership.subscriptionRewardUnavailable') }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </transition>
         </div>
 
         <!-- User Dropdown -->
@@ -222,6 +285,7 @@ import LocaleSwitcher from '@/components/common/LocaleSwitcher.vue'
 import SubscriptionProgressMini from '@/components/common/SubscriptionProgressMini.vue'
 import AnnouncementBell from '@/components/common/AnnouncementBell.vue'
 import Icon from '@/components/icons/Icon.vue'
+import { formatCurrency } from '@/utils/format'
 
 const router = useRouter()
 const route = useRoute()
@@ -234,9 +298,76 @@ const onboardingStore = useOnboardingStore()
 const user = computed(() => authStore.user)
 const dropdownOpen = ref(false)
 const dropdownRef = ref<HTMLElement | null>(null)
+const membershipRef = ref<HTMLElement | null>(null)
+const membershipPopoverOpen = ref(false)
 const contactInfo = computed(() => appStore.contactInfo)
 const docUrl = computed(() => appStore.docUrl)
 const avatarUrl = computed(() => user.value?.avatar_url?.trim() || '')
+const totalRecharged = computed(() => user.value?.total_recharged || 0)
+const membershipLevel = computed(() => user.value?.membership_level ?? resolveMembershipLevel(totalRecharged.value))
+const membershipLabel = computed(() => `LV.${membershipLevel.value}`)
+const nextMembershipThreshold = computed(() => {
+  if (membershipLevel.value === 0) return 20
+  if (membershipLevel.value === 1) return 300
+  if (membershipLevel.value === 2) return 1000
+  return null
+})
+const currentMembershipThreshold = computed(() => {
+  if (membershipLevel.value === 1) return 20
+  if (membershipLevel.value === 2) return 300
+  if (membershipLevel.value >= 3) return 1000
+  return 0
+})
+const membershipProgress = computed(() => {
+  const next = nextMembershipThreshold.value
+  if (!next) return 100
+  const current = currentMembershipThreshold.value
+  return Math.max(0, Math.min(((totalRecharged.value - current) / (next - current)) * 100, 100))
+})
+const membershipProgressWidth = computed(() => `${membershipProgress.value}%`)
+const membershipProgressTitle = computed(() => {
+  const next = nextMembershipThreshold.value
+  return next ? t('membership.progressTo', { level: membershipLevel.value + 1 }) : t('membership.highest')
+})
+const membershipProgressText = computed(() => {
+  return nextMembershipThreshold.value ? `${Math.round(membershipProgress.value)}%` : '100%'
+})
+const membershipHint = computed(() => {
+  const next = nextMembershipThreshold.value
+  if (!next) return t('membership.highestHint')
+  const remaining = Math.max(next - totalRecharged.value, 0)
+  return t('membership.remainingHint', {
+    amount: remaining.toFixed(2),
+    level: membershipLevel.value + 1
+  })
+})
+const affiliateRebateDays = computed(() => {
+  if (membershipLevel.value <= 0) return 0
+  if (membershipLevel.value >= 3) return 7
+  if (membershipLevel.value >= 2) return 3
+  return 1
+})
+const affiliateRebateRate = computed(() => {
+  if (membershipLevel.value <= 0) return 0
+  if (membershipLevel.value >= 3) return 25
+  if (membershipLevel.value >= 2) return 10
+  return 5
+})
+const membershipTitle = computed(() => {
+  return `${membershipLabel.value} · ${totalRecharged.value.toFixed(2)}`
+})
+const membershipBadgeClass = computed(() => {
+  if (membershipLevel.value >= 3) {
+    return 'bg-gradient-to-r from-amber-100 to-purple-100 text-amber-700 hover:from-amber-200 hover:to-purple-200 dark:from-amber-900/30 dark:to-purple-900/30 dark:text-amber-300'
+  }
+  if (membershipLevel.value === 2) {
+    return 'bg-purple-100 text-purple-700 hover:bg-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:hover:bg-purple-900/40'
+  }
+  if (membershipLevel.value === 1) {
+    return 'bg-primary-100 text-primary-700 hover:bg-primary-200 dark:bg-primary-900/30 dark:text-primary-300 dark:hover:bg-primary-900/40'
+  }
+  return 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-dark-700 dark:text-dark-300 dark:hover:bg-dark-600'
+})
 
 // 只在标准模式的管理员下显示新手引导按钮
 const showOnboardingButton = computed(() => {
@@ -298,6 +429,21 @@ function closeDropdown() {
   dropdownOpen.value = false
 }
 
+function toggleMembershipPopover() {
+  membershipPopoverOpen.value = !membershipPopoverOpen.value
+}
+
+function closeMembershipPopover() {
+  membershipPopoverOpen.value = false
+}
+
+function resolveMembershipLevel(total: number) {
+  if (total > 1000) return 3
+  if (total > 300) return 2
+  if (total > 20) return 1
+  return 0
+}
+
 async function handleLogout() {
   closeDropdown()
   try {
@@ -315,8 +461,12 @@ function handleReplayGuide() {
 }
 
 function handleClickOutside(event: MouseEvent) {
-  if (dropdownRef.value && !dropdownRef.value.contains(event.target as Node)) {
+  const target = event.target as Node
+  if (dropdownRef.value && !dropdownRef.value.contains(target)) {
     closeDropdown()
+  }
+  if (membershipRef.value && !membershipRef.value.contains(target)) {
+    closeMembershipPopover()
   }
 }
 

@@ -340,6 +340,31 @@ func (s *UserRepoSuite) TestUpdateBalance() {
 	got, err := s.repo.GetByID(s.ctx, user.ID)
 	s.Require().NoError(err)
 	s.Require().InDelta(12.5, got.Balance, 1e-6)
+	s.Require().Zero(got.TotalRecharged)
+}
+
+func (s *UserRepoSuite) TestUpdateBalance_PaidRechargePoints() {
+	user := s.mustCreateUser(&service.User{Email: "balpaid@test.com", Balance: 10})
+
+	err := s.repo.UpdateBalance(service.ContextRechargePointsFactor(s.ctx, 1), user.ID, 2.5)
+	s.Require().NoError(err, "UpdateBalance with paid recharge points")
+
+	got, err := s.repo.GetByID(s.ctx, user.ID)
+	s.Require().NoError(err)
+	s.Require().InDelta(12.5, got.Balance, 1e-6)
+	s.Require().InDelta(2.5, got.TotalRecharged, 1e-6)
+}
+
+func (s *UserRepoSuite) TestUpdateBalance_RechargePointsFactor() {
+	user := s.mustCreateUser(&service.User{Email: "balfactor@test.com", Balance: 10})
+
+	err := s.repo.UpdateBalance(service.ContextRechargePointsFactor(s.ctx, 0.1), user.ID, 2.5)
+	s.Require().NoError(err, "UpdateBalance with points factor")
+
+	got, err := s.repo.GetByID(s.ctx, user.ID)
+	s.Require().NoError(err)
+	s.Require().InDelta(12.5, got.Balance, 1e-6)
+	s.Require().InDelta(0.25, got.TotalRecharged, 1e-6)
 }
 
 func (s *UserRepoSuite) TestUpdateBalance_Negative() {

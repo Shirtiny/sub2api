@@ -76,7 +76,7 @@ func (r *affiliateRepository) GetAffiliateByCode(ctx context.Context, code strin
 	return queryAffiliateByCode(ctx, client, code)
 }
 
-func (r *affiliateRepository) BindInviter(ctx context.Context, userID, inviterID int64) (bool, error) {
+func (r *affiliateRepository) BindInviter(ctx context.Context, userID, inviterID int64, inviteLimit int) (bool, error) {
 	var bound bool
 	err := r.withTx(ctx, func(txCtx context.Context, txClient *dbent.Client) error {
 		if _, err := ensureUserAffiliateWithClient(txCtx, txClient, userID); err != nil {
@@ -99,11 +99,16 @@ func (r *affiliateRepository) BindInviter(ctx context.Context, userID, inviterID
 			return nil
 		}
 
-		if _, err = txClient.ExecContext(txCtx,
-			"UPDATE user_affiliates SET aff_count = aff_count + 1, updated_at = NOW() WHERE user_id = $1",
-			inviterID,
-		); err != nil {
+		res, err = txClient.ExecContext(txCtx,
+			"UPDATE user_affiliates SET aff_count = aff_count + 1, updated_at = NOW() WHERE user_id = $1 AND ($2 = 0 OR aff_count < $2)",
+			inviterID, inviteLimit,
+		)
+		if err != nil {
 			return fmt.Errorf("increment inviter aff_count: %w", err)
+		}
+		affected, _ = res.RowsAffected()
+		if affected == 0 {
+			return service.ErrAffiliateInviteLimitReached
 		}
 		bound = true
 		return nil
@@ -289,7 +294,6 @@ FROM cleared`, userID)
 		affected, err := txClient.User.Update().
 			Where(user.IDEQ(userID)).
 			AddBalance(transferred).
-			AddTotalRecharged(transferred).
 			Save(txCtx)
 		if err != nil {
 			return fmt.Errorf("credit user balance by affiliate quota: %w", err)
@@ -780,19 +784,22 @@ ON CONFLICT (user_id) DO NOTHING`, userID, code)
 
 func queryAffiliateByUserID(ctx context.Context, client affiliateQueryExecer, userID int64) (*service.AffiliateSummary, error) {
 	rows, err := client.QueryContext(ctx, `
-SELECT user_id,
-       aff_code,
-       aff_code_custom,
-       aff_rebate_rate_percent,
-       inviter_id,
-       aff_count,
-       aff_quota::double precision,
-       aff_frozen_quota::double precision,
-       aff_history_quota::double precision,
-       created_at,
-       updated_at
-FROM user_affiliates
-WHERE user_id = $1`, userID)
+SELECT ua.user_id,
+       ua.aff_code,
+       ua.aff_code_custom,
+       ua.aff_rebate_rate_percent,
+       ua.aff_invite_limit,
+       ua.inviter_id,
+       ua.aff_count,
+       ua.aff_quota::double precision,
+       ua.aff_frozen_quota::double precision,
+       ua.aff_history_quota::double precision,
+       u.total_recharged::double precision,
+       ua.created_at,
+       ua.updated_at
+FROM user_affiliates ua
+JOIN users u ON u.id = ua.user_id
+WHERE ua.user_id = $1`, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -807,16 +814,19 @@ WHERE user_id = $1`, userID)
 	var out service.AffiliateSummary
 	var inviterID sql.NullInt64
 	var rebateRate sql.NullFloat64
+	var inviteLimit sql.NullInt64
 	if err := rows.Scan(
 		&out.UserID,
 		&out.AffCode,
 		&out.AffCodeCustom,
 		&rebateRate,
+		&inviteLimit,
 		&inviterID,
 		&out.AffCount,
 		&out.AffQuota,
 		&out.AffFrozenQuota,
 		&out.AffHistoryQuota,
+		&out.TotalRecharged,
 		&out.CreatedAt,
 		&out.UpdatedAt,
 	); err != nil {
@@ -829,24 +839,31 @@ WHERE user_id = $1`, userID)
 		v := rebateRate.Float64
 		out.AffRebateRatePercent = &v
 	}
+	if inviteLimit.Valid {
+		v := int(inviteLimit.Int64)
+		out.AffInviteLimit = &v
+	}
 	return &out, nil
 }
 
 func queryAffiliateByCode(ctx context.Context, client affiliateQueryExecer, code string) (*service.AffiliateSummary, error) {
 	rows, err := client.QueryContext(ctx, `
-SELECT user_id,
-       aff_code,
-       aff_code_custom,
-       aff_rebate_rate_percent,
-       inviter_id,
-       aff_count,
-       aff_quota::double precision,
-       aff_frozen_quota::double precision,
-       aff_history_quota::double precision,
-       created_at,
-       updated_at
-FROM user_affiliates
-WHERE aff_code = $1
+SELECT ua.user_id,
+       ua.aff_code,
+       ua.aff_code_custom,
+       ua.aff_rebate_rate_percent,
+       ua.aff_invite_limit,
+       ua.inviter_id,
+       ua.aff_count,
+       ua.aff_quota::double precision,
+       ua.aff_frozen_quota::double precision,
+       ua.aff_history_quota::double precision,
+       u.total_recharged::double precision,
+       ua.created_at,
+       ua.updated_at
+FROM user_affiliates ua
+JOIN users u ON u.id = ua.user_id
+WHERE ua.aff_code = $1
 LIMIT 1`, strings.ToUpper(strings.TrimSpace(code)))
 	if err != nil {
 		return nil, err
@@ -863,16 +880,19 @@ LIMIT 1`, strings.ToUpper(strings.TrimSpace(code)))
 	var out service.AffiliateSummary
 	var inviterID sql.NullInt64
 	var rebateRate sql.NullFloat64
+	var inviteLimit sql.NullInt64
 	if err := rows.Scan(
 		&out.UserID,
 		&out.AffCode,
 		&out.AffCodeCustom,
 		&rebateRate,
+		&inviteLimit,
 		&inviterID,
 		&out.AffCount,
 		&out.AffQuota,
 		&out.AffFrozenQuota,
 		&out.AffHistoryQuota,
+		&out.TotalRecharged,
 		&out.CreatedAt,
 		&out.UpdatedAt,
 	); err != nil {
@@ -884,6 +904,10 @@ LIMIT 1`, strings.ToUpper(strings.TrimSpace(code)))
 	if rebateRate.Valid {
 		v := rebateRate.Float64
 		out.AffRebateRatePercent = &v
+	}
+	if inviteLimit.Valid {
+		v := int(inviteLimit.Int64)
+		out.AffInviteLimit = &v
 	}
 	return &out, nil
 }
@@ -1081,6 +1105,30 @@ WHERE user_id = $2`, nullableArg(ratePercent), userID)
 	})
 }
 
+func (r *affiliateRepository) SetUserInviteLimit(ctx context.Context, userID int64, limit *int) error {
+	if userID <= 0 {
+		return service.ErrUserNotFound
+	}
+	return r.withTx(ctx, func(txCtx context.Context, txClient *dbent.Client) error {
+		if _, err := ensureUserAffiliateWithClient(txCtx, txClient, userID); err != nil {
+			return err
+		}
+		res, err := txClient.ExecContext(txCtx, `
+UPDATE user_affiliates
+SET aff_invite_limit = $1,
+    updated_at = NOW()
+WHERE user_id = $2`, nullableIntArg(limit), userID)
+		if err != nil {
+			return fmt.Errorf("set aff_invite_limit: %w", err)
+		}
+		affected, _ := res.RowsAffected()
+		if affected == 0 {
+			return service.ErrUserNotFound
+		}
+		return nil
+	})
+}
+
 // BatchSetUserRebateRate 批量为多个用户设置专属比例（nil 清除）。
 func (r *affiliateRepository) BatchSetUserRebateRate(ctx context.Context, userIDs []int64, ratePercent *float64) error {
 	if len(userIDs) == 0 {
@@ -1116,6 +1164,13 @@ func nullableArg(v *float64) any {
 	return *v
 }
 
+func nullableIntArg(v *int) any {
+	if v == nil {
+		return nil
+	}
+	return *v
+}
+
 func nullableInt64Arg(v *int64) any {
 	if v == nil {
 		return nil
@@ -1143,7 +1198,7 @@ func (r *affiliateRepository) ListUsersWithCustomSettings(ctx context.Context, f
 	const baseFrom = `
 FROM user_affiliates ua
 JOIN users u ON u.id = ua.user_id
-WHERE (ua.aff_code_custom = true OR ua.aff_rebate_rate_percent IS NOT NULL)
+WHERE (ua.aff_code_custom = true OR ua.aff_rebate_rate_percent IS NOT NULL OR ua.aff_invite_limit IS NOT NULL)
   AND (u.email ILIKE $1 OR u.username ILIKE $1)`
 
 	client := clientFromContext(ctx, r.client)
@@ -1160,6 +1215,7 @@ SELECT ua.user_id,
        ua.aff_code,
        ua.aff_code_custom,
        ua.aff_rebate_rate_percent,
+       ua.aff_invite_limit,
        ua.aff_count` + baseFrom + `
 ORDER BY ua.updated_at DESC
 LIMIT $2 OFFSET $3`
@@ -1174,13 +1230,18 @@ LIMIT $2 OFFSET $3`
 	for rows.Next() {
 		var e service.AffiliateAdminEntry
 		var rebate sql.NullFloat64
+		var inviteLimit sql.NullInt64
 		if err := rows.Scan(&e.UserID, &e.Email, &e.Username, &e.AffCode,
-			&e.AffCodeCustom, &rebate, &e.AffCount); err != nil {
+			&e.AffCodeCustom, &rebate, &inviteLimit, &e.AffCount); err != nil {
 			return nil, 0, err
 		}
 		if rebate.Valid {
 			v := rebate.Float64
 			e.AffRebateRatePercent = &v
+		}
+		if inviteLimit.Valid {
+			v := int(inviteLimit.Int64)
+			e.AffInviteLimit = &v
 		}
 		entries = append(entries, e)
 	}

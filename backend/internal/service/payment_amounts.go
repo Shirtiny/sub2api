@@ -23,6 +23,13 @@ func calculateCreditedBalance(paymentAmount, multiplier float64) float64 {
 		InexactFloat64()
 }
 
+func paidRechargePointsFactor(creditedBalance, paidAmount float64) float64 {
+	if creditedBalance <= 0 || paidAmount <= 0 || math.IsNaN(creditedBalance) || math.IsNaN(paidAmount) || math.IsInf(creditedBalance, 0) || math.IsInf(paidAmount, 0) {
+		return 0
+	}
+	return decimal.NewFromFloat(paidAmount).Div(decimal.NewFromFloat(creditedBalance)).InexactFloat64()
+}
+
 func calculateGatewayRefundAmount(orderAmount, payAmount, refundAmount float64, currency string) float64 {
 	if orderAmount <= 0 || payAmount <= 0 || refundAmount <= 0 {
 		return 0

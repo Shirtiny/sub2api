@@ -28,6 +28,7 @@ func setupAdminRouter() (*gin.Engine, *stubAdminService) {
 	router.PUT("/api/v1/admin/users/:id", userHandler.Update)
 	router.DELETE("/api/v1/admin/users/:id", userHandler.Delete)
 	router.POST("/api/v1/admin/users/:id/balance", userHandler.UpdateBalance)
+	router.POST("/api/v1/admin/users/:id/membership-points", userHandler.UpdateMembershipPoints)
 	router.GET("/api/v1/admin/users/:id/api-keys", userHandler.GetUserAPIKeys)
 	router.GET("/api/v1/admin/users/:id/usage", userHandler.GetUserUsage)
 
@@ -121,6 +122,24 @@ func TestUserHandlerEndpoints(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json")
 	router.ServeHTTP(rec, req)
 	require.Equal(t, http.StatusOK, rec.Code)
+
+	rec = httptest.NewRecorder()
+	req = httptest.NewRequest(http.MethodPost, "/api/v1/admin/users/1/membership-points", bytes.NewBufferString(`{"points":1,"operation":"add"}`))
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(rec, req)
+	require.Equal(t, http.StatusOK, rec.Code)
+
+	rec = httptest.NewRecorder()
+	req = httptest.NewRequest(http.MethodPost, "/api/v1/admin/users/1/membership-points", bytes.NewBufferString(`{"points":0,"operation":"set"}`))
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(rec, req)
+	require.Equal(t, http.StatusOK, rec.Code)
+
+	rec = httptest.NewRecorder()
+	req = httptest.NewRequest(http.MethodPost, "/api/v1/admin/users/1/membership-points", bytes.NewBufferString(`{"operation":"set"}`))
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(rec, req)
+	require.Equal(t, http.StatusBadRequest, rec.Code)
 
 	rec = httptest.NewRecorder()
 	req = httptest.NewRequest(http.MethodGet, "/api/v1/admin/users/1/api-keys", nil)

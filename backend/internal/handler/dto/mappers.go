@@ -29,6 +29,7 @@ func UserFromServiceShallow(u *service.User) *User {
 		BalanceNotifyThreshold:     u.BalanceNotifyThreshold,
 		BalanceNotifyExtraEmails:   NotifyEmailEntriesFromService(u.BalanceNotifyExtraEmails),
 		TotalRecharged:             u.TotalRecharged,
+		MembershipLevel:            service.CalculateMembershipLevel(u.TotalRecharged),
 		RPMLimit:                   u.RPMLimit,
 		DeletedAt:                  u.DeletedAt,
 	}

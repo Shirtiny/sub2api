@@ -82,6 +82,13 @@ type UpdateBalanceRequest struct {
 	Notes     string  `json:"notes"`
 }
 
+// UpdateMembershipPointsRequest represents membership points update request
+type UpdateMembershipPointsRequest struct {
+	Points    *float64 `json:"points" binding:"required,gte=0"`
+	Operation string   `json:"operation" binding:"required,oneof=set add subtract"`
+	Notes     string   `json:"notes"`
+}
+
 type BindUserAuthIdentityRequest struct {
 	ProviderType    string                              `json:"provider_type"`
 	ProviderKey     string                              `json:"provider_key"`
@@ -360,6 +367,37 @@ func (h *UserHandler) UpdateBalance(c *gin.Context) {
 	})
 }
 
+// UpdateMembershipPoints handles updating user membership points
+// POST /api/v1/admin/users/:id/membership-points
+func (h *UserHandler) UpdateMembershipPoints(c *gin.Context) {
+	userID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		response.BadRequest(c, "Invalid user ID")
+		return
+	}
+
+	var req UpdateMembershipPointsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+
+	idempotencyPayload := struct {
+		UserID int64                         `json:"user_id"`
+		Body   UpdateMembershipPointsRequest `json:"body"`
+	}{
+		UserID: userID,
+		Body:   req,
+	}
+	executeAdminIdempotentJSON(c, "admin.users.membership_points.update", idempotencyPayload, service.DefaultWriteIdempotencyTTL(), func(ctx context.Context) (any, error) {
+		user, execErr := h.adminService.UpdateUserMembershipPoints(ctx, userID, *req.Points, req.Operation, req.Notes)
+		if execErr != nil {
+			return nil, execErr
+		}
+		return dto.UserFromServiceAdmin(user), nil
+	})
+}
+
 // GetUserAPIKeys handles getting user's API keys
 // GET /api/v1/admin/users/:id/api-keys
 func (h *UserHandler) GetUserAPIKeys(c *gin.Context) {
@@ -433,10 +471,7 @@ func (h *UserHandler) GetBalanceHistory(c *gin.Context) {
 	}
 
 	// Custom response with total_recharged alongside pagination
-	pages := int((total + int64(pageSize) - 1) / int64(pageSize))
-	if pages < 1 {
-		pages = 1
-	}
+	pages := max(1, int((total+int64(pageSize)-1)/int64(pageSize)))
 	response.Success(c, gin.H{
 		"items":           out,
 		"total":           total,

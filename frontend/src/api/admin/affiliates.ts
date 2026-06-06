@@ -14,6 +14,7 @@ export interface AffiliateAdminEntry {
   aff_code: string
   aff_code_custom: boolean
   aff_rebate_rate_percent?: number | null
+  aff_invite_limit?: number | null
   aff_count: number
 }
 
@@ -92,8 +93,10 @@ export interface AffiliateUserOverview {
 export interface UpdateAffiliateUserRequest {
   aff_code?: string
   aff_rebate_rate_percent?: number | null
+  aff_invite_limit?: number | null
   /** Set true to explicitly clear the per-user rate (sets it to NULL). */
   clear_rebate_rate?: boolean
+  clear_invite_limit?: boolean
 }
 
 export interface BatchSetRateRequest {

@@ -35,7 +35,11 @@ func (s *settingHandlerRepoStub) GetValue(ctx context.Context, key string) (stri
 }
 
 func (s *settingHandlerRepoStub) Set(ctx context.Context, key, value string) error {
-	panic("unexpected Set call")
+	if s.values == nil {
+		s.values = map[string]string{}
+	}
+	s.values[key] = value
+	return nil
 }
 
 func (s *settingHandlerRepoStub) GetMultiple(ctx context.Context, keys []string) (map[string]string, error) {
@@ -470,6 +474,63 @@ func TestSettingHandler_UpdateSettings_DoesNotPersistPartialSystemSettingsWhenAu
 	require.Equal(t, http.StatusInternalServerError, rec.Code)
 	require.Equal(t, "false", repo.values[service.SettingKeyRegistrationEnabled])
 	require.Equal(t, "9.5", repo.values[service.SettingKeyAuthSourceDefaultEmailBalance])
+}
+
+func TestSettingHandler_UpdateSettings_PersistsAffiliateInviteLimit(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	repo := &settingHandlerRepoStub{
+		values: map[string]string{
+			service.SettingKeyRegistrationEnabled:      "true",
+			service.SettingKeyPromoCodeEnabled:         "true",
+			service.SettingKeyAffiliateInviteLimit:     "0",
+			service.SettingKeyDefaultConcurrency:       "5",
+			service.SettingKeyDefaultBalance:           "0",
+			service.SettingKeyDefaultSubscriptions:     "[]",
+			service.SettingKeyTableDefaultPageSize:     "20",
+			service.SettingKeyTablePageSizeOptions:     "[10,20,50,100]",
+			service.SettingPaymentEnabled:              "false",
+			service.SettingEnabledPaymentTypes:         "[]",
+			service.SettingKeyAccountQuotaNotifyEmails: "[]",
+		},
+	}
+	svc := service.NewSettingService(repo, &config.Config{Default: config.DefaultConfig{UserConcurrency: 5}})
+	handler := NewSettingHandler(svc, nil, nil, nil, nil, nil, nil)
+
+	body := map[string]any{
+		"promo_code_enabled":     true,
+		"affiliate_invite_limit": 123,
+	}
+	rawBody, err := json.Marshal(body)
+	require.NoError(t, err)
+
+	putRec := httptest.NewRecorder()
+	putCtx, _ := gin.CreateTestContext(putRec)
+	putCtx.Request = httptest.NewRequest(http.MethodPut, "/api/v1/admin/settings", bytes.NewReader(rawBody))
+	putCtx.Request.Header.Set("Content-Type", "application/json")
+
+	handler.UpdateSettings(putCtx)
+
+	require.Equal(t, http.StatusOK, putRec.Code)
+	require.Equal(t, "123", repo.values[service.SettingKeyAffiliateInviteLimit])
+
+	var putResp response.Response
+	require.NoError(t, json.Unmarshal(putRec.Body.Bytes(), &putResp))
+	putData, ok := putResp.Data.(map[string]any)
+	require.True(t, ok)
+	require.Equal(t, float64(123), putData["affiliate_invite_limit"])
+
+	getRec := httptest.NewRecorder()
+	getCtx, _ := gin.CreateTestContext(getRec)
+	getCtx.Request = httptest.NewRequest(http.MethodGet, "/api/v1/admin/settings", nil)
+
+	handler.GetSettings(getCtx)
+
+	require.Equal(t, http.StatusOK, getRec.Code)
+	var getResp response.Response
+	require.NoError(t, json.Unmarshal(getRec.Body.Bytes(), &getResp))
+	getData, ok := getResp.Data.(map[string]any)
+	require.True(t, ok)
+	require.Equal(t, float64(123), getData["affiliate_invite_limit"])
 }
 
 func TestDiffSettings_IncludesAuthSourceDefaultsAndForceEmail(t *testing.T) {
