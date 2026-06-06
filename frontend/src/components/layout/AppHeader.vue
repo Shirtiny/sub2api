@@ -83,7 +83,7 @@
               <div class="border-b border-gray-100 p-3 dark:border-dark-700">
                 <div class="flex items-start justify-between gap-3">
                   <div>
-                    <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
+                    <h3 class="text-sm font-semibold text-primary-600 dark:text-primary-400">
                       {{ t('membership.title') }}
                     </h3>
                     <p class="mt-0.5 text-xs text-gray-500 dark:text-dark-400">

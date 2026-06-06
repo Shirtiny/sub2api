@@ -248,15 +248,15 @@ export default {
   },
 
   membership: {
-    title: '会员等级',
+    title: 'Café LEVEL',
     totalRecharged: '累计点数：{amount}',
     progressTo: '距离 LV.{level}',
     highest: '已达最高等级',
     highestHint: 'LV.3 是当前最高会员等级。',
     remainingHint: '再获得 {amount} 点可升级到 LV.{level}。',
     affiliateRebate: '会员权益',
-    subscriptionReward: '邀请返利：余额返利{rate}%、月订阅套餐返利{days}天',
-    subscriptionRewardUnavailable: '邀请返利：LV.1 及以上可开启'
+    subscriptionReward: '邀请注册：余额返利{rate}%、月订阅套餐返利{days}天',
+    subscriptionRewardUnavailable: '邀请注册：LV.1 及以上可开启'
   },
 
   // Common
@@ -363,8 +363,8 @@ export default {
     apiKeys: 'API 密钥',
     usage: '使用记录',
     redeem: '兑换',
-    affiliate: '邀请返利',
-    affiliateManagement: '邀请返利',
+    affiliate: '邀请注册',
+    affiliateManagement: '邀请注册',
     affiliateInviteRecords: '邀请记录',
     affiliateRebateRecords: '返利记录',
     affiliateTransferRecords: '提取记录',
@@ -1088,7 +1088,7 @@ export default {
   },
 
   affiliate: {
-    title: '邀请返利',
+    title: '邀请注册',
     description: 'LV.1 及以上用户可邀请新用户注册，余额充值返额度，月订阅套餐返同套餐天数',
     yourCode: '我的邀请码',
     inviteLink: '邀请链接',
