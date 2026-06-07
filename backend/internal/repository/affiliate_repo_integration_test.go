@@ -222,9 +222,9 @@ func TestAffiliateRepository_AccrueQuota_ReusesOuterTransaction(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, bound, "invitee must bind to inviter")
 
-	applied, err := repo.AccrueQuota(txCtx, inviter.ID, invitee.ID, 3.5, 0, nil)
+	applied, err := repo.AccrueQuota(txCtx, inviter.ID, invitee.ID, 3.5, 0, nil, 10)
 	require.NoError(t, err)
-	require.True(t, applied, "AccrueQuota must report applied=true")
+	require.InDelta(t, 3.5, applied, 1e-9, "AccrueQuota must report applied amount")
 
 	// Visible inside the outer tx.
 	innerQuota := querySingleFloat(t, txCtx, client,
