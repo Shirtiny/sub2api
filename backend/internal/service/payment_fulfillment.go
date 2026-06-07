@@ -306,11 +306,13 @@ func (s *PaymentService) markCompleted(ctx context.Context, o *dbent.PaymentOrde
 	if err != nil {
 		return fmt.Errorf("mark completed: %w", err)
 	}
-	s.writeAuditLog(ctx, o.ID, auditAction, "system", map[string]any{
-		"rechargeCode":   o.RechargeCode,
-		"creditedAmount": o.Amount,
-		"payAmount":      o.PayAmount,
-	})
+	if !s.hasAuditLog(ctx, o.ID, auditAction) {
+		s.writeAuditLog(ctx, o.ID, auditAction, "system", map[string]any{
+			"rechargeCode":   o.RechargeCode,
+			"creditedAmount": o.Amount,
+			"payAmount":      o.PayAmount,
+		})
+	}
 	s.dispatchPaymentFulfillmentNotification(o, auditAction)
 	return nil
 }
@@ -440,9 +442,33 @@ func (s *PaymentService) doSub(ctx context.Context, o *dbent.PaymentOrder) error
 		return s.markCompleted(ctx, o, "SUBSCRIPTION_SUCCESS")
 	}
 	orderNote := fmt.Sprintf("payment order %d", o.ID)
-	_, _, err = s.subscriptionSvc.AssignOrExtendSubscription(ctx, &AssignSubscriptionInput{UserID: o.UserID, GroupID: gid, ValidityDays: days, AssignedBy: 0, Notes: orderNote})
+	tx, err := s.entClient.Tx(ctx)
 	if err != nil {
+		return fmt.Errorf("begin transaction: %w", err)
+	}
+	txCtx := dbent.NewTxContext(ctx, tx)
+
+	if _, _, err = s.subscriptionSvc.AssignOrExtendSubscription(txCtx, &AssignSubscriptionInput{UserID: o.UserID, GroupID: gid, ValidityDays: days, AssignedBy: 0, Notes: orderNote}); err != nil {
+		_ = tx.Rollback()
 		return fmt.Errorf("assign subscription: %w", err)
+	}
+	if o.PayAmount > 0 {
+		if _, err := tx.Client().User.UpdateOneID(o.UserID).AddTotalRecharged(o.PayAmount).Save(txCtx); err != nil {
+			_ = tx.Rollback()
+			return fmt.Errorf("update membership points: %w", err)
+		}
+	}
+	if err := s.writeAuditLogStrict(txCtx, o.ID, "SUBSCRIPTION_SUCCESS", "system", map[string]any{
+		"subscriptionGroupID": gid,
+		"subscriptionDays":    days,
+		"creditedAmount":      o.Amount,
+		"payAmount":           o.PayAmount,
+	}); err != nil {
+		_ = tx.Rollback()
+		return fmt.Errorf("write audit log: %w", err)
+	}
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("commit transaction: %w", err)
 	}
 	if err := s.applyAffiliateRebateForOrder(ctx, o); err != nil {
 		return err
