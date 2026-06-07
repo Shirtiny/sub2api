@@ -19,6 +19,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/apikey"
 	"github.com/Wei-Shaw/sub2api/ent/authidentity"
 	"github.com/Wei-Shaw/sub2api/ent/authidentitychannel"
+	"github.com/Wei-Shaw/sub2api/ent/cafecoupon"
 	"github.com/Wei-Shaw/sub2api/ent/channelmonitor"
 	"github.com/Wei-Shaw/sub2api/ent/channelmonitordailyrollup"
 	"github.com/Wei-Shaw/sub2api/ent/channelmonitorhistory"
@@ -67,6 +68,7 @@ const (
 	TypeAnnouncementRead              = "AnnouncementRead"
 	TypeAuthIdentity                  = "AuthIdentity"
 	TypeAuthIdentityChannel           = "AuthIdentityChannel"
+	TypeCafeCoupon                    = "CafeCoupon"
 	TypeChannelMonitor                = "ChannelMonitor"
 	TypeChannelMonitorDailyRollup     = "ChannelMonitorDailyRollup"
 	TypeChannelMonitorHistory         = "ChannelMonitorHistory"
@@ -8742,6 +8744,1178 @@ func (m *AuthIdentityChannelMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown AuthIdentityChannel edge %s", name)
+}
+
+// CafeCouponMutation represents an operation that mutates the CafeCoupon nodes in the graph.
+type CafeCouponMutation struct {
+	config
+	op                  Op
+	typ                 string
+	id                  *int64
+	code                *string
+	membership_level    *int
+	addmembership_level *int
+	coupon_type         *string
+	value               *float64
+	addvalue            *float64
+	period              *string
+	period_start        *time.Time
+	period_end          *time.Time
+	status              *string
+	order_id            *int64
+	addorder_id         *int64
+	applied_at          *time.Time
+	created_at          *time.Time
+	updated_at          *time.Time
+	clearedFields       map[string]struct{}
+	user                *int64
+	cleareduser         bool
+	done                bool
+	oldValue            func(context.Context) (*CafeCoupon, error)
+	predicates          []predicate.CafeCoupon
+}
+
+var _ ent.Mutation = (*CafeCouponMutation)(nil)
+
+// cafecouponOption allows management of the mutation configuration using functional options.
+type cafecouponOption func(*CafeCouponMutation)
+
+// newCafeCouponMutation creates new mutation for the CafeCoupon entity.
+func newCafeCouponMutation(c config, op Op, opts ...cafecouponOption) *CafeCouponMutation {
+	m := &CafeCouponMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeCafeCoupon,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withCafeCouponID sets the ID field of the mutation.
+func withCafeCouponID(id int64) cafecouponOption {
+	return func(m *CafeCouponMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *CafeCoupon
+		)
+		m.oldValue = func(ctx context.Context) (*CafeCoupon, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().CafeCoupon.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withCafeCoupon sets the old CafeCoupon of the mutation.
+func withCafeCoupon(node *CafeCoupon) cafecouponOption {
+	return func(m *CafeCouponMutation) {
+		m.oldValue = func(context.Context) (*CafeCoupon, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m CafeCouponMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m CafeCouponMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *CafeCouponMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *CafeCouponMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().CafeCoupon.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCode sets the "code" field.
+func (m *CafeCouponMutation) SetCode(s string) {
+	m.code = &s
+}
+
+// Code returns the value of the "code" field in the mutation.
+func (m *CafeCouponMutation) Code() (r string, exists bool) {
+	v := m.code
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCode returns the old "code" field's value of the CafeCoupon entity.
+// If the CafeCoupon object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CafeCouponMutation) OldCode(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCode is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCode requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCode: %w", err)
+	}
+	return oldValue.Code, nil
+}
+
+// ResetCode resets all changes to the "code" field.
+func (m *CafeCouponMutation) ResetCode() {
+	m.code = nil
+}
+
+// SetUserID sets the "user_id" field.
+func (m *CafeCouponMutation) SetUserID(i int64) {
+	m.user = &i
+}
+
+// UserID returns the value of the "user_id" field in the mutation.
+func (m *CafeCouponMutation) UserID() (r int64, exists bool) {
+	v := m.user
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUserID returns the old "user_id" field's value of the CafeCoupon entity.
+// If the CafeCoupon object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CafeCouponMutation) OldUserID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUserID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUserID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUserID: %w", err)
+	}
+	return oldValue.UserID, nil
+}
+
+// ResetUserID resets all changes to the "user_id" field.
+func (m *CafeCouponMutation) ResetUserID() {
+	m.user = nil
+}
+
+// SetMembershipLevel sets the "membership_level" field.
+func (m *CafeCouponMutation) SetMembershipLevel(i int) {
+	m.membership_level = &i
+	m.addmembership_level = nil
+}
+
+// MembershipLevel returns the value of the "membership_level" field in the mutation.
+func (m *CafeCouponMutation) MembershipLevel() (r int, exists bool) {
+	v := m.membership_level
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMembershipLevel returns the old "membership_level" field's value of the CafeCoupon entity.
+// If the CafeCoupon object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CafeCouponMutation) OldMembershipLevel(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMembershipLevel is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMembershipLevel requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMembershipLevel: %w", err)
+	}
+	return oldValue.MembershipLevel, nil
+}
+
+// AddMembershipLevel adds i to the "membership_level" field.
+func (m *CafeCouponMutation) AddMembershipLevel(i int) {
+	if m.addmembership_level != nil {
+		*m.addmembership_level += i
+	} else {
+		m.addmembership_level = &i
+	}
+}
+
+// AddedMembershipLevel returns the value that was added to the "membership_level" field in this mutation.
+func (m *CafeCouponMutation) AddedMembershipLevel() (r int, exists bool) {
+	v := m.addmembership_level
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetMembershipLevel resets all changes to the "membership_level" field.
+func (m *CafeCouponMutation) ResetMembershipLevel() {
+	m.membership_level = nil
+	m.addmembership_level = nil
+}
+
+// SetCouponType sets the "coupon_type" field.
+func (m *CafeCouponMutation) SetCouponType(s string) {
+	m.coupon_type = &s
+}
+
+// CouponType returns the value of the "coupon_type" field in the mutation.
+func (m *CafeCouponMutation) CouponType() (r string, exists bool) {
+	v := m.coupon_type
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCouponType returns the old "coupon_type" field's value of the CafeCoupon entity.
+// If the CafeCoupon object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CafeCouponMutation) OldCouponType(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCouponType is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCouponType requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCouponType: %w", err)
+	}
+	return oldValue.CouponType, nil
+}
+
+// ResetCouponType resets all changes to the "coupon_type" field.
+func (m *CafeCouponMutation) ResetCouponType() {
+	m.coupon_type = nil
+}
+
+// SetValue sets the "value" field.
+func (m *CafeCouponMutation) SetValue(f float64) {
+	m.value = &f
+	m.addvalue = nil
+}
+
+// Value returns the value of the "value" field in the mutation.
+func (m *CafeCouponMutation) Value() (r float64, exists bool) {
+	v := m.value
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldValue returns the old "value" field's value of the CafeCoupon entity.
+// If the CafeCoupon object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CafeCouponMutation) OldValue(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldValue is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldValue requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldValue: %w", err)
+	}
+	return oldValue.Value, nil
+}
+
+// AddValue adds f to the "value" field.
+func (m *CafeCouponMutation) AddValue(f float64) {
+	if m.addvalue != nil {
+		*m.addvalue += f
+	} else {
+		m.addvalue = &f
+	}
+}
+
+// AddedValue returns the value that was added to the "value" field in this mutation.
+func (m *CafeCouponMutation) AddedValue() (r float64, exists bool) {
+	v := m.addvalue
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetValue resets all changes to the "value" field.
+func (m *CafeCouponMutation) ResetValue() {
+	m.value = nil
+	m.addvalue = nil
+}
+
+// SetPeriod sets the "period" field.
+func (m *CafeCouponMutation) SetPeriod(s string) {
+	m.period = &s
+}
+
+// Period returns the value of the "period" field in the mutation.
+func (m *CafeCouponMutation) Period() (r string, exists bool) {
+	v := m.period
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPeriod returns the old "period" field's value of the CafeCoupon entity.
+// If the CafeCoupon object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CafeCouponMutation) OldPeriod(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPeriod is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPeriod requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPeriod: %w", err)
+	}
+	return oldValue.Period, nil
+}
+
+// ResetPeriod resets all changes to the "period" field.
+func (m *CafeCouponMutation) ResetPeriod() {
+	m.period = nil
+}
+
+// SetPeriodStart sets the "period_start" field.
+func (m *CafeCouponMutation) SetPeriodStart(t time.Time) {
+	m.period_start = &t
+}
+
+// PeriodStart returns the value of the "period_start" field in the mutation.
+func (m *CafeCouponMutation) PeriodStart() (r time.Time, exists bool) {
+	v := m.period_start
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPeriodStart returns the old "period_start" field's value of the CafeCoupon entity.
+// If the CafeCoupon object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CafeCouponMutation) OldPeriodStart(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPeriodStart is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPeriodStart requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPeriodStart: %w", err)
+	}
+	return oldValue.PeriodStart, nil
+}
+
+// ResetPeriodStart resets all changes to the "period_start" field.
+func (m *CafeCouponMutation) ResetPeriodStart() {
+	m.period_start = nil
+}
+
+// SetPeriodEnd sets the "period_end" field.
+func (m *CafeCouponMutation) SetPeriodEnd(t time.Time) {
+	m.period_end = &t
+}
+
+// PeriodEnd returns the value of the "period_end" field in the mutation.
+func (m *CafeCouponMutation) PeriodEnd() (r time.Time, exists bool) {
+	v := m.period_end
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPeriodEnd returns the old "period_end" field's value of the CafeCoupon entity.
+// If the CafeCoupon object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CafeCouponMutation) OldPeriodEnd(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPeriodEnd is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPeriodEnd requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPeriodEnd: %w", err)
+	}
+	return oldValue.PeriodEnd, nil
+}
+
+// ResetPeriodEnd resets all changes to the "period_end" field.
+func (m *CafeCouponMutation) ResetPeriodEnd() {
+	m.period_end = nil
+}
+
+// SetStatus sets the "status" field.
+func (m *CafeCouponMutation) SetStatus(s string) {
+	m.status = &s
+}
+
+// Status returns the value of the "status" field in the mutation.
+func (m *CafeCouponMutation) Status() (r string, exists bool) {
+	v := m.status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStatus returns the old "status" field's value of the CafeCoupon entity.
+// If the CafeCoupon object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CafeCouponMutation) OldStatus(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStatus: %w", err)
+	}
+	return oldValue.Status, nil
+}
+
+// ResetStatus resets all changes to the "status" field.
+func (m *CafeCouponMutation) ResetStatus() {
+	m.status = nil
+}
+
+// SetOrderID sets the "order_id" field.
+func (m *CafeCouponMutation) SetOrderID(i int64) {
+	m.order_id = &i
+	m.addorder_id = nil
+}
+
+// OrderID returns the value of the "order_id" field in the mutation.
+func (m *CafeCouponMutation) OrderID() (r int64, exists bool) {
+	v := m.order_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOrderID returns the old "order_id" field's value of the CafeCoupon entity.
+// If the CafeCoupon object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CafeCouponMutation) OldOrderID(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOrderID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOrderID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOrderID: %w", err)
+	}
+	return oldValue.OrderID, nil
+}
+
+// AddOrderID adds i to the "order_id" field.
+func (m *CafeCouponMutation) AddOrderID(i int64) {
+	if m.addorder_id != nil {
+		*m.addorder_id += i
+	} else {
+		m.addorder_id = &i
+	}
+}
+
+// AddedOrderID returns the value that was added to the "order_id" field in this mutation.
+func (m *CafeCouponMutation) AddedOrderID() (r int64, exists bool) {
+	v := m.addorder_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearOrderID clears the value of the "order_id" field.
+func (m *CafeCouponMutation) ClearOrderID() {
+	m.order_id = nil
+	m.addorder_id = nil
+	m.clearedFields[cafecoupon.FieldOrderID] = struct{}{}
+}
+
+// OrderIDCleared returns if the "order_id" field was cleared in this mutation.
+func (m *CafeCouponMutation) OrderIDCleared() bool {
+	_, ok := m.clearedFields[cafecoupon.FieldOrderID]
+	return ok
+}
+
+// ResetOrderID resets all changes to the "order_id" field.
+func (m *CafeCouponMutation) ResetOrderID() {
+	m.order_id = nil
+	m.addorder_id = nil
+	delete(m.clearedFields, cafecoupon.FieldOrderID)
+}
+
+// SetAppliedAt sets the "applied_at" field.
+func (m *CafeCouponMutation) SetAppliedAt(t time.Time) {
+	m.applied_at = &t
+}
+
+// AppliedAt returns the value of the "applied_at" field in the mutation.
+func (m *CafeCouponMutation) AppliedAt() (r time.Time, exists bool) {
+	v := m.applied_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAppliedAt returns the old "applied_at" field's value of the CafeCoupon entity.
+// If the CafeCoupon object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CafeCouponMutation) OldAppliedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAppliedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAppliedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAppliedAt: %w", err)
+	}
+	return oldValue.AppliedAt, nil
+}
+
+// ClearAppliedAt clears the value of the "applied_at" field.
+func (m *CafeCouponMutation) ClearAppliedAt() {
+	m.applied_at = nil
+	m.clearedFields[cafecoupon.FieldAppliedAt] = struct{}{}
+}
+
+// AppliedAtCleared returns if the "applied_at" field was cleared in this mutation.
+func (m *CafeCouponMutation) AppliedAtCleared() bool {
+	_, ok := m.clearedFields[cafecoupon.FieldAppliedAt]
+	return ok
+}
+
+// ResetAppliedAt resets all changes to the "applied_at" field.
+func (m *CafeCouponMutation) ResetAppliedAt() {
+	m.applied_at = nil
+	delete(m.clearedFields, cafecoupon.FieldAppliedAt)
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *CafeCouponMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *CafeCouponMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the CafeCoupon entity.
+// If the CafeCoupon object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CafeCouponMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *CafeCouponMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *CafeCouponMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *CafeCouponMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the CafeCoupon entity.
+// If the CafeCoupon object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CafeCouponMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *CafeCouponMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// ClearUser clears the "user" edge to the User entity.
+func (m *CafeCouponMutation) ClearUser() {
+	m.cleareduser = true
+	m.clearedFields[cafecoupon.FieldUserID] = struct{}{}
+}
+
+// UserCleared reports if the "user" edge to the User entity was cleared.
+func (m *CafeCouponMutation) UserCleared() bool {
+	return m.cleareduser
+}
+
+// UserIDs returns the "user" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// UserID instead. It exists only for internal usage by the builders.
+func (m *CafeCouponMutation) UserIDs() (ids []int64) {
+	if id := m.user; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetUser resets all changes to the "user" edge.
+func (m *CafeCouponMutation) ResetUser() {
+	m.user = nil
+	m.cleareduser = false
+}
+
+// Where appends a list predicates to the CafeCouponMutation builder.
+func (m *CafeCouponMutation) Where(ps ...predicate.CafeCoupon) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the CafeCouponMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *CafeCouponMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.CafeCoupon, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *CafeCouponMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *CafeCouponMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (CafeCoupon).
+func (m *CafeCouponMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *CafeCouponMutation) Fields() []string {
+	fields := make([]string, 0, 13)
+	if m.code != nil {
+		fields = append(fields, cafecoupon.FieldCode)
+	}
+	if m.user != nil {
+		fields = append(fields, cafecoupon.FieldUserID)
+	}
+	if m.membership_level != nil {
+		fields = append(fields, cafecoupon.FieldMembershipLevel)
+	}
+	if m.coupon_type != nil {
+		fields = append(fields, cafecoupon.FieldCouponType)
+	}
+	if m.value != nil {
+		fields = append(fields, cafecoupon.FieldValue)
+	}
+	if m.period != nil {
+		fields = append(fields, cafecoupon.FieldPeriod)
+	}
+	if m.period_start != nil {
+		fields = append(fields, cafecoupon.FieldPeriodStart)
+	}
+	if m.period_end != nil {
+		fields = append(fields, cafecoupon.FieldPeriodEnd)
+	}
+	if m.status != nil {
+		fields = append(fields, cafecoupon.FieldStatus)
+	}
+	if m.order_id != nil {
+		fields = append(fields, cafecoupon.FieldOrderID)
+	}
+	if m.applied_at != nil {
+		fields = append(fields, cafecoupon.FieldAppliedAt)
+	}
+	if m.created_at != nil {
+		fields = append(fields, cafecoupon.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, cafecoupon.FieldUpdatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *CafeCouponMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case cafecoupon.FieldCode:
+		return m.Code()
+	case cafecoupon.FieldUserID:
+		return m.UserID()
+	case cafecoupon.FieldMembershipLevel:
+		return m.MembershipLevel()
+	case cafecoupon.FieldCouponType:
+		return m.CouponType()
+	case cafecoupon.FieldValue:
+		return m.Value()
+	case cafecoupon.FieldPeriod:
+		return m.Period()
+	case cafecoupon.FieldPeriodStart:
+		return m.PeriodStart()
+	case cafecoupon.FieldPeriodEnd:
+		return m.PeriodEnd()
+	case cafecoupon.FieldStatus:
+		return m.Status()
+	case cafecoupon.FieldOrderID:
+		return m.OrderID()
+	case cafecoupon.FieldAppliedAt:
+		return m.AppliedAt()
+	case cafecoupon.FieldCreatedAt:
+		return m.CreatedAt()
+	case cafecoupon.FieldUpdatedAt:
+		return m.UpdatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *CafeCouponMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case cafecoupon.FieldCode:
+		return m.OldCode(ctx)
+	case cafecoupon.FieldUserID:
+		return m.OldUserID(ctx)
+	case cafecoupon.FieldMembershipLevel:
+		return m.OldMembershipLevel(ctx)
+	case cafecoupon.FieldCouponType:
+		return m.OldCouponType(ctx)
+	case cafecoupon.FieldValue:
+		return m.OldValue(ctx)
+	case cafecoupon.FieldPeriod:
+		return m.OldPeriod(ctx)
+	case cafecoupon.FieldPeriodStart:
+		return m.OldPeriodStart(ctx)
+	case cafecoupon.FieldPeriodEnd:
+		return m.OldPeriodEnd(ctx)
+	case cafecoupon.FieldStatus:
+		return m.OldStatus(ctx)
+	case cafecoupon.FieldOrderID:
+		return m.OldOrderID(ctx)
+	case cafecoupon.FieldAppliedAt:
+		return m.OldAppliedAt(ctx)
+	case cafecoupon.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case cafecoupon.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown CafeCoupon field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *CafeCouponMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case cafecoupon.FieldCode:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCode(v)
+		return nil
+	case cafecoupon.FieldUserID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUserID(v)
+		return nil
+	case cafecoupon.FieldMembershipLevel:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMembershipLevel(v)
+		return nil
+	case cafecoupon.FieldCouponType:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCouponType(v)
+		return nil
+	case cafecoupon.FieldValue:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetValue(v)
+		return nil
+	case cafecoupon.FieldPeriod:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPeriod(v)
+		return nil
+	case cafecoupon.FieldPeriodStart:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPeriodStart(v)
+		return nil
+	case cafecoupon.FieldPeriodEnd:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPeriodEnd(v)
+		return nil
+	case cafecoupon.FieldStatus:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStatus(v)
+		return nil
+	case cafecoupon.FieldOrderID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOrderID(v)
+		return nil
+	case cafecoupon.FieldAppliedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAppliedAt(v)
+		return nil
+	case cafecoupon.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case cafecoupon.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown CafeCoupon field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *CafeCouponMutation) AddedFields() []string {
+	var fields []string
+	if m.addmembership_level != nil {
+		fields = append(fields, cafecoupon.FieldMembershipLevel)
+	}
+	if m.addvalue != nil {
+		fields = append(fields, cafecoupon.FieldValue)
+	}
+	if m.addorder_id != nil {
+		fields = append(fields, cafecoupon.FieldOrderID)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *CafeCouponMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case cafecoupon.FieldMembershipLevel:
+		return m.AddedMembershipLevel()
+	case cafecoupon.FieldValue:
+		return m.AddedValue()
+	case cafecoupon.FieldOrderID:
+		return m.AddedOrderID()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *CafeCouponMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case cafecoupon.FieldMembershipLevel:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddMembershipLevel(v)
+		return nil
+	case cafecoupon.FieldValue:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddValue(v)
+		return nil
+	case cafecoupon.FieldOrderID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddOrderID(v)
+		return nil
+	}
+	return fmt.Errorf("unknown CafeCoupon numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *CafeCouponMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(cafecoupon.FieldOrderID) {
+		fields = append(fields, cafecoupon.FieldOrderID)
+	}
+	if m.FieldCleared(cafecoupon.FieldAppliedAt) {
+		fields = append(fields, cafecoupon.FieldAppliedAt)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *CafeCouponMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *CafeCouponMutation) ClearField(name string) error {
+	switch name {
+	case cafecoupon.FieldOrderID:
+		m.ClearOrderID()
+		return nil
+	case cafecoupon.FieldAppliedAt:
+		m.ClearAppliedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown CafeCoupon nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *CafeCouponMutation) ResetField(name string) error {
+	switch name {
+	case cafecoupon.FieldCode:
+		m.ResetCode()
+		return nil
+	case cafecoupon.FieldUserID:
+		m.ResetUserID()
+		return nil
+	case cafecoupon.FieldMembershipLevel:
+		m.ResetMembershipLevel()
+		return nil
+	case cafecoupon.FieldCouponType:
+		m.ResetCouponType()
+		return nil
+	case cafecoupon.FieldValue:
+		m.ResetValue()
+		return nil
+	case cafecoupon.FieldPeriod:
+		m.ResetPeriod()
+		return nil
+	case cafecoupon.FieldPeriodStart:
+		m.ResetPeriodStart()
+		return nil
+	case cafecoupon.FieldPeriodEnd:
+		m.ResetPeriodEnd()
+		return nil
+	case cafecoupon.FieldStatus:
+		m.ResetStatus()
+		return nil
+	case cafecoupon.FieldOrderID:
+		m.ResetOrderID()
+		return nil
+	case cafecoupon.FieldAppliedAt:
+		m.ResetAppliedAt()
+		return nil
+	case cafecoupon.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case cafecoupon.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown CafeCoupon field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *CafeCouponMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.user != nil {
+		edges = append(edges, cafecoupon.EdgeUser)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *CafeCouponMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case cafecoupon.EdgeUser:
+		if id := m.user; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *CafeCouponMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *CafeCouponMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *CafeCouponMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.cleareduser {
+		edges = append(edges, cafecoupon.EdgeUser)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *CafeCouponMutation) EdgeCleared(name string) bool {
+	switch name {
+	case cafecoupon.EdgeUser:
+		return m.cleareduser
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *CafeCouponMutation) ClearEdge(name string) error {
+	switch name {
+	case cafecoupon.EdgeUser:
+		m.ClearUser()
+		return nil
+	}
+	return fmt.Errorf("unknown CafeCoupon unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *CafeCouponMutation) ResetEdge(name string) error {
+	switch name {
+	case cafecoupon.EdgeUser:
+		m.ResetUser()
+		return nil
+	}
+	return fmt.Errorf("unknown CafeCoupon edge %s", name)
 }
 
 // ChannelMonitorMutation represents an operation that mutates the ChannelMonitor nodes in the graph.
@@ -20502,6 +21676,9 @@ type PaymentOrderMutation struct {
 	fee_rate                 *float64
 	addfee_rate              *float64
 	recharge_code            *string
+	cafe_coupon_code         *string
+	cafe_coupon_discount     *float64
+	addcafe_coupon_discount  *float64
 	out_trade_no             *string
 	payment_type             *string
 	payment_trade_no         *string
@@ -21002,6 +22179,111 @@ func (m *PaymentOrderMutation) OldRechargeCode(ctx context.Context) (v string, e
 // ResetRechargeCode resets all changes to the "recharge_code" field.
 func (m *PaymentOrderMutation) ResetRechargeCode() {
 	m.recharge_code = nil
+}
+
+// SetCafeCouponCode sets the "cafe_coupon_code" field.
+func (m *PaymentOrderMutation) SetCafeCouponCode(s string) {
+	m.cafe_coupon_code = &s
+}
+
+// CafeCouponCode returns the value of the "cafe_coupon_code" field in the mutation.
+func (m *PaymentOrderMutation) CafeCouponCode() (r string, exists bool) {
+	v := m.cafe_coupon_code
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCafeCouponCode returns the old "cafe_coupon_code" field's value of the PaymentOrder entity.
+// If the PaymentOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PaymentOrderMutation) OldCafeCouponCode(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCafeCouponCode is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCafeCouponCode requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCafeCouponCode: %w", err)
+	}
+	return oldValue.CafeCouponCode, nil
+}
+
+// ClearCafeCouponCode clears the value of the "cafe_coupon_code" field.
+func (m *PaymentOrderMutation) ClearCafeCouponCode() {
+	m.cafe_coupon_code = nil
+	m.clearedFields[paymentorder.FieldCafeCouponCode] = struct{}{}
+}
+
+// CafeCouponCodeCleared returns if the "cafe_coupon_code" field was cleared in this mutation.
+func (m *PaymentOrderMutation) CafeCouponCodeCleared() bool {
+	_, ok := m.clearedFields[paymentorder.FieldCafeCouponCode]
+	return ok
+}
+
+// ResetCafeCouponCode resets all changes to the "cafe_coupon_code" field.
+func (m *PaymentOrderMutation) ResetCafeCouponCode() {
+	m.cafe_coupon_code = nil
+	delete(m.clearedFields, paymentorder.FieldCafeCouponCode)
+}
+
+// SetCafeCouponDiscount sets the "cafe_coupon_discount" field.
+func (m *PaymentOrderMutation) SetCafeCouponDiscount(f float64) {
+	m.cafe_coupon_discount = &f
+	m.addcafe_coupon_discount = nil
+}
+
+// CafeCouponDiscount returns the value of the "cafe_coupon_discount" field in the mutation.
+func (m *PaymentOrderMutation) CafeCouponDiscount() (r float64, exists bool) {
+	v := m.cafe_coupon_discount
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCafeCouponDiscount returns the old "cafe_coupon_discount" field's value of the PaymentOrder entity.
+// If the PaymentOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PaymentOrderMutation) OldCafeCouponDiscount(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCafeCouponDiscount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCafeCouponDiscount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCafeCouponDiscount: %w", err)
+	}
+	return oldValue.CafeCouponDiscount, nil
+}
+
+// AddCafeCouponDiscount adds f to the "cafe_coupon_discount" field.
+func (m *PaymentOrderMutation) AddCafeCouponDiscount(f float64) {
+	if m.addcafe_coupon_discount != nil {
+		*m.addcafe_coupon_discount += f
+	} else {
+		m.addcafe_coupon_discount = &f
+	}
+}
+
+// AddedCafeCouponDiscount returns the value that was added to the "cafe_coupon_discount" field in this mutation.
+func (m *PaymentOrderMutation) AddedCafeCouponDiscount() (r float64, exists bool) {
+	v := m.addcafe_coupon_discount
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetCafeCouponDiscount resets all changes to the "cafe_coupon_discount" field.
+func (m *PaymentOrderMutation) ResetCafeCouponDiscount() {
+	m.cafe_coupon_discount = nil
+	m.addcafe_coupon_discount = nil
 }
 
 // SetOutTradeNo sets the "out_trade_no" field.
@@ -22511,7 +23793,7 @@ func (m *PaymentOrderMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PaymentOrderMutation) Fields() []string {
-	fields := make([]string, 0, 39)
+	fields := make([]string, 0, 41)
 	if m.user != nil {
 		fields = append(fields, paymentorder.FieldUserID)
 	}
@@ -22535,6 +23817,12 @@ func (m *PaymentOrderMutation) Fields() []string {
 	}
 	if m.recharge_code != nil {
 		fields = append(fields, paymentorder.FieldRechargeCode)
+	}
+	if m.cafe_coupon_code != nil {
+		fields = append(fields, paymentorder.FieldCafeCouponCode)
+	}
+	if m.cafe_coupon_discount != nil {
+		fields = append(fields, paymentorder.FieldCafeCouponDiscount)
 	}
 	if m.out_trade_no != nil {
 		fields = append(fields, paymentorder.FieldOutTradeNo)
@@ -22653,6 +23941,10 @@ func (m *PaymentOrderMutation) Field(name string) (ent.Value, bool) {
 		return m.FeeRate()
 	case paymentorder.FieldRechargeCode:
 		return m.RechargeCode()
+	case paymentorder.FieldCafeCouponCode:
+		return m.CafeCouponCode()
+	case paymentorder.FieldCafeCouponDiscount:
+		return m.CafeCouponDiscount()
 	case paymentorder.FieldOutTradeNo:
 		return m.OutTradeNo()
 	case paymentorder.FieldPaymentType:
@@ -22740,6 +24032,10 @@ func (m *PaymentOrderMutation) OldField(ctx context.Context, name string) (ent.V
 		return m.OldFeeRate(ctx)
 	case paymentorder.FieldRechargeCode:
 		return m.OldRechargeCode(ctx)
+	case paymentorder.FieldCafeCouponCode:
+		return m.OldCafeCouponCode(ctx)
+	case paymentorder.FieldCafeCouponDiscount:
+		return m.OldCafeCouponDiscount(ctx)
 	case paymentorder.FieldOutTradeNo:
 		return m.OldOutTradeNo(ctx)
 	case paymentorder.FieldPaymentType:
@@ -22866,6 +24162,20 @@ func (m *PaymentOrderMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetRechargeCode(v)
+		return nil
+	case paymentorder.FieldCafeCouponCode:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCafeCouponCode(v)
+		return nil
+	case paymentorder.FieldCafeCouponDiscount:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCafeCouponDiscount(v)
 		return nil
 	case paymentorder.FieldOutTradeNo:
 		v, ok := value.(string)
@@ -23101,6 +24411,9 @@ func (m *PaymentOrderMutation) AddedFields() []string {
 	if m.addfee_rate != nil {
 		fields = append(fields, paymentorder.FieldFeeRate)
 	}
+	if m.addcafe_coupon_discount != nil {
+		fields = append(fields, paymentorder.FieldCafeCouponDiscount)
+	}
 	if m.addplan_id != nil {
 		fields = append(fields, paymentorder.FieldPlanID)
 	}
@@ -23127,6 +24440,8 @@ func (m *PaymentOrderMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedPayAmount()
 	case paymentorder.FieldFeeRate:
 		return m.AddedFeeRate()
+	case paymentorder.FieldCafeCouponDiscount:
+		return m.AddedCafeCouponDiscount()
 	case paymentorder.FieldPlanID:
 		return m.AddedPlanID()
 	case paymentorder.FieldSubscriptionGroupID:
@@ -23164,6 +24479,13 @@ func (m *PaymentOrderMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddFeeRate(v)
+		return nil
+	case paymentorder.FieldCafeCouponDiscount:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCafeCouponDiscount(v)
 		return nil
 	case paymentorder.FieldPlanID:
 		v, ok := value.(int64)
@@ -23203,6 +24525,9 @@ func (m *PaymentOrderMutation) ClearedFields() []string {
 	var fields []string
 	if m.FieldCleared(paymentorder.FieldUserNotes) {
 		fields = append(fields, paymentorder.FieldUserNotes)
+	}
+	if m.FieldCleared(paymentorder.FieldCafeCouponCode) {
+		fields = append(fields, paymentorder.FieldCafeCouponCode)
 	}
 	if m.FieldCleared(paymentorder.FieldPayURL) {
 		fields = append(fields, paymentorder.FieldPayURL)
@@ -23277,6 +24602,9 @@ func (m *PaymentOrderMutation) ClearField(name string) error {
 	switch name {
 	case paymentorder.FieldUserNotes:
 		m.ClearUserNotes()
+		return nil
+	case paymentorder.FieldCafeCouponCode:
+		m.ClearCafeCouponCode()
 		return nil
 	case paymentorder.FieldPayURL:
 		m.ClearPayURL()
@@ -23366,6 +24694,12 @@ func (m *PaymentOrderMutation) ResetField(name string) error {
 		return nil
 	case paymentorder.FieldRechargeCode:
 		m.ResetRechargeCode()
+		return nil
+	case paymentorder.FieldCafeCouponCode:
+		m.ResetCafeCouponCode()
+		return nil
+	case paymentorder.FieldCafeCouponDiscount:
+		m.ResetCafeCouponDiscount()
 		return nil
 	case paymentorder.FieldOutTradeNo:
 		m.ResetOutTradeNo()
@@ -38210,6 +39544,9 @@ type UserMutation struct {
 	payment_orders                map[int64]struct{}
 	removedpayment_orders         map[int64]struct{}
 	clearedpayment_orders         bool
+	cafe_coupons                  map[int64]struct{}
+	removedcafe_coupons           map[int64]struct{}
+	clearedcafe_coupons           bool
 	auth_identities               map[int64]struct{}
 	removedauth_identities        map[int64]struct{}
 	clearedauth_identities        bool
@@ -39869,6 +41206,60 @@ func (m *UserMutation) ResetPaymentOrders() {
 	m.removedpayment_orders = nil
 }
 
+// AddCafeCouponIDs adds the "cafe_coupons" edge to the CafeCoupon entity by ids.
+func (m *UserMutation) AddCafeCouponIDs(ids ...int64) {
+	if m.cafe_coupons == nil {
+		m.cafe_coupons = make(map[int64]struct{})
+	}
+	for i := range ids {
+		m.cafe_coupons[ids[i]] = struct{}{}
+	}
+}
+
+// ClearCafeCoupons clears the "cafe_coupons" edge to the CafeCoupon entity.
+func (m *UserMutation) ClearCafeCoupons() {
+	m.clearedcafe_coupons = true
+}
+
+// CafeCouponsCleared reports if the "cafe_coupons" edge to the CafeCoupon entity was cleared.
+func (m *UserMutation) CafeCouponsCleared() bool {
+	return m.clearedcafe_coupons
+}
+
+// RemoveCafeCouponIDs removes the "cafe_coupons" edge to the CafeCoupon entity by IDs.
+func (m *UserMutation) RemoveCafeCouponIDs(ids ...int64) {
+	if m.removedcafe_coupons == nil {
+		m.removedcafe_coupons = make(map[int64]struct{})
+	}
+	for i := range ids {
+		delete(m.cafe_coupons, ids[i])
+		m.removedcafe_coupons[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedCafeCoupons returns the removed IDs of the "cafe_coupons" edge to the CafeCoupon entity.
+func (m *UserMutation) RemovedCafeCouponsIDs() (ids []int64) {
+	for id := range m.removedcafe_coupons {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// CafeCouponsIDs returns the "cafe_coupons" edge IDs in the mutation.
+func (m *UserMutation) CafeCouponsIDs() (ids []int64) {
+	for id := range m.cafe_coupons {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetCafeCoupons resets all changes to the "cafe_coupons" edge.
+func (m *UserMutation) ResetCafeCoupons() {
+	m.cafe_coupons = nil
+	m.clearedcafe_coupons = false
+	m.removedcafe_coupons = nil
+}
+
 // AddAuthIdentityIDs adds the "auth_identities" edge to the AuthIdentity entity by ids.
 func (m *UserMutation) AddAuthIdentityIDs(ids ...int64) {
 	if m.auth_identities == nil {
@@ -40640,7 +42031,7 @@ func (m *UserMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *UserMutation) AddedEdges() []string {
-	edges := make([]string, 0, 13)
+	edges := make([]string, 0, 14)
 	if m.api_keys != nil {
 		edges = append(edges, user.EdgeAPIKeys)
 	}
@@ -40670,6 +42061,9 @@ func (m *UserMutation) AddedEdges() []string {
 	}
 	if m.payment_orders != nil {
 		edges = append(edges, user.EdgePaymentOrders)
+	}
+	if m.cafe_coupons != nil {
+		edges = append(edges, user.EdgeCafeCoupons)
 	}
 	if m.auth_identities != nil {
 		edges = append(edges, user.EdgeAuthIdentities)
@@ -40747,6 +42141,12 @@ func (m *UserMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case user.EdgeCafeCoupons:
+		ids := make([]ent.Value, 0, len(m.cafe_coupons))
+		for id := range m.cafe_coupons {
+			ids = append(ids, id)
+		}
+		return ids
 	case user.EdgeAuthIdentities:
 		ids := make([]ent.Value, 0, len(m.auth_identities))
 		for id := range m.auth_identities {
@@ -40771,7 +42171,7 @@ func (m *UserMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *UserMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 13)
+	edges := make([]string, 0, 14)
 	if m.removedapi_keys != nil {
 		edges = append(edges, user.EdgeAPIKeys)
 	}
@@ -40801,6 +42201,9 @@ func (m *UserMutation) RemovedEdges() []string {
 	}
 	if m.removedpayment_orders != nil {
 		edges = append(edges, user.EdgePaymentOrders)
+	}
+	if m.removedcafe_coupons != nil {
+		edges = append(edges, user.EdgeCafeCoupons)
 	}
 	if m.removedauth_identities != nil {
 		edges = append(edges, user.EdgeAuthIdentities)
@@ -40878,6 +42281,12 @@ func (m *UserMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case user.EdgeCafeCoupons:
+		ids := make([]ent.Value, 0, len(m.removedcafe_coupons))
+		for id := range m.removedcafe_coupons {
+			ids = append(ids, id)
+		}
+		return ids
 	case user.EdgeAuthIdentities:
 		ids := make([]ent.Value, 0, len(m.removedauth_identities))
 		for id := range m.removedauth_identities {
@@ -40902,7 +42311,7 @@ func (m *UserMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *UserMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 13)
+	edges := make([]string, 0, 14)
 	if m.clearedapi_keys {
 		edges = append(edges, user.EdgeAPIKeys)
 	}
@@ -40932,6 +42341,9 @@ func (m *UserMutation) ClearedEdges() []string {
 	}
 	if m.clearedpayment_orders {
 		edges = append(edges, user.EdgePaymentOrders)
+	}
+	if m.clearedcafe_coupons {
+		edges = append(edges, user.EdgeCafeCoupons)
 	}
 	if m.clearedauth_identities {
 		edges = append(edges, user.EdgeAuthIdentities)
@@ -40969,6 +42381,8 @@ func (m *UserMutation) EdgeCleared(name string) bool {
 		return m.clearedpromo_code_usages
 	case user.EdgePaymentOrders:
 		return m.clearedpayment_orders
+	case user.EdgeCafeCoupons:
+		return m.clearedcafe_coupons
 	case user.EdgeAuthIdentities:
 		return m.clearedauth_identities
 	case user.EdgePendingAuthSessions:
@@ -41020,6 +42434,9 @@ func (m *UserMutation) ResetEdge(name string) error {
 		return nil
 	case user.EdgePaymentOrders:
 		m.ResetPaymentOrders()
+		return nil
+	case user.EdgeCafeCoupons:
+		m.ResetCafeCoupons()
 		return nil
 	case user.EdgeAuthIdentities:
 		m.ResetAuthIdentities()

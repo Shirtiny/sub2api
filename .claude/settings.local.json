@@ -29,7 +29,13 @@
       "Bash(command -v docker)",
       "Bash(docker --version)",
       "Bash(docker compose *)",
-      "Bash(rg *)"
+      "Bash(rg *)",
+      "Bash(curl -fsS http://127.0.0.1:8080/api/v1/settings/public)",
+      "Bash(lsof -nP -iTCP:8080 -sTCP:LISTEN)",
+      "Bash(lsof -nP -iTCP:3000 -sTCP:LISTEN)",
+      "Bash(curl -fsS http://127.0.0.1:8080/health)",
+      "Bash(curl -fsS http://127.0.0.1:3000)",
+      "Bash(curl -fsS -I http://127.0.0.1:3000)"
     ]
   }
 }

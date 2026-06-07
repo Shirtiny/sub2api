@@ -161,6 +161,7 @@ type SystemSettings struct {
 	AffiliateInviteLimitLevel1         int                          `json:"affiliate_invite_limit_level1"`
 	AffiliateInviteLimitLevel2         int                          `json:"affiliate_invite_limit_level2"`
 	AffiliateInviteLimitLevel3         int                          `json:"affiliate_invite_limit_level3"`
+	CafeCouponConfig                   service.CafeCouponConfig     `json:"cafe_coupon_config"`
 	DefaultUserRPMLimit                int                          `json:"default_user_rpm_limit"`
 	DefaultSubscriptions               []DefaultSubscriptionSetting `json:"default_subscriptions"`
 

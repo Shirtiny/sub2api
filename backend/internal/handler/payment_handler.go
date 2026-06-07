@@ -221,6 +221,118 @@ func (h *PaymentHandler) GetLimits(c *gin.Context) {
 	response.Success(c, resp)
 }
 
+type CafeCouponSummary struct {
+	Code        string    `json:"code"`
+	CouponType  string    `json:"type"`
+	Value       float64   `json:"value"`
+	Period      string    `json:"period"`
+	ExpiresAt   time.Time `json:"expires_at"`
+	ClaimedAt   time.Time `json:"claimed_at"`
+	DisplayName string    `json:"display_name"`
+	CopyText    string    `json:"copy_text,omitempty"`
+}
+
+type CafeCouponApplyRequest struct {
+	Code      string  `json:"code" binding:"required"`
+	Amount    float64 `json:"amount"`
+	OrderType string  `json:"order_type"`
+	PlanID    int64   `json:"plan_id"`
+}
+
+type CafeCouponApplyResponse struct {
+	Valid          bool               `json:"valid"`
+	DiscountAmount float64            `json:"discount_amount"`
+	PayAmount      float64            `json:"pay_amount"`
+	Coupon         *CafeCouponSummary `json:"coupon,omitempty"`
+	Message        string             `json:"message,omitempty"`
+}
+
+// ClaimCafeCoupon claims the current user's café coupon for the active benefit period.
+// POST /api/v1/payment/cafe-coupons/claim
+func (h *PaymentHandler) ClaimCafeCoupon(c *gin.Context) {
+	subject, ok := requireAuth(c)
+	if !ok {
+		return
+	}
+	claimed, err := h.paymentService.ClaimCafeCoupon(c.Request.Context(), subject.UserID)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, cafeCouponSummaryFromClaim(claimed))
+}
+
+// ApplyCafeCoupon previews the server-side discount for a café coupon.
+// POST /api/v1/payment/cafe-coupons/apply
+func (h *PaymentHandler) ApplyCafeCoupon(c *gin.Context) {
+	subject, ok := requireAuth(c)
+	if !ok {
+		return
+	}
+	var req CafeCouponApplyRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+	preview, err := h.paymentService.PreviewCafeCouponForOrder(c.Request.Context(), service.CreateOrderRequest{
+		UserID:         subject.UserID,
+		Amount:         req.Amount,
+		OrderType:      req.OrderType,
+		PlanID:         req.PlanID,
+		CafeCouponCode: req.Code,
+	})
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, CafeCouponApplyResponse{
+		Valid:          true,
+		DiscountAmount: preview.DiscountAmount,
+		PayAmount:      preview.PayableAmount,
+		Coupon:         cafeCouponSummaryFromPreview(preview),
+		Message:        "cafe coupon applied",
+	})
+}
+
+func cafeCouponSummaryFromClaim(claimed *service.CafeCouponClaimResult) *CafeCouponSummary {
+	if claimed == nil {
+		return nil
+	}
+	return &CafeCouponSummary{
+		Code:        claimed.Code,
+		CouponType:  claimed.CouponType,
+		Value:       claimed.Value,
+		Period:      claimed.Period,
+		ExpiresAt:   claimed.PeriodEnd,
+		ClaimedAt:   claimed.ClaimedAt,
+		DisplayName: cafeCouponDisplayName(claimed.CouponType, claimed.Value),
+		CopyText:    claimed.Code,
+	}
+}
+
+func cafeCouponSummaryFromPreview(preview *service.CafeCouponPreview) *CafeCouponSummary {
+	if preview == nil {
+		return nil
+	}
+	return &CafeCouponSummary{
+		Code:        preview.Code,
+		CouponType:  preview.CouponType,
+		Value:       preview.Value,
+		Period:      preview.Period,
+		ExpiresAt:   preview.ExpiresAt,
+		ClaimedAt:   preview.ClaimedAt,
+		DisplayName: cafeCouponDisplayName(preview.CouponType, preview.Value),
+		CopyText:    preview.Code,
+	}
+}
+
+func cafeCouponDisplayName(couponType string, value float64) string {
+	if couponType == service.CafeCouponTypeDiscount {
+		return fmt.Sprintf("%.0f%% café coupon", value)
+	}
+	return fmt.Sprintf("¥%.2f café coupon", value)
+}
+
 // CreateOrderRequest is the request body for creating a payment order.
 type CreateOrderRequest struct {
 	Amount            float64 `json:"amount"`
@@ -231,6 +343,7 @@ type CreateOrderRequest struct {
 	PaymentSource     string  `json:"payment_source"`
 	OrderType         string  `json:"order_type"`
 	PlanID            int64   `json:"plan_id"`
+	CafeCouponCode    string  `json:"cafe_coupon_code"`
 	// IsMobile lets the frontend declare its mobile status directly. When
 	// nil we fall back to User-Agent heuristics (which miss iPadOS / some
 	// embedded browsers that strip the "Mobile" keyword).
@@ -280,6 +393,7 @@ func (h *PaymentHandler) CreateOrder(c *gin.Context) {
 		PaymentSource:   req.PaymentSource,
 		OrderType:       req.OrderType,
 		PlanID:          req.PlanID,
+		CafeCouponCode:  req.CafeCouponCode,
 		Locale:          c.GetHeader("Accept-Language"),
 	})
 	if err != nil {
@@ -323,6 +437,9 @@ func applyWeChatPaymentResumeClaims(req *CreateOrderRequest, claims *service.WeC
 	}
 	if claims.PlanID > 0 {
 		req.PlanID = claims.PlanID
+	}
+	if strings.TrimSpace(claims.CafeCouponCode) != "" {
+		req.CafeCouponCode = claims.CafeCouponCode
 	}
 	return nil
 }

@@ -122,13 +122,58 @@
                   </div>
                   <div class="space-y-0.5 text-[12px] font-semibold leading-4 text-[#7A5AE6] dark:text-[#F0E9DF]">
                     <div><span class="text-[#7A5AE6] dark:text-[#F5C66B]">1. </span><span v-html="highlightBenefitText(membershipBenefitText)"></span></div>
-                    <div><span class="text-[#7A5AE6] dark:text-[#F5C66B]">2. </span><span v-html="highlightBenefitText(t('membership.consumptionDiscount'))"></span></div>
+                    <div class="flex flex-wrap items-center gap-2">
+                      <span class="text-[#7A5AE6] dark:text-[#F5C66B]">2. </span>
+                      <span>{{ t('membership.cafeCoupon.label') }}</span>
+                      <button
+                        type="button"
+                        class="rounded-md bg-[#7A5AE6] px-2 py-1 text-[11px] font-semibold text-white transition-colors hover:bg-[#6849D9] disabled:cursor-not-allowed disabled:opacity-60 dark:bg-[#F5C66B] dark:text-[#2B1F3A] dark:hover:bg-[#E5B95F]"
+                        :disabled="claimingCafeCoupon"
+                        @click.stop="claimCafeCoupon"
+                      >
+                        {{ claimingCafeCoupon ? t('membership.cafeCoupon.claiming') : t('membership.cafeCoupon.claim') }}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </transition>
         </div>
+
+        <BaseDialog
+          :show="cafeCouponModalOpen"
+          :title="t('membership.cafeCoupon.modalTitle')"
+          width="narrow"
+          @close="closeCafeCouponModal"
+        >
+          <div class="space-y-4">
+            <p class="text-sm text-content-secondary">
+              {{ t('membership.cafeCoupon.modalDescription') }}
+            </p>
+            <div class="rounded-xl border border-[#EFE6D8] bg-[#F7F4F1] p-4 dark:border-[#3D2E2A]/70 dark:bg-dark-800">
+              <p class="text-xs font-medium uppercase tracking-wide text-content-tertiary">
+                {{ t('membership.cafeCoupon.codeLabel') }}
+              </p>
+              <div class="mt-2 flex items-center gap-2">
+                <code class="min-w-0 flex-1 truncate rounded-lg bg-white px-3 py-2 font-mono text-base font-semibold text-[#7A5AE6] dark:bg-dark-900 dark:text-[#F5C66B]">
+                  {{ claimedCafeCouponCode }}
+                </code>
+                <button type="button" class="btn btn-primary shrink-0" @click="copyCafeCouponCode">
+                  {{ t('membership.cafeCoupon.copy') }}
+                </button>
+              </div>
+            </div>
+            <p class="text-xs text-content-tertiary">
+              {{ t('membership.cafeCoupon.useHint') }}
+            </p>
+          </div>
+          <template #footer>
+            <button type="button" class="btn btn-secondary" @click="closeCafeCouponModal">
+              {{ t('common.close') }}
+            </button>
+          </template>
+        </BaseDialog>
 
         <!-- User Dropdown -->
         <div v-if="user" class="relative" ref="dropdownRef">
@@ -281,11 +326,12 @@ import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAppStore, useAuthStore, useOnboardingStore } from '@/stores'
 import { useAdminSettingsStore } from '@/stores/adminSettings'
+import { usePaymentStore } from '@/stores/payment'
+import BaseDialog from '@/components/common/BaseDialog.vue'
 import LocaleSwitcher from '@/components/common/LocaleSwitcher.vue'
 import SubscriptionProgressMini from '@/components/common/SubscriptionProgressMini.vue'
 import AnnouncementBell from '@/components/common/AnnouncementBell.vue'
 import Icon from '@/components/icons/Icon.vue'
-import { formatCurrency } from '@/utils/format'
 
 const router = useRouter()
 const route = useRoute()
@@ -293,6 +339,7 @@ const { t } = useI18n()
 const appStore = useAppStore()
 const authStore = useAuthStore()
 const adminSettingsStore = useAdminSettingsStore()
+const paymentStore = usePaymentStore()
 const onboardingStore = useOnboardingStore()
 
 const user = computed(() => authStore.user)
@@ -300,6 +347,9 @@ const dropdownOpen = ref(false)
 const dropdownRef = ref<HTMLElement | null>(null)
 const membershipRef = ref<HTMLElement | null>(null)
 const membershipPopoverOpen = ref(false)
+const claimingCafeCoupon = ref(false)
+const cafeCouponModalOpen = ref(false)
+const claimedCafeCouponCode = ref('')
 const contactInfo = computed(() => appStore.contactInfo)
 const docUrl = computed(() => appStore.docUrl)
 const avatarUrl = computed(() => user.value?.avatar_url?.trim() || '')
@@ -465,6 +515,43 @@ function toggleMembershipPopover() {
 
 function closeMembershipPopover() {
   membershipPopoverOpen.value = false
+}
+
+function closeCafeCouponModal() {
+  cafeCouponModalOpen.value = false
+}
+
+async function claimCafeCoupon() {
+  if (claimingCafeCoupon.value) return
+  claimingCafeCoupon.value = true
+  try {
+    const response = await paymentStore.claimCafeCoupon()
+    const code = (response.copy_text || response.code || '').trim()
+    if (!code) {
+      throw new Error('Missing café coupon code')
+    }
+    claimedCafeCouponCode.value = code
+    closeMembershipPopover()
+    cafeCouponModalOpen.value = true
+    appStore.showSuccess(t('membership.cafeCoupon.claimSuccess'))
+  } catch (error: unknown) {
+    console.error('Failed to claim café coupon:', error)
+    appStore.showError(t('membership.cafeCoupon.claimFailed'))
+  } finally {
+    claimingCafeCoupon.value = false
+  }
+}
+
+async function copyCafeCouponCode() {
+  const code = claimedCafeCouponCode.value.trim()
+  if (!code) return
+  try {
+    await navigator.clipboard.writeText(code)
+    appStore.showSuccess(t('membership.cafeCoupon.copied'))
+  } catch (error) {
+    console.error('Failed to copy café coupon code:', error)
+    appStore.showError(t('membership.cafeCoupon.copyFailed'))
+  }
 }
 
 function highlightBenefitText(text: string) {

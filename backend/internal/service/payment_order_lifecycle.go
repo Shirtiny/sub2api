@@ -137,6 +137,7 @@ func (s *PaymentService) cancelCore(ctx context.Context, o *dbent.PaymentOrder, 
 			auditAction = "ORDER_EXPIRED"
 		}
 		s.writeAuditLog(ctx, o.ID, auditAction, op, map[string]any{"detail": ad})
+		s.releaseCafeCouponForOrder(ctx, o.ID, auditAction)
 	}
 	return checkPaidResultCancelled, nil
 }

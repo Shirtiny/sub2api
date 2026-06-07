@@ -257,7 +257,21 @@ export default {
     affiliateRebate: '会员权益',
     subscriptionReward: '邀请注册：可邀请{limit}人，返利{rate}%，上限 ¥{cap}',
     subscriptionRewardUnavailable: '邀请注册：普通用户暂不可邀请，LV.1 及以上可获得返利权益',
-    consumptionDiscount: '消费折扣：敬请期待...'
+    consumptionDiscount: '消费折扣：敬请期待...',
+    cafeCoupon: {
+      label: 'Café券:',
+      claim: '领取',
+      claiming: '领取中...',
+      claimSuccess: 'Café券领取成功',
+      claimFailed: 'Café券领取失败',
+      modalTitle: '您的 Café券',
+      modalDescription: '充值或订阅确认付款时可使用此券码。',
+      codeLabel: '券码',
+      copy: '复制',
+      copied: '券码已复制',
+      copyFailed: '复制券码失败',
+      useHint: '确认付款前，将券码粘贴到 Café券输入框。'
+    }
   },
 
   // Common
@@ -1107,7 +1121,7 @@ export default {
     stats: {
       rebateRate: '我的返利比例',
       rebateRateHint: '按被邀请用户符合条件购买的实际支付金额计算',
-      rebateCap: '单人返利上限：{amount}',
+      rebateCap: '返利上限：{amount}',
       invitedUsers: '邀请人数',
       inviteLimit: '最多 {count} 人',
       inviteLimitUnavailable: '暂不可邀请',
@@ -1121,6 +1135,8 @@ export default {
       title: '返利金额兑换',
       description: '将可用返利金额兑换到账户余额或订阅套餐',
       button: '返利商店',
+      withdrawButton: '返利提现',
+      withdrawUnavailable: '暂未开放',
       modalTitle: '兑换邀请返利金额',
       empty: '当前没有可兑换金额',
       available: '当前可用 {points}',
@@ -5645,7 +5661,7 @@ export default {
           freezeHoursDesc: '新产生的返利将在冻结期内无法提现。0 = 不冻结。',
           durationDays: '返利有效期（天）',
           durationDaysDesc: '被邀请用户注册后多少天内的充值产生返利。0 = 永久有效。',
-          perInviteeCap: '单人返利上限',
+          perInviteeCap: '返利上限',
           perInviteeCapDesc: '按邀请人的会员等级设置每个被邀请用户最多产生的返利总额。0 表示不能获得返利。默认：普通用户 0，LV.1 100，LV.2 300，LV.3 1000。',
           perInviteeCapLevel0: '普通用户',
           perInviteeCapLevel1: 'LV.1',
@@ -7166,6 +7182,21 @@ export default {
     amountTooHigh: '最高金额为 {max}',
     amountNoMethod: '该金额没有可用的支付方式',
     rechargeRatePreview: '当前倍率：1 CNY = {usd} USD',
+    cafeCoupon: {
+      label: 'Café券码',
+      placeholder: '请输入 Café券码',
+      hint: '输入完成或离开输入框后自动应用。',
+      applied: 'Café券已应用',
+      invalid: 'Café券码无效',
+      discount: '优惠',
+      payable: '应付',
+      errors: {
+        CAFE_COUPON_INVALID: 'Café券码无效。',
+        CAFE_COUPON_EXPIRED: '该 Café券已过期。',
+        CAFE_COUPON_USED: '该 Café券已被使用。',
+        CAFE_COUPON_NOT_ELIGIBLE: '该 Café券不可用于当前订单。',
+      },
+    },
     refundReason: '退款原因',
     refundReasonPlaceholder: '请描述您的退款原因',
     stripeLoadFailed: '支付组件加载失败，请刷新页面重试',

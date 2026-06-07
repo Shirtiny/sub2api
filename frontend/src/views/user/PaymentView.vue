@@ -80,12 +80,37 @@
                 </p>
               </div>
             </div>
+            <div v-if="validAmount > 0" class="card p-4">
+              <label for="cafe-coupon-recharge" class="input-label">{{ t('payment.cafeCoupon.label') }}</label>
+              <div class="relative mt-1">
+                <input
+                  id="cafe-coupon-recharge"
+                  v-model="cafeCouponCode"
+                  type="text"
+                  :placeholder="t('payment.cafeCoupon.placeholder')"
+                  :disabled="submitting"
+                  class="input pr-10 font-mono uppercase tracking-wide"
+                  @input="scheduleCafeCouponAutoApply"
+                  @blur="applyCafeCoupon"
+                />
+                <span v-if="applyingCafeCoupon" class="absolute inset-y-0 right-3 flex items-center">
+                  <span class="h-4 w-4 animate-spin rounded-full border-2 border-primary-500 border-t-transparent"></span>
+                </span>
+              </div>
+              <p v-if="cafeCouponError" class="mt-2 text-xs text-red-600 dark:text-red-400">{{ cafeCouponError }}</p>
+              <p v-else-if="cafeCouponApplied" class="mt-2 text-xs text-emerald-600 dark:text-emerald-400">
+                {{ cafeCouponMessage || t('payment.cafeCoupon.applied') }}
+                <span v-if="cafeCouponDiscountAmount != null"> · {{ t('payment.cafeCoupon.discount') }} {{ formatSelectedPaymentAmount(cafeCouponDiscountAmount) }}</span>
+                <span v-if="cafeCouponPayableAmount != null"> · {{ t('payment.cafeCoupon.payable') }} {{ formatSelectedPaymentAmount(cafeCouponPayableAmount) }}</span>
+              </p>
+              <p v-else class="input-hint">{{ t('payment.cafeCoupon.hint') }}</p>
+            </div>
             <button :class="['btn w-full py-3 text-base font-medium', paymentButtonClass]" :disabled="!canSubmit || submitting" @click="handleSubmitRecharge">
               <span v-if="submitting" class="flex items-center justify-center gap-2">
                 <span class="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
                 {{ t('common.processing') }}
               </span>
-              <span v-else>{{ t('payment.createOrder') }} {{ formatSelectedPaymentAmount(totalAmount) }}</span>
+              <span v-else>{{ t('payment.createOrder') }} {{ formatSelectedPaymentAmount(rechargeButtonAmount) }}</span>
             </button>
             </template>
           </template>
@@ -162,12 +187,37 @@
                   </div>
                 </div>
               </div>
+              <div class="card p-4">
+                <label for="cafe-coupon-subscription" class="input-label">{{ t('payment.cafeCoupon.label') }}</label>
+                <div class="relative mt-1">
+                  <input
+                    id="cafe-coupon-subscription"
+                    v-model="cafeCouponCode"
+                    type="text"
+                    :placeholder="t('payment.cafeCoupon.placeholder')"
+                    :disabled="submitting"
+                    class="input pr-10 font-mono uppercase tracking-wide"
+                    @input="scheduleCafeCouponAutoApply"
+                    @blur="applyCafeCoupon"
+                  />
+                  <span v-if="applyingCafeCoupon" class="absolute inset-y-0 right-3 flex items-center">
+                    <span class="h-4 w-4 animate-spin rounded-full border-2 border-primary-500 border-t-transparent"></span>
+                  </span>
+                </div>
+                <p v-if="cafeCouponError" class="mt-2 text-xs text-red-600 dark:text-red-400">{{ cafeCouponError }}</p>
+                <p v-else-if="cafeCouponApplied" class="mt-2 text-xs text-emerald-600 dark:text-emerald-400">
+                  {{ cafeCouponMessage || t('payment.cafeCoupon.applied') }}
+                  <span v-if="cafeCouponDiscountAmount != null"> · {{ t('payment.cafeCoupon.discount') }} {{ formatSelectedPaymentAmount(cafeCouponDiscountAmount) }}</span>
+                  <span v-if="cafeCouponPayableAmount != null"> · {{ t('payment.cafeCoupon.payable') }} {{ formatSelectedPaymentAmount(cafeCouponPayableAmount) }}</span>
+                </p>
+                <p v-else class="input-hint">{{ t('payment.cafeCoupon.hint') }}</p>
+              </div>
               <button :class="['btn w-full py-3 text-base font-medium', paymentButtonClass]" :disabled="!canSubmitSubscription || submitting" @click="confirmSubscribe">
                 <span v-if="submitting" class="flex items-center justify-center gap-2">
                   <span class="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
                   {{ t('common.processing') }}
                 </span>
-                <span v-else>{{ t('payment.createOrder') }} {{ formatSelectedPaymentAmount(feeRate > 0 ? subTotalAmount : selectedPlan.price) }}</span>
+                <span v-else>{{ t('payment.createOrder') }} {{ formatSelectedPaymentAmount(subscriptionButtonAmount) }}</span>
               </button>
               <button class="btn btn-secondary w-full" @click="selectedPlan = null">{{ t('common.cancel') }}</button>
             </template>
@@ -245,7 +295,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
@@ -306,6 +356,15 @@ const amount = ref<number | null>(null)
 const selectedMethod = ref('')
 const selectedPlan = ref<SubscriptionPlan | null>(null)
 const previewImage = ref('')
+const cafeCouponCode = ref('')
+const cafeCouponAppliedCode = ref('')
+const cafeCouponApplyingCode = ref('')
+const cafeCouponMessage = ref('')
+const cafeCouponError = ref('')
+const cafeCouponDiscountAmount = ref<number | null>(null)
+const cafeCouponPayableAmount = ref<number | null>(null)
+const applyingCafeCoupon = ref(false)
+let cafeCouponApplyTimer: ReturnType<typeof setTimeout> | null = null
 
 const paymentPhase = ref<'select' | 'paying'>('select')
 
@@ -441,6 +500,12 @@ function buildWechatOAuthAuthorizeUrl(
       redirectUrl.searchParams.delete('plan_id')
     }
 
+    if (normalizedCafeCouponCode.value && cafeCouponApplied.value) {
+      redirectUrl.searchParams.set('cafe_coupon_code', normalizedCafeCouponCode.value)
+    } else {
+      redirectUrl.searchParams.delete('cafe_coupon_code')
+    }
+
     if (context.orderAmount > 0) {
       redirectUrl.searchParams.set('amount', String(context.orderAmount))
     } else {
@@ -566,6 +631,11 @@ const totalAmount = computed(() =>
     ? Math.round((validAmount.value + feeAmount.value) * 100) / 100
     : validAmount.value
 )
+const cafeCouponApplied = computed(() => cafeCouponAppliedCode.value !== '' && cafeCouponAppliedCode.value === normalizedCafeCouponCode.value)
+const rechargeButtonAmount = computed(() => cafeCouponApplied.value && cafeCouponPayableAmount.value != null
+  ? cafeCouponPayableAmount.value
+  : totalAmount.value
+)
 
 const amountError = computed(() => {
   if (validAmount.value <= 0) return ''
@@ -612,12 +682,100 @@ const subTotalAmount = computed(() => {
   if (feeRate.value <= 0 || price <= 0) return price
   return Math.round((price + subFeeAmount.value) * 100) / 100
 })
+const subscriptionButtonAmount = computed(() => cafeCouponApplied.value && cafeCouponPayableAmount.value != null
+  ? cafeCouponPayableAmount.value
+  : subTotalAmount.value
+)
 
 const canSubmitSubscription = computed(() =>
   selectedPlan.value !== null
     && amountFitsMethod(selectedPlan.value.price, selectedMethod.value)
     && selectedLimit.value?.available !== false
 )
+
+const normalizedCafeCouponCode = computed(() => cafeCouponCode.value.trim().toUpperCase())
+const currentOrderType = computed<OrderType>(() => activeTab.value === 'subscription' && selectedPlan.value ? 'subscription' : 'balance')
+const currentOrderAmount = computed(() => currentOrderType.value === 'subscription' ? selectedPlan.value?.price ?? 0 : validAmount.value)
+const currentPlanId = computed(() => currentOrderType.value === 'subscription' ? selectedPlan.value?.id : undefined)
+
+function resetCafeCouponState(keepError = false) {
+  cafeCouponAppliedCode.value = ''
+  cafeCouponApplyingCode.value = ''
+  cafeCouponMessage.value = ''
+  cafeCouponDiscountAmount.value = null
+  cafeCouponPayableAmount.value = null
+  if (!keepError) {
+    cafeCouponError.value = ''
+  }
+}
+
+async function applyCafeCoupon() {
+  const code = normalizedCafeCouponCode.value
+  if (!code) {
+    resetCafeCouponState()
+    return
+  }
+  if (code === cafeCouponAppliedCode.value || code === cafeCouponApplyingCode.value) return
+  if (currentOrderAmount.value <= 0) return
+
+  if (cafeCouponApplyTimer) {
+    clearTimeout(cafeCouponApplyTimer)
+    cafeCouponApplyTimer = null
+  }
+  applyingCafeCoupon.value = true
+  cafeCouponApplyingCode.value = code
+  cafeCouponError.value = ''
+  try {
+    const response = await paymentStore.applyCafeCoupon({
+      code,
+      amount: currentOrderAmount.value,
+      order_type: currentOrderType.value,
+      plan_id: currentPlanId.value,
+    })
+    if (response.valid === false) {
+      cafeCouponAppliedCode.value = ''
+      cafeCouponMessage.value = ''
+      cafeCouponDiscountAmount.value = null
+      cafeCouponPayableAmount.value = null
+      cafeCouponError.value = response.message || t('payment.cafeCoupon.invalid')
+      return
+    }
+    cafeCouponAppliedCode.value = (response.coupon?.code || code).trim().toUpperCase()
+    cafeCouponMessage.value = response.message || ''
+    cafeCouponDiscountAmount.value = Number.isFinite(response.discount_amount) ? response.discount_amount : null
+    cafeCouponPayableAmount.value = Number.isFinite(response.pay_amount) ? response.pay_amount : null
+  } catch (error: unknown) {
+    console.error('Failed to apply café coupon:', error)
+    resetCafeCouponState(true)
+    cafeCouponError.value = extractI18nErrorMessage(error, t, 'payment.cafeCoupon.errors', extractApiErrorMessage(error, t('payment.cafeCoupon.invalid')))
+  } finally {
+    applyingCafeCoupon.value = false
+    cafeCouponApplyingCode.value = ''
+  }
+}
+
+function scheduleCafeCouponAutoApply() {
+  resetCafeCouponState()
+  const code = normalizedCafeCouponCode.value
+  if (!code) return
+  if (cafeCouponApplyTimer) clearTimeout(cafeCouponApplyTimer)
+  cafeCouponApplyTimer = setTimeout(() => {
+    applyCafeCoupon().catch(() => {})
+  }, code.length >= 8 ? 450 : 900)
+}
+
+watch([currentOrderAmount, currentOrderType, currentPlanId, selectedMethod], () => {
+  if (normalizedCafeCouponCode.value) {
+    resetCafeCouponState()
+    scheduleCafeCouponAutoApply()
+  }
+})
+
+onBeforeUnmount(() => {
+  if (cafeCouponApplyTimer) {
+    clearTimeout(cafeCouponApplyTimer)
+  }
+})
 
 // Auto-switch to first available method when current selection can't handle the amount
 watch(() => [validAmount.value, selectedMethod.value] as const, ([amt, method]) => {
@@ -674,13 +832,22 @@ function closeRenewalModal() {
   renewGroupId.value = null
 }
 
+async function ensureCafeCouponReady() {
+  if (!normalizedCafeCouponCode.value || cafeCouponApplied.value) return
+  await applyCafeCoupon()
+}
+
 async function handleSubmitRecharge() {
   if (!canSubmit.value || submitting.value) return
+  await ensureCafeCouponReady()
+  if (cafeCouponError.value) return
   await createOrder(validAmount.value, 'balance')
 }
 
 async function confirmSubscribe() {
   if (!selectedPlan.value || submitting.value) return
+  await ensureCafeCouponReady()
+  if (cafeCouponError.value) return
   await createOrder(selectedPlan.value.price, 'subscription', selectedPlan.value.id)
 }
 
@@ -699,6 +866,7 @@ async function createOrder(orderAmount: number, orderType: OrderType, planId?: n
       isMobile: isMobileDevice(),
       isWechatBrowser: typeof window !== 'undefined' && /MicroMessenger/i.test(window.navigator.userAgent),
       forceQRCode: !!(checkout.value.alipay_force_qrcode && normalizeVisibleMethod(requestType) === 'alipay'),
+      cafeCouponCode: cafeCouponApplied.value ? normalizedCafeCouponCode.value : undefined,
     })
     if (options.openid) {
       payload.openid = options.openid
@@ -929,6 +1097,7 @@ async function attemptMobileQrFallback(err: unknown, context: MobileQrFallbackCo
       origin: typeof window !== 'undefined' ? window.location.origin : '',
       isMobile: false,
       isWechatBrowser: false,
+      cafeCouponCode: cafeCouponApplied.value ? normalizedCafeCouponCode.value : undefined,
     })
     const result = await paymentStore.createOrder(payload) as CreateOrderResult & { resume_token?: string }
     const stripeMethod = visibleMethod === 'wxpay' ? 'wechat_pay' : 'alipay'
@@ -997,6 +1166,10 @@ async function resumeWechatPaymentFromQuery() {
   }
   if (resume.orderType === 'subscription' && resume.planId) {
     selectedPlan.value = checkout.value.plans.find(plan => plan.id === resume.planId) ?? null
+  }
+
+  if (resume.cafeCouponCode) {
+    cafeCouponCode.value = resume.cafeCouponCode
   }
 
   await router.replace({ path: route.path, query: stripWechatResumeQuery(route.query) })

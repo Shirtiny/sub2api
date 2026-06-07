@@ -160,9 +160,38 @@ export interface CreateOrderRequest {
   plan_id?: number
   return_url?: string
   payment_source?: string
+  cafe_coupon_code?: string
   openid?: string
   wechat_resume_token?: string
   is_mobile?: boolean
+}
+
+export interface CafeCouponSummary {
+  code: string
+  type: 'cash' | 'discount'
+  value: number
+  period: 'day' | 'week' | 'month'
+  expires_at: string
+  claimed_at: string
+  display_name: string
+  copy_text?: string
+}
+
+export type CafeCouponClaimResponse = CafeCouponSummary
+
+export interface CafeCouponApplyRequest {
+  code: string
+  amount: number
+  order_type: OrderType
+  plan_id?: number
+}
+
+export interface CafeCouponApplyResponse {
+  valid: boolean
+  discount_amount: number
+  pay_amount: number
+  coupon?: CafeCouponSummary
+  message?: string
 }
 
 export type CreateOrderResultType = 'order_created' | 'oauth_required' | 'jsapi_ready' | 'payment_completed'

@@ -242,6 +242,7 @@ func (h *SettingHandler) GetSettings(c *gin.Context) {
 		AffiliateInviteLimitLevel1:             settings.AffiliateInviteLimitLevel1,
 		AffiliateInviteLimitLevel2:             settings.AffiliateInviteLimitLevel2,
 		AffiliateInviteLimitLevel3:             settings.AffiliateInviteLimitLevel3,
+		CafeCouponConfig:                       settings.CafeCouponConfig,
 		DefaultUserRPMLimit:                    settings.DefaultUserRPMLimit,
 		DefaultSubscriptions:                   defaultSubscriptions,
 		EnableModelFallback:                    settings.EnableModelFallback,
@@ -537,6 +538,7 @@ type UpdateSettingsRequest struct {
 	AffiliateInviteLimitLevel1                *int                              `json:"affiliate_invite_limit_level1"`
 	AffiliateInviteLimitLevel2                *int                              `json:"affiliate_invite_limit_level2"`
 	AffiliateInviteLimitLevel3                *int                              `json:"affiliate_invite_limit_level3"`
+	CafeCouponConfig                          *service.CafeCouponConfig        `json:"cafe_coupon_config"`
 	DefaultUserRPMLimit                       int                               `json:"default_user_rpm_limit"`
 	DefaultSubscriptions                      []dto.DefaultSubscriptionSetting  `json:"default_subscriptions"`
 	AuthSourceDefaultEmailBalance             *float64                          `json:"auth_source_default_email_balance"`
@@ -2591,6 +2593,9 @@ func diffSettings(before *service.SystemSettings, after *service.SystemSettings,
 	}
 	if before.AffiliateInviteLimitLevel3 != after.AffiliateInviteLimitLevel3 {
 		changed = append(changed, "affiliate_invite_limit_level3")
+	}
+	if req.CafeCouponConfig != nil {
+		changed = append(changed, "cafe_coupon_config")
 	}
 	if !equalDefaultSubscriptions(before.DefaultSubscriptions, after.DefaultSubscriptions) {
 		changed = append(changed, "default_subscriptions")

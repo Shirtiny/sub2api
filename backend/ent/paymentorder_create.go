@@ -87,6 +87,34 @@ func (_c *PaymentOrderCreate) SetRechargeCode(v string) *PaymentOrderCreate {
 	return _c
 }
 
+// SetCafeCouponCode sets the "cafe_coupon_code" field.
+func (_c *PaymentOrderCreate) SetCafeCouponCode(v string) *PaymentOrderCreate {
+	_c.mutation.SetCafeCouponCode(v)
+	return _c
+}
+
+// SetNillableCafeCouponCode sets the "cafe_coupon_code" field if the given value is not nil.
+func (_c *PaymentOrderCreate) SetNillableCafeCouponCode(v *string) *PaymentOrderCreate {
+	if v != nil {
+		_c.SetCafeCouponCode(*v)
+	}
+	return _c
+}
+
+// SetCafeCouponDiscount sets the "cafe_coupon_discount" field.
+func (_c *PaymentOrderCreate) SetCafeCouponDiscount(v float64) *PaymentOrderCreate {
+	_c.mutation.SetCafeCouponDiscount(v)
+	return _c
+}
+
+// SetNillableCafeCouponDiscount sets the "cafe_coupon_discount" field if the given value is not nil.
+func (_c *PaymentOrderCreate) SetNillableCafeCouponDiscount(v *float64) *PaymentOrderCreate {
+	if v != nil {
+		_c.SetCafeCouponDiscount(*v)
+	}
+	return _c
+}
+
 // SetOutTradeNo sets the "out_trade_no" field.
 func (_c *PaymentOrderCreate) SetOutTradeNo(v string) *PaymentOrderCreate {
 	_c.mutation.SetOutTradeNo(v)
@@ -517,6 +545,10 @@ func (_c *PaymentOrderCreate) defaults() {
 		v := paymentorder.DefaultFeeRate
 		_c.mutation.SetFeeRate(v)
 	}
+	if _, ok := _c.mutation.CafeCouponDiscount(); !ok {
+		v := paymentorder.DefaultCafeCouponDiscount
+		_c.mutation.SetCafeCouponDiscount(v)
+	}
 	if _, ok := _c.mutation.OutTradeNo(); !ok {
 		v := paymentorder.DefaultOutTradeNo
 		_c.mutation.SetOutTradeNo(v)
@@ -584,6 +616,14 @@ func (_c *PaymentOrderCreate) check() error {
 		if err := paymentorder.RechargeCodeValidator(v); err != nil {
 			return &ValidationError{Name: "recharge_code", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.recharge_code": %w`, err)}
 		}
+	}
+	if v, ok := _c.mutation.CafeCouponCode(); ok {
+		if err := paymentorder.CafeCouponCodeValidator(v); err != nil {
+			return &ValidationError{Name: "cafe_coupon_code", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.cafe_coupon_code": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.CafeCouponDiscount(); !ok {
+		return &ValidationError{Name: "cafe_coupon_discount", err: errors.New(`ent: missing required field "PaymentOrder.cafe_coupon_discount"`)}
 	}
 	if _, ok := _c.mutation.OutTradeNo(); !ok {
 		return &ValidationError{Name: "out_trade_no", err: errors.New(`ent: missing required field "PaymentOrder.out_trade_no"`)}
@@ -728,6 +768,14 @@ func (_c *PaymentOrderCreate) createSpec() (*PaymentOrder, *sqlgraph.CreateSpec)
 	if value, ok := _c.mutation.RechargeCode(); ok {
 		_spec.SetField(paymentorder.FieldRechargeCode, field.TypeString, value)
 		_node.RechargeCode = value
+	}
+	if value, ok := _c.mutation.CafeCouponCode(); ok {
+		_spec.SetField(paymentorder.FieldCafeCouponCode, field.TypeString, value)
+		_node.CafeCouponCode = &value
+	}
+	if value, ok := _c.mutation.CafeCouponDiscount(); ok {
+		_spec.SetField(paymentorder.FieldCafeCouponDiscount, field.TypeFloat64, value)
+		_node.CafeCouponDiscount = value
 	}
 	if value, ok := _c.mutation.OutTradeNo(); ok {
 		_spec.SetField(paymentorder.FieldOutTradeNo, field.TypeString, value)
@@ -1039,6 +1087,42 @@ func (u *PaymentOrderUpsert) SetRechargeCode(v string) *PaymentOrderUpsert {
 // UpdateRechargeCode sets the "recharge_code" field to the value that was provided on create.
 func (u *PaymentOrderUpsert) UpdateRechargeCode() *PaymentOrderUpsert {
 	u.SetExcluded(paymentorder.FieldRechargeCode)
+	return u
+}
+
+// SetCafeCouponCode sets the "cafe_coupon_code" field.
+func (u *PaymentOrderUpsert) SetCafeCouponCode(v string) *PaymentOrderUpsert {
+	u.Set(paymentorder.FieldCafeCouponCode, v)
+	return u
+}
+
+// UpdateCafeCouponCode sets the "cafe_coupon_code" field to the value that was provided on create.
+func (u *PaymentOrderUpsert) UpdateCafeCouponCode() *PaymentOrderUpsert {
+	u.SetExcluded(paymentorder.FieldCafeCouponCode)
+	return u
+}
+
+// ClearCafeCouponCode clears the value of the "cafe_coupon_code" field.
+func (u *PaymentOrderUpsert) ClearCafeCouponCode() *PaymentOrderUpsert {
+	u.SetNull(paymentorder.FieldCafeCouponCode)
+	return u
+}
+
+// SetCafeCouponDiscount sets the "cafe_coupon_discount" field.
+func (u *PaymentOrderUpsert) SetCafeCouponDiscount(v float64) *PaymentOrderUpsert {
+	u.Set(paymentorder.FieldCafeCouponDiscount, v)
+	return u
+}
+
+// UpdateCafeCouponDiscount sets the "cafe_coupon_discount" field to the value that was provided on create.
+func (u *PaymentOrderUpsert) UpdateCafeCouponDiscount() *PaymentOrderUpsert {
+	u.SetExcluded(paymentorder.FieldCafeCouponDiscount)
+	return u
+}
+
+// AddCafeCouponDiscount adds v to the "cafe_coupon_discount" field.
+func (u *PaymentOrderUpsert) AddCafeCouponDiscount(v float64) *PaymentOrderUpsert {
+	u.Add(paymentorder.FieldCafeCouponDiscount, v)
 	return u
 }
 
@@ -1722,6 +1806,48 @@ func (u *PaymentOrderUpsertOne) SetRechargeCode(v string) *PaymentOrderUpsertOne
 func (u *PaymentOrderUpsertOne) UpdateRechargeCode() *PaymentOrderUpsertOne {
 	return u.Update(func(s *PaymentOrderUpsert) {
 		s.UpdateRechargeCode()
+	})
+}
+
+// SetCafeCouponCode sets the "cafe_coupon_code" field.
+func (u *PaymentOrderUpsertOne) SetCafeCouponCode(v string) *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.SetCafeCouponCode(v)
+	})
+}
+
+// UpdateCafeCouponCode sets the "cafe_coupon_code" field to the value that was provided on create.
+func (u *PaymentOrderUpsertOne) UpdateCafeCouponCode() *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.UpdateCafeCouponCode()
+	})
+}
+
+// ClearCafeCouponCode clears the value of the "cafe_coupon_code" field.
+func (u *PaymentOrderUpsertOne) ClearCafeCouponCode() *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.ClearCafeCouponCode()
+	})
+}
+
+// SetCafeCouponDiscount sets the "cafe_coupon_discount" field.
+func (u *PaymentOrderUpsertOne) SetCafeCouponDiscount(v float64) *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.SetCafeCouponDiscount(v)
+	})
+}
+
+// AddCafeCouponDiscount adds v to the "cafe_coupon_discount" field.
+func (u *PaymentOrderUpsertOne) AddCafeCouponDiscount(v float64) *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.AddCafeCouponDiscount(v)
+	})
+}
+
+// UpdateCafeCouponDiscount sets the "cafe_coupon_discount" field to the value that was provided on create.
+func (u *PaymentOrderUpsertOne) UpdateCafeCouponDiscount() *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.UpdateCafeCouponDiscount()
 	})
 }
 
@@ -2654,6 +2780,48 @@ func (u *PaymentOrderUpsertBulk) SetRechargeCode(v string) *PaymentOrderUpsertBu
 func (u *PaymentOrderUpsertBulk) UpdateRechargeCode() *PaymentOrderUpsertBulk {
 	return u.Update(func(s *PaymentOrderUpsert) {
 		s.UpdateRechargeCode()
+	})
+}
+
+// SetCafeCouponCode sets the "cafe_coupon_code" field.
+func (u *PaymentOrderUpsertBulk) SetCafeCouponCode(v string) *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.SetCafeCouponCode(v)
+	})
+}
+
+// UpdateCafeCouponCode sets the "cafe_coupon_code" field to the value that was provided on create.
+func (u *PaymentOrderUpsertBulk) UpdateCafeCouponCode() *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.UpdateCafeCouponCode()
+	})
+}
+
+// ClearCafeCouponCode clears the value of the "cafe_coupon_code" field.
+func (u *PaymentOrderUpsertBulk) ClearCafeCouponCode() *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.ClearCafeCouponCode()
+	})
+}
+
+// SetCafeCouponDiscount sets the "cafe_coupon_discount" field.
+func (u *PaymentOrderUpsertBulk) SetCafeCouponDiscount(v float64) *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.SetCafeCouponDiscount(v)
+	})
+}
+
+// AddCafeCouponDiscount adds v to the "cafe_coupon_discount" field.
+func (u *PaymentOrderUpsertBulk) AddCafeCouponDiscount(v float64) *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.AddCafeCouponDiscount(v)
+	})
+}
+
+// UpdateCafeCouponDiscount sets the "cafe_coupon_discount" field to the value that was provided on create.
+func (u *PaymentOrderUpsertBulk) UpdateCafeCouponDiscount() *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.UpdateCafeCouponDiscount()
 	})
 }
 

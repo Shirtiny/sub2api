@@ -13,6 +13,7 @@ import (
 	"time"
 
 	dbent "github.com/Wei-Shaw/sub2api/ent"
+	"github.com/Wei-Shaw/sub2api/ent/cafecoupon"
 	"github.com/Wei-Shaw/sub2api/ent/paymentorder"
 	"github.com/Wei-Shaw/sub2api/internal/payment"
 	"github.com/Wei-Shaw/sub2api/internal/payment/provider"
@@ -73,6 +74,11 @@ func (s *PaymentService) CreateOrder(ctx context.Context, req CreateOrderRequest
 		return nil, err
 	}
 	if s.paymentDevAutoSuccessEnabled() {
+		_, limitAmount, payAmount, err = s.prepareCafeCouponForOrder(ctx, req, plan, cfg, limitAmount, methodCurrency, feeRate)
+		if err != nil {
+			return nil, err
+		}
+		payAmountStr = payment.FormatAmountForCurrency(payAmount, methodCurrency)
 		order, err := s.createOrderInTx(ctx, req, user, plan, cfg, orderAmount, limitAmount, feeRate, payAmount, nil)
 		if err != nil {
 			return nil, err
@@ -96,6 +102,11 @@ func (s *PaymentService) CreateOrder(ctx context.Context, req CreateOrderRequest
 			return nil, err
 		}
 	}
+	_, limitAmount, payAmount, err = s.prepareCafeCouponForOrder(ctx, req, plan, cfg, limitAmount, selectedCurrency, feeRate)
+	if err != nil {
+		return nil, err
+	}
+	payAmountStr = payment.FormatAmountForCurrency(payAmount, selectedCurrency)
 	if err := validateSelectedCreateOrderAmountCurrency(payAmountStr, sel); err != nil {
 		return nil, err
 	}
@@ -115,6 +126,7 @@ func (s *PaymentService) CreateOrder(ctx context.Context, req CreateOrderRequest
 		_, _ = s.entClient.PaymentOrder.UpdateOneID(order.ID).
 			SetStatus(OrderStatusFailed).
 			Save(ctx)
+		s.releaseCafeCouponForOrder(ctx, order.ID, "PROVIDER_CREATE_FAILED")
 		return nil, err
 	}
 	return resp, nil
@@ -274,10 +286,41 @@ func (s *PaymentService) createOrderInTx(ctx context.Context, req CreateOrderReq
 	if err != nil {
 		return nil, fmt.Errorf("create order: %w", err)
 	}
+	couponCode := ""
+	couponDiscount := 0.0
+	if strings.TrimSpace(req.CafeCouponCode) != "" {
+		couponCode, err = normalizeCafeCouponCode(req.CafeCouponCode)
+		if err != nil {
+			return nil, err
+		}
+		if coupon, couponErr := tx.Client().CafeCoupon.Query().Where(cafecoupon.CodeEQ(couponCode)).Only(ctx); couponErr != nil {
+			if dbent.IsNotFound(couponErr) {
+				return nil, infraerrors.NotFound("CAFE_COUPON_NOT_FOUND", "cafe coupon not found")
+			}
+			return nil, fmt.Errorf("lock cafe coupon: %w", couponErr)
+		} else {
+			if err := s.validateCafeCouponEntity(ctx, req.UserID, coupon); err != nil {
+				return nil, err
+			}
+			couponDiscount, err = cafeCouponDiscountAmount(cafeCouponOrderOriginalAmount(req, plan, cfg), coupon.CouponType, coupon.Value)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
 	code := fmt.Sprintf("PAY-%d-%d", order.ID, time.Now().UnixNano()%100000)
-	order, err = tx.PaymentOrder.UpdateOneID(order.ID).SetRechargeCode(code).Save(ctx)
+	orderUpdate := tx.PaymentOrder.UpdateOneID(order.ID).SetRechargeCode(code)
+	if couponCode != "" {
+		orderUpdate.SetCafeCouponCode(couponCode).SetCafeCouponDiscount(couponDiscount)
+	}
+	order, err = orderUpdate.Save(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("set recharge code: %w", err)
+	}
+	if couponCode != "" {
+		if err := s.applyCafeCouponToOrderTx(ctx, tx, order.ID, req.UserID, couponCode, cafeCouponOrderOriginalAmount(req, plan, cfg), couponDiscount); err != nil {
+			return nil, err
+		}
 	}
 	if err := tx.Commit(); err != nil {
 		return nil, fmt.Errorf("commit order transaction: %w", err)
@@ -779,6 +822,9 @@ func buildWeChatPaymentOAuthStartURL(req CreateOrderRequest, scope string) (stri
 	}
 	if req.PlanID > 0 {
 		q.Set("plan_id", strconv.FormatInt(req.PlanID, 10))
+	}
+	if couponCode := strings.TrimSpace(req.CafeCouponCode); couponCode != "" {
+		q.Set("cafe_coupon_code", couponCode)
 	}
 	if scope = strings.TrimSpace(scope); scope != "" {
 		q.Set("scope", scope)

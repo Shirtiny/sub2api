@@ -30,6 +30,10 @@ const (
 	FieldFeeRate = "fee_rate"
 	// FieldRechargeCode holds the string denoting the recharge_code field in the database.
 	FieldRechargeCode = "recharge_code"
+	// FieldCafeCouponCode holds the string denoting the cafe_coupon_code field in the database.
+	FieldCafeCouponCode = "cafe_coupon_code"
+	// FieldCafeCouponDiscount holds the string denoting the cafe_coupon_discount field in the database.
+	FieldCafeCouponDiscount = "cafe_coupon_discount"
 	// FieldOutTradeNo holds the string denoting the out_trade_no field in the database.
 	FieldOutTradeNo = "out_trade_no"
 	// FieldPaymentType holds the string denoting the payment_type field in the database.
@@ -116,6 +120,8 @@ var Columns = []string{
 	FieldPayAmount,
 	FieldFeeRate,
 	FieldRechargeCode,
+	FieldCafeCouponCode,
+	FieldCafeCouponDiscount,
 	FieldOutTradeNo,
 	FieldPaymentType,
 	FieldPaymentTradeNo,
@@ -168,6 +174,10 @@ var (
 	DefaultFeeRate float64
 	// RechargeCodeValidator is a validator for the "recharge_code" field. It is called by the builders before save.
 	RechargeCodeValidator func(string) error
+	// CafeCouponCodeValidator is a validator for the "cafe_coupon_code" field. It is called by the builders before save.
+	CafeCouponCodeValidator func(string) error
+	// DefaultCafeCouponDiscount holds the default value on creation for the "cafe_coupon_discount" field.
+	DefaultCafeCouponDiscount float64
 	// DefaultOutTradeNo holds the default value on creation for the "out_trade_no" field.
 	DefaultOutTradeNo string
 	// OutTradeNoValidator is a validator for the "out_trade_no" field. It is called by the builders before save.
@@ -252,6 +262,16 @@ func ByFeeRate(opts ...sql.OrderTermOption) OrderOption {
 // ByRechargeCode orders the results by the recharge_code field.
 func ByRechargeCode(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldRechargeCode, opts...).ToFunc()
+}
+
+// ByCafeCouponCode orders the results by the cafe_coupon_code field.
+func ByCafeCouponCode(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCafeCouponCode, opts...).ToFunc()
+}
+
+// ByCafeCouponDiscount orders the results by the cafe_coupon_discount field.
+func ByCafeCouponDiscount(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCafeCouponDiscount, opts...).ToFunc()
 }
 
 // ByOutTradeNo orders the results by the out_trade_no field.

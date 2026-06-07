@@ -257,7 +257,21 @@ export default {
     affiliateRebate: 'Membership benefits',
     subscriptionReward: 'Invite registration: {limit} invitee(s), rebate {rate}%, per-invitee cap ¥{cap}',
     subscriptionRewardUnavailable: 'Invite registration: unavailable for normal users; rebates available from LV.1',
-    consumptionDiscount: 'Consumption discount: coming soon...'
+    consumptionDiscount: 'Consumption discount: coming soon...',
+    cafeCoupon: {
+      label: 'Café coupon:',
+      claim: 'Claim',
+      claiming: 'Claiming...',
+      claimSuccess: 'Café coupon claimed',
+      claimFailed: 'Failed to claim café coupon',
+      modalTitle: 'Your Café Coupon',
+      modalDescription: 'Use this coupon code during recharge or subscription checkout.',
+      codeLabel: 'Coupon code',
+      copy: 'Copy',
+      copied: 'Coupon code copied',
+      copyFailed: 'Failed to copy coupon code',
+      useHint: 'Paste the code into the Café coupon field before confirming payment.'
+    }
   },
 
   // Common
@@ -1117,6 +1131,8 @@ export default {
       title: 'Redeem Rebate Amount',
       description: 'Redeem available rebate amount to balance or subscription packages',
       button: 'Rebate Store',
+      withdrawButton: 'Withdraw Rebate',
+      withdrawUnavailable: 'Coming soon',
       modalTitle: 'Redeem Affiliate Rebate',
       empty: 'No available rebate amount',
       available: '{points} available',
@@ -6986,6 +7002,21 @@ export default {
     amountTooHigh: 'Maximum amount is {max}',
     amountNoMethod: 'No payment method available for this amount',
     rechargeRatePreview: 'Current rate: 1 CNY = {usd} USD',
+    cafeCoupon: {
+      label: 'Café Coupon Code',
+      placeholder: 'Enter Café coupon code',
+      hint: 'The coupon is applied automatically after you finish typing or leave the field.',
+      applied: 'Café coupon applied',
+      invalid: 'Invalid Café coupon code',
+      discount: 'Discount',
+      payable: 'Payable',
+      errors: {
+        CAFE_COUPON_INVALID: 'Invalid Café coupon code.',
+        CAFE_COUPON_EXPIRED: 'This Café coupon has expired.',
+        CAFE_COUPON_USED: 'This Café coupon has already been used.',
+        CAFE_COUPON_NOT_ELIGIBLE: 'This Café coupon cannot be used for the selected order.',
+      },
+    },
     refundReason: 'Refund Reason',
     refundReasonPlaceholder: 'Please describe your refund reason',
     stripeLoadFailed: 'Failed to load payment component. Please refresh and try again.',

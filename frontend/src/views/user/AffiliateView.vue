@@ -105,15 +105,27 @@
               <h3 class="text-base font-semibold text-content-primary">{{ t('affiliate.redeem.title') }}</h3>
               <p class="mt-1 text-sm text-content-tertiary">{{ t('affiliate.redeem.description') }}</p>
             </div>
-            <button
-              class="btn btn-primary"
-              :disabled="redeeming || availableRebatePoints <= 0"
-              @click="openRedeemDialog"
-            >
-              <Icon v-if="redeeming" name="refresh" size="sm" class="animate-spin" />
-              <Icon v-else name="dollar" size="sm" />
-              <span>{{ t('affiliate.redeem.button') }}</span>
-            </button>
+            <div class="flex flex-wrap gap-2 sm:justify-end">
+              <button
+                class="btn btn-primary"
+                :disabled="redeeming"
+                @click="openRedeemDialog"
+              >
+                <Icon v-if="redeeming" name="refresh" size="sm" class="animate-spin" />
+                <Icon v-else name="dollar" size="sm" />
+                <span>{{ t('affiliate.redeem.button') }}</span>
+              </button>
+              <span class="inline-flex cursor-not-allowed" :title="t('affiliate.redeem.withdrawUnavailable')">
+                <button
+                  type="button"
+                  class="btn border border-gray-200 bg-gray-100 text-gray-400 shadow-none hover:bg-gray-100 hover:text-gray-400 dark:border-dark-600 dark:bg-dark-800 dark:text-gray-500"
+                  disabled
+                >
+                  <Icon name="creditCard" size="sm" />
+                  <span>{{ t('affiliate.redeem.withdrawButton') }}</span>
+                </button>
+              </span>
+            </div>
           </div>
           <p v-if="availableRebatePoints <= 0" class="mt-3 text-sm text-amber-600 dark:text-amber-400">
             {{ t('affiliate.redeem.empty') }}

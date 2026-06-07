@@ -163,6 +163,7 @@ type SystemSettings struct {
 	AffiliateInviteLimitLevel1         int
 	AffiliateInviteLimitLevel2         int
 	AffiliateInviteLimitLevel3         int
+	CafeCouponConfig                   CafeCouponConfig
 	DefaultUserRPMLimit                int
 	DefaultSubscriptions               []DefaultSubscriptionSetting
 

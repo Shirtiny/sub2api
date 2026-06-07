@@ -31,6 +31,12 @@ func RegisterPaymentRoutes(
 		authenticated.GET("/channels", paymentHandler.GetChannels)
 		authenticated.GET("/limits", paymentHandler.GetLimits)
 
+		cafeCoupons := authenticated.Group("/cafe-coupons")
+		{
+			cafeCoupons.POST("/claim", paymentHandler.ClaimCafeCoupon)
+			cafeCoupons.POST("/apply", paymentHandler.ApplyCafeCoupon)
+		}
+
 		orders := authenticated.Group("/orders")
 		{
 			orders.POST("", paymentHandler.CreateOrder)

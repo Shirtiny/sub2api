@@ -95,6 +95,16 @@ func RechargeCode(v string) predicate.PaymentOrder {
 	return predicate.PaymentOrder(sql.FieldEQ(FieldRechargeCode, v))
 }
 
+// CafeCouponCode applies equality check predicate on the "cafe_coupon_code" field. It's identical to CafeCouponCodeEQ.
+func CafeCouponCode(v string) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldEQ(FieldCafeCouponCode, v))
+}
+
+// CafeCouponDiscount applies equality check predicate on the "cafe_coupon_discount" field. It's identical to CafeCouponDiscountEQ.
+func CafeCouponDiscount(v float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldEQ(FieldCafeCouponDiscount, v))
+}
+
 // OutTradeNo applies equality check predicate on the "out_trade_no" field. It's identical to OutTradeNoEQ.
 func OutTradeNo(v string) predicate.PaymentOrder {
 	return predicate.PaymentOrder(sql.FieldEQ(FieldOutTradeNo, v))
@@ -653,6 +663,121 @@ func RechargeCodeEqualFold(v string) predicate.PaymentOrder {
 // RechargeCodeContainsFold applies the ContainsFold predicate on the "recharge_code" field.
 func RechargeCodeContainsFold(v string) predicate.PaymentOrder {
 	return predicate.PaymentOrder(sql.FieldContainsFold(FieldRechargeCode, v))
+}
+
+// CafeCouponCodeEQ applies the EQ predicate on the "cafe_coupon_code" field.
+func CafeCouponCodeEQ(v string) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldEQ(FieldCafeCouponCode, v))
+}
+
+// CafeCouponCodeNEQ applies the NEQ predicate on the "cafe_coupon_code" field.
+func CafeCouponCodeNEQ(v string) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldNEQ(FieldCafeCouponCode, v))
+}
+
+// CafeCouponCodeIn applies the In predicate on the "cafe_coupon_code" field.
+func CafeCouponCodeIn(vs ...string) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldIn(FieldCafeCouponCode, vs...))
+}
+
+// CafeCouponCodeNotIn applies the NotIn predicate on the "cafe_coupon_code" field.
+func CafeCouponCodeNotIn(vs ...string) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldNotIn(FieldCafeCouponCode, vs...))
+}
+
+// CafeCouponCodeGT applies the GT predicate on the "cafe_coupon_code" field.
+func CafeCouponCodeGT(v string) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldGT(FieldCafeCouponCode, v))
+}
+
+// CafeCouponCodeGTE applies the GTE predicate on the "cafe_coupon_code" field.
+func CafeCouponCodeGTE(v string) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldGTE(FieldCafeCouponCode, v))
+}
+
+// CafeCouponCodeLT applies the LT predicate on the "cafe_coupon_code" field.
+func CafeCouponCodeLT(v string) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldLT(FieldCafeCouponCode, v))
+}
+
+// CafeCouponCodeLTE applies the LTE predicate on the "cafe_coupon_code" field.
+func CafeCouponCodeLTE(v string) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldLTE(FieldCafeCouponCode, v))
+}
+
+// CafeCouponCodeContains applies the Contains predicate on the "cafe_coupon_code" field.
+func CafeCouponCodeContains(v string) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldContains(FieldCafeCouponCode, v))
+}
+
+// CafeCouponCodeHasPrefix applies the HasPrefix predicate on the "cafe_coupon_code" field.
+func CafeCouponCodeHasPrefix(v string) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldHasPrefix(FieldCafeCouponCode, v))
+}
+
+// CafeCouponCodeHasSuffix applies the HasSuffix predicate on the "cafe_coupon_code" field.
+func CafeCouponCodeHasSuffix(v string) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldHasSuffix(FieldCafeCouponCode, v))
+}
+
+// CafeCouponCodeIsNil applies the IsNil predicate on the "cafe_coupon_code" field.
+func CafeCouponCodeIsNil() predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldIsNull(FieldCafeCouponCode))
+}
+
+// CafeCouponCodeNotNil applies the NotNil predicate on the "cafe_coupon_code" field.
+func CafeCouponCodeNotNil() predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldNotNull(FieldCafeCouponCode))
+}
+
+// CafeCouponCodeEqualFold applies the EqualFold predicate on the "cafe_coupon_code" field.
+func CafeCouponCodeEqualFold(v string) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldEqualFold(FieldCafeCouponCode, v))
+}
+
+// CafeCouponCodeContainsFold applies the ContainsFold predicate on the "cafe_coupon_code" field.
+func CafeCouponCodeContainsFold(v string) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldContainsFold(FieldCafeCouponCode, v))
+}
+
+// CafeCouponDiscountEQ applies the EQ predicate on the "cafe_coupon_discount" field.
+func CafeCouponDiscountEQ(v float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldEQ(FieldCafeCouponDiscount, v))
+}
+
+// CafeCouponDiscountNEQ applies the NEQ predicate on the "cafe_coupon_discount" field.
+func CafeCouponDiscountNEQ(v float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldNEQ(FieldCafeCouponDiscount, v))
+}
+
+// CafeCouponDiscountIn applies the In predicate on the "cafe_coupon_discount" field.
+func CafeCouponDiscountIn(vs ...float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldIn(FieldCafeCouponDiscount, vs...))
+}
+
+// CafeCouponDiscountNotIn applies the NotIn predicate on the "cafe_coupon_discount" field.
+func CafeCouponDiscountNotIn(vs ...float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldNotIn(FieldCafeCouponDiscount, vs...))
+}
+
+// CafeCouponDiscountGT applies the GT predicate on the "cafe_coupon_discount" field.
+func CafeCouponDiscountGT(v float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldGT(FieldCafeCouponDiscount, v))
+}
+
+// CafeCouponDiscountGTE applies the GTE predicate on the "cafe_coupon_discount" field.
+func CafeCouponDiscountGTE(v float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldGTE(FieldCafeCouponDiscount, v))
+}
+
+// CafeCouponDiscountLT applies the LT predicate on the "cafe_coupon_discount" field.
+func CafeCouponDiscountLT(v float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldLT(FieldCafeCouponDiscount, v))
+}
+
+// CafeCouponDiscountLTE applies the LTE predicate on the "cafe_coupon_discount" field.
+func CafeCouponDiscountLTE(v float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldLTE(FieldCafeCouponDiscount, v))
 }
 
 // OutTradeNoEQ applies the EQ predicate on the "out_trade_no" field.
