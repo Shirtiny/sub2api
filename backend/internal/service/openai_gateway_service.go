@@ -225,6 +225,9 @@ type OpenAIForwardResult struct {
 	ResponseID string
 	Usage      OpenAIUsage
 	Model      string // 原始模型（用于响应和日志显示）
+	// InputTokensAlreadyNet marks usage.InputTokens as already excluding cache-read input.
+	// When true, RecordUsage must not subtract CacheReadInputTokens again.
+	InputTokensAlreadyNet bool
 	// BillingModel is the model used for cost calculation.
 	// When non-empty, CalculateCost uses this instead of Model.
 	// This is set by the Anthropic Messages conversion path where
@@ -5779,9 +5782,13 @@ func (s *OpenAIGatewayService) RecordUsage(ctx context.Context, input *OpenAIRec
 	subscription := input.Subscription
 	ApplyOpenAIImageBillingResolution(result)
 
-	// 计算实际的新输入token（减去缓存读取的token）
-	// 因为 input_tokens 包含了 cache_read_tokens，而缓存读取的token不应按输入价格计费
-	actualInputTokens := result.Usage.InputTokens - result.Usage.CacheReadInputTokens
+	// 计算实际的新输入token。
+	// 默认认为 input_tokens 需要扣除 cache_read_tokens；Anthropic Messages 兼容路径会
+	// 显式标记 InputTokensAlreadyNet=true，表示结果里的 input_tokens 已经是净值。
+	actualInputTokens := result.Usage.InputTokens
+	if !result.InputTokensAlreadyNet {
+		actualInputTokens -= result.Usage.CacheReadInputTokens
+	}
 	if actualInputTokens < 0 {
 		actualInputTokens = 0
 	}

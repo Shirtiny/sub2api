@@ -528,14 +528,15 @@ func (s *OpenAIGatewayService) forwardOpenAIMessagesPassthrough(
 	}
 
 	result := &OpenAIForwardResult{
-		RequestID:     resp.Header.Get("x-request-id"),
-		Usage:         *usage,
-		Model:         originalModel,
-		BillingModel:  billingModel,
-		UpstreamModel: upstreamModel,
-		Stream:        reqStream,
-		Duration:      time.Since(startTime),
-		FirstTokenMs:  firstTokenMs,
+		RequestID:             resp.Header.Get("x-request-id"),
+		Usage:                 *usage,
+		Model:                 originalModel,
+		InputTokensAlreadyNet: true,
+		BillingModel:          billingModel,
+		UpstreamModel:         upstreamModel,
+		Stream:                reqStream,
+		Duration:              time.Since(startTime),
+		FirstTokenMs:          firstTokenMs,
 	}
 	if c != nil && containsBetaToken(c.GetHeader("anthropic-beta"), claude.BetaFastMode) {
 		tier := "priority"
@@ -805,14 +806,15 @@ func (s *OpenAIGatewayService) handleAnthropicBufferedStreamingResponse(
 	c.JSON(http.StatusOK, anthropicResp)
 
 	return &OpenAIForwardResult{
-		RequestID:     requestID,
-		ResponseID:    finalResponse.ID,
-		Usage:         usage,
-		Model:         originalModel,
-		BillingModel:  billingModel,
-		UpstreamModel: upstreamModel,
-		Stream:        false,
-		Duration:      time.Since(startTime),
+		RequestID:             requestID,
+		ResponseID:            finalResponse.ID,
+		Usage:                 usage,
+		Model:                 originalModel,
+		InputTokensAlreadyNet: true,
+		BillingModel:          billingModel,
+		UpstreamModel:         upstreamModel,
+		Stream:                false,
+		Duration:              time.Since(startTime),
 	}, nil
 }
 
@@ -1076,16 +1078,17 @@ func (s *OpenAIGatewayService) handleAnthropicStreamingResponse(
 	// resultWithUsage builds the final result snapshot.
 	resultWithUsage := func() *OpenAIForwardResult {
 		return &OpenAIForwardResult{
-			RequestID:        requestID,
-			ResponseID:       responseID,
-			Usage:            usage,
-			Model:            originalModel,
-			BillingModel:     billingModel,
-			UpstreamModel:    upstreamModel,
-			Stream:           true,
-			Duration:         time.Since(startTime),
-			FirstTokenMs:     firstTokenMs,
-			ClientDisconnect: clientDisconnected,
+			RequestID:             requestID,
+			ResponseID:            responseID,
+			Usage:                 usage,
+			Model:                 originalModel,
+			InputTokensAlreadyNet: true,
+			BillingModel:          billingModel,
+			UpstreamModel:         upstreamModel,
+			Stream:                true,
+			Duration:              time.Since(startTime),
+			FirstTokenMs:          firstTokenMs,
+			ClientDisconnect:      clientDisconnected,
 		}
 	}
 

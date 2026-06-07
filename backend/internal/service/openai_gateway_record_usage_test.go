@@ -635,6 +635,35 @@ func TestOpenAIGatewayServiceRecordUsage_BillingRepoUsesDetachedContext(t *testi
 	require.NoError(t, usageRepo.lastCtxErr)
 }
 
+func TestOpenAIGatewayServiceRecordUsage_PreservesNetInputTokensForAnthropicMessages(t *testing.T) {
+	usageRepo := &openAIRecordUsageLogRepoStub{inserted: true}
+	billingRepo := &openAIRecordUsageBillingRepoStub{result: &UsageBillingApplyResult{Applied: true}}
+	userRepo := &openAIRecordUsageUserRepoStub{}
+	subRepo := &openAIRecordUsageSubRepoStub{}
+	svc := newOpenAIRecordUsageServiceWithBillingRepoForTest(usageRepo, billingRepo, userRepo, subRepo, nil)
+
+	err := svc.RecordUsage(context.Background(), &OpenAIRecordUsageInput{
+		Result: &OpenAIForwardResult{
+			RequestID:             "resp_anthropic_messages",
+			Usage:                 OpenAIUsage{InputTokens: 533, OutputTokens: 115, CacheReadInputTokens: 73216},
+			InputTokensAlreadyNet: true,
+			Model:                 "gpt-5.5",
+			Duration:              time.Second,
+		},
+		APIKey:  &APIKey{ID: 10051},
+		User:    &User{ID: 20051},
+		Account: &Account{ID: 30051},
+	})
+
+	require.NoError(t, err)
+	require.NotNil(t, usageRepo.lastLog)
+	require.Equal(t, 533, usageRepo.lastLog.InputTokens)
+	require.Equal(t, 73216, usageRepo.lastLog.CacheReadTokens)
+	require.NotNil(t, billingRepo.lastCmd)
+	require.Equal(t, 533, billingRepo.lastCmd.InputTokens)
+	require.Equal(t, 73216, billingRepo.lastCmd.CacheReadTokens)
+}
+
 func TestOpenAIGatewayServiceRecordUsage_BillingFingerprintIncludesRequestPayloadHash(t *testing.T) {
 	usageRepo := &openAIRecordUsageLogRepoStub{}
 	billingRepo := &openAIRecordUsageBillingRepoStub{result: &UsageBillingApplyResult{Applied: true}}
