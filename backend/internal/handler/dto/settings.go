@@ -330,6 +330,10 @@ type PublicSettings struct {
 	AvailableChannelsEnabled bool `json:"available_channels_enabled"`
 
 	AffiliateEnabled                   bool    `json:"affiliate_enabled"`
+	AffiliateRebateRateLevel0          float64 `json:"affiliate_rebate_rate_level0"`
+	AffiliateRebateRateLevel1          float64 `json:"affiliate_rebate_rate_level1"`
+	AffiliateRebateRateLevel2          float64 `json:"affiliate_rebate_rate_level2"`
+	AffiliateRebateRateLevel3          float64 `json:"affiliate_rebate_rate_level3"`
 	AffiliateRebatePerInviteeCap       float64 `json:"affiliate_rebate_per_invitee_cap"`
 	AffiliateRebatePerInviteeCapLevel0 float64 `json:"affiliate_rebate_per_invitee_cap_level0"`
 	AffiliateRebatePerInviteeCapLevel1 float64 `json:"affiliate_rebate_per_invitee_cap_level1"`

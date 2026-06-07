@@ -274,6 +274,10 @@ export interface PublicSettings {
   available_channels_enabled: boolean
   service_quota_enabled: boolean
   affiliate_enabled: boolean
+  affiliate_rebate_rate_level0?: number
+  affiliate_rebate_rate_level1?: number
+  affiliate_rebate_rate_level2?: number
+  affiliate_rebate_rate_level3?: number
   affiliate_rebate_per_invitee_cap?: number
   affiliate_rebate_per_invitee_cap_level0?: number
   affiliate_rebate_per_invitee_cap_level1?: number

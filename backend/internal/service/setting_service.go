@@ -760,6 +760,10 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		SettingKeyChannelMonitorDefaultIntervalSeconds,
 		SettingKeyAvailableChannelsEnabled,
 		SettingKeyAffiliateEnabled,
+		SettingKeyAffiliateRebateRateLevel0,
+		SettingKeyAffiliateRebateRateLevel1,
+		SettingKeyAffiliateRebateRateLevel2,
+		SettingKeyAffiliateRebateRateLevel3,
 		SettingKeyAffiliateRebatePerInviteeCap,
 		SettingKeyAffiliateRebatePerInviteeCapLevel0,
 		SettingKeyAffiliateRebatePerInviteeCapLevel1,
@@ -879,9 +883,12 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		ChannelMonitorEnabled:                !isFalseSettingValue(settings[SettingKeyChannelMonitorEnabled]),
 		ChannelMonitorDefaultIntervalSeconds: parseChannelMonitorInterval(settings[SettingKeyChannelMonitorDefaultIntervalSeconds]),
 
-		AvailableChannelsEnabled: settings[SettingKeyAvailableChannelsEnabled] == "true",
-
+		AvailableChannelsEnabled:           settings[SettingKeyAvailableChannelsEnabled] == "true",
 		AffiliateEnabled:                   settings[SettingKeyAffiliateEnabled] == "true",
+		AffiliateRebateRateLevel0:          s.getAffiliateRebateRateSetting(settings, SettingKeyAffiliateRebateRateLevel0, SettingKeyAffiliateRebateRate, AffiliateRebateRateLevel0Default),
+		AffiliateRebateRateLevel1:          s.getAffiliateRebateRateSetting(settings, SettingKeyAffiliateRebateRateLevel1, "", AffiliateRebateRateLevel1Default),
+		AffiliateRebateRateLevel2:          s.getAffiliateRebateRateSetting(settings, SettingKeyAffiliateRebateRateLevel2, "", AffiliateRebateRateLevel2Default),
+		AffiliateRebateRateLevel3:          s.getAffiliateRebateRateSetting(settings, SettingKeyAffiliateRebateRateLevel3, "", AffiliateRebateRateLevel3Default),
 		AffiliateRebatePerInviteeCap:       getAffiliateRebatePerInviteeCapSetting(settings, SettingKeyAffiliateRebatePerInviteeCapLevel0, SettingKeyAffiliateRebatePerInviteeCap, AffiliateRebatePerInviteeCapLevel0Default),
 		AffiliateRebatePerInviteeCapLevel0: getAffiliateRebatePerInviteeCapSetting(settings, SettingKeyAffiliateRebatePerInviteeCapLevel0, SettingKeyAffiliateRebatePerInviteeCap, AffiliateRebatePerInviteeCapLevel0Default),
 		AffiliateRebatePerInviteeCapLevel1: getAffiliateRebatePerInviteeCapSetting(settings, SettingKeyAffiliateRebatePerInviteeCapLevel1, "", AffiliateRebatePerInviteeCapLevel1Default),
@@ -1223,6 +1230,10 @@ type PublicSettingsInjectionPayload struct {
 	ChannelMonitorDefaultIntervalSeconds int     `json:"channel_monitor_default_interval_seconds"`
 	AvailableChannelsEnabled             bool    `json:"available_channels_enabled"`
 	AffiliateEnabled                     bool    `json:"affiliate_enabled"`
+	AffiliateRebateRateLevel0            float64 `json:"affiliate_rebate_rate_level0"`
+	AffiliateRebateRateLevel1            float64 `json:"affiliate_rebate_rate_level1"`
+	AffiliateRebateRateLevel2            float64 `json:"affiliate_rebate_rate_level2"`
+	AffiliateRebateRateLevel3            float64 `json:"affiliate_rebate_rate_level3"`
 	AffiliateRebatePerInviteeCap         float64 `json:"affiliate_rebate_per_invitee_cap"`
 	AffiliateRebatePerInviteeCapLevel0   float64 `json:"affiliate_rebate_per_invitee_cap_level0"`
 	AffiliateRebatePerInviteeCapLevel1   float64 `json:"affiliate_rebate_per_invitee_cap_level1"`
@@ -1295,6 +1306,10 @@ func (s *SettingService) GetPublicSettingsForInjection(ctx context.Context) (any
 		ChannelMonitorDefaultIntervalSeconds: settings.ChannelMonitorDefaultIntervalSeconds,
 		AvailableChannelsEnabled:             settings.AvailableChannelsEnabled,
 		AffiliateEnabled:                     settings.AffiliateEnabled,
+		AffiliateRebateRateLevel0:            settings.AffiliateRebateRateLevel0,
+		AffiliateRebateRateLevel1:            settings.AffiliateRebateRateLevel1,
+		AffiliateRebateRateLevel2:            settings.AffiliateRebateRateLevel2,
+		AffiliateRebateRateLevel3:            settings.AffiliateRebateRateLevel3,
 		AffiliateRebatePerInviteeCap:         settings.AffiliateRebatePerInviteeCap,
 		AffiliateRebatePerInviteeCapLevel0:   settings.AffiliateRebatePerInviteeCapLevel0,
 		AffiliateRebatePerInviteeCapLevel1:   settings.AffiliateRebatePerInviteeCapLevel1,

@@ -343,10 +343,11 @@ const membershipHint = computed(() => {
   })
 })
 const affiliateRebateRate = computed(() => {
-  if (membershipLevel.value <= 0) return 0
-  if (membershipLevel.value >= 3) return 25
-  if (membershipLevel.value >= 2) return 10
-  return 5
+  const settings = appStore.cachedPublicSettings
+  if (membershipLevel.value >= 3) return settings?.affiliate_rebate_rate_level3 ?? 25
+  if (membershipLevel.value >= 2) return settings?.affiliate_rebate_rate_level2 ?? 15
+  if (membershipLevel.value >= 1) return settings?.affiliate_rebate_rate_level1 ?? 5
+  return settings?.affiliate_rebate_rate_level0 ?? 0
 })
 const affiliateFeatureEnabled = computed(() => appStore.cachedPublicSettings?.affiliate_enabled === true)
 const membershipInviteLimit = computed(() => {
@@ -373,7 +374,11 @@ const membershipRebateCapText = computed(() => Number(membershipRebateCap.value 
   maximumFractionDigits: 2
 }))
 const membershipBenefitText = computed(() => {
-  const params = { rate: affiliateRebateRate.value, limit: membershipInviteLimitText.value, cap: membershipRebateCapText.value }
+  const params = {
+    rate: affiliateRebateRate.value,
+    limit: membershipInviteLimitText.value,
+    cap: membershipRebateCapText.value,
+  }
   return membershipLevel.value > 0
     ? t('membership.subscriptionReward', params)
     : t('membership.subscriptionRewardUnavailable', params)

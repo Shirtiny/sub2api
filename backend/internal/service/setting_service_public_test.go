@@ -104,6 +104,31 @@ func TestSettingService_GetPublicSettings_ExposesAllowUserViewErrorRequests(t *t
 	require.True(t, settings.AllowUserViewErrorRequests)
 }
 
+func TestSettingService_GetPublicSettings_ExposesAffiliateRebateRates(t *testing.T) {
+	repo := &settingPublicRepoStub{
+		values: map[string]string{
+			SettingKeyAffiliateEnabled:                   "true",
+			SettingKeyAffiliateRebateRateLevel0:          "0",
+			SettingKeyAffiliateRebateRateLevel1:          "5",
+			SettingKeyAffiliateRebateRateLevel2:          "12",
+			SettingKeyAffiliateRebateRateLevel3:          "20",
+			SettingKeyAffiliateInviteLimitLevel2:         "3",
+			SettingKeyAffiliateRebatePerInviteeCapLevel2: "300",
+		},
+	}
+	svc := NewSettingService(repo, &config.Config{})
+
+	settings, err := svc.GetPublicSettings(context.Background())
+	require.NoError(t, err)
+	require.True(t, settings.AffiliateEnabled)
+	require.Equal(t, 0.0, settings.AffiliateRebateRateLevel0)
+	require.Equal(t, 5.0, settings.AffiliateRebateRateLevel1)
+	require.Equal(t, 12.0, settings.AffiliateRebateRateLevel2)
+	require.Equal(t, 20.0, settings.AffiliateRebateRateLevel3)
+	require.Equal(t, 3, settings.AffiliateInviteLimitLevel2)
+	require.Equal(t, 300.0, settings.AffiliateRebatePerInviteeCapLevel2)
+}
+
 func TestSettingService_GetPublicSettings_ExposesWeChatOAuthModeCapabilities(t *testing.T) {
 	svc := NewSettingService(&settingPublicRepoStub{
 		values: map[string]string{

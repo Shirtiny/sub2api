@@ -53,6 +53,53 @@ func (s *settingHandlerPublicRepoStub) Delete(ctx context.Context, key string) e
 	panic("unexpected Delete call")
 }
 
+func TestSettingHandler_GetPublicSettings_ExposesAffiliateMembershipSettings(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	repo := &settingHandlerPublicRepoStub{
+		values: map[string]string{
+			service.SettingKeyAffiliateEnabled:                   "true",
+			service.SettingKeyAffiliateRebateRateLevel0:          "0",
+			service.SettingKeyAffiliateRebateRateLevel1:          "5",
+			service.SettingKeyAffiliateRebateRateLevel2:          "12",
+			service.SettingKeyAffiliateRebateRateLevel3:          "20",
+			service.SettingKeyAffiliateInviteLimitLevel2:         "3",
+			service.SettingKeyAffiliateRebatePerInviteeCapLevel0: "300",
+		},
+	}
+	h := NewSettingHandler(service.NewSettingService(repo, &config.Config{}), "test-version")
+
+	recorder := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(recorder)
+	c.Request = httptest.NewRequest(http.MethodGet, "/api/v1/settings/public", nil)
+
+	h.GetPublicSettings(c)
+
+	require.Equal(t, http.StatusOK, recorder.Code)
+
+	var resp struct {
+		Code int `json:"code"`
+		Data struct {
+			AffiliateEnabled             bool    `json:"affiliate_enabled"`
+			AffiliateRebateRateLevel0    float64 `json:"affiliate_rebate_rate_level0"`
+			AffiliateRebateRateLevel1    float64 `json:"affiliate_rebate_rate_level1"`
+			AffiliateRebateRateLevel2    float64 `json:"affiliate_rebate_rate_level2"`
+			AffiliateRebateRateLevel3    float64 `json:"affiliate_rebate_rate_level3"`
+			AffiliateInviteLimitLevel2   int     `json:"affiliate_invite_limit_level2"`
+			AffiliateRebatePerInviteeCap float64 `json:"affiliate_rebate_per_invitee_cap"`
+		} `json:"data"`
+	}
+	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &resp))
+	require.Equal(t, 0, resp.Code)
+	require.True(t, resp.Data.AffiliateEnabled)
+	require.Equal(t, 0.0, resp.Data.AffiliateRebateRateLevel0)
+	require.Equal(t, 5.0, resp.Data.AffiliateRebateRateLevel1)
+	require.Equal(t, 12.0, resp.Data.AffiliateRebateRateLevel2)
+	require.Equal(t, 20.0, resp.Data.AffiliateRebateRateLevel3)
+	require.Equal(t, 3, resp.Data.AffiliateInviteLimitLevel2)
+	require.Equal(t, 300.0, resp.Data.AffiliateRebatePerInviteeCap)
+}
+
 func TestSettingHandler_GetPublicSettings_ExposesForceEmailOnThirdPartySignup(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 

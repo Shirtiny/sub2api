@@ -255,7 +255,7 @@ export default {
     highestHint: 'LV.3 是当前最高会员等级。',
     remainingHint: '再获得 {amount} 点可升级到 LV.{level}。',
     affiliateRebate: '会员权益',
-    subscriptionReward: '邀请注册：可邀请{limit}人，会员积分返利{rate}%，上限 ¥{cap}',
+    subscriptionReward: '邀请注册：可邀请{limit}人，返利{rate}%，上限 ¥{cap}',
     subscriptionRewardUnavailable: '邀请注册：普通用户暂不可邀请，LV.1 及以上可获得返利权益',
     consumptionDiscount: '消费折扣：敬请期待...'
   },

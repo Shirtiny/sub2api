@@ -255,7 +255,7 @@ export default {
     highestHint: 'LV.3 is the highest membership level.',
     remainingHint: 'Earn {amount} more points to unlock LV.{level}.',
     affiliateRebate: 'Membership benefits',
-    subscriptionReward: 'Invite registration: {limit} invitee(s), membership points rebate {rate}%, per-invitee cap ¥{cap}',
+    subscriptionReward: 'Invite registration: {limit} invitee(s), rebate {rate}%, per-invitee cap ¥{cap}',
     subscriptionRewardUnavailable: 'Invite registration: unavailable for normal users; rebates available from LV.1',
     consumptionDiscount: 'Consumption discount: coming soon...'
   },

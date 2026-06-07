@@ -7,6 +7,7 @@ import (
 	"math"
 	"testing"
 
+	"github.com/Wei-Shaw/sub2api/internal/config"
 	"github.com/stretchr/testify/require"
 )
 
@@ -219,6 +220,28 @@ func TestAccrueInviteRebateForOrder_SkipsLevelZeroInviter(t *testing.T) {
 	require.Zero(t, repo.accrueCalls)
 }
 
+func TestAccrueInviteRebateForOrder_UsesLevelSpecificRateSetting(t *testing.T) {
+	t.Parallel()
+	inviterID := int64(2)
+	repo := &affiliateRepoThresholdStub{summaries: map[int64]*AffiliateSummary{
+		1: {UserID: 1, InviterID: &inviterID},
+		2: {UserID: 2, TotalRecharged: MembershipLevel2Threshold + 0.01},
+	}}
+	svc := &AffiliateService{
+		repo: repo,
+		settingService: NewSettingService(affiliateSettingRepoStub{values: map[string]string{
+			SettingKeyAffiliateEnabled:          "true",
+			SettingKeyAffiliateRebateRateLevel2: "12",
+		}}, &config.Config{}),
+	}
+
+	got, err := svc.AccrueInviteRebateForOrder(context.Background(), 1, 100, nil)
+
+	require.NoError(t, err)
+	require.InDelta(t, 12.0, got, 1e-9)
+	require.Equal(t, 1, repo.accrueCalls)
+}
+
 func TestGetAffiliateDetail_HidesAffCodeForLevelZero(t *testing.T) {
 	t.Parallel()
 	repo := &affiliateRepoThresholdStub{summaries: map[int64]*AffiliateSummary{
@@ -419,28 +442,41 @@ func (r *affiliateRepoThresholdStub) GetAffiliateUserOverview(ctx context.Contex
 	return nil, nil
 }
 
-type affiliateSettingRepoStub struct{}
+type affiliateSettingRepoStub struct {
+	values map[string]string
+}
 
 func (affiliateSettingRepoStub) Get(ctx context.Context, key string) (*Setting, error) {
 	return nil, ErrSettingNotFound
 }
-func (affiliateSettingRepoStub) GetValue(ctx context.Context, key string) (string, error) {
+func (r affiliateSettingRepoStub) GetValue(ctx context.Context, key string) (string, error) {
+	if r.values != nil {
+		if value, ok := r.values[key]; ok {
+			return value, nil
+		}
+	}
 	if key == SettingKeyAffiliateEnabled {
 		return "true", nil
 	}
 	return "", ErrSettingNotFound
 }
-func (affiliateSettingRepoStub) Set(ctx context.Context, key, value string) error { return nil }
-func (affiliateSettingRepoStub) GetMultiple(ctx context.Context, keys []string) (map[string]string, error) {
-	return nil, nil
+func (r affiliateSettingRepoStub) Set(ctx context.Context, key, value string) error { return nil }
+func (r affiliateSettingRepoStub) GetMultiple(ctx context.Context, keys []string) (map[string]string, error) {
+	out := make(map[string]string, len(keys))
+	for _, key := range keys {
+		if value, ok := r.values[key]; ok {
+			out[key] = value
+		}
+	}
+	return out, nil
 }
-func (affiliateSettingRepoStub) SetMultiple(ctx context.Context, settings map[string]string) error {
+func (r affiliateSettingRepoStub) SetMultiple(ctx context.Context, settings map[string]string) error {
 	return nil
 }
-func (affiliateSettingRepoStub) GetAll(ctx context.Context) (map[string]string, error) {
+func (r affiliateSettingRepoStub) GetAll(ctx context.Context) (map[string]string, error) {
 	return nil, nil
 }
-func (affiliateSettingRepoStub) Delete(ctx context.Context, key string) error { return nil }
+func (r affiliateSettingRepoStub) Delete(ctx context.Context, key string) error { return nil }
 
 type affiliateDisabledSettingRepoStub struct{}
 
