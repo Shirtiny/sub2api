@@ -218,7 +218,7 @@ func TestAffiliateRepository_AccrueQuota_ReusesOuterTransaction(t *testing.T) {
 	_, err = repo.EnsureUserAffiliate(txCtx, invitee.ID)
 	require.NoError(t, err)
 
-	bound, err := repo.BindInviter(txCtx, invitee.ID, inviter.ID, 0)
+	bound, err := repo.BindInviter(txCtx, invitee.ID, inviter.ID, 1)
 	require.NoError(t, err)
 	require.True(t, bound, "invitee must bind to inviter")
 
@@ -315,7 +315,7 @@ func TestAffiliateRepository_TransferQuotaToSubscription_CreatesSubscriptionWith
 	VALUES ($1, $2, 40, 40, NOW(), NOW())`, u.ID, affCode)
 	require.NoError(t, err)
 
-	result, err := repo.TransferQuotaToSubscription(txCtx, u.ID, group.ID, plan.ID, 5)
+	result, err := repo.TransferQuotaToSubscription(txCtx, u.ID, group.ID, plan.ID, 0)
 	require.NoError(t, err)
 	require.Equal(t, group.ID, result.GroupID)
 	require.Equal(t, group.Name, result.GroupName)
