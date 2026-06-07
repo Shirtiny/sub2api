@@ -463,7 +463,7 @@ function closeMembershipPopover() {
 }
 
 function highlightBenefitText(text: string) {
-  return text.replace(/\d+(?:\.\d+)?%?/g, '<span class="font-bold text-[#3D2E2A] dark:text-white">$&</span>')
+  return text.replace(/\d+(?:\.\d+)?%?/g, '<span class="font-bold text-[#7A5AE6] dark:text-[#F5C66B]">$&</span>')
 }
 
 function resolveMembershipLevel(total: number) {
