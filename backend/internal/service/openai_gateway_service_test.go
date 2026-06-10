@@ -67,6 +67,9 @@ func (r stubOpenAIAccountRepo) ListSchedulableByGroupIDAndPlatform(ctx context.C
 	var result []Account
 	for _, acc := range r.accounts {
 		if acc.Platform == platform {
+			if len(acc.GroupIDs) == 0 && len(acc.AccountGroups) == 0 {
+				acc.GroupIDs = []int64{groupID}
+			}
 			result = append(result, acc)
 		}
 	}
