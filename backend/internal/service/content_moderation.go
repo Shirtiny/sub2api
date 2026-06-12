@@ -60,6 +60,7 @@ const (
 	maxContentModerationTimeoutMS     = 30000
 	maxModerationInputRunes           = 12000
 	maxModerationExcerptRunes         = 240
+	moderationKeywordContextRunes     = maxModerationExcerptRunes
 
 	defaultContentModerationWorkerCount          = 4
 	maxContentModerationWorkerCount              = 32
@@ -386,6 +387,7 @@ type ContentModerationLog struct {
 	CategoryScores    map[string]float64 `json:"category_scores"`
 	ThresholdSnapshot map[string]float64 `json:"threshold_snapshot"`
 	InputExcerpt      string             `json:"input_excerpt"`
+	MatchedKeyword    string             `json:"matched_keyword"`
 	UpstreamLatencyMS *int               `json:"upstream_latency_ms,omitempty"`
 	Error             string             `json:"error"`
 	ViolationCount    int                `json:"violation_count"`
@@ -881,6 +883,8 @@ func (s *ContentModerationService) Check(ctx context.Context, input ContentModer
 					"keyword", keyword)
 				scores := map[string]float64{contentModerationKeywordCategory: 1.0}
 				log := s.buildLog(input, cfg, ContentModerationActionKeywordBlock, true, contentModerationKeywordCategory, 1.0, scores, content.ExcerptText(), nil, nil, "")
+				log.MatchedKeyword = keyword
+				log.InputExcerpt = buildKeywordContextExcerpt(content.ExcerptText(), keyword)
 				s.enqueueRecord(input, cfg, log, hashText, false, true)
 				return &ContentModerationDecision{
 					Allowed:         false,
@@ -2584,6 +2588,70 @@ func matchBlockedKeyword(text string, keywords []string) (string, bool) {
 		}
 	}
 	return "", false
+}
+
+func buildKeywordContextExcerpt(text string, keyword string) string {
+	text = normalizeContentModerationText(text)
+	keyword = strings.TrimSpace(keyword)
+	if text == "" {
+		return ""
+	}
+	if keyword == "" {
+		return trimRunes(redactContentModerationSecrets(text), maxModerationExcerptRunes)
+	}
+	runes := []rune(text)
+	keywordRunes := []rune(keyword)
+	startRune := findKeywordStartRune(runes, keywordRunes)
+	if startRune < 0 {
+		return trimRunes(redactContentModerationSecrets(text), maxModerationExcerptRunes)
+	}
+	endRune := startRune + len(keywordRunes)
+	if len(keywordRunes) >= moderationKeywordContextRunes {
+		return trimRunes(redactContentModerationSecrets(string(runes[startRune:endRune])), maxModerationExcerptRunes)
+	}
+	remaining := moderationKeywordContextRunes - len(keywordRunes)
+	before := remaining / 2
+	after := remaining - before
+	contextStart := startRune - before
+	if contextStart < 0 {
+		after += -contextStart
+		contextStart = 0
+	}
+	contextEnd := endRune + after
+	if contextEnd > len(runes) {
+		contextStart -= contextEnd - len(runes)
+		if contextStart < 0 {
+			contextStart = 0
+		}
+		contextEnd = len(runes)
+	}
+	excerpt := string(runes[contextStart:contextEnd])
+	if contextStart > 0 && contextEnd < len(runes) {
+		excerpt = trimRunes(excerpt, maxModerationExcerptRunes-6)
+	} else if contextStart > 0 || contextEnd < len(runes) {
+		excerpt = trimRunes(excerpt, maxModerationExcerptRunes-3)
+	} else {
+		excerpt = trimRunes(excerpt, maxModerationExcerptRunes)
+	}
+	if contextStart > 0 {
+		excerpt = "..." + excerpt
+	}
+	if contextEnd < len(runes) {
+		excerpt += "..."
+	}
+	return trimRunes(redactContentModerationSecrets(excerpt), maxModerationExcerptRunes)
+}
+
+func findKeywordStartRune(text []rune, keyword []rune) int {
+	if len(text) == 0 || len(keyword) == 0 || len(keyword) > len(text) {
+		return -1
+	}
+	for i := 0; i <= len(text)-len(keyword); i++ {
+		if strings.EqualFold(string(text[i:i+len(keyword)]), string(keyword)) {
+			return i
+		}
+	}
+	return -1
 }
 
 func normalizeModerationAPIKeys(keys []string) []string {

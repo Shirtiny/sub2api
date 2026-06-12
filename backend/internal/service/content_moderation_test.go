@@ -431,6 +431,18 @@ func TestMatchBlockedKeyword_CaseInsensitiveSubstring(t *testing.T) {
 	require.False(t, hit)
 }
 
+func TestBuildKeywordContextExcerpt_CentersMatchedKeyword(t *testing.T) {
+	prefix := strings.Repeat("前", 300)
+	suffix := strings.Repeat("后", 300)
+	excerpt := buildKeywordContextExcerpt(prefix+" 乳头 "+suffix, "乳头")
+
+	require.Contains(t, excerpt, "乳头")
+	require.NotContains(t, excerpt, strings.Repeat("前", 240))
+	require.True(t, strings.HasPrefix(excerpt, "..."))
+	require.True(t, strings.HasSuffix(excerpt, "..."))
+	require.LessOrEqual(t, len([]rune(excerpt)), maxModerationExcerptRunes)
+}
+
 func TestContentModerationCheck_PreBlockKeywordHitSkipsUpstreamCall(t *testing.T) {
 	upstreamCalled := false
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -478,6 +490,8 @@ func TestContentModerationCheck_PreBlockKeywordHitSkipsUpstreamCall(t *testing.T
 	require.True(t, logs[0].Flagged)
 	require.Equal(t, ContentModerationActionKeywordBlock, logs[0].Action)
 	require.Equal(t, contentModerationKeywordCategory, logs[0].HighestCategory)
+	require.Equal(t, "secret-token", logs[0].MatchedKeyword)
+	require.Contains(t, strings.ToLower(logs[0].InputExcerpt), "secret-token")
 }
 
 func TestContentModerationCheck_KeywordsIgnoredInObserveMode(t *testing.T) {

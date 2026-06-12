@@ -1071,6 +1071,10 @@
                 {{ inputDetailRow.highest_category || '-' }} / {{ percent(inputDetailRow.highest_score) }}
               </p>
             </div>
+            <div v-if="inputDetailRow.matched_keyword" class="rounded-lg border border-amber-100 bg-amber-50 p-4 dark:border-amber-900/40 dark:bg-amber-950/20">
+              <p class="text-xs font-medium text-amber-700 dark:text-amber-300">{{ t('admin.riskControl.matchedKeyword') }}</p>
+              <p class="mt-1 truncate text-sm font-semibold text-amber-900 dark:text-amber-100">{{ inputDetailRow.matched_keyword }}</p>
+            </div>
           </div>
 
           <div class="rounded-xl border border-gray-100 bg-white p-4 shadow-sm dark:border-dark-700 dark:bg-dark-800">
