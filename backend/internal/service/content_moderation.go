@@ -19,10 +19,12 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+	"unicode"
 
 	gosensitive "github.com/Karrecy/sensitive-go"
 	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
+	"golang.org/x/text/unicode/norm"
 )
 
 const (
@@ -86,6 +88,7 @@ const (
 	maxContentModerationTestImageDataURLBytes    = 12 * 1024 * 1024
 	maxContentModerationBlockedKeywords          = 10000
 	maxContentModerationBlockedKeywordRunes      = 200
+	minContentModerationFoldedKeywordRunes       = 2
 	maxContentModerationModelFilterModels        = 1000
 	maxContentModerationModelFilterRunes         = 200
 
@@ -2198,6 +2201,7 @@ func (s *ContentModerationService) getBuiltInFilter() *gosensitive.Detector {
 	s.builtInFilterOnce.Do(func() {
 		s.builtInFilter, s.builtInFilterErr = gosensitive.New().
 			LoadBuiltin().
+			EnableSymbol().
 			SetCaseSensitive(false).
 			Build()
 		if s.builtInFilterErr != nil {
@@ -2630,15 +2634,36 @@ func (s *ContentModerationService) matchBlockedKeyword(text string, cfg *Content
 		return contentModerationKeywordMatch{}
 	}
 	if detector := s.getBuiltInFilter(); detector != nil {
-		for _, matched := range detector.Find(text) {
-			keyword := strings.TrimSpace(matched.Word)
-			if keyword == "" || isKeywordWhitelisted(keyword, cfg.KeywordWhitelist) {
-				continue
-			}
+		if keyword, hit := matchBuiltInBlockedKeyword(detector, text, cfg.KeywordWhitelist); hit {
 			return contentModerationKeywordMatch{Keyword: keyword, Source: "built_in", Hit: true}
 		}
 	}
 	return contentModerationKeywordMatch{}
+}
+
+func matchBuiltInBlockedKeyword(detector *gosensitive.Detector, text string, whitelist []string) (string, bool) {
+	if detector == nil || text == "" {
+		return "", false
+	}
+	if keyword, hit := firstNonWhitelistedBuiltInMatch(detector.Find(text), whitelist); hit {
+		return keyword, true
+	}
+	foldedText := foldContentModerationKeywordText(text)
+	if foldedText == "" || foldedText == strings.ToLower(strings.TrimSpace(text)) {
+		return "", false
+	}
+	return firstNonWhitelistedBuiltInMatch(detector.Find(foldedText), whitelist)
+}
+
+func firstNonWhitelistedBuiltInMatch(matches []gosensitive.Match, whitelist []string) (string, bool) {
+	for _, matched := range matches {
+		keyword := strings.TrimSpace(matched.Word)
+		if keyword == "" || isKeywordWhitelistedForMatch(keyword, whitelist) {
+			continue
+		}
+		return keyword, true
+	}
+	return "", false
 }
 
 func matchCustomBlockedKeyword(text string, keywords []string, whitelist []string) (string, bool) {
@@ -2646,12 +2671,23 @@ func matchCustomBlockedKeyword(text string, keywords []string, whitelist []strin
 		return "", false
 	}
 	lower := strings.ToLower(text)
+	foldedText := foldContentModerationKeywordText(text)
 	for _, kw := range keywords {
 		if kw == "" {
 			continue
 		}
 		if strings.Contains(lower, strings.ToLower(kw)) {
-			if isKeywordWhitelisted(kw, whitelist) {
+			if isKeywordWhitelistedForMatch(kw, whitelist) {
+				continue
+			}
+			return kw, true
+		}
+		foldedKeyword := foldContentModerationKeywordText(kw)
+		if !contentModerationFoldedKeywordUsable(foldedKeyword) {
+			continue
+		}
+		if strings.Contains(foldedText, foldedKeyword) {
+			if isKeywordWhitelistedForMatch(kw, whitelist) {
 				continue
 			}
 			return kw, true
@@ -2672,6 +2708,45 @@ func isKeywordWhitelisted(keyword string, whitelist []string) bool {
 		}
 	}
 	return false
+}
+
+func isKeywordWhitelistedForMatch(keyword string, whitelist []string) bool {
+	if isKeywordWhitelisted(keyword, whitelist) {
+		return true
+	}
+	foldedKeyword := foldContentModerationKeywordText(keyword)
+	if !contentModerationFoldedKeywordUsable(foldedKeyword) {
+		return false
+	}
+	for _, candidate := range whitelist {
+		foldedCandidate := foldContentModerationKeywordText(candidate)
+		if contentModerationFoldedKeywordUsable(foldedCandidate) && foldedCandidate == foldedKeyword {
+			return true
+		}
+	}
+	return false
+}
+
+func contentModerationFoldedKeywordUsable(keyword string) bool {
+	return len([]rune(keyword)) >= minContentModerationFoldedKeywordRunes
+}
+
+func foldContentModerationKeywordText(text string) string {
+	text = strings.TrimSpace(text)
+	if text == "" {
+		return ""
+	}
+	var builder strings.Builder
+	builder.Grow(len(text))
+	for _, r := range norm.NFD.String(text) {
+		if unicode.Is(unicode.Mn, r) {
+			continue
+		}
+		if unicode.IsLetter(r) || unicode.IsDigit(r) {
+			builder.WriteRune(unicode.ToLower(r))
+		}
+	}
+	return builder.String()
 }
 
 func buildKeywordContextExcerpt(text string, keyword string) string {

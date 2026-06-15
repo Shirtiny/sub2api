@@ -13,6 +13,7 @@ import (
 	"testing"
 	"time"
 
+	gosensitive "github.com/Karrecy/sensitive-go"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
 	"github.com/stretchr/testify/require"
 )
@@ -437,6 +438,35 @@ func TestMatchCustomBlockedKeyword_SkipsWhitelistedMatches(t *testing.T) {
 	require.Equal(t, "safe-danger", keyword)
 
 	_, hit = matchCustomBlockedKeyword("SAFE-TERM is approved", []string{"safe-term"}, []string{"safe-term"})
+	require.False(t, hit)
+}
+
+func TestMatchCustomBlockedKeyword_FoldedTextVariants(t *testing.T) {
+	keyword, hit := matchCustomBlockedKeyword("please B a-d_Word now", []string{"badword"}, nil)
+	require.True(t, hit)
+	require.Equal(t, "badword", keyword)
+
+	keyword, hit = matchCustomBlockedKeyword("order café today", []string{"cafe"}, nil)
+	require.True(t, hit)
+	require.Equal(t, "cafe", keyword)
+
+	_, hit = matchCustomBlockedKeyword("B a d W o r d is approved", []string{"badword"}, []string{"bad-word"})
+	require.False(t, hit)
+}
+
+func TestMatchBuiltInBlockedKeyword_FoldedTextVariants(t *testing.T) {
+	detector, err := gosensitive.New().
+		LoadMemory([]string{"badword"}).
+		EnableSymbol().
+		SetCaseSensitive(false).
+		Build()
+	require.NoError(t, err)
+
+	keyword, hit := matchBuiltInBlockedKeyword(detector, "B a-d Wörd", nil)
+	require.True(t, hit)
+	require.Equal(t, "badword", keyword)
+
+	_, hit = matchBuiltInBlockedKeyword(detector, "B a-d Wörd", []string{"bad word"})
 	require.False(t, hit)
 }
 
