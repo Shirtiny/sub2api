@@ -994,6 +994,14 @@
               </div>
             </div>
 
+            <div class="flex items-center justify-between gap-4 rounded-lg border border-gray-100 bg-gray-50 p-4 dark:border-dark-700 dark:bg-dark-900/30">
+              <div class="min-w-0">
+                <p class="text-sm font-semibold text-content-primary">{{ t('admin.riskControl.builtInFilterEnabled') }}</p>
+                <p class="mt-1 text-xs leading-5 text-gray-500 dark:text-gray-400">{{ t('admin.riskControl.builtInFilterEnabledDesc') }}</p>
+              </div>
+              <Toggle v-model="configForm.built_in_filter_enabled" />
+            </div>
+
             <div>
               <div class="mb-2 flex items-center justify-between">
                 <label class="input-label mb-0">{{ t('admin.riskControl.blockedKeywords') }}</label>
@@ -1009,6 +1017,23 @@
               ></textarea>
               <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
                 {{ t('admin.riskControl.blockedKeywordsLimit', { max: blockedKeywordMax }) }}
+              </p>
+            </div>
+
+            <div>
+              <div class="mb-2 flex items-center justify-between">
+                <label class="input-label mb-0">{{ t('admin.riskControl.keywordWhitelist') }}</label>
+                <span class="inline-flex rounded-md bg-gray-100 px-2 py-1 text-xs text-gray-500 dark:bg-dark-700 dark:text-gray-300">
+                  {{ t('admin.riskControl.keywordWhitelistCount', { count: keywordWhitelistCount }) }}
+                </span>
+              </div>
+              <textarea
+                v-model="configForm.keyword_whitelist_text"
+                class="input min-h-40 resize-y font-mono text-sm"
+                :placeholder="t('admin.riskControl.keywordWhitelistPlaceholder')"
+              ></textarea>
+              <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                {{ t('admin.riskControl.keywordWhitelistHint') }}
               </p>
             </div>
           </div>
@@ -1237,7 +1262,9 @@ const configForm = reactive({
   pre_hash_check_enabled: false,
   thresholds: { ...riskThresholdDefaults } as Record<string, number>,
   blocked_keywords_text: '',
+  keyword_whitelist_text: '',
   keyword_blocking_mode: 'keyword_and_api' as KeywordBlockingMode,
+  built_in_filter_enabled: false,
   model_filter_type: 'all' as ContentModerationModelFilterType,
   model_filter_models: [] as string[],
 })
@@ -1421,6 +1448,10 @@ const inputApiKeyCount = computed(() => parseApiKeys(configForm.api_keys_text).l
 const blockedKeywordList = computed(() => parseBlockedKeywords(configForm.blocked_keywords_text))
 
 const blockedKeywordCount = computed(() => blockedKeywordList.value.length)
+
+const keywordWhitelist = computed(() => parseBlockedKeywords(configForm.keyword_whitelist_text))
+
+const keywordWhitelistCount = computed(() => keywordWhitelist.value.length)
 
 const pendingDeletedApiKeyCount = computed(() => pendingDeleteApiKeyHashes.value.length)
 
@@ -1713,7 +1744,9 @@ function applyConfig(config: ContentModerationConfig) {
   configForm.pre_hash_check_enabled = config.pre_hash_check_enabled ?? false
   configForm.thresholds = riskThresholdsFromConfig(config.thresholds)
   configForm.blocked_keywords_text = Array.isArray(config.blocked_keywords) ? config.blocked_keywords.join('\n') : ''
+  configForm.keyword_whitelist_text = Array.isArray(config.keyword_whitelist) ? config.keyword_whitelist.join('\n') : ''
   configForm.keyword_blocking_mode = normalizeKeywordBlockingMode(config.keyword_blocking_mode)
+  configForm.built_in_filter_enabled = config.built_in_filter_enabled ?? false
   const modelFilter = normalizeModelFilter(config.model_filter)
   configForm.model_filter_type = modelFilter.type
   configForm.model_filter_models = modelFilter.models
@@ -1793,7 +1826,9 @@ async function saveConfig() {
       pre_hash_check_enabled: configForm.pre_hash_check_enabled,
       thresholds: buildRiskThresholdPayload(),
       blocked_keywords: blockedKeywordList.value,
+      keyword_whitelist: keywordWhitelist.value,
       keyword_blocking_mode: configForm.keyword_blocking_mode,
+      built_in_filter_enabled: configForm.built_in_filter_enabled,
       model_filter: modelFilterPayload,
     }
     const keys = parseApiKeys(configForm.api_keys_text)

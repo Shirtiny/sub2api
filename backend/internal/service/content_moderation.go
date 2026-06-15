@@ -20,6 +20,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	gosensitive "github.com/Karrecy/sensitive-go"
 	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
 )
@@ -159,7 +160,9 @@ type ContentModerationConfig struct {
 	NonHitRetentionDays  int                          `json:"non_hit_retention_days"`
 	PreHashCheckEnabled  bool                         `json:"pre_hash_check_enabled"`
 	BlockedKeywords      []string                     `json:"blocked_keywords"`
+	KeywordWhitelist     []string                     `json:"keyword_whitelist"`
 	KeywordBlockingMode  string                       `json:"keyword_blocking_mode"`
+	BuiltInFilterEnabled bool                         `json:"built_in_filter_enabled"`
 	ModelFilter          ContentModerationModelFilter `json:"model_filter"`
 }
 
@@ -192,7 +195,9 @@ type ContentModerationConfigView struct {
 	NonHitRetentionDays  int                             `json:"non_hit_retention_days"`
 	PreHashCheckEnabled  bool                            `json:"pre_hash_check_enabled"`
 	BlockedKeywords      []string                        `json:"blocked_keywords"`
+	KeywordWhitelist     []string                        `json:"keyword_whitelist"`
 	KeywordBlockingMode  string                          `json:"keyword_blocking_mode"`
+	BuiltInFilterEnabled bool                            `json:"built_in_filter_enabled"`
 	ModelFilter          ContentModerationModelFilter    `json:"model_filter"`
 }
 
@@ -279,7 +284,9 @@ type UpdateContentModerationConfigInput struct {
 	NonHitRetentionDays  *int                          `json:"non_hit_retention_days"`
 	PreHashCheckEnabled  *bool                         `json:"pre_hash_check_enabled"`
 	BlockedKeywords      *[]string                     `json:"blocked_keywords"`
+	KeywordWhitelist     *[]string                     `json:"keyword_whitelist"`
 	KeywordBlockingMode  *string                       `json:"keyword_blocking_mode"`
+	BuiltInFilterEnabled *bool                         `json:"built_in_filter_enabled"`
 	ModelFilter          *ContentModerationModelFilter `json:"model_filter"`
 }
 
@@ -503,6 +510,9 @@ type ContentModerationService struct {
 	lastCleanupDeletedNonHit atomic.Int64
 	keyHealthMu              sync.Mutex
 	keyHealth                map[string]*contentModerationKeyHealth
+	builtInFilterOnce        sync.Once
+	builtInFilter            *gosensitive.Detector
+	builtInFilterErr         error
 }
 
 type contentModerationTask struct {
@@ -635,8 +645,14 @@ func (s *ContentModerationService) UpdateConfig(ctx context.Context, input Updat
 	if input.BlockedKeywords != nil {
 		cfg.BlockedKeywords = normalizeBlockedKeywords(*input.BlockedKeywords)
 	}
+	if input.KeywordWhitelist != nil {
+		cfg.KeywordWhitelist = normalizeBlockedKeywords(*input.KeywordWhitelist)
+	}
 	if input.KeywordBlockingMode != nil {
 		cfg.KeywordBlockingMode = strings.TrimSpace(*input.KeywordBlockingMode)
+	}
+	if input.BuiltInFilterEnabled != nil {
+		cfg.BuiltInFilterEnabled = *input.BuiltInFilterEnabled
 	}
 	if input.ModelFilter != nil {
 		cfg.ModelFilter = *input.ModelFilter
@@ -870,8 +886,8 @@ func (s *ContentModerationService) Check(ctx context.Context, input ContentModer
 		"image_count", len(content.Images))
 	hashText := content.Hash()
 	if cfg.Mode == ContentModerationModePreBlock {
-		if cfg.KeywordBlockingMode != ContentModerationKeywordModeAPIOnly && len(cfg.BlockedKeywords) > 0 {
-			if keyword, hit := matchBlockedKeyword(content.Text, cfg.BlockedKeywords); hit {
+		if cfg.KeywordBlockingMode != ContentModerationKeywordModeAPIOnly && (len(cfg.BlockedKeywords) > 0 || cfg.BuiltInFilterEnabled) {
+			if match := s.matchBlockedKeyword(content.Text, cfg); match.Hit {
 				s.recordPreBlockSyncMetric(0, ContentModerationActionKeywordBlock)
 				slog.Info("content_moderation.keyword_block",
 					"user_id", input.UserID,
@@ -880,11 +896,12 @@ func (s *ContentModerationService) Check(ctx context.Context, input ContentModer
 					"endpoint", input.Endpoint,
 					"protocol", input.Protocol,
 					"keyword_blocking_mode", cfg.KeywordBlockingMode,
-					"keyword", keyword)
+					"keyword_source", match.Source,
+					"built_in_filter_enabled", cfg.BuiltInFilterEnabled)
 				scores := map[string]float64{contentModerationKeywordCategory: 1.0}
 				log := s.buildLog(input, cfg, ContentModerationActionKeywordBlock, true, contentModerationKeywordCategory, 1.0, scores, content.ExcerptText(), nil, nil, "")
-				log.MatchedKeyword = keyword
-				log.InputExcerpt = buildKeywordContextExcerpt(content.ExcerptText(), keyword)
+				log.MatchedKeyword = match.Keyword
+				log.InputExcerpt = buildKeywordContextExcerpt(content.ExcerptText(), match.Keyword)
 				s.enqueueRecord(input, cfg, log, hashText, false, true)
 				return &ContentModerationDecision{
 					Allowed:         false,
@@ -1834,7 +1851,9 @@ func defaultContentModerationConfig() *ContentModerationConfig {
 		NonHitRetentionDays:  defaultContentModerationNonHitRetentionDays,
 		PreHashCheckEnabled:  false,
 		BlockedKeywords:      []string{},
+		KeywordWhitelist:     []string{},
 		KeywordBlockingMode:  ContentModerationKeywordModeKeywordAndAPI,
+		BuiltInFilterEnabled: false,
 		ModelFilter: ContentModerationModelFilter{
 			Type:   ContentModerationModelFilterAll,
 			Models: []string{},
@@ -1850,6 +1869,7 @@ func cloneContentModerationConfig(cfg *ContentModerationConfig) *ContentModerati
 	clone.APIKeys = append([]string(nil), cfg.APIKeys...)
 	clone.GroupIDs = append([]int64(nil), cfg.GroupIDs...)
 	clone.BlockedKeywords = append([]string(nil), cfg.BlockedKeywords...)
+	clone.KeywordWhitelist = append([]string(nil), cfg.KeywordWhitelist...)
 	clone.Thresholds = cloneFloatMap(cfg.Thresholds)
 	clone.ModelFilter = ContentModerationModelFilter{
 		Type:   cfg.ModelFilter.Type,
@@ -1934,6 +1954,7 @@ func (cfg *ContentModerationConfig) normalize() {
 	cfg.GroupIDs = normalizeInt64IDs(cfg.GroupIDs)
 	cfg.Thresholds = mergeContentModerationThresholds(ContentModerationDefaultThresholds(), cfg.Thresholds)
 	cfg.BlockedKeywords = normalizeBlockedKeywords(cfg.BlockedKeywords)
+	cfg.KeywordWhitelist = normalizeBlockedKeywords(cfg.KeywordWhitelist)
 	cfg.KeywordBlockingMode = normalizeKeywordBlockingMode(cfg.KeywordBlockingMode)
 	cfg.ModelFilter = normalizeContentModerationModelFilter(cfg.ModelFilter)
 }
@@ -2163,9 +2184,27 @@ func (s *ContentModerationService) configView(cfg *ContentModerationConfig) *Con
 		NonHitRetentionDays:  cfg.NonHitRetentionDays,
 		PreHashCheckEnabled:  cfg.PreHashCheckEnabled,
 		BlockedKeywords:      append([]string(nil), cfg.BlockedKeywords...),
+		KeywordWhitelist:     append([]string(nil), cfg.KeywordWhitelist...),
 		KeywordBlockingMode:  cfg.KeywordBlockingMode,
+		BuiltInFilterEnabled: cfg.BuiltInFilterEnabled,
 		ModelFilter:          cloneContentModerationModelFilter(cfg.ModelFilter),
 	}
+}
+
+func (s *ContentModerationService) getBuiltInFilter() *gosensitive.Detector {
+	if s == nil {
+		return nil
+	}
+	s.builtInFilterOnce.Do(func() {
+		s.builtInFilter, s.builtInFilterErr = gosensitive.New().
+			LoadBuiltin().
+			SetCaseSensitive(false).
+			Build()
+		if s.builtInFilterErr != nil {
+			slog.Warn("content_moderation.built_in_filter_init_failed", "error", s.builtInFilterErr)
+		}
+	})
+	return s.builtInFilter
 }
 
 func (s *ContentModerationService) apiKeyStatuses(keys []string) []ContentModerationAPIKeyStatus {
@@ -2574,7 +2613,35 @@ func contentModerationModelListContains(models []string, model string) bool {
 	return false
 }
 
-func matchBlockedKeyword(text string, keywords []string) (string, bool) {
+type contentModerationKeywordMatch struct {
+	Keyword string
+	Source  string
+	Hit     bool
+}
+
+func (s *ContentModerationService) matchBlockedKeyword(text string, cfg *ContentModerationConfig) contentModerationKeywordMatch {
+	if text == "" || cfg == nil {
+		return contentModerationKeywordMatch{}
+	}
+	if keyword, hit := matchCustomBlockedKeyword(text, cfg.BlockedKeywords, cfg.KeywordWhitelist); hit {
+		return contentModerationKeywordMatch{Keyword: keyword, Source: "admin", Hit: true}
+	}
+	if !cfg.BuiltInFilterEnabled {
+		return contentModerationKeywordMatch{}
+	}
+	if detector := s.getBuiltInFilter(); detector != nil {
+		for _, matched := range detector.Find(text) {
+			keyword := strings.TrimSpace(matched.Word)
+			if keyword == "" || isKeywordWhitelisted(keyword, cfg.KeywordWhitelist) {
+				continue
+			}
+			return contentModerationKeywordMatch{Keyword: keyword, Source: "built_in", Hit: true}
+		}
+	}
+	return contentModerationKeywordMatch{}
+}
+
+func matchCustomBlockedKeyword(text string, keywords []string, whitelist []string) (string, bool) {
 	if text == "" || len(keywords) == 0 {
 		return "", false
 	}
@@ -2584,10 +2651,27 @@ func matchBlockedKeyword(text string, keywords []string) (string, bool) {
 			continue
 		}
 		if strings.Contains(lower, strings.ToLower(kw)) {
+			if isKeywordWhitelisted(kw, whitelist) {
+				continue
+			}
 			return kw, true
 		}
 	}
 	return "", false
+}
+
+func isKeywordWhitelisted(keyword string, whitelist []string) bool {
+	keyword = strings.TrimSpace(keyword)
+	if keyword == "" || len(whitelist) == 0 {
+		return false
+	}
+	lower := strings.ToLower(keyword)
+	for _, candidate := range whitelist {
+		if strings.ToLower(strings.TrimSpace(candidate)) == lower {
+			return true
+		}
+	}
+	return false
 }
 
 func buildKeywordContextExcerpt(text string, keyword string) string {

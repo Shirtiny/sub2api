@@ -48,7 +48,9 @@ type contentModerationConfigRequest struct {
 	NonHitRetentionDays  *int                                  `json:"non_hit_retention_days"`
 	PreHashCheckEnabled  *bool                                 `json:"pre_hash_check_enabled"`
 	BlockedKeywords      *[]string                             `json:"blocked_keywords"`
+	KeywordWhitelist     *[]string                             `json:"keyword_whitelist"`
 	KeywordBlockingMode  *string                               `json:"keyword_blocking_mode"`
+	BuiltInFilterEnabled *bool                                 `json:"built_in_filter_enabled"`
 	ModelFilter          *service.ContentModerationModelFilter `json:"model_filter"`
 }
 
@@ -109,7 +111,9 @@ func (h *ContentModerationHandler) UpdateConfig(c *gin.Context) {
 		NonHitRetentionDays:  req.NonHitRetentionDays,
 		PreHashCheckEnabled:  req.PreHashCheckEnabled,
 		BlockedKeywords:      req.BlockedKeywords,
+		KeywordWhitelist:     req.KeywordWhitelist,
 		KeywordBlockingMode:  req.KeywordBlockingMode,
+		BuiltInFilterEnabled: req.BuiltInFilterEnabled,
 		ModelFilter:          req.ModelFilter,
 	})
 	if err != nil {

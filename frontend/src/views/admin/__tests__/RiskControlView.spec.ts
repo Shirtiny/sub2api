@@ -96,7 +96,9 @@ const baseConfig = (): ContentModerationConfig => ({
   non_hit_retention_days: 3,
   pre_hash_check_enabled: false,
   blocked_keywords: [],
+  keyword_whitelist: [],
   keyword_blocking_mode: 'keyword_and_api',
+  built_in_filter_enabled: false,
   thresholds: {
     harassment: 0.98,
     sexual: 0.65,
@@ -272,6 +274,40 @@ describe('admin RiskControlView', () => {
         sexual: 0.72,
         harassment: 0.99,
       }),
+    }))
+    expect(showError).not.toHaveBeenCalled()
+  })
+
+  it('preserves the built-in filter toggle when saving moderation config', async () => {
+    getConfig.mockResolvedValue({
+      ...baseConfig(),
+      built_in_filter_enabled: true,
+      keyword_whitelist: ['allowed-term'],
+    })
+
+    const wrapper = mount(RiskControlView, {
+      global: {
+        stubs: {
+          AppLayout: AppLayoutStub,
+          BaseDialog: BaseDialogStub,
+          Icon: true,
+          Select: true,
+          Toggle: true,
+          Pagination: true,
+          ModelWhitelistSelector: ModelWhitelistSelectorStub,
+        },
+      },
+    })
+
+    await flushPromises()
+
+    await findButtonByText(wrapper, 'admin.riskControl.openSettings').trigger('click')
+    await findButtonByText(wrapper, 'admin.riskControl.saveConfig').trigger('click')
+    await flushPromises()
+
+    expect(updateConfig).toHaveBeenCalledWith(expect.objectContaining({
+      built_in_filter_enabled: true,
+      keyword_whitelist: ['allowed-term'],
     }))
     expect(showError).not.toHaveBeenCalled()
   })

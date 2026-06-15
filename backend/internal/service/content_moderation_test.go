@@ -420,14 +420,23 @@ func TestNormalizeBlockedKeywords_TrimsDedupesAndCaps(t *testing.T) {
 }
 
 func TestMatchBlockedKeyword_CaseInsensitiveSubstring(t *testing.T) {
-	keyword, hit := matchBlockedKeyword("Please ignore the BadWord here", []string{"badword"})
+	keyword, hit := matchCustomBlockedKeyword("Please ignore the BadWord here", []string{"badword"}, nil)
 	require.True(t, hit)
 	require.Equal(t, "badword", keyword)
 
-	_, hit = matchBlockedKeyword("clean prompt", []string{"badword"})
+	_, hit = matchCustomBlockedKeyword("clean prompt", []string{"badword"}, nil)
 	require.False(t, hit)
 
-	_, hit = matchBlockedKeyword("anything", nil)
+	_, hit = matchCustomBlockedKeyword("anything", nil, nil)
+	require.False(t, hit)
+}
+
+func TestMatchCustomBlockedKeyword_SkipsWhitelistedMatches(t *testing.T) {
+	keyword, hit := matchCustomBlockedKeyword("safe-term plus SAFE-DANGER", []string{"safe-term", "safe-danger"}, []string{"safe-term"})
+	require.True(t, hit)
+	require.Equal(t, "safe-danger", keyword)
+
+	_, hit = matchCustomBlockedKeyword("SAFE-TERM is approved", []string{"safe-term"}, []string{"safe-term"})
 	require.False(t, hit)
 }
 
@@ -492,6 +501,121 @@ func TestContentModerationCheck_PreBlockKeywordHitSkipsUpstreamCall(t *testing.T
 	require.Equal(t, contentModerationKeywordCategory, logs[0].HighestCategory)
 	require.Equal(t, "secret-token", logs[0].MatchedKeyword)
 	require.Contains(t, strings.ToLower(logs[0].InputExcerpt), "secret-token")
+}
+
+func TestContentModerationCheck_KeywordWhitelistSkipsKeywordBlock(t *testing.T) {
+	cfg := defaultContentModerationConfig()
+	cfg.Enabled = true
+	cfg.Mode = ContentModerationModePreBlock
+	cfg.KeywordBlockingMode = ContentModerationKeywordModeKeywordOnly
+	cfg.BlockedKeywords = []string{"internal-term"}
+	cfg.KeywordWhitelist = []string{"internal-term"}
+	rawCfg, err := json.Marshal(cfg)
+	require.NoError(t, err)
+
+	repo := &contentModerationTestRepo{}
+	svc := NewContentModerationService(
+		&contentModerationTestSettingRepo{values: map[string]string{
+			SettingKeyRiskControlEnabled:      "true",
+			SettingKeyContentModerationConfig: string(rawCfg),
+		}},
+		repo,
+		&contentModerationTestHashCache{},
+		nil,
+		nil,
+		nil,
+		nil,
+	)
+
+	body := []byte(`{"messages":[{"role":"user","content":"this INTERNAL-TERM is approved"}]}`)
+	decision, err := svc.Check(context.Background(), ContentModerationCheckInput{
+		Endpoint: "/v1/messages",
+		Provider: "anthropic",
+		Protocol: ContentModerationProtocolAnthropicMessages,
+		Body:     body,
+	})
+
+	require.NoError(t, err)
+	require.False(t, decision.Blocked)
+	require.Empty(t, repo.snapshotLogs())
+}
+
+func TestContentModerationCheck_WhitelistDoesNotBypassOtherBlockedKeyword(t *testing.T) {
+	cfg := defaultContentModerationConfig()
+	cfg.Enabled = true
+	cfg.Mode = ContentModerationModePreBlock
+	cfg.KeywordBlockingMode = ContentModerationKeywordModeKeywordOnly
+	cfg.BlockedKeywords = []string{"safe-term", "blocked-term"}
+	cfg.KeywordWhitelist = []string{"safe-term"}
+	rawCfg, err := json.Marshal(cfg)
+	require.NoError(t, err)
+
+	repo := &contentModerationTestRepo{}
+	svc := NewContentModerationService(
+		&contentModerationTestSettingRepo{values: map[string]string{
+			SettingKeyRiskControlEnabled:      "true",
+			SettingKeyContentModerationConfig: string(rawCfg),
+		}},
+		repo,
+		&contentModerationTestHashCache{},
+		nil,
+		nil,
+		nil,
+		nil,
+	)
+
+	body := []byte(`{"messages":[{"role":"user","content":"safe-term and BLOCKED-TERM appear together"}]}`)
+	decision, err := svc.Check(context.Background(), ContentModerationCheckInput{
+		Endpoint: "/v1/messages",
+		Provider: "anthropic",
+		Protocol: ContentModerationProtocolAnthropicMessages,
+		Body:     body,
+	})
+
+	require.NoError(t, err)
+	require.True(t, decision.Blocked)
+	require.Equal(t, ContentModerationActionKeywordBlock, decision.Action)
+	logs := requireContentModerationLogCount(t, repo, 1)
+	require.Equal(t, "blocked-term", logs[0].MatchedKeyword)
+}
+
+func TestContentModerationCheck_WhitelistDoesNotBypassBuiltInKeyword(t *testing.T) {
+	cfg := defaultContentModerationConfig()
+	cfg.Enabled = true
+	cfg.Mode = ContentModerationModePreBlock
+	cfg.KeywordBlockingMode = ContentModerationKeywordModeKeywordOnly
+	cfg.BuiltInFilterEnabled = true
+	cfg.KeywordWhitelist = []string{"QQ"}
+	rawCfg, err := json.Marshal(cfg)
+	require.NoError(t, err)
+
+	repo := &contentModerationTestRepo{}
+	svc := NewContentModerationService(
+		&contentModerationTestSettingRepo{values: map[string]string{
+			SettingKeyRiskControlEnabled:      "true",
+			SettingKeyContentModerationConfig: string(rawCfg),
+		}},
+		repo,
+		&contentModerationTestHashCache{},
+		nil,
+		nil,
+		nil,
+		nil,
+	)
+
+	body := []byte(`{"messages":[{"role":"user","content":"QQ and av下载 appear together"}]}`)
+	decision, err := svc.Check(context.Background(), ContentModerationCheckInput{
+		Endpoint: "/v1/messages",
+		Provider: "anthropic",
+		Protocol: ContentModerationProtocolAnthropicMessages,
+		Body:     body,
+	})
+
+	require.NoError(t, err)
+	require.True(t, decision.Blocked)
+	require.Equal(t, ContentModerationActionKeywordBlock, decision.Action)
+	logs := requireContentModerationLogCount(t, repo, 1)
+	require.Equal(t, "av下载", logs[0].MatchedKeyword)
 }
 
 func TestContentModerationCheck_KeywordsIgnoredInObserveMode(t *testing.T) {
@@ -862,6 +986,33 @@ func TestContentModerationUpdateConfig_SavesCustomThresholds(t *testing.T) {
 	require.Equal(t, 0.72, saved.Thresholds["sexual"])
 	require.Equal(t, 1.0, saved.Thresholds["harassment"])
 	require.NotContains(t, saved.Thresholds, "unknown")
+}
+
+func TestContentModerationUpdateConfig_SavesBuiltInFilterToggle(t *testing.T) {
+	cfg := defaultContentModerationConfig()
+	rawCfg, err := json.Marshal(cfg)
+	require.NoError(t, err)
+
+	repo := &contentModerationTestSettingRepo{values: map[string]string{
+		SettingKeyContentModerationConfig: string(rawCfg),
+	}}
+	svc := NewContentModerationService(repo, nil, nil, nil, nil, nil, nil)
+	enabled := true
+	whitelist := []string{" allowed-term ", "ALLOWED-TERM", "other-term"}
+
+	view, err := svc.UpdateConfig(context.Background(), UpdateContentModerationConfigInput{
+		BuiltInFilterEnabled: &enabled,
+		KeywordWhitelist:     &whitelist,
+	})
+
+	require.NoError(t, err)
+	require.True(t, view.BuiltInFilterEnabled)
+	require.Equal(t, []string{"allowed-term", "other-term"}, view.KeywordWhitelist)
+
+	var saved ContentModerationConfig
+	require.NoError(t, json.Unmarshal([]byte(repo.values[SettingKeyContentModerationConfig]), &saved))
+	require.True(t, saved.BuiltInFilterEnabled)
+	require.Equal(t, []string{"allowed-term", "other-term"}, saved.KeywordWhitelist)
 }
 
 func TestExtractContentModerationInput_AnthropicImageSourceOnlyParticipatesInMemory(t *testing.T) {
