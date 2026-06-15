@@ -58,6 +58,10 @@ const ExtraKeyResponsesMode = "openai_responses_mode"
 // 值类型为 bool：true=支持、false=不支持、键缺失=未探测。
 const ExtraKeyResponsesSupported = "openai_responses_supported"
 
+// ExtraKeyCafecodeIdentityHeadersEnabled 是 accounts.extra JSON 中的账号级开关。
+// 开启后，sub2api 会把当前 API Key 对应的用户身份作为内部 cafecode 头传给上游。
+const ExtraKeyCafecodeIdentityHeadersEnabled = "cafecode_identity_headers_enabled"
+
 // NormalizeResponsesSupportMode 归一化账号级 Responses API 路由覆盖模式。
 // 缺失或非法值按 auto 处理，以保持存量行为。
 func NormalizeResponsesSupportMode(mode string) ResponsesSupportMode {

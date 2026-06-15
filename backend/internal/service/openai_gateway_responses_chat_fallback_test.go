@@ -176,6 +176,69 @@ func TestForwardResponses_AutoSupportedAccountStillUsesResponsesEndpoint(t *test
 	require.Equal(t, "ok", gjson.Get(rec.Body.String(), "output.0.content.0.text").String())
 }
 
+func TestForwardResponses_CafecodeIdentityHeadersFollowAccountSwitch(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	body := []byte(`{"model":"gpt-5.4","input":"hello","stream":false}`)
+	responseBody := `{"id":"resp_native","object":"response","model":"gpt-5.4","status":"completed","output":[{"type":"message","role":"assistant","content":[{"type":"output_text","text":"ok"}],"status":"completed"}],"usage":{"input_tokens":5,"output_tokens":2,"total_tokens":7}}`
+	upstream := &httpUpstreamRecorder{responses: []*http.Response{
+		{
+			StatusCode: http.StatusOK,
+			Header:     http.Header{"Content-Type": []string{"application/json"}, "x-request-id": []string{"rid_cafecode_identity_disabled"}},
+			Body:       io.NopCloser(strings.NewReader(responseBody)),
+		},
+		{
+			StatusCode: http.StatusOK,
+			Header:     http.Header{"Content-Type": []string{"application/json"}, "x-request-id": []string{"rid_cafecode_identity_enabled"}},
+			Body:       io.NopCloser(strings.NewReader(responseBody)),
+		},
+	}}
+	svc := &OpenAIGatewayService{
+		cfg:          rawChatCompletionsTestConfig(),
+		httpUpstream: upstream,
+	}
+
+	buildContext := func() *gin.Context {
+		rec := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(rec)
+		c.Request = httptest.NewRequest(http.MethodPost, "/v1/responses", bytes.NewReader(body))
+		c.Request.Header.Set("Content-Type", "application/json")
+		c.Request.Header.Set("cafecode-uid", "spoofed")
+		c.Request.Header.Set("cafecode-uname", "spoofed")
+		c.Set("api_key", &APIKey{
+			User: &User{
+				ID:       42,
+				Username: "cafe-user",
+				Email:    "fallback@example.test",
+			},
+		})
+		return c
+	}
+
+	disabled := rawChatCompletionsTestAccount()
+	disabled.Extra = map[string]any{
+		openai_compat.ExtraKeyResponsesMode:      string(openai_compat.ResponsesSupportModeAuto),
+		openai_compat.ExtraKeyResponsesSupported: true,
+	}
+	result, err := svc.Forward(context.Background(), buildContext(), disabled, body)
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	require.Empty(t, upstream.lastReq.Header.Get("cafecode-uid"))
+	require.Empty(t, upstream.lastReq.Header.Get("cafecode-uname"))
+
+	enabled := rawChatCompletionsTestAccount()
+	enabled.Extra = map[string]any{
+		openai_compat.ExtraKeyResponsesMode:                  string(openai_compat.ResponsesSupportModeAuto),
+		openai_compat.ExtraKeyResponsesSupported:             true,
+		openai_compat.ExtraKeyCafecodeIdentityHeadersEnabled: true,
+	}
+	result, err = svc.Forward(context.Background(), buildContext(), enabled, body)
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	require.Equal(t, "42", upstream.lastReq.Header.Get("cafecode-uid"))
+	require.Equal(t, "cafe-user", upstream.lastReq.Header.Get("cafecode-uname"))
+}
+
 func forceChatResponsesFallbackAccount() *Account {
 	account := rawChatCompletionsTestAccount()
 	account.Extra = map[string]any{

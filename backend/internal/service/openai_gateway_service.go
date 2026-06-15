@@ -930,18 +930,31 @@ func (s *OpenAIGatewayService) detectCodexClientRestriction(c *gin.Context, acco
 }
 
 func getAPIKeyIDFromContext(c *gin.Context) int64 {
-	if c == nil {
-		return 0
-	}
-	v, exists := c.Get("api_key")
-	if !exists {
-		return 0
-	}
-	apiKey, ok := v.(*APIKey)
-	if !ok || apiKey == nil {
+	apiKey := getAPIKeyFromContext(c)
+	if apiKey == nil {
 		return 0
 	}
 	return apiKey.ID
+}
+
+func applyCafecodeIdentityHeaders(req *http.Request, c *gin.Context, account *Account) {
+	if req == nil || !account.IsCafecodeIdentityHeadersEnabled() {
+		return
+	}
+	apiKey := getAPIKeyFromContext(c)
+	if apiKey == nil || apiKey.User == nil {
+		return
+	}
+	req.Header.Set("cafecode-uid", strconv.FormatInt(apiKey.User.ID, 10))
+	uname := strings.TrimSpace(apiKey.User.Username)
+	if uname == "" {
+		uname = strings.TrimSpace(apiKey.User.Email)
+	}
+	if uname != "" {
+		req.Header.Set("cafecode-uname", uname)
+	} else {
+		req.Header.Del("cafecode-uname")
+	}
 }
 
 // isolateOpenAISessionID 将 apiKeyID 混入 session 标识符，
@@ -3490,6 +3503,7 @@ func (s *OpenAIGatewayService) buildUpstreamRequestOpenAIPassthrough(
 	req.Header.Del("x-api-key")
 	req.Header.Del("x-goog-api-key")
 	req.Header.Set("authorization", "Bearer "+token)
+	applyCafecodeIdentityHeaders(req, c, account)
 
 	// OAuth 透传到 ChatGPT internal API 时补齐必要头。
 	if account.Type == AccountTypeOAuth {
@@ -4228,6 +4242,7 @@ func (s *OpenAIGatewayService) buildUpstreamRequest(ctx context.Context, c *gin.
 			}
 		}
 	}
+	applyCafecodeIdentityHeaders(req, c, account)
 	if account.Type == AccountTypeOAuth {
 		compatMessagesBridge := isOpenAICompatMessagesBridgeContext(c) || isOpenAICompatMessagesBridgeBody(body)
 		// 清除客户端透传的 session 头，后续用隔离后的值重新设置，防止跨用户会话碰撞。

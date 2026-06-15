@@ -14,6 +14,7 @@ import (
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
 	"github.com/Wei-Shaw/sub2api/internal/domain"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/openai_compat"
 )
 
 type Account struct {
@@ -782,6 +783,15 @@ func (a *Account) GetExtraString(key string) string {
 		}
 	}
 	return ""
+}
+
+// IsCafecodeIdentityHeadersEnabled 返回是否为该账号向上游注入内部 cafecode 身份头。
+func (a *Account) IsCafecodeIdentityHeadersEnabled() bool {
+	if a == nil || !a.IsOpenAI() || a.Extra == nil {
+		return false
+	}
+	enabled, ok := a.Extra[openai_compat.ExtraKeyCafecodeIdentityHeadersEnabled].(bool)
+	return ok && enabled
 }
 
 func (a *Account) GetClaudeUserID() string {

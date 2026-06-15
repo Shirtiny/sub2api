@@ -3594,6 +3594,9 @@ export default {
         oauthPassthrough: '自动透传（仅替换认证）',
         oauthPassthroughDesc:
           '开启后，该 OpenAI 账号将自动透传请求与响应，仅替换认证并保留计费/并发/审计及必要安全过滤；如遇兼容性问题可随时关闭回滚。',
+        cafecodeIdentityHeaders: '注入 Cafecode 身份头',
+        cafecodeIdentityHeadersDesc:
+          '仅用于指向内部 Aether 的账号。开启后向上游附加 cafecode-uid 与 cafecode-uname，便于在 Aether 请求记录中关联 sub2api 使用者。',
         responsesWebsocketsV2: 'Responses WebSocket v2',
         responsesWebsocketsV2Desc:
           '默认关闭。开启后可启用 responses_websockets_v2 协议能力（受网关全局开关与账号类型开关约束）。',
