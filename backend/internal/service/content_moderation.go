@@ -65,32 +65,33 @@ const (
 	maxModerationExcerptRunes         = 240
 	moderationKeywordContextRunes     = maxModerationExcerptRunes
 
-	defaultContentModerationWorkerCount          = 4
-	maxContentModerationWorkerCount              = 32
-	defaultContentModerationQueueSize            = 32768
-	maxContentModerationQueueSize                = 100000
-	defaultContentModerationBanThreshold         = 10
-	defaultContentModerationViolationWindowHours = 720
-	defaultContentModerationBlockHTTPStatus      = http.StatusForbidden
-	defaultContentModerationBlockMessage         = "内容审计命中风险规则，请调整输入后重试"
-	defaultContentModerationRetryCount           = 2
-	maxContentModerationRetryCount               = 5
-	defaultContentModerationHitRetentionDays     = 180
-	defaultContentModerationNonHitRetentionDays  = 3
-	maxContentModerationRetentionDays            = 3650
-	maxContentModerationNonHitRetentionDays      = 3
-	contentModerationKeyRateLimitFreezeDuration  = time.Minute
-	contentModerationKeyAuthFreezeDuration       = 10 * time.Minute
-	contentModerationKeyHTTPErrorFreezeDuration  = 10 * time.Second
-	maxContentModerationInputImages              = 1
-	maxContentModerationTestImages               = maxContentModerationInputImages
-	maxContentModerationTestImageBytes           = 8 * 1024 * 1024
-	maxContentModerationTestImageDataURLBytes    = 12 * 1024 * 1024
-	maxContentModerationBlockedKeywords          = 10000
-	maxContentModerationBlockedKeywordRunes      = 200
-	minContentModerationFoldedKeywordRunes       = 2
-	maxContentModerationModelFilterModels        = 1000
-	maxContentModerationModelFilterRunes         = 200
+	defaultContentModerationWorkerCount           = 4
+	maxContentModerationWorkerCount               = 32
+	defaultContentModerationQueueSize             = 32768
+	maxContentModerationQueueSize                 = 100000
+	defaultContentModerationBanThreshold          = 10
+	defaultContentModerationViolationWindowHours  = 720
+	defaultContentModerationBlockHTTPStatus       = http.StatusForbidden
+	defaultContentModerationBlockMessage          = "内容审计命中风险规则，请调整输入后重试"
+	defaultContentModerationRetryCount            = 2
+	maxContentModerationRetryCount                = 5
+	defaultContentModerationHitRetentionDays      = 180
+	defaultContentModerationNonHitRetentionDays   = 3
+	maxContentModerationRetentionDays             = 3650
+	maxContentModerationNonHitRetentionDays       = 3
+	contentModerationKeyRateLimitFreezeDuration   = time.Minute
+	contentModerationKeyAuthFreezeDuration        = 10 * time.Minute
+	contentModerationKeyHTTPErrorFreezeDuration   = 10 * time.Second
+	maxContentModerationInputImages               = 1
+	maxContentModerationTestImages                = maxContentModerationInputImages
+	maxContentModerationTestImageBytes            = 8 * 1024 * 1024
+	maxContentModerationTestImageDataURLBytes     = 12 * 1024 * 1024
+	maxContentModerationBlockedKeywords           = 10000
+	maxContentModerationBlockedKeywordRunes       = 200
+	minContentModerationFoldedKeywordRunes        = 2
+	minContentModerationBuiltInFoldedKeywordRunes = 3
+	maxContentModerationModelFilterModels         = 1000
+	maxContentModerationModelFilterRunes          = 200
 
 	contentModerationCleanupInterval = 24 * time.Hour
 	contentModerationCleanupTimeout  = 30 * time.Minute
@@ -2658,7 +2659,7 @@ func matchBuiltInBlockedKeyword(detector *gosensitive.Detector, text string, whi
 func firstNonWhitelistedBuiltInMatch(matches []gosensitive.Match, whitelist []string) (string, bool) {
 	for _, matched := range matches {
 		keyword := strings.TrimSpace(matched.Word)
-		if keyword == "" || isKeywordWhitelistedForMatch(keyword, whitelist) {
+		if keyword == "" || !contentModerationBuiltInKeywordUsable(keyword) || isKeywordWhitelistedForMatch(keyword, whitelist) {
 			continue
 		}
 		return keyword, true
@@ -2729,6 +2730,10 @@ func isKeywordWhitelistedForMatch(keyword string, whitelist []string) bool {
 
 func contentModerationFoldedKeywordUsable(keyword string) bool {
 	return len([]rune(keyword)) >= minContentModerationFoldedKeywordRunes
+}
+
+func contentModerationBuiltInKeywordUsable(keyword string) bool {
+	return len([]rune(foldContentModerationKeywordText(keyword))) >= minContentModerationBuiltInFoldedKeywordRunes
 }
 
 func foldContentModerationKeywordText(text string) string {

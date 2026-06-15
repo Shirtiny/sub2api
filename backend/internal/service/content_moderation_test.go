@@ -456,17 +456,29 @@ func TestMatchCustomBlockedKeyword_FoldedTextVariants(t *testing.T) {
 
 func TestMatchBuiltInBlockedKeyword_FoldedTextVariants(t *testing.T) {
 	detector, err := gosensitive.New().
-		LoadMemory([]string{"badword"}).
+		LoadMemory([]string{"badword", "sb", "用户"}).
 		EnableSymbol().
 		SetCaseSensitive(false).
 		Build()
 	require.NoError(t, err)
 
-	keyword, hit := matchBuiltInBlockedKeyword(detector, "B a-d Wörd", nil)
+	keyword, hit := matchBuiltInBlockedKeyword(detector, "superpowers brainstorming 用户 B a-d Wörd", nil)
 	require.True(t, hit)
 	require.Equal(t, "badword", keyword)
 
 	_, hit = matchBuiltInBlockedKeyword(detector, "B a-d Wörd", []string{"bad word"})
+	require.False(t, hit)
+}
+
+func TestMatchBuiltInBlockedKeyword_SkipsShortGenericWords(t *testing.T) {
+	detector, err := gosensitive.New().
+		LoadMemory([]string{"sb", "码", "用户", "助理", "伊朗"}).
+		EnableSymbol().
+		SetCaseSensitive(false).
+		Build()
+	require.NoError(t, err)
+
+	_, hit := matchBuiltInBlockedKeyword(detector, "superpowers brainstorming 用户 助理 伊朗 代码", nil)
 	require.False(t, hit)
 }
 
