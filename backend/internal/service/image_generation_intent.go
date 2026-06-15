@@ -3,6 +3,7 @@ package service
 import (
 	"strings"
 
+	"github.com/gin-gonic/gin"
 	"github.com/tidwall/gjson"
 )
 
@@ -169,7 +170,7 @@ func openAIAnyToolChoiceSelectsImageGeneration(choice any) bool {
 	return false
 }
 
-func getAPIKeyFromContext(c interface{ Get(string) (any, bool) }) *APIKey {
+func getAPIKeyFromContext(c *gin.Context) *APIKey {
 	if c == nil {
 		return nil
 	}
