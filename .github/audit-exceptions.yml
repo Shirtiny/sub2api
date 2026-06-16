@@ -42,3 +42,10 @@ exceptions:
     mitigation: "Do not pass user-controlled cookie attributes; upgrade js-cookie when a patched release is available"
     expires_on: "2026-07-10"
     owner: "security@your-domain"
+  - package: form-data
+    advisory: "GHSA-hmw2-7cc7-3qxx"
+    severity: high
+    reason: "Transitive dependency of axios/jsdom; production frontend runs in the browser and does not use Node form-data to build multipart bodies from untrusted field names or filenames"
+    mitigation: "Do not use Node form-data for user-controlled multipart construction; upgrade axios/jsdom/form-data when patched transitive versions are available"
+    expires_on: "2026-07-10"
+    owner: "security@your-domain"
