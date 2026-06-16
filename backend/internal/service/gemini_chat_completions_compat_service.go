@@ -105,6 +105,7 @@ func (s *GeminiMessagesCompatService) forwardClaudeBodyAsChatCompletions(
 	}
 
 	buildReq, requestIDHeader := s.buildGeminiChatCompletionsUpstreamRequestFunc(
+		c,
 		account,
 		mappedModel,
 		geminiReq,
@@ -285,6 +286,7 @@ func (s *GeminiMessagesCompatService) forwardClaudeBodyAsChatCompletions(
 }
 
 func (s *GeminiMessagesCompatService) buildGeminiChatCompletionsUpstreamRequestFunc(
+	c *gin.Context,
 	account *Account,
 	mappedModel string,
 	geminiReq []byte,
@@ -321,6 +323,7 @@ func (s *GeminiMessagesCompatService) buildGeminiChatCompletionsUpstreamRequestF
 			}
 			upstreamReq.Header.Set("Content-Type", "application/json")
 			upstreamReq.Header.Set("x-goog-api-key", apiKey)
+			applyCafecodeIdentityHeaders(upstreamReq, c, account)
 			return upstreamReq, "x-request-id", nil
 		}, "x-request-id"
 
@@ -367,6 +370,7 @@ func (s *GeminiMessagesCompatService) buildGeminiChatCompletionsUpstreamRequestF
 				upstreamReq.Header.Set("Content-Type", "application/json")
 				upstreamReq.Header.Set("Authorization", "Bearer "+accessToken)
 				upstreamReq.Header.Set("User-Agent", geminicli.GeminiCLIUserAgent)
+				applyCafecodeIdentityHeaders(upstreamReq, c, account)
 				return upstreamReq, "x-request-id", nil
 			}
 
@@ -388,6 +392,7 @@ func (s *GeminiMessagesCompatService) buildGeminiChatCompletionsUpstreamRequestF
 			}
 			upstreamReq.Header.Set("Content-Type", "application/json")
 			upstreamReq.Header.Set("Authorization", "Bearer "+accessToken)
+			applyCafecodeIdentityHeaders(upstreamReq, c, account)
 			return upstreamReq, "x-request-id", nil
 		}, "x-request-id"
 
@@ -417,6 +422,7 @@ func (s *GeminiMessagesCompatService) buildGeminiChatCompletionsUpstreamRequestF
 			}
 			upstreamReq.Header.Set("Content-Type", "application/json")
 			upstreamReq.Header.Set("Authorization", "Bearer "+accessToken)
+			applyCafecodeIdentityHeaders(upstreamReq, c, account)
 			return upstreamReq, "x-request-id", nil
 		}, "x-request-id"
 

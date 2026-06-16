@@ -787,7 +787,7 @@ func (a *Account) GetExtraString(key string) string {
 
 // IsCafecodeIdentityHeadersEnabled 返回是否为该账号向上游注入内部 cafecode 身份头。
 func (a *Account) IsCafecodeIdentityHeadersEnabled() bool {
-	if a == nil || !a.IsOpenAI() || a.Extra == nil {
+	if a == nil || a.Extra == nil {
 		return false
 	}
 	enabled, ok := a.Extra[openai_compat.ExtraKeyCafecodeIdentityHeadersEnabled].(bool)

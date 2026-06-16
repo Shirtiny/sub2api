@@ -938,7 +938,12 @@ func getAPIKeyIDFromContext(c *gin.Context) int64 {
 }
 
 func applyCafecodeIdentityHeaders(req *http.Request, c *gin.Context, account *Account) {
-	if req == nil || !account.IsCafecodeIdentityHeadersEnabled() {
+	if req == nil {
+		return
+	}
+	req.Header.Del("cafecode-uid")
+	req.Header.Del("cafecode-uname")
+	if !account.IsCafecodeIdentityHeadersEnabled() {
 		return
 	}
 	apiKey := getAPIKeyFromContext(c)

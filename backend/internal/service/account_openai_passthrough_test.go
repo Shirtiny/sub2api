@@ -71,6 +71,26 @@ func TestAccount_IsOpenAIOAuthPassthroughEnabled(t *testing.T) {
 	})
 }
 
+func TestAccount_IsCafecodeIdentityHeadersEnabled(t *testing.T) {
+	for _, platform := range []string{PlatformOpenAI, PlatformAnthropic, PlatformGemini, PlatformAntigravity} {
+		t.Run(platform, func(t *testing.T) {
+			account := &Account{
+				Platform: platform,
+				Type:     AccountTypeAPIKey,
+				Extra: map[string]any{
+					"cafecode_identity_headers_enabled": true,
+				},
+			}
+			require.True(t, account.IsCafecodeIdentityHeadersEnabled())
+		})
+	}
+
+	t.Run("missing extra disables", func(t *testing.T) {
+		account := &Account{Platform: PlatformAnthropic, Type: AccountTypeAPIKey}
+		require.False(t, account.IsCafecodeIdentityHeadersEnabled())
+	})
+}
+
 func TestAccount_IsCodexCLIOnlyEnabled(t *testing.T) {
 	t.Run("OpenAI OAuth 开启", func(t *testing.T) {
 		account := &Account{

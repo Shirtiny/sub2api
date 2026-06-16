@@ -1356,9 +1356,8 @@
         </div>
       </div>
 
-      <!-- OpenAI 内部 Cafecode 身份头 -->
+      <!-- 内部 Cafecode 身份头 -->
       <div
-        v-if="account?.platform === 'openai' && (account?.type === 'oauth' || account?.type === 'apikey')"
         class="border-t border-gray-200 pt-4 dark:border-dark-600"
       >
         <div class="flex items-center justify-between gap-4">
@@ -2999,9 +2998,9 @@ const syncFormFromAccount = (newAccount: Account | null) => {
   codexImageGenerationBridgeMode.value = 'inherit'
   anthropicPassthroughEnabled.value = false
   webSearchEmulationMode.value = 'default'
+  cafecodeIdentityHeadersEnabled.value = extra?.cafecode_identity_headers_enabled === true
   if (newAccount.platform === 'openai' && (newAccount.type === 'oauth' || newAccount.type === 'apikey')) {
     openaiPassthroughEnabled.value = extra?.openai_passthrough === true || extra?.openai_oauth_passthrough === true
-    cafecodeIdentityHeadersEnabled.value = extra?.cafecode_identity_headers_enabled === true
     openAICompactMode.value = (extra?.openai_compact_mode as OpenAICompactMode) || 'auto'
     if (newAccount.type === 'apikey') {
       openAIResponsesMode.value = normalizeOpenAIResponsesMode(extra?.openai_responses_mode)
@@ -4107,10 +4106,27 @@ const handleSubmit = async () => {
       updatePayload.extra = newExtra
     }
 
+    {
+      const currentExtra =
+        (updatePayload.extra as Record<string, unknown>) ||
+        (props.account.extra as Record<string, unknown>) ||
+        {}
+      const newExtra: Record<string, unknown> = { ...currentExtra }
+      if (cafecodeIdentityHeadersEnabled.value) {
+        newExtra.cafecode_identity_headers_enabled = true
+      } else {
+        delete newExtra.cafecode_identity_headers_enabled
+      }
+      updatePayload.extra = newExtra
+    }
+
     // For OpenAI OAuth/API Key accounts, handle passthrough mode in extra
-	if (props.account.platform === 'openai' && (props.account.type === 'oauth' || props.account.type === 'apikey')) {
-		const currentExtra = (props.account.extra as Record<string, unknown>) || {}
-		const newExtra: Record<string, unknown> = { ...currentExtra }
+    if (props.account.platform === 'openai' && (props.account.type === 'oauth' || props.account.type === 'apikey')) {
+      const currentExtra =
+        (updatePayload.extra as Record<string, unknown>) ||
+        (props.account.extra as Record<string, unknown>) ||
+        {}
+      const newExtra: Record<string, unknown> = { ...currentExtra }
       const hadCodexCLIOnlyEnabled = currentExtra.codex_cli_only === true
       if (props.account.type === 'oauth') {
         newExtra.openai_oauth_responses_websockets_v2_mode = openaiOAuthResponsesWebSocketV2Mode.value
@@ -4126,11 +4142,6 @@ const handleSubmit = async () => {
       } else {
         delete newExtra.openai_passthrough
         delete newExtra.openai_oauth_passthrough
-      }
-      if (cafecodeIdentityHeadersEnabled.value) {
-        newExtra.cafecode_identity_headers_enabled = true
-      } else {
-        delete newExtra.cafecode_identity_headers_enabled
       }
       if (openAICompactMode.value === 'auto') {
         delete newExtra.openai_compact_mode

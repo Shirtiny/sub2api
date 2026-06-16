@@ -2536,9 +2536,8 @@
         </div>
       </div>
 
-      <!-- OpenAI 内部 Cafecode 身份头 -->
+      <!-- 内部 Cafecode 身份头 -->
       <div
-        v-if="form.platform === 'openai'"
         class="border-t border-gray-200 pt-4 dark:border-dark-600"
       >
         <div class="flex items-center justify-between gap-4">
@@ -3565,9 +3564,19 @@ const applyOpenAIEndpointCapabilities = (credentials: Record<string, unknown>) =
 }
 
 function buildAntigravityExtra(): Record<string, unknown> | undefined {
-  const extra: Record<string, unknown> = {}
+  const extra: Record<string, unknown> = { ...(buildCafecodeIdentityExtra() || {}) }
   if (mixedScheduling.value) extra.mixed_scheduling = true
   if (allowOverages.value) extra.allow_overages = true
+  return Object.keys(extra).length > 0 ? extra : undefined
+}
+
+const buildCafecodeIdentityExtra = (base?: Record<string, unknown>): Record<string, unknown> | undefined => {
+  const extra: Record<string, unknown> = { ...(base || {}) }
+  if (cafecodeIdentityHeadersEnabled.value) {
+    extra.cafecode_identity_headers_enabled = true
+  } else {
+    delete extra.cafecode_identity_headers_enabled
+  }
   return Object.keys(extra).length > 0 ? extra : undefined
 }
 
@@ -4331,6 +4340,7 @@ const handleClose = () => {
 }
 
 const buildOpenAIExtra = (base?: Record<string, unknown>): Record<string, unknown> | undefined => {
+  base = buildCafecodeIdentityExtra(base)
   if (form.platform !== 'openai') {
     return base
   }
@@ -4352,12 +4362,6 @@ const buildOpenAIExtra = (base?: Record<string, unknown>): Record<string, unknow
     delete extra.openai_passthrough
     delete extra.openai_oauth_passthrough
   }
-  if (cafecodeIdentityHeadersEnabled.value) {
-    extra.cafecode_identity_headers_enabled = true
-  } else {
-    delete extra.cafecode_identity_headers_enabled
-  }
-
   if (accountCategory.value === 'oauth-based' && codexCLIOnlyEnabled.value) {
     extra.codex_cli_only = true
   } else {
@@ -4577,7 +4581,7 @@ const handleSubmit = async () => {
 
     applyInterceptWarmup(credentials, interceptWarmupRequests.value, 'create')
 
-    await createAccountAndFinish('anthropic', 'bedrock' as AccountType, credentials)
+    await createAccountAndFinish('anthropic', 'bedrock' as AccountType, credentials, buildCafecodeIdentityExtra())
     return
   }
 
@@ -4638,7 +4642,7 @@ const handleSubmit = async () => {
       location: vertexLocation.value.trim(),
       tier_id: 'vertex'
     }
-    await createAccountAndFinish(form.platform, 'service_account' as AccountType, credentials)
+    await createAccountAndFinish(form.platform, 'service_account' as AccountType, credentials, buildCafecodeIdentityExtra())
     return
   }
 
@@ -5170,18 +5174,18 @@ const handleAntigravityValidateRT = async (refreshTokenInput: string) => {
         }
 
         const credentials = antigravityOAuth.buildCredentials(tokenInfo)
-        
+        const extra = buildAntigravityExtra()
+
         // Generate account name with index for batch
         const accountName = refreshTokens.length > 1 ? `${form.name} #${i + 1}` : form.name
 
-        // Note: Antigravity doesn't have buildExtraInfo, so we pass empty extra or rely on credentials
         const createPayload = withAntigravityConfirmFlag({
           name: accountName,
           notes: form.notes,
           platform: 'antigravity',
           type: 'oauth',
           credentials,
-          extra: {},
+          extra,
           proxy_id: form.proxy_id,
           concurrency: form.concurrency,
           load_factor: form.load_factor ?? undefined,
@@ -5251,7 +5255,7 @@ const handleGeminiExchange = async (authCode: string) => {
     if (!tokenInfo) return
 
     const credentials = geminiOAuth.buildCredentials(tokenInfo)
-    const extra = geminiOAuth.buildExtraInfo(tokenInfo)
+    const extra = buildCafecodeIdentityExtra(geminiOAuth.buildExtraInfo(tokenInfo))
     await createAccountAndFinish('gemini', 'oauth', credentials, extra)
   } catch (error: any) {
     geminiOAuth.error.value = error.response?.data?.detail || t('admin.accounts.oauth.authFailed')
@@ -5386,7 +5390,7 @@ const handleAnthropicExchange = async (authCode: string) => {
 
     const credentials: Record<string, unknown> = { ...tokenInfo }
     applyInterceptWarmup(credentials, interceptWarmupRequests.value, 'create')
-    await createAccountAndFinish(form.platform, addMethod.value as AccountType, credentials, extra)
+    await createAccountAndFinish(form.platform, addMethod.value as AccountType, credentials, buildCafecodeIdentityExtra(extra))
   } catch (error: any) {
     oauth.error.value = error.response?.data?.detail || t('admin.accounts.oauth.authFailed')
     appStore.showError(oauth.error.value)
@@ -5507,6 +5511,7 @@ const handleCookieAuth = async (sessionKey: string) => {
           extra.custom_base_url = customBaseUrl.value.trim()
         }
 
+        const finalExtra = buildCafecodeIdentityExtra(extra)
         const accountName = keys.length > 1 ? `${form.name} #${i + 1}` : form.name
 
         const credentials: Record<string, unknown> = { ...tokenInfo }
@@ -5522,7 +5527,7 @@ const handleCookieAuth = async (sessionKey: string) => {
           platform: form.platform,
           type: addMethod.value, // Use addMethod as type: 'oauth' or 'setup-token'
           credentials,
-          extra,
+          extra: finalExtra,
           proxy_id: form.proxy_id,
           concurrency: form.concurrency,
           load_factor: form.load_factor ?? undefined,

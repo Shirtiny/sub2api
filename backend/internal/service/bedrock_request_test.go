@@ -1,8 +1,13 @@
 package service
 
 import (
+	"bytes"
+	"context"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
+	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
@@ -20,6 +25,47 @@ func TestPrepareBedrockRequestBody_BasicFields(t *testing.T) {
 	assert.False(t, gjson.GetBytes(result, "stream").Exists())
 	// max_tokens 应保留
 	assert.Equal(t, int64(1024), gjson.GetBytes(result, "max_tokens").Int())
+}
+
+func TestBuildUpstreamRequestBedrockAPIKey_CafecodeIdentityHeaders(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request = httptest.NewRequest(http.MethodPost, "/v1/messages", bytes.NewReader([]byte(`{}`)))
+	c.Request.Header.Set("cafecode-uid", "spoofed")
+	c.Request.Header.Set("cafecode-uname", "spoofed")
+	c.Set("api_key", &APIKey{
+		User: &User{
+			ID:       44,
+			Username: "bedrock-user",
+		},
+	})
+
+	account := &Account{
+		ID:       201,
+		Platform: PlatformAnthropic,
+		Type:     AccountTypeBedrock,
+		Extra: map[string]any{
+			"cafecode_identity_headers_enabled": true,
+		},
+	}
+
+	req, err := (&GatewayService{}).buildUpstreamRequestBedrockAPIKey(
+		context.Background(),
+		c,
+		account,
+		[]byte(`{"anthropic_version":"bedrock-2023-05-31","messages":[]}`),
+		"us.anthropic.claude-opus-4-6-v1",
+		"us-east-1",
+		false,
+		"bedrock-api-key",
+	)
+	require.NoError(t, err)
+	require.NotNil(t, req)
+	require.Equal(t, "Bearer bedrock-api-key", req.Header.Get("Authorization"))
+	require.Equal(t, "44", req.Header.Get("cafecode-uid"))
+	require.Equal(t, "bedrock-user", req.Header.Get("cafecode-uname"))
 }
 
 func TestPrepareBedrockRequestBody_OutputFormatInlineSchema(t *testing.T) {

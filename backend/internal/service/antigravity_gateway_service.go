@@ -4305,6 +4305,7 @@ func (s *AntigravityGatewayService) ForwardUpstream(ctx context.Context, c *gin.
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+apiKey)
 	req.Header.Set("x-api-key", apiKey) // Claude API 兼容
+	applyCafecodeIdentityHeaders(req, c, account)
 
 	// 透传 Claude 相关 headers
 	if v := c.GetHeader("anthropic-version"); v != "" {

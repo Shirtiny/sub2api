@@ -66,7 +66,7 @@ func (h *GatewayHandler) GeminiV1BetaListModels(c *gin.Context) {
 		return
 	}
 
-	res, err := h.geminiCompatService.ForwardAIStudioGET(c.Request.Context(), account, "/v1beta/models")
+	res, err := h.geminiCompatService.ForwardAIStudioGET(c.Request.Context(), c, account, "/v1beta/models")
 	if err != nil {
 		googleError(c, http.StatusBadGateway, err.Error())
 		return
@@ -119,7 +119,7 @@ func (h *GatewayHandler) GeminiV1BetaGetModel(c *gin.Context) {
 		return
 	}
 
-	res, err := h.geminiCompatService.ForwardAIStudioGET(c.Request.Context(), account, "/v1beta/models/"+modelName)
+	res, err := h.geminiCompatService.ForwardAIStudioGET(c.Request.Context(), c, account, "/v1beta/models/"+modelName)
 	if err != nil {
 		googleError(c, http.StatusBadGateway, err.Error())
 		return

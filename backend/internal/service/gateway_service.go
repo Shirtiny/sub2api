@@ -5487,6 +5487,7 @@ func (s *GatewayService) buildUpstreamRequestAnthropicAPIKeyPassthrough(
 	if getHeaderRaw(req.Header, "anthropic-version") == "" {
 		setHeaderRaw(req.Header, "anthropic-version", "2023-06-01")
 	}
+	applyCafecodeIdentityHeaders(req, c, account)
 
 	return req, body, nil
 }
@@ -6028,9 +6029,9 @@ func (s *GatewayService) executeBedrockUpstream(
 	for attempt := 1; attempt <= maxRetryAttempts; attempt++ {
 		var upstreamReq *http.Request
 		if account.IsBedrockAPIKey() {
-			upstreamReq, err = s.buildUpstreamRequestBedrockAPIKey(ctx, body, modelID, region, stream, apiKey)
+			upstreamReq, err = s.buildUpstreamRequestBedrockAPIKey(ctx, c, account, body, modelID, region, stream, apiKey)
 		} else {
-			upstreamReq, err = s.buildUpstreamRequestBedrock(ctx, body, modelID, region, stream, signer)
+			upstreamReq, err = s.buildUpstreamRequestBedrock(ctx, c, account, body, modelID, region, stream, signer)
 		}
 		if err != nil {
 			return nil, err
@@ -6177,6 +6178,8 @@ func (s *GatewayService) handleBedrockUpstreamErrors(
 // buildUpstreamRequestBedrock 构建 Bedrock 上游请求
 func (s *GatewayService) buildUpstreamRequestBedrock(
 	ctx context.Context,
+	c *gin.Context,
+	account *Account,
 	body []byte,
 	modelID string,
 	region string,
@@ -6197,6 +6200,7 @@ func (s *GatewayService) buildUpstreamRequestBedrock(
 	if err := signer.SignRequest(ctx, req, body); err != nil {
 		return nil, fmt.Errorf("sign bedrock request: %w", err)
 	}
+	applyCafecodeIdentityHeaders(req, c, account)
 
 	return req, nil
 }
@@ -6204,6 +6208,8 @@ func (s *GatewayService) buildUpstreamRequestBedrock(
 // buildUpstreamRequestBedrockAPIKey 构建 Bedrock API Key (Bearer Token) 上游请求
 func (s *GatewayService) buildUpstreamRequestBedrockAPIKey(
 	ctx context.Context,
+	c *gin.Context,
+	account *Account,
 	body []byte,
 	modelID string,
 	region string,
@@ -6220,6 +6226,7 @@ func (s *GatewayService) buildUpstreamRequestBedrockAPIKey(
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Authorization", "Bearer "+apiKey)
+	applyCafecodeIdentityHeaders(req, c, account)
 
 	return req, nil
 }
@@ -6406,6 +6413,7 @@ func (s *GatewayService) buildUpstreamRequest(ctx context.Context, c *gin.Contex
 	if finalBetaShouldSet {
 		setHeaderRaw(req.Header, "anthropic-beta", finalBetaHeader)
 	}
+	applyCafecodeIdentityHeaders(req, c, account)
 
 	// 同步 X-Claude-Code-Session-Id 头：取 body 中已处理的 metadata.user_id 的 session_id 覆盖
 	if sessionHeader := getHeaderRaw(req.Header, "X-Claude-Code-Session-Id"); sessionHeader != "" {
@@ -6490,6 +6498,7 @@ func (s *GatewayService) buildUpstreamRequestAnthropicVertex(
 	req.Header.Del("anthropic-version")
 	setHeaderRaw(req.Header, "authorization", "Bearer "+token)
 	setHeaderRaw(req.Header, "content-type", "application/json")
+	applyCafecodeIdentityHeaders(req, c, account)
 
 	s.debugLogGatewaySnapshot("UPSTREAM_FORWARD_VERTEX_ANTHROPIC", req.Header, vertexBody, map[string]string{
 		"url":        req.URL.String(),
@@ -9740,6 +9749,7 @@ func (s *GatewayService) buildCountTokensRequestAnthropicAPIKeyPassthrough(
 	if req.Header.Get("anthropic-version") == "" {
 		req.Header.Set("anthropic-version", "2023-06-01")
 	}
+	applyCafecodeIdentityHeaders(req, c, account)
 
 	return req, nil
 }

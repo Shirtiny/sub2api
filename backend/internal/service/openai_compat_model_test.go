@@ -192,6 +192,12 @@ func TestForwardAsAnthropic_OpenAIAPIKeyPassthroughUsesRawMessagesEndpoint(t *te
 	c.Request = httptest.NewRequest(http.MethodPost, "/v1/messages", bytes.NewReader(body))
 	c.Request.Header.Set("Content-Type", "application/json")
 	c.Request.Header.Set("anthropic-version", "2023-06-01")
+	c.Set("api_key", &APIKey{
+		User: &User{
+			ID:       42,
+			Username: "cafe-user",
+		},
+	})
 
 	upstream := &httpUpstreamRecorder{resp: &http.Response{
 		StatusCode: http.StatusOK,
@@ -217,7 +223,8 @@ func TestForwardAsAnthropic_OpenAIAPIKeyPassthroughUsesRawMessagesEndpoint(t *te
 			"base_url": "http://upstream.example",
 		},
 		Extra: map[string]any{
-			"openai_passthrough": true,
+			"openai_passthrough":                true,
+			"cafecode_identity_headers_enabled": true,
 		},
 	}
 
@@ -227,6 +234,8 @@ func TestForwardAsAnthropic_OpenAIAPIKeyPassthroughUsesRawMessagesEndpoint(t *te
 	require.NotNil(t, upstream.lastReq)
 	require.Equal(t, "http://upstream.example/v1/messages", upstream.lastReq.URL.String())
 	require.Equal(t, "Bearer sk-test", upstream.lastReq.Header.Get("authorization"))
+	require.Equal(t, "42", upstream.lastReq.Header.Get("cafecode-uid"))
+	require.Equal(t, "cafe-user", upstream.lastReq.Header.Get("cafecode-uname"))
 	require.Equal(t, "claude-sonnet-4-5", gjson.GetBytes(upstream.lastBody, "model").String())
 	require.True(t, gjson.GetBytes(upstream.lastBody, "messages").Exists())
 	require.False(t, gjson.GetBytes(upstream.lastBody, "input").Exists())

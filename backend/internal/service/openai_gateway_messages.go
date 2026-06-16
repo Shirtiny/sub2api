@@ -597,6 +597,7 @@ func (s *OpenAIGatewayService) buildUpstreamRequestOpenAIMessagesPassthrough(
 	req.Header.Del("x-api-key")
 	req.Header.Del("x-goog-api-key")
 	req.Header.Set("authorization", "Bearer "+token)
+	applyCafecodeIdentityHeaders(req, c, account)
 	if req.Header.Get("content-type") == "" {
 		req.Header.Set("content-type", "application/json")
 	}

@@ -67,6 +67,9 @@ func TestGeminiForwardAsChatCompletions_OAuthRoutesToGeminiAndReturnsChatFormat(
 			"access_token": "ya29.test-token",
 			"project_id":   "project-1",
 		},
+		Extra: map[string]any{
+			"cafecode_identity_headers_enabled": true,
+		},
 		Concurrency: 1,
 	}
 
@@ -74,6 +77,14 @@ func TestGeminiForwardAsChatCompletions_OAuthRoutesToGeminiAndReturnsChatFormat(
 	c, _ := gin.CreateTestContext(rec)
 	body := []byte(`{"model":"gemini-2.5-flash","messages":[{"role":"user","content":"hi"}]}`)
 	c.Request = httptest.NewRequest(http.MethodPost, "/v1/chat/completions", bytes.NewReader(body))
+	c.Request.Header.Set("cafecode-uid", "spoofed")
+	c.Request.Header.Set("cafecode-uname", "spoofed")
+	c.Set("api_key", &APIKey{
+		User: &User{
+			ID:       42,
+			Username: "cafe-user",
+		},
+	})
 
 	result, err := svc.ForwardAsChatCompletions(context.Background(), c, account, body)
 	require.NoError(t, err)
@@ -86,6 +97,8 @@ func TestGeminiForwardAsChatCompletions_OAuthRoutesToGeminiAndReturnsChatFormat(
 	require.NotNil(t, httpStub.lastReq)
 	require.Contains(t, httpStub.lastReq.URL.String(), "/v1internal:streamGenerateContent?alt=sse")
 	require.Equal(t, "Bearer ya29.test-token", httpStub.lastReq.Header.Get("Authorization"))
+	require.Equal(t, "42", httpStub.lastReq.Header.Get("cafecode-uid"))
+	require.Equal(t, "cafe-user", httpStub.lastReq.Header.Get("cafecode-uname"))
 	require.Empty(t, httpStub.lastReq.Header.Get("x-api-key"))
 	require.Empty(t, httpStub.lastReq.Header.Get("anthropic-version"))
 
@@ -141,6 +154,9 @@ func TestGeminiForwardAsChatCompletions_StreamsOpenAIChunksFromGeminiSSE(t *test
 		Credentials: map[string]any{
 			"api_key": "gemini-api-key",
 		},
+		Extra: map[string]any{
+			"cafecode_identity_headers_enabled": true,
+		},
 		Concurrency: 1,
 	}
 
@@ -148,6 +164,12 @@ func TestGeminiForwardAsChatCompletions_StreamsOpenAIChunksFromGeminiSSE(t *test
 	c, _ := gin.CreateTestContext(rec)
 	body := []byte(`{"model":"gemini-2.5-flash","stream":true,"stream_options":{"include_usage":true},"messages":[{"role":"user","content":"hi"}]}`)
 	c.Request = httptest.NewRequest(http.MethodPost, "/v1/chat/completions", bytes.NewReader(body))
+	c.Set("api_key", &APIKey{
+		User: &User{
+			ID:    43,
+			Email: "fallback@example.test",
+		},
+	})
 
 	result, err := svc.ForwardAsChatCompletions(context.Background(), c, account, body)
 	require.NoError(t, err)
@@ -160,6 +182,8 @@ func TestGeminiForwardAsChatCompletions_StreamsOpenAIChunksFromGeminiSSE(t *test
 	require.NotNil(t, httpStub.lastReq)
 	require.Contains(t, httpStub.lastReq.URL.String(), "/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse")
 	require.Equal(t, "gemini-api-key", httpStub.lastReq.Header.Get("x-goog-api-key"))
+	require.Equal(t, "43", httpStub.lastReq.Header.Get("cafecode-uid"))
+	require.Equal(t, "fallback@example.test", httpStub.lastReq.Header.Get("cafecode-uname"))
 
 	out := rec.Body.String()
 	require.Contains(t, out, `"object":"chat.completion.chunk"`)
