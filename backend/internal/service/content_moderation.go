@@ -2748,7 +2748,7 @@ func foldContentModerationKeywordText(text string) string {
 			continue
 		}
 		if unicode.IsLetter(r) || unicode.IsDigit(r) {
-			builder.WriteRune(unicode.ToLower(r))
+			_, _ = builder.WriteRune(unicode.ToLower(r))
 		}
 	}
 	return builder.String()
