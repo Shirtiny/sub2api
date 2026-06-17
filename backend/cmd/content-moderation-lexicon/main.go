@@ -28,7 +28,10 @@ func main() {
 	}
 	switch cmd {
 	case "generate":
-		generate()
+		if err := generate(os.Stdout); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
 	case "stats":
 		if err := stats(os.Stdin, os.Stdout); err != nil {
 			fmt.Fprintln(os.Stderr, err)
@@ -54,9 +57,8 @@ func main() {
 	}
 }
 
-func generate() {
-	writer := bufio.NewWriterSize(os.Stdout, 1024*1024)
-	defer writer.Flush()
+func generate(w io.Writer) error {
+	writer := bufio.NewWriterSize(w, 1024*1024)
 
 	for _, word := range service.ContentModerationTaggedBuiltinWordsForExport() {
 		entry := lexiconEntry{
@@ -66,18 +68,16 @@ func generate() {
 		}
 		raw, err := json.Marshal(entry)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "marshal %q: %v\n", word.Text, err)
-			os.Exit(1)
+			return fmt.Errorf("marshal %q: %w", word.Text, err)
 		}
 		if _, err := writer.Write(raw); err != nil {
-			fmt.Fprintf(os.Stderr, "write %q: %v\n", word.Text, err)
-			os.Exit(1)
+			return fmt.Errorf("write %q: %w", word.Text, err)
 		}
 		if err := writer.WriteByte('\n'); err != nil {
-			fmt.Fprintf(os.Stderr, "write newline: %v\n", err)
-			os.Exit(1)
+			return fmt.Errorf("write newline: %w", err)
 		}
 	}
+	return writer.Flush()
 }
 
 func stats(r io.Reader, w io.Writer) error {
@@ -121,7 +121,7 @@ func applyReview(lexiconPath string, reviewPath string, w io.Writer) error {
 	if err != nil {
 		return fmt.Errorf("open review: %w", err)
 	}
-	defer reviewFile.Close()
+	defer func() { _ = reviewFile.Close() }()
 	if err := scanEntries(reviewFile, func(lineNo int, entry lexiconEntry) error {
 		if strings.TrimSpace(entry.Text) == "" {
 			return fmt.Errorf("review line %d: text is required", lineNo)
@@ -142,10 +142,9 @@ func applyReview(lexiconPath string, reviewPath string, w io.Writer) error {
 	if err != nil {
 		return fmt.Errorf("open lexicon: %w", err)
 	}
-	defer lexiconFile.Close()
+	defer func() { _ = lexiconFile.Close() }()
 
 	writer := bufio.NewWriterSize(w, 1024*1024)
-	defer writer.Flush()
 
 	applied := make(map[string]int)
 	if err := scanEntries(lexiconFile, func(_ int, entry lexiconEntry) error {
@@ -178,7 +177,7 @@ func applyReview(lexiconPath string, reviewPath string, w io.Writer) error {
 		}
 		return fmt.Errorf("applied %d of %d review entries; missing: %s", len(applied), len(reviews), strings.Join(missing, ", "))
 	}
-	return nil
+	return writer.Flush()
 }
 
 func applyReviewInPlace(lexiconPath string, reviewPath string) error {
@@ -188,7 +187,7 @@ func applyReviewInPlace(lexiconPath string, reviewPath string) error {
 		return fmt.Errorf("create temp lexicon: %w", err)
 	}
 	tmpPath := tmpFile.Name()
-	defer os.Remove(tmpPath)
+	defer func() { _ = os.Remove(tmpPath) }()
 
 	if err := applyReview(cleanLexiconPath, reviewPath, tmpFile); err != nil {
 		_ = tmpFile.Close()
