@@ -1,0 +1,715 @@
+{"text":"qq出售快递公司面单数据","category":"illegal","level":"high","review_note":"Sale of courier waybill data indicates trafficking in personal/customer data; illegal/high fits better than ad/low."}
+{"text":"qq出售快递客户资料","category":"illegal","level":"high","review_note":"Customer-data sale phrase; should be illegal/high rather than generic advertising."}
+{"text":"qq出售快递面单","category":"illegal","level":"high","review_note":"Courier waybills contain personal delivery data; sale should be illegal/high."}
+{"text":"qq出售手机窃听软件","category":"illegal","level":"high","review_note":"Phone eavesdropping software sale is privacy-invasion tooling; original ad/low is too weak."}
+{"text":"qq出售手狗","category":"illegal","level":"high","review_note":"手狗 is firearm slang in this context; sale should be illegal/high rather than ad/low."}
+{"text":"qq出售打牌药","category":"illegal","level":"high","review_note":"Drugging/card-cheating medicine sale is illicit; original ad/low understates the content."}
+{"text":"qq出售折叠军刺","category":"violence","level":"medium","review_note":"Military knife sale phrase; violence/medium is clearer than generic ad/low."}
+{"text":"qq出售拍肩听话粉","category":"illegal","level":"high","review_note":"Drugging/obedience powder sale phrase; should be illegal/high."}
+{"text":"qq出售拍肩型昏迷药","category":"illegal","level":"high","review_note":"Knockout-drug sale phrase; original ad/low is mislabeled."}
+{"text":"qq出售拍肩粉","category":"illegal","level":"high","review_note":"Drugging powder sale phrase; should be illegal/high rather than ad/low."}
+{"text":"qq出售拍肩药","category":"illegal","level":"high","review_note":"Drugging medicine sale phrase; original ad/low is too weak."}
+{"text":"qq出售摇头糖","category":"illegal","level":"high","review_note":"摇头糖 refers to MDMA/ecstasy-like drugs; sale should be illegal/high."}
+{"text":"qq出售收藏品客户资料","category":"illegal","level":"high","review_note":"Customer-data sale phrase; should be illegal/high rather than ad/low."}
+{"text":"qq出售收藏品进线面单数据","category":"illegal","level":"high","review_note":"Sale of lead/order waybill data indicates personal-data trafficking; illegal/high fits."}
+{"text":"qq出售昏睡药","category":"illegal","level":"high","review_note":"Sleep/knockout drug sale phrase; original ad/low is too weak."}
+{"text":"qq出售春药","category":"pornographic","level":"medium","review_note":"Aphrodisiac sale is sexual-content related; pornographic/medium is clearer than ad/low."}
+{"text":"qq出售暴力开锁工具","category":"illegal","level":"high","review_note":"Burglary/forced-entry tooling sale; should be illegal/high."}
+{"text":"qq出售暴力强开工具","category":"illegal","level":"high","review_note":"Forced-entry tooling sale phrase; illegal/high fits better than ad/low."}
+{"text":"qq出售曲马多","category":"illegal","level":"high","review_note":"Tramadol sale is controlled-drug trafficking; original ad/low is mislabeled."}
+{"text":"qq出售替马西泮","category":"illegal","level":"high","review_note":"Temazepam sale is controlled-drug trafficking; should be illegal/high."}
+{"text":"qq出售朝版假人民币","category":"illegal","level":"high","review_note":"Counterfeit currency sale phrase; should be illegal/high."}
+{"text":"qq出售期货客户资料","category":"illegal","level":"high","review_note":"Financial customer-data sale phrase; original ad/low should be illegal/high."}
+{"text":"qq出售本科假文凭","category":"illegal","level":"high","review_note":"Fake diploma sale phrase; illegal/high fits better than ad/low."}
+{"text":"qq出售本科证","category":"illegal","level":"high","review_note":"In this sale cluster, degree/certificate sale implies forged credential trafficking; illegal/high fits."}
+{"text":"qq出售机打税票","category":"illegal","level":"high","review_note":"Tax invoice/ticket sale phrase; should be illegal/high rather than ad/low."}
+{"text":"qq出售杜冷丁","category":"illegal","level":"high","review_note":"Pethidine/Demerol sale is controlled-drug trafficking; original ad/low is mislabeled."}
+{"text":"qq出售果子冰","category":"illegal","level":"high","review_note":"Drug slang involving 冰 in a sale phrase; illegal/high is more appropriate."}
+{"text":"qq出售植物冰","category":"illegal","level":"high","review_note":"Drug slang involving 冰 in a sale phrase; original ad/low should be illegal/high."}
+{"text":"qq出售楼盘业主名单","category":"illegal","level":"high","review_note":"Sale of property-owner lists is personal-data trafficking; illegal/high fits."}
+{"text":"qq出售楼盘业主资料","category":"illegal","level":"high","review_note":"Sale of owner personal data; should be illegal/high rather than ad/low."}
+{"text":"qq出售毕业证","category":"illegal","level":"high","review_note":"Diploma/certificate sale in this context implies forged credentials; original ad/low is too weak."}
+{"text":"qq出售气木仓","category":"illegal","level":"high","review_note":"木仓 is an obfuscation for 枪; air-gun sale should be illegal/high."}
+{"text":"qq出售气长狗","category":"illegal","level":"high","review_note":"长狗 is firearm slang in this weapon cluster; sale should be illegal/high."}
+{"text":"qq出售氧化汞","category":"illegal","level":"high","review_note":"Mercury compound sale in this illicit-goods cluster is hazardous/regulated chemical content; illegal/high fits."}
+{"text":"qq出售氰化钠","category":"illegal","level":"high","review_note":"Cyanide sale phrase; should be illegal/high rather than ad/low."}
+{"text":"qq出售氰化钾","category":"illegal","level":"high","review_note":"Cyanide sale phrase; original ad/low is mislabeled."}
+{"text":"qq出售汽动狗","category":"illegal","level":"high","review_note":"汽动狗 is firearm slang; sale should be illegal/high."}
+{"text":"qq出售汽木仓","category":"illegal","level":"high","review_note":"木仓 obfuscates 枪; air-gun sale should be illegal/high."}
+{"text":"qq出售汽狗铅弹","category":"illegal","level":"high","review_note":"Pellets/ammunition for gun-slang item; illegal/high fits better than ad/low."}
+{"text":"qq出售汽车中控干扰器","category":"illegal","level":"high","review_note":"Vehicle signal/jamming theft tool sale; should be illegal/high."}
+{"text":"qq出售汽车中控拦截器","category":"illegal","level":"high","review_note":"Vehicle lock/signal interception tool sale; illegal/high fits."}
+{"text":"qq出售汽车信号屏蔽器","category":"illegal","level":"high","review_note":"Vehicle signal jammer sale phrase; original ad/low is too weak."}
+{"text":"qq出售汽车信号干扰器","category":"illegal","level":"high","review_note":"Vehicle signal jammer sale phrase; should be illegal/high."}
+{"text":"qq出售汽车信号拦截器","category":"illegal","level":"high","review_note":"Vehicle signal interception tool sale; illegal/high fits better than ad/low."}
+{"text":"qq出售汽车信号解码器","category":"illegal","level":"high","review_note":"Vehicle signal decoder sale is theft-enabling tooling; should be illegal/high."}
+{"text":"qq出售汽车屏蔽器","category":"illegal","level":"high","review_note":"Vehicle signal jammer/scrambler sale; original ad/low should be illegal/high."}
+{"text":"qq出售汽车干扰器","category":"illegal","level":"high","review_note":"Vehicle jammer sale phrase; should be illegal/high."}
+{"text":"qq出售汽车开锁工具","category":"illegal","level":"high","review_note":"Vehicle lock-opening tool sale; illegal/high fits better than ad/low."}
+{"text":"qq出售汽车拦截器","category":"illegal","level":"high","review_note":"Vehicle interception tool sale; should be illegal/high."}
+{"text":"qq出售汽车电子解码器","category":"illegal","level":"high","review_note":"Vehicle electronic decoder sale is theft-enabling tooling; illegal/high fits."}
+{"text":"qq出售汽车解码器","category":"illegal","level":"high","review_note":"Vehicle decoder sale phrase; original ad/low is too weak."}
+{"text":"qq出售汽车遥控干扰器","category":"illegal","level":"high","review_note":"Vehicle remote jammer sale phrase; should be illegal/high."}
+{"text":"qq出售汽车遥控拦截器","category":"illegal","level":"high","review_note":"Vehicle remote interception tool sale; illegal/high fits."}
+{"text":"qq出售汽车锁解码器","category":"illegal","level":"high","review_note":"Vehicle lock decoder sale is theft-enabling tooling; should be illegal/high."}
+{"text":"qq出售汽车门锁解码器","category":"illegal","level":"high","review_note":"Vehicle door-lock decoder sale; original ad/low should be illegal/high."}
+{"text":"qq出售汽长狗","category":"illegal","level":"high","review_note":"长狗 is firearm slang in this context; sale should be illegal/high."}
+{"text":"qq出售海乐神","category":"illegal","level":"high","review_note":"Triazolam/Halcion sale is controlled-drug trafficking; original ad/low is too weak."}
+{"text":"qq出售烟花炮竹","category":"illegal","level":"medium","review_note":"Fireworks/explosives sale in this illicit marketplace cluster is better treated as illegal/medium than ad/low."}
+{"text":"qq出售物流公司内部数据","category":"illegal","level":"high","review_note":"Sale of internal logistics data; illegal/high fits better than ad/low."}
+{"text":"qq出售物流客户数据","category":"illegal","level":"high","review_note":"Sale of logistics customer data; should be illegal/high."}
+{"text":"qq出售特洛伊智能偷听软件","category":"illegal","level":"high","review_note":"Eavesdropping software sale phrase; original ad/low should be illegal/high."}
+{"text":"qq出售狩猎弓弩","category":"violence","level":"medium","review_note":"Crossbow weapon sale phrase; violence/medium is clearer than generic ad/low."}
+{"text":"qq出售猎刀","category":"violence","level":"medium","review_note":"Hunting-knife sale phrase; should be violence/medium rather than ad/low."}
+{"text":"qq出售猎豹弓弩","category":"violence","level":"medium","review_note":"Crossbow weapon sale phrase; violence/medium fits better than ad/low."}
+{"text":"qq出售甲卡西酮","category":"illegal","level":"high","review_note":"Methcathinone sale is controlled-drug trafficking; original ad/low is mislabeled."}
+{"text":"qq出售甲喹酮","category":"illegal","level":"high","review_note":"Methaqualone sale is controlled-drug trafficking; should be illegal/high."}
+{"text":"qq出售甲基苯丙胺","category":"illegal","level":"high","review_note":"Methamphetamine sale phrase; original ad/low should be illegal/high."}
+{"text":"qq出售甲硝西泮","category":"illegal","level":"high","review_note":"Nimetazepam sale is controlled-drug trafficking; illegal/high fits."}
+{"text":"qq出售电动开锁器","category":"illegal","level":"high","review_note":"Lock-opening tool sale phrase; original ad/low is too weak."}
+{"text":"qq出售电视购物名录","category":"illegal","level":"high","review_note":"Sale of customer/marketing lists indicates personal-data trafficking; should be illegal/high."}
+{"text":"qq出售电购数据","category":"illegal","level":"high","review_note":"Sale of telemarketing/shopping data; illegal/high fits better than ad/low."}
+{"text":"qq出售白冰","category":"illegal","level":"high","review_note":"白冰 is methamphetamine slang; sale should be illegal/high."}
+{"text":"qq出售白牙签","category":"illegal","level":"high","review_note":"Drug slang sale phrase in this narcotics cluster; illegal/high fits better than ad/low."}
+{"text":"qq出售百元假钞","category":"illegal","level":"high","review_note":"Counterfeit banknote sale phrase; should be illegal/high."}
+{"text":"qq出售盐酸哌替啶","category":"illegal","level":"high","review_note":"Pethidine hydrochloride sale is controlled-drug trafficking; original ad/low is mislabeled."}
+{"text":"qq出售盐酸曲马多","category":"illegal","level":"high","review_note":"Tramadol hydrochloride sale is controlled-drug trafficking; should be illegal/high."}
+{"text":"qq出售盐酸氯胺酮","category":"illegal","level":"high","review_note":"Ketamine hydrochloride sale is controlled-drug trafficking; original ad/low is too weak."}
+{"text":"qq出售盐酸羟亚胺","category":"illegal","level":"high","review_note":"Drug precursor sale phrase; illegal/high fits better than ad/low."}
+{"text":"qq出售相思红娘剂","category":"illegal","level":"high","review_note":"Aphrodisiac/drugging product sale phrase; original ad/low should be illegal/high."}
+{"text":"qq出售相思红娘粉","category":"illegal","level":"high","review_note":"Drugging/aphrodisiac powder sale phrase; should be illegal/high."}
+{"text":"qq出售眼镜蛇弩","category":"violence","level":"medium","review_note":"Crossbow weapon sale phrase; violence/medium fits better than ad/low."}
+{"text":"qq出售砍刀","category":"violence","level":"medium","review_note":"Machete sale phrase; original ad/low is too generic."}
+{"text":"qq出售硝酸铊","category":"illegal","level":"high","review_note":"Thallium poison sale phrase; should be illegal/high."}
+{"text":"qq出售碘化汞","category":"illegal","level":"high","review_note":"Toxic mercury compound sale; illegal/high fits better than ad/low."}
+{"text":"qq出售礼炮","category":"illegal","level":"medium","review_note":"Explosive/firework sale phrase in illicit-goods cluster; illegal/medium is more accurate than ad/low."}
+{"text":"qq出售礼花弹","category":"illegal","level":"medium","review_note":"Firework shell/explosive sale phrase; original ad/low is too weak."}
+{"text":"qq出售社区业主名单","category":"illegal","level":"high","review_note":"Sale of community owner lists is personal-data trafficking; should be illegal/high."}
+{"text":"qq出售神仙水","category":"illegal","level":"high","review_note":"神仙水 is commonly used for GHB/club-drug content; sale should be illegal/high."}
+{"text":"qq出售秃鹰套件","category":"illegal","level":"high","review_note":"秃鹰 is an air-gun/firearm term here; kit sale should be illegal/high."}
+{"text":"qq出售秃鹰配件","category":"illegal","level":"high","review_note":"秃鹰 firearm/air-gun parts sale; original ad/low is too weak."}
+{"text":"qq出售窃听手机软件","category":"illegal","level":"high","review_note":"Phone eavesdropping software sale; should be illegal/high."}
+{"text":"qq出售窃听软件","category":"illegal","level":"high","review_note":"Eavesdropping software sale phrase; original ad/low should be illegal/high."}
+{"text":"qq出售等级证","category":"illegal","level":"high","review_note":"Certificate sale in this forged-document cluster implies fake credentials; illegal/high fits."}
+{"text":"qq出售等级证书","category":"illegal","level":"high","review_note":"Credential/certificate sale phrase; should be illegal/high rather than ad/low."}
+{"text":"qq出售纯冰","category":"illegal","level":"high","review_note":"纯冰 is methamphetamine slang; sale should be illegal/high."}
+{"text":"qq出售纯古","category":"illegal","level":"high","review_note":"Drug slang sale phrase in narcotics cluster; illegal/high fits better than ad/low."}
+{"text":"qq出售缅古","category":"illegal","level":"high","review_note":"Drug slang sale phrase in narcotics cluster; original ad/low should be illegal/high."}
+{"text":"qq出售羟亚胺","category":"illegal","level":"high","review_note":"Drug precursor sale phrase; should be illegal/high."}
+{"text":"qq出售老年人数据","category":"illegal","level":"high","review_note":"Sale of personal data about seniors; illegal/high fits better than ad/low."}
+{"text":"qq出售老年人资料","category":"illegal","level":"high","review_note":"Sale of personal data about seniors; should be illegal/high."}
+{"text":"qq出售考生信息","category":"illegal","level":"high","review_note":"Sale of examinee personal information; illegal/high fits."}
+{"text":"qq出售考试作弊器","category":"illegal","level":"medium","review_note":"Exam cheating device sale; illegal/medium is more accurate than ad/low."}
+{"text":"qq出售考试作弊工具","category":"illegal","level":"medium","review_note":"Exam cheating tool sale; original ad/low is too weak."}
+{"text":"qq出售考试答案","category":"illegal","level":"medium","review_note":"Exam-answer sale is cheating/fraud content; should be illegal/medium."}
+{"text":"qq出售股民个人信息","category":"illegal","level":"high","review_note":"Sale of investor personal information; illegal/high fits better than ad/low."}
+{"text":"qq出售股民个人资料","category":"illegal","level":"high","review_note":"Sale of investor personal data; should be illegal/high."}
+{"text":"qq出售股民信息","category":"illegal","level":"high","review_note":"Sale of investor information; original ad/low should be illegal/high."}
+{"text":"qq出售股民名单","category":"illegal","level":"high","review_note":"Sale of investor lists; illegal/high fits."}
+{"text":"qq出售股民名录","category":"illegal","level":"high","review_note":"Sale of investor directories; should be illegal/high."}
+{"text":"qq出售股民数据","category":"illegal","level":"high","review_note":"Sale of investor data; original ad/low is mislabeled."}
+{"text":"qq出售股民详细信息","category":"illegal","level":"high","review_note":"Sale of detailed investor personal information; illegal/high fits."}
+{"text":"qq出售致癌药","category":"illegal","level":"high","review_note":"Poison/harmful-drug sale phrase; original ad/low should be illegal/high."}
+{"text":"qq出售苍蝇水","category":"illegal","level":"high","review_note":"Sex/drugging product sale phrase; illegal/high fits better than ad/low."}
+{"text":"qq出售蒙汗药","category":"illegal","level":"high","review_note":"Knockout drug sale phrase; should be illegal/high."}
+{"text":"qq出售蒙汗药配方","category":"illegal","level":"high","review_note":"Knockout-drug recipe sale phrase; original ad/low is too weak."}
+{"text":"qq出售虎牙军刀","category":"violence","level":"medium","review_note":"Military knife sale phrase; violence/medium is clearer than ad/low."}
+{"text":"qq出售蝴蝶刀","category":"violence","level":"medium","review_note":"Knife sale phrase; original ad/low is too generic."}
+{"text":"qq出售西班牙苍蝇水","category":"illegal","level":"high","review_note":"Sex/drugging product sale phrase; should be illegal/high rather than ad/low."}
+{"text":"qq出售西班牙苍蝇粉","category":"illegal","level":"high","review_note":"Sex/drugging powder sale phrase; illegal/high fits."}
+{"text":"qq出售警官证","category":"illegal","level":"high","review_note":"Police-officer ID sale implies forged official credentials; should be illegal/high."}
+{"text":"qq出售警察证","category":"illegal","level":"high","review_note":"Police ID sale implies forged official credentials; original ad/low is too weak."}
+{"text":"qq出售警帽","category":"illegal","level":"medium","review_note":"Sale of police uniform item in this impersonation cluster; illegal/medium fits better than ad/low."}
+{"text":"qq出售警徽","category":"illegal","level":"medium","review_note":"Sale of police badge/emblem suggests impersonation tooling; should be illegal/medium."}
+{"text":"qq出售警服","category":"illegal","level":"medium","review_note":"Police-uniform sale suggests impersonation tooling; original ad/low is too weak."}
+{"text":"qq出售警用器材","category":"illegal","level":"medium","review_note":"Police equipment sale phrase; illegal/medium is clearer than generic ad/low."}
+{"text":"qq出售警用电棒","category":"violence","level":"medium","review_note":"Police stun baton weapon sale; violence/medium fits better than ad/low."}
+{"text":"qq出售贝尔求生刀","category":"violence","level":"medium","review_note":"Knife sale phrase; should be violence/medium rather than generic ad/low."}
+{"text":"qq出售赵氏弓弩","category":"violence","level":"medium","review_note":"Crossbow weapon sale phrase; original ad/low is too generic."}
+{"text":"qq出售赵氏弩","category":"violence","level":"medium","review_note":"Crossbow sale phrase; violence/medium fits better than ad/low."}
+{"text":"qq出售车主信息","category":"illegal","level":"high","review_note":"Sale of vehicle-owner personal information; should be illegal/high."}
+{"text":"qq出售车主名单","category":"illegal","level":"high","review_note":"Sale of vehicle-owner lists; illegal/high fits better than ad/low."}
+{"text":"qq出售车主数据","category":"illegal","level":"high","review_note":"Sale of vehicle-owner data; original ad/low should be illegal/high."}
+{"text":"qq出售车主资料","category":"illegal","level":"high","review_note":"Sale of vehicle-owner personal data; should be illegal/high."}
+{"text":"qq出售车门干扰器","category":"illegal","level":"high","review_note":"Vehicle door jammer sale is theft-enabling tooling; illegal/high fits."}
+{"text":"qq出售进口弓弩","category":"violence","level":"medium","review_note":"Crossbow weapon sale phrase; violence/medium is clearer than ad/low."}
+{"text":"qq出售进口汽狗","category":"illegal","level":"high","review_note":"汽狗 is firearm slang; sale should be illegal/high rather than ad/low."}
+{"text":"qq出售迷奸粉","category":"illegal","level":"high","review_note":"Drug-facilitated sexual assault powder sale; should be illegal/high."}
+{"text":"qq出售迷奸药","category":"illegal","level":"high","review_note":"Drug-facilitated sexual assault drug sale; original ad/low is severe mislabel."}
+{"text":"qq出售迷幻喷雾","category":"illegal","level":"high","review_note":"Drugging/hallucinogenic spray sale phrase; should be illegal/high."}
+{"text":"qq出售迷幻药物","category":"illegal","level":"high","review_note":"Hallucinogenic drug sale phrase; original ad/low is too weak."}
+{"text":"qq出售迷幻香烟","category":"illegal","level":"high","review_note":"Drugged/hallucinogenic cigarette sale phrase; should be illegal/high."}
+{"text":"qq出售迷情乖乖水","category":"illegal","level":"high","review_note":"Drugging/obedience drug sale phrase; illegal/high fits better than ad/low."}
+{"text":"qq出售迷情水","category":"illegal","level":"high","review_note":"Drugging/aphrodisiac liquid sale phrase; original ad/low should be illegal/high."}
+{"text":"qq出售迷情药","category":"illegal","level":"high","review_note":"Drugging/aphrodisiac drug sale phrase; should be illegal/high."}
+{"text":"qq出售迷情药水","category":"illegal","level":"high","review_note":"Drugging liquid sale phrase; illegal/high fits."}
+{"text":"qq出售迷昏药水","category":"illegal","level":"high","review_note":"Knockout drug liquid sale phrase; original ad/low is too weak."}
+{"text":"qq出售迷晕药","category":"illegal","level":"high","review_note":"Knockout drug sale phrase; should be illegal/high."}
+{"text":"qq出售迷烟","category":"illegal","level":"high","review_note":"Drugging smoke sale phrase; original ad/low should be illegal/high."}
+{"text":"qq出售迷药","category":"illegal","level":"high","review_note":"Drugging/knockout drug sale phrase; should be illegal/high."}
+{"text":"qq出售迷魂烟","category":"illegal","level":"high","review_note":"Drugging smoke sale phrase; illegal/high fits better than ad/low."}
+{"text":"qq出售迷魂香","category":"illegal","level":"high","review_note":"Drugging incense sale phrase; should be illegal/high."}
+{"text":"qq出售迷魂香水","category":"illegal","level":"high","review_note":"Drugging perfume/liquid sale phrase; original ad/low is too weak."}
+{"text":"qq出售迷魂香烟","category":"illegal","level":"high","review_note":"Drugging cigarette sale phrase; should be illegal/high."}
+{"text":"qq出售野营砍刀","category":"violence","level":"medium","review_note":"Machete sale phrase; violence/medium is clearer than ad/low."}
+{"text":"qq出售金属仿真狗","category":"illegal","level":"high","review_note":"狗 is firearm slang in this weapon cluster; replica gun sale should be illegal/high."}
+{"text":"qq出售金融客户资源","category":"illegal","level":"high","review_note":"Sale of financial customer leads/data; should be illegal/high."}
+{"text":"qq出售钢珠左轮狗","category":"illegal","level":"high","review_note":"Firearm slang involving revolver/steel balls; sale should be illegal/high."}
+{"text":"qq出售钢珠弹","category":"illegal","level":"high","review_note":"Projectile/ammunition sale phrase; original ad/low should be illegal/high."}
+{"text":"qq出售钢珠狗","category":"illegal","level":"high","review_note":"狗 is firearm slang; steel-ball gun sale should be illegal/high."}
+{"text":"qq出售钢珠铅弹","category":"illegal","level":"high","review_note":"Projectile/ammunition sale phrase; should be illegal/high."}
+{"text":"qq出售钻石冰","category":"illegal","level":"high","review_note":"Drug slang involving 冰 in a sale phrase; illegal/high fits better than ad/low."}
+{"text":"qq出售铊盐","category":"illegal","level":"high","review_note":"Thallium poison sale phrase; original ad/low is mislabeled."}
+{"text":"qq出售银行卡","category":"illegal","level":"high","review_note":"Bank-card sale phrase suggests financial fraud trafficking; should be illegal/high."}
+{"text":"qq出售银行客户资料","category":"illegal","level":"high","review_note":"Sale of bank customer personal data; illegal/high fits."}
+{"text":"qq出售锡锋b51","category":"illegal","level":"high","review_note":"Air-gun model sale in weapon cluster; original ad/low should be illegal/high."}
+{"text":"qq出售阻击弩","category":"violence","level":"medium","review_note":"Crossbow weapon sale phrase; violence/medium fits better than ad/low."}
+{"text":"qq出售阿普唑仑","category":"illegal","level":"high","review_note":"Alprazolam sale is controlled-drug trafficking; should be illegal/high."}
+{"text":"qq出售鞭炮","category":"illegal","level":"medium","review_note":"Firework/explosive sale phrase in illicit-goods cluster; illegal/medium is clearer than ad/low."}
+{"text":"qq出售驾驶证","category":"illegal","level":"high","review_note":"Driver-license sale implies forged credentials; should be illegal/high."}
+{"text":"qq出售骚冰","category":"illegal","level":"high","review_note":"Drug slang involving 冰 in a sale phrase; original ad/low should be illegal/high."}
+{"text":"qq出售骚本pcp","category":"illegal","level":"high","review_note":"PCP/drug-related sale phrase; illegal/high fits better than ad/low."}
+{"text":"qq出售高仿4级证","category":"illegal","level":"high","review_note":"Fake CET certificate sale phrase; should be illegal/high."}
+{"text":"qq出售高仿人民币","category":"illegal","level":"high","review_note":"Counterfeit RMB sale phrase; original ad/low is mislabeled."}
+{"text":"qq出售高仿假硬币","category":"illegal","level":"high","review_note":"Counterfeit coin sale phrase; should be illegal/high."}
+{"text":"qq出售高仿假钱","category":"illegal","level":"high","review_note":"Counterfeit money sale phrase; illegal/high fits."}
+{"text":"qq出售高仿军官证","category":"illegal","level":"high","review_note":"Fake military-officer credential sale; should be illegal/high."}
+{"text":"qq出售高仿学位证","category":"illegal","level":"high","review_note":"Fake degree credential sale; original ad/low is too weak."}
+{"text":"qq出售高仿学位证书","category":"illegal","level":"high","review_note":"Fake degree certificate sale; should be illegal/high."}
+{"text":"qq出售高仿学历证书","category":"illegal","level":"high","review_note":"Fake education credential sale; illegal/high fits."}
+{"text":"qq出售高仿户口本","category":"illegal","level":"high","review_note":"Fake household-registration document sale; should be illegal/high."}
+{"text":"qq出售高仿文凭","category":"illegal","level":"high","review_note":"Fake diploma sale phrase; original ad/low is mislabeled."}
+{"text":"qq出售高仿文凭证书","category":"illegal","level":"high","review_note":"Fake diploma certificate sale; should be illegal/high."}
+{"text":"qq出售高仿毕业证","category":"illegal","level":"high","review_note":"Fake graduation certificate sale; illegal/high fits."}
+{"text":"qq出售高仿真假钞","category":"illegal","level":"high","review_note":"Counterfeit banknote sale phrase; original ad/low should be illegal/high."}
+{"text":"qq出售高仿硬币","category":"illegal","level":"high","review_note":"Counterfeit coin sale phrase; should be illegal/high."}
+{"text":"qq出售高仿警官证","category":"illegal","level":"high","review_note":"Fake police-officer credential sale; illegal/high fits."}
+{"text":"qq出售高仿警察证","category":"illegal","level":"high","review_note":"Fake police credential sale; should be illegal/high."}
+{"text":"qq出售高仿警服","category":"illegal","level":"medium","review_note":"Police-uniform sale suggests impersonation tooling; original ad/low is too weak."}
+{"text":"qq出售高仿钞票","category":"illegal","level":"high","review_note":"Counterfeit banknote sale phrase; illegal/high fits better than ad/low."}
+{"text":"qq出售高仿驾驶证","category":"illegal","level":"high","review_note":"Fake driver-license sale; should be illegal/high."}
+{"text":"qq出售高压气狗","category":"illegal","level":"high","review_note":"气狗 is firearm slang; sale should be illegal/high."}
+{"text":"qq出售高压钢珠狗","category":"illegal","level":"high","review_note":"Steel-ball gun slang sale phrase; original ad/low should be illegal/high."}
+{"text":"qq出售高校文凭","category":"illegal","level":"high","review_note":"University diploma sale implies forged credentials; illegal/high fits."}
+{"text":"qq出售高考答案","category":"illegal","level":"medium","review_note":"Gaokao answer sale is exam fraud; should be illegal/medium."}
+{"text":"qq出售麻黄碱","category":"illegal","level":"high","review_note":"Ephedrine sale is drug-precursor trafficking; original ad/low is mislabeled."}
+{"text":"qq出售麻黄素","category":"illegal","level":"high","review_note":"Ephedrine sale is drug-precursor trafficking; should be illegal/high."}
+{"text":"qq出售黄牙签","category":"illegal","level":"high","review_note":"Drug slang sale phrase in narcotics cluster; illegal/high fits better than ad/low."}
+{"text":"qq出售黑信用卡","category":"illegal","level":"high","review_note":"Illicit credit-card sale phrase; should be illegal/high."}
+{"text":"qq出售黑火药","category":"illegal","level":"high","review_note":"Black powder explosive sale; original ad/low should be illegal/high."}
+{"text":"qq出售黑鹰弩","category":"violence","level":"medium","review_note":"Crossbow weapon sale phrase; violence/medium fits better than ad/low."}
+{"text":"qq出气报仇","category":"violence","level":"high","review_note":"Revenge/retaliation service phrase; should be violence/high rather than ad/low."}
+{"text":"qq制作假会计证","category":"illegal","level":"high","review_note":"Fake accounting certificate production; should be illegal/high."}
+{"text":"qq制作假军官证","category":"illegal","level":"high","review_note":"Fake military-officer credential production; original ad/low is too weak."}
+{"text":"qq制作假学位证","category":"illegal","level":"high","review_note":"Fake degree certificate production; should be illegal/high."}
+{"text":"qq制作假户口本","category":"illegal","level":"high","review_note":"Fake household-registration document production; illegal/high fits."}
+{"text":"qq制作假文凭","category":"illegal","level":"high","review_note":"Fake diploma production phrase; original ad/low should be illegal/high."}
+{"text":"qq制作假毕业证","category":"illegal","level":"high","review_note":"Fake graduation certificate production; should be illegal/high."}
+{"text":"qq制作假驾照","category":"illegal","level":"high","review_note":"Fake driver-license production; illegal/high fits."}
+{"text":"qq制作假驾驶证","category":"illegal","level":"high","review_note":"Fake driver-license production; should be illegal/high."}
+{"text":"qq制作军官证","category":"illegal","level":"high","review_note":"Military-officer credential production in forged-document cluster; illegal/high fits."}
+{"text":"qq制作台湾秃鹰","category":"illegal","level":"high","review_note":"秃鹰 is an air-gun/firearm term; making it should be illegal/high."}
+{"text":"qq制作大学毕业证","category":"illegal","level":"high","review_note":"Fake university graduation certificate production; original ad/low is too weak."}
+{"text":"qq制作学士学位证","category":"illegal","level":"high","review_note":"Fake bachelor-degree certificate production; should be illegal/high."}
+{"text":"qq制作弓弩","category":"violence","level":"medium","review_note":"Crossbow weapon manufacturing phrase; violence/medium is clearer than ad/low."}
+{"text":"qq制作本科证","category":"illegal","level":"high","review_note":"Fake undergraduate credential production; illegal/high fits."}
+{"text":"qq制作等级证","category":"illegal","level":"high","review_note":"Fake grade/level certificate production; should be illegal/high."}
+{"text":"qq制作警官证","category":"illegal","level":"high","review_note":"Fake police-officer credential production; original ad/low is too weak."}
+{"text":"qq制作驾驶证","category":"illegal","level":"high","review_note":"Driver-license production in forged-document cluster; should be illegal/high."}
+{"text":"qq制作高仿4级证","category":"illegal","level":"high","review_note":"Fake CET certificate production; illegal/high fits."}
+{"text":"qq制作高仿会计证","category":"illegal","level":"high","review_note":"Fake accounting certificate production; should be illegal/high."}
+{"text":"qq制作高仿军官证","category":"illegal","level":"high","review_note":"Fake military-officer credential production; original ad/low should be illegal/high."}
+{"text":"qq制作高仿学位证","category":"illegal","level":"high","review_note":"Fake degree credential production; should be illegal/high."}
+{"text":"qq制作高仿学位证书","category":"illegal","level":"high","review_note":"Fake degree certificate production; illegal/high fits."}
+{"text":"qq制作高仿学历证书","category":"illegal","level":"high","review_note":"Fake education credential production; should be illegal/high."}
+{"text":"qq制作高仿户口本","category":"illegal","level":"high","review_note":"Fake household-registration document production; original ad/low is too weak."}
+{"text":"qq制作高仿执业资格证书","category":"illegal","level":"high","review_note":"Fake professional qualification certificate production; illegal/high fits."}
+{"text":"qq制作高仿文凭","category":"illegal","level":"high","review_note":"Fake diploma production; should be illegal/high."}
+{"text":"qq制作高仿毕业证","category":"illegal","level":"high","review_note":"Fake graduation certificate production; original ad/low should be illegal/high."}
+{"text":"qq制作高仿资格证","category":"illegal","level":"high","review_note":"Fake qualification certificate production; should be illegal/high."}
+{"text":"qq制作高仿驾照","category":"illegal","level":"high","review_note":"Fake driver-license production; illegal/high fits."}
+{"text":"qq制办假证","category":"illegal","level":"high","review_note":"Fake-document production/handling phrase; original ad/low is too weak."}
+{"text":"qq制造意外消失","category":"violence","level":"high","review_note":"Euphemistic phrase for making someone disappear/harm; violence/high fits better than ad/low."}
+{"text":"qq剁饼子包夜服务","category":"pornographic","level":"high","review_note":"包夜服务 in this context is a commercial sexual-service phrase; pornographic/high fits better than ad/low."}
+{"text":"qq办假学位证","category":"illegal","level":"high","review_note":"Fake degree certificate service; should be illegal/high."}
+{"text":"qq办假户口本","category":"illegal","level":"high","review_note":"Fake household-registration document service; original ad/low is too weak."}
+{"text":"qq办假毕业证","category":"illegal","level":"high","review_note":"Fake graduation certificate service; should be illegal/high."}
+{"text":"qq办假证书","category":"illegal","level":"high","review_note":"Fake certificate service; illegal/high fits."}
+{"text":"qq办假证服务","category":"illegal","level":"high","review_note":"Fake-document service phrase; original ad/low should be illegal/high."}
+{"text":"qq办假驾照","category":"illegal","level":"high","review_note":"Fake driver-license service; should be illegal/high."}
+{"text":"qq办军官证","category":"illegal","level":"high","review_note":"Military-officer credential service in forged-document cluster; illegal/high fits."}
+{"text":"qq办理46级证书","category":"illegal","level":"high","review_note":"CET certificate service in forged-document cluster; should be illegal/high."}
+{"text":"qq办理4级证","category":"illegal","level":"high","review_note":"CET-4 certificate service in forged-document cluster; illegal/high fits."}
+{"text":"qq办理6级证书","category":"illegal","level":"high","review_note":"CET-6 certificate service in forged-document cluster; should be illegal/high."}
+{"text":"qq办理从业资格证","category":"illegal","level":"high","review_note":"Professional qualification certificate service in forged-document cluster; illegal/high fits."}
+{"text":"qq办理仿真驾驶证","category":"illegal","level":"high","review_note":"Fake/replica driver-license service; should be illegal/high."}
+{"text":"qq办理假46级证","category":"illegal","level":"high","review_note":"Fake CET certificate service; original ad/low is too weak."}
+{"text":"qq办理假学历证书","category":"illegal","level":"high","review_note":"Fake education credential service; should be illegal/high."}
+{"text":"qq办理假学生证","category":"illegal","level":"high","review_note":"Fake student ID service; illegal/high fits."}
+{"text":"qq办理假文凭","category":"illegal","level":"high","review_note":"Fake diploma service; original ad/low should be illegal/high."}
+{"text":"qq办理假文凭证书","category":"illegal","level":"high","review_note":"Fake diploma certificate service; should be illegal/high."}
+{"text":"qq办理假毕业证","category":"illegal","level":"high","review_note":"Fake graduation certificate service; illegal/high fits."}
+{"text":"qq办理假毕业证书","category":"illegal","level":"high","review_note":"Fake graduation certificate service; should be illegal/high."}
+{"text":"qq办理假等级证书","category":"illegal","level":"high","review_note":"Fake level/grade certificate service; original ad/low should be illegal/high."}
+{"text":"qq办理假证","category":"illegal","level":"high","review_note":"Fake-document service phrase; should be illegal/high."}
+{"text":"qq办理假证公司","category":"illegal","level":"high","review_note":"Fake-document company/service phrase; illegal/high fits."}
+{"text":"qq办理假驾照","category":"illegal","level":"high","review_note":"Fake driver-license service; should be illegal/high."}
+{"text":"qq办理军官证","category":"illegal","level":"high","review_note":"Military-officer credential service in forged-document cluster; original ad/low is too weak."}
+{"text":"qq办理各校文凭学历","category":"illegal","level":"high","review_note":"Diploma/education credential service; should be illegal/high."}
+{"text":"qq办理国外文凭","category":"illegal","level":"high","review_note":"Foreign diploma service in forged-document cluster; illegal/high fits."}
+{"text":"qq办理大专毕业证","category":"illegal","level":"high","review_note":"College graduation certificate service; should be illegal/high."}
+{"text":"qq办理大学毕业证","category":"illegal","level":"high","review_note":"University graduation certificate service; original ad/low is too weak."}
+{"text":"qq办理学历证","category":"illegal","level":"high","review_note":"Education credential service in forged-document cluster; should be illegal/high."}
+{"text":"qq办理本科假文凭","category":"illegal","level":"high","review_note":"Fake undergraduate diploma service; illegal/high fits."}
+{"text":"qq办理本科学位","category":"illegal","level":"high","review_note":"Undergraduate degree service in forged-document cluster; should be illegal/high."}
+{"text":"qq办理本科证","category":"illegal","level":"high","review_note":"Undergraduate credential service in forged-document cluster; original ad/low should be illegal/high."}
+{"text":"qq办理毕业证书","category":"illegal","level":"high","review_note":"Graduation certificate service in forged-document cluster; should be illegal/high."}
+{"text":"qq办理真实文凭","category":"illegal","level":"high","review_note":"Diploma handling/sale service; illegal/high fits better than ad/low."}
+{"text":"qq办理等级证","category":"illegal","level":"high","review_note":"Level/grade certificate service in forged-document cluster; should be illegal/high."}
+{"text":"qq办理职称证书","category":"illegal","level":"high","review_note":"Professional title certificate service; original ad/low is too weak."}
+{"text":"qq办理行驶证","category":"illegal","level":"high","review_note":"Vehicle registration/license document service in forged-document cluster; illegal/high fits."}
+{"text":"qq办理警察证","category":"illegal","level":"high","review_note":"Police credential service; should be illegal/high."}
+{"text":"qq办理驾照","category":"illegal","level":"high","review_note":"Driver-license service in forged-document cluster; original ad/low should be illegal/high."}
+{"text":"qq办理高仿4级证","category":"illegal","level":"high","review_note":"Fake CET-4 certificate service; illegal/high fits."}
+{"text":"qq办理高仿会计证","category":"illegal","level":"high","review_note":"Fake accounting certificate service; should be illegal/high."}
+{"text":"qq办理高仿学位证书","category":"illegal","level":"high","review_note":"Fake degree certificate service; original ad/low should be illegal/high."}
+{"text":"qq办理高仿学历证书","category":"illegal","level":"high","review_note":"Fake education credential service; should be illegal/high."}
+{"text":"qq办理高仿户口本","category":"illegal","level":"high","review_note":"Fake household-registration document service; illegal/high fits."}
+{"text":"qq办理高仿毕业证","category":"illegal","level":"high","review_note":"Fake graduation certificate service; should be illegal/high."}
+{"text":"qq办理高仿毕业证书","category":"illegal","level":"high","review_note":"Fake graduation certificate service; original ad/low is too weak."}
+{"text":"qq办理高仿证书","category":"illegal","level":"high","review_note":"Fake certificate service; should be illegal/high."}
+{"text":"qq办理高仿驾照","category":"illegal","level":"high","review_note":"Fake driver-license service; illegal/high fits."}
+{"text":"qq办自考本科毕业证","category":"illegal","level":"high","review_note":"Self-study undergraduate graduation certificate service; should be illegal/high."}
+{"text":"qq办警官证","category":"illegal","level":"high","review_note":"Police-officer credential service; original ad/low should be illegal/high."}
+{"text":"qq办警察证","category":"illegal","level":"high","review_note":"Police credential service; should be illegal/high."}
+{"text":"qq办证","category":"illegal","level":"high","review_note":"Document-forging service phrase in forged-document cluster; illegal/high fits."}
+{"text":"qq办证刻章公司","category":"illegal","level":"high","review_note":"Document and seal forging service; original ad/low should be illegal/high."}
+{"text":"qq办驾照","category":"illegal","level":"high","review_note":"Driver-license service in forged-document cluster; should be illegal/high."}
+{"text":"qq包夜性服务电话","category":"pornographic","level":"high","review_note":"Commercial overnight sexual-service contact phrase; pornographic/high fits better than ad/low."}
+{"text":"qq包夜打炮服务","category":"pornographic","level":"high","review_note":"Explicit commercial sexual-service phrase; should be pornographic/high."}
+{"text":"qq包夜热线","category":"pornographic","level":"high","review_note":"In this adult-service cluster, overnight hotline indicates commercial sexual service; pornographic/high fits."}
+{"text":"qq包夜特殊服务","category":"pornographic","level":"high","review_note":"Commercial adult special-service phrase; original ad/low is mislabeled."}
+{"text":"qq化学冰牙签出售","category":"illegal","level":"high","review_note":"Drug slang sale phrase; should be illegal/high."}
+{"text":"qq十字开锁工具批发","category":"illegal","level":"high","review_note":"Lock-picking tool wholesale phrase; illegal/high fits better than ad/low."}
+{"text":"qq十字强开工具提供","category":"illegal","level":"high","review_note":"Forced-entry tool supply phrase; original ad/low is too weak."}
+{"text":"qq十字强开工具订购","category":"illegal","level":"high","review_note":"Forced-entry tool order phrase; should be illegal/high."}
+{"text":"qq半圆刮刀出售","category":"violence","level":"medium","review_note":"Blade/knife sale phrase; violence/medium is clearer than ad/low."}
+{"text":"qq半圆刮刀批发","category":"violence","level":"medium","review_note":"Blade/knife wholesale phrase; should be violence/medium rather than ad/low."}
+{"text":"qq半圆刮刀直销","category":"violence","level":"medium","review_note":"Blade/knife direct-sale phrase; violence/medium fits better than ad/low."}
+{"text":"qq卖45mm狗粮","category":"illegal","level":"high","review_note":"狗粮 is ammunition slang in this weapon cluster; sale should be illegal/high."}
+{"text":"qq卖54式64式","category":"illegal","level":"high","review_note":"Handgun model sale phrase in weapon cluster; should be illegal/high rather than ad/low."}
+{"text":"qq卖64式","category":"illegal","level":"high","review_note":"64式 handgun sale phrase in weapon cluster; original ad/low is too weak."}
+{"text":"qq卖64手qiang","category":"illegal","level":"high","review_note":"Obfuscated handgun sale phrase; should be illegal/high."}
+{"text":"qq卖92式","category":"illegal","level":"high","review_note":"92式 handgun sale phrase in weapon cluster; original ad/low should be illegal/high."}
+{"text":"qq卖92手qiang","category":"illegal","level":"high","review_note":"Obfuscated handgun sale phrase; illegal/high fits better than ad/low."}
+{"text":"qq卖健卫小口径","category":"illegal","level":"high","review_note":"Small-caliber firearm phrase in weapon-sale cluster; should be illegal/high."}
+{"text":"qq卖广州3箭气","category":"illegal","level":"high","review_note":"Air-gun sale phrase in weapon cluster; original ad/low should be illegal/high."}
+{"text":"qq卖手狗","category":"illegal","level":"high","review_note":"手狗 is firearm slang; sale should be illegal/high."}
+{"text":"qq卖散弹狗","category":"illegal","level":"high","review_note":"散弹狗 is firearm slang; original ad/low is too weak."}
+{"text":"qq卖热武器","category":"illegal","level":"high","review_note":"Hot weapons/firearms sale phrase; should be illegal/high."}
+{"text":"qq卖瓦斯手狗","category":"illegal","level":"high","review_note":"手狗 is firearm slang; gas gun sale should be illegal/high."}
+{"text":"qq卖肾","category":"illegal","level":"high","review_note":"Organ sale phrase; illegal/high fits better than ad/low."}
+{"text":"qq卖自制手狗","category":"illegal","level":"high","review_note":"Homemade firearm slang sale phrase; should be illegal/high."}
+{"text":"qq卖虎头双管","category":"illegal","level":"high","review_note":"Double-barrel firearm sale phrase in weapon cluster; original ad/low should be illegal/high."}
+{"text":"qq卖进口汽狗","category":"illegal","level":"high","review_note":"汽狗 is firearm slang; sale should be illegal/high."}
+{"text":"qq卖钢珠狗","category":"illegal","level":"high","review_note":"Steel-ball gun slang sale phrase; original ad/low is too weak."}
+{"text":"qq卖防身武器","category":"violence","level":"medium","review_note":"Weapon sale phrase; violence/medium is clearer than generic ad/low."}
+{"text":"qq压制负面帖子","category":"illegal","level":"medium","review_note":"Paid suppression/removal of negative posts suggests illicit reputation manipulation; illegal/medium fits better than ad/low."}
+{"text":"qq双刃尖刀买卖","category":"violence","level":"medium","review_note":"Double-edged knife trading phrase; should be violence/medium."}
+{"text":"qq变号软件供应","category":"illegal","level":"high","review_note":"Caller-ID spoofing software supply; illegal/high fits better than ad/low."}
+{"text":"qq可待因专卖","category":"illegal","level":"high","review_note":"Codeine sale phrase; should be illegal/high rather than ad/low."}
+{"text":"qq可待因批发","category":"illegal","level":"high","review_note":"Codeine wholesale phrase; original ad/low is too weak."}
+{"text":"qq可待因订购","category":"illegal","level":"high","review_note":"Codeine order phrase; should be illegal/high."}
+{"text":"qq台湾版假钞批发","category":"illegal","level":"high","review_note":"Counterfeit banknote wholesale phrase; should be illegal/high."}
+{"text":"qq台湾版假钱批发","category":"illegal","level":"high","review_note":"Counterfeit money wholesale phrase; original ad/low should be illegal/high."}
+{"text":"qq听话水订购","category":"illegal","level":"high","review_note":"Drugging/obedience liquid order phrase; should be illegal/high."}
+{"text":"qq咖啡因订购","category":"illegal","level":"medium","review_note":"Caffeine order phrase in controlled-drug marketplace cluster; illegal/medium is more accurate than ad/low."}
+{"text":"qq售猪肉钻石白牙签","category":"illegal","level":"high","review_note":"Drug slang sale phrase; original ad/low should be illegal/high."}
+{"text":"qq售盐酸哌替啶","category":"illegal","level":"high","review_note":"Pethidine hydrochloride sale; should be illegal/high."}
+{"text":"qq喵喵药供应","category":"illegal","level":"high","review_note":"喵喵药 is mephedrone/synthetic-drug slang; supply should be illegal/high."}
+{"text":"qq喵喵药提供","category":"illegal","level":"high","review_note":"Synthetic-drug supply phrase; original ad/low is too weak."}
+{"text":"qq喷雾迷幻药订购","category":"illegal","level":"high","review_note":"Hallucinogenic/drugging spray order phrase; should be illegal/high."}
+{"text":"qq国外学历认证代办","category":"illegal","level":"medium","review_note":"Credential/education-authentication handling in fake-document cluster; illegal/medium fits better than ad/low."}
+{"text":"qq国外文凭代办","category":"illegal","level":"high","review_note":"Foreign diploma service in forged-document cluster; should be illegal/high."}
+{"text":"qq国税税票代开","category":"illegal","level":"high","review_note":"Tax invoice issuing service; original ad/low should be illegal/high."}
+{"text":"qq堂","category":"other","level":"low","review_note":"Likely Tencent QQ Tang game/product name; ad category is not supported by the term itself."}
+{"text":"qq地税税票代开","category":"illegal","level":"high","review_note":"Local-tax invoice issuing service; should be illegal/high."}
+{"text":"qq增值税票代开","category":"illegal","level":"high","review_note":"VAT invoice issuing service; original ad/low is too weak."}
+{"text":"qq增值税税票代开","category":"illegal","level":"high","review_note":"VAT tax invoice issuing service; should be illegal/high."}
+{"text":"qq复仇找打手","category":"violence","level":"high","review_note":"Hiring thugs for revenge; violence/high fits better than ad/low."}
+{"text":"qq大专文凭出售","category":"illegal","level":"high","review_note":"College diploma sale implies forged credentials; should be illegal/high."}
+{"text":"qq大冰砖出售","category":"illegal","level":"high","review_note":"Drug slang involving 冰砖 in sale phrase; original ad/low should be illegal/high."}
+{"text":"qq大冰砖销售","category":"illegal","level":"high","review_note":"Drug slang involving 冰砖 in sale phrase; should be illegal/high."}
+{"text":"qq大学毕业证代办","category":"illegal","level":"high","review_note":"University graduation certificate service; illegal/high fits better than ad/low."}
+{"text":"qq大学生援交服务","category":"pornographic","level":"high","review_note":"Compensated dating/sexual-service phrase; should be pornographic/high."}
+{"text":"qq大黑鹰弩改装","category":"violence","level":"medium","review_note":"Crossbow weapon modification phrase; violence/medium is clearer than ad/low."}
+{"text":"qq失忆水提供","category":"illegal","level":"high","review_note":"Drugging/amnesia liquid supply phrase; should be illegal/high."}
+{"text":"qq失忆水销售","category":"illegal","level":"high","review_note":"Drugging/amnesia liquid sale phrase; original ad/low is too weak."}
+{"text":"qq女性数据专卖","category":"illegal","level":"high","review_note":"Sale of personal data about women; illegal/high fits."}
+{"text":"qq女性数据供应","category":"illegal","level":"high","review_note":"Supply of personal data about women; should be illegal/high."}
+{"text":"qq妓女上门","category":"pornographic","level":"high","review_note":"Commercial sex-service phrase; original ad/low should be pornographic/high."}
+{"text":"qq妓女上门性服务","category":"pornographic","level":"high","review_note":"Explicit commercial sexual-service phrase; should be pornographic/high."}
+{"text":"qq妓女上门服务","category":"pornographic","level":"high","review_note":"Commercial sex-service phrase; pornographic/high fits better than ad/low."}
+{"text":"qq妓女全套服务","category":"pornographic","level":"high","review_note":"Explicit full-service sex-work phrase; original ad/low is mislabeled."}
+{"text":"qq妓女包夜上门服务","category":"pornographic","level":"high","review_note":"Commercial overnight sex-service phrase; should be pornographic/high."}
+{"text":"qq妓女包夜服务","category":"pornographic","level":"high","review_note":"Commercial overnight sex-service phrase; pornographic/high fits."}
+{"text":"qq妓女性服务","category":"pornographic","level":"high","review_note":"Explicit commercial sexual-service phrase; original ad/low should be pornographic/high."}
+{"text":"qq妓女服务","category":"pornographic","level":"high","review_note":"Commercial sex-service phrase; should be pornographic/high."}
+{"text":"qq婴儿数据专卖","category":"illegal","level":"high","review_note":"Sale of infant personal data; illegal/high fits better than ad/low."}
+{"text":"qq学位证专卖","category":"illegal","level":"high","review_note":"Degree certificate sale in forged-document cluster; should be illegal/high."}
+{"text":"qq学位证制作","category":"illegal","level":"high","review_note":"Degree certificate production in forged-document cluster; original ad/low is too weak."}
+{"text":"qq学生妹上门性服务","category":"pornographic","level":"high","review_note":"Explicit commercial sexual-service phrase; should be pornographic/high."}
+{"text":"qq学生妹兼职性服务","category":"pornographic","level":"high","review_note":"Explicit commercial sexual-service phrase; pornographic/high fits."}
+{"text":"qq学生家长数据专卖","category":"illegal","level":"high","review_note":"Sale of student/parent personal data; should be illegal/high."}
+{"text":"qq学生家长资料专卖","category":"illegal","level":"high","review_note":"Sale of student/parent personal data; illegal/high fits."}
+{"text":"qq学生数据供应","category":"illegal","level":"high","review_note":"Supply of student personal data; original ad/low should be illegal/high."}
+{"text":"qq安眠酮提供","category":"illegal","level":"high","review_note":"Methaqualone/sedative supply phrase; should be illegal/high."}
+{"text":"qq安钠咖供应","category":"illegal","level":"medium","review_note":"Controlled stimulant supply phrase in drug marketplace cluster; illegal/medium fits better than ad/low."}
+{"text":"qq安钠咖销售","category":"illegal","level":"medium","review_note":"Controlled stimulant sale phrase in drug marketplace cluster; original ad/low is too weak."}
+{"text":"qq宠物","category":"other","level":"low","review_note":"Likely Tencent QQ Pet product name; ad category is not supported by the term itself."}
+{"text":"qq小口径汽狗销售","category":"illegal","level":"high","review_note":"汽狗 is firearm slang; small-caliber gun sale should be illegal/high."}
+{"text":"qq小口径运动步狗供应","category":"illegal","level":"high","review_note":"步狗 is firearm slang; small-caliber rifle supply should be illegal/high."}
+{"text":"qq小口径运动步狗批发","category":"illegal","level":"high","review_note":"Small-caliber rifle slang wholesale phrase; original ad/low should be illegal/high."}
+{"text":"qq小口径运动步狗提供","category":"illegal","level":"high","review_note":"Small-caliber rifle slang supply phrase; should be illegal/high."}
+{"text":"qq小口径运动步狗订购","category":"illegal","level":"high","review_note":"Small-caliber rifle slang order phrase; illegal/high fits."}
+{"text":"qq小口径运动步狗购买","category":"illegal","level":"high","review_note":"Small-caliber rifle slang purchase phrase; original ad/low is too weak."}
+{"text":"qq小口径运动步狗销售","category":"illegal","level":"high","review_note":"Small-caliber rifle slang sale phrase; should be illegal/high."}
+{"text":"qq尼泊尔军刀专卖","category":"violence","level":"medium","review_note":"Military knife sale phrase; violence/medium fits better than ad/low."}
+{"text":"qq尼泊尔军刀批发","category":"violence","level":"medium","review_note":"Military knife wholesale phrase; should be violence/medium rather than ad/low."}
+{"text":"qq左旋麻黄素直销","category":"illegal","level":"high","review_note":"Ephedrine precursor direct-sale phrase; illegal/high fits."}
+{"text":"qq帮人办事报仇","category":"violence","level":"high","review_note":"Revenge-for-hire phrase; should be violence/high."}
+{"text":"qq帮人复仇","category":"violence","level":"high","review_note":"Revenge-for-hire phrase; original ad/low is too weak."}
+{"text":"qq帮人打架","category":"violence","level":"high","review_note":"Hiring someone to fight; violence/high fits better than ad/low."}
+{"text":"qq帮人报仇","category":"violence","level":"high","review_note":"Revenge-for-hire phrase; should be violence/high."}
+{"text":"qq帮人报仇复仇","category":"violence","level":"high","review_note":"Revenge-for-hire phrase; original ad/low should be violence/high."}
+{"text":"qq帮人报复","category":"violence","level":"high","review_note":"Retaliation-for-hire phrase; violence/high fits."}
+{"text":"qq帮人解决纠纷","category":"violence","level":"medium","review_note":"In this revenge/fighting cluster, dispute-solving service implies coercive violence; violence/medium fits better than ad/low."}
+{"text":"qq幻想","category":"other","level":"low","review_note":"Likely Tencent QQ Fantasy game/product name; ad category is not supported by the term itself."}
+{"text":"qq开山刀出售","category":"violence","level":"medium","review_note":"Machete sale phrase; violence/medium is clearer than ad/low."}
+{"text":"qq开山刀销售","category":"violence","level":"medium","review_note":"Machete sale phrase; should be violence/medium rather than ad/low."}
+{"text":"qq开锁器材提供","category":"illegal","level":"high","review_note":"Lock-opening equipment supply; illegal/high fits better than ad/low."}
+{"text":"qq开锁器材销售","category":"illegal","level":"high","review_note":"Lock-opening equipment sale; should be illegal/high."}
+{"text":"qq开锁器销售","category":"illegal","level":"high","review_note":"Lock-opening device sale; original ad/low is too weak."}
+{"text":"qq开锁工具出售","category":"illegal","level":"high","review_note":"Lock-picking tool sale; should be illegal/high."}
+{"text":"qq开锁工具批发","category":"illegal","level":"high","review_note":"Lock-picking tool wholesale phrase; illegal/high fits."}
+{"text":"qq开锁工具提供","category":"illegal","level":"high","review_note":"Lock-picking tool supply phrase; original ad/low should be illegal/high."}
+{"text":"qq开锁工具销售","category":"illegal","level":"high","review_note":"Lock-picking tool sale phrase; should be illegal/high."}
+{"text":"qq异丁腈批发","category":"illegal","level":"high","review_note":"Toxic chemical wholesale phrase in illicit-goods cluster; illegal/high fits better than ad/low."}
+{"text":"qq异丁腈销售","category":"illegal","level":"high","review_note":"Toxic chemical sale phrase in illicit-goods cluster; should be illegal/high."}
+{"text":"qq弹簧刀专卖","category":"violence","level":"medium","review_note":"Switchblade/spring knife sale phrase; violence/medium fits better than ad/low."}
+{"text":"qq弹簧刀具专卖","category":"violence","level":"medium","review_note":"Switchblade/knife sale phrase; should be violence/medium."}
+{"text":"qq弹簧刀具出售","category":"violence","level":"medium","review_note":"Switchblade/knife sale phrase; original ad/low is too generic."}
+{"text":"qq弹簧刀直销","category":"violence","level":"medium","review_note":"Switchblade direct-sale phrase; violence/medium fits better than ad/low."}
+{"text":"qq弹簧刀销售","category":"violence","level":"medium","review_note":"Switchblade sale phrase; should be violence/medium rather than ad/low."}
+{"text":"qq弹簧跳刀批发","category":"violence","level":"medium","review_note":"Spring-assisted knife wholesale phrase; violence/medium fits."}
+{"text":"qq快递数据供应","category":"illegal","level":"high","review_note":"Supply of courier/customer data; should be illegal/high."}
+{"text":"qq快递数据出售","category":"illegal","level":"high","review_note":"Sale of courier/customer data; original ad/low is too weak."}
+{"text":"qq快递面单数据专卖","category":"illegal","level":"high","review_note":"Sale of courier waybill personal data; illegal/high fits."}
+{"text":"qq快递面单数据供应","category":"illegal","level":"high","review_note":"Supply of courier waybill personal data; should be illegal/high."}
+{"text":"qq快递面单数据出售","category":"illegal","level":"high","review_note":"Sale of courier waybill data; original ad/low should be illegal/high."}
+{"text":"qq快递面单数据提供","category":"illegal","level":"high","review_note":"Provision of courier waybill personal data; illegal/high fits."}
+{"text":"qq快递面单数据销售","category":"illegal","level":"high","review_note":"Sale of courier waybill personal data; should be illegal/high."}
+{"text":"qq恩华3唑仑","category":"illegal","level":"high","review_note":"Triazolam drug sale/reference in illicit marketplace cluster; original ad/low should be illegal/high."}
+{"text":"qq慢性毒药专卖","category":"illegal","level":"high","review_note":"Poison sale phrase; should be illegal/high."}
+{"text":"qq慢性毒药批发","category":"illegal","level":"high","review_note":"Poison wholesale phrase; original ad/low is too weak."}
+{"text":"qq慢性毒药直销","category":"illegal","level":"high","review_note":"Poison direct-sale phrase; should be illegal/high."}
+{"text":"qq户外刀具买卖","category":"violence","level":"medium","review_note":"Knife trading phrase; violence/medium is clearer than ad/low."}
+{"text":"qq户外刀具出售","category":"violence","level":"medium","review_note":"Knife sale phrase; should be violence/medium rather than ad/low."}
+{"text":"qq手拉狗供应","category":"illegal","level":"high","review_note":"手拉狗 is firearm slang; supply should be illegal/high."}
+{"text":"qq手拉狗出售","category":"illegal","level":"high","review_note":"Firearm slang sale phrase; original ad/low should be illegal/high."}
+{"text":"qq手拉狗提供","category":"illegal","level":"high","review_note":"Firearm slang supply phrase; should be illegal/high."}
+{"text":"qq手拉狗直销","category":"illegal","level":"high","review_note":"Firearm slang direct-sale phrase; illegal/high fits."}
+{"text":"qq手拉狗订购","category":"illegal","level":"high","review_note":"Firearm slang order phrase; original ad/low is too weak."}
+{"text":"qq手拉狗购买","category":"illegal","level":"high","review_note":"Firearm slang purchase phrase; should be illegal/high."}
+{"text":"qq手拉狗销售","category":"illegal","level":"high","review_note":"Firearm slang sale phrase; illegal/high fits."}
+{"text":"qq手拉短狗出售","category":"illegal","level":"high","review_note":"短狗 is firearm slang; sale should be illegal/high."}
+{"text":"qq手拉短狗直销","category":"illegal","level":"high","review_note":"Firearm slang direct-sale phrase; original ad/low should be illegal/high."}
+{"text":"qq手拉短狗订购","category":"illegal","level":"high","review_note":"Firearm slang order phrase; should be illegal/high."}
+{"text":"qq手拉短狗销售","category":"illegal","level":"high","review_note":"Firearm slang sale phrase; illegal/high fits."}
+{"text":"qq手拉长狗供应","category":"illegal","level":"high","review_note":"长狗 is firearm slang; supply should be illegal/high."}
+{"text":"qq手拉长狗出售","category":"illegal","level":"high","review_note":"Firearm slang sale phrase; original ad/low is too weak."}
+{"text":"qq手拉长狗批发","category":"illegal","level":"high","review_note":"Firearm slang wholesale phrase; should be illegal/high."}
+{"text":"qq手拉长狗提供","category":"illegal","level":"high","review_note":"Firearm slang supply phrase; illegal/high fits."}
+{"text":"qq手拉长狗直销","category":"illegal","level":"high","review_note":"Firearm slang direct-sale phrase; should be illegal/high."}
+{"text":"qq手拉长狗订购","category":"illegal","level":"high","review_note":"Firearm slang order phrase; original ad/low should be illegal/high."}
+{"text":"qq手拉长狗购买","category":"illegal","level":"high","review_note":"Firearm slang purchase phrase; should be illegal/high."}
+{"text":"qq手拉鸡买卖","category":"illegal","level":"high","review_note":"手拉鸡 is firearm slang in this cluster; trading should be illegal/high."}
+{"text":"qq手拉鸡直销","category":"illegal","level":"high","review_note":"Firearm slang direct-sale phrase; original ad/low should be illegal/high."}
+{"text":"qq手机变号软件直销","category":"illegal","level":"high","review_note":"Caller-ID spoofing software sale; should be illegal/high."}
+{"text":"qq手机改串号软件下载","category":"illegal","level":"high","review_note":"Phone IMEI/serial modification software download; illegal/high fits better than ad/low."}
+{"text":"qq手机改串号软件出售","category":"illegal","level":"high","review_note":"Phone IMEI/serial modification software sale; should be illegal/high."}
+{"text":"qq手机改号软件批发","category":"illegal","level":"high","review_note":"Caller-ID spoofing software wholesale phrase; original ad/low is too weak."}
+{"text":"qq手机改号软件提供","category":"illegal","level":"high","review_note":"Caller-ID spoofing software supply; should be illegal/high."}
+{"text":"qq手机改号软件直销","category":"illegal","level":"high","review_note":"Caller-ID spoofing software direct sale; illegal/high fits."}
+{"text":"qq手机窃听软件买卖","category":"illegal","level":"high","review_note":"Phone eavesdropping software trading; should be illegal/high."}
+{"text":"qq手机窃听软件出售","category":"illegal","level":"high","review_note":"Phone eavesdropping software sale; original ad/low is too weak."}
+{"text":"qq手机窃听软件销售","category":"illegal","level":"high","review_note":"Phone eavesdropping software sale; should be illegal/high."}
+{"text":"qq手狗专卖","category":"illegal","level":"high","review_note":"手狗 is firearm slang; sale should be illegal/high."}
+{"text":"qq手铐专卖","category":"violence","level":"medium","review_note":"Restraint equipment sale phrase; violence/medium is clearer than ad/low."}
+{"text":"qq手铐供应","category":"violence","level":"medium","review_note":"Restraint equipment supply phrase; should be violence/medium rather than ad/low."}
+{"text":"qq手铐出售","category":"violence","level":"medium","review_note":"Restraint equipment sale phrase; violence/medium fits."}
+{"text":"qq手铐销售","category":"violence","level":"medium","review_note":"Restraint equipment sale phrase; original ad/low is too generic."}
+{"text":"qq打炮援交服务","category":"pornographic","level":"high","review_note":"Explicit compensated sex-service phrase; should be pornographic/high."}
+{"text":"qq批发3利达弓弩","category":"violence","level":"medium","review_note":"Crossbow weapon wholesale phrase; violence/medium fits better than ad/low."}
+{"text":"qq批发3唑仑","category":"illegal","level":"high","review_note":"Triazolam wholesale phrase; should be illegal/high."}
+{"text":"qq批发3唑仑片","category":"illegal","level":"high","review_note":"Triazolam tablets wholesale phrase; original ad/low should be illegal/high."}
+{"text":"qq批发3棱军刀","category":"violence","level":"medium","review_note":"Triangular military knife wholesale phrase; violence/medium fits."}
+{"text":"qq批发3棱刀","category":"violence","level":"medium","review_note":"Triangular knife wholesale phrase; should be violence/medium rather than ad/low."}
+{"text":"qq批发3棱刀具","category":"violence","level":"medium","review_note":"Triangular blade wholesale phrase; violence/medium is clearer than ad/low."}
+{"text":"qq批发3棱刺刀","category":"violence","level":"medium","review_note":"Bayonet wholesale phrase; should be violence/medium."}
+{"text":"qq批发54短狗","category":"illegal","level":"high","review_note":"短狗 is firearm slang; wholesale should be illegal/high."}
+{"text":"qq批发64短狗","category":"illegal","level":"high","review_note":"短狗 is firearm slang; original ad/low should be illegal/high."}
+{"text":"qq批发awp配件","category":"illegal","level":"high","review_note":"AWP firearm parts wholesale phrase; should be illegal/high."}
+{"text":"qq批发fox格斗砍刀","category":"violence","level":"medium","review_note":"Combat machete wholesale phrase; violence/medium fits better than ad/low."}
+{"text":"qq批发pcp秃鹰套件","category":"illegal","level":"high","review_note":"PCP air-gun kit wholesale phrase; illegal/high fits."}
+{"text":"qq批发pcp骚本配件","category":"illegal","level":"high","review_note":"PCP gun-related parts wholesale phrase; original ad/low should be illegal/high."}
+{"text":"qq批发tnt","category":"illegal","level":"high","review_note":"TNT explosive wholesale phrase; should be illegal/high."}
+{"text":"qq批发万能开锁工具","category":"illegal","level":"high","review_note":"Lock-picking tool wholesale phrase; illegal/high fits better than ad/low."}
+{"text":"qq批发万能钥匙","category":"illegal","level":"high","review_note":"Master-key/bypass tool wholesale phrase; should be illegal/high."}
+{"text":"qq批发业主信息","category":"illegal","level":"high","review_note":"Sale/supply of property-owner personal information; illegal/high fits."}
+{"text":"qq批发业主名单","category":"illegal","level":"high","review_note":"Wholesale of property-owner lists; original ad/low should be illegal/high."}
+{"text":"qq批发业主资料","category":"illegal","level":"high","review_note":"Wholesale of property-owner personal data; should be illegal/high."}
+{"text":"qq批发乖乖水","category":"illegal","level":"high","review_note":"Drugging/obedience liquid wholesale phrase; illegal/high fits."}
+{"text":"qq批发乖乖药","category":"illegal","level":"high","review_note":"Drugging/obedience drug wholesale phrase; should be illegal/high."}
+{"text":"qq批发乙醚","category":"illegal","level":"high","review_note":"Ether wholesale in drugging/illicit-goods cluster; original ad/low should be illegal/high."}
+{"text":"qq批发云南情蛊药","category":"illegal","level":"high","review_note":"Drugging/aphrodisiac product wholesale phrase; illegal/high fits."}
+{"text":"qq批发仿真汽狗","category":"illegal","level":"high","review_note":"汽狗 is firearm slang; replica gun wholesale should be illegal/high."}
+{"text":"qq批发仿真警服","category":"illegal","level":"medium","review_note":"Replica police uniform wholesale suggests impersonation tooling; illegal/medium fits better than ad/low."}
+{"text":"qq批发保健品资料","category":"illegal","level":"high","review_note":"Wholesale of health-product customer data/leads; should be illegal/high."}
+{"text":"qq批发假1元硬币","category":"illegal","level":"high","review_note":"Counterfeit coin wholesale phrase; original ad/low should be illegal/high."}
+{"text":"qq批发催情口香糖","category":"illegal","level":"high","review_note":"Aphrodisiac/drugging product wholesale phrase; illegal/high fits."}
+{"text":"qq批发催情液","category":"illegal","level":"high","review_note":"Aphrodisiac/drugging liquid wholesale phrase; should be illegal/high."}
+{"text":"qq批发催情药水","category":"illegal","level":"high","review_note":"Aphrodisiac/drugging liquid wholesale phrase; original ad/low is too weak."}
+{"text":"qq批发催眠喷雾剂","category":"illegal","level":"high","review_note":"Sedating spray wholesale phrase; should be illegal/high."}
+{"text":"qq批发兰博军刀","category":"violence","level":"medium","review_note":"Military knife wholesale phrase; violence/medium is clearer than ad/low."}
+{"text":"qq批发军刀","category":"violence","level":"medium","review_note":"Military knife wholesale phrase; should be violence/medium."}
+{"text":"qq批发军刺","category":"violence","level":"medium","review_note":"Military dagger wholesale phrase; original ad/low is too generic."}
+{"text":"qq批发冰油","category":"illegal","level":"high","review_note":"Drug slang wholesale phrase; illegal/high fits better than ad/low."}
+{"text":"qq批发十字开锁工具","category":"illegal","level":"high","review_note":"Lock-picking tool wholesale phrase; should be illegal/high."}
+{"text":"qq批发双刃尖刀","category":"violence","level":"medium","review_note":"Double-edged knife wholesale phrase; violence/medium fits."}
+{"text":"qq批发变号软件","category":"illegal","level":"high","review_note":"Caller-ID spoofing software wholesale; original ad/low should be illegal/high."}
+{"text":"qq批发口服型昏迷药","category":"illegal","level":"high","review_note":"Oral knockout-drug wholesale phrase; should be illegal/high."}
+{"text":"qq批发古柯碱","category":"illegal","level":"high","review_note":"Cocaine/alkaloid wholesale phrase; illegal/high fits better than ad/low."}
+{"text":"qq批发台湾版假钞","category":"illegal","level":"high","review_note":"Counterfeit banknote wholesale phrase; should be illegal/high."}
+{"text":"qq批发台湾版假钱","category":"illegal","level":"high","review_note":"Counterfeit money wholesale phrase; original ad/low should be illegal/high."}
+{"text":"qq批发吗啡","category":"illegal","level":"high","review_note":"Morphine wholesale phrase; should be illegal/high."}
+{"text":"qq批发听话药","category":"illegal","level":"high","review_note":"Drugging/obedience drug wholesale phrase; illegal/high fits."}
+{"text":"qq批发听话药水","category":"illegal","level":"high","review_note":"Drugging/obedience liquid wholesale phrase; should be illegal/high."}
+{"text":"qq批发喵喵药","category":"illegal","level":"high","review_note":"Synthetic-drug slang wholesale phrase; original ad/low is too weak."}
+{"text":"qq批发喷雾蒙汗药","category":"illegal","level":"high","review_note":"Knockout spray wholesale phrase; should be illegal/high."}
+{"text":"qq批发喷雾迷幻药","category":"illegal","level":"high","review_note":"Hallucinogenic/drugging spray wholesale phrase; illegal/high fits."}
+{"text":"qq批发喷雾迷情水","category":"illegal","level":"high","review_note":"Drugging/aphrodisiac spray wholesale phrase; should be illegal/high."}
+{"text":"qq批发喷雾迷药","category":"illegal","level":"high","review_note":"Drugging spray wholesale phrase; original ad/low should be illegal/high."}
+{"text":"qq批发失忆水","category":"illegal","level":"high","review_note":"Drugging/amnesia liquid wholesale phrase; illegal/high fits."}
+{"text":"qq批发失忆药","category":"illegal","level":"high","review_note":"Drugging/amnesia medicine wholesale phrase; should be illegal/high."}
+{"text":"qq批发女性数据","category":"illegal","level":"high","review_note":"Wholesale of personal data about women; original ad/low should be illegal/high."}
+{"text":"qq批发女性资料","category":"illegal","level":"high","review_note":"Wholesale of personal data about women; illegal/high fits."}
+{"text":"qq批发奶油冰","category":"illegal","level":"high","review_note":"Drug slang involving 冰 in wholesale phrase; should be illegal/high."}
+{"text":"qq批发学生资料","category":"illegal","level":"high","review_note":"Wholesale of student personal data; original ad/low is too weak."}
+{"text":"qq批发小口径运动步狗","category":"illegal","level":"high","review_note":"步狗 is firearm slang; small-caliber rifle wholesale should be illegal/high."}
+{"text":"qq批发尼泊尔军刀","category":"violence","level":"medium","review_note":"Military knife wholesale phrase; violence/medium fits better than ad/low."}
+{"text":"qq批发尼蒙尔克素","category":"illegal","level":"high","review_note":"Drug/controlled-substance wholesale phrase in narcotics cluster; should be illegal/high."}
+{"text":"qq批发工字牌钢珠狗","category":"illegal","level":"high","review_note":"钢珠狗 is gun slang; wholesale should be illegal/high."}
+{"text":"qq批发左旋麻黄素","category":"illegal","level":"high","review_note":"Ephedrine precursor wholesale phrase; original ad/low should be illegal/high."}
+{"text":"qq批发开他敏","category":"illegal","level":"high","review_note":"Ketamine wholesale phrase; should be illegal/high."}
+{"text":"qq批发开山刀","category":"violence","level":"medium","review_note":"Machete wholesale phrase; violence/medium is clearer than ad/low."}
+{"text":"qq批发开心水","category":"illegal","level":"high","review_note":"Drug slang wholesale phrase; illegal/high fits better than ad/low."}
+{"text":"qq批发开锁工具","category":"illegal","level":"high","review_note":"Lock-picking tool wholesale phrase; should be illegal/high."}
+{"text":"qq批发异丁腈","category":"illegal","level":"high","review_note":"Toxic chemical wholesale phrase in illicit-goods cluster; illegal/high fits."}
+{"text":"qq批发弓弩配件","category":"violence","level":"medium","review_note":"Crossbow parts wholesale phrase; violence/medium fits better than ad/low."}
+{"text":"qq批发弹簧刀","category":"violence","level":"medium","review_note":"Spring knife wholesale phrase; should be violence/medium."}
+{"text":"qq批发强开工具","category":"illegal","level":"high","review_note":"Forced-entry tool wholesale phrase; original ad/low should be illegal/high."}
+{"text":"qq批发快开工具","category":"illegal","level":"high","review_note":"Quick lock-opening tool wholesale phrase; should be illegal/high."}
+{"text":"qq批发战术折刀","category":"violence","level":"medium","review_note":"Tactical folding knife wholesale phrase; violence/medium fits better than ad/low."}
+{"text":"qq批发手拉狗","category":"illegal","level":"high","review_note":"手拉狗 is firearm slang; wholesale should be illegal/high."}
+{"text":"qq批发手拉长狗","category":"illegal","level":"high","review_note":"长狗 is firearm slang; wholesale should be illegal/high."}
+{"text":"qq批发手拉鸡","category":"illegal","level":"high","review_note":"手拉鸡 is firearm slang in this cluster; original ad/low should be illegal/high."}
+{"text":"qq批发手木仓","category":"illegal","level":"high","review_note":"木仓 obfuscates 枪; handgun wholesale should be illegal/high."}
+{"text":"qq批发手铐","category":"violence","level":"medium","review_note":"Restraint equipment wholesale phrase; violence/medium is clearer than ad/low."}
+{"text":"qq批发拍肩型昏迷药","category":"illegal","level":"high","review_note":"Knockout-drug wholesale phrase; should be illegal/high."}
+{"text":"qq批发拍肩型迷魂粉","category":"illegal","level":"high","review_note":"Drugging powder wholesale phrase; original ad/low should be illegal/high."}
+{"text":"qq批发拍肩粉","category":"illegal","level":"high","review_note":"Drugging powder wholesale phrase; illegal/high fits."}
+{"text":"qq批发拍肩药","category":"illegal","level":"high","review_note":"Drugging medicine wholesale phrase; should be illegal/high."}
+{"text":"qq批发拍肩迷药","category":"illegal","level":"high","review_note":"Drugging medicine wholesale phrase; original ad/low is too weak."}
+{"text":"qq批发收藏品数据","category":"illegal","level":"high","review_note":"Wholesale of customer/lead data; should be illegal/high."}
+{"text":"qq批发收藏品资料","category":"illegal","level":"high","review_note":"Wholesale of customer/lead personal data; illegal/high fits."}
+{"text":"qq批发昏迷药","category":"illegal","level":"high","review_note":"Knockout-drug wholesale phrase; should be illegal/high."}
+{"text":"qq批发春药","category":"pornographic","level":"medium","review_note":"Aphrodisiac wholesale phrase is sexual-content related; pornographic/medium fits better than ad/low."}
+{"text":"qq批发普拉西泮","category":"illegal","level":"high","review_note":"Benzodiazepine wholesale phrase; original ad/low should be illegal/high."}
+{"text":"qq批发曲马多","category":"illegal","level":"high","review_note":"Tramadol wholesale phrase; should be illegal/high."}
+{"text":"qq批发替马西泮","category":"illegal","level":"high","review_note":"Temazepam wholesale phrase; illegal/high fits better than ad/low."}
+{"text":"qq批发朝版假人民币","category":"illegal","level":"high","review_note":"Counterfeit RMB wholesale phrase; should be illegal/high."}
+{"text":"qq批发朝鲜版人民币","category":"illegal","level":"high","review_note":"Counterfeit/illicit currency wholesale phrase in fake-money cluster; original ad/low should be illegal/high."}
+{"text":"qq批发杜冷丁","category":"illegal","level":"high","review_note":"Pethidine/Demerol wholesale phrase; should be illegal/high."}
+{"text":"qq批发植物冰","category":"illegal","level":"high","review_note":"Drug slang involving 冰 in wholesale phrase; illegal/high fits."}
+{"text":"qq批发气动狗","category":"illegal","level":"high","review_note":"气动狗 is firearm slang; wholesale should be illegal/high."}
+{"text":"qq批发氯胺酮","category":"illegal","level":"high","review_note":"Ketamine wholesale phrase; original ad/low should be illegal/high."}
+{"text":"qq批发氰化钾","category":"illegal","level":"high","review_note":"Cyanide wholesale phrase; should be illegal/high."}
+{"text":"qq批发汽动狗","category":"illegal","level":"high","review_note":"汽动狗 is firearm slang; wholesale should be illegal/high."}
+{"text":"qq批发汽车信号干扰器","category":"illegal","level":"high","review_note":"Vehicle signal jammer wholesale phrase; illegal/high fits better than ad/low."}
+{"text":"qq批发汽车信号拦截器","category":"illegal","level":"high","review_note":"Vehicle signal interception tool wholesale; should be illegal/high."}
+{"text":"qq批发汽车拦截器","category":"illegal","level":"high","review_note":"Vehicle interception tool wholesale phrase; original ad/low is too weak."}
+{"text":"qq批发汽车遥控干扰器","category":"illegal","level":"high","review_note":"Vehicle remote jammer wholesale phrase; should be illegal/high."}
+{"text":"qq批发汽车遥控解码器","category":"illegal","level":"high","review_note":"Vehicle remote decoder wholesale is theft-enabling tooling; illegal/high fits."}
+{"text":"qq批发沙菲片","category":"illegal","level":"high","review_note":"Drug tablet wholesale phrase in narcotics cluster; should be illegal/high."}
+{"text":"qq批发猎刀","category":"violence","level":"medium","review_note":"Hunting-knife wholesale phrase; violence/medium fits better than ad/low."}
+{"text":"qq批发猎豹弓弩","category":"violence","level":"medium","review_note":"Crossbow wholesale phrase; should be violence/medium."}
+{"text":"qq批发猎鹰弓弩","category":"violence","level":"medium","review_note":"Crossbow wholesale phrase; original ad/low is too generic."}
+{"text":"qq批发甲卡西酮","category":"illegal","level":"high","review_note":"Methcathinone wholesale phrase; illegal/high fits."}
+{"text":"qq批发电狗","category":"illegal","level":"high","review_note":"电狗 is weapon/gun slang in this cluster; wholesale should be illegal/high."}
+{"text":"qq批发电视购物名录","category":"illegal","level":"high","review_note":"Wholesale of shopping customer list data; should be illegal/high."}
+{"text":"qq批发电视购物数据","category":"illegal","level":"high","review_note":"Wholesale of TV-shopping customer data; original ad/low should be illegal/high."}
+{"text":"qq批发电视购物资料","category":"illegal","level":"high","review_note":"Wholesale of TV-shopping customer personal data; illegal/high fits."}
+{"text":"qq批发男性数据","category":"illegal","level":"high","review_note":"Wholesale of personal data about men; should be illegal/high."}
+{"text":"qq批发男性资料","category":"illegal","level":"high","review_note":"Wholesale of personal data about men; original ad/low is too weak."}
+{"text":"qq批发白粉","category":"illegal","level":"high","review_note":"白粉 is heroin/drug slang; wholesale should be illegal/high."}
+{"text":"qq批发盐酸哌替啶","category":"illegal","level":"high","review_note":"Pethidine hydrochloride wholesale phrase; should be illegal/high."}
+{"text":"qq批发盐酸曲马多","category":"illegal","level":"high","review_note":"Tramadol hydrochloride wholesale phrase; original ad/low should be illegal/high."}
+{"text":"qq批发盐酸羟亚胺","category":"illegal","level":"high","review_note":"Drug precursor wholesale phrase; illegal/high fits."}
+{"text":"qq批发砍刀","category":"violence","level":"medium","review_note":"Machete wholesale phrase; should be violence/medium."}
+{"text":"qq批发破氧毒素","category":"illegal","level":"high","review_note":"Poison/toxin wholesale phrase; original ad/low should be illegal/high."}
+{"text":"qq批发砷酸","category":"illegal","level":"high","review_note":"Arsenic acid wholesale phrase; illegal/high fits."}
+{"text":"qq批发礼炮","category":"illegal","level":"medium","review_note":"Firework/explosive wholesale phrase in illicit-goods cluster; illegal/medium fits better than ad/low."}
+{"text":"qq批发礼花弹","category":"illegal","level":"medium","review_note":"Firework shell/explosive wholesale phrase; should be illegal/medium."}
+{"text":"qq批发税票","category":"illegal","level":"high","review_note":"Tax invoice/ticket wholesale phrase; original ad/low should be illegal/high."}
+{"text":"qq批发纯古","category":"illegal","level":"high","review_note":"Drug slang wholesale phrase in narcotics cluster; illegal/high fits."}
+{"text":"qq批发美沙酮","category":"illegal","level":"high","review_note":"Methadone wholesale phrase; should be illegal/high."}
+{"text":"qq批发羟亚胺","category":"illegal","level":"high","review_note":"Drug precursor wholesale phrase; original ad/low should be illegal/high."}
+{"text":"qq批发老人数据","category":"illegal","level":"high","review_note":"Wholesale of personal data about seniors; illegal/high fits."}
+{"text":"qq批发老人资料","category":"illegal","level":"high","review_note":"Wholesale of personal data about seniors; should be illegal/high."}
+{"text":"qq批发考生资料","category":"illegal","level":"high","review_note":"Wholesale of examinee personal data; original ad/low is too weak."}
+{"text":"qq批发考试作弊设备","category":"illegal","level":"medium","review_note":"Exam-cheating equipment wholesale phrase; should be illegal/medium."}
+{"text":"qq批发股民数据","category":"illegal","level":"high","review_note":"Wholesale of investor personal data; illegal/high fits better than ad/low."}
+{"text":"qq批发股民详细信息","category":"illegal","level":"high","review_note":"Wholesale of detailed investor personal information; should be illegal/high."}
+{"text":"qq批发股民资料","category":"illegal","level":"high","review_note":"Wholesale of investor personal data; original ad/low should be illegal/high."}
+{"text":"qq批发胡椒醛","category":"illegal","level":"high","review_note":"Drug-precursor chemical wholesale phrase; illegal/high fits."}
+{"text":"qq批发膛线管","category":"illegal","level":"high","review_note":"Rifled barrel/gun part wholesale phrase; should be illegal/high."}
+{"text":"qq批发苍蝇水","category":"illegal","level":"high","review_note":"Sex/drugging product wholesale phrase; original ad/low is too weak."}
+{"text":"qq批发苍蝇粉","category":"illegal","level":"high","review_note":"Sex/drugging powder wholesale phrase; should be illegal/high."}
+{"text":"qq批发蒙汗药","category":"illegal","level":"high","review_note":"Knockout-drug wholesale phrase; illegal/high fits."}
+{"text":"qq批发西班牙苍蝇水","category":"illegal","level":"high","review_note":"Sex/drugging product wholesale phrase; should be illegal/high."}
+{"text":"qq批发西班牙苍蝇粉","category":"illegal","level":"high","review_note":"Sex/drugging powder wholesale phrase; original ad/low should be illegal/high."}
+{"text":"qq批发警号","category":"illegal","level":"medium","review_note":"Police ID number/badge-related item wholesale suggests impersonation tooling; illegal/medium fits."}
+{"text":"qq批发警徽","category":"illegal","level":"medium","review_note":"Police badge/emblem wholesale suggests impersonation tooling; should be illegal/medium."}
+{"text":"qq批发警服","category":"illegal","level":"medium","review_note":"Police uniform wholesale suggests impersonation tooling; original ad/low is too weak."}
+{"text":"qq批发赵氏弓弩","category":"violence","level":"medium","review_note":"Crossbow wholesale phrase; violence/medium is clearer than ad/low."}
+{"text":"qq批发跳刀","category":"violence","level":"medium","review_note":"Switchblade wholesale phrase; should be violence/medium."}
+{"text":"qq批发车主信息","category":"illegal","level":"high","review_note":"Wholesale of vehicle-owner personal information; illegal/high fits."}
+{"text":"qq批发车主资料","category":"illegal","level":"high","review_note":"Wholesale of vehicle-owner personal data; should be illegal/high."}
+{"text":"qq批发车主资源","category":"illegal","level":"high","review_note":"Wholesale of vehicle-owner leads/data; original ad/low should be illegal/high."}
+{"text":"qq批发车门干扰器","category":"illegal","level":"high","review_note":"Vehicle door jammer wholesale phrase; illegal/high fits."}
+{"text":"qq批发进口弓弩","category":"violence","level":"medium","review_note":"Crossbow wholesale phrase; violence/medium fits better than ad/low."}
+{"text":"qq批发迷幻喷雾","category":"illegal","level":"high","review_note":"Hallucinogenic/drugging spray wholesale phrase; should be illegal/high."}
+{"text":"qq批发迷幻水","category":"illegal","level":"high","review_note":"Hallucinogenic/drugging liquid wholesale phrase; original ad/low should be illegal/high."}
+{"text":"qq批发迷幻药","category":"illegal","level":"high","review_note":"Hallucinogenic drug wholesale phrase; illegal/high fits."}
+{"text":"qq批发迷幻蘑菇","category":"illegal","level":"high","review_note":"Psychedelic mushroom wholesale phrase; should be illegal/high."}
+{"text":"qq批发迷情乖乖水","category":"illegal","level":"high","review_note":"Drugging/obedience liquid wholesale phrase; original ad/low is too weak."}
+{"text":"qq批发迷情粉","category":"illegal","level":"high","review_note":"Drugging/aphrodisiac powder wholesale phrase; should be illegal/high."}
+{"text":"qq批发迷情药","category":"illegal","level":"high","review_note":"Drugging/aphrodisiac drug wholesale phrase; illegal/high fits."}
+{"text":"qq批发迷昏药水","category":"illegal","level":"high","review_note":"Knockout-drug liquid wholesale phrase; should be illegal/high."}
+{"text":"qq批发迷晕药","category":"illegal","level":"high","review_note":"Knockout-drug wholesale phrase; original ad/low should be illegal/high."}
+{"text":"qq批发迷魂水","category":"illegal","level":"high","review_note":"Drugging liquid wholesale phrase; illegal/high fits."}
+{"text":"qq批发迷魂烟","category":"illegal","level":"high","review_note":"Drugging smoke wholesale phrase; should be illegal/high."}
+{"text":"qq批发迷魂粉","category":"illegal","level":"high","review_note":"Drugging powder wholesale phrase; original ad/low is too weak."}
+{"text":"qq批发迷魂香","category":"illegal","level":"high","review_note":"Drugging incense wholesale phrase; should be illegal/high."}
+{"text":"qq批发迷魂香烟","category":"illegal","level":"high","review_note":"Drugging cigarette wholesale phrase; illegal/high fits."}
+{"text":"qq批发钢珠左轮狗","category":"illegal","level":"high","review_note":"Firearm slang involving revolver/steel balls; wholesale should be illegal/high."}
+{"text":"qq批发钢珠弹","category":"illegal","level":"high","review_note":"Projectile/ammunition wholesale phrase; should be illegal/high."}
+{"text":"qq批发铀毒","category":"illegal","level":"high","review_note":"Poison/toxic uranium phrase; original ad/low should be illegal/high."}
+{"text":"qq批发阻击弩","category":"violence","level":"medium","review_note":"Crossbow wholesale phrase; violence/medium fits better than ad/low."}
+{"text":"qq批发阿普唑仑","category":"illegal","level":"high","review_note":"Alprazolam wholesale phrase; should be illegal/high."}
+{"text":"qq批发香烟型昏迷药","category":"illegal","level":"high","review_note":"Cigarette-form knockout drug wholesale phrase; illegal/high fits."}
+{"text":"qq批发香烟型迷药","category":"illegal","level":"high","review_note":"Cigarette-form drugging product wholesale phrase; should be illegal/high."}
+{"text":"qq批发高仿假人民币","category":"illegal","level":"high","review_note":"Counterfeit RMB wholesale phrase; original ad/low should be illegal/high."}
+{"text":"qq批发高仿假硬币","category":"illegal","level":"high","review_note":"Counterfeit coin wholesale phrase; should be illegal/high."}
+{"text":"qq批发高仿假钞","category":"illegal","level":"high","review_note":"Counterfeit banknote wholesale phrase; illegal/high fits."}
+{"text":"qq批发高仿假钱","category":"illegal","level":"high","review_note":"Counterfeit money wholesale phrase; should be illegal/high."}
+{"text":"qq批发高仿毕业证","category":"illegal","level":"high","review_note":"Fake graduation certificate wholesale/service phrase; original ad/low is too weak."}
+{"text":"qq批发高仿警服","category":"illegal","level":"medium","review_note":"Replica police-uniform wholesale suggests impersonation tooling; illegal/medium fits."}
+{"text":"qq批发高压钢珠狗","category":"illegal","level":"high","review_note":"Steel-ball gun slang wholesale phrase; should be illegal/high."}
+{"text":"qq批发麻黄碱","category":"illegal","level":"high","review_note":"Ephedrine precursor wholesale phrase; original ad/low should be illegal/high."}
+{"text":"qq批发黄牙签","category":"illegal","level":"high","review_note":"Drug slang wholesale phrase in narcotics cluster; illegal/high fits."}
+{"text":"qq批发黑曼巴弓弩","category":"violence","level":"medium","review_note":"Crossbow wholesale phrase; violence/medium fits better than ad/low."}
+{"text":"qq找专业打手","category":"violence","level":"high","review_note":"Hiring professional thugs; should be violence/high rather than ad/low."}
+{"text":"qq找人出气报仇","category":"violence","level":"high","review_note":"Seeking revenge/retaliation service; violence/high fits."}
+{"text":"qq找人复仇","category":"violence","level":"high","review_note":"Seeking revenge service; original ad/low should be violence/high."}
+{"text":"qq找人报复","category":"violence","level":"high","review_note":"Seeking retaliation service; should be violence/high."}
+{"text":"qq找小妹上门服务","category":"pornographic","level":"high","review_note":"In this adult-service cluster, 小妹上门服务 indicates commercial sexual service; pornographic/high fits."}
+{"text":"qq找打手报仇","category":"violence","level":"high","review_note":"Hiring thugs for revenge; original ad/low is too weak."}
+{"text":"qq找杀手报仇","category":"violence","level":"critical","review_note":"Hiring a killer for revenge; should be critical violence."}
+{"text":"qq找职业打手","category":"violence","level":"high","review_note":"Seeking professional thugs; violence/high fits better than ad/low."}
+{"text":"qq找职业杀手","category":"violence","level":"critical","review_note":"Seeking a professional killer; critical violence classification is warranted."}
+{"text":"qq拍肩听话粉专卖","category":"illegal","level":"high","review_note":"Drugging/obedience powder sale phrase; should be illegal/high."}
+{"text":"qq拍肩听话粉买卖","category":"illegal","level":"high","review_note":"Drugging/obedience powder trading phrase; original ad/low should be illegal/high."}
+{"text":"qq拍肩型迷魂粉订购","category":"illegal","level":"high","review_note":"Drugging powder order phrase; illegal/high fits."}
+{"text":"qq拍肩药销售","category":"illegal","level":"high","review_note":"Drugging medicine sale phrase; should be illegal/high."}
+{"text":"qq拍肩迷药供应","category":"illegal","level":"high","review_note":"Drugging medicine supply phrase; original ad/low is too weak."}
+{"text":"qq拍肩迷药批发","category":"illegal","level":"high","review_note":"Drugging medicine wholesale phrase; should be illegal/high."}
+{"text":"qq拍肩迷药提供","category":"illegal","level":"high","review_note":"Drugging medicine supply phrase; illegal/high fits."}
+{"text":"qq拍肩迷药直销","category":"illegal","level":"high","review_note":"Drugging medicine direct-sale phrase; should be illegal/high."}
+{"text":"qq拍肩迷药订购","category":"illegal","level":"high","review_note":"Drugging medicine order phrase; original ad/low should be illegal/high."}
+{"text":"qq拍肩迷药销售","category":"illegal","level":"high","review_note":"Drugging medicine sale phrase; should be illegal/high."}
+{"text":"qq招人复仇","category":"violence","level":"high","review_note":"Recruiting people for revenge; violence/high fits better than ad/low."}
+{"text":"qq按摩保健性服务","category":"pornographic","level":"high","review_note":"Explicit sexual-service phrase; should be pornographic/high."}
+{"text":"qq提供3利达弓弩","category":"violence","level":"medium","review_note":"Crossbow weapon supply phrase; violence/medium fits better than ad/low."}
+{"text":"qq提供3利达弩","category":"violence","level":"medium","review_note":"Crossbow supply phrase; should be violence/medium."}
+{"text":"qq提供3棱刀","category":"violence","level":"medium","review_note":"Triangular knife supply phrase; original ad/low is too generic."}
+{"text":"qq提供3棱刮刀","category":"violence","level":"medium","review_note":"Blade supply phrase; violence/medium fits."}
+{"text":"qq提供3棱尖刀","category":"violence","level":"medium","review_note":"Triangular pointed knife supply phrase; should be violence/medium."}
+{"text":"qq提供3棱尖刺","category":"violence","level":"medium","review_note":"Triangular spike/blade supply phrase; original ad/low is too generic."}
+{"text":"qq提供46级答案","category":"illegal","level":"medium","review_note":"Exam-answer provision phrase; should be illegal/medium."}
+{"text":"qq提供46级证","category":"illegal","level":"high","review_note":"CET certificate provision in forged-document cluster; illegal/high fits."}
+{"text":"qq提供54短狗","category":"illegal","level":"high","review_note":"短狗 is firearm slang; supply should be illegal/high rather than ad/low."}
+{"text":"qq提供64式手狗","category":"illegal","level":"high","review_note":"手狗 is firearm slang; supply should be illegal/high."}
+{"text":"qq提供64短狗","category":"illegal","level":"high","review_note":"短狗 is firearm slang; original ad/low should be illegal/high."}
+{"text":"qq提供awp配件","category":"illegal","level":"high","review_note":"AWP firearm parts supply; illegal/high fits better than ad/low."}
+{"text":"qq提供cp99配件","category":"illegal","level":"high","review_note":"CP99 gun/air-gun parts supply; should be illegal/high."}
+{"text":"qq提供ghb水","category":"illegal","level":"high","review_note":"GHB liquid supply phrase; original ad/low should be illegal/high."}
+{"text":"qq提供pcp配件","category":"illegal","level":"high","review_note":"PCP air-gun parts supply; illegal/high fits."}
+{"text":"qq提供万能开锁器","category":"illegal","level":"high","review_note":"Lock-opening device supply phrase; should be illegal/high."}
+{"text":"qq提供万能开锁钥匙","category":"illegal","level":"high","review_note":"Master key/lock-opening tool supply; original ad/low is too weak."}
+{"text":"qq提供万能钥匙","category":"illegal","level":"high","review_note":"Master-key/bypass tool supply phrase; illegal/high fits."}
+{"text":"qq提供业主名录","category":"illegal","level":"high","review_note":"Provision of property-owner directory/personal data; should be illegal/high."}
+{"text":"qq提供业主资料","category":"illegal","level":"high","review_note":"Provision of property-owner personal data; original ad/low should be illegal/high."}
+{"text":"qq提供乖乖水","category":"illegal","level":"high","review_note":"Drugging/obedience liquid supply phrase; illegal/high fits."}
+{"text":"qq提供乖乖水配方","category":"illegal","level":"high","review_note":"Drugging liquid recipe supply phrase; should be illegal/high."}
+{"text":"qq提供乖乖药","category":"illegal","level":"high","review_note":"Drugging/obedience drug supply phrase; original ad/low is too weak."}
+{"text":"qq提供乙醚","category":"illegal","level":"high","review_note":"Ether supply in drugging/illicit-goods cluster; should be illegal/high."}
+{"text":"qq提供云南情蛊药","category":"illegal","level":"high","review_note":"Drugging/aphrodisiac product supply phrase; illegal/high fits."}
+{"text":"qq提供任意变号软件","category":"illegal","level":"high","review_note":"Caller-ID spoofing software supply; should be illegal/high."}
+{"text":"qq提供任意改号软件","category":"illegal","level":"high","review_note":"Caller-ID spoofing software supply; original ad/low should be illegal/high."}
+{"text":"qq提供仿真假钱","category":"illegal","level":"high","review_note":"Counterfeit money supply phrase; illegal/high fits."}
+{"text":"qq提供仿真手狗","category":"illegal","level":"high","review_note":"手狗 is firearm slang; replica gun supply should be illegal/high."}
+{"text":"qq提供仿真汽狗","category":"illegal","level":"high","review_note":"汽狗 is firearm slang; replica gun supply should be illegal/high."}
+{"text":"qq提供仿真警服","category":"illegal","level":"medium","review_note":"Replica police uniform supply suggests impersonation tooling; illegal/medium fits."}
+{"text":"qq提供保险客户数据","category":"illegal","level":"high","review_note":"Provision of insurance customer data; should be illegal/high."}
+{"text":"qq提供保险用户资料","category":"illegal","level":"high","review_note":"Provision of insurance user personal data; original ad/low is too weak."}
+{"text":"qq提供假1元硬币","category":"illegal","level":"high","review_note":"Counterfeit coin supply phrase; should be illegal/high."}
+{"text":"qq提供假文凭证书","category":"illegal","level":"high","review_note":"Fake diploma certificate supply; illegal/high fits."}
+{"text":"qq提供假硬币","category":"illegal","level":"high","review_note":"Counterfeit coin supply phrase; original ad/low should be illegal/high."}
+{"text":"qq提供假等级证书","category":"illegal","level":"high","review_note":"Fake level/grade certificate supply; should be illegal/high."}
+{"text":"qq提供假证","category":"illegal","level":"high","review_note":"Fake-document supply phrase; illegal/high fits."}
+{"text":"qq提供催情口香糖","category":"illegal","level":"high","review_note":"Aphrodisiac/drugging product supply phrase; should be illegal/high."}
+{"text":"qq提供催情水","category":"illegal","level":"high","review_note":"Aphrodisiac/drugging liquid supply; original ad/low should be illegal/high."}
+{"text":"qq提供催情液","category":"illegal","level":"high","review_note":"Aphrodisiac/drugging liquid supply phrase; illegal/high fits."}
+{"text":"qq提供催情药水","category":"illegal","level":"high","review_note":"Aphrodisiac/drugging liquid supply; should be illegal/high."}
+{"text":"qq提供催眠喷雾剂","category":"illegal","level":"high","review_note":"Sedating spray supply phrase; original ad/low is too weak."}
+{"text":"qq提供军刺","category":"violence","level":"medium","review_note":"Military dagger supply phrase; violence/medium fits better than ad/low."}
+{"text":"qq提供军品刺刀","category":"violence","level":"medium","review_note":"Military bayonet supply phrase; should be violence/medium."}
+{"text":"qq提供军用弓弩","category":"violence","level":"medium","review_note":"Military crossbow supply phrase; original ad/low is too generic."}
+{"text":"qq提供冰古","category":"illegal","level":"high","review_note":"Drug slang supply phrase in narcotics cluster; illegal/high fits."}
+{"text":"qq提供化学冰","category":"illegal","level":"high","review_note":"Methamphetamine/drug slang supply phrase; should be illegal/high."}
+{"text":"qq提供去氧麻黄素","category":"illegal","level":"high","review_note":"Methamphetamine/precursor term supply phrase; original ad/low should be illegal/high."}
+{"text":"qq提供双刃尖刀","category":"violence","level":"medium","review_note":"Double-edged knife supply phrase; violence/medium fits."}
+{"text":"qq提供口服型昏迷药","category":"illegal","level":"high","review_note":"Oral knockout-drug supply phrase; should be illegal/high."}
+{"text":"qq提供古柯叶","category":"illegal","level":"high","review_note":"Coca leaf supply phrase; original ad/low should be illegal/high."}
+{"text":"qq提供可待因","category":"illegal","level":"high","review_note":"Codeine supply phrase; should be illegal/high."}
+{"text":"qq提供台湾版假钞","category":"illegal","level":"high","review_note":"Counterfeit banknote supply phrase; illegal/high fits better than ad/low."}
+{"text":"qq提供台湾版假钱","category":"illegal","level":"high","review_note":"Counterfeit money supply phrase; should be illegal/high."}
+{"text":"qq提供司马系列气狗","category":"illegal","level":"high","review_note":"气狗 is firearm slang; supply should be illegal/high."}
+{"text":"qq提供听话水","category":"illegal","level":"high","review_note":"Drugging/obedience liquid supply phrase; original ad/low is too weak."}
+{"text":"qq提供听话药水","category":"illegal","level":"high","review_note":"Drugging/obedience liquid supply phrase; should be illegal/high."}
+{"text":"qq提供哌替啶","category":"illegal","level":"high","review_note":"Pethidine supply phrase; illegal/high fits."}
+{"text":"qq提供喵喵药","category":"illegal","level":"high","review_note":"Synthetic-drug slang supply phrase; should be illegal/high."}
+{"text":"qq提供喷雾蒙汗药","category":"illegal","level":"high","review_note":"Knockout spray supply phrase; original ad/low should be illegal/high."}
+{"text":"qq提供喷雾迷幻药","category":"illegal","level":"high","review_note":"Hallucinogenic/drugging spray supply phrase; should be illegal/high."}

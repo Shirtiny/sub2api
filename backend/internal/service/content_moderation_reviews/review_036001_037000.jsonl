@@ -1,0 +1,230 @@
+{"text":"提供包夜全套服务","category":"pornographic","level":"high","review_note":"明确包夜全套色情服务，原 other/low 过低。"}
+{"text":"提供化学冰","category":"illegal","level":"high","review_note":"冰在该语境中指向冰毒交易，原 other/low 过低。"}
+{"text":"提供化学合成冰","category":"illegal","level":"high","review_note":"明确冰毒类交易语义，原 other/low 过低。"}
+{"text":"提供北朝鲜冰","category":"illegal","level":"high","review_note":"冰在该语境中指向冰毒交易，原 other/low 过低。"}
+{"text":"提供医保个人信息","category":"illegal","level":"high","review_note":"提供医保个人信息属于个人信息黑产交易，原 other/low 过低。"}
+{"text":"提供半自动步枪qq","category":"ad","level":"low","review_note":"含 qq 的售卖导流词，按本次规则应为 ad/low，不直接高危拦截。"}
+{"text":"提供双氢吗啡","category":"illegal","level":"high","review_note":"双氢吗啡为受管制阿片类药物，提供交易语义明确，原 other/low 过低。"}
+{"text":"提供古柯碱","category":"illegal","level":"high","review_note":"古柯碱即可卡因类毒品，原 other/low 过低。"}
+{"text":"提供台湾版假钞","category":"illegal","level":"high","review_note":"明确假钞交易，原 other/low 过低。"}
+{"text":"提供台湾版假钱","category":"illegal","level":"high","review_note":"明确假钱交易，原 other/low 过低。"}
+{"text":"提供台版高仿假币qq","category":"ad","level":"low","review_note":"含 qq 的假币售卖导流词，按本次规则应为 ad/low。"}
+{"text":"提供号码任意显示软件qq","category":"ad","level":"low","review_note":"含 qq 的改号软件导流词，按本次规则应为 ad/low。"}
+{"text":"提供各地老板数据","category":"illegal","level":"high","review_note":"提供个人/客户数据属于数据黑产交易，原 other/low 过低。"}
+{"text":"提供各地老板资料","category":"illegal","level":"high","review_note":"提供个人资料属于数据黑产交易，原 other/low 过低。"}
+{"text":"提供各种制毒工具","category":"illegal","level":"high","review_note":"明确制毒工具交易，原 other/low 过低。"}
+{"text":"提供听话水","category":"illegal","level":"high","review_note":"听话水属于迷药/药物侵害语境，原 other/low 过低。"}
+{"text":"提供听话药","category":"illegal","level":"high","review_note":"听话药属于迷药/药物侵害语境，原 other/low 过低。"}
+{"text":"提供国税发票qq","category":"ad","level":"low","review_note":"含 qq 的发票导流词，按本次规则应为 ad/low。"}
+{"text":"提供国考答案","category":"illegal","level":"high","review_note":"提供考试答案属于作弊黑产，原 other/low 过低。"}
+{"text":"提供土冰","category":"illegal","level":"high","review_note":"土冰在该语境中指向冰毒交易，原 other/low 过低。"}
+{"text":"提供地税发票qq","category":"ad","level":"low","review_note":"含 qq 的发票导流词，按本次规则应为 ad/low。"}
+{"text":"提供增值发票qq","category":"ad","level":"low","review_note":"含 qq 的发票导流词，按本次规则应为 ad/low。"}
+{"text":"提供增值税发票qq","category":"ad","level":"low","review_note":"含 qq 的发票导流词，按本次规则应为 ad/low。"}
+{"text":"提供大冰砖","category":"illegal","level":"high","review_note":"冰砖指向冰毒类交易，原 other/low 过低。"}
+{"text":"提供大麻qq","category":"ad","level":"low","review_note":"含 qq 的毒品售卖导流词，按本次规则应为 ad/low。"}
+{"text":"提供天天面单数据","category":"illegal","level":"high","review_note":"面单数据含个人收寄信息，提供交易属于数据黑产，原 other/low 过低。"}
+{"text":"提供太安炸药qq","category":"ad","level":"low","review_note":"含 qq 的爆炸物导流词，按本次规则应为 ad/low。"}
+{"text":"提供失忆药","category":"illegal","level":"high","review_note":"失忆药属于迷药/药物侵害语境，原 other/low 过低。"}
+{"text":"提供女性数据","category":"illegal","level":"high","review_note":"提供人群个人数据属于数据黑产交易，原 other/low 过低。"}
+{"text":"提供娥眉气枪qq","category":"ad","level":"low","review_note":"含 qq 的气枪售卖导流词，按本次规则应为 ad/low。"}
+{"text":"提供婴儿数据","category":"illegal","level":"high","review_note":"婴儿数据涉及未成年人个人信息交易，原 other/low 过低。"}
+{"text":"提供子弹qq","category":"ad","level":"low","review_note":"含 qq 的弹药售卖导流词，按本次规则应为 ad/low。"}
+{"text":"提供学生家长数据","category":"illegal","level":"high","review_note":"学生家长数据涉及个人信息交易，原 other/low 过低。"}
+{"text":"提供学生家长资料","category":"illegal","level":"high","review_note":"学生家长资料涉及个人信息交易，原 other/low 过低。"}
+{"text":"提供学生数据","category":"illegal","level":"high","review_note":"学生数据涉及个人信息交易，原 other/low 过低。"}
+{"text":"提供学生资料","category":"illegal","level":"high","review_note":"学生资料涉及个人信息交易，原 other/low 过低。"}
+{"text":"提供宅急送数据","category":"illegal","level":"high","review_note":"快递/物流数据交易涉及个人信息泄露，原 other/low 过低。"}
+{"text":"提供宅急送面单数据","category":"illegal","level":"high","review_note":"面单数据含个人收寄信息，原 other/low 过低。"}
+{"text":"提供安乐死毒药","category":"violence","level":"high","review_note":"明确提供致死毒药，涉及严重伤害风险，原 other/low 过低。"}
+{"text":"提供安卓手机卧底软件qq","category":"ad","level":"low","review_note":"含 qq 的软件导流词，按本次规则应为 ad/low。"}
+{"text":"提供少女迷情粉","category":"illegal","level":"high","review_note":"迷情粉属于迷药/药物侵害语境，原 other/low 过低。"}
+{"text":"提供居民户口本","category":"illegal","level":"high","review_note":"提供户籍证件属于疑似假证交易，原 other/low 过低。"}
+{"text":"提供峨眉牌汽枪qq","category":"ad","level":"low","review_note":"含 qq 的汽枪售卖导流词，按本次规则应为 ad/low。"}
+{"text":"提供工字气木仓","category":"illegal","level":"high","review_note":"木仓为枪的规避写法，气枪交易语义明确，原 other/low 过低。"}
+{"text":"提供工字气枪qq","category":"ad","level":"low","review_note":"含 qq 的气枪售卖导流词，按本次规则应为 ad/low。"}
+{"text":"提供工字牌汽枪qq","category":"ad","level":"low","review_note":"含 qq 的汽枪售卖导流词，按本次规则应为 ad/low。"}
+{"text":"提供左轮手枪qq","category":"ad","level":"low","review_note":"含 qq 的枪支售卖导流词，按本次规则应为 ad/low。"}
+{"text":"提供成人3d电视棒qq","category":"ad","level":"low","review_note":"含 qq 的成人资源导流词，按本次规则应为 ad/low。"}
+{"text":"提供成人电视棒qq","category":"ad","level":"low","review_note":"含 qq 的成人资源导流词，按本次规则应为 ad/low。"}
+{"text":"提供成人高考答案","category":"illegal","level":"high","review_note":"成人高考是考试场景，提供答案属于作弊黑产，原 pornographic/high 分类不准。"}
+{"text":"提供户口本","category":"illegal","level":"high","review_note":"提供户籍证件属于疑似假证交易，原 other/low 过低。"}
+{"text":"提供手qiang子弹qq","category":"ad","level":"low","review_note":"含 qq 的弹药售卖导流词，按本次规则应为 ad/low。"}
+{"text":"提供手木仓","category":"illegal","level":"high","review_note":"木仓为枪的规避写法，手枪交易语义明确，原 other/low 过低。"}
+{"text":"提供手机任意显号软件qq","category":"ad","level":"low","review_note":"含 qq 的显号软件导流词，按本次规则应为 ad/low。"}
+{"text":"提供手机卧底定位软件qq","category":"ad","level":"low","review_note":"含 qq 的软件导流词，按本次规则应为 ad/low。"}
+{"text":"提供手机卧底监听软件qq","category":"ad","level":"low","review_note":"含 qq 的监听软件导流词，按本次规则应为 ad/low。"}
+{"text":"提供手机卧底间谍软件qq","category":"ad","level":"low","review_note":"含 qq 的间谍软件导流词，按本次规则应为 ad/low。"}
+{"text":"提供手机去电任意显软件qq","category":"ad","level":"low","review_note":"含 qq 的显号软件导流词，按本次规则应为 ad/low。"}
+{"text":"提供手机窃听软件","category":"illegal","level":"high","review_note":"手机窃听软件属于非法监听工具，原 ad/low 过低。"}
+{"text":"提供手机窃听软件下载","category":"illegal","level":"high","review_note":"手机窃听软件下载属于非法监听工具传播，原 ad/low 过低。"}
+{"text":"提供手机远程卧底软件qq","category":"ad","level":"low","review_note":"含 qq 的软件导流词，按本次规则应为 ad/low。"}
+{"text":"提供手枪qq","category":"ad","level":"low","review_note":"含 qq 的枪支售卖导流词，按本次规则应为 ad/low。"}
+{"text":"提供手枪子弹qq","category":"ad","level":"low","review_note":"含 qq 的弹药售卖导流词，按本次规则应为 ad/low。"}
+{"text":"提供手枪配件qq","category":"ad","level":"low","review_note":"含 qq 的枪支配件导流词，按本次规则应为 ad/low。"}
+{"text":"提供打手杀手","category":"violence","level":"high","review_note":"提供打手/杀手服务指向暴力犯罪服务，原 other/low 过低。"}
+{"text":"提供打鸟木仓","category":"illegal","level":"high","review_note":"木仓为枪的规避写法，打鸟枪交易语义明确，原 other/low 过低。"}
+{"text":"提供打鸟枪qq","category":"ad","level":"low","review_note":"含 qq 的枪支售卖导流词，按本次规则应为 ad/low。"}
+{"text":"提供打鸟汽枪qq","category":"ad","level":"low","review_note":"含 qq 的汽枪售卖导流词，按本次规则应为 ad/low。"}
+{"text":"提供拍肩型迷魂粉","category":"illegal","level":"high","review_note":"拍肩型迷魂粉属于迷药/药物侵害语境，原 other/low 过低。"}
+{"text":"提供拍肩药","category":"illegal","level":"high","review_note":"拍肩药属于迷药/药物侵害语境，原 other/low 过低。"}
+{"text":"提供挥发型迷药","category":"illegal","level":"high","review_note":"明确迷药交易，原 other/low 过低。"}
+{"text":"提供援交","category":"pornographic","level":"high","review_note":"援交属于明确色情交易服务，原 other/low 过低。"}
+{"text":"提供援交妹","category":"pornographic","level":"high","review_note":"援交妹属于色情服务语境，原 other/low 过低。"}
+{"text":"提供援交服务","category":"pornographic","level":"high","review_note":"明确援交色情服务，原 other/low 过低。"}
+{"text":"提供摇头丸qq","category":"ad","level":"low","review_note":"含 qq 的毒品售卖导流词，按本次规则应为 ad/low。"}
+{"text":"提供摇头丸配方qq","category":"ad","level":"low","review_note":"含 qq 的毒品配方导流词，按本次规则应为 ad/low。"}
+{"text":"提供散弹枪qq","category":"ad","level":"low","review_note":"含 qq 的枪支售卖导流词，按本次规则应为 ad/low。"}
+{"text":"提供新生儿数据","category":"illegal","level":"high","review_note":"新生儿数据涉及未成年人个人信息交易，原 other/low 过低。"}
+{"text":"提供旅客个人信息","category":"illegal","level":"high","review_note":"旅客个人信息交易属于数据黑产，原 other/low 过低。"}
+{"text":"提供无线电作弊器材","category":"illegal","level":"high","review_note":"考试作弊器材交易语义明确，原 other/low 过低。"}
+{"text":"提供无线电作弊接收器","category":"illegal","level":"high","review_note":"考试作弊接收器交易语义明确，原 other/low 过低。"}
+{"text":"提供最新保险数据","category":"illegal","level":"high","review_note":"保险客户数据交易属于数据黑产，原 other/low 过低。"}
+{"text":"提供最新股民数据","category":"illegal","level":"high","review_note":"股民数据交易属于个人信息黑产，原 other/low 过低。"}
+{"text":"提供最新股民资源","category":"illegal","level":"high","review_note":"股民资源交易属于个人信息黑产，原 other/low 过低。"}
+{"text":"提供杀手帮人复仇","category":"violence","level":"high","review_note":"杀手复仇服务指向暴力犯罪，原 other/low 过低。"}
+{"text":"提供杀手服务","category":"violence","level":"high","review_note":"杀手服务指向暴力犯罪，原 other/low 过低。"}
+{"text":"提供枪支配件qq","category":"ad","level":"low","review_note":"含 qq 的枪支配件导流词，按本次规则应为 ad/low。"}
+{"text":"提供枸橼酸芬太尼","category":"illegal","level":"high","review_note":"芬太尼类受管制麻醉药品交易语义明确，原 other/low 过低。"}
+{"text":"提供楼盘业主数据","category":"illegal","level":"high","review_note":"业主数据交易属于个人信息黑产，原 other/low 过低。"}
+{"text":"提供步qiang","category":"illegal","level":"high","review_note":"qiang 为枪的拼音规避写法，步枪交易语义明确，原 other/low 过低。"}
+{"text":"提供步qiang子弹qq","category":"ad","level":"low","review_note":"含 qq 的弹药售卖导流词，按本次规则应为 ad/low。"}
+{"text":"提供步枪qq","category":"ad","level":"low","review_note":"含 qq 的枪支售卖导流词，按本次规则应为 ad/low。"}
+{"text":"提供步枪子弹qq","category":"ad","level":"low","review_note":"含 qq 的弹药售卖导流词，按本次规则应为 ad/low。"}
+{"text":"提供步枪配件qq","category":"ad","level":"low","review_note":"含 qq 的枪支配件导流词，按本次规则应为 ad/low。"}
+{"text":"提供气动钢珠枪qq","category":"ad","level":"low","review_note":"含 qq 的气枪售卖导流词，按本次规则应为 ad/low。"}
+{"text":"提供气手枪qq","category":"ad","level":"low","review_note":"含 qq 的枪支售卖导流词，按本次规则应为 ad/low。"}
+{"text":"提供气木仓","category":"illegal","level":"high","review_note":"木仓为枪的规避写法，气枪交易语义明确，原 other/low 过低。"}
+{"text":"提供气枪qq","category":"ad","level":"low","review_note":"含 qq 的气枪售卖导流词，按本次规则应为 ad/low。"}
+{"text":"提供氯胺酮","category":"illegal","level":"high","review_note":"氯胺酮为受管制毒品/麻醉药品，原 other/low 过低。"}
+{"text":"提供氯胺酮制作配方","category":"illegal","level":"high","review_note":"提供受管制毒品制作配方，原 other/low 过低。"}
+{"text":"提供汽枪子弹qq","category":"ad","level":"low","review_note":"含 qq 的汽枪弹药导流词，按本次规则应为 ad/low。"}
+{"text":"提供汽枪配件qq","category":"ad","level":"low","review_note":"含 qq 的汽枪配件导流词，按本次规则应为 ad/low。"}
+{"text":"提供汽枪铅弹qq","category":"ad","level":"low","review_note":"含 qq 的汽枪弹药导流词，按本次规则应为 ad/low。"}
+{"text":"提供汽步枪qq","category":"ad","level":"low","review_note":"含 qq 的汽枪售卖导流词，按本次规则应为 ad/low。"}
+{"text":"提供汽油燃烧瓶","category":"illegal","level":"high","review_note":"汽油燃烧瓶属于危险燃烧武器，原 other/low 过低。"}
+{"text":"提供海洛因4号qq","category":"ad","level":"low","review_note":"含 qq 的毒品售卖导流词，按本次规则应为 ad/low。"}
+{"text":"提供海洛因qq","category":"ad","level":"low","review_note":"含 qq 的毒品售卖导流词，按本次规则应为 ad/low。"}
+{"text":"提供激情裸聊qq","category":"ad","level":"low","review_note":"含 qq 的裸聊导流词，按本次规则应为 ad/low。"}
+{"text":"提供火药配方比例","category":"illegal","level":"high","review_note":"提供火药配方比例属于爆炸物制作信息，原 other/low 过低。"}
+{"text":"提供物流公司内部数据","category":"illegal","level":"high","review_note":"物流内部数据交易属于数据黑产，原 other/low 过低。"}
+{"text":"提供物流客户资料","category":"illegal","level":"high","review_note":"物流客户资料交易属于个人信息黑产，原 other/low 过低。"}
+{"text":"提供物流成单数据","category":"illegal","level":"high","review_note":"物流成单数据交易属于客户数据黑产，原 other/low 过低。"}
+{"text":"提供物流数据","category":"illegal","level":"high","review_note":"物流数据交易属于数据黑产，原 other/low 过低。"}
+{"text":"提供物流进线数据","category":"illegal","level":"high","review_note":"物流进线数据交易属于客户数据黑产，原 other/low 过低。"}
+{"text":"提供特洛伊卧底软件qq","category":"ad","level":"low","review_note":"含 qq 的软件导流词，按本次规则应为 ad/low。"}
+{"text":"提供特洛伊远程窃听软件","category":"illegal","level":"high","review_note":"远程窃听软件属于非法监听工具，原 other/low 过低。"}
+{"text":"提供犯人数据","category":"illegal","level":"high","review_note":"犯人数据交易属于个人信息黑产，原 other/low 过低。"}
+{"text":"提供狙击步枪qq","category":"ad","level":"low","review_note":"含 qq 的枪支售卖导流词，按本次规则应为 ad/low。"}
+{"text":"提供狙击气枪qq","category":"ad","level":"low","review_note":"含 qq 的气枪售卖导流词，按本次规则应为 ad/low。"}
+{"text":"提供狙击气步枪qq","category":"ad","level":"low","review_note":"含 qq 的气枪售卖导流词，按本次规则应为 ad/low。"}
+{"text":"提供狩猎气枪qq","category":"ad","level":"low","review_note":"含 qq 的气枪售卖导流词，按本次规则应为 ad/low。"}
+{"text":"提供猎qiang子弹qq","category":"ad","level":"low","review_note":"含 qq 的弹药售卖导流词，按本次规则应为 ad/low。"}
+{"text":"提供猎木仓","category":"illegal","level":"high","review_note":"木仓为枪的规避写法，猎枪交易语义明确，原 other/low 过低。"}
+{"text":"提供猎枪qq","category":"ad","level":"low","review_note":"含 qq 的枪支售卖导流词，按本次规则应为 ad/low。"}
+{"text":"提供猎枪子弹qq","category":"ad","level":"low","review_note":"含 qq 的弹药售卖导流词，按本次规则应为 ad/low。"}
+{"text":"提供猎枪铅弹qq","category":"ad","level":"low","review_note":"含 qq 的枪支弹药导流词，按本次规则应为 ad/low。"}
+{"text":"提供甲基安非他命","category":"illegal","level":"high","review_note":"甲基安非他命为明确毒品，原 other/low 过低。"}
+{"text":"提供甲基甲卡西酮","category":"illegal","level":"high","review_note":"甲基甲卡西酮为受管制新精神活性物质，原 other/low 过低。"}
+{"text":"提供甲基苯丙胺","category":"illegal","level":"high","review_note":"甲基苯丙胺为明确毒品，原 other/low 过低。"}
+{"text":"提供甲基苯丙胺制作方法","category":"illegal","level":"high","review_note":"提供毒品制作方法，原 other/low 过低。"}
+{"text":"提供甲硝西泮","category":"illegal","level":"high","review_note":"甲硝西泮为受管制镇静催眠药，原 other/low 过低。"}
+{"text":"提供电信用户数据","category":"illegal","level":"high","review_note":"电信用户数据交易属于个人信息黑产，原 other/low 过低。"}
+{"text":"提供电视购物用户数据","category":"illegal","level":"high","review_note":"电视购物用户数据交易属于客户信息黑产，原 other/low 过低。"}
+{"text":"提供电视购物资料","category":"illegal","level":"high","review_note":"电视购物客户资料交易属于数据黑产，原 other/low 过低。"}
+{"text":"提供电购数据","category":"illegal","level":"high","review_note":"电购客户数据交易属于数据黑产，原 other/low 过低。"}
+{"text":"提供电购资料","category":"illegal","level":"high","review_note":"电购客户资料交易属于数据黑产，原 other/low 过低。"}
+{"text":"提供电购进线面单数据","category":"illegal","level":"high","review_note":"电购面单数据含个人信息，原 other/low 过低。"}
+{"text":"提供电购面单数据","category":"illegal","level":"high","review_note":"电购面单数据含个人信息，原 other/low 过低。"}
+{"text":"提供百元假币qq","category":"ad","level":"low","review_note":"含 qq 的假币售卖导流词，按本次规则应为 ad/low。"}
+{"text":"提供盐酸哌替啶","category":"illegal","level":"high","review_note":"盐酸哌替啶为受管制麻醉药品，原 other/low 过低。"}
+{"text":"提供盐酸氯胺酮","category":"illegal","level":"high","review_note":"盐酸氯胺酮为受管制毒品/麻醉药品，原 other/low 过低。"}
+{"text":"提供硝甲西泮","category":"illegal","level":"high","review_note":"硝甲西泮为受管制镇静催眠药，原 other/low 过低。"}
+{"text":"提供监狱数据","category":"illegal","level":"high","review_note":"监狱数据交易属于个人信息黑产，原 other/low 过低。"}
+{"text":"提供真实银行卡","category":"illegal","level":"high","review_note":"真实银行卡交易属于银行卡黑产，原 other/low 过低。"}
+{"text":"提供眼角膜源","category":"illegal","level":"high","review_note":"眼角膜源交易涉及人体组织买卖，原 other/low 过低。"}
+{"text":"提供秃鹰枪qq","category":"ad","level":"low","review_note":"含 qq 的枪支售卖导流词，按本次规则应为 ad/low。"}
+{"text":"提供秃鹰气枪qq","category":"ad","level":"low","review_note":"含 qq 的气枪售卖导流词，按本次规则应为 ad/low。"}
+{"text":"提供秃鹰气步枪qq","category":"ad","level":"low","review_note":"含 qq 的气枪售卖导流词，按本次规则应为 ad/low。"}
+{"text":"提供秃鹰汽枪qq","category":"ad","level":"low","review_note":"含 qq 的汽枪售卖导流词，按本次规则应为 ad/low。"}
+{"text":"提供税务发票qq","category":"ad","level":"low","review_note":"含 qq 的发票导流词，按本次规则应为 ad/low。"}
+{"text":"提供突击步枪qq","category":"ad","level":"low","review_note":"含 qq 的枪支售卖导流词，按本次规则应为 ad/low。"}
+{"text":"提供窃听手机软件","category":"illegal","level":"high","review_note":"窃听手机软件属于非法监听工具，原 ad/low 过低。"}
+{"text":"提供窃听软件","category":"illegal","level":"high","review_note":"窃听软件属于非法监听工具，原 other/low 过低。"}
+{"text":"提供罂粟种子","category":"illegal","level":"high","review_note":"罂粟种子交易涉毒风险明确，原 other/low 过低。"}
+{"text":"提供网络攻击","category":"illegal","level":"high","review_note":"提供网络攻击属于网络黑产服务，原 other/low 过低。"}
+{"text":"提供美女luoliao","category":"pornographic","level":"high","review_note":"luoliao 为裸聊拼音规避写法，原 other/low 过低。"}
+{"text":"提供美沙酮","category":"illegal","level":"high","review_note":"美沙酮为受管制麻醉药品，原 other/low 过低。"}
+{"text":"提供老人保健数据","category":"illegal","level":"high","review_note":"老人保健数据交易属于个人信息黑产，原 other/low 过低。"}
+{"text":"提供老人数据","category":"illegal","level":"high","review_note":"老人数据交易属于个人信息黑产，原 other/low 过低。"}
+{"text":"提供老人电购数据","category":"illegal","level":"high","review_note":"老人电购数据交易属于个人信息黑产，原 other/low 过低。"}
+{"text":"提供老人资料","category":"illegal","level":"high","review_note":"老人资料交易属于个人信息黑产，原 other/low 过低。"}
+{"text":"提供老板个人资料","category":"illegal","level":"high","review_note":"老板个人资料交易属于个人信息黑产，原 other/low 过低。"}
+{"text":"提供老板资料","category":"illegal","level":"high","review_note":"老板资料交易属于个人信息黑产，原 other/low 过低。"}
+{"text":"提供考生家长资料","category":"illegal","level":"high","review_note":"考生家长资料交易属于个人信息黑产，原 other/low 过低。"}
+{"text":"提供考试作弊器","category":"illegal","level":"high","review_note":"考试作弊器交易属于作弊黑产，原 other/low 过低。"}
+{"text":"提供考试作弊器材","category":"illegal","level":"high","review_note":"考试作弊器材交易属于作弊黑产，原 other/low 过低。"}
+{"text":"提供考试作弊设备","category":"illegal","level":"high","review_note":"考试作弊设备交易属于作弊黑产，原 other/low 过低。"}
+{"text":"提供考试反屏蔽设备","category":"illegal","level":"high","review_note":"考试反屏蔽设备用于作弊规避，原 other/low 过低。"}
+{"text":"提供考试答案tel","category":"ad","level":"low","review_note":"含 tel 联系导流，按本次规则应为 ad/low。"}
+{"text":"提供联通用户数据","category":"illegal","level":"high","review_note":"联通用户数据交易属于个人信息黑产，原 other/low 过低。"}
+{"text":"提供肾源","category":"illegal","level":"high","review_note":"肾源交易涉及人体器官买卖，原 other/low 过低。"}
+{"text":"提供肾源信息","category":"illegal","level":"high","review_note":"肾源信息交易涉及人体器官买卖，原 other/low 过低。"}
+{"text":"提供胸推服务","category":"pornographic","level":"high","review_note":"胸推服务属于色情服务语境，原 other/low 过低。"}
+{"text":"提供色情服务qq","category":"ad","level":"low","review_note":"含 qq 的色情服务导流词，按本次规则应为 ad/low。"}
+{"text":"提供芬太尼","category":"illegal","level":"high","review_note":"芬太尼为受管制麻醉药品，原 other/low 过低。"}
+{"text":"提供英语46级答案","category":"illegal","level":"high","review_note":"提供考试答案属于作弊黑产，原 other/low 过低。"}
+{"text":"提供蒙汗药","category":"illegal","level":"high","review_note":"蒙汗药属于迷药/药物侵害语境，原 other/low 过低。"}
+{"text":"提供蒙汗药配方","category":"illegal","level":"high","review_note":"提供迷药配方，原 other/low 过低。"}
+{"text":"提供虎头猎枪qq","category":"ad","level":"low","review_note":"含 qq 的枪支售卖导流词，按本次规则应为 ad/low。"}
+{"text":"提供警官证","category":"illegal","level":"high","review_note":"提供警官证属于疑似假冒证件交易，原 other/low 过低。"}
+{"text":"提供警察证","category":"illegal","level":"high","review_note":"提供警察证属于疑似假冒证件交易，原 other/low 过低。"}
+{"text":"提供记者证","category":"illegal","level":"high","review_note":"提供记者证属于疑似假冒证件交易，原 other/low 过低。"}
+{"text":"提供财务发票qq","category":"ad","level":"low","review_note":"含 qq 的发票导流词，按本次规则应为 ad/low。"}
+{"text":"提供赌博粉qq","category":"ad","level":"low","review_note":"含 qq 的赌博黑产导流词，按本次规则应为 ad/low。"}
+{"text":"提供赌博药qq","category":"ad","level":"low","review_note":"含 qq 的赌博黑产导流词，按本次规则应为 ad/low。"}
+{"text":"提供足交服务","category":"pornographic","level":"high","review_note":"足交服务属于色情服务语境，原 other/low 过低。"}
+{"text":"提供车主个人信息","category":"illegal","level":"high","review_note":"车主个人信息交易属于个人信息黑产，原 other/low 过低。"}
+{"text":"提供车主信息","category":"illegal","level":"high","review_note":"车主信息交易属于个人信息黑产，原 other/low 过低。"}
+{"text":"提供车主信息资料","category":"illegal","level":"high","review_note":"车主信息资料交易属于个人信息黑产，原 other/low 过低。"}
+{"text":"提供车主名录","category":"illegal","level":"high","review_note":"车主名录交易属于个人信息黑产，原 other/low 过低。"}
+{"text":"提供车主数据","category":"illegal","level":"high","review_note":"车主数据交易属于个人信息黑产，原 other/low 过低。"}
+{"text":"提供车主详细资料","category":"illegal","level":"high","review_note":"车主详细资料交易属于个人信息黑产，原 other/low 过低。"}
+{"text":"提供进口气枪qq","category":"ad","level":"low","review_note":"含 qq 的气枪售卖导流词，按本次规则应为 ad/low。"}
+{"text":"提供远程卧底监控软件qq","category":"ad","level":"low","review_note":"含 qq 的监控软件导流词，按本次规则应为 ad/low。"}
+{"text":"提供远程手机偷听器软件","category":"illegal","level":"high","review_note":"远程手机偷听软件属于非法监听工具，原 ad/low 过低。"}
+{"text":"提供迪卡昏迷粉","category":"illegal","level":"high","review_note":"昏迷粉属于迷药/药物侵害语境，原 other/low 过低。"}
+{"text":"提供迷奸药","category":"illegal","level":"high","review_note":"迷奸药属于药物侵害工具，原 other/low 过低。"}
+{"text":"提供迷幻喷雾","category":"illegal","level":"high","review_note":"迷幻喷雾属于迷药/致幻药物交易语境，原 other/low 过低。"}
+{"text":"提供迷幻药","category":"illegal","level":"high","review_note":"明确迷幻药交易，原 other/low 过低。"}
+{"text":"提供迷幻蘑菇","category":"illegal","level":"high","review_note":"迷幻蘑菇属于致幻毒品交易语境，原 other/low 过低。"}
+{"text":"提供迷情水","category":"illegal","level":"high","review_note":"迷情水属于迷药/药物侵害语境，原 other/low 过低。"}
+{"text":"提供迷情粉","category":"illegal","level":"high","review_note":"迷情粉属于迷药/药物侵害语境，原 other/low 过低。"}
+{"text":"提供迷情药","category":"illegal","level":"high","review_note":"迷情药属于迷药/药物侵害语境，原 other/low 过低。"}
+{"text":"提供迷情药水","category":"illegal","level":"high","review_note":"迷情药水属于迷药/药物侵害语境，原 other/low 过低。"}
+{"text":"提供迷烟","category":"illegal","level":"high","review_note":"迷烟属于迷药/药物侵害语境，原 other/low 过低。"}
+{"text":"提供迷魂水","category":"illegal","level":"high","review_note":"迷魂水属于迷药/药物侵害语境，原 other/low 过低。"}
+{"text":"提供迷魂粉","category":"illegal","level":"high","review_note":"迷魂粉属于迷药/药物侵害语境，原 other/low 过低。"}
+{"text":"提供迷魂药","category":"illegal","level":"high","review_note":"迷魂药属于迷药/药物侵害语境，原 other/low 过低。"}
+{"text":"提供通用机打发票qq","category":"ad","level":"low","review_note":"含 qq 的发票导流词，按本次规则应为 ad/low。"}
+{"text":"提供金属气枪qq","category":"ad","level":"low","review_note":"含 qq 的气枪售卖导流词，按本次规则应为 ad/low。"}
+{"text":"提供金融客户资源","category":"illegal","level":"high","review_note":"金融客户资源交易属于个人信息黑产，原 other/low 过低。"}
+{"text":"提供针孔作弊器","category":"illegal","level":"high","review_note":"针孔作弊器用于作弊黑产，原 other/low 过低。"}
+{"text":"提供钢珠枪qq","category":"ad","level":"low","review_note":"含 qq 的枪支售卖导流词，按本次规则应为 ad/low。"}
+{"text":"提供钢珠汽枪qq","category":"ad","level":"low","review_note":"含 qq 的汽枪售卖导流词，按本次规则应为 ad/low。"}
+{"text":"提供钢管枪qq","category":"ad","level":"low","review_note":"含 qq 的枪支售卖导流词，按本次规则应为 ad/low。"}
+{"text":"提供钻石冰","category":"illegal","level":"high","review_note":"钻石冰在该语境中指向冰毒交易，原 other/low 过低。"}
+{"text":"提供钻石冰毒qq","category":"ad","level":"low","review_note":"含 qq 的毒品售卖导流词，按本次规则应为 ad/low。"}
+{"text":"提供铅弹模具","category":"illegal","level":"high","review_note":"铅弹模具用于弹药制作，原 other/low 过低。"}
+{"text":"提供铅弹汽枪qq","category":"ad","level":"low","review_note":"含 qq 的汽枪售卖导流词，按本次规则应为 ad/low。"}
+{"text":"提供硝酸铊","category":"illegal","level":"high","review_note":"提供高毒铊盐交易风险明确，原 other/low 过低。"}
+{"text":"提供铊粉","category":"illegal","level":"high","review_note":"提供高毒铊粉交易风险明确，原 other/low 过低。"}
+{"text":"提供银氰化钾","category":"illegal","level":"high","review_note":"银氰化钾为高毒氰化物，交易风险明确，原 other/low 过低。"}
+{"text":"提供银行客户信息","category":"illegal","level":"high","review_note":"银行客户信息交易属于金融数据黑产，原 other/low 过低。"}
+{"text":"提供锡锋牌汽枪qq","category":"ad","level":"low","review_note":"含 qq 的汽枪售卖导流词，按本次规则应为 ad/low。"}
+{"text":"提供阿普唑仑","category":"illegal","level":"high","review_note":"阿普唑仑为受管制镇静催眠药，原 other/low 过低。"}
+{"text":"提供隐形作弊耳机","category":"illegal","level":"high","review_note":"隐形作弊耳机属于考试作弊工具，原 other/low 过低。"}
+{"text":"提供韵达面单数据","category":"illegal","level":"high","review_note":"快递面单数据含个人收寄信息，原 other/low 过低。"}
+{"text":"提供顺丰面单购物数据","category":"illegal","level":"high","review_note":"顺丰面单购物数据含个人信息，原 other/low 过低。"}
+{"text":"提供驾照","category":"illegal","level":"high","review_note":"提供驾驶证件属于疑似假证交易，原 other/low 过低。"}
+{"text":"提供驾驶证","category":"illegal","level":"high","review_note":"提供驾驶证件属于疑似假证交易，原 other/low 过低。"}

@@ -1,0 +1,246 @@
+{"text":"黄金城娱乐场","category":"illegal","level":"high","review_note":"指向赌博娱乐场语义，原 other/low 分类过低。"}
+{"text":"黄金城赌场","category":"illegal","level":"high","review_note":"明确赌场语义，原 other/low 分类过低。"}
+{"text":"黄麻素供应","category":"illegal","level":"high","review_note":"黄麻素为易制毒/管制风险物质，供应语义明确，原 other/low 过低。"}
+{"text":"黄麻素出售","category":"illegal","level":"high","review_note":"黄麻素出售涉及管制物质交易，原 ad/low 过低。"}
+{"text":"黄麻素出售qq","category":"illegal","level":"high","review_note":"黄麻素出售并带 QQ 导流，涉及管制物质交易，原 ad/low 过低。"}
+{"text":"黎智英","category":"political","level":"medium","review_note":"香港政治人物姓名，政治语境明确，原 other/low 分类过低。"}
+{"text":"黑不过中国证监会","category":"political","level":"medium","review_note":"涉及中国证监会的政治/监管讽刺表述，原 other/low 分类过低。"}
+{"text":"黑丝内射","category":"pornographic","level":"high","review_note":"包含明确色情行为词，原 other/low 过低。"}
+{"text":"黑丝双通道可内射","category":"pornographic","level":"high","review_note":"包含露骨色情服务/行为描述，原 other/low 过低。"}
+{"text":"黑丝熟女","category":"pornographic","level":"medium","review_note":"色情化成人对象描述，原 other/low 过低。"}
+{"text":"黑丝豹纹中出全套","category":"pornographic","level":"high","review_note":"包含中出、全套等明确色情服务语义，原 other/low 过低。"}
+{"text":"黑人大屌","category":"pornographic","level":"medium","review_note":"包含露骨生殖器色情描述，原 other/low 过低。"}
+{"text":"黑屄","category":"pornographic","level":"medium","review_note":"露骨女性生殖器低俗词，原 other/low 过低。"}
+{"text":"黑崎彩种子","category":"pornographic","level":"medium","review_note":"成人女优姓名加种子资源语义，原 other/low 过低。"}
+{"text":"黑崎扇菜种子","category":"pornographic","level":"medium","review_note":"成人女优姓名加种子资源语义，原 other/low 过低。"}
+{"text":"黑市军刀专卖","category":"illegal","level":"high","review_note":"黑市军刀专卖属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"黑市刀具qq","category":"illegal","level":"high","review_note":"黑市刀具交易并带 QQ 导流，原 ad/low 过低。"}
+{"text":"黑市刀具出售","category":"illegal","level":"high","review_note":"黑市刀具出售属于管制刀具交易语义，原 ad/low 过低。"}
+{"text":"黑市卖肾qq","category":"illegal","level":"high","review_note":"卖肾并带 QQ 导流，涉及非法器官交易，原 ad/low 过低。"}
+{"text":"黑市器官","category":"illegal","level":"high","review_note":"黑市器官指向非法器官交易，原 other/low 过低。"}
+{"text":"黑市肾源供应","category":"illegal","level":"high","review_note":"肾源供应涉及非法器官交易，原 other/low 过低。"}
+{"text":"黑彩","category":"illegal","level":"high","review_note":"黑彩为非法彩票/赌博语义，原 other/low 过低。"}
+{"text":"黑彩代购","category":"illegal","level":"high","review_note":"非法彩票代购语义明确，原 other/low 过低。"}
+{"text":"黑彩网","category":"illegal","level":"high","review_note":"指向非法彩票网站，原 other/low 过低。"}
+{"text":"黑曼巴弓弩专卖qq","category":"illegal","level":"high","review_note":"弓弩专卖并带 QQ 导流，属于管制武器交易语义，原 ad/low 过低。"}
+{"text":"黑曼巴弓弩供应qq","category":"illegal","level":"high","review_note":"弓弩供应并带 QQ 导流，属于管制武器交易语义，原 ad/low 过低。"}
+{"text":"黑曼巴弓弩出售qq","category":"illegal","level":"high","review_note":"弓弩出售并带 QQ 导流，属于管制武器交易语义，原 ad/low 过低。"}
+{"text":"黑曼巴弓弩批发qq","category":"illegal","level":"high","review_note":"弓弩批发并带 QQ 导流，属于管制武器交易语义，原 ad/low 过低。"}
+{"text":"黑曼巴弓弩提供qq","category":"illegal","level":"high","review_note":"弓弩提供并带 QQ 导流，属于管制武器交易语义，原 ad/low 过低。"}
+{"text":"黑曼巴弓弩直销qq","category":"illegal","level":"high","review_note":"弓弩直销并带 QQ 导流，属于管制武器交易语义，原 ad/low 过低。"}
+{"text":"黑曼巴弓弩订购qq","category":"illegal","level":"high","review_note":"弓弩订购并带 QQ 导流，属于管制武器交易语义，原 ad/low 过低。"}
+{"text":"黑曼巴弓弩销售qq","category":"illegal","level":"high","review_note":"弓弩销售并带 QQ 导流，属于管制武器交易语义，原 ad/low 过低。"}
+{"text":"黑木奈美种子","category":"pornographic","level":"medium","review_note":"成人女优姓名加种子资源语义，原 other/low 过低。"}
+{"text":"黑木爱美种子","category":"pornographic","level":"medium","review_note":"成人女优姓名加种子资源语义，原 other/low 过低。"}
+{"text":"黑毛屄","category":"pornographic","level":"medium","review_note":"露骨女性生殖器低俗词，原 other/low 过低。"}
+{"text":"黑泽爱种子","category":"pornographic","level":"medium","review_note":"成人女优姓名加种子资源语义，原 other/low 过低。"}
+{"text":"黑火药供应","category":"illegal","level":"high","review_note":"黑火药供应涉及爆炸物交易，原 other/low 过低。"}
+{"text":"黑火药供应qq","category":"illegal","level":"high","review_note":"黑火药供应并带 QQ 导流，涉及爆炸物交易，原 ad/low 过低。"}
+{"text":"黑火药出售","category":"illegal","level":"high","review_note":"黑火药出售涉及爆炸物交易，原 ad/low 过低。"}
+{"text":"黑火药制作","category":"illegal","level":"high","review_note":"黑火药制作属于爆炸物制作语义，原 other/low 过低。"}
+{"text":"黑火药制作教程","category":"illegal","level":"high","review_note":"黑火药制作教程属于爆炸物制作指导，原 other/low 过低。"}
+{"text":"黑火药制作方法","category":"illegal","level":"high","review_note":"黑火药制作方法属于爆炸物制作指导，原 other/low 过低。"}
+{"text":"黑火药制作配方","category":"illegal","level":"high","review_note":"黑火药制作配方属于爆炸物制作指导，原 other/low 过低。"}
+{"text":"黑火药制造","category":"illegal","level":"high","review_note":"黑火药制造属于爆炸物制作语义，原 other/low 过低。"}
+{"text":"黑火药和硝酸钾农药混合","category":"illegal","level":"high","review_note":"描述黑火药相关混合物，具有爆炸物制作风险，原 other/low 过低。"}
+{"text":"黑火药成分比例","category":"illegal","level":"high","review_note":"黑火药成分比例属于爆炸物配方信息，原 other/low 过低。"}
+{"text":"黑火药比例","category":"illegal","level":"high","review_note":"黑火药比例属于爆炸物配方信息，原 other/low 过低。"}
+{"text":"黑火药混合成分","category":"illegal","level":"high","review_note":"黑火药混合成分属于爆炸物配方信息，原 other/low 过低。"}
+{"text":"黑火药的制作","category":"illegal","level":"high","review_note":"黑火药制作属于爆炸物制作语义，原 other/low 过低。"}
+{"text":"黑火药的制作方法","category":"illegal","level":"high","review_note":"黑火药制作方法属于爆炸物制作指导，原 other/low 过低。"}
+{"text":"黑火药的完美配方","category":"illegal","level":"high","review_note":"黑火药配方属于爆炸物制作指导，原 other/low 过低。"}
+{"text":"黑火药的比例与配方","category":"illegal","level":"high","review_note":"黑火药比例与配方属于爆炸物制作指导，原 other/low 过低。"}
+{"text":"黑火药的配方","category":"illegal","level":"high","review_note":"黑火药配方属于爆炸物制作指导，原 other/low 过低。"}
+{"text":"黑火药配制比例","category":"illegal","level":"high","review_note":"黑火药配制比例属于爆炸物制作指导，原 other/low 过低。"}
+{"text":"黑火药配方","category":"illegal","level":"high","review_note":"黑火药配方属于爆炸物制作指导，原 other/low 过低。"}
+{"text":"黑火药配方比例","category":"illegal","level":"high","review_note":"黑火药配方比例属于爆炸物制作指导，原 other/low 过低。"}
+{"text":"黑火药配比","category":"illegal","level":"high","review_note":"黑火药配比属于爆炸物制作指导，原 other/low 过低。"}
+{"text":"黑火药销售","category":"illegal","level":"high","review_note":"黑火药销售涉及爆炸物交易，原 other/low 过低。"}
+{"text":"黑社会大姐大性欲很旺盛","category":"pornographic","level":"medium","review_note":"包含明确色情化欲望描述，原 other/low 过低。"}
+{"text":"黑索今供应","category":"illegal","level":"high","review_note":"黑索今疑似黑索金变体，供应语义涉及爆炸物交易，原 other/low 过低。"}
+{"text":"黑索金","category":"illegal","level":"high","review_note":"黑索金为高爆炸药，原 other/low 分类过低。"}
+{"text":"黑索金供应","category":"illegal","level":"high","review_note":"黑索金供应涉及爆炸物交易，原 other/low 过低。"}
+{"text":"黑索金制作","category":"illegal","level":"high","review_note":"黑索金制作属于爆炸物制作语义，原 other/low 过低。"}
+{"text":"黑索金制作方法","category":"illegal","level":"high","review_note":"黑索金制作方法属于爆炸物制作指导，原 other/low 过低。"}
+{"text":"黑索金的制作","category":"illegal","level":"high","review_note":"黑索金制作属于爆炸物制作语义，原 other/low 过低。"}
+{"text":"黑索金的制造过程","category":"illegal","level":"high","review_note":"黑索金制造过程属于爆炸物制作指导，原 other/low 过低。"}
+{"text":"黑索金销售qq","category":"illegal","level":"high","review_note":"黑索金销售并带 QQ 导流，涉及爆炸物交易，原 ad/low 过低。"}
+{"text":"黑诱惑痴女","category":"pornographic","level":"medium","review_note":"色情化成人对象描述，原 other/low 过低。"}
+{"text":"黑逼","category":"pornographic","level":"medium","review_note":"露骨女性生殖器低俗词，原 other/low 过低。"}
+{"text":"黑鲍娇","category":"pornographic","level":"medium","review_note":"含露骨女性生殖器隐喻语义，原 other/low 过低。"}
+{"text":"黑鹰弓弩专卖","category":"illegal","level":"high","review_note":"弓弩专卖属于管制武器交易语义，原 other/low 过低。"}
+{"text":"黑鹰弓弩专卖qq","category":"illegal","level":"high","review_note":"弓弩专卖并带 QQ 导流，属于管制武器交易语义，原 ad/low 过低。"}
+{"text":"黑鹰弩qq","category":"illegal","level":"high","review_note":"黑鹰弩交易导流语义明确，属于管制武器交易，原 ad/low 过低。"}
+{"text":"黑鹰弩专卖","category":"illegal","level":"high","review_note":"弩具专卖属于管制武器交易语义，原 other/low 过低。"}
+{"text":"黑鹰弩专卖qq","category":"illegal","level":"high","review_note":"弩具专卖并带 QQ 导流，属于管制武器交易语义，原 ad/low 过低。"}
+{"text":"黑鹰弩供应","category":"illegal","level":"high","review_note":"弩具供应属于管制武器交易语义，原 other/low 过低。"}
+{"text":"黑鹰弩供应qq","category":"illegal","level":"high","review_note":"弩具供应并带 QQ 导流，属于管制武器交易语义，原 ad/low 过低。"}
+{"text":"黑鹰弩出售","category":"illegal","level":"high","review_note":"弩具出售属于管制武器交易语义，原 ad/low 过低。"}
+{"text":"黑鹰弩出售qq","category":"illegal","level":"high","review_note":"弩具出售并带 QQ 导流，属于管制武器交易语义，原 ad/low 过低。"}
+{"text":"黑鹰弩批发qq","category":"illegal","level":"high","review_note":"弩具批发并带 QQ 导流，属于管制武器交易语义，原 ad/low 过低。"}
+{"text":"黑鹰弩提供qq","category":"illegal","level":"high","review_note":"弩具提供并带 QQ 导流，属于管制武器交易语义，原 ad/low 过低。"}
+{"text":"黑鹰弩订购qq","category":"illegal","level":"high","review_note":"弩具订购并带 QQ 导流，属于管制武器交易语义，原 ad/low 过低。"}
+{"text":"黑鹰弩转让","category":"illegal","level":"high","review_note":"弩具转让属于管制武器交易语义，原 other/low 过低。"}
+{"text":"黑鹰弩转让qq","category":"illegal","level":"high","review_note":"弩具转让并带 QQ 导流，属于管制武器交易语义，原 ad/low 过低。"}
+{"text":"黑鹰弩配件出售","category":"illegal","level":"high","review_note":"弩具配件出售属于管制武器交易语义，原 ad/low 过低。"}
+{"text":"黑鹰弩销售","category":"illegal","level":"high","review_note":"弩具销售属于管制武器交易语义，原 other/low 过低。"}
+{"text":"黑鹰弩销售qq","category":"illegal","level":"high","review_note":"弩具销售并带 QQ 导流，属于管制武器交易语义，原 ad/low 过低。"}
+{"text":"齐天大性","category":"pornographic","level":"medium","review_note":"标题含明显情色谐音语义，原 other/low 过低。"}
+{"text":"齐天大性之大破盘丝洞","category":"pornographic","level":"medium","review_note":"标题含明显情色谐音语义，原 other/low 过低。"}
+{"text":"齐藤加菜子种子","category":"pornographic","level":"medium","review_note":"成人女优姓名加种子资源语义，原 other/low 过低。"}
+{"text":"齐藤司种子","category":"pornographic","level":"medium","review_note":"成人女优姓名加种子资源语义，原 other/low 过低。"}
+{"text":"龙凤419","category":"pornographic","level":"medium","review_note":"419 为一夜情/约炮信息语义，原 other/low 过低。"}
+{"text":"龙川利奈种子","category":"pornographic","level":"medium","review_note":"成人女优姓名加种子资源语义，原 other/low 过低。"}
+{"text":"龙泽仁美种子","category":"pornographic","level":"medium","review_note":"成人女优姓名加种子资源语义，原 other/low 过低。"}
+{"text":"龙泽优种子","category":"pornographic","level":"medium","review_note":"成人女优姓名加种子资源语义，原 other/low 过低。"}
+{"text":"龙泽加奈种子","category":"pornographic","level":"medium","review_note":"成人女优姓名加种子资源语义，原 other/low 过低。"}
+{"text":"龙泽彩种子","category":"pornographic","level":"medium","review_note":"成人女优姓名加种子资源语义，原 other/low 过低。"}
+{"text":"龙皇艳帝","category":"pornographic","level":"medium","review_note":"艳情小说/色情内容语境，原 other/low 分类过低。"}
+{"text":"龙虎斗游戏平台","category":"illegal","level":"high","review_note":"龙虎斗游戏平台指向赌博游戏，原 other/low 过低。"}
+{"text":"龙虎斗网站","category":"illegal","level":"high","review_note":"龙虎斗网站指向赌博站点，原 other/low 过低。"}
+{"text":"龙虎机","category":"illegal","level":"high","review_note":"龙虎机为赌博机/赌博游戏语义，原 other/low 过低。"}
+{"text":"龟儿子","category":"abuse","level":"medium","review_note":"明确辱骂称谓，原 other/low 分类过低。"}
+{"text":"龟孙子","category":"abuse","level":"medium","review_note":"明确辱骂称谓，原 other/low 分类过低。"}
+{"text":"08宪","category":"political","level":"medium","review_note":"08宪为零八宪章简称，政治语境明确，原 other/low 分类过低。"}
+{"text":"12高考答案出售","category":"illegal","level":"high","review_note":"出售高考答案属于考试作弊交易，原 ad/low 过低。"}
+{"text":"12高考答案提供","category":"illegal","level":"high","review_note":"提供高考答案属于考试作弊语义，原 other/low 过低。"}
+{"text":"15年前的共和国卫士","category":"political","level":"medium","review_note":"在该词库语境下指向政治事件相关表述，原 other/low 分类过低。"}
+{"text":"16大","category":"political","level":"medium","review_note":"中共党代会简称，政治语境明确，原 other/low 分类过低。"}
+{"text":"17大","category":"political","level":"medium","review_note":"中共党代会简称，政治语境明确，原 other/low 分类过低。"}
+{"text":"17日向省属媒体发出禁令","category":"political","level":"medium","review_note":"涉及媒体禁令与省属媒体，政治语境明确，原 other/low 分类过低。"}
+{"text":"17权力布局","category":"political","level":"medium","review_note":"涉及权力布局的政治语境，原 other/low 分类过低。"}
+{"text":"1989事件","category":"political","level":"medium","review_note":"在该词库语境下指向敏感政治事件，原 other/low 分类过低。"}
+{"text":"1个体位干翻你","category":"pornographic","level":"high","review_note":"包含体位和性行为低俗描述，原 other/low 过低。"}
+{"text":"1元假硬币专卖","category":"illegal","level":"high","review_note":"假硬币专卖涉及假币交易，原 other/low 过低。"}
+{"text":"1元假硬币专卖qq","category":"illegal","level":"high","review_note":"假硬币专卖并带 QQ 导流，涉及假币交易，原 ad/low 过低。"}
+{"text":"1元假硬币买卖","category":"illegal","level":"high","review_note":"假硬币买卖涉及假币交易，原 other/low 过低。"}
+{"text":"1元假硬币买卖qq","category":"illegal","level":"high","review_note":"假硬币买卖并带 QQ 导流，涉及假币交易，原 ad/low 过低。"}
+{"text":"1元假硬币供应","category":"illegal","level":"high","review_note":"假硬币供应涉及假币交易，原 other/low 过低。"}
+{"text":"1元假硬币供应qq","category":"illegal","level":"high","review_note":"假硬币供应并带 QQ 导流，涉及假币交易，原 ad/low 过低。"}
+{"text":"1元假硬币出售","category":"illegal","level":"high","review_note":"假硬币出售涉及假币交易，原 ad/low 过低。"}
+{"text":"1元假硬币出售qq","category":"illegal","level":"high","review_note":"假硬币出售并带 QQ 导流，涉及假币交易，原 ad/low 过低。"}
+{"text":"1元假硬币批发","category":"illegal","level":"high","review_note":"假硬币批发涉及假币交易，原 other/low 过低。"}
+{"text":"1元假硬币批发qq","category":"illegal","level":"high","review_note":"假硬币批发并带 QQ 导流，涉及假币交易，原 ad/low 过低。"}
+{"text":"1元假硬币提供","category":"illegal","level":"high","review_note":"假硬币提供涉及假币交易，原 other/low 过低。"}
+{"text":"1元假硬币提供qq","category":"illegal","level":"high","review_note":"假硬币提供并带 QQ 导流，涉及假币交易，原 ad/low 过低。"}
+{"text":"1元假硬币直销","category":"illegal","level":"high","review_note":"假硬币直销涉及假币交易，原 other/low 过低。"}
+{"text":"1元假硬币直销qq","category":"illegal","level":"high","review_note":"假硬币直销并带 QQ 导流，涉及假币交易，原 ad/low 过低。"}
+{"text":"1元假硬币销售","category":"illegal","level":"high","review_note":"假硬币销售涉及假币交易，原 other/low 过低。"}
+{"text":"1元假硬币销售qq","category":"illegal","level":"high","review_note":"假硬币销售并带 QQ 导流，涉及假币交易，原 ad/low 过低。"}
+{"text":"1元假钱出售","category":"illegal","level":"high","review_note":"假钱出售涉及假币交易，原 ad/low 过低。"}
+{"text":"1元假钱销售","category":"illegal","level":"high","review_note":"假钱销售涉及假币交易，原 other/low 过低。"}
+{"text":"1元嫖鸡费","category":"pornographic","level":"medium","review_note":"嫖鸡为卖淫嫖娼低俗交易语义，原 other/low 过低。"}
+{"text":"1元激情电影","category":"pornographic","level":"medium","review_note":"激情电影在该语境下指向色情影片，原 other/low 过低。"}
+{"text":"1元硬币模具出售","category":"illegal","level":"high","review_note":"硬币模具出售存在伪造货币工具交易风险，原 ad/low 过低。"}
+{"text":"1党","category":"political","level":"medium","review_note":"一党政治语境明确，原 other/low 分类过低。"}
+{"text":"1品色导航","category":"pornographic","level":"high","review_note":"色情导航站点语义明确，原 pornographic/low 级别过低。"}
+{"text":"1场说来就来的炮","category":"pornographic","level":"medium","review_note":"约炮语义明确，原 other/low 过低。"}
+{"text":"1夜嫖","category":"pornographic","level":"medium","review_note":"包含嫖娼语义，原 other/low 过低。"}
+{"text":"1夜性网","category":"pornographic","level":"medium","review_note":"指向一夜情/色情站点语义，原 other/low 过低。"}
+{"text":"1夜性趣","category":"pornographic","level":"medium","review_note":"性趣语义明确，原 other/low 过低。"}
+{"text":"1夜情","category":"pornographic","level":"medium","review_note":"一夜情约炮语义明确，原 other/low 过低。"}
+{"text":"1夜情ons","category":"pornographic","level":"medium","review_note":"ONS 为一夜情语义，原 other/low 过低。"}
+{"text":"1夜情上门","category":"pornographic","level":"medium","review_note":"一夜情上门服务语义明确，原 other/low 过低。"}
+{"text":"1夜情上门服务","category":"pornographic","level":"medium","review_note":"一夜情上门服务语义明确，原 other/low 过低。"}
+{"text":"1夜情服务","category":"pornographic","level":"medium","review_note":"一夜情服务语义明确，原 other/low 过低。"}
+{"text":"1夜情艳照美女","category":"pornographic","level":"medium","review_note":"艳照美女资源语义明确，原 other/low 过低。"}
+{"text":"1夜激情网站","category":"pornographic","level":"medium","review_note":"指向色情/约炮网站语义，原 other/low 过低。"}
+{"text":"1夜色妻","category":"pornographic","level":"medium","review_note":"情色化成人对象语义，原 other/low 过低。"}
+{"text":"1字开锁工具批发qq","category":"illegal","level":"high","review_note":"开锁工具批发并带 QQ 导流，具有违法工具交易语义，原 ad/low 过低。"}
+{"text":"1字强开工具出售","category":"illegal","level":"high","review_note":"强开工具出售涉及违法工具交易，原 ad/low 过低。"}
+{"text":"1字强开工具销售","category":"illegal","level":"high","review_note":"强开工具销售涉及违法工具交易，原 other/low 过低。"}
+{"text":"1字强开工具销售qq","category":"illegal","level":"high","review_note":"强开工具销售并带 QQ 导流，涉及违法工具交易，原 ad/low 过低。"}
+{"text":"1对熟女间的性虐游戏","category":"pornographic","level":"high","review_note":"包含性虐游戏等明确色情内容，原 other/low 过低。"}
+{"text":"1年两会又3代表","category":"political","level":"medium","review_note":"涉及两会及代表的政治语境，原 other/low 分类过低。"}
+{"text":"1手操作带试卷","category":"illegal","level":"high","review_note":"带试卷的一手操作语义指向考试作弊交易，原 other/low 过低。"}
+{"text":"1手老人数据","category":"illegal","level":"high","review_note":"一手老人数据涉及个人信息非法交易，原 other/low 过低。"}
+{"text":"1手股民资源","category":"illegal","level":"high","review_note":"一手股民资源涉及个人信息非法交易，原 other/low 过低。"}
+{"text":"1手车主信息","category":"illegal","level":"high","review_note":"一手车主信息涉及个人信息非法交易，原 other/low 过低。"}
+{"text":"1手车主名录","category":"illegal","level":"high","review_note":"一手车主名录涉及个人信息非法交易，原 other/low 过低。"}
+{"text":"1手车主资料","category":"illegal","level":"high","review_note":"一手车主资料涉及个人信息非法交易，原 other/low 过低。"}
+{"text":"1本道1137陵辱巨乳薫まい","category":"pornographic","level":"high","review_note":"成人品牌加露骨色情片名语义，原 other/low 过低。"}
+{"text":"1本道bt","category":"pornographic","level":"medium","review_note":"成人品牌加 BT 资源语义，原 other/low 过低。"}
+{"text":"1本道ed2k","category":"pornographic","level":"medium","review_note":"成人品牌加 ed2k 资源语义，原 other/low 过低。"}
+{"text":"1本道qvod","category":"pornographic","level":"medium","review_note":"成人品牌加快播资源语义，原 other/low 过低。"}
+{"text":"1本道rmvb","category":"pornographic","level":"medium","review_note":"成人品牌加视频资源格式语义，原 other/low 过低。"}
+{"text":"1本道午夜电影","category":"pornographic","level":"medium","review_note":"成人品牌加午夜电影资源语义，原 other/low 过低。"}
+{"text":"1本道在线影院","category":"pornographic","level":"medium","review_note":"成人品牌加在线影院语义，原 other/low 过低。"}
+{"text":"1本道影院","category":"pornographic","level":"medium","review_note":"成人品牌影院资源语义，原 other/low 过低。"}
+{"text":"1本道电影","category":"pornographic","level":"medium","review_note":"成人品牌影片资源语义，原 other/low 过低。"}
+{"text":"1本道电影网","category":"pornographic","level":"medium","review_note":"成人品牌电影网站语义，原 other/low 过低。"}
+{"text":"1本道视频","category":"pornographic","level":"medium","review_note":"成人品牌视频资源语义，原 other/low 过低。"}
+{"text":"1本道视频播放","category":"pornographic","level":"medium","review_note":"成人品牌视频播放资源语义，原 other/low 过低。"}
+{"text":"1本道迅雷下载","category":"pornographic","level":"medium","review_note":"成人品牌迅雷下载资源语义，原 other/low 过低。"}
+{"text":"1本道迅雷下载区","category":"pornographic","level":"medium","review_note":"成人品牌下载区语义，原 other/low 过低。"}
+{"text":"1炮不行就两炮","category":"pornographic","level":"medium","review_note":"炮在此为性行为低俗语义，原 other/low 过低。"}
+{"text":"1炮之缘","category":"pornographic","level":"medium","review_note":"约炮/性行为语义明确，原 other/low 过低。"}
+{"text":"1炮到天明","category":"pornographic","level":"medium","review_note":"性行为低俗语义明确，原 other/low 过低。"}
+{"text":"1炮泯恩仇","category":"pornographic","level":"medium","review_note":"炮在此为性行为低俗语义，原 other/low 过低。"}
+{"text":"1炮解千愁","category":"pornographic","level":"medium","review_note":"炮在此为性行为低俗语义，原 other/low 过低。"}
+{"text":"1生酒色网","category":"pornographic","level":"medium","review_note":"酒色网站语义指向情色内容，原 other/low 过低。"}
+{"text":"1直处于充血勃起","category":"pornographic","level":"medium","review_note":"包含明确性生理描述，原 other/low 过低。"}
+{"text":"1秒射更多","category":"pornographic","level":"medium","review_note":"包含射精相关色情语义，原 other/low 过低。"}
+{"text":"1管很硬擎天1柱","category":"pornographic","level":"medium","review_note":"男性生殖器隐喻和勃起描述明确，原 other/low 过低。"}
+{"text":"1级黄电视","category":"pornographic","level":"medium","review_note":"黄色电视/成人视频语义，原 other/low 过低。"}
+{"text":"1色丽矢种子","category":"pornographic","level":"medium","review_note":"成人女优姓名加种子资源语义，原 other/low 过低。"}
+{"text":"1色志乃种子","category":"pornographic","level":"medium","review_note":"成人女优姓名加种子资源语义，原 other/low 过低。"}
+{"text":"1色鲇美种子","category":"pornographic","level":"medium","review_note":"成人女优姓名加种子资源语义，原 other/low 过低。"}
+{"text":"1虎8奶图","category":"pornographic","level":"medium","review_note":"奶图为色情图片语义，原 other/low 过低。"}
+{"text":"1起啪啪啪啪","category":"pornographic","level":"medium","review_note":"啪啪为性行为低俗语义，原 other/low 过低。"}
+{"text":"1起干妹妹网","category":"pornographic","level":"high","review_note":"包含露骨色情站点语义，原 other/low 过低。"}
+{"text":"1起干骚妹","category":"pornographic","level":"high","review_note":"包含露骨色情行为和对象描述，原 other/low 过低。"}
+{"text":"1边1国","category":"political","level":"medium","review_note":"一边一国为政治主张语境，原 other/low 分类过低。"}
+{"text":"1边1国独裁","category":"political","level":"medium","review_note":"一边一国加独裁政治表述，原 other/low 分类过低。"}
+{"text":"1野濑茜种子","category":"pornographic","level":"medium","review_note":"成人女优姓名加种子资源语义，原 other/low 过低。"}
+{"text":"2010诺贝尔和平奖","category":"political","level":"medium","review_note":"2010 年诺贝尔和平奖在该词库语境下指向政治敏感议题，原 other/low 分类过低。"}
+{"text":"2012中考答案","category":"illegal","level":"high","review_note":"中考答案语义指向考试作弊，原 other/low 过低。"}
+{"text":"2012出售高考答案","category":"illegal","level":"high","review_note":"出售高考答案属于考试作弊交易，原 ad/low 过低。"}
+{"text":"2012司法考试答案","category":"illegal","level":"high","review_note":"司法考试答案语义指向考试作弊，原 other/low 过低。"}
+{"text":"2012年中考答案出售","category":"illegal","level":"high","review_note":"出售中考答案属于考试作弊交易，原 ad/low 过低。"}
+{"text":"2012最新股民数据","category":"illegal","level":"high","review_note":"股民数据涉及个人信息非法交易，原 other/low 过低。"}
+{"text":"2012最新股民资源","category":"illegal","level":"high","review_note":"股民资源涉及个人信息非法交易，原 other/low 过低。"}
+{"text":"2012甲基苯丙胺价格","category":"illegal","level":"high","review_note":"甲基苯丙胺为毒品，询价语义风险明确，原 other/low 过低。"}
+{"text":"2012答案出售qq","category":"illegal","level":"high","review_note":"答案出售并带 QQ 导流，属于考试作弊交易，原 ad/low 过低。"}
+{"text":"2012答案预售qq","category":"illegal","level":"high","review_note":"答案预售并带 QQ 导流，属于考试作弊交易，原 ad/low 过低。"}
+{"text":"2012考生资料qq","category":"illegal","level":"high","review_note":"考生资料并带 QQ 导流，涉及个人信息非法交易，原 ad/low 过低。"}
+{"text":"2012车主资料供应","category":"illegal","level":"high","review_note":"车主资料供应涉及个人信息非法交易，原 other/low 过低。"}
+{"text":"2012高考助考答案","category":"illegal","level":"high","review_note":"高考助考答案指向考试作弊，原 other/low 过低。"}
+{"text":"2012高考真题出售","category":"illegal","level":"high","review_note":"高考真题出售指向考试作弊交易，原 ad/low 过低。"}
+{"text":"2012高考答案qq","category":"illegal","level":"high","review_note":"高考答案并带 QQ 导流，属于考试作弊交易，原 ad/low 过低。"}
+{"text":"2012高考答案出售qq","category":"illegal","level":"high","review_note":"高考答案出售并带 QQ 导流，属于考试作弊交易，原 ad/low 过低。"}
+{"text":"2012高考答案预售qq","category":"illegal","level":"high","review_note":"高考答案预售并带 QQ 导流，属于考试作弊交易，原 ad/low 过低。"}
+{"text":"2012高考考中答案qq","category":"illegal","level":"high","review_note":"高考考中答案并带 QQ 导流，属于考试作弊交易，原 ad/low 过低。"}
+{"text":"2012高考考中答案出售","category":"illegal","level":"high","review_note":"出售高考考中答案属于考试作弊交易，原 ad/low 过低。"}
+{"text":"2012高考考前答案出售","category":"illegal","level":"high","review_note":"出售高考考前答案属于考试作弊交易，原 ad/low 过低。"}
+{"text":"2012高考考生信息","category":"illegal","level":"high","review_note":"高考考生信息涉及个人信息非法交易，原 other/low 过低。"}
+{"text":"2012高考考题出售qq","category":"illegal","level":"high","review_note":"高考考题出售并带 QQ 导流，属于考试作弊交易，原 ad/low 过低。"}
+{"text":"2012高考试题出售","category":"illegal","level":"high","review_note":"高考试题出售属于考试作弊交易，原 ad/low 过低。"}
+{"text":"2012高考高生资料","category":"illegal","level":"high","review_note":"高考考生资料涉及个人信息非法交易，原 other/low 过低。"}
+{"text":"2012高考高生资料出售","category":"illegal","level":"high","review_note":"高考考生资料出售涉及个人信息非法交易，原 ad/low 过低。"}
+{"text":"2013中考考生落榜信息","category":"illegal","level":"high","review_note":"中考考生落榜信息涉及个人信息非法交易，原 other/low 过低。"}
+{"text":"2013中考考生落榜资料","category":"illegal","level":"high","review_note":"中考考生落榜资料涉及个人信息非法交易，原 other/low 过低。"}
+{"text":"2013现金棋牌游戏","category":"illegal","level":"high","review_note":"现金棋牌游戏指向赌博，原 other/low 过低。"}
+{"text":"2013高考考生信息名单qq","category":"illegal","level":"high","review_note":"高考考生信息名单并带 QQ 导流，涉及个人信息非法交易，原 ad/low 过低。"}
+{"text":"2013高考考生名单价格","category":"illegal","level":"high","review_note":"高考考生名单标价涉及个人信息非法交易，原 other/low 过低。"}
+{"text":"2013高考考生详细名单qq","category":"illegal","level":"high","review_note":"高考考生详细名单并带 QQ 导流，涉及个人信息非法交易，原 ad/low 过低。"}
+{"text":"2013高考落榜生资料qq","category":"illegal","level":"high","review_note":"高考落榜生资料并带 QQ 导流，涉及个人信息非法交易，原 ad/low 过低。"}
+{"text":"20和谐年","category":"political","level":"medium","review_note":"和谐年为政治讽刺语境，原 other/low 分类过低。"}
+{"text":"20岁处女偷拍免费ab片","category":"pornographic","level":"high","review_note":"包含偷拍和成人色情影片语义，原 other/low 过低。"}
+{"text":"23条","category":"political","level":"medium","review_note":"在该词库语境下指向香港基本法第 23 条政治议题，原 other/low 分类过低。"}
+{"text":"2乙基汞供应","category":"illegal","level":"high","review_note":"有毒汞化合物供应语义风险较高，原 other/low 过低。"}
+{"text":"2乙基汞批发","category":"illegal","level":"high","review_note":"有毒汞化合物批发语义风险较高，原 other/low 过低。"}
+{"text":"2乙基汞销售","category":"illegal","level":"high","review_note":"有毒汞化合物销售语义风险较高，原 other/low 过低。"}
+{"text":"2乙基硫代磷酰氯供应","category":"illegal","level":"high","review_note":"危险化学品供应语义风险较高，原 other/low 过低。"}
+{"text":"2乙基硫代磷酰氯批发","category":"illegal","level":"high","review_note":"危险化学品批发语义风险较高，原 other/low 过低。"}
+{"text":"2乙基硫代磷酰氯提供","category":"illegal","level":"high","review_note":"危险化学品提供语义风险较高，原 other/low 过低。"}
+{"text":"2乙基硫代磷酰氯直销","category":"illegal","level":"high","review_note":"危险化学品直销语义风险较高，原 other/low 过低。"}
+{"text":"2乙基硫代磷酰氯销售","category":"illegal","level":"high","review_note":"危险化学品销售语义风险较高，原 other/low 过低。"}
+{"text":"2乙酰吗啡","category":"illegal","level":"high","review_note":"二乙酰吗啡为海洛因，原 other/low 分类过低。"}
+{"text":"2亚甲基双氧安非他明","category":"illegal","level":"high","review_note":"该词指向 MDMA 类毒品，原 other/low 分类过低。"}
+{"text":"2代证代办","category":"illegal","level":"high","review_note":"二代证代办涉及身份证件违法办理风险，原 ad/low 过低。"}
+{"text":"2代证制作qq","category":"illegal","level":"high","review_note":"二代证制作并带 QQ 导流，涉及伪造证件交易，原 ad/low 过低。"}
+{"text":"2代证制作软件","category":"illegal","level":"high","review_note":"二代证制作软件涉及伪造身份证件工具，原 other/low 过低。"}
+{"text":"2代证制作软件下载","category":"illegal","level":"high","review_note":"二代证制作软件下载涉及伪造身份证件工具，原 other/low 过低。"}
+{"text":"2代证复印件生成器","category":"illegal","level":"high","review_note":"二代证复印件生成器涉及伪造身份证件材料，原 other/low 过低。"}
+{"text":"2代证扫描件生成器","category":"illegal","level":"high","review_note":"二代证扫描件生成器涉及伪造身份证件材料，原 other/low 过低。"}
+{"text":"2代证生成软件","category":"illegal","level":"high","review_note":"二代证生成软件涉及伪造身份证件工具，原 other/low 过低。"}

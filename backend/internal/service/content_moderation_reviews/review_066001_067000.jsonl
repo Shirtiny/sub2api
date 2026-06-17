@@ -1,0 +1,386 @@
+{"text":"2屄","category":"abuse","level":"medium","review_note":"含粗俗性器官辱骂语义，原 other/low 过低。"}
+{"text":"2手3利达弩转让","category":"illegal","level":"high","review_note":"弩具转让属于管制武器交易语义，原 other/low 过低。"}
+{"text":"2手军弩转让","category":"illegal","level":"high","review_note":"军弩转让属于管制武器交易语义，原 other/low 过低。"}
+{"text":"2手军用弩出售","category":"illegal","level":"high","review_note":"军用弩出售属于管制武器交易语义，原 ad/low 过低。"}
+{"text":"2手大黑鹰弩","category":"illegal","level":"high","review_note":"大黑鹰弩为弩具武器语义，原 other/low 过低。"}
+{"text":"2手大黑鹰弩转让","category":"illegal","level":"high","review_note":"弩具转让属于管制武器交易语义，原 other/low 过低。"}
+{"text":"2手套牌车出售","category":"illegal","level":"high","review_note":"套牌车出售属于违法车辆交易语义，原 ad/low 过低。"}
+{"text":"2手弓弩出售","category":"illegal","level":"high","review_note":"弓弩出售属于管制武器交易语义，原 ad/low 过低。"}
+{"text":"2手弓弩设备","category":"illegal","level":"high","review_note":"弓弩设备指向管制武器器具，原 other/low 过低。"}
+{"text":"2手弓弩转让","category":"illegal","level":"high","review_note":"弓弩转让属于管制武器交易语义，原 other/low 过低。"}
+{"text":"2手弩买卖","category":"illegal","level":"high","review_note":"弩买卖属于管制武器交易语义，原 other/low 过低。"}
+{"text":"2手弩出售","category":"illegal","level":"high","review_note":"弩出售属于管制武器交易语义，原 ad/low 过低。"}
+{"text":"2手弩转让","category":"illegal","level":"high","review_note":"弩转让属于管制武器交易语义，原 other/low 过低。"}
+{"text":"2手手狗转让","category":"illegal","level":"high","review_note":"手狗为枪支黑话，转让语义明确，原 other/low 过低。"}
+{"text":"2手重弩转让","category":"illegal","level":"high","review_note":"重弩转让属于管制武器交易语义，原 other/low 过低。"}
+{"text":"2氢埃托啡批发","category":"illegal","level":"high","review_note":"二氢埃托啡为强效管制麻醉药品，批发语义明确，原 other/low 过低。"}
+{"text":"2氢埃托啡批发qq","category":"illegal","level":"high","review_note":"管制麻醉药品批发并带 QQ 导流，原 ad/low 过低。"}
+{"text":"2氰化汞供应qq","category":"illegal","level":"high","review_note":"氰化汞为高毒物质，供应并带 QQ 导流，原 ad/low 过低。"}
+{"text":"2氰化汞批发qq","category":"illegal","level":"high","review_note":"氰化汞为高毒物质，批发并带 QQ 导流，原 ad/low 过低。"}
+{"text":"2氰化汞直销qq","category":"illegal","level":"high","review_note":"氰化汞为高毒物质，直销并带 QQ 导流，原 ad/low 过低。"}
+{"text":"2氰化汞销售qq","category":"illegal","level":"high","review_note":"氰化汞为高毒物质，销售并带 QQ 导流，原 ad/low 过低。"}
+{"text":"2甲基安非他明","category":"illegal","level":"high","review_note":"甲基安非他明为毒品语义，原 other/low 过低。"}
+{"text":"2皆堂奈奈种子","category":"pornographic","level":"medium","review_note":"成人女优姓名加种子资源语义，原 other/low 过低。"}
+{"text":"2穴中出","category":"pornographic","level":"high","review_note":"包含露骨色情行为描述，原 other/low 过低。"}
+{"text":"2穴性玩具","category":"pornographic","level":"medium","review_note":"含性玩具及色情器官语义，原 other/low 过低。"}
+{"text":"2类ghb","category":"illegal","level":"high","review_note":"GHB 为违禁/迷奸药物语义，原 other/low 过低。"}
+{"text":"2逼","category":"abuse","level":"medium","review_note":"含粗俗辱骂语义，原 other/low 过低。"}
+{"text":"2逼老逼","category":"abuse","level":"medium","review_note":"含连续粗俗辱骂语义，原 other/low 过低。"}
+{"text":"2逼靠","category":"abuse","level":"medium","review_note":"含粗俗辱骂语义，原 other/low 过低。"}
+{"text":"2阶堂仁美种子","category":"pornographic","level":"medium","review_note":"成人女优姓名加种子资源语义，原 other/low 过低。"}
+{"text":"3158色站导航","category":"pornographic","level":"high","review_note":"色站导航指向色情网站资源，原 other/low 过低。"}
+{"text":"322攻台作战","category":"political","level":"medium","review_note":"涉及攻台军事政治议题，原 other/low 分类过低。"}
+{"text":"322攻台作战计划","category":"political","level":"medium","review_note":"涉及攻台军事政治计划语义，原 other/low 分类过低。"}
+{"text":"33bbb走光","category":"pornographic","level":"medium","review_note":"走光图片/资源语义偏色情，原 pornographic/low 过低。"}
+{"text":"3dh卡通","category":"pornographic","level":"medium","review_note":"H 卡通为成人色情动漫语义，原 other/low 过低。"}
+{"text":"3d团蒲肉完整版下载","category":"pornographic","level":"high","review_note":"肉蒲团成人影片下载语义明确，原 other/low 过低。"}
+{"text":"3d玉蒲团","category":"pornographic","level":"high","review_note":"玉蒲团成人影片语义明确，原 other/low 过低。"}
+{"text":"3d轮盘","category":"illegal","level":"medium","review_note":"轮盘为博彩赌博语义，原 other/low 分类过低。"}
+{"text":"3d黑彩","category":"illegal","level":"medium","review_note":"黑彩为非法博彩语义，原 other/low 分类过低。"}
+{"text":"3p","category":"pornographic","level":"medium","review_note":"3P 为明确性行为缩写，原 other/low 过低。"}
+{"text":"3p图片","category":"pornographic","level":"medium","review_note":"3P 图片为色情图片资源语义，原 pornographic/low 过低。"}
+{"text":"3p美女图片","category":"pornographic","level":"medium","review_note":"3P 美女图片为色情图片资源语义，原 other/low 过低。"}
+{"text":"3不反对执政党","category":"political","level":"medium","review_note":"涉及执政党政治表述，原 other/low 分类过低。"}
+{"text":"3个代婊","category":"political","level":"medium","review_note":"三个代表谐音辱称，政治讽刺语义明确，原 other/low 分类过低。"}
+{"text":"3个代表","category":"political","level":"medium","review_note":"三个代表为政治术语，原 other/low 分类过低。"}
+{"text":"3个呆婊","category":"political","level":"medium","review_note":"三个代表谐音辱称，政治讽刺语义明确，原 other/low 分类过低。"}
+{"text":"3井惠里种子","category":"pornographic","level":"medium","review_note":"成人女优姓名加种子资源语义，原 other/low 过低。"}
+{"text":"3井绘梨种子","category":"pornographic","level":"medium","review_note":"成人女优姓名加种子资源语义，原 other/low 过低。"}
+{"text":"3亲4摸","category":"pornographic","level":"medium","review_note":"含亲摸性挑逗语义，原 other/low 过低。"}
+{"text":"3位昏官","category":"political","level":"medium","review_note":"涉及官员贬称和政治批评，原 other/low 分类过低。"}
+{"text":"3健弓弩网","category":"illegal","level":"high","review_note":"弓弩网站指向管制武器交易/资源，原 other/low 过低。"}
+{"text":"3利达弓弩专卖qq","category":"illegal","level":"high","review_note":"弓弩专卖并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3利达弓弩专卖网","category":"illegal","level":"high","review_note":"弓弩专卖网站指向管制武器交易，原 other/low 过低。"}
+{"text":"3利达弓弩供应","category":"illegal","level":"high","review_note":"弓弩供应属于管制武器交易语义，原 other/low 过低。"}
+{"text":"3利达弓弩供应qq","category":"illegal","level":"high","review_note":"弓弩供应并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3利达弓弩军刀","category":"illegal","level":"high","review_note":"同时涉及弓弩和军刀管制武器，原 other/low 过低。"}
+{"text":"3利达弓弩出售","category":"illegal","level":"high","review_note":"弓弩出售属于管制武器交易语义，原 ad/low 过低。"}
+{"text":"3利达弓弩出售qq","category":"illegal","level":"high","review_note":"弓弩出售并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3利达弓弩团购","category":"illegal","level":"high","review_note":"弓弩团购属于管制武器交易语义，原 other/low 过低。"}
+{"text":"3利达弓弩批发","category":"illegal","level":"high","review_note":"弓弩批发属于管制武器交易语义，原 other/low 过低。"}
+{"text":"3利达弓弩提供","category":"illegal","level":"high","review_note":"弓弩提供属于管制武器交易语义，原 other/low 过低。"}
+{"text":"3利达弓弩提供qq","category":"illegal","level":"high","review_note":"弓弩提供并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3利达弓弩直营","category":"illegal","level":"high","review_note":"弓弩直营指向管制武器销售，原 other/low 过低。"}
+{"text":"3利达弓弩直销","category":"illegal","level":"high","review_note":"弓弩直销属于管制武器交易语义，原 other/low 过低。"}
+{"text":"3利达弓弩转让","category":"illegal","level":"high","review_note":"弓弩转让属于管制武器交易语义，原 other/low 过低。"}
+{"text":"3利达弓弩转让qq","category":"illegal","level":"high","review_note":"弓弩转让并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3利达弓弩配件","category":"illegal","level":"high","review_note":"弓弩配件指向管制武器配件交易，原 other/low 过低。"}
+{"text":"3利达弓弩销售","category":"illegal","level":"high","review_note":"弓弩销售属于管制武器交易语义，原 other/low 过低。"}
+{"text":"3利达弓弩销售qq","category":"illegal","level":"high","review_note":"弓弩销售并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3利达弩买卖","category":"illegal","level":"high","review_note":"弩买卖属于管制武器交易语义，原 other/low 过低。"}
+{"text":"3利达弩买卖qq","category":"illegal","level":"high","review_note":"弩买卖并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3利达弩供应","category":"illegal","level":"high","review_note":"弩供应属于管制武器交易语义，原 other/low 过低。"}
+{"text":"3利达弩供应qq","category":"illegal","level":"high","review_note":"弩供应并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3利达弩出售qq","category":"illegal","level":"high","review_note":"弩出售并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3利达弩商店","category":"illegal","level":"high","review_note":"弩商店指向管制武器交易，原 other/low 过低。"}
+{"text":"3利达弩团购","category":"illegal","level":"high","review_note":"弩团购属于管制武器交易语义，原 other/low 过低。"}
+{"text":"3利达弩团购qq","category":"illegal","level":"high","review_note":"弩团购并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3利达弩弓直销","category":"illegal","level":"high","review_note":"弩弓直销属于管制武器交易语义，原 other/low 过低。"}
+{"text":"3利达弩批发","category":"illegal","level":"high","review_note":"弩批发属于管制武器交易语义，原 other/low 过低。"}
+{"text":"3利达弩提供","category":"illegal","level":"high","review_note":"弩提供属于管制武器交易语义，原 other/low 过低。"}
+{"text":"3利达弩提供qq","category":"illegal","level":"high","review_note":"弩提供并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3利达弩改装方法","category":"illegal","level":"high","review_note":"涉及弩具改装方法，原 other/low 过低。"}
+{"text":"3利达弩直销","category":"illegal","level":"high","review_note":"弩直销属于管制武器交易语义，原 other/low 过低。"}
+{"text":"3利达弩直销qq","category":"illegal","level":"high","review_note":"弩直销并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3利达弩订购","category":"illegal","level":"high","review_note":"弩订购属于管制武器交易语义，原 other/low 过低。"}
+{"text":"3利达弩转让","category":"illegal","level":"high","review_note":"弩转让属于管制武器交易语义，原 other/low 过低。"}
+{"text":"3利达弩销售","category":"illegal","level":"high","review_note":"弩销售属于管制武器交易语义，原 other/low 过低。"}
+{"text":"3利达弩销售qq","category":"illegal","level":"high","review_note":"弩销售并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3去仑功","category":"political","level":"medium","review_note":"法轮功谐写政治敏感语义，原 other/low 分类过低。"}
+{"text":"3去车仑","category":"political","level":"medium","review_note":"法轮谐写政治敏感语义，原 other/low 分类过低。"}
+{"text":"3去车仑功","category":"political","level":"medium","review_note":"法轮功谐写政治敏感语义，原 other/low 分类过低。"}
+{"text":"3去车仑工力","category":"political","level":"medium","review_note":"法轮功谐写政治敏感语义，原 other/low 分类过低。"}
+{"text":"3唑仑","category":"illegal","level":"high","review_note":"三唑仑为管制精神药品，原 other/low 过低。"}
+{"text":"3唑仑qq","category":"illegal","level":"high","review_note":"三唑仑并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3唑仑专卖","category":"illegal","level":"high","review_note":"三唑仑专卖属于管制药物交易语义，原 other/low 过低。"}
+{"text":"3唑仑专卖qq","category":"illegal","level":"high","review_note":"三唑仑专卖并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3唑仑专卖店","category":"illegal","level":"high","review_note":"三唑仑专卖店指向管制药物交易，原 other/low 过低。"}
+{"text":"3唑仑供应qq","category":"illegal","level":"high","review_note":"三唑仑供应并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3唑仑供货qq","category":"illegal","level":"high","review_note":"三唑仑供货并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3唑仑出售qq","category":"illegal","level":"high","review_note":"三唑仑出售并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3唑仑出货","category":"illegal","level":"high","review_note":"三唑仑出货属于管制药物交易语义，原 other/low 过低。"}
+{"text":"3唑仑到货","category":"illegal","level":"high","review_note":"三唑仑到货属于管制药物流通语义，原 other/low 过低。"}
+{"text":"3唑仑合成","category":"illegal","level":"high","review_note":"涉及管制药物三唑仑合成，原 other/low 过低。"}
+{"text":"3唑仑售价qq","category":"illegal","level":"high","review_note":"三唑仑售价并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3唑仑商城","category":"illegal","level":"high","review_note":"三唑仑商城指向管制药物交易，原 other/low 过低。"}
+{"text":"3唑仑批发","category":"illegal","level":"high","review_note":"三唑仑批发属于管制药物交易语义，原 other/low 过低。"}
+{"text":"3唑仑批发qq","category":"illegal","level":"high","review_note":"三唑仑批发并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3唑仑提供","category":"illegal","level":"high","review_note":"三唑仑提供属于管制药物交易语义，原 other/low 过低。"}
+{"text":"3唑仑片qq","category":"illegal","level":"high","review_note":"三唑仑片并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3唑仑片专卖","category":"illegal","level":"high","review_note":"三唑仑片专卖属于管制药物交易语义，原 other/low 过低。"}
+{"text":"3唑仑片专卖qq","category":"illegal","level":"high","review_note":"三唑仑片专卖并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3唑仑片价格","category":"illegal","level":"high","review_note":"三唑仑片价格指向管制药物交易语境，原 other/low 过低。"}
+{"text":"3唑仑片供应","category":"illegal","level":"high","review_note":"三唑仑片供应属于管制药物交易语义，原 other/low 过低。"}
+{"text":"3唑仑片出售qq","category":"illegal","level":"high","review_note":"三唑仑片出售并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3唑仑片提供","category":"illegal","level":"high","review_note":"三唑仑片提供属于管制药物交易语义，原 other/low 过低。"}
+{"text":"3唑仑片订购qq","category":"illegal","level":"high","review_note":"三唑仑片订购并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3唑仑片销售qq","category":"illegal","level":"high","review_note":"三唑仑片销售并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3唑仑直销qq","category":"illegal","level":"high","review_note":"三唑仑直销并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3唑仑订购","category":"illegal","level":"high","review_note":"三唑仑订购属于管制药物交易语义，原 other/low 过低。"}
+{"text":"3唑仑订购qq","category":"illegal","level":"high","review_note":"三唑仑订购并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3唑仑货到付款qq","category":"illegal","level":"high","review_note":"三唑仑货到付款并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3唑仑迷魂药","category":"illegal","level":"high","review_note":"三唑仑与迷魂药语义明确，原 other/low 过低。"}
+{"text":"3唑仑送货上门","category":"illegal","level":"high","review_note":"三唑仑送货上门属于管制药物交易语义，原 other/low 过低。"}
+{"text":"3唑仑配方","category":"illegal","level":"high","review_note":"涉及管制药物三唑仑配方，原 other/low 过低。"}
+{"text":"3唑仑销售","category":"illegal","level":"high","review_note":"三唑仑销售属于管制药物交易语义，原 other/low 过低。"}
+{"text":"3唑安定出售qq","category":"illegal","level":"high","review_note":"三唑安定出售并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3唑纶","category":"illegal","level":"high","review_note":"三唑仑错写，指向管制精神药品，原 other/low 过低。"}
+{"text":"3唑纶出售","category":"illegal","level":"high","review_note":"三唑仑错写出售语义，原 ad/low 过低。"}
+{"text":"3国美人1锅煮","category":"pornographic","level":"medium","review_note":"含美人一锅煮等情色小说语境，原 other/low 过低。"}
+{"text":"3国风流传txt","category":"pornographic","level":"medium","review_note":"风流类情色小说资源语义，原 other/low 过低。"}
+{"text":"3夫妻ed2k","category":"pornographic","level":"medium","review_note":"三夫妻成人资源 ed2k 语境，原 other/low 过低。"}
+{"text":"3夫妻下载","category":"pornographic","level":"medium","review_note":"三夫妻成人资源下载语境，原 other/low 过低。"}
+{"text":"3夫妻开房","category":"pornographic","level":"medium","review_note":"三夫妻开房为色情/换妻语境，原 other/low 过低。"}
+{"text":"3夫妻种子","category":"pornographic","level":"medium","review_note":"三夫妻成人资源种子语境，原 other/low 过低。"}
+{"text":"3夫妻视频下载","category":"pornographic","level":"high","review_note":"三夫妻成人视频下载语境，原 other/low 过低。"}
+{"text":"3宫里绪种子","category":"pornographic","level":"medium","review_note":"成人女优姓名加种子资源语义，原 other/low 过低。"}
+{"text":"3对夫妻种子下载","category":"pornographic","level":"high","review_note":"多夫妻色情资源种子下载语义，原 other/low 过低。"}
+{"text":"3峡大坝导致汶川地","category":"political","level":"medium","review_note":"涉及三峡大坝与汶川地震政治/公共事件阴谋论语境，原 other/low 分类过低。"}
+{"text":"3度诱惑","category":"pornographic","level":"medium","review_note":"诱惑类成人内容语境，原 other/low 过低。"}
+{"text":"3本亚美电驴下载","category":"pornographic","level":"medium","review_note":"成人女优姓名加电驴下载资源语义，原 other/low 过低。"}
+{"text":"3本亚美种子","category":"pornographic","level":"medium","review_note":"成人女优姓名加种子资源语义，原 other/low 过低。"}
+{"text":"3极试看片","category":"pornographic","level":"high","review_note":"三级片试看片资源语义明确，原 other/low 过低。"}
+{"text":"3枝美优种子","category":"pornographic","level":"medium","review_note":"成人女优姓名加种子资源语义，原 other/low 过低。"}
+{"text":"3棱军刀","category":"illegal","level":"high","review_note":"三棱军刀为管制刀具语义，原 other/low 过低。"}
+{"text":"3棱军刀qq供应","category":"illegal","level":"high","review_note":"三棱军刀供应并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3棱军刀专卖","category":"illegal","level":"high","review_note":"三棱军刀专卖属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"3棱军刀专卖qq","category":"illegal","level":"high","review_note":"三棱军刀专卖并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3棱军刀买卖","category":"illegal","level":"high","review_note":"三棱军刀买卖属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"3棱军刀买卖qq","category":"illegal","level":"high","review_note":"三棱军刀买卖并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3棱军刀供应","category":"illegal","level":"high","review_note":"三棱军刀供应属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"3棱军刀供应qq","category":"illegal","level":"high","review_note":"三棱军刀供应并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3棱军刀批发","category":"illegal","level":"high","review_note":"三棱军刀批发属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"3棱军刀批发qq","category":"illegal","level":"high","review_note":"三棱军刀批发并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3棱军刀提供","category":"illegal","level":"high","review_note":"三棱军刀提供属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"3棱军刀提供qq","category":"illegal","level":"high","review_note":"三棱军刀提供并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3棱军刀直销","category":"illegal","level":"high","review_note":"三棱军刀直销属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"3棱军刀网","category":"illegal","level":"high","review_note":"三棱军刀网站指向管制刀具交易，原 other/low 过低。"}
+{"text":"3棱军刀订购","category":"illegal","level":"high","review_note":"三棱军刀订购属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"3棱军刺专卖","category":"illegal","level":"high","review_note":"三棱军刺专卖属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"3棱军刺专卖qq","category":"illegal","level":"high","review_note":"三棱军刺专卖并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3棱军刺买卖","category":"illegal","level":"high","review_note":"三棱军刺买卖属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"3棱军刺买卖qq","category":"illegal","level":"high","review_note":"三棱军刺买卖并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3棱军刺供应","category":"illegal","level":"high","review_note":"三棱军刺供应属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"3棱军刺供应qq","category":"illegal","level":"high","review_note":"三棱军刺供应并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3棱军刺出售qq","category":"illegal","level":"high","review_note":"三棱军刺出售并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3棱军刺刀供应","category":"illegal","level":"high","review_note":"三棱军刺刀供应属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"3棱军刺刀出售","category":"illegal","level":"high","review_note":"三棱军刺刀出售属于管制刀具交易语义，原 ad/low 过低。"}
+{"text":"3棱军刺批发","category":"illegal","level":"high","review_note":"三棱军刺批发属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"3棱军刺批发qq","category":"illegal","level":"high","review_note":"三棱军刺批发并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3棱军刺直销","category":"illegal","level":"high","review_note":"三棱军刺直销属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"3棱军刺直销qq","category":"illegal","level":"high","review_note":"三棱军刺直销并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3棱军刺转让","category":"illegal","level":"high","review_note":"三棱军刺转让属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"3棱军刺销售","category":"illegal","level":"high","review_note":"三棱军刺销售属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"3棱军刺销售qq","category":"illegal","level":"high","review_note":"三棱军刺销售并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3棱刀","category":"illegal","level":"high","review_note":"三棱刀为管制刀具语义，原 other/low 过低。"}
+{"text":"3棱刀供应","category":"illegal","level":"high","review_note":"三棱刀供应属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"3棱刀具专卖","category":"illegal","level":"high","review_note":"三棱刀具专卖属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"3棱刀具专卖qq","category":"illegal","level":"high","review_note":"三棱刀具专卖并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3棱刀具买卖","category":"illegal","level":"high","review_note":"三棱刀具买卖属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"3棱刀具买卖qq","category":"illegal","level":"high","review_note":"三棱刀具买卖并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3棱刀具供应","category":"illegal","level":"high","review_note":"三棱刀具供应属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"3棱刀具供应qq","category":"illegal","level":"high","review_note":"三棱刀具供应并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3棱刀具出售","category":"illegal","level":"high","review_note":"三棱刀具出售属于管制刀具交易语义，原 ad/low 过低。"}
+{"text":"3棱刀具出售qq","category":"illegal","level":"high","review_note":"三棱刀具出售并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3棱刀具批发","category":"illegal","level":"high","review_note":"三棱刀具批发属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"3棱刀具批发qq","category":"illegal","level":"high","review_note":"三棱刀具批发并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3棱刀具提供","category":"illegal","level":"high","review_note":"三棱刀具提供属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"3棱刀具提供qq","category":"illegal","level":"high","review_note":"三棱刀具提供并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3棱刀具直销","category":"illegal","level":"high","review_note":"三棱刀具直销属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"3棱刀具销售","category":"illegal","level":"high","review_note":"三棱刀具销售属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"3棱刀具销售qq","category":"illegal","level":"high","review_note":"三棱刀具销售并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3棱刀批发","category":"illegal","level":"high","review_note":"三棱刀批发属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"3棱刀订购","category":"illegal","level":"high","review_note":"三棱刀订购属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"3棱刀转让","category":"illegal","level":"high","review_note":"三棱刀转让属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"3棱刀销售","category":"illegal","level":"high","review_note":"三棱刀销售属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"3棱刺刀","category":"illegal","level":"high","review_note":"三棱刺刀为管制刀具语义，原 other/low 过低。"}
+{"text":"3棱刺刀专卖qq","category":"illegal","level":"high","review_note":"三棱刺刀专卖并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3棱刺刀批发","category":"illegal","level":"high","review_note":"三棱刺刀批发属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"3棱尖刀","category":"illegal","level":"high","review_note":"三棱尖刀为管制刀具语义，原 other/low 过低。"}
+{"text":"3棱尖刀专卖","category":"illegal","level":"high","review_note":"三棱尖刀专卖属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"3棱尖刀专卖qq","category":"illegal","level":"high","review_note":"三棱尖刀专卖并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3棱尖刀买卖","category":"illegal","level":"high","review_note":"三棱尖刀买卖属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"3棱尖刀供应","category":"illegal","level":"high","review_note":"三棱尖刀供应属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"3棱尖刀供应qq","category":"illegal","level":"high","review_note":"三棱尖刀供应并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3棱尖刀出售qq","category":"illegal","level":"high","review_note":"三棱尖刀出售并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3棱尖刀出售电话","category":"illegal","level":"high","review_note":"三棱尖刀出售并带电话导流，原 ad/low 过低。"}
+{"text":"3棱尖刀批发","category":"illegal","level":"high","review_note":"三棱尖刀批发属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"3棱尖刀批发qq","category":"illegal","level":"high","review_note":"三棱尖刀批发并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3棱尖刀提供","category":"illegal","level":"high","review_note":"三棱尖刀提供属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"3棱尖刀提供qq","category":"illegal","level":"high","review_note":"三棱尖刀提供并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3棱尖刀直销","category":"illegal","level":"high","review_note":"三棱尖刀直销属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"3棱尖刀直销qq","category":"illegal","level":"high","review_note":"三棱尖刀直销并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3棱尖刀订购","category":"illegal","level":"high","review_note":"三棱尖刀订购属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"3棱尖刀购买","category":"illegal","level":"high","review_note":"三棱尖刀购买属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"3棱尖刀转让qq","category":"illegal","level":"high","review_note":"三棱尖刀转让并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3棱尖刀销售qq","category":"illegal","level":"high","review_note":"三棱尖刀销售并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3棱尖刺","category":"illegal","level":"high","review_note":"三棱尖刺为管制刀具/刺器语义，原 other/low 过低。"}
+{"text":"3棱尖刺买卖","category":"illegal","level":"high","review_note":"三棱尖刺买卖属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"3棱尖刺买卖qq","category":"illegal","level":"high","review_note":"三棱尖刺买卖并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3棱尖刺供应","category":"illegal","level":"high","review_note":"三棱尖刺供应属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"3棱尖刺供应qq","category":"illegal","level":"high","review_note":"三棱尖刺供应并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3棱尖刺批发","category":"illegal","level":"high","review_note":"三棱尖刺批发属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"3棱尖刺批发qq","category":"illegal","level":"high","review_note":"三棱尖刺批发并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3棱尖刺提供","category":"illegal","level":"high","review_note":"三棱尖刺提供属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"3棱尖刺提供qq","category":"illegal","level":"high","review_note":"三棱尖刺提供并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3棱尖刺直销","category":"illegal","level":"high","review_note":"三棱尖刺直销属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"3棱尖刺订购","category":"illegal","level":"high","review_note":"三棱尖刺订购属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"3棱跳刀","category":"illegal","level":"high","review_note":"跳刀为管制刀具语义，原 other/low 过低。"}
+{"text":"3步倒","category":"illegal","level":"high","review_note":"三步倒为毒药/迷药语义，原 other/low 过低。"}
+{"text":"3步倒弩箭专卖","category":"illegal","level":"high","review_note":"毒箭及弩箭专卖语义明确，原 other/low 过低。"}
+{"text":"3步倒捕狗药","category":"illegal","level":"high","review_note":"三步倒捕狗药为毒药交易语义，原 other/low 过低。"}
+{"text":"3步倒药箭批发","category":"illegal","level":"high","review_note":"毒箭批发语义明确，原 other/low 过低。"}
+{"text":"3步倒麻醉弩箭销售","category":"illegal","level":"high","review_note":"麻醉弩箭销售涉及管制武器和麻醉药物，原 other/low 过低。"}
+{"text":"3步倒麻醉箭","category":"illegal","level":"high","review_note":"麻醉箭涉及违法伤害工具，原 other/low 过低。"}
+{"text":"3步倒麻醉箭专卖","category":"illegal","level":"high","review_note":"麻醉箭专卖涉及违法伤害工具交易，原 other/low 过低。"}
+{"text":"3民主义","category":"political","level":"medium","review_note":"三民主义为政治思想/政治术语，原 other/low 分类过低。"}
+{"text":"3氧化2砷供应","category":"illegal","level":"high","review_note":"三氧化二砷为高毒物质，供应语义明确，原 other/low 过低。"}
+{"text":"3氧化2砷直销","category":"illegal","level":"high","review_note":"三氧化二砷为高毒物质，直销语义明确，原 other/low 过低。"}
+{"text":"3氧化2砷销售","category":"illegal","level":"high","review_note":"三氧化二砷为高毒物质，销售语义明确，原 other/low 过低。"}
+{"text":"3氯化砷专卖qq","category":"illegal","level":"high","review_note":"三氯化砷为高毒危险化学品，专卖并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3氯化砷批发","category":"illegal","level":"high","review_note":"三氯化砷为高毒危险化学品，批发语义明确，原 other/low 过低。"}
+{"text":"3氯硝基甲烷供应","category":"illegal","level":"high","review_note":"三氯硝基甲烷为高风险毒性化学品，供应语义明确，原 other/low 过低。"}
+{"text":"3氯硝基甲烷供应qq","category":"illegal","level":"high","review_note":"高风险毒性化学品供应并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3氯硝基甲烷批发","category":"illegal","level":"high","review_note":"高风险毒性化学品批发语义明确，原 other/low 过低。"}
+{"text":"3氯硝基甲烷提供","category":"illegal","level":"high","review_note":"高风险毒性化学品提供语义明确，原 other/low 过低。"}
+{"text":"3氯硝基甲烷直销","category":"illegal","level":"high","review_note":"高风险毒性化学品直销语义明确，原 other/low 过低。"}
+{"text":"3氯硝基甲烷销售","category":"illegal","level":"high","review_note":"高风险毒性化学品销售语义明确，原 other/low 过低。"}
+{"text":"3水法轮","category":"political","level":"medium","review_note":"法轮相关谐写政治敏感语义，原 other/low 分类过低。"}
+{"text":"3浦沙耶香种子","category":"pornographic","level":"medium","review_note":"成人女优姓名加种子资源语义，原 other/low 过低。"}
+{"text":"3浦爱佳种子","category":"pornographic","level":"medium","review_note":"成人女优姓名加种子资源语义，原 other/low 过低。"}
+{"text":"3田友穗种子","category":"pornographic","level":"medium","review_note":"成人女优姓名加种子资源语义，原 other/low 过低。"}
+{"text":"3田爱bt下载","category":"pornographic","level":"medium","review_note":"成人女优姓名加 BT 下载资源语义，原 other/low 过低。"}
+{"text":"3田爱种子","category":"pornographic","level":"medium","review_note":"成人女优姓名加种子资源语义，原 other/low 过低。"}
+{"text":"3田爱表bt","category":"pornographic","level":"medium","review_note":"成人女优姓名加 BT 资源语义，原 other/low 过低。"}
+{"text":"3田爱表全集","category":"pornographic","level":"medium","review_note":"成人女优资源全集语义，原 other/low 过低。"}
+{"text":"3田爱表电驴","category":"pornographic","level":"medium","review_note":"成人女优姓名加电驴资源语义，原 other/low 过低。"}
+{"text":"3秒倒","category":"illegal","level":"high","review_note":"三秒倒为迷药/毒药语义，原 other/low 过低。"}
+{"text":"3箭气狗qq","category":"illegal","level":"high","review_note":"气狗为枪支黑话并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3箭气狗专卖","category":"illegal","level":"high","review_note":"气狗专卖指向枪支交易，原 other/low 过低。"}
+{"text":"3箭气狗专卖qq","category":"illegal","level":"high","review_note":"气狗专卖并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3箭气狗供应","category":"illegal","level":"high","review_note":"气狗供应指向枪支交易，原 other/low 过低。"}
+{"text":"3箭气狗供应qq","category":"illegal","level":"high","review_note":"气狗供应并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3箭气狗出售","category":"illegal","level":"high","review_note":"气狗出售指向枪支交易，原 ad/low 过低。"}
+{"text":"3箭气狗提供","category":"illegal","level":"high","review_note":"气狗提供指向枪支交易，原 other/low 过低。"}
+{"text":"3箭气狗提供qq","category":"illegal","level":"high","review_note":"气狗提供并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3箭气狗转让","category":"illegal","level":"high","review_note":"气狗转让指向枪支交易，原 other/low 过低。"}
+{"text":"3箭气狗销售","category":"illegal","level":"high","review_note":"气狗销售指向枪支交易，原 other/low 过低。"}
+{"text":"3箭气狗销售qq","category":"illegal","level":"high","review_note":"气狗销售并带 QQ 导流，原 ad/low 过低。"}
+{"text":"3箭汽狗专卖","category":"illegal","level":"high","review_note":"汽狗为枪支黑话，专卖语义明确，原 other/low 过低。"}
+{"text":"3级明星大会聚","category":"pornographic","level":"medium","review_note":"三级片明星成人资源语境，原 other/low 过低。"}
+{"text":"3股势力","category":"political","level":"medium","review_note":"三股势力为政治安全语境术语，原 other/low 分类过低。"}
+{"text":"3退","category":"political","level":"medium","review_note":"三退为政治运动/法轮功相关语境，原 other/low 分类过低。"}
+{"text":"3配小姐","category":"pornographic","level":"medium","review_note":"三陪小姐谐写，性服务语境明确，原 other/low 过低。"}
+{"text":"3陪","category":"pornographic","level":"medium","review_note":"三陪为色情陪侍/性服务语境，原 other/low 过低。"}
+{"text":"3陪女","category":"pornographic","level":"medium","review_note":"三陪女为色情陪侍/性服务语境，原 other/low 过低。"}
+{"text":"3陪女上门服务tel","category":"pornographic","level":"high","review_note":"三陪女上门服务并带电话导流，原 other/low 过低。"}
+{"text":"3陪女出台服务tel","category":"pornographic","level":"high","review_note":"出台服务并带电话导流，卖淫招嫖语义明确，原 other/low 过低。"}
+{"text":"3陪女服务qq","category":"pornographic","level":"high","review_note":"三陪女服务并带 QQ 导流，卖淫招嫖语义明确，原 ad/low 过低。"}
+{"text":"3陪女服务电话","category":"pornographic","level":"high","review_note":"三陪女服务并带电话导流，卖淫招嫖语义明确，原 ad/low 过低。"}
+{"text":"3陪女特殊服务tel","category":"pornographic","level":"high","review_note":"特殊服务并带电话导流，卖淫招嫖语义明确，原 other/low 过低。"}
+{"text":"3陪女联系qq","category":"pornographic","level":"high","review_note":"三陪女联系 QQ，卖淫招嫖导流语义明确，原 ad/low 过低。"}
+{"text":"3陪女联系电话","category":"pornographic","level":"high","review_note":"三陪女联系电话，卖淫招嫖导流语义明确，原 ad/low 过低。"}
+{"text":"3陪小姐","category":"pornographic","level":"medium","review_note":"三陪小姐为色情陪侍/性服务语境，原 other/low 过低。"}
+{"text":"3陪小姐服务电话","category":"pornographic","level":"high","review_note":"三陪小姐服务并带电话导流，卖淫招嫖语义明确，原 ad/low 过低。"}
+{"text":"3陪小姐联系电话","category":"pornographic","level":"high","review_note":"三陪小姐联系电话，卖淫招嫖导流语义明确，原 ad/low 过低。"}
+{"text":"3陪服务qq","category":"pornographic","level":"high","review_note":"三陪服务并带 QQ 导流，卖淫招嫖语义明确，原 ad/low 过低。"}
+{"text":"40万名车车主名单","category":"illegal","level":"medium","review_note":"车主名单疑似个人信息交易/泄露语义，原 other/low 过低。"}
+{"text":"425事件","category":"political","level":"medium","review_note":"4.25 事件为政治敏感事件语境，原 other/low 分类过低。"}
+{"text":"426社论","category":"political","level":"medium","review_note":"四二六社论为政治敏感历史事件语境，原 other/low 分类过低。"}
+{"text":"42lian色站大全","category":"pornographic","level":"high","review_note":"色站大全指向色情网站资源，原 other/low 过低。"}
+{"text":"43lian色站大全","category":"pornographic","level":"high","review_note":"色站大全指向色情网站资源，原 other/low 过低。"}
+{"text":"44lian色站大全","category":"pornographic","level":"high","review_note":"色站大全指向色情网站资源，原 other/low 过低。"}
+{"text":"45mm狗粮","category":"illegal","level":"high","review_note":"狗粮为枪弹/铅弹黑话，原 other/low 过低。"}
+{"text":"45mm狗粮qq","category":"illegal","level":"high","review_note":"枪弹黑话并带 QQ 导流，原 ad/low 过低。"}
+{"text":"45mm狗粮专卖","category":"illegal","level":"high","review_note":"枪弹黑话专卖语义明确，原 other/low 过低。"}
+{"text":"45mm狗粮专卖qq","category":"illegal","level":"high","review_note":"枪弹黑话专卖并带 QQ 导流，原 ad/low 过低。"}
+{"text":"45mm狗粮供应qq","category":"illegal","level":"high","review_note":"枪弹黑话供应并带 QQ 导流，原 ad/low 过低。"}
+{"text":"45mm狗粮出售","category":"illegal","level":"high","review_note":"枪弹黑话出售语义明确，原 ad/low 过低。"}
+{"text":"45mm狗粮出售qq","category":"illegal","level":"high","review_note":"枪弹黑话出售并带 QQ 导流，原 ad/low 过低。"}
+{"text":"45mm狗粮出货","category":"illegal","level":"high","review_note":"枪弹黑话出货语义明确，原 other/low 过低。"}
+{"text":"45mm狗粮到货","category":"illegal","level":"high","review_note":"枪弹黑话到货语义明确，原 other/low 过低。"}
+{"text":"45mm狗粮制造","category":"illegal","level":"high","review_note":"枪弹黑话制造语义明确，原 other/low 过低。"}
+{"text":"45mm狗粮售出","category":"illegal","level":"high","review_note":"枪弹黑话售出语义明确，原 other/low 过低。"}
+{"text":"45mm狗粮图纸","category":"illegal","level":"high","review_note":"枪弹黑话图纸语义明确，原 other/low 过低。"}
+{"text":"45mm狗粮批发qq","category":"illegal","level":"high","review_note":"枪弹黑话批发并带 QQ 导流，原 ad/low 过低。"}
+{"text":"45mm狗粮提供qq","category":"illegal","level":"high","review_note":"枪弹黑话提供并带 QQ 导流，原 ad/low 过低。"}
+{"text":"45mm狗粮现货","category":"illegal","level":"high","review_note":"枪弹黑话现货语义明确，原 other/low 过低。"}
+{"text":"45mm狗粮电话","category":"illegal","level":"high","review_note":"枪弹黑话并带电话导流，原 ad/low 过低。"}
+{"text":"45mm狗粮直销qq","category":"illegal","level":"high","review_note":"枪弹黑话直销并带 QQ 导流，原 ad/low 过低。"}
+{"text":"45mm狗粮订购","category":"illegal","level":"high","review_note":"枪弹黑话订购语义明确，原 other/low 过低。"}
+{"text":"45mm狗粮购买qq","category":"illegal","level":"high","review_note":"枪弹黑话购买并带 QQ 导流，原 ad/low 过低。"}
+{"text":"45mm狗粮销售qq","category":"illegal","level":"high","review_note":"枪弹黑话销售并带 QQ 导流，原 ad/low 过低。"}
+{"text":"45mm狗粮预订","category":"illegal","level":"high","review_note":"枪弹黑话预订语义明确，原 other/low 过低。"}
+{"text":"45mm铅弹出售","category":"illegal","level":"high","review_note":"铅弹出售属于枪弹/气枪弹交易语义，原 ad/low 过低。"}
+{"text":"46级助考","category":"illegal","level":"medium","review_note":"考试助考服务指向作弊违规，原 other/low 分类过低。"}
+{"text":"46级助考qq","category":"illegal","level":"medium","review_note":"考试助考并带 QQ 导流，作弊违规语义明确，原 ad/low 过低。"}
+{"text":"46级替考","category":"illegal","level":"high","review_note":"替考属于明确考试作弊违法语义，原 other/low 过低。"}
+{"text":"46级答案qq","category":"illegal","level":"medium","review_note":"考试答案售卖/导流语境，原 ad/low 过低。"}
+{"text":"46级答案买卖","category":"illegal","level":"medium","review_note":"考试答案买卖属于作弊违规语义，原 other/low 过低。"}
+{"text":"46级答案出售","category":"illegal","level":"medium","review_note":"考试答案出售属于作弊违规语义，原 ad/low 过低。"}
+{"text":"46级答案出售qq","category":"illegal","level":"medium","review_note":"考试答案出售并带 QQ 导流，原 ad/low 过低。"}
+{"text":"46级答案销售","category":"illegal","level":"medium","review_note":"考试答案销售属于作弊违规语义，原 other/low 过低。"}
+{"text":"46级考中答案qq","category":"illegal","level":"medium","review_note":"考试中答案并带 QQ 导流，作弊语义明确，原 ad/low 过低。"}
+{"text":"46级考前答案qq","category":"illegal","level":"medium","review_note":"考前答案并带 QQ 导流，作弊语义明确，原 ad/low 过低。"}
+{"text":"46级考试答案买卖","category":"illegal","level":"medium","review_note":"考试答案买卖属于作弊违规语义，原 other/low 过低。"}
+{"text":"46级考试答案出售","category":"illegal","level":"medium","review_note":"考试答案出售属于作弊违规语义，原 ad/low 过低。"}
+{"text":"46级证书代办","category":"illegal","level":"high","review_note":"证书代办指向伪造证书服务，原 ad/low 过低。"}
+{"text":"46级证书办理qq","category":"illegal","level":"high","review_note":"证书办理并带 QQ 导流，疑似伪造证书服务，原 ad/low 过低。"}
+{"text":"46级证代办","category":"illegal","level":"high","review_note":"证书代办指向伪造证书服务，原 ad/low 过低。"}
+{"text":"46级证办理","category":"illegal","level":"high","review_note":"证书办理指向伪造证书服务，原 ad/low 过低。"}
+{"text":"4事件89","category":"political","level":"medium","review_note":"疑似六四事件谐写政治敏感语义，原 other/low 分类过低。"}
+{"text":"4人帮","category":"political","level":"medium","review_note":"四人帮为政治历史敏感词，原 other/low 分类过低。"}
+{"text":"4号维园见","category":"political","level":"medium","review_note":"指向 6 月 4 日维园纪念活动政治语境，原 other/low 分类过低。"}
+{"text":"4川永川人民教师罢教运动口诀","category":"political","level":"medium","review_note":"涉及罢教运动公共政治事件，原 other/low 分类过低。"}
+{"text":"4川独","category":"political","level":"medium","review_note":"四川独立分裂政治语义，原 other/low 分类过低。"}
+{"text":"4房播播","category":"pornographic","level":"medium","review_note":"成人视频/色播站点语境，原 other/low 过低。"}
+{"text":"4房播播小说","category":"pornographic","level":"medium","review_note":"成人站点小说资源语境，原 other/low 过低。"}
+{"text":"4房看看","category":"pornographic","level":"medium","review_note":"成人视频站点语境，原 other/low 过低。"}
+{"text":"4房色播","category":"pornographic","level":"high","review_note":"色播为色情视频语义，原 other/low 过低。"}
+{"text":"4房色播网","category":"pornographic","level":"high","review_note":"色播网指向色情视频站点，原 other/low 过低。"}
+{"text":"4级成绩单代办qq","category":"illegal","level":"high","review_note":"成绩单代办并带 QQ 导流，疑似伪造证件/材料服务，原 ad/low 过低。"}
+{"text":"4级成绩单制作qq","category":"illegal","level":"high","review_note":"成绩单制作并带 QQ 导流，疑似伪造证件/材料服务，原 ad/low 过低。"}
+{"text":"4级成绩单办理qq","category":"illegal","level":"high","review_note":"成绩单办理并带 QQ 导流，疑似伪造证件/材料服务，原 ad/low 过低。"}
+{"text":"4级答案出售","category":"illegal","level":"medium","review_note":"考试答案出售属于作弊违规语义，原 ad/low 过低。"}
+{"text":"4级考试答案买卖","category":"illegal","level":"medium","review_note":"考试答案买卖属于作弊违规语义，原 other/low 过低。"}
+{"text":"4级考试答案买卖qq","category":"illegal","level":"medium","review_note":"考试答案买卖并带 QQ 导流，原 ad/low 过低。"}
+{"text":"4级证专卖qq","category":"illegal","level":"high","review_note":"四级证专卖并带 QQ 导流，疑似伪造证书交易，原 ad/low 过低。"}
+{"text":"4级证代办qq","category":"illegal","level":"high","review_note":"四级证代办并带 QQ 导流，疑似伪造证书服务，原 ad/low 过低。"}
+{"text":"4级证办理qq","category":"illegal","level":"high","review_note":"四级证办理并带 QQ 导流，疑似伪造证书服务，原 ad/low 过低。"}
+{"text":"500人打砸警车","category":"violence","level":"medium","review_note":"包含群体打砸警车暴力事件语义，原 other/low 分类过低。"}
+{"text":"50不露脸80露脸可以自慰可以指挥服务时间半小时","category":"pornographic","level":"high","review_note":"明码标价的自慰指挥色情服务语义，原 other/low 过低。"}
+{"text":"54式64式qq","category":"illegal","level":"high","review_note":"54/64 式枪支交易黑话并带 QQ 导流，原 ad/low 过低。"}
+{"text":"54式64式专卖","category":"illegal","level":"high","review_note":"54/64 式枪支专卖语义明确，原 other/low 过低。"}
+{"text":"54式64式出货","category":"illegal","level":"high","review_note":"54/64 式枪支出货语义明确，原 other/low 过低。"}
+{"text":"54式64式到货","category":"illegal","level":"high","review_note":"54/64 式枪支到货语义明确，原 other/low 过低。"}
+{"text":"54式64式制造","category":"illegal","level":"high","review_note":"54/64 式枪支制造语义明确，原 other/low 过低。"}
+{"text":"54式64式售出","category":"illegal","level":"high","review_note":"54/64 式枪支售出语义明确，原 other/low 过低。"}
+{"text":"54式64式图纸","category":"illegal","level":"high","review_note":"54/64 式枪支图纸语义明确，原 other/low 过低。"}
+{"text":"54式64式现货","category":"illegal","level":"high","review_note":"54/64 式枪支现货语义明确，原 other/low 过低。"}
+{"text":"54式64式电话","category":"illegal","level":"high","review_note":"54/64 式枪支交易并带电话导流，原 ad/low 过低。"}
+{"text":"54式64式订购","category":"illegal","level":"high","review_note":"54/64 式枪支订购语义明确，原 other/low 过低。"}
+{"text":"54式64式转售","category":"illegal","level":"high","review_note":"54/64 式枪支转售语义明确，原 other/low 过低。"}
+{"text":"54式64式配货","category":"illegal","level":"high","review_note":"54/64 式枪支配货语义明确，原 other/low 过低。"}
+{"text":"54式64式预订","category":"illegal","level":"high","review_note":"54/64 式枪支预订语义明确，原 other/low 过低。"}
+{"text":"54式qq","category":"illegal","level":"high","review_note":"54 式枪支黑话并带 QQ 导流，原 ad/low 过低。"}
+{"text":"54式专卖","category":"illegal","level":"high","review_note":"54 式枪支专卖语义明确，原 other/low 过低。"}
+{"text":"54式专卖qq","category":"illegal","level":"high","review_note":"54 式枪支专卖并带 QQ 导流，原 ad/low 过低。"}
+{"text":"54式冲锋狗出售","category":"illegal","level":"high","review_note":"冲锋狗为枪支黑话，出售语义明确，原 ad/low 过低。"}
+{"text":"54式冲锋狗出售qq","category":"illegal","level":"high","review_note":"冲锋狗出售并带 QQ 导流，原 ad/low 过低。"}
+{"text":"54式出售","category":"illegal","level":"high","review_note":"54 式枪支出售语义明确，原 ad/low 过低。"}
+{"text":"54式出货","category":"illegal","level":"high","review_note":"54 式枪支出货语义明确，原 other/low 过低。"}
+{"text":"54式到货","category":"illegal","level":"high","review_note":"54 式枪支到货语义明确，原 other/low 过低。"}
+{"text":"54式制造","category":"illegal","level":"high","review_note":"54 式枪支制造语义明确，原 other/low 过低。"}
+{"text":"54式图纸","category":"illegal","level":"high","review_note":"54 式枪支图纸语义明确，原 other/low 过低。"}
+{"text":"54式图纸出售","category":"illegal","level":"high","review_note":"54 式枪支图纸出售语义明确，原 ad/low 过低。"}
+{"text":"54式图纸销售","category":"illegal","level":"high","review_note":"54 式枪支图纸销售语义明确，原 other/low 过低。"}
+{"text":"54式图解","category":"illegal","level":"high","review_note":"54 式枪支图解语义明确，原 other/low 过低。"}
+{"text":"54式现货","category":"illegal","level":"high","review_note":"54 式枪支现货语义明确，原 other/low 过低。"}
+{"text":"54式电话","category":"illegal","level":"high","review_note":"54 式枪支交易并带电话导流，原 ad/low 过低。"}
+{"text":"54式订购","category":"illegal","level":"high","review_note":"54 式枪支订购语义明确，原 other/low 过低。"}
+{"text":"54式转售","category":"illegal","level":"high","review_note":"54 式枪支转售语义明确，原 other/low 过低。"}
+{"text":"54式连锁","category":"illegal","level":"high","review_note":"54 式枪支连锁交易语境明确，原 other/low 过低。"}
+{"text":"54式送狗粮","category":"illegal","level":"high","review_note":"54 式枪支并送弹药黑话，原 other/low 过低。"}
+{"text":"54式配货","category":"illegal","level":"high","review_note":"54 式枪支配货语义明确，原 other/low 过低。"}
+{"text":"54式销售qq","category":"illegal","level":"high","review_note":"54 式枪支销售并带 QQ 导流，原 ad/low 过低。"}
+{"text":"54式预订","category":"illegal","level":"high","review_note":"54 式枪支预订语义明确，原 other/low 过低。"}

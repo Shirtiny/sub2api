@@ -1,0 +1,99 @@
+{"text":"专卖麻姑","category":"illegal","level":"high","review_note":"麻姑为麻古毒品谐音变体，专卖语义明确，原 other/low 过低。"}
+{"text":"专卖黄牙签qq","category":"illegal","level":"high","review_note":"黄牙签为毒品隐语，专卖并带 QQ 导流仍属毒品交易语义，原 ad/low 过低。"}
+{"text":"专卖黄白牙签","category":"illegal","level":"high","review_note":"黄白牙签为毒品隐语，专卖语义明确，原 other/low 过低。"}
+{"text":"专卖黄白牙签qq","category":"illegal","level":"high","review_note":"黄白牙签为毒品隐语，专卖并带 QQ 导流，原 ad/low 过低。"}
+{"text":"专卖黄绿牙签","category":"illegal","level":"high","review_note":"黄绿牙签为毒品隐语，专卖语义明确，原 other/low 过低。"}
+{"text":"专卖黄绿牙签qq","category":"illegal","level":"high","review_note":"黄绿牙签为毒品隐语，专卖并带 QQ 导流，原 ad/low 过低。"}
+{"text":"专售西班牙苍蝇水","category":"illegal","level":"high","review_note":"西班牙苍蝇水为催情/迷奸类药物交易语义，原 pornographic/medium 偏低。"}
+{"text":"专销人皮面具","category":"illegal","level":"medium","review_note":"人皮面具专销可用于伪装规避身份，原 other/low 过低。"}
+{"text":"专销高仿人皮面具","category":"illegal","level":"medium","review_note":"高仿人皮面具专销可用于伪装规避身份，原 other/low 过低。"}
+{"text":"专销高仿人皮面具qq","category":"illegal","level":"medium","review_note":"高仿人皮面具专销并带 QQ 导流，可用于伪装规避身份，原 ad/low 过低。"}
+{"text":"世界名刀专卖qq","category":"violence","level":"medium","review_note":"名刀专卖导流属于刀具交易语义，原 ad/low 过低。"}
+{"text":"世界名刀批发qq","category":"violence","level":"medium","review_note":"名刀批发导流属于刀具交易语义，原 ad/low 过低。"}
+{"text":"世界名刀批发网","category":"violence","level":"medium","review_note":"名刀批发网站属于刀具交易语义，原 other/low 过低。"}
+{"text":"丙烯醛供应","category":"illegal","level":"medium","review_note":"丙烯醛为危险化学品，供应语义存在违禁交易风险，原 other/low 过低。"}
+{"text":"丙烯醛供应qq","category":"illegal","level":"medium","review_note":"丙烯醛供应并带 QQ 导流，存在危险化学品交易风险，原 ad/low 过低。"}
+{"text":"丙烯醛批发","category":"illegal","level":"medium","review_note":"丙烯醛为危险化学品，批发语义存在违禁交易风险，原 other/low 过低。"}
+{"text":"丙烯醛提供","category":"illegal","level":"medium","review_note":"丙烯醛为危险化学品，提供语义存在违禁交易风险，原 other/low 过低。"}
+{"text":"丙烯醛直销","category":"illegal","level":"medium","review_note":"丙烯醛为危险化学品，直销语义存在违禁交易风险，原 other/low 过低。"}
+{"text":"丙烯醛销售","category":"illegal","level":"medium","review_note":"丙烯醛为危险化学品，销售语义存在违禁交易风险，原 other/low 过低。"}
+{"text":"丙腈供应","category":"illegal","level":"medium","review_note":"丙腈为危险化学品，供应语义存在违禁交易风险，原 other/low 过低。"}
+{"text":"丙腈供应qq","category":"illegal","level":"medium","review_note":"丙腈供应并带 QQ 导流，存在危险化学品交易风险，原 ad/low 过低。"}
+{"text":"丙腈批发","category":"illegal","level":"medium","review_note":"丙腈为危险化学品，批发语义存在违禁交易风险，原 other/low 过低。"}
+{"text":"丙腈提供","category":"illegal","level":"medium","review_note":"丙腈为危险化学品，提供语义存在违禁交易风险，原 other/low 过低。"}
+{"text":"丙腈直销","category":"illegal","level":"medium","review_note":"丙腈为危险化学品，直销语义存在违禁交易风险，原 other/low 过低。"}
+{"text":"丙腈销售","category":"illegal","level":"medium","review_note":"丙腈为危险化学品，销售语义存在违禁交易风险，原 other/low 过低。"}
+{"text":"东京物语vol3优质美少女","category":"pornographic","level":"medium","review_note":"成人资源标题语境明显，原 other/low 过低。"}
+{"text":"东百合子种子","category":"pornographic","level":"medium","review_note":"人名加种子在该成人资源上下文中指向色情资源下载，原 other/low 过低。"}
+{"text":"丝袜聊天室","category":"pornographic","level":"medium","review_note":"丝袜成人聊天导流语义明显，原 ad/low 过低。"}
+{"text":"丝足上门qq","category":"pornographic","level":"medium","review_note":"丝足上门并带 QQ 导流，指向色情/擦边服务，原 ad/low 过低。"}
+{"text":"丝足保健qq","category":"pornographic","level":"medium","review_note":"丝足保健并带 QQ 导流，指向色情/擦边服务，原 ad/low 过低。"}
+{"text":"丝足按摩服务qq","category":"pornographic","level":"medium","review_note":"丝足按摩服务并带 QQ 导流，指向色情/擦边服务，原 ad/low 过低。"}
+{"text":"两性电影在线免费欣赏","category":"pornographic","level":"medium","review_note":"两性电影在线欣赏指向成人影视资源，原 other/low 过低。"}
+{"text":"中共任用","category":"political","level":"medium","review_note":"涉及中共组织任用议题，应归政治类，原 other/low 过低。"}
+{"text":"中共保命","category":"political","level":"medium","review_note":"涉及中共政治评价语境，应归政治类，原 other/low 过低。"}
+{"text":"中共帮凶","category":"political","level":"medium","review_note":"涉及中共政治评价语境，应归政治类，原 other/low 过低。"}
+{"text":"中共恐惧","category":"political","level":"medium","review_note":"涉及中共政治评价语境，应归政治类，原 other/low 过低。"}
+{"text":"中共表演","category":"political","level":"medium","review_note":"涉及中共政治评价语境，应归政治类，原 other/low 过低。"}
+{"text":"中共黑","category":"political","level":"medium","review_note":"涉及中共政治评价语境，应归政治类，原 other/low 过低。"}
+{"text":"中国军刀网","category":"violence","level":"medium","review_note":"军刀网站指向刀具交易/资源，原 other/low 过低。"}
+{"text":"中国性城","category":"pornographic","level":"high","review_note":"成人站点名称语义明显，原 other/low 过低。"}
+{"text":"中国性搜网","category":"pornographic","level":"high","review_note":"成人搜索站点语义明显，原 other/low 过低。"}
+{"text":"中国户外刀具网","category":"violence","level":"medium","review_note":"户外刀具网站指向刀具交易/资源，原 illegal/medium 分类偏重违法类，应归暴力武器类。"}
+{"text":"中国打日本是必须","category":"violence","level":"medium","review_note":"含对国家群体的打击/冲突鼓动语义，原 other/low 过低。"}
+{"text":"中国移动联电信午夜激情电影秘密通道","category":"pornographic","level":"high","review_note":"含午夜激情电影秘密通道，指向成人影视资源，原 other/low 过低。"}
+{"text":"中山沙绪里种子","category":"pornographic","level":"medium","review_note":"成人演员姓名加种子指向色情资源下载，原 other/low 过低。"}
+{"text":"中山爱里bt","category":"pornographic","level":"medium","review_note":"成人演员姓名加 BT 指向色情资源下载，原 other/low 过低。"}
+{"text":"中山爱里全集","category":"pornographic","level":"medium","review_note":"成人演员姓名加全集指向色情资源合集，原 other/low 过低。"}
+{"text":"中山爱里电驴","category":"pornographic","level":"medium","review_note":"成人演员姓名加电驴指向色情资源下载，原 other/low 过低。"}
+{"text":"中山真由种子","category":"pornographic","level":"medium","review_note":"成人演员姓名加种子指向色情资源下载，原 other/low 过低。"}
+{"text":"中山美嘉种子","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加种子指向色情资源下载，原 other/low 过低。"}
+{"text":"中山美穗种子","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加种子指向色情资源下载，原 other/low 过低。"}
+{"text":"中山美里种子","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加种子指向色情资源下载，原 other/low 过低。"}
+{"text":"中山里菜种子","category":"pornographic","level":"medium","review_note":"成人演员姓名加种子指向色情资源下载，原 other/low 过低。"}
+{"text":"中岛京子种子","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加种子指向色情资源下载，原 other/low 过低。"}
+{"text":"中控拦截器","category":"illegal","level":"medium","review_note":"中控拦截器可用于车辆非法解锁/盗窃，原 other/low 过低。"}
+{"text":"中控拦截器出售","category":"illegal","level":"high","review_note":"出售中控拦截器属于违法工具交易语义，原 ad/low 过低。"}
+{"text":"中村あみ种子","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加种子指向色情资源下载，原 other/low 过低。"}
+{"text":"中村亚美种子","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加种子指向色情资源下载，原 other/low 过低。"}
+{"text":"中村晴美种子","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加种子指向色情资源下载，原 other/low 过低。"}
+{"text":"中森蓝子种子","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加种子指向色情资源下载，原 other/low 过低。"}
+{"text":"中河原椿种子","category":"pornographic","level":"medium","review_note":"成人演员姓名加种子指向色情资源下载，原 other/low 过低。"}
+{"text":"中泽明步种子","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加种子指向色情资源下载，原 other/low 过低。"}
+{"text":"中泽由真种子","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加种子指向色情资源下载，原 other/low 过低。"}
+{"text":"中泽绘美种子","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加种子指向色情资源下载，原 other/low 过低。"}
+{"text":"中泽美亚种子","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加种子指向色情资源下载，原 other/low 过低。"}
+{"text":"中田由真种子","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加种子指向色情资源下载，原 other/low 过低。"}
+{"text":"中西里菜下载","category":"pornographic","level":"medium","review_note":"成人演员姓名加下载指向色情资源，原 other/low 过低。"}
+{"text":"中谷あいみbt下载","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加 BT 下载指向色情资源，原 other/low 过低。"}
+{"text":"中谷鞍罗种子","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加种子指向色情资源下载，原 other/low 过低。"}
+{"text":"中谷麻生加奈种子","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加种子指向色情资源下载，原 other/low 过低。"}
+{"text":"中里优奈种子","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加种子指向色情资源下载，原 other/low 过低。"}
+{"text":"中里爱菜全集","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加全集指向色情资源合集，原 other/low 过低。"}
+{"text":"中里爱菜种子","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加种子指向色情资源下载，原 other/low 过低。"}
+{"text":"中野千夏种子","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加种子指向色情资源下载，原 other/low 过低。"}
+{"text":"丰满少妇","category":"pornographic","level":"medium","review_note":"在成人词库上下文中为情色描写词，原 other/low 过低。"}
+{"text":"丰满熟妇","category":"pornographic","level":"medium","review_note":"在成人词库上下文中为情色描写词，原 other/low 过低。"}
+{"text":"丰满的视频聊天主持","category":"pornographic","level":"medium","review_note":"含视频聊天主持且带情色描述，指向成人聊天语境，原 other/low 过低。"}
+{"text":"丰胸性感少女久纱","category":"pornographic","level":"medium","review_note":"含性感少女成人资源语境，原 other/low 过低。"}
+{"text":"临时情人","category":"pornographic","level":"medium","review_note":"临时情人具有色情/陪伴服务暗示，原 other/low 过低。"}
+{"text":"丹羽瞳种子","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加种子指向色情资源下载，原 other/low 过低。"}
+{"text":"为了性和钱","category":"pornographic","level":"medium","review_note":"直接指向性交易/情色主题，原 other/low 过低。"}
+{"text":"为接触不到高分梅梅而烦恼吗","category":"ad","level":"low","review_note":"疑似交友/招揽广告但风险不足，按 low 不拦截规则维持低风险广告类。"}
+{"text":"为淑女免费介绍企业家","category":"ad","level":"low","review_note":"婚恋介绍广告语义，按 low 不拦截规则归为 ad/low。"}
+{"text":"丽丽单身家园","category":"ad","level":"low","review_note":"婚恋交友站点语义，按 low 不拦截规则归为 ad/low。"}
+{"text":"久保路里种子","category":"pornographic","level":"medium","review_note":"成人演员姓名加种子指向色情资源下载，原 other/low 过低。"}
+{"text":"久硬真茎","category":"pornographic","level":"medium","review_note":"含明显性器官/壮阳暗示，原 other/low 过低。"}
+{"text":"久里麻里种子","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加种子指向色情资源下载，原 other/low 过低。"}
+{"text":"乌头碱","category":"illegal","level":"medium","review_note":"乌头碱为高毒物质，单独词也存在违禁品风险，原 other/low 过低。"}
+{"text":"乌蝇水","category":"illegal","level":"high","review_note":"乌蝇水为迷情/催情药物黑话，原 other/low 过低。"}
+{"text":"乏仑","category":"political","level":"medium","review_note":"法轮相关规避写法，应归政治/敏感组织类，原 other/low 过低。"}
+{"text":"乏伦","category":"political","level":"medium","review_note":"法轮相关规避写法，应归政治/敏感组织类，原 other/low 过低。"}
+{"text":"乏囵","category":"political","level":"medium","review_note":"法轮相关规避写法，应归政治/敏感组织类，原 other/low 过低。"}
+{"text":"乏抡","category":"political","level":"medium","review_note":"法轮相关规避写法，应归政治/敏感组织类，原 other/low 过低。"}
+{"text":"乏沦","category":"political","level":"medium","review_note":"法轮相关规避写法，应归政治/敏感组织类，原 other/low 过低。"}
+{"text":"乏纶","category":"political","level":"medium","review_note":"法轮相关规避写法，应归政治/敏感组织类，原 other/low 过低。"}
+{"text":"乏论","category":"political","level":"medium","review_note":"法轮相关规避写法，应归政治/敏感组织类，原 other/low 过低。"}
+{"text":"乏轮","category":"political","level":"medium","review_note":"法轮相关规避写法，应归政治/敏感组织类，原 other/low 过低。"}
+{"text":"乖乖丫鬟我想交友1下试","category":"ad","level":"low","review_note":"交友招揽语义但未达到拦截风险，按 low 不拦截规则维持低风险广告类。"}
+{"text":"乘骑按摩","category":"pornographic","level":"medium","review_note":"按摩语境中含情色服务暗示，原 other/low 过低。"}

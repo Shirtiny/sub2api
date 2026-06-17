@@ -1002,6 +1002,61 @@
               <Toggle v-model="configForm.built_in_filter_enabled" />
             </div>
 
+            <div
+              v-if="configForm.built_in_filter_enabled"
+              class="grid grid-cols-1 gap-4 rounded-lg border border-gray-100 p-4 dark:border-dark-700 lg:grid-cols-2"
+            >
+              <div class="space-y-2">
+                <div class="flex items-center justify-between gap-2">
+                  <label class="input-label mb-0">{{ t('admin.riskControl.builtInFilterCategories') }}</label>
+                  <span class="inline-flex rounded-md bg-gray-100 px-2 py-1 text-xs text-gray-500 dark:bg-dark-700 dark:text-gray-300">
+                    {{ t('admin.riskControl.builtInFilterSelectedCount', { count: builtInFilterCategoryCount }) }}
+                  </span>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                  <button
+                    v-for="option in builtInFilterCategoryOptions"
+                    :key="option.value"
+                    type="button"
+                    class="inline-flex h-9 items-center gap-1.5 rounded-md border px-3 text-sm transition-colors"
+                    :class="configForm.built_in_filter_categories.includes(option.value)
+                      ? 'border-primary-300 bg-primary-50 text-primary-700 dark:border-primary-700 dark:bg-primary-900/20 dark:text-primary-200'
+                      : 'border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-dark-600 dark:text-gray-300 dark:hover:bg-dark-700'"
+                    @click="toggleBuiltInFilterCategory(option.value)"
+                  >
+                    <Icon v-if="configForm.built_in_filter_categories.includes(option.value)" name="check" size="xs" />
+                    <span>{{ option.label }}</span>
+                  </button>
+                </div>
+                <p class="text-xs leading-5 text-gray-500 dark:text-gray-400">{{ t('admin.riskControl.builtInFilterCategoriesDesc') }}</p>
+              </div>
+
+              <div class="space-y-2">
+                <div class="flex items-center justify-between gap-2">
+                  <label class="input-label mb-0">{{ t('admin.riskControl.builtInFilterLevels') }}</label>
+                  <span class="inline-flex rounded-md bg-gray-100 px-2 py-1 text-xs text-gray-500 dark:bg-dark-700 dark:text-gray-300">
+                    {{ t('admin.riskControl.builtInFilterSelectedCount', { count: builtInFilterLevelCount }) }}
+                  </span>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                  <button
+                    v-for="option in builtInFilterLevelOptions"
+                    :key="option.value"
+                    type="button"
+                    class="inline-flex h-9 items-center gap-1.5 rounded-md border px-3 text-sm transition-colors"
+                    :class="configForm.built_in_filter_levels.includes(option.value)
+                      ? 'border-primary-300 bg-primary-50 text-primary-700 dark:border-primary-700 dark:bg-primary-900/20 dark:text-primary-200'
+                      : 'border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-dark-600 dark:text-gray-300 dark:hover:bg-dark-700'"
+                    @click="toggleBuiltInFilterLevel(option.value)"
+                  >
+                    <Icon v-if="configForm.built_in_filter_levels.includes(option.value)" name="check" size="xs" />
+                    <span>{{ option.label }}</span>
+                  </button>
+                </div>
+                <p class="text-xs leading-5 text-gray-500 dark:text-gray-400">{{ t('admin.riskControl.builtInFilterLevelsDesc') }}</p>
+              </div>
+            </div>
+
             <div>
               <div class="mb-2 flex items-center justify-between">
                 <label class="input-label mb-0">{{ t('admin.riskControl.blockedKeywords') }}</label>
@@ -1141,6 +1196,8 @@ import ModelWhitelistSelector from '@/components/account/ModelWhitelistSelector.
 import { adminAPI } from '@/api/admin'
 import type {
   ContentModerationAPIKeyLoad,
+  ContentModerationBuiltinCategory,
+  ContentModerationBuiltinLevel,
   ContentModerationAPIKeyStatus,
   ContentModerationConfig,
   ContentModerationLog,
@@ -1161,6 +1218,10 @@ type SettingsTab = 'basic' | 'scope' | 'runtime' | 'response' | 'riskThresholds'
 type WorkerSlotState = 'active' | 'idle' | 'disabled'
 type APIKeysWriteMode = 'append' | 'replace'
 type OverviewIcon = 'shield' | 'key' | 'users' | 'document'
+type BuiltInFilterOption<T extends string> = {
+  value: T
+  label: string
+}
 type OverviewItem = {
   key: string
   label: string
@@ -1203,6 +1264,8 @@ const riskThresholdDefaults: Record<string, number> = {
   'violence/graphic': 95,
 }
 const riskThresholdCategories = Object.keys(riskThresholdDefaults)
+const defaultBuiltInFilterCategories: ContentModerationBuiltinCategory[] = ['political', 'pornographic', 'violence', 'abuse', 'ad', 'illegal', 'other']
+const defaultBuiltInFilterLevels: ContentModerationBuiltinLevel[] = ['high']
 
 const { t } = useI18n()
 const appStore = useAppStore()
@@ -1265,6 +1328,8 @@ const configForm = reactive({
   keyword_whitelist_text: '',
   keyword_blocking_mode: 'keyword_and_api' as KeywordBlockingMode,
   built_in_filter_enabled: false,
+  built_in_filter_categories: [...defaultBuiltInFilterCategories] as ContentModerationBuiltinCategory[],
+  built_in_filter_levels: [...defaultBuiltInFilterLevels] as ContentModerationBuiltinLevel[],
   model_filter_type: 'all' as ContentModerationModelFilterType,
   model_filter_models: [] as string[],
 })
@@ -1317,6 +1382,23 @@ const keywordBlockingModeOptions = computed<Array<{ value: KeywordBlockingMode; 
     label: t('admin.riskControl.keywordModeApiOnly'),
     description: t('admin.riskControl.keywordModeApiOnlyDesc'),
   },
+])
+
+const builtInFilterCategoryOptions = computed<Array<BuiltInFilterOption<ContentModerationBuiltinCategory>>>(() => [
+  { value: 'political', label: t('admin.riskControl.builtInFilterCategoryPolitical') },
+  { value: 'pornographic', label: t('admin.riskControl.builtInFilterCategoryPornographic') },
+  { value: 'violence', label: t('admin.riskControl.builtInFilterCategoryViolence') },
+  { value: 'abuse', label: t('admin.riskControl.builtInFilterCategoryAbuse') },
+  { value: 'ad', label: t('admin.riskControl.builtInFilterCategoryAd') },
+  { value: 'illegal', label: t('admin.riskControl.builtInFilterCategoryIllegal') },
+  { value: 'other', label: t('admin.riskControl.builtInFilterCategoryOther') },
+])
+
+const builtInFilterLevelOptions = computed<Array<BuiltInFilterOption<ContentModerationBuiltinLevel>>>(() => [
+  { value: 'low', label: t('admin.riskControl.builtInFilterLevelLow') },
+  { value: 'medium', label: t('admin.riskControl.builtInFilterLevelMedium') },
+  { value: 'high', label: t('admin.riskControl.builtInFilterLevelHigh') },
+  { value: 'critical', label: t('admin.riskControl.builtInFilterLevelCritical') },
 ])
 
 const modelFilterOptions = computed<Array<{ value: ContentModerationModelFilterType; label: string; description: string }>>(() => [
@@ -1452,6 +1534,10 @@ const blockedKeywordCount = computed(() => blockedKeywordList.value.length)
 const keywordWhitelist = computed(() => parseBlockedKeywords(configForm.keyword_whitelist_text))
 
 const keywordWhitelistCount = computed(() => keywordWhitelist.value.length)
+
+const builtInFilterCategoryCount = computed(() => configForm.built_in_filter_categories.length)
+
+const builtInFilterLevelCount = computed(() => configForm.built_in_filter_levels.length)
 
 const pendingDeletedApiKeyCount = computed(() => pendingDeleteApiKeyHashes.value.length)
 
@@ -1747,6 +1833,8 @@ function applyConfig(config: ContentModerationConfig) {
   configForm.keyword_whitelist_text = Array.isArray(config.keyword_whitelist) ? config.keyword_whitelist.join('\n') : ''
   configForm.keyword_blocking_mode = normalizeKeywordBlockingMode(config.keyword_blocking_mode)
   configForm.built_in_filter_enabled = config.built_in_filter_enabled ?? false
+  configForm.built_in_filter_categories = normalizeBuiltInFilterCategories(config.built_in_filter_categories)
+  configForm.built_in_filter_levels = normalizeBuiltInFilterLevels(config.built_in_filter_levels)
   const modelFilter = normalizeModelFilter(config.model_filter)
   configForm.model_filter_type = modelFilter.type
   configForm.model_filter_models = modelFilter.models
@@ -1801,6 +1889,10 @@ async function saveConfig() {
       appStore.showError(t('admin.riskControl.modelFilterModelsRequired'))
       return
     }
+    const builtInFilterCategories = normalizeBuiltInFilterCategories(configForm.built_in_filter_categories)
+    const builtInFilterLevels = normalizeBuiltInFilterLevels(configForm.built_in_filter_levels)
+    configForm.built_in_filter_categories = builtInFilterCategories
+    configForm.built_in_filter_levels = builtInFilterLevels
     const payload: UpdateContentModerationConfig = {
       enabled: configForm.enabled,
       mode: configForm.mode,
@@ -1829,6 +1921,8 @@ async function saveConfig() {
       keyword_whitelist: keywordWhitelist.value,
       keyword_blocking_mode: configForm.keyword_blocking_mode,
       built_in_filter_enabled: configForm.built_in_filter_enabled,
+      built_in_filter_categories: builtInFilterCategories,
+      built_in_filter_levels: builtInFilterLevels,
       model_filter: modelFilterPayload,
     }
     const keys = parseApiKeys(configForm.api_keys_text)
@@ -2246,6 +2340,50 @@ function normalizeKeywordBlockingMode(value: unknown): KeywordBlockingMode {
     return value
   }
   return 'keyword_and_api'
+}
+
+function normalizeBuiltInFilterCategories(values: unknown): ContentModerationBuiltinCategory[] {
+  return normalizeBuiltInFilterOptionList(values, defaultBuiltInFilterCategories, defaultBuiltInFilterCategories)
+}
+
+function normalizeBuiltInFilterLevels(values: unknown): ContentModerationBuiltinLevel[] {
+  return normalizeBuiltInFilterOptionList(values, ['low', 'medium', 'high', 'critical'], defaultBuiltInFilterLevels)
+}
+
+function normalizeBuiltInFilterOptionList<T extends string>(values: unknown, allowed: readonly T[], defaults: readonly T[]): T[] {
+  if (!Array.isArray(values)) {
+    return [...defaults]
+  }
+  const allowedSet = new Set<T>(allowed)
+  const seen = new Set<T>()
+  const out: T[] = []
+  for (const item of values) {
+    const value = String(item ?? '').trim().toLowerCase() as T
+    if (!allowedSet.has(value) || seen.has(value)) continue
+    seen.add(value)
+    out.push(value)
+  }
+  return out.length > 0 ? out : [...defaults]
+}
+
+function toggleBuiltInFilterCategory(category: ContentModerationBuiltinCategory) {
+  toggleBuiltInFilterOption(configForm.built_in_filter_categories, category, defaultBuiltInFilterCategories)
+}
+
+function toggleBuiltInFilterLevel(level: ContentModerationBuiltinLevel) {
+  toggleBuiltInFilterOption(configForm.built_in_filter_levels, level, defaultBuiltInFilterLevels)
+}
+
+function toggleBuiltInFilterOption<T extends string>(target: T[], value: T, fallback: readonly T[]) {
+  const index = target.indexOf(value)
+  if (index >= 0) {
+    target.splice(index, 1)
+  } else {
+    target.push(value)
+  }
+  if (target.length === 0) {
+    target.push(...fallback)
+  }
 }
 
 function normalizeModelFilter(value: unknown): ContentModerationModelFilter {

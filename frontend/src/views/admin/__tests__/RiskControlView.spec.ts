@@ -99,6 +99,8 @@ const baseConfig = (): ContentModerationConfig => ({
   keyword_whitelist: [],
   keyword_blocking_mode: 'keyword_and_api',
   built_in_filter_enabled: false,
+  built_in_filter_categories: ['political', 'pornographic', 'violence', 'abuse', 'ad', 'illegal', 'other'],
+  built_in_filter_levels: ['high'],
   thresholds: {
     harassment: 0.98,
     sexual: 0.65,
@@ -282,6 +284,8 @@ describe('admin RiskControlView', () => {
     getConfig.mockResolvedValue({
       ...baseConfig(),
       built_in_filter_enabled: true,
+      built_in_filter_categories: ['ad', 'illegal'],
+      built_in_filter_levels: ['low', 'high'],
       keyword_whitelist: ['allowed-term'],
     })
 
@@ -307,6 +311,8 @@ describe('admin RiskControlView', () => {
 
     expect(updateConfig).toHaveBeenCalledWith(expect.objectContaining({
       built_in_filter_enabled: true,
+      built_in_filter_categories: ['ad', 'illegal'],
+      built_in_filter_levels: ['low', 'high'],
       keyword_whitelist: ['allowed-term'],
     }))
     expect(showError).not.toHaveBeenCalled()

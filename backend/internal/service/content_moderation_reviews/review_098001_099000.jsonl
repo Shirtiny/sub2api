@@ -1,0 +1,171 @@
+{"text":"战术军刀出售","category":"violence","level":"medium","review_note":"管制/危险刀具出售语义明确，原 ad/low 过低。"}
+{"text":"战术砍刀出售","category":"violence","level":"medium","review_note":"砍刀出售属于危险刀具交易语义，原 ad/low 过低。"}
+{"text":"截听器","category":"illegal","level":"high","review_note":"截听器指向非法监听设备，原 other/low 过低。"}
+{"text":"戳那吗b","category":"abuse","level":"medium","review_note":"辱骂他人亲属的粗俗变体，原 other/low 过低。"}
+{"text":"戳那吗比","category":"abuse","level":"medium","review_note":"辱骂他人亲属的粗俗变体，原 other/low 过低。"}
+{"text":"戳那吗逼","category":"abuse","level":"medium","review_note":"辱骂他人亲属的粗俗变体，原 other/low 过低。"}
+{"text":"户外军刀出售","category":"violence","level":"medium","review_note":"军刀出售属于危险刀具交易语义，原 ad/low 过低。"}
+{"text":"户外刀专卖","category":"violence","level":"medium","review_note":"刀具专卖交易语义，原 other/low 过低。"}
+{"text":"户外刀具商城","category":"violence","level":"medium","review_note":"刀具商城指向危险刀具交易渠道，原 other/low 过低。"}
+{"text":"户外刀具批发网","category":"violence","level":"medium","review_note":"刀具批发网站交易语义，原 other/low 过低。"}
+{"text":"户外开山刀专卖","category":"violence","level":"medium","review_note":"开山刀专卖属于危险刀具交易语义，原 other/low 过低。"}
+{"text":"户外猎刀出售","category":"violence","level":"medium","review_note":"猎刀出售属于危险刀具交易语义，原 ad/low 过低。"}
+{"text":"户外砍刀专卖","category":"violence","level":"medium","review_note":"砍刀专卖属于危险刀具交易语义，原 other/low 过低。"}
+{"text":"房主数据出售","category":"illegal","level":"high","review_note":"房主数据出售属于个人信息交易，原 ad/low 过低。"}
+{"text":"扆淉窷","category":"other","level":"medium","review_note":"文本含义无法判断，按规则由 other/low 调整为 other/medium。"}
+{"text":"手qiang子弹供应qq","category":"ad","level":"low","review_note":"含 QQ 联系方式，按用户规则改为 ad/low。"}
+{"text":"手qiang子弹提供qq","category":"ad","level":"low","review_note":"含 QQ 联系方式，按用户规则改为 ad/low。"}
+{"text":"手qiang子弹电话","category":"ad","level":"low","review_note":"含电话联系方式，按用户规则改为 ad/low。"}
+{"text":"手伸到两腿间","category":"pornographic","level":"medium","review_note":"在该上下文中指向性骚扰/性接触语义，原 other/low 过低。"}
+{"text":"手工刀奴专卖","category":"violence","level":"medium","review_note":"刀具专卖交易语义，原 other/low 过低。"}
+{"text":"手弩制作","category":"illegal","level":"high","review_note":"手弩制作教程语义涉及管制武器制作，原 violence/medium 偏低。"}
+{"text":"手弩图纸","category":"illegal","level":"high","review_note":"手弩图纸涉及管制武器制作资料，原 violence/medium 偏低。"}
+{"text":"手拉鸡专卖","category":"illegal","level":"high","review_note":"在枪械词簇中为枪支隐语交易，原 other/low 过低。"}
+{"text":"手拉鸡买卖","category":"illegal","level":"high","review_note":"在枪械词簇中为枪支隐语交易，原 other/low 过低。"}
+{"text":"手拉鸡出售","category":"illegal","level":"high","review_note":"在枪械词簇中为枪支隐语出售，原 ad/low 过低。"}
+{"text":"手拉鸡改装","category":"illegal","level":"high","review_note":"在枪械词簇中指向枪支改装，原 other/low 过低。"}
+{"text":"手拉鸡直销","category":"illegal","level":"high","review_note":"在枪械词簇中为枪支隐语直销，原 other/low 过低。"}
+{"text":"手拉鸡订购","category":"illegal","level":"high","review_note":"在枪械词簇中为枪支隐语订购，原 other/low 过低。"}
+{"text":"手拉鸡销售","category":"illegal","level":"high","review_note":"在枪械词簇中为枪支隐语销售，原 other/low 过低。"}
+{"text":"手拷出售","category":"illegal","level":"high","review_note":"手拷为手铐错写，出售约束器械有违法风险，原 ad/low 过低。"}
+{"text":"手拷批发","category":"illegal","level":"high","review_note":"手拷为手铐错写，批发约束器械有违法风险，原 other/low 过低。"}
+{"text":"手拷销售","category":"illegal","level":"high","review_note":"手拷为手铐错写，销售约束器械有违法风险，原 other/low 过低。"}
+{"text":"手机","category":"other","level":"low","review_note":"普通高频词，不应作为广告类词拦截，改为 other/low。"}
+{"text":"手机qie听器","category":"illegal","level":"high","review_note":"手机窃听器规避写法，指向非法监听设备，原 ad/low 过低。"}
+{"text":"手机信号屏蔽器","category":"illegal","level":"high","review_note":"手机信号屏蔽设备交易/使用风险高，原 ad/low 过低。"}
+{"text":"手机偷听","category":"illegal","level":"high","review_note":"指向非法手机偷听行为，原 ad/low 过低。"}
+{"text":"手机偷听器软件","category":"illegal","level":"high","review_note":"手机偷听软件属于非法监听工具，原 ad/low 过低。"}
+{"text":"手机偷听器软件下载","category":"illegal","level":"high","review_note":"手机偷听软件下载属于非法监听工具获取，原 ad/low 过低。"}
+{"text":"手机偷听器软件官网","category":"illegal","level":"high","review_note":"手机偷听软件官网指向非法监听工具渠道，原 ad/low 过低。"}
+{"text":"手机卡复制","category":"illegal","level":"high","review_note":"手机卡复制涉及通信身份克隆风险，原 ad/low 过低。"}
+{"text":"手机卡复制器","category":"illegal","level":"high","review_note":"手机卡复制器属于通信身份克隆工具，原 ad/low 过低。"}
+{"text":"手机卡服务密码破","category":"illegal","level":"high","review_note":"破解手机卡服务密码涉及账号侵入风险，原 ad/low 过低。"}
+{"text":"手机卡监听器价格","category":"illegal","level":"high","review_note":"手机卡监听器交易询价属于非法监听工具语义，原 ad/low 过低。"}
+{"text":"手机变号","category":"illegal","level":"high","review_note":"手机变号指向来电号码伪装工具，原 ad/low 过低。"}
+{"text":"手机变号器","category":"illegal","level":"high","review_note":"手机变号器可用于号码伪装/诈骗，原 ad/low 过低。"}
+{"text":"手机变号器批发","category":"illegal","level":"high","review_note":"手机变号器批发属于号码伪装工具交易，原 ad/low 过低。"}
+{"text":"手机变号平台","category":"illegal","level":"high","review_note":"手机变号平台指向号码伪装服务，原 ad/low 过低。"}
+{"text":"手机变号机","category":"illegal","level":"high","review_note":"手机变号机可用于号码伪装/诈骗，原 ad/low 过低。"}
+{"text":"手机变号软件","category":"illegal","level":"high","review_note":"手机变号软件可用于号码伪装/诈骗，原 ad/low 过低。"}
+{"text":"手机变号软件供应","category":"illegal","level":"high","review_note":"手机变号软件供应属于违法工具交易，原 ad/low 过低。"}
+{"text":"手机变号软件出售","category":"illegal","level":"high","review_note":"手机变号软件出售属于违法工具交易，原 ad/low 过低。"}
+{"text":"手机变号软件销售","category":"illegal","level":"high","review_note":"手机变号软件销售属于违法工具交易，原 ad/low 过低。"}
+{"text":"手机号任意更改软件","category":"illegal","level":"high","review_note":"手机号任意更改软件可用于号码伪装/诈骗，原 ad/low 过低。"}
+{"text":"手机号码任意更改软件","category":"illegal","level":"high","review_note":"手机号码任意更改软件可用于号码伪装/诈骗，原 ad/low 过低。"}
+{"text":"手机号码任意更改软件低价出售","category":"illegal","level":"high","review_note":"号码任意更改软件出售属于违法工具交易，原 ad/low 过低。"}
+{"text":"手机号码修改软件","category":"illegal","level":"high","review_note":"手机号码修改软件可用于号码伪装/诈骗，原 ad/low 过低。"}
+{"text":"手机名录","category":"illegal","level":"high","review_note":"手机名录在该词库语境中指向个人手机号数据交易，原 ad/low 过低。"}
+{"text":"手机复制","category":"illegal","level":"high","review_note":"手机复制指向通信身份/设备克隆风险，原 ad/low 过低。"}
+{"text":"手机定位","category":"other","level":"low","review_note":"单独的手机定位为普通功能词，原 ad/low 分类不准。"}
+{"text":"手机密码破","category":"illegal","level":"high","review_note":"破解手机密码涉及账号/设备侵入，原 ad/low 过低。"}
+{"text":"手机开机密码破","category":"illegal","level":"high","review_note":"破解手机开机密码涉及设备侵入，原 ad/low 过低。"}
+{"text":"手机彩信改号","category":"illegal","level":"high","review_note":"彩信改号涉及通信号码伪装，原 ad/low 过低。"}
+{"text":"手机截听器","category":"illegal","level":"high","review_note":"手机截听器属于非法监听设备，原 ad/low 过低。"}
+{"text":"手机改串号软件下载","category":"illegal","level":"high","review_note":"手机改串号软件涉及设备标识篡改，原 ad/low 过低。"}
+{"text":"手机改串号软件出售","category":"illegal","level":"high","review_note":"手机改串号软件出售属于违法工具交易，原 ad/low 过低。"}
+{"text":"手机改号","category":"illegal","level":"high","review_note":"手机改号指向号码伪装工具/服务，原 ad/low 过低。"}
+{"text":"手机改号器","category":"illegal","level":"high","review_note":"手机改号器可用于号码伪装/诈骗，原 ad/low 过低。"}
+{"text":"手机改号机","category":"illegal","level":"high","review_note":"手机改号机可用于号码伪装/诈骗，原 ad/low 过低。"}
+{"text":"手机改号软件","category":"illegal","level":"high","review_note":"手机改号软件可用于号码伪装/诈骗，原 ad/low 过低。"}
+{"text":"手机改号软件下载","category":"illegal","level":"high","review_note":"手机改号软件下载属于违法工具获取，原 ad/low 过低。"}
+{"text":"手机改号软件代理","category":"illegal","level":"high","review_note":"手机改号软件代理属于违法工具推广，原 ad/low 过低。"}
+{"text":"手机改号软件供应","category":"illegal","level":"high","review_note":"手机改号软件供应属于违法工具交易，原 ad/low 过低。"}
+{"text":"手机改号软件出售","category":"illegal","level":"high","review_note":"手机改号软件出售属于违法工具交易，原 ad/low 过低。"}
+{"text":"手机改号软件破解版","category":"illegal","level":"high","review_note":"手机改号软件破解版属于违法工具，原 ad/low 过低。"}
+{"text":"手机改号软件破解版下载","category":"illegal","level":"high","review_note":"手机改号软件破解版下载属于违法工具获取，原 ad/low 过低。"}
+{"text":"手机改号软件销售","category":"illegal","level":"high","review_note":"手机改号软件销售属于违法工具交易，原 ad/low 过低。"}
+{"text":"手机污资源","category":"pornographic","level":"medium","review_note":"污资源指向成人色情资源，原 ad/low 分类不准。"}
+{"text":"手机注册","category":"other","level":"low","review_note":"普通注册功能词，不应归为广告类，改为 other/low。"}
+{"text":"手机监听","category":"illegal","level":"high","review_note":"手机监听指向非法监听行为，原 ad/low 过低。"}
+{"text":"手机监听1卡通","category":"illegal","level":"high","review_note":"手机监听卡/卡通语境指向非法监听工具，原 ad/low 过低。"}
+{"text":"手机监听器","category":"illegal","level":"high","review_note":"手机监听器属于非法监听设备，原 ad/low 过低。"}
+{"text":"手机监听器软件","category":"illegal","level":"high","review_note":"手机监听器软件属于非法监听工具，原 ad/low 过低。"}
+{"text":"手机监听器软件下载","category":"illegal","level":"high","review_note":"手机监听器软件下载属于非法监听工具获取，原 ad/low 过低。"}
+{"text":"手机监听官网","category":"illegal","level":"high","review_note":"手机监听官网指向非法监听工具渠道，原 ad/low 过低。"}
+{"text":"手机监听淘宝交易","category":"illegal","level":"high","review_note":"监听淘宝交易涉及隐私侵入，原 ad/low 过低。"}
+{"text":"手机监听王","category":"illegal","level":"high","review_note":"手机监听王为监听工具名称，原 ad/low 过低。"}
+{"text":"手机监听王下载","category":"illegal","level":"high","review_note":"手机监听王下载属于非法监听工具获取，原 ad/low 过低。"}
+{"text":"手机监控器","category":"illegal","level":"high","review_note":"在手机监控语境中指向隐私侵入工具，原 ad/low 过低。"}
+{"text":"手机眔听卡","category":"illegal","level":"high","review_note":"手机窃听卡规避写法，属于非法监听工具，原 ad/low 过低。"}
+{"text":"手机短信查询","category":"illegal","level":"high","review_note":"手机短信查询服务涉及隐私数据非法查询，原 ad/low 过低。"}
+{"text":"手机碟中谍软件","category":"illegal","level":"high","review_note":"碟中谍手机软件为间谍/监听工具语境，原 ad/low 过低。"}
+{"text":"手机窃","category":"illegal","level":"high","review_note":"在手机窃听词簇中为非法窃听截断词，原 ad/low 过低。"}
+{"text":"手机窃听器","category":"illegal","level":"high","review_note":"手机窃听器属于非法监听设备，原 ad/low 过低。"}
+{"text":"手机窃听器专卖","category":"illegal","level":"high","review_note":"手机窃听器专卖属于非法监听设备交易，原 ad/low 过低。"}
+{"text":"手机窃听器公司","category":"illegal","level":"high","review_note":"手机窃听器公司指向非法监听设备渠道，原 ad/low 过低。"}
+{"text":"手机窃听器购买","category":"illegal","level":"high","review_note":"购买手机窃听器属于非法监听设备交易，原 ad/low 过低。"}
+{"text":"手机窃听器软件","category":"illegal","level":"high","review_note":"手机窃听器软件属于非法监听工具，原 ad/low 过低。"}
+{"text":"手机窃听软件","category":"illegal","level":"high","review_note":"手机窃听软件属于非法监听工具，原 ad/low 过低。"}
+{"text":"手机窃听软件下载","category":"illegal","level":"high","review_note":"手机窃听软件下载属于非法监听工具获取，原 ad/low 过低。"}
+{"text":"手机窃听软件供应","category":"illegal","level":"high","review_note":"手机窃听软件供应属于非法监听工具交易，原 ad/low 过低。"}
+{"text":"手机窃听软件出售","category":"illegal","level":"high","review_note":"手机窃听软件出售属于非法监听工具交易，原 ad/low 过低。"}
+{"text":"手机窃听软件操作方法","category":"illegal","level":"high","review_note":"手机窃听软件操作方法涉及非法监听工具使用，原 ad/low 过低。"}
+{"text":"手机窃听软件破解版","category":"illegal","level":"high","review_note":"手机窃听软件破解版属于非法监听工具，原 ad/low 过低。"}
+{"text":"手机萣莅器","category":"illegal","level":"medium","review_note":"手机定位器规避写法，在该词簇中指向跟踪定位工具，原 ad/low 分类过低。"}
+{"text":"手机跟踪","category":"illegal","level":"medium","review_note":"手机跟踪指向隐私跟踪服务/工具，原 ad/low 分类过低。"}
+{"text":"手机跟踪定位器","category":"illegal","level":"medium","review_note":"手机跟踪定位器可用于隐私跟踪，原 ad/low 分类过低。"}
+{"text":"手机远程偷听器软件官网","category":"illegal","level":"high","review_note":"远程手机偷听软件官网指向非法监听工具渠道，原 ad/low 过低。"}
+{"text":"手机追","category":"illegal","level":"medium","review_note":"在手机跟踪词簇中指向追踪定位服务，原 ad/low 分类过低。"}
+{"text":"手机通话清单查询","category":"illegal","level":"high","review_note":"通话清单查询涉及隐私通信记录非法查询，原 ad/low 过低。"}
+{"text":"手机通话记录","category":"illegal","level":"high","review_note":"在该词库语境中指向通话记录非法获取，原 ad/low 过低。"}
+{"text":"手机通话记录查询","category":"illegal","level":"high","review_note":"通话记录查询涉及隐私通信记录非法查询，原 ad/low 过低。"}
+{"text":"手机魔卡","category":"illegal","level":"high","review_note":"手机魔卡在该词簇中指向通信卡克隆/改号工具，原 ad/low 过低。"}
+{"text":"手铐供应","category":"illegal","level":"high","review_note":"手铐供应涉及约束器械交易风险，原 other/low 过低。"}
+{"text":"手铐出售价格","category":"illegal","level":"high","review_note":"手铐出售价格属于约束器械交易语义，原 ad/low 过低。"}
+{"text":"手铐批发","category":"illegal","level":"high","review_note":"手铐批发涉及约束器械交易风险，原 other/low 过低。"}
+{"text":"手铐销售","category":"illegal","level":"high","review_note":"手铐销售涉及约束器械交易风险，原 other/low 过低。"}
+{"text":"手驽配件","category":"illegal","level":"medium","review_note":"手驽为手弩错写，配件涉及管制武器部件，原 other/low 过低。"}
+{"text":"才ъczкω1","category":"other","level":"medium","review_note":"文本含义无法判断，按规则由 other/low 调整为 other/medium。"}
+{"text":"扎卡维是英雄","category":"violence","level":"high","review_note":"宣扬恐怖暴力人物，原 other/low 过低。"}
+{"text":"扑克分析仪","category":"illegal","level":"medium","review_note":"扑克分析仪指向赌博作弊工具，原 other/low 过低。"}
+{"text":"扒屄","category":"pornographic","level":"medium","review_note":"含粗俗性器官词和性动作语义，原 other/low 过低。"}
+{"text":"扒开你的胸罩","category":"pornographic","level":"medium","review_note":"含性挑逗/脱衣语义，原 other/low 过低。"}
+{"text":"扒裤抬鸡","category":"pornographic","level":"medium","review_note":"含脱裤和性隐语，原 other/low 过低。"}
+{"text":"打死人","category":"violence","level":"medium","review_note":"直接包含致死暴力语义，原 other/low 过低。"}
+{"text":"打灰机","category":"pornographic","level":"medium","review_note":"打灰机为自慰隐语，原 other/low 过低。"}
+{"text":"打炮","category":"pornographic","level":"medium","review_note":"打炮为粗俗性交隐语，原 other/low 过低。"}
+{"text":"打炮高手","category":"pornographic","level":"medium","review_note":"包含打炮粗俗性交隐语，原 other/low 过低。"}
+{"text":"打牌药销售","category":"illegal","level":"medium","review_note":"打牌药销售指向赌博作弊药物/工具交易，原 other/low 过低。"}
+{"text":"打砲","category":"pornographic","level":"medium","review_note":"打砲为打炮异体写法，指向粗俗性交语义，原 other/low 过低。"}
+{"text":"打胎药","category":"illegal","level":"medium","review_note":"打胎药涉及高风险药品获取，原 other/low 过低。"}
+{"text":"打野炮","category":"pornographic","level":"medium","review_note":"野炮为粗俗性交隐语，原 other/low 过低。"}
+{"text":"打飞机","category":"pornographic","level":"medium","review_note":"打飞机为自慰隐语，原 other/low 过低。"}
+{"text":"打飞机专","category":"pornographic","level":"medium","review_note":"包含打飞机自慰隐语，原 other/low 过低。"}
+{"text":"扣穴","category":"pornographic","level":"medium","review_note":"含明确性动作和性器官隐语，原 other/low 过低。"}
+{"text":"扮开嫩穴","category":"pornographic","level":"high","review_note":"扒开嫩穴错写，露骨色情语义明确，原 other/low 过低。"}
+{"text":"批发1元假硬币","category":"illegal","level":"high","review_note":"批发假硬币属于伪造货币交易，原 other/low 过低。"}
+{"text":"批发1元硬币模具","category":"illegal","level":"high","review_note":"硬币模具批发存在伪造货币工具风险，原 other/low 过低。"}
+{"text":"批发3利达弩","category":"illegal","level":"high","review_note":"弩具批发属于管制武器交易语义，原 other/low 过低。"}
+{"text":"批发3棱军刀","category":"violence","level":"medium","review_note":"三棱军刀批发属于危险刀具交易，原 other/low 过低。"}
+{"text":"批发3棱军刺刀","category":"violence","level":"medium","review_note":"三棱军刺刀批发属于危险刀具交易，原 other/low 过低。"}
+{"text":"批发3棱刀具","category":"violence","level":"medium","review_note":"三棱刀具批发属于危险刀具交易，原 other/low 过低。"}
+{"text":"批发3棱刮刀","category":"violence","level":"medium","review_note":"三棱刮刀批发属于危险刀具交易，原 other/low 过低。"}
+{"text":"批发3棱尖刀","category":"violence","level":"medium","review_note":"三棱尖刀批发属于危险刀具交易，原 other/low 过低。"}
+{"text":"批发3棱尖刺","category":"violence","level":"medium","review_note":"三棱尖刺批发属于危险刀具交易，原 other/low 过低。"}
+{"text":"批发3箭气狗","category":"illegal","level":"high","review_note":"气狗为气枪隐语，批发语义明确，原 other/low 过低。"}
+{"text":"批发3箭汽枪qq","category":"ad","level":"low","review_note":"含 QQ 联系方式，按用户规则改为 ad/low。"}
+{"text":"批发54式手枪qq","category":"ad","level":"low","review_note":"含 QQ 联系方式，按用户规则改为 ad/low。"}
+{"text":"批发54式手枪配件qq","category":"ad","level":"low","review_note":"含 QQ 联系方式，按用户规则改为 ad/low。"}
+{"text":"批发54手枪qq","category":"ad","level":"low","review_note":"含 QQ 联系方式，按用户规则改为 ad/low。"}
+{"text":"批发56式军刺","category":"violence","level":"medium","review_note":"军刺批发属于危险刀具交易，原 other/low 过低。"}
+{"text":"批发64式手枪qq","category":"ad","level":"low","review_note":"含 QQ 联系方式，按用户规则改为 ad/low。"}
+{"text":"批发64式手枪配件qq","category":"ad","level":"low","review_note":"含 QQ 联系方式，按用户规则改为 ad/low。"}
+{"text":"批发77式手枪qq","category":"ad","level":"low","review_note":"含 QQ 联系方式，按用户规则改为 ad/low。"}
+{"text":"批发77式手枪配件qq","category":"ad","level":"low","review_note":"含 QQ 联系方式，按用户规则改为 ad/low。"}
+{"text":"批发77手枪qq","category":"ad","level":"low","review_note":"含 QQ 联系方式，按用户规则改为 ad/low。"}
+{"text":"批发awp气步枪qq","category":"ad","level":"low","review_note":"含 QQ 联系方式，按用户规则改为 ad/low。"}
+{"text":"批发d9军刺","category":"violence","level":"medium","review_note":"军刺批发属于危险刀具交易，原 other/low 过低。"}
+{"text":"批发fox格斗砍刀","category":"violence","level":"medium","review_note":"格斗砍刀批发属于危险刀具交易，原 other/low 过低。"}
+{"text":"批发k粉qq","category":"ad","level":"low","review_note":"含 QQ 联系方式，按用户规则改为 ad/low。"}
+{"text":"批发pcp汽枪qq","category":"ad","level":"low","review_note":"含 QQ 联系方式，按用户规则改为 ad/low。"}
+{"text":"批发x手机卧底软件qq","category":"ad","level":"low","review_note":"含 QQ 联系方式，按用户规则改为 ad/low。"}
+{"text":"批发万利达弓弩","category":"illegal","level":"high","review_note":"弓弩批发属于管制武器交易语义，原 other/low 过低。"}
+{"text":"批发万利达弩","category":"illegal","level":"high","review_note":"弩具批发属于管制武器交易语义，原 other/low 过低。"}
+{"text":"批发业主名单","category":"illegal","level":"high","review_note":"业主名单批发属于个人信息交易，原 other/low 过低。"}
+{"text":"批发业主数据","category":"illegal","level":"high","review_note":"业主数据批发属于个人信息交易，原 other/low 过低。"}
+{"text":"批发丛林刀","category":"violence","level":"medium","review_note":"丛林刀批发属于危险刀具交易，原 other/low 过低。"}
+{"text":"批发个性号码变号","category":"illegal","level":"high","review_note":"个性号码变号指向号码伪装服务，原 other/low 过低。"}
+{"text":"批发个性号码改号","category":"illegal","level":"high","review_note":"个性号码改号指向号码伪装服务，原 other/low 过低。"}
+{"text":"批发中握b50","category":"illegal","level":"high","review_note":"中握 b50 在气枪词簇中指向气枪/配件交易，原 other/low 过低。"}
+{"text":"批发中握pcp","category":"illegal","level":"high","review_note":"PCP 气枪相关批发语义，原 other/low 过低。"}
+{"text":"批发乳胶人皮","category":"other","level":"medium","review_note":"文本含义和风险指向无法稳定判断，按规则由 other/low 调整为 other/medium。"}

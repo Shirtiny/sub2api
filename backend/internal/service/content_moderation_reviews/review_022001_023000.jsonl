@@ -1,0 +1,247 @@
+{"text":"单管猎枪专卖qq","category":"ad","level":"low","review_note":"包含 QQ 联系导流，按规则应降为 ad/low，不按武器交易高危拦截。"}
+{"text":"单管猎枪出售qq","category":"ad","level":"low","review_note":"包含 QQ 联系导流，按规则应标为 ad/low。"}
+{"text":"单管猎枪提供qq","category":"ad","level":"low","review_note":"包含 QQ 联系导流，按规则应标为 ad/low。"}
+{"text":"单管猎枪订购qq","category":"ad","level":"low","review_note":"包含 QQ 联系导流，按规则应标为 ad/low。"}
+{"text":"卖2012高考答案","category":"illegal","level":"medium","review_note":"售卖高考答案属于考试作弊交易，other/low 过低。"}
+{"text":"卖3唑仑片","category":"illegal","level":"high","review_note":"三唑仑片属于受控药物，售卖表述应为 illegal/high。"}
+{"text":"卖46级证书","category":"illegal","level":"high","review_note":"售卖等级证书属于证件/资质造假交易，other/low 过低。"}
+{"text":"卖54式64式","category":"illegal","level":"high","review_note":"54 式、64 式为枪支型号，售卖表述应为 illegal/high。"}
+{"text":"卖k粉qq","category":"ad","level":"low","review_note":"包含 QQ 联系导流，按规则应标为 ad/low。"}
+{"text":"卖k粉手机","category":"ad","level":"low","review_note":"包含手机联系导流，按规则应标为 ad/low。"}
+{"text":"卖k粉电话","category":"ad","level":"low","review_note":"包含电话联系导流，按规则应标为 ad/low。"}
+{"text":"卖业主信息","category":"illegal","level":"high","review_note":"售卖业主个人信息属于个人数据黑产，other/low 过低。"}
+{"text":"卖乌头碱","category":"illegal","level":"high","review_note":"乌头碱为高毒物质，售卖表述应为 illegal/high。"}
+{"text":"卖仿真枪qq","category":"ad","level":"low","review_note":"包含 QQ 联系导流，按规则应标为 ad/low。"}
+{"text":"卖会计师证","category":"illegal","level":"high","review_note":"售卖职业资格证书属于证件/资质造假交易，other/low 过低。"}
+{"text":"卖假人民币","category":"illegal","level":"high","review_note":"售卖假人民币属于假币违法交易，other/low 明显过低。"}
+{"text":"卖假军官证","category":"illegal","level":"high","review_note":"售卖假军官证属于假证交易，other/low 明显过低。"}
+{"text":"卖假户口本","category":"illegal","level":"high","review_note":"售卖假户口本属于假证件交易，other/low 明显过低。"}
+{"text":"卖假文凭","category":"illegal","level":"high","review_note":"售卖假文凭属于学历造假交易，other/low 明显过低。"}
+{"text":"卖假结婚证","category":"illegal","level":"high","review_note":"售卖假结婚证属于假证件交易，other/low 明显过低。"}
+{"text":"卖假言正","category":"illegal","level":"high","review_note":"言正为证的拆字规避，售卖假证应为 illegal/high。"}
+{"text":"卖假车牌","category":"illegal","level":"high","review_note":"售卖假车牌属于违法牌证交易，other/low 明显过低。"}
+{"text":"卖假驾照","category":"illegal","level":"high","review_note":"售卖假驾照属于假证件交易，other/low 明显过低。"}
+{"text":"卖军人证","category":"illegal","level":"high","review_note":"售卖军人证属于证件违法交易，other/low 明显过低。"}
+{"text":"卖军官证","category":"illegal","level":"high","review_note":"售卖军官证属于证件违法交易，other/low 明显过低。"}
+{"text":"卖军车套牌","category":"illegal","level":"high","review_note":"军车套牌交易属于违法牌证交易，other/low 明显过低。"}
+{"text":"卖冰毒qq","category":"ad","level":"low","review_note":"包含 QQ 联系导流，按规则应标为 ad/low。"}
+{"text":"卖冰毒手机","category":"ad","level":"low","review_note":"包含手机联系导流，按规则应标为 ad/low。"}
+{"text":"卖冰毒电话","category":"ad","level":"low","review_note":"包含电话联系导流，按规则应标为 ad/low。"}
+{"text":"卖双管猎qiang出售","category":"illegal","level":"high","review_note":"双管猎枪售卖虽有拼音规避但无联系导流，应按枪支交易标为 illegal/high。"}
+{"text":"卖定额发票qq","category":"ad","level":"low","review_note":"包含 QQ 联系导流，按规则应标为 ad/low。"}
+{"text":"卖学历证书","category":"illegal","level":"high","review_note":"售卖学历证书属于学历/资质造假交易，other/low 过低。"}
+{"text":"卖居民户口本","category":"illegal","level":"high","review_note":"售卖居民户口本属于证件违法交易，other/low 明显过低。"}
+{"text":"卖工作证","category":"illegal","level":"high","review_note":"售卖工作证属于证件造假交易，other/low 过低。"}
+{"text":"卖开山刀","category":"illegal","level":"high","review_note":"售卖管制刀具语义明确，other/low 过低。"}
+{"text":"卖心脏","category":"illegal","level":"high","review_note":"人体器官交易语义明确，other/low 明显过低。"}
+{"text":"卖户口本","category":"illegal","level":"high","review_note":"售卖户口本属于证件违法交易，other/low 明显过低。"}
+{"text":"卖手铐","category":"illegal","level":"high","review_note":"售卖警用约束器械属于违法交易风险，other/low 过低。"}
+{"text":"卖摇头丸qq","category":"ad","level":"low","review_note":"包含 QQ 联系导流，按规则应标为 ad/low。"}
+{"text":"卖摇头丸手机","category":"ad","level":"low","review_note":"包含手机联系导流，按规则应标为 ad/low。"}
+{"text":"卖摇头丸电话","category":"ad","level":"low","review_note":"包含电话联系导流，按规则应标为 ad/low。"}
+{"text":"卖摇头丸配方qq","category":"ad","level":"low","review_note":"包含 QQ 联系导流，按规则应标为 ad/low。"}
+{"text":"卖春","category":"pornographic","level":"high","review_note":"卖春为明确卖淫招嫖表述，other/low 明显过低。"}
+{"text":"卖春网站","category":"pornographic","level":"high","review_note":"卖春网站指向色情服务/招嫖内容，other/low 明显过低。"}
+{"text":"卖枪qq","category":"ad","level":"low","review_note":"包含 QQ 联系导流，按规则应标为 ad/low。"}
+{"text":"卖毕业文凭","category":"illegal","level":"high","review_note":"售卖毕业文凭属于学历造假交易，other/low 明显过低。"}
+{"text":"卖毕业证书","category":"illegal","level":"high","review_note":"售卖毕业证书属于学历造假交易，other/low 明显过低。"}
+{"text":"卖氰化钙","category":"illegal","level":"high","review_note":"氰化物售卖属于危险毒物交易，other/low 明显过低。"}
+{"text":"卖氰化钾","category":"illegal","level":"high","review_note":"氰化钾为剧毒物，售卖表述应为 illegal/high。"}
+{"text":"卖水晶冰","category":"illegal","level":"high","review_note":"水晶冰在售卖语境中为毒品冰毒暗语，other/low 过低。"}
+{"text":"卖水果冰","category":"illegal","level":"high","review_note":"水果冰在同类售卖语境中为毒品暗语，other/low 过低。"}
+{"text":"卖污片","category":"pornographic","level":"high","review_note":"售卖色情影片资源语义明确，other/low 明显过低。"}
+{"text":"卖海洛因qq","category":"ad","level":"low","review_note":"包含 QQ 联系导流，按规则应标为 ad/low。"}
+{"text":"卖海洛因手机","category":"ad","level":"low","review_note":"包含手机联系导流，按规则应标为 ad/low。"}
+{"text":"卖海洛因电话","category":"ad","level":"low","review_note":"包含电话联系导流，按规则应标为 ad/low。"}
+{"text":"卖淫女包夜电话","category":"ad","level":"low","review_note":"包含电话联系导流，按规则应标为 ad/low。"}
+{"text":"卖淫女援交电话","category":"ad","level":"low","review_note":"包含电话联系导流，按规则应标为 ad/low。"}
+{"text":"卖淫女联系电话","category":"ad","level":"low","review_note":"包含电话联系导流，按规则应标为 ad/low。"}
+{"text":"卖热武器","category":"illegal","level":"high","review_note":"售卖热武器属于明确武器交易，other/low 明显过低。"}
+{"text":"卖眼角膜","category":"illegal","level":"high","review_note":"人体组织/器官交易语义明确，other/low 明显过低。"}
+{"text":"卖砒霜","category":"illegal","level":"high","review_note":"砒霜为毒物，售卖表述应为 illegal/high。"}
+{"text":"卖硝酸铊","category":"illegal","level":"high","review_note":"铊盐类高毒物质售卖应为 illegal/high。"}
+{"text":"卖神仙水","category":"illegal","level":"high","review_note":"神仙水在此类售卖语境中常指迷奸/管制药物，other/low 过低。"}
+{"text":"卖答案","category":"illegal","level":"medium","review_note":"售卖考试答案属于作弊交易，other/low 过低。"}
+{"text":"卖考前答案","category":"illegal","level":"medium","review_note":"售卖考前答案属于考试作弊交易，other/low 过低。"}
+{"text":"卖肝","category":"illegal","level":"high","review_note":"人体器官交易语义明确，other/low 明显过低。"}
+{"text":"卖肝中介","category":"illegal","level":"high","review_note":"器官交易中介语义明确，other/low 明显过低。"}
+{"text":"卖肝源","category":"illegal","level":"high","review_note":"器官来源交易语义明确，other/low 明显过低。"}
+{"text":"卖肾","category":"illegal","level":"high","review_note":"人体器官交易语义明确，other/low 明显过低。"}
+{"text":"卖肾信息","category":"illegal","level":"high","review_note":"肾源交易信息属于器官买卖相关内容，other/low 明显过低。"}
+{"text":"卖肾源","category":"illegal","level":"high","review_note":"人体器官来源交易语义明确，other/low 明显过低。"}
+{"text":"卖肾网","category":"illegal","level":"high","review_note":"肾脏交易网站语义明确，other/low 明显过低。"}
+{"text":"卖胆","category":"illegal","level":"high","review_note":"人体器官交易语义明确，other/low 明显过低。"}
+{"text":"卖胡椒基甲酮","category":"illegal","level":"high","review_note":"胡椒基甲酮为毒品前体相关化学品，售卖表述应为 illegal/high。"}
+{"text":"卖藏刀","category":"illegal","level":"high","review_note":"售卖管制刀具语义明确，other/low 过低。"}
+{"text":"卖虎头双管","category":"illegal","level":"high","review_note":"虎头双管为猎枪/枪支语境，售卖表述应为 illegal/high。"}
+{"text":"卖行驶证","category":"illegal","level":"high","review_note":"售卖行驶证属于证件违法交易，other/low 明显过低。"}
+{"text":"卖角膜","category":"illegal","level":"high","review_note":"人体组织交易语义明确，other/low 明显过低。"}
+{"text":"卖言正","category":"illegal","level":"high","review_note":"言正为证的拆字规避，售卖证件应为 illegal/high。"}
+{"text":"卖警官证","category":"illegal","level":"high","review_note":"售卖警官证属于证件违法交易，other/low 明显过低。"}
+{"text":"卖警察证","category":"illegal","level":"high","review_note":"售卖警察证属于证件违法交易，other/low 明显过低。"}
+{"text":"卖记者证","category":"illegal","level":"high","review_note":"售卖记者证属于证件/资质违法交易，other/low 过低。"}
+{"text":"卖资质证书","category":"illegal","level":"high","review_note":"售卖资质证书属于资质造假交易，other/low 过低。"}
+{"text":"卖车辆牌照","category":"illegal","level":"high","review_note":"售卖车辆牌照属于违法牌证交易，other/low 过低。"}
+{"text":"卖进口汽狗","category":"illegal","level":"high","review_note":"汽狗为气枪隐语，售卖语境应按枪支交易标为 illegal/high。"}
+{"text":"卖迷魂药3唑仑","category":"illegal","level":"high","review_note":"迷魂药和三唑仑售卖语义明确，other/low 明显过低。"}
+{"text":"卖钢珠枪qq","category":"ad","level":"low","review_note":"包含 QQ 联系导流，按规则应标为 ad/low。"}
+{"text":"卖铊盐","category":"illegal","level":"high","review_note":"铊盐为高毒物质，售卖表述应为 illegal/high。"}
+{"text":"卖银行卡","category":"illegal","level":"high","review_note":"售卖银行卡属于金融黑产/诈骗工具交易，other/low 明显过低。"}
+{"text":"卖驾照","category":"illegal","level":"high","review_note":"售卖驾照属于证件违法交易，other/low 明显过低。"}
+{"text":"卖驾驶证","category":"illegal","level":"high","review_note":"售卖驾驶证属于证件违法交易，other/low 明显过低。"}
+{"text":"卖骨髓","category":"illegal","level":"high","review_note":"人体组织交易语义明确，other/low 明显过低。"}
+{"text":"卖骨髓收肾","category":"illegal","level":"high","review_note":"骨髓和肾脏交易语义明确，other/low 明显过低。"}
+{"text":"卖高仿学位证","category":"illegal","level":"high","review_note":"售卖高仿学位证属于假证交易，other/low 明显过低。"}
+{"text":"卖高仿户口本","category":"illegal","level":"high","review_note":"售卖高仿户口本属于假证件交易，other/low 明显过低。"}
+{"text":"卖高仿证","category":"illegal","level":"high","review_note":"售卖高仿证属于假证交易，other/low 明显过低。"}
+{"text":"卖高考答案","category":"illegal","level":"medium","review_note":"售卖高考答案属于考试作弊交易，other/low 过低。"}
+{"text":"卖麻古qq","category":"ad","level":"low","review_note":"包含 QQ 联系导流，按规则应标为 ad/low。"}
+{"text":"卖麻古手机","category":"ad","level":"low","review_note":"包含手机联系导流，按规则应标为 ad/low。"}
+{"text":"卖麻古电话","category":"ad","level":"low","review_note":"包含电话联系导流，按规则应标为 ad/low。"}
+{"text":"卖麻果qq","category":"ad","level":"low","review_note":"包含 QQ 联系导流，按规则应标为 ad/low。"}
+{"text":"卖黑市肾","category":"illegal","level":"high","review_note":"黑市肾为明确器官违法交易，other/low 明显过低。"}
+{"text":"博客负面删除","category":"ad","level":"low","review_note":"负面信息删除服务属于广告/导流型服务表述，other/low 应调整为 ad/low。"}
+{"text":"博客贴子删除","category":"ad","level":"low","review_note":"帖子删除服务属于广告/导流型服务表述，other/low 应调整为 ad/low。"}
+{"text":"博彩qq群","category":"ad","level":"low","review_note":"包含 QQ 群导流，按规则应标为 ad/low。"}
+{"text":"博彩乐透乐qq","category":"ad","level":"low","review_note":"包含 QQ 联系导流，按规则应标为 ad/low。"}
+{"text":"博彩网址导航qq","category":"ad","level":"low","review_note":"包含 QQ 联系导流，按规则应标为 ad/low。"}
+{"text":"卡巴军刀出售","category":"illegal","level":"high","review_note":"军刀出售属于武器交易语义，ad/low 过低。"}
+{"text":"卡西酮","category":"illegal","level":"high","review_note":"卡西酮为受控毒品/精神活性物质名称，other/low 过低。"}
+{"text":"卡通色图","category":"pornographic","level":"medium","review_note":"色图为色情图片表述，other/low 过低。"}
+{"text":"卧底","category":"other","level":"low","review_note":"单独的卧底是常见中性词，illegal/high 过度拦截。"}
+{"text":"厂区内斗殴","category":"violence","level":"medium","review_note":"斗殴为明确暴力冲突表述，other/low 过低。"}
+{"text":"厕奴","category":"pornographic","level":"medium","review_note":"厕奴为明显性癖/BDSM 语境词，other/low 过低。"}
+{"text":"厕所偷拍","category":"pornographic","level":"high","review_note":"厕所偷拍涉及非自愿隐私/色情盗摄，other/low 明显过低。"}
+{"text":"厕所盗摄","category":"pornographic","level":"high","review_note":"厕所盗摄涉及非自愿隐私/色情盗摄，other/low 明显过低。"}
+{"text":"厕所盗摄meinv","category":"pornographic","level":"medium","review_note":"厕所盗摄美女为非自愿色情盗摄语境，other/low 过低。"}
+{"text":"厕所盗摄meinv性感","category":"pornographic","level":"high","review_note":"盗摄加性感描述指向色情盗摄内容，other/low 明显过低。"}
+{"text":"厕所盗摄护士jiejie","category":"pornographic","level":"medium","review_note":"厕所盗摄护士为非自愿色情盗摄语境，other/low 过低。"}
+{"text":"厕所盗摄护士jiejie性感","category":"pornographic","level":"high","review_note":"盗摄加性感描述指向色情盗摄内容，other/low 明显过低。"}
+{"text":"厕所盗摄护士姐姐","category":"pornographic","level":"medium","review_note":"厕所盗摄护士为非自愿色情盗摄语境，other/low 过低。"}
+{"text":"厕所盗摄护士姐姐性感","category":"pornographic","level":"high","review_note":"盗摄加性感描述指向色情盗摄内容，other/low 明显过低。"}
+{"text":"厕所盗摄美女","category":"pornographic","level":"medium","review_note":"厕所盗摄美女为非自愿色情盗摄语境，other/low 过低。"}
+{"text":"厕所盗摄美女性感","category":"pornographic","level":"high","review_note":"盗摄加性感描述指向色情盗摄内容，other/low 明显过低。"}
+{"text":"原千寻白领迷奸fingercharm","category":"pornographic","level":"high","review_note":"迷奸色情内容语义明确，other/low 明显过低。"}
+{"text":"原砷酸供应","category":"illegal","level":"high","review_note":"砷酸类高毒化学品供应语义明确，other/low 过低。"}
+{"text":"原装汽狙狗","category":"illegal","level":"high","review_note":"汽狙狗为气枪/枪支隐语，other/low 过低。"}
+{"text":"原装电动长狗","category":"illegal","level":"high","review_note":"长狗为枪支隐语，原装电动长狗应按武器交易风险标注。"}
+{"text":"原装秃鹰专卖","category":"illegal","level":"high","review_note":"秃鹰为气枪型号隐语，专卖表述应为 illegal/high。"}
+{"text":"原装秃鹰直销","category":"illegal","level":"high","review_note":"秃鹰气枪直销语义明确，other/low 过低。"}
+{"text":"厦门办假毕业证","category":"illegal","level":"high","review_note":"办理假毕业证属于假证交易，other/low 明显过低。"}
+{"text":"去他妈","category":"abuse","level":"medium","review_note":"明显辱骂用语，other/low 过低。"}
+{"text":"去她妈","category":"abuse","level":"medium","review_note":"明显辱骂用语，other/low 过低。"}
+{"text":"去妳妈","category":"abuse","level":"medium","review_note":"明显辱骂用语，other/low 过低。"}
+{"text":"去氧麻黄堿或安非他命","category":"illegal","level":"high","review_note":"安非他命/去氧麻黄碱为明确毒品相关词，other/low 过低。"}
+{"text":"去氧麻黄碱","category":"illegal","level":"high","review_note":"去氧麻黄碱为冰毒相关物质名称，other/low 过低。"}
+{"text":"去氧麻黄碱制作方法","category":"illegal","level":"high","review_note":"毒品制作方法语义明确，other/low 明显过低。"}
+{"text":"去氧麻黄碱或安非他命","category":"illegal","level":"high","review_note":"安非他命/去氧麻黄碱为明确毒品相关词，other/low 过低。"}
+{"text":"去氧麻黄素配方","category":"illegal","level":"high","review_note":"毒品相关配方语义明确，other/low 明显过低。"}
+{"text":"去氧麻黄素销售","category":"illegal","level":"high","review_note":"毒品相关物质销售语义明确，other/low 过低。"}
+{"text":"去甲伪麻黄碱","category":"illegal","level":"high","review_note":"去甲伪麻黄碱为毒品前体/受控化学品相关词，other/low 过低。"}
+{"text":"去甲麻黄碱销售","category":"illegal","level":"high","review_note":"受控化学品销售语义明确，other/low 过低。"}
+{"text":"去甲麻黄素","category":"illegal","level":"high","review_note":"去甲麻黄素为受控兴奋剂/毒品相关词，other/low 过低。"}
+{"text":"县委书记5p下载","category":"pornographic","level":"medium","review_note":"5P 下载为色情资源表述，other/low 过低。"}
+{"text":"县委书记换妻","category":"pornographic","level":"medium","review_note":"换妻为明确成人色情语境，other/low 过低。"}
+{"text":"县委书记群p","category":"pornographic","level":"medium","review_note":"群P 为多人性行为表述，other/low 过低。"}
+{"text":"县委书记群p照","category":"pornographic","level":"medium","review_note":"群P 照片为色情图片资源表述，other/low 过低。"}
+{"text":"县委书记群p照片","category":"pornographic","level":"medium","review_note":"群P 照片为色情图片资源表述，other/low 过低。"}
+{"text":"县委书记群p视频","category":"pornographic","level":"medium","review_note":"群P 视频为色情视频资源表述，other/low 过低。"}
+{"text":"又咬又舔又吸","category":"pornographic","level":"medium","review_note":"在该组性描写语境中为明显色情动作描述，other/low 过低。"}
+{"text":"又大又嫩的屄","category":"pornographic","level":"high","review_note":"包含明确性器官露骨描述，other/low 明显过低。"}
+{"text":"又大又嫩的穴","category":"pornographic","level":"high","review_note":"包含明确性器官露骨描述，other/low 明显过低。"}
+{"text":"又大又嫩的阴户","category":"pornographic","level":"high","review_note":"包含明确性器官露骨描述，other/low 明显过低。"}
+{"text":"又大又硬的肉棒","category":"pornographic","level":"high","review_note":"包含明确性器官露骨描述，other/low 明显过低。"}
+{"text":"又大又硬的香蕉","category":"pornographic","level":"medium","review_note":"在该组色情描写中为明显性暗示词，other/low 过低。"}
+{"text":"又大又粗的肉棒","category":"pornographic","level":"high","review_note":"包含明确性器官露骨描述，other/low 明显过低。"}
+{"text":"又大又紧的阴户","category":"pornographic","level":"high","review_note":"包含明确性器官露骨描述，other/low 明显过低。"}
+{"text":"又大又肥的屄","category":"pornographic","level":"high","review_note":"包含明确性器官露骨描述，other/low 明显过低。"}
+{"text":"又嫩又紧的屄","category":"pornographic","level":"high","review_note":"包含明确性器官露骨描述，other/low 明显过低。"}
+{"text":"又嫩又紧的穴","category":"pornographic","level":"high","review_note":"包含明确性器官露骨描述，other/low 明显过低。"}
+{"text":"又嫩又紧的阴户","category":"pornographic","level":"high","review_note":"包含明确性器官露骨描述，other/low 明显过低。"}
+{"text":"又深又紧的穴","category":"pornographic","level":"high","review_note":"包含明确性器官露骨描述，other/low 明显过低。"}
+{"text":"又深又紧的阴户","category":"pornographic","level":"high","review_note":"包含明确性器官露骨描述，other/low 明显过低。"}
+{"text":"又猛插几下","category":"pornographic","level":"high","review_note":"露骨性行为动作描述，other/low 明显过低。"}
+{"text":"又硬又大的肉棒","category":"pornographic","level":"high","review_note":"包含明确性器官露骨描述，other/low 明显过低。"}
+{"text":"又硬又大的肉棒插入阴户","category":"pornographic","level":"high","review_note":"露骨性行为和性器官描述，other/low 明显过低。"}
+{"text":"又硬又粗的肉棒","category":"pornographic","level":"high","review_note":"包含明确性器官露骨描述，other/low 明显过低。"}
+{"text":"又粗又大的肉棒","category":"pornographic","level":"high","review_note":"包含明确性器官露骨描述，other/low 明显过低。"}
+{"text":"又粗又硬的大肉棒","category":"pornographic","level":"high","review_note":"包含明确性器官露骨描述，other/low 明显过低。"}
+{"text":"又粗又硬的肉棒","category":"pornographic","level":"high","review_note":"包含明确性器官露骨描述，other/low 明显过低。"}
+{"text":"又粗又长的大肉棒","category":"pornographic","level":"high","review_note":"包含明确性器官露骨描述，other/low 明显过低。"}
+{"text":"又粗又长的肉棒","category":"pornographic","level":"high","review_note":"包含明确性器官露骨描述，other/low 明显过低。"}
+{"text":"又粘又湿的阴户","category":"pornographic","level":"high","review_note":"包含明确性器官露骨描述，other/low 明显过低。"}
+{"text":"又紧又嫩的屄","category":"pornographic","level":"high","review_note":"包含明确性器官露骨描述，other/low 明显过低。"}
+{"text":"又紧又嫩的屄儿","category":"pornographic","level":"high","review_note":"包含明确性器官露骨描述，other/low 明显过低。"}
+{"text":"又肥又大的穴","category":"pornographic","level":"high","review_note":"包含明确性器官露骨描述，other/low 明显过低。"}
+{"text":"又肥又大的阴户","category":"pornographic","level":"high","review_note":"包含明确性器官露骨描述，other/low 明显过低。"}
+{"text":"又肥又大的骚屄儿","category":"pornographic","level":"high","review_note":"包含明确性器官露骨描述，other/low 明显过低。"}
+{"text":"又肥又嫩的小骚屄儿","category":"pornographic","level":"high","review_note":"包含明确性器官露骨描述，other/low 明显过低。"}
+{"text":"又肥又嫩的阴户","category":"pornographic","level":"high","review_note":"包含明确性器官露骨描述，other/low 明显过低。"}
+{"text":"又肥又紧的屄","category":"pornographic","level":"high","review_note":"包含明确性器官露骨描述，other/low 明显过低。"}
+{"text":"又肥又紧的屄儿","category":"pornographic","level":"high","review_note":"包含明确性器官露骨描述，other/low 明显过低。"}
+{"text":"又能啪啪啪你懂的","category":"pornographic","level":"medium","review_note":"啪啪啪为性行为俗语，other/low 过低。"}
+{"text":"又解开乳罩鸡巴","category":"pornographic","level":"high","review_note":"露骨色情场景和性器官描述，other/low 明显过低。"}
+{"text":"又长又大的肉棒","category":"pornographic","level":"high","review_note":"包含明确性器官露骨描述，other/low 明显过低。"}
+{"text":"又长粗的肉棒","category":"pornographic","level":"high","review_note":"包含明确性器官露骨描述，other/low 明显过低。"}
+{"text":"又顶到我的子宫","category":"pornographic","level":"high","review_note":"露骨性行为描述，other/low 明显过低。"}
+{"text":"又骚又大的屄","category":"pornographic","level":"high","review_note":"包含明确性器官露骨描述，other/low 明显过低。"}
+{"text":"又黑又粗长的鸡巴","category":"pornographic","level":"high","review_note":"包含明确性器官露骨描述，other/low 明显过低。"}
+{"text":"双刃尖刀买卖","category":"illegal","level":"high","review_note":"双刃尖刀买卖属于武器交易，other/low 过低。"}
+{"text":"双刃尖刀供应","category":"illegal","level":"high","review_note":"双刃尖刀供应属于武器交易，other/low 过低。"}
+{"text":"双刃尖刀出售","category":"illegal","level":"high","review_note":"双刃尖刀出售属于武器交易，ad/low 过低。"}
+{"text":"双刃尖刀批发","category":"illegal","level":"high","review_note":"双刃尖刀批发属于武器交易，other/low 过低。"}
+{"text":"双刃尖刀提供","category":"illegal","level":"high","review_note":"双刃尖刀提供属于武器交易，other/low 过低。"}
+{"text":"双刃尖刀直销","category":"illegal","level":"high","review_note":"双刃尖刀直销属于武器交易，other/low 过低。"}
+{"text":"双刃尖刀订购","category":"illegal","level":"high","review_note":"双刃尖刀订购属于武器交易，other/low 过低。"}
+{"text":"双刃尖刀销售","category":"illegal","level":"high","review_note":"双刃尖刀销售属于武器交易，other/low 过低。"}
+{"text":"双刃订购","category":"illegal","level":"high","review_note":"双刃刀具订购属于武器交易语境，other/low 过低。"}
+{"text":"双氢可待因","category":"illegal","level":"high","review_note":"双氢可待因为受控阿片类药物，other/low 过低。"}
+{"text":"双氢可待因提供","category":"illegal","level":"high","review_note":"受控阿片类药物提供语义明确，other/low 明显过低。"}
+{"text":"双氢吗啡","category":"illegal","level":"high","review_note":"双氢吗啡为受控阿片类药物，other/low 过低。"}
+{"text":"双管猎枪专卖qq","category":"ad","level":"low","review_note":"包含 QQ 联系导流，按规则应标为 ad/low。"}
+{"text":"双管猎枪买卖qq","category":"ad","level":"low","review_note":"包含 QQ 联系导流，按规则应标为 ad/low。"}
+{"text":"双管猎枪供应qq","category":"ad","level":"low","review_note":"包含 QQ 联系导流，按规则应标为 ad/low。"}
+{"text":"双管猎枪出售qq","category":"ad","level":"low","review_note":"包含 QQ 联系导流，按规则应标为 ad/low。"}
+{"text":"双管猎枪销售qq","category":"ad","level":"low","review_note":"包含 QQ 联系导流，按规则应标为 ad/low。"}
+{"text":"双腿夹著我的腰部使我的肉棒进入的更深","category":"pornographic","level":"high","review_note":"露骨性行为描写，other/low 明显过低。"}
+{"text":"双腿间做出爱","category":"pornographic","level":"high","review_note":"明确性行为描写，other/low 明显过低。"}
+{"text":"双飞服务","category":"pornographic","level":"high","review_note":"双飞服务为色情服务表述，other/low 过低。"}
+{"text":"双飞毒龙直到分享了精液","category":"pornographic","level":"high","review_note":"露骨色情行为和精液描述，other/low 明显过低。"}
+{"text":"双龙入洞","category":"pornographic","level":"medium","review_note":"明显性暗示词，other/low 过低。"}
+{"text":"反中游行","category":"political","level":"medium","review_note":"明确政治游行/动员表述，other/low 过低。"}
+{"text":"反党","category":"political","level":"medium","review_note":"明确政治攻击/立场表述，other/low 过低。"}
+{"text":"反共传单","category":"political","level":"medium","review_note":"明确政治宣传材料表述，other/low 过低。"}
+{"text":"反共言论","category":"political","level":"medium","review_note":"明确政治攻击/宣传表述，other/low 过低。"}
+{"text":"反对08奥运会","category":"political","level":"medium","review_note":"明确政治化反对动员表述，other/low 过低。"}
+{"text":"反对两会","category":"political","level":"medium","review_note":"明确针对政治会议的反对表述，other/low 过低。"}
+{"text":"反对共产党","category":"political","level":"medium","review_note":"明确政治攻击/立场表述，other/low 过低。"}
+{"text":"反屏蔽考试作弊器","category":"illegal","level":"high","review_note":"考试作弊器属于作弊工具交易/使用风险，other/low 过低。"}
+{"text":"反屏蔽考试设备","category":"illegal","level":"high","review_note":"反屏蔽考试设备属于作弊工具，other/low 过低。"}
+{"text":"反屏蔽考试设备供应","category":"illegal","level":"high","review_note":"供应考试作弊设备属于违法作弊工具交易，other/low 过低。"}
+{"text":"反屏蔽考试设备出售","category":"illegal","level":"high","review_note":"出售考试作弊设备属于违法作弊工具交易，ad/low 过低。"}
+{"text":"反屏蔽考试设备批发","category":"illegal","level":"high","review_note":"批发考试作弊设备属于违法作弊工具交易，other/low 过低。"}
+{"text":"反屏蔽考试设备销售","category":"illegal","level":"high","review_note":"销售考试作弊设备属于违法作弊工具交易，other/low 过低。"}
+{"text":"反恐狙击弩买卖","category":"illegal","level":"high","review_note":"狙击弩买卖属于武器交易，other/low 过低。"}
+{"text":"反攻大6","category":"political","level":"medium","review_note":"反攻大陆为明确政治/军事动员表述，other/low 过低。"}
+{"text":"反政府","category":"political","level":"medium","review_note":"明确政治攻击/立场表述，other/low 过低。"}
+{"text":"反日活动","category":"political","level":"medium","review_note":"明确政治性集体活动表述，other/low 过低。"}
+{"text":"反社会主义","category":"political","level":"medium","review_note":"明确政治立场攻击表述，other/low 过低。"}
+{"text":"反革命暴乱","category":"political","level":"medium","review_note":"明确政治暴乱表述，other/low 过低。"}
+{"text":"发piao","category":"illegal","level":"high","review_note":"发票的拼音规避写法，结合词库语境应按非法发票交易风险标注。"}
+{"text":"发剽代开","category":"illegal","level":"high","review_note":"发票代开的错别字规避，属于非法发票交易。"}
+{"text":"发廊小姐包夜","category":"pornographic","level":"high","review_note":"包夜服务为明确色情服务/招嫖表述，other/low 明显过低。"}
+{"text":"发廊性息","category":"pornographic","level":"high","review_note":"性息为性服务信息规避写法，other/low 明显过低。"}
+{"text":"发情春药","category":"pornographic","level":"medium","review_note":"春药和性唤起表述为成人色情/性药品语境，other/low 过低。"}
+{"text":"发爆器","category":"illegal","level":"high","review_note":"发爆器为爆破引爆器材，other/low 过低。"}
+{"text":"发票","category":"other","level":"low","review_note":"发票本身是常见中性词，单独标 illegal/high 过度拦截。"}
+{"text":"发票qq","category":"ad","level":"low","review_note":"包含 QQ 联系导流，按规则应标为 ad/low。"}
+{"text":"发票代开qq","category":"ad","level":"low","review_note":"包含 QQ 联系导流，按规则应标为 ad/low。"}
+{"text":"发票代理qq","category":"ad","level":"low","review_note":"包含 QQ 联系导流，按规则应标为 ad/low。"}
+{"text":"发票供应qq","category":"ad","level":"low","review_note":"包含 QQ 联系导流，按规则应标为 ad/low。"}
+{"text":"发票咨询qq","category":"ad","level":"low","review_note":"包含 QQ 联系导流，按规则应标为 ad/low。"}
+{"text":"发票销售qq","category":"ad","level":"low","review_note":"包含 QQ 联系导流，按规则应标为 ad/low。"}
+{"text":"叔嫂偷欢","category":"pornographic","level":"medium","review_note":"乱伦/偷欢色情语境明确，other/low 过低。"}
+{"text":"叔嫂奸情","category":"pornographic","level":"medium","review_note":"乱伦色情关系表述，other/low 过低。"}
+{"text":"叔嫂肉欲","category":"pornographic","level":"medium","review_note":"乱伦色情欲望表述，other/low 过低。"}
+{"text":"卖假币qq","category":"ad","level":"low","review_note":"包含 QQ 联系导流，按规则应标为 ad/low。"}
+{"text":"卖财税发票tel","category":"ad","level":"low","review_note":"包含 tel 联系导流，按规则应标为 ad/low。"}

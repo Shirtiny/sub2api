@@ -1,0 +1,421 @@
+{"text":"fuck我操","category":"abuse","level":"medium","review_note":"Profane phrase; abuse is clearer than other/low."}
+{"text":"fuck我操你","category":"abuse","level":"medium","review_note":"Targeted profane insult; abuse is clearer than other/low."}
+{"text":"fuck我日","category":"abuse","level":"medium","review_note":"Profane phrase; abuse is clearer than other/low."}
+{"text":"fuck我日你","category":"abuse","level":"medium","review_note":"Targeted profane insult; abuse is clearer than other/low."}
+{"text":"fuck斯大林","category":"political","level":"medium","review_note":"Political historical figure reference; political fits better than other/low."}
+{"text":"fuck新党","category":"political","level":"medium","review_note":"Political party reference; original other/low is too generic."}
+{"text":"fuck新闻管制","category":"political","level":"medium","review_note":"Political censorship phrase; should be political rather than other."}
+{"text":"fuck无界浏览器","category":"political","level":"medium","review_note":"Censorship-circumvention tool reference; political is clearer than other/low."}
+{"text":"fuck死全家","category":"abuse","level":"high","review_note":"Hostile curse against a family; abuse/high is clearer than other/low."}
+{"text":"fuck温家宝","category":"political","level":"medium","review_note":"Chinese political leader reference; should be political."}
+{"text":"fuck温总理","category":"political","level":"medium","review_note":"Chinese premier reference; should be political rather than other."}
+{"text":"fuck湿透的内裤","category":"pornographic","level":"medium","review_note":"Sexualized underwear phrase; pornographic is clearer than other/low."}
+{"text":"fuck煞逼","category":"abuse","level":"medium","review_note":"Insult phrase; abuse category fits better than other/low."}
+{"text":"fuck王岐山","category":"political","level":"medium","review_note":"Chinese political leader reference; should be political."}
+{"text":"fuck生孩子没屁眼","category":"abuse","level":"medium","review_note":"Abusive curse phrase; abuse is clearer than other/low."}
+{"text":"fuck生鸦片","category":"illegal","level":"high","review_note":"Raw opium phrase; illegal category fits better than other/low."}
+{"text":"fuck社会主义","category":"political","level":"medium","review_note":"Political ideology reference; original other/low is too generic."}
+{"text":"fuck神经病","category":"abuse","level":"medium","review_note":"Insult phrase; abuse category fits better than other/low."}
+{"text":"fuck退党","category":"political","level":"medium","review_note":"Political party-withdrawal phrase; should be political rather than other."}
+{"text":"fuck靠","category":"abuse","level":"medium","review_note":"Profanity phrase; abuse is clearer than other/low."}
+{"text":"fuck食屎","category":"abuse","level":"medium","review_note":"Insult phrase meaning eat feces; abuse is clearer than other/low."}
+{"text":"fuck食捻屎","category":"abuse","level":"medium","review_note":"Cantonese abusive insult phrase; abuse is clearer than other/low."}
+{"text":"fuck骚","category":"abuse","level":"medium","review_note":"Derogatory sexualized insult; abuse fits better than other/low."}
+{"text":"fuzzvol11ririkoasahina朝日奈りりこ加藤つばさ","category":"pornographic","level":"high","review_note":"Adult-video title/performer phrase; pornographic is clearer than other/low."}
+{"text":"gay上门性服务","category":"pornographic","level":"high","review_note":"Commercial sexual-service phrase; pornographic is clearer than other/low."}
+{"text":"gay包夜性服务","category":"pornographic","level":"high","review_note":"Commercial overnight sexual-service phrase; pornographic is clearer than other/low."}
+{"text":"gay片","category":"pornographic","level":"medium","review_note":"Gay adult-video phrase; pornographic fits better than other/low."}
+{"text":"gay网导航","category":"pornographic","level":"medium","review_note":"Adult site-directory phrase; pornographic fits better than other/low."}
+{"text":"ghb专卖","category":"illegal","level":"high","review_note":"GHB controlled-drug sale phrase; illegal/high is clearer than other/low."}
+{"text":"ghb催情水订购","category":"illegal","level":"critical","review_note":"GHB aphrodisiac/date-rape drug ordering phrase; illegal/critical is clearer than other/low."}
+{"text":"ghb催情水订购qq","category":"illegal","level":"critical","review_note":"QQ ordering phrase for GHB aphrodisiac/date-rape drug; illegal/critical is clearer than ad/low."}
+{"text":"ghb原液","category":"illegal","level":"high","review_note":"GHB concentrate phrase; illegal category fits better than other/low."}
+{"text":"ghb提供","category":"illegal","level":"high","review_note":"Offering GHB is an illegal-drug phrase, not other/low."}
+{"text":"ghb水","category":"illegal","level":"high","review_note":"GHB water/drug slang; illegal category fits better than other/low."}
+{"text":"ghb水出售","category":"illegal","level":"high","review_note":"GHB sale phrase; illegal/high is clearer than ad/low."}
+{"text":"ghb水送货上门","category":"illegal","level":"high","review_note":"GHB delivery phrase; illegal/high is clearer than other/low."}
+{"text":"ghb水送货上门qq","category":"illegal","level":"high","review_note":"QQ delivery phrase for GHB; illegal/high is clearer than ad/low."}
+{"text":"ghb水配方专卖qq","category":"illegal","level":"critical","review_note":"GHB formula sale/contact phrase; illegal/critical is clearer than ad/low."}
+{"text":"ghb水配方供应","category":"illegal","level":"critical","review_note":"GHB formula supply phrase; illegal/critical is clearer than other/low."}
+{"text":"ghb水配方批发","category":"illegal","level":"critical","review_note":"GHB formula wholesale phrase; illegal/critical is clearer than other/low."}
+{"text":"ghb水配方提供","category":"illegal","level":"critical","review_note":"GHB formula offering phrase; illegal/critical is clearer than other/low."}
+{"text":"ghb水配方提供qq","category":"illegal","level":"critical","review_note":"QQ offering phrase for GHB formula; illegal/critical is clearer than ad/low."}
+{"text":"ghb水销售","category":"illegal","level":"high","review_note":"GHB sales phrase; illegal/high is clearer than other/low."}
+{"text":"ghb液","category":"illegal","level":"high","review_note":"GHB liquid phrase; illegal category fits better than other/low."}
+{"text":"ghb迷奸水直销qq","category":"illegal","level":"critical","review_note":"GHB date-rape drug direct-sale phrase; illegal/critical is clearer than ad/low."}
+{"text":"ghb迷情药专卖","category":"illegal","level":"critical","review_note":"Date-rape drug sale phrase; illegal/critical is clearer than other/low."}
+{"text":"ghb迷情药批发","category":"illegal","level":"critical","review_note":"Date-rape drug wholesale phrase; illegal/critical is clearer than other/low."}
+{"text":"ghb销售","category":"illegal","level":"high","review_note":"GHB sales phrase; illegal/high is clearer than other/low."}
+{"text":"glock转让","category":"illegal","level":"high","review_note":"Glock firearm transfer phrase; illegal/high is clearer than other/low."}
+{"text":"goldangelvol7supereroticgirlranmonbu纹舞らん","category":"pornographic","level":"high","review_note":"Adult-video title with explicit erotic wording; pornographic is clearer than other/low."}
+{"text":"goldangelvol8supereroticgirlrionakamura仲村りお","category":"pornographic","level":"high","review_note":"Adult-video title with explicit erotic wording; pornographic is clearer than other/low."}
+{"text":"gv下载","category":"pornographic","level":"medium","review_note":"GV adult-video download phrase; pornographic fits better than other/low."}
+{"text":"gv动漫","category":"pornographic","level":"medium","review_note":"GV adult-animation phrase; pornographic fits better than other/low."}
+{"text":"gv电影下载","category":"pornographic","level":"medium","review_note":"GV adult-film download phrase; pornographic fits better than other/low."}
+{"text":"gv种子下载","category":"pornographic","level":"medium","review_note":"GV adult torrent download phrase; pornographic fits better than other/low."}
+{"text":"gv视频下载","category":"pornographic","level":"medium","review_note":"GV adult-video download phrase; pornographic fits better than other/low."}
+{"text":"gv资源","category":"pornographic","level":"medium","review_note":"GV adult-resource phrase; pornographic fits better than other/low."}
+{"text":"gηb迷情水专卖","category":"illegal","level":"critical","review_note":"Obfuscated GHB date-rape drug sale phrase; illegal/critical is clearer than other/low."}
+{"text":"gηb迷情水供应","category":"illegal","level":"critical","review_note":"Obfuscated GHB date-rape drug supply phrase; illegal/critical is clearer than other/low."}
+{"text":"gηb迷情水出售","category":"illegal","level":"critical","review_note":"Obfuscated GHB date-rape drug sale phrase; illegal/critical is clearer than ad/low."}
+{"text":"gηb迷情水出售qq","category":"illegal","level":"critical","review_note":"QQ sale of obfuscated GHB date-rape drug; illegal/critical is clearer than ad/low."}
+{"text":"gηb迷情水提供qq","category":"illegal","level":"critical","review_note":"QQ offering of obfuscated GHB date-rape drug; illegal/critical is clearer than ad/low."}
+{"text":"gηb迷情水直销","category":"illegal","level":"critical","review_note":"Obfuscated GHB date-rape drug direct-sale phrase; illegal/critical is clearer than other/low."}
+{"text":"gηb迷情水订购","category":"illegal","level":"critical","review_note":"Obfuscated GHB date-rape drug ordering phrase; illegal/critical is clearer than other/low."}
+{"text":"gηb迷情水订购qq","category":"illegal","level":"critical","review_note":"QQ ordering phrase for obfuscated GHB date-rape drug; illegal/critical is clearer than ad/low."}
+{"text":"gカップカリスマ店员松嶋れいな20连発中出し","category":"pornographic","level":"high","review_note":"Adult-video phrase with explicit ejaculation wording; pornographic is clearer than other/low."}
+{"text":"g水","category":"illegal","level":"high","review_note":"GHB/G-water drug slang in this cluster; illegal fits better than other/low."}
+{"text":"g水出售","category":"illegal","level":"high","review_note":"G-water/GHB sale phrase; illegal/high is clearer than ad/low."}
+{"text":"g点高潮","category":"pornographic","level":"medium","review_note":"Sexual climax phrase; pornographic is clearer than other/low."}
+{"text":"g片","category":"pornographic","level":"medium","review_note":"Adult-video shorthand; pornographic is clearer than other/low."}
+{"text":"g片免费下载","category":"pornographic","level":"medium","review_note":"Adult-video free download phrase; pornographic fits better than other/low."}
+{"text":"happy水","category":"illegal","level":"high","review_note":"Happy water drug slang; illegal fits better than other/low."}
+{"text":"happy水qq","category":"illegal","level":"high","review_note":"QQ contact phrase for happy water drug; illegal/high is clearer than ad/low."}
+{"text":"happy水专卖","category":"illegal","level":"high","review_note":"Happy water drug sale phrase; illegal/high is clearer than other/low."}
+{"text":"happy水提供","category":"illegal","level":"high","review_note":"Happy water drug offering phrase; illegal/high is clearer than other/low."}
+{"text":"happy水销售","category":"illegal","level":"high","review_note":"Happy water drug sales phrase; illegal/high is clearer than other/low."}
+{"text":"h动漫","category":"pornographic","level":"medium","review_note":"H-anime adult-content phrase; pornographic fits better than other/low."}
+{"text":"h动漫下载","category":"pornographic","level":"medium","review_note":"H-anime download phrase; pornographic fits better than other/low."}
+{"text":"h动漫图片","category":"pornographic","level":"medium","review_note":"H-anime image phrase; pornographic fits better than other/low."}
+{"text":"h动漫图片网","category":"pornographic","level":"medium","review_note":"H-anime image-site phrase; pornographic fits better than other/low."}
+{"text":"h动漫快播","category":"pornographic","level":"medium","review_note":"H-anime streaming phrase; pornographic fits better than other/low."}
+{"text":"h动漫快播网","category":"pornographic","level":"medium","review_note":"H-anime streaming-site phrase; pornographic fits better than other/low."}
+{"text":"h动画","category":"pornographic","level":"medium","review_note":"H-animation adult-content phrase; pornographic fits better than other/low."}
+{"text":"h图","category":"pornographic","level":"medium","review_note":"Adult image shorthand; pornographic fits better than other/low."}
+{"text":"h日本动漫h","category":"pornographic","level":"medium","review_note":"Japanese H-anime adult-content phrase; pornographic fits better than other/low."}
+{"text":"h服务","category":"pornographic","level":"medium","review_note":"Sexual-service shorthand; pornographic fits better than other/low."}
+{"text":"h漫","category":"pornographic","level":"medium","review_note":"Adult manga shorthand; pornographic fits better than other/low."}
+{"text":"h漫免费下载","category":"pornographic","level":"medium","review_note":"Adult manga download phrase; pornographic fits better than other/low."}
+{"text":"h漫画","category":"pornographic","level":"medium","review_note":"Adult manga phrase; pornographic fits better than other/low."}
+{"text":"h漫画下载","category":"pornographic","level":"medium","review_note":"Adult manga download phrase; pornographic fits better than other/low."}
+{"text":"h片下载qq","category":"pornographic","level":"high","review_note":"Adult-video download/contact phrase; pornographic is clearer than ad/low."}
+{"text":"h片网址","category":"pornographic","level":"high","review_note":"Adult-video URL phrase; pornographic is clearer than other/low."}
+{"text":"h片网站qq","category":"pornographic","level":"high","review_note":"Adult-video site/contact phrase; pornographic is clearer than ad/low."}
+{"text":"h电影","category":"pornographic","level":"medium","review_note":"Adult-film shorthand; pornographic fits better than other/low."}
+{"text":"h电影下载qq","category":"pornographic","level":"high","review_note":"Adult-film download/contact phrase; pornographic is clearer than ad/low."}
+{"text":"h站","category":"pornographic","level":"medium","review_note":"Adult-site shorthand; pornographic fits better than other/low."}
+{"text":"h色小说","category":"pornographic","level":"medium","review_note":"Erotic-fiction phrase; pornographic fits better than other/low."}
+{"text":"h色网站","category":"pornographic","level":"high","review_note":"Adult website phrase; pornographic is clearer than other/low."}
+{"text":"ied制作","category":"illegal","level":"critical","review_note":"IED making phrase; illegal/critical is clearer than other/low."}
+{"text":"jgirl双穴水原小笠原崎","category":"pornographic","level":"high","review_note":"Explicit adult-video phrase; pornographic is clearer than other/low."}
+{"text":"jiejie和我乱伦理小说","category":"pornographic","level":"high","review_note":"Incest erotic-fiction phrase; pornographic/high is clearer than other/low."}
+{"text":"jiejie和我乱伦理电影","category":"pornographic","level":"high","review_note":"Incest erotic-film phrase; pornographic/high is clearer than other/low."}
+{"text":"jiejie的嫩穴mm嫩穴","category":"pornographic","level":"high","review_note":"Explicit sexual body-part phrase; pornographic/high is clearer than other/low."}
+{"text":"jiejie的嫩阴户","category":"pornographic","level":"high","review_note":"Explicit sexual body-part phrase; pornographic/high is clearer than other/low."}
+{"text":"jiejie的小屄","category":"pornographic","level":"high","review_note":"Explicit sexual body-part phrase; pornographic/high is clearer than other/low."}
+{"text":"jiejie的小穴","category":"pornographic","level":"high","review_note":"Explicit sexual body-part phrase; pornographic/high is clearer than other/low."}
+{"text":"jiejie的小穴被大鸡巴插得好舒服哟","category":"pornographic","level":"high","review_note":"Explicit sex-act phrase; pornographic/high is clearer than other/low."}
+{"text":"jiejie的屄","category":"pornographic","level":"high","review_note":"Explicit sexual body-part phrase; pornographic/high is clearer than other/low."}
+{"text":"jiejie的穴夹的我好紧小说","category":"pornographic","level":"high","review_note":"Explicit erotic-fiction phrase; pornographic/high is clearer than other/low."}
+{"text":"jiejie的穴好大啊","category":"pornographic","level":"high","review_note":"Explicit sexual body-part phrase; pornographic/high is clearer than other/low."}
+{"text":"jiejie的穴好紧啊","category":"pornographic","level":"high","review_note":"Explicit sexual body-part phrase; pornographic/high is clearer than other/low."}
+{"text":"jiejie的肥穴","category":"pornographic","level":"high","review_note":"Explicit sexual body-part phrase; pornographic/high is clearer than other/low."}
+{"text":"jiejie的肥阴户","category":"pornographic","level":"high","review_note":"Explicit sexual body-part phrase; pornographic/high is clearer than other/low."}
+{"text":"jiejie的阴户","category":"pornographic","level":"high","review_note":"Explicit sexual body-part phrase; pornographic/high is clearer than other/low."}
+{"text":"jiejie的阴户好嫩啊","category":"pornographic","level":"high","review_note":"Explicit sexual body-part phrase; pornographic/high is clearer than other/low."}
+{"text":"jiejie被插的好爽","category":"pornographic","level":"high","review_note":"Explicit sex-act phrase; pornographic/high is clearer than other/low."}
+{"text":"jiqing视频","category":"pornographic","level":"medium","review_note":"激情视频 means erotic/passion video; pornographic fits better than other/low."}
+{"text":"ji女","category":"pornographic","level":"medium","review_note":"Obfuscated prostitute phrase; pornographic fits better than other/low."}
+{"text":"jj大而弯","category":"pornographic","level":"medium","review_note":"Explicit male-genital phrase; pornographic fits better than other/low."}
+{"text":"jj插入嫩穴","category":"pornographic","level":"high","review_note":"Explicit sex-act phrase; pornographic/high is clearer than other/low."}
+{"text":"j巴","category":"pornographic","level":"medium","review_note":"Obfuscated male-genital term; pornographic fits better than other/low."}
+{"text":"k2精炼粉批发代理","category":"illegal","level":"high","review_note":"Synthetic-drug wholesale/agent phrase; illegal/high is clearer than ad/low."}
+{"text":"k3精炼粉批发代理","category":"illegal","level":"high","review_note":"Synthetic-drug wholesale/agent phrase; illegal/high is clearer than ad/low."}
+{"text":"king粉","category":"illegal","level":"high","review_note":"Drug powder phrase in sales cluster; illegal fits better than other/low."}
+{"text":"king粉出售","category":"illegal","level":"high","review_note":"Drug powder sale phrase; illegal/high is clearer than ad/low."}
+{"text":"king粉出货","category":"illegal","level":"high","review_note":"Drug shipment phrase; illegal/high is clearer than other/low."}
+{"text":"king粉到货","category":"illegal","level":"high","review_note":"Drug arrival/supply phrase; illegal/high is clearer than other/low."}
+{"text":"king粉合成","category":"illegal","level":"critical","review_note":"Drug synthesis phrase; illegal/critical is clearer than other/low."}
+{"text":"king粉订购","category":"illegal","level":"high","review_note":"Drug ordering phrase; illegal/high is clearer than other/low."}
+{"text":"king粉送货qq","category":"illegal","level":"high","review_note":"QQ drug delivery phrase; illegal/high is clearer than ad/low."}
+{"text":"king粉送货上门","category":"illegal","level":"high","review_note":"Drug delivery phrase; illegal/high is clearer than other/low."}
+{"text":"king粉配方","category":"illegal","level":"critical","review_note":"Drug formula phrase; illegal/critical is clearer than other/low."}
+{"text":"king粉销售","category":"illegal","level":"high","review_note":"Drug sales phrase; illegal/high is clearer than other/low."}
+{"text":"kx粉","category":"illegal","level":"high","review_note":"Drug powder slang in K-drug cluster; illegal fits better than other/low."}
+{"text":"k仔","category":"illegal","level":"high","review_note":"Ketamine slang; illegal category fits better than other/low."}
+{"text":"k他命","category":"illegal","level":"high","review_note":"Ketamine term; illegal category fits better than other/low."}
+{"text":"k他命5号","category":"illegal","level":"high","review_note":"Ketamine variant phrase; illegal category fits better than other/low."}
+{"text":"lsd供应","category":"illegal","level":"high","review_note":"LSD supply phrase; illegal/high is clearer than other/low."}
+{"text":"lsd供应qq","category":"illegal","level":"high","review_note":"QQ supply phrase for LSD; illegal/high is clearer than ad/low."}
+{"text":"lsd出售","category":"illegal","level":"high","review_note":"LSD sale phrase; illegal/high is clearer than ad/low."}
+{"text":"lsd出售qq","category":"illegal","level":"high","review_note":"QQ sale phrase for LSD; illegal/high is clearer than ad/low."}
+{"text":"lsd迷幻药","category":"illegal","level":"high","review_note":"LSD hallucinogen phrase; illegal fits better than other/low."}
+{"text":"lsd迷幻药出售","category":"illegal","level":"high","review_note":"LSD hallucinogen sale phrase; illegal/high is clearer than ad/low."}
+{"text":"lsd迷幻药出售qq","category":"illegal","level":"high","review_note":"QQ sale phrase for LSD hallucinogen; illegal/high is clearer than ad/low."}
+{"text":"lsd迷幻药销售qq","category":"illegal","level":"high","review_note":"QQ sales phrase for LSD hallucinogen; illegal/high is clearer than ad/low."}
+{"text":"lsd销售","category":"illegal","level":"high","review_note":"LSD sales phrase; illegal/high is clearer than other/low."}
+{"text":"lsd销售qq","category":"illegal","level":"high","review_note":"QQ sales phrase for LSD; illegal/high is clearer than ad/low."}
+{"text":"luo聊qq","category":"pornographic","level":"high","review_note":"Obfuscated nude-chat contact phrase; pornographic is clearer than ad/low."}
+{"text":"luo聊妹qq","category":"pornographic","level":"high","review_note":"Obfuscated nude-chat contact phrase; pornographic is clearer than ad/low."}
+{"text":"luo聊美女qq","category":"pornographic","level":"high","review_note":"Obfuscated nude-chat contact phrase; pornographic is clearer than ad/low."}
+{"text":"luo聊表演","category":"pornographic","level":"high","review_note":"Obfuscated nude-chat performance phrase; pornographic is clearer than other/low."}
+{"text":"luo聊表演qq","category":"pornographic","level":"high","review_note":"Obfuscated nude-chat performance contact phrase; pornographic is clearer than ad/low."}
+{"text":"luo聊表演秀","category":"pornographic","level":"high","review_note":"Obfuscated nude-chat performance phrase; pornographic is clearer than other/low."}
+{"text":"m1911转让","category":"illegal","level":"high","review_note":"M1911 firearm transfer phrase; illegal/high is clearer than other/low."}
+{"text":"m300狙击配件出售","category":"illegal","level":"high","review_note":"Sniper-rifle parts sale phrase; illegal/high is clearer than ad/low."}
+{"text":"m300狙击配件在线订购","category":"illegal","level":"high","review_note":"Sniper-rifle parts ordering phrase; illegal/high is clearer than other/low."}
+{"text":"m300狙击配件直销","category":"illegal","level":"high","review_note":"Sniper-rifle parts direct-sale phrase; illegal/high is clearer than other/low."}
+{"text":"m300狙击配件直销qq","category":"illegal","level":"high","review_note":"QQ direct-sale phrase for sniper-rifle parts; illegal/high is clearer than ad/low."}
+{"text":"m300狙击配件预定","category":"illegal","level":"high","review_note":"Sniper-rifle parts reservation phrase; illegal/high is clearer than other/low."}
+{"text":"m300狙击配件预定qq","category":"illegal","level":"high","review_note":"QQ reservation phrase for sniper-rifle parts; illegal/high is clearer than ad/low."}
+{"text":"m3长刺专卖","category":"violence","level":"medium","review_note":"Long bayonet sale phrase; violence/medium is clearer than other/low."}
+{"text":"m9d80军刀专卖","category":"violence","level":"medium","review_note":"Military knife sale phrase; violence/medium is clearer than other/low."}
+{"text":"m9军刀专卖","category":"violence","level":"medium","review_note":"Military knife sale phrase; violence/medium is clearer than other/low."}
+{"text":"m9军刀批发","category":"violence","level":"medium","review_note":"Military knife wholesale phrase; violence/medium is clearer than other/low."}
+{"text":"m9长刺专卖","category":"violence","level":"medium","review_note":"Long bayonet sale phrase; violence/medium is clearer than other/low."}
+{"text":"mb同志上门服务","category":"pornographic","level":"high","review_note":"Male sexual-service phrase; pornographic is clearer than other/low."}
+{"text":"mb同志上门服务电话","category":"pornographic","level":"high","review_note":"Male sexual-service phone phrase; pornographic is clearer than ad/low."}
+{"text":"meimei吸精","category":"pornographic","level":"high","review_note":"Explicit sex-act phrase; pornographic/high is clearer than other/low."}
+{"text":"meimei嫩穴","category":"pornographic","level":"high","review_note":"Explicit sexual body-part phrase; pornographic/high is clearer than other/low."}
+{"text":"meimei嫩穴被狂插","category":"pornographic","level":"high","review_note":"Explicit sex-act phrase; pornographic/high is clearer than other/low."}
+{"text":"meimei小穴","category":"pornographic","level":"high","review_note":"Explicit sexual body-part phrase; pornographic/high is clearer than other/low."}
+{"text":"meimei小穴好紧","category":"pornographic","level":"high","review_note":"Explicit sexual body-part phrase; pornographic/high is clearer than other/low."}
+{"text":"meimei张开双腿等你操","category":"pornographic","level":"high","review_note":"Explicit sex invitation phrase; pornographic/high is clearer than other/low."}
+{"text":"meimei的大阴户","category":"pornographic","level":"high","review_note":"Explicit sexual body-part phrase; pornographic/high is clearer than other/low."}
+{"text":"meimei的嫩屄","category":"pornographic","level":"high","review_note":"Explicit sexual body-part phrase; pornographic/high is clearer than other/low."}
+{"text":"meimei的嫩阴户","category":"pornographic","level":"high","review_note":"Explicit sexual body-part phrase; pornographic/high is clearer than other/low."}
+{"text":"meimei的小嫩穴","category":"pornographic","level":"high","review_note":"Explicit sexual body-part phrase; pornographic/high is clearer than other/low."}
+{"text":"meimei的小屄好痒","category":"pornographic","level":"high","review_note":"Explicit sexual body-part phrase; pornographic/high is clearer than other/low."}
+{"text":"meimei的小穴好紧啊","category":"pornographic","level":"high","review_note":"Explicit sexual body-part phrase; pornographic/high is clearer than other/low."}
+{"text":"meimei的小穴舒服死了","category":"pornographic","level":"high","review_note":"Explicit sexual body-part phrase; pornographic/high is clearer than other/low."}
+{"text":"meimei的小阴户","category":"pornographic","level":"high","review_note":"Explicit sexual body-part phrase; pornographic/high is clearer than other/low."}
+{"text":"meimei的屄","category":"pornographic","level":"high","review_note":"Explicit sexual body-part phrase; pornographic/high is clearer than other/low."}
+{"text":"meimei的屄好紧啊","category":"pornographic","level":"high","review_note":"Explicit sexual body-part phrase; pornographic/high is clearer than other/low."}
+{"text":"meimei的穴好多水","category":"pornographic","level":"high","review_note":"Explicit sexual body-part phrase; pornographic/high is clearer than other/low."}
+{"text":"meimei的穴好紧","category":"pornographic","level":"high","review_note":"Explicit sexual body-part phrase; pornographic/high is clearer than other/low."}
+{"text":"meimei的阴户","category":"pornographic","level":"high","review_note":"Explicit sexual body-part phrase; pornographic/high is clearer than other/low."}
+{"text":"meimei穴","category":"pornographic","level":"high","review_note":"Explicit sexual body-part phrase; pornographic/high is clearer than other/low."}
+{"text":"meimei等你大鸡吧来插","category":"pornographic","level":"high","review_note":"Explicit sex invitation phrase; pornographic/high is clearer than other/low."}
+{"text":"meimei黄站","category":"pornographic","level":"high","review_note":"Adult-site phrase; pornographic/high is clearer than other/low."}
+{"text":"meinv主持24小时全天激情热舞","category":"pornographic","level":"medium","review_note":"Erotic live-performance phrase; pornographic is clearer than other/low."}
+{"text":"meinv主持25小时全天激情热舞","category":"pornographic","level":"medium","review_note":"Erotic live-performance phrase; pornographic is clearer than other/low."}
+{"text":"meinv主持26小时全天激情热舞","category":"pornographic","level":"medium","review_note":"Erotic live-performance phrase; pornographic is clearer than other/low."}
+{"text":"meinv主持27小时全天激情热舞","category":"pornographic","level":"medium","review_note":"Erotic live-performance phrase; pornographic is clearer than other/low."}
+{"text":"meinv主持脱衣","category":"pornographic","level":"high","review_note":"Striptease/live adult phrase; pornographic is clearer than other/low."}
+{"text":"meinv出租车内强行进入","category":"pornographic","level":"high","review_note":"Sexual-assault adult-content phrase in this cluster; pornographic/high is clearer than other/low."}
+{"text":"meinv口含鸡吧玩内射","category":"pornographic","level":"high","review_note":"Explicit sex-act phrase; pornographic/high is clearer than other/low."}
+{"text":"meinv含双棍玩内射","category":"pornographic","level":"high","review_note":"Explicit sex-act phrase; pornographic/high is clearer than other/low."}
+{"text":"meinv嫂子的小骚逼","category":"pornographic","level":"high","review_note":"Explicit sexual body-part phrase; pornographic/high is clearer than other/low."}
+{"text":"meinv嫩穴","category":"pornographic","level":"high","review_note":"Explicit sexual body-part phrase; pornographic/high is clearer than other/low."}
+{"text":"meinv嫩穴妹穴亮穴女人穴","category":"pornographic","level":"high","review_note":"Explicit sexual body-part phrase; pornographic/high is clearer than other/low."}
+{"text":"meinv孩含双棍玩内射","category":"pornographic","level":"high","review_note":"Explicit sex-act phrase; pornographic/high is clearer than other/low."}
+{"text":"meinv小穴贴图偷拍少女乳房","category":"pornographic","level":"high","review_note":"Explicit sexual image phrase; pornographic/high is clearer than other/low."}
+{"text":"meinv性生活贴图","category":"pornographic","level":"high","review_note":"Explicit sexual-life image phrase; pornographic/high is clearer than other/low."}
+{"text":"meinv护士被奸","category":"pornographic","level":"high","review_note":"Explicit rape/sex adult-content phrase; pornographic/high is clearer than other/low."}
+{"text":"meinv插穴","category":"pornographic","level":"high","review_note":"Explicit sex-act phrase; pornographic/high is clearer than other/low."}
+{"text":"meinv极品嫩穴","category":"pornographic","level":"high","review_note":"Explicit sexual body-part phrase; pornographic/high is clearer than other/low."}
+{"text":"meinv极品穴","category":"pornographic","level":"high","review_note":"Explicit sexual body-part phrase; pornographic/high is clearer than other/low."}
+{"text":"meinv潮吹","category":"pornographic","level":"high","review_note":"Explicit sexual act phrase; pornographic/high is clearer than other/low."}
+{"text":"meinv激情视频聊天室","category":"pornographic","level":"high","review_note":"Erotic video-chat phrase; pornographic is clearer than ad/low."}
+{"text":"meinv穴","category":"pornographic","level":"high","review_note":"Explicit sexual body-part phrase; pornographic/high is clearer than other/low."}
+{"text":"meinv穴自拍","category":"pornographic","level":"high","review_note":"Explicit sexual selfie phrase; pornographic/high is clearer than other/low."}
+{"text":"meinv鸡吧图","category":"pornographic","level":"high","review_note":"Explicit genital-image phrase; pornographic/high is clearer than other/low."}
+{"text":"mm1夜情视频","category":"pornographic","level":"medium","review_note":"One-night-stand video phrase; pornographic fits better than other/low."}
+{"text":"mm上门爱爱","category":"pornographic","level":"high","review_note":"Sexual-service phrase; pornographic/high is clearer than other/low."}
+{"text":"mm亲自写的让女生高潮的方法","category":"pornographic","level":"high","review_note":"Instructional sexual-climax phrase; pornographic/high is clearer than other/low."}
+{"text":"mm嫩穴","category":"pornographic","level":"high","review_note":"Explicit sexual body-part phrase; pornographic/high is clearer than other/low."}
+{"text":"mm屄","category":"pornographic","level":"high","review_note":"Explicit sexual body-part term; pornographic/high is clearer than other/low."}
+{"text":"mm激情穴贴图","category":"pornographic","level":"high","review_note":"Explicit sexual image phrase; pornographic/high is clearer than other/low."}
+{"text":"mm激情视屏","category":"pornographic","level":"high","review_note":"Erotic video phrase; pornographic/high is clearer than other/low."}
+{"text":"mm激情视频","category":"pornographic","level":"high","review_note":"Erotic video phrase; pornographic/high is clearer than other/low."}
+{"text":"mm激情视频聊天","category":"pornographic","level":"high","review_note":"Erotic video-chat phrase; pornographic/high is clearer than other/low."}
+{"text":"mm的小嫩穴","category":"pornographic","level":"high","review_note":"Explicit sexual body-part phrase; pornographic/high is clearer than other/low."}
+{"text":"mm的小穴","category":"pornographic","level":"high","review_note":"Explicit sexual body-part phrase; pornographic/high is clearer than other/low."}
+{"text":"mm的胸罩脱下","category":"pornographic","level":"medium","review_note":"Sexualized undressing phrase; pornographic is clearer than other/low."}
+{"text":"mm的诱人双峰","category":"pornographic","level":"medium","review_note":"Sexualized body-description phrase; pornographic is clearer than other/low."}
+{"text":"mm的诱人双峰免费试看片","category":"pornographic","level":"high","review_note":"Sexualized preview-video phrase; pornographic/high is clearer than other/low."}
+{"text":"mm破处","category":"pornographic","level":"high","review_note":"Explicit virginity/sex phrase; pornographic/high is clearer than other/low."}
+{"text":"mm穴激情小说","category":"pornographic","level":"high","review_note":"Explicit erotic-fiction phrase; pornographic/high is clearer than other/low."}
+{"text":"mm翘臀诱惑图","category":"pornographic","level":"medium","review_note":"Sexualized image phrase; pornographic is clearer than other/low."}
+{"text":"mm脱的光视频","category":"pornographic","level":"high","review_note":"Nude-video phrase; pornographic/high is clearer than other/low."}
+{"text":"mm被人插图片","category":"pornographic","level":"high","review_note":"Explicit sex image phrase; pornographic/high is clearer than other/low."}
+{"text":"mm被干小穴","category":"pornographic","level":"high","review_note":"Explicit sex-act phrase; pornographic/high is clearer than other/low."}
+{"text":"mm要我使劲插它的穴","category":"pornographic","level":"high","review_note":"Explicit sex-act phrase; pornographic/high is clearer than other/low."}
+{"text":"mm视频聊天室","category":"pornographic","level":"medium","review_note":"In this adult cluster, video chat is sexualized; pornographic fits better than ad/low."}
+{"text":"mm走光","category":"pornographic","level":"medium","review_note":"Voyeuristic exposure phrase; pornographic fits better than other/low."}
+{"text":"mm露底见毛图","category":"pornographic","level":"high","review_note":"Explicit exposure image phrase; pornographic/high is clearer than other/low."}
+{"text":"mo你鸡巴","category":"pornographic","level":"high","review_note":"Explicit sexual touching/genital phrase; pornographic/high is clearer than other/low."}
+{"text":"mo擦小肥穴","category":"pornographic","level":"high","review_note":"Explicit sexual body-part phrase; pornographic/high is clearer than other/low."}
+{"text":"mp654k出售","category":"illegal","level":"high","review_note":"MP-654K air-pistol sale phrase; illegal/high is clearer than ad/low."}
+{"text":"mp654k出售qq","category":"illegal","level":"high","review_note":"QQ sale phrase for MP-654K air pistol; illegal/high is clearer than ad/low."}
+{"text":"mp654k配件专卖qq","category":"illegal","level":"high","review_note":"QQ sale phrase for MP-654K weapon parts; illegal/high is clearer than ad/low."}
+{"text":"mp654k配件出售","category":"illegal","level":"high","review_note":"MP-654K weapon-parts sale phrase; illegal/high is clearer than ad/low."}
+{"text":"mp654k配件出售qq","category":"illegal","level":"high","review_note":"QQ sale phrase for MP-654K weapon parts; illegal/high is clearer than ad/low."}
+{"text":"mp654k配件销售","category":"illegal","level":"high","review_note":"MP-654K weapon-parts sales phrase; illegal/high is clearer than other/low."}
+{"text":"mp654k配件销售qq","category":"illegal","level":"high","review_note":"QQ sales phrase for MP-654K weapon parts; illegal/high is clearer than ad/low."}
+{"text":"mp654k销售qq","category":"illegal","level":"high","review_note":"QQ sale phrase for MP-654K air pistol; illegal/high is clearer than ad/low."}
+{"text":"mugenexvol4吉川萌","category":"pornographic","level":"medium","review_note":"Adult-video series/performer phrase; pornographic fits better than other/low."}
+{"text":"mugenexvol7滨崎mx07","category":"pornographic","level":"medium","review_note":"Adult-video series/performer phrase; pornographic fits better than other/low."}
+{"text":"mugenexvol8美脚痴女红音まい","category":"pornographic","level":"high","review_note":"Adult-video title with fetish wording; pornographic is clearer than other/low."}
+{"text":"mugenexvol9人体喷泉强烈な潮吹きホールmx09","category":"pornographic","level":"high","review_note":"Adult-video title with explicit squirting wording; pornographic is clearer than other/low."}
+{"text":"n02553国冬子不用厌牝中出し廃弃処分k7","category":"pornographic","level":"high","review_note":"Japanese adult-video phrase with explicit ejaculation wording; pornographic is clearer than other/low."}
+{"text":"nadeshiko梦の超高级愈し系wおでかけソープ嬢完全版","category":"pornographic","level":"high","review_note":"Adult soapland/prostitution-themed video phrase; pornographic is clearer than other/low."}
+{"text":"nekognvol1潮姬史上最高之潮吹少女","category":"pornographic","level":"high","review_note":"Adult-video phrase with explicit squirting wording; pornographic is clearer than other/low."}
+{"text":"n巨乳女医师森口绘美","category":"pornographic","level":"medium","review_note":"Sexualized adult-video style phrase; pornographic fits better than other/low."}
+{"text":"n性狂欢","category":"pornographic","level":"high","review_note":"Sex orgy phrase; pornographic/high is clearer than other/low."}
+{"text":"ok1夜情","category":"pornographic","level":"medium","review_note":"One-night-stand phrase; pornographic fits better than other/low."}
+{"text":"olmeinv街上遥控震动a","category":"pornographic","level":"high","review_note":"Remote vibrator adult-content phrase; pornographic/high is clearer than other/low."}
+{"text":"ol性感制服","category":"pornographic","level":"medium","review_note":"Sexualized uniform phrase; pornographic fits better than other/low."}
+{"text":"ol美女街上遥控震动a","category":"pornographic","level":"high","review_note":"Remote vibrator adult-content phrase; pornographic/high is clearer than other/low."}
+{"text":"one页情","category":"pornographic","level":"medium","review_note":"Obfuscated one-night-stand phrase; pornographic fits better than other/low."}
+{"text":"ons交友","category":"pornographic","level":"medium","review_note":"One-night-stand dating phrase; pornographic fits better than ad/low."}
+{"text":"ons俱乐部","category":"pornographic","level":"medium","review_note":"One-night-stand club phrase; pornographic fits better than other/low."}
+{"text":"ons性息","category":"pornographic","level":"medium","review_note":"One-night-stand sexual-information phrase; pornographic fits better than other/low."}
+{"text":"ons社区","category":"pornographic","level":"medium","review_note":"One-night-stand community phrase; pornographic fits better than other/low."}
+{"text":"ons论坛","category":"pornographic","level":"medium","review_note":"One-night-stand forum phrase; pornographic fits better than other/low."}
+{"text":"ooxx人妻","category":"pornographic","level":"medium","review_note":"Adult married-woman sex phrase; pornographic fits better than other/low."}
+{"text":"oratoragoldvol4ささきふう香92cmg罩杯美爆乳","category":"pornographic","level":"medium","review_note":"Sexualized adult-video title phrase; pornographic fits better than other/low."}
+{"text":"p8com1级激情","category":"pornographic","level":"medium","review_note":"Erotic/passion adult-site phrase; pornographic fits better than other/low."}
+{"text":"painfulgroinsgettingpoundedakirashiratori白鸟あきら","category":"pornographic","level":"high","review_note":"Explicit adult-video title phrase; pornographic/high is clearer than other/low."}
+{"text":"pao大叔约pa平台","category":"pornographic","level":"medium","review_note":"Obfuscated hookup platform phrase; pornographic fits better than other/low."}
+{"text":"paradevol57巨乳绞りボンデージ","category":"pornographic","level":"high","review_note":"Adult-video title with fetish/bondage wording; pornographic is clearer than other/low."}
+{"text":"pcp专卖","category":"illegal","level":"high","review_note":"PCP airgun sale phrase in this weapons cluster; illegal/high is clearer than other/low."}
+{"text":"pcp出售","category":"illegal","level":"high","review_note":"PCP airgun sale phrase in this weapons cluster; illegal/high is clearer than ad/low."}
+{"text":"pcp新贵专卖","category":"illegal","level":"high","review_note":"PCP airgun model sale phrase; illegal/high is clearer than other/low."}
+{"text":"pcp新贵出售","category":"illegal","level":"high","review_note":"PCP airgun model sale phrase; illegal/high is clearer than ad/low."}
+{"text":"pcp新贵配件出售","category":"illegal","level":"high","review_note":"PCP airgun parts sale phrase; illegal/high is clearer than ad/low."}
+{"text":"pcp新贵配件直销","category":"illegal","level":"high","review_note":"PCP airgun parts direct-sale phrase; illegal/high is clearer than other/low."}
+{"text":"pcp新贵配件直销qq","category":"illegal","level":"high","review_note":"QQ direct-sale phrase for PCP airgun parts; illegal/high is clearer than ad/low."}
+{"text":"pcp新贵配件销售","category":"illegal","level":"high","review_note":"PCP airgun parts sales phrase; illegal/high is clearer than other/low."}
+{"text":"pcp新贵配件预定","category":"illegal","level":"high","review_note":"PCP airgun parts reservation phrase; illegal/high is clearer than other/low."}
+{"text":"pcp新贵配件预定qq","category":"illegal","level":"high","review_note":"QQ reservation phrase for PCP airgun parts; illegal/high is clearer than ad/low."}
+{"text":"pcp气狗出售qq","category":"illegal","level":"high","review_note":"气狗 is airgun slang; QQ sale phrase should be illegal/high rather than ad/low."}
+{"text":"pcp消声器qq","category":"illegal","level":"high","review_note":"QQ contact phrase for weapon suppressor; illegal/high is clearer than ad/low."}
+{"text":"pcp消声器专卖","category":"illegal","level":"high","review_note":"Weapon suppressor sale phrase; illegal/high is clearer than other/low."}
+{"text":"pcp秃鹰出售","category":"illegal","level":"high","review_note":"PCP airgun model sale phrase; illegal/high is clearer than ad/low."}
+{"text":"pcp秃鹰套件专卖","category":"illegal","level":"high","review_note":"PCP airgun kit sale phrase; illegal/high is clearer than other/low."}
+{"text":"pcp秃鹰套件出售","category":"illegal","level":"high","review_note":"PCP airgun kit sale phrase; illegal/high is clearer than ad/low."}
+{"text":"pcp配件买卖","category":"illegal","level":"high","review_note":"PCP airgun parts trading phrase; illegal/high is clearer than other/low."}
+{"text":"pcp配件买卖qq","category":"illegal","level":"high","review_note":"QQ trading phrase for PCP airgun parts; illegal/high is clearer than ad/low."}
+{"text":"pcp配件供应","category":"illegal","level":"high","review_note":"PCP airgun parts supply phrase; illegal/high is clearer than other/low."}
+{"text":"pcp配件供应qq","category":"illegal","level":"high","review_note":"QQ supply phrase for PCP airgun parts; illegal/high is clearer than ad/low."}
+{"text":"pcp配件出售","category":"illegal","level":"high","review_note":"PCP airgun parts sale phrase; illegal/high is clearer than ad/low."}
+{"text":"pcp配件出售qq","category":"illegal","level":"high","review_note":"QQ sale phrase for PCP airgun parts; illegal/high is clearer than ad/low."}
+{"text":"pcp配件批发","category":"illegal","level":"high","review_note":"PCP airgun parts wholesale phrase; illegal/high is clearer than other/low."}
+{"text":"pcp配件批发qq","category":"illegal","level":"high","review_note":"QQ wholesale phrase for PCP airgun parts; illegal/high is clearer than ad/low."}
+{"text":"pcp配件提供","category":"illegal","level":"high","review_note":"PCP airgun parts offering phrase; illegal/high is clearer than other/low."}
+{"text":"pcp配件提供qq","category":"illegal","level":"high","review_note":"QQ offering phrase for PCP airgun parts; illegal/high is clearer than ad/low."}
+{"text":"pcp配件直销","category":"illegal","level":"high","review_note":"PCP airgun parts direct-sale phrase; illegal/high is clearer than other/low."}
+{"text":"pcp配件直销qq","category":"illegal","level":"high","review_note":"QQ direct-sale phrase for PCP airgun parts; illegal/high is clearer than ad/low."}
+{"text":"pcp配件订购","category":"illegal","level":"high","review_note":"PCP airgun parts ordering phrase; illegal/high is clearer than other/low."}
+{"text":"pcp配件订购qq","category":"illegal","level":"high","review_note":"QQ ordering phrase for PCP airgun parts; illegal/high is clearer than ad/low."}
+{"text":"pcp配件转让","category":"illegal","level":"high","review_note":"PCP airgun parts transfer phrase; illegal/high is clearer than other/low."}
+{"text":"pcp配件销售","category":"illegal","level":"high","review_note":"PCP airgun parts sales phrase; illegal/high is clearer than other/low."}
+{"text":"pcp配件销售qq","category":"illegal","level":"high","review_note":"QQ sales phrase for PCP airgun parts; illegal/high is clearer than ad/low."}
+{"text":"pent制作过程","category":"illegal","level":"critical","review_note":"Likely PETN explosive-making process phrase; illegal/critical is clearer than other/low."}
+{"text":"petn制作","category":"illegal","level":"critical","review_note":"PETN explosive-making phrase; illegal/critical is clearer than other/low."}
+{"text":"petn制作方法","category":"illegal","level":"critical","review_note":"PETN explosive-making method phrase; illegal/critical is clearer than other/low."}
+{"text":"petn制作过程","category":"illegal","level":"critical","review_note":"PETN explosive-making process phrase; illegal/critical is clearer than other/low."}
+{"text":"petn制取","category":"illegal","level":"critical","review_note":"PETN explosive preparation phrase; illegal/critical is clearer than other/low."}
+{"text":"petn合成","category":"illegal","level":"critical","review_note":"PETN explosive synthesis phrase; illegal/critical is clearer than other/low."}
+{"text":"petn爆炸演示","category":"violence","level":"high","review_note":"Explosive detonation demonstration phrase; violence/high is clearer than other/low."}
+{"text":"petn爆炸视频","category":"violence","level":"high","review_note":"Explosive detonation video phrase; violence/high is clearer than other/low."}
+{"text":"petn的制作过程","category":"illegal","level":"critical","review_note":"PETN explosive-making process phrase; illegal/critical is clearer than other/low."}
+{"text":"petn的合成","category":"illegal","level":"critical","review_note":"PETN explosive synthesis phrase; illegal/critical is clearer than other/low."}
+{"text":"petn的配方","category":"illegal","level":"critical","review_note":"PETN explosive formula phrase; illegal/critical is clearer than other/low."}
+{"text":"pj国际娱乐","category":"illegal","level":"high","review_note":"Online gambling/casino phrase; illegal/high is clearer than other/low."}
+{"text":"ppk出售","category":"illegal","level":"high","review_note":"PPK firearm sale phrase; illegal/high is clearer than ad/low."}
+{"text":"ppk转让","category":"illegal","level":"high","review_note":"PPK firearm transfer phrase; illegal/high is clearer than other/low."}
+{"text":"ppk销售","category":"illegal","level":"high","review_note":"PPK firearm sales phrase; illegal/high is clearer than other/low."}
+{"text":"pp点点激情","category":"pornographic","level":"medium","review_note":"Erotic adult-content phrase; pornographic fits better than other/low."}
+{"text":"pp点点激情播放","category":"pornographic","level":"medium","review_note":"Erotic adult-video playback phrase; pornographic fits better than other/low."}
+{"text":"pp点点激情片播放","category":"pornographic","level":"high","review_note":"Erotic adult-video playback phrase; pornographic/high is clearer than other/low."}
+{"text":"pp点点通色穴激情片","category":"pornographic","level":"high","review_note":"Explicit adult-video phrase; pornographic/high is clearer than other/low."}
+{"text":"premiumオトナの変态稚园神谷姫","category":"pornographic","level":"high","review_note":"Adult-video title with sexual/fetish wording; pornographic is clearer than other/low."}
+{"text":"px事件","category":"political","level":"medium","review_note":"PX incident/protest phrase; political fits better than other/low."}
+{"text":"px项目","category":"political","level":"medium","review_note":"PX project public-protest phrase; political fits better than other/low."}
+{"text":"qiang支出售","category":"illegal","level":"high","review_note":"Obfuscated gun sale phrase; illegal/high is clearer than ad/low."}
+{"text":"qiang支弹药购买","category":"illegal","level":"high","review_note":"Obfuscated firearm/ammunition purchase phrase; illegal/high is clearer than other/low."}
+{"text":"qi狗","category":"illegal","level":"high","review_note":"Obfuscated airgun/firearm slang; illegal category fits better than other/low."}
+{"text":"qi狗专卖","category":"illegal","level":"high","review_note":"Obfuscated airgun/firearm sale phrase; illegal/high is clearer than other/low."}
+{"text":"qi狗出售","category":"illegal","level":"high","review_note":"Obfuscated airgun/firearm sale phrase; illegal/high is clearer than ad/low."}
+{"text":"qq1夜情交友","category":"pornographic","level":"medium","review_note":"One-night-stand dating contact phrase; pornographic fits better than ad/low."}
+{"text":"qq2手弩转让","category":"illegal","level":"high","review_note":"Crossbow transfer phrase; illegal/high is clearer than ad/low."}
+{"text":"qq3唑仑","category":"illegal","level":"high","review_note":"Triazolam controlled-drug phrase; illegal/high is clearer than ad/low."}
+{"text":"qq3唑仑买卖","category":"illegal","level":"high","review_note":"Triazolam trading phrase; illegal/high is clearer than ad/low."}
+{"text":"qq3唑仑供应","category":"illegal","level":"high","review_note":"Triazolam supply phrase; illegal/high is clearer than ad/low."}
+{"text":"qq3唑仑出售","category":"illegal","level":"high","review_note":"Triazolam sale phrase; illegal/high is clearer than ad/low."}
+{"text":"qq3唑仑批发","category":"illegal","level":"high","review_note":"Triazolam wholesale phrase; illegal/high is clearer than ad/low."}
+{"text":"qq3唑仑直销","category":"illegal","level":"high","review_note":"Triazolam direct-sale phrase; illegal/high is clearer than ad/low."}
+{"text":"qq3唑仑订购","category":"illegal","level":"high","review_note":"Triazolam ordering phrase; illegal/high is clearer than ad/low."}
+{"text":"qq3唑仑销售","category":"illegal","level":"high","review_note":"Triazolam sales phrase; illegal/high is clearer than ad/low."}
+{"text":"qq3棱军刀直销","category":"violence","level":"medium","review_note":"Military knife sale phrase; violence/medium is clearer than ad/low."}
+{"text":"qq3棱军刺专卖","category":"violence","level":"medium","review_note":"Military spike/bayonet sale phrase; violence/medium is clearer than ad/low."}
+{"text":"qq3棱军刺批发","category":"violence","level":"medium","review_note":"Military spike/bayonet wholesale phrase; violence/medium is clearer than ad/low."}
+{"text":"qq3棱军刺销售","category":"violence","level":"medium","review_note":"Military spike/bayonet sales phrase; violence/medium is clearer than ad/low."}
+{"text":"qq3棱刮刀供应","category":"violence","level":"medium","review_note":"Bladed weapon supply phrase; violence/medium is clearer than ad/low."}
+{"text":"qq3棱刺刀专卖","category":"violence","level":"medium","review_note":"Bayonet sale phrase; violence/medium is clearer than ad/low."}
+{"text":"qq3棱尖刀批发","category":"violence","level":"medium","review_note":"Stabbing knife wholesale phrase; violence/medium is clearer than ad/low."}
+{"text":"qq3陪女上门服务","category":"pornographic","level":"high","review_note":"Commercial sexual-service phrase; pornographic is clearer than ad/low."}
+{"text":"qq3陪女出台服务","category":"pornographic","level":"high","review_note":"Commercial escort/sexual-service phrase; pornographic is clearer than ad/low."}
+{"text":"qq54式64式出售","category":"illegal","level":"high","review_note":"Firearm model sale phrase; illegal/high is clearer than ad/low."}
+{"text":"qq54式手狗出售","category":"illegal","level":"high","review_note":"Firearm slang sale phrase; illegal/high is clearer than ad/low."}
+{"text":"qq54手qiang出售","category":"illegal","level":"high","review_note":"Obfuscated handgun sale phrase; illegal/high is clearer than ad/low."}
+{"text":"qq54手狗出售","category":"illegal","level":"high","review_note":"Firearm slang sale phrase; illegal/high is clearer than ad/low."}
+{"text":"qq54手狗提供","category":"illegal","level":"high","review_note":"Firearm slang offering phrase; illegal/high is clearer than ad/low."}
+{"text":"qq54汽狗","category":"illegal","level":"high","review_note":"Airgun/firearm slang phrase; illegal/high is clearer than ad/low."}
+{"text":"qq54狗","category":"illegal","level":"high","review_note":"Firearm slang phrase; illegal/high is clearer than ad/low."}
+{"text":"qq64式专卖","category":"illegal","level":"high","review_note":"64式 firearm sale phrase; illegal/high is clearer than ad/low."}
+{"text":"qq64式买卖","category":"illegal","level":"high","review_note":"64式 firearm trading phrase; illegal/high is clearer than ad/low."}
+{"text":"qq64式出售","category":"illegal","level":"high","review_note":"64式 firearm sale phrase; illegal/high is clearer than ad/low."}
+{"text":"qq64式手狗出售","category":"illegal","level":"high","review_note":"64式 firearm slang sale phrase; illegal/high is clearer than ad/low."}
+{"text":"qq7连发猎狗","category":"illegal","level":"high","review_note":"Firearm slang phrase; illegal/high is clearer than ad/low."}
+{"text":"qq92式手狗出售","category":"illegal","level":"high","review_note":"92式 firearm slang sale phrase; illegal/high is clearer than ad/low."}
+{"text":"qqghb催情水订购","category":"illegal","level":"critical","review_note":"GHB aphrodisiac/date-rape drug ordering phrase; illegal/critical is clearer than ad/low."}
+{"text":"qqpcp配件供应","category":"illegal","level":"high","review_note":"PCP airgun parts supply phrase; illegal/high is clearer than ad/low."}
+{"text":"qqpcp配件直销","category":"illegal","level":"high","review_note":"PCP airgun parts direct-sale phrase; illegal/high is clearer than ad/low."}
+{"text":"qqpcp配件订购","category":"illegal","level":"high","review_note":"PCP airgun parts ordering phrase; illegal/high is clearer than ad/low."}
+{"text":"qqpcp配件销售","category":"illegal","level":"high","review_note":"PCP airgun parts sales phrase; illegal/high is clearer than ad/low."}
+{"text":"qq上门援交服务","category":"pornographic","level":"high","review_note":"Commercial sexual-service phrase; pornographic/high is clearer than ad/low."}
+{"text":"qq上门服务性息","category":"pornographic","level":"high","review_note":"Sexual-service information phrase; pornographic/high is clearer than ad/low."}
+{"text":"qq上门服务找美女","category":"pornographic","level":"high","review_note":"Sexual-service solicitation phrase; pornographic/high is clearer than ad/low."}
+{"text":"qq上门服务美女","category":"pornographic","level":"high","review_note":"Sexual-service solicitation phrase; pornographic/high is clearer than ad/low."}
+{"text":"qq专业制作假证","category":"illegal","level":"high","review_note":"Fake-document production phrase; illegal/high is clearer than ad/low."}
+{"text":"qq专业办假证","category":"illegal","level":"high","review_note":"Fake-document service phrase; illegal/high is clearer than ad/low."}
+{"text":"qq专业办假证公司","category":"illegal","level":"high","review_note":"Fake-document company/service phrase; illegal/high is clearer than ad/low."}
+{"text":"qq专业税票代开","category":"illegal","level":"high","review_note":"Illegal tax-invoice issuance phrase; illegal/high is clearer than ad/low."}
+{"text":"qq专业打手公司","category":"violence","level":"high","review_note":"Hired thug company phrase; violence/high is clearer than ad/low."}
+{"text":"qq专业提供打手","category":"violence","level":"high","review_note":"Offering hired attackers phrase; violence/high is clearer than ad/low."}
+{"text":"qq专办假证书","category":"illegal","level":"high","review_note":"Fake-certificate service phrase; illegal/high is clearer than ad/low."}
+{"text":"qq专卖3棱军刺","category":"violence","level":"medium","review_note":"Military spike/bayonet sale phrase; violence/medium is clearer than ad/low."}
+{"text":"qq专卖3棱刺刀","category":"violence","level":"medium","review_note":"Bayonet sale phrase; violence/medium is clearer than ad/low."}
+{"text":"qq专卖54手qiang","category":"illegal","level":"high","review_note":"Obfuscated handgun sale phrase; illegal/high is clearer than ad/low."}
+{"text":"qq专卖64式手狗","category":"illegal","level":"high","review_note":"64式 firearm slang sale phrase; illegal/high is clearer than ad/low."}
+{"text":"qq专卖64手qiang","category":"illegal","level":"high","review_note":"Obfuscated 64 handgun sale phrase; illegal/high is clearer than ad/low."}
+{"text":"qq专卖77手qiang","category":"illegal","level":"high","review_note":"Obfuscated 77 handgun sale phrase; illegal/high is clearer than ad/low."}
+{"text":"qq专卖92手qiang","category":"illegal","level":"high","review_note":"Obfuscated 92 handgun sale phrase; illegal/high is clearer than ad/low."}
+{"text":"qq专卖fox格斗砍刀","category":"violence","level":"medium","review_note":"Combat machete sale phrase; violence/medium is clearer than ad/low."}
+{"text":"qq专卖lsd迷幻药","category":"illegal","level":"high","review_note":"LSD hallucinogen sale phrase; illegal/high is clearer than ad/low."}
+{"text":"qq专卖mp654k配件","category":"illegal","level":"high","review_note":"MP-654K weapon-parts sale phrase; illegal/high is clearer than ad/low."}
+{"text":"qq专卖万能开锁器","category":"illegal","level":"high","review_note":"Lock-picking tool sale phrase; illegal/high is clearer than ad/low."}
+{"text":"qq专卖万能钥匙","category":"illegal","level":"high","review_note":"Lock-picking/skeleton-key sale phrase; illegal/high is clearer than ad/low."}
+{"text":"qq专卖乖乖药","category":"illegal","level":"critical","review_note":"Date-rape/drugging product sale phrase; illegal/critical is clearer than ad/low."}
+{"text":"qq专卖仿真汽狗","category":"illegal","level":"high","review_note":"Imitation airgun sale phrase using gun slang; illegal/high is clearer than ad/low."}
+{"text":"qq专卖假军官证","category":"illegal","level":"high","review_note":"Fake military ID sale phrase; illegal/high is clearer than ad/low."}
+{"text":"qq专卖假学位证","category":"illegal","level":"high","review_note":"Fake degree certificate sale phrase; illegal/high is clearer than ad/low."}
+{"text":"qq专卖假文凭","category":"illegal","level":"high","review_note":"Fake diploma sale phrase; illegal/high is clearer than ad/low."}
+{"text":"qq专卖假硬币","category":"illegal","level":"high","review_note":"Counterfeit coin sale phrase; illegal/high is clearer than ad/low."}
+{"text":"qq专卖假钞","category":"illegal","level":"high","review_note":"Counterfeit money sale phrase; illegal/high is clearer than ad/low."}
+{"text":"qq专卖催眠喷雾剂","category":"illegal","level":"critical","review_note":"Drugging/hypnosis spray sale phrase; illegal/critical is clearer than ad/low."}
+{"text":"qq专卖兰博刀","category":"violence","level":"medium","review_note":"Combat knife sale phrase; violence/medium is clearer than ad/low."}
+{"text":"qq专卖军用54式","category":"illegal","level":"high","review_note":"Military 54式 firearm sale phrase; illegal/high is clearer than ad/low."}
+{"text":"qq专卖军用匕首","category":"violence","level":"medium","review_note":"Military dagger sale phrase; violence/medium is clearer than ad/low."}
+{"text":"qq专卖军用弩","category":"illegal","level":"high","review_note":"Military crossbow sale phrase; illegal/high is clearer than ad/low."}
+{"text":"qq专卖军警用品","category":"violence","level":"medium","review_note":"Military/police equipment sale phrase; violence category is clearer than ad/low."}
+{"text":"qq专卖吗啡","category":"illegal","level":"high","review_note":"Morphine sale phrase; illegal/high is clearer than ad/low."}
+{"text":"qq专卖喷雾蒙汗药","category":"illegal","level":"critical","review_note":"Knockout/date-rape spray sale phrase; illegal/critical is clearer than ad/low."}
+{"text":"qq专卖地西泮","category":"illegal","level":"high","review_note":"Diazepam controlled-drug sale phrase; illegal/high is clearer than ad/low."}
+{"text":"qq专卖大黑鹰弓弩","category":"illegal","level":"high","review_note":"Crossbow sale phrase; illegal/high is clearer than ad/low."}
+{"text":"qq专卖安乐死药物","category":"illegal","level":"high","review_note":"Euthanasia drug sale phrase; illegal/high is clearer than ad/low."}
+{"text":"qq专卖安纳咖","category":"illegal","level":"high","review_note":"Controlled stimulant sale phrase; illegal/high is clearer than ad/low."}
+{"text":"qq专卖小口径手qiang","category":"illegal","level":"high","review_note":"Obfuscated small-caliber handgun sale phrase; illegal/high is clearer than ad/low."}
+{"text":"qq专卖小口径步qiang","category":"illegal","level":"high","review_note":"Obfuscated small-caliber rifle sale phrase; illegal/high is clearer than ad/low."}
+{"text":"qq专卖尼泊尔军刀","category":"violence","level":"medium","review_note":"Military knife sale phrase; violence/medium is clearer than ad/low."}
+{"text":"qq专卖尼美西泮","category":"illegal","level":"high","review_note":"Nimetazepam controlled-drug sale phrase; illegal/high is clearer than ad/low."}
+{"text":"qq专卖工字牌钢珠狗","category":"illegal","level":"high","review_note":"Steel-ball airgun sale phrase; illegal/high is clearer than ad/low."}
+{"text":"qq专卖开锁器","category":"illegal","level":"high","review_note":"Lock-picking tool sale phrase; illegal/high is clearer than ad/low."}
+{"text":"qq专卖开锁器材","category":"illegal","level":"high","review_note":"Lock-picking equipment sale phrase; illegal/high is clearer than ad/low."}
+{"text":"qq专卖开锁工具","category":"illegal","level":"high","review_note":"Lock-picking tool sale phrase; illegal/high is clearer than ad/low."}
+{"text":"qq专卖弹簧刀","category":"violence","level":"medium","review_note":"Switchblade sale phrase; violence/medium is clearer than ad/low."}
+{"text":"qq专卖弹簧刀具","category":"violence","level":"medium","review_note":"Switchblade weapon sale phrase; violence/medium is clearer than ad/low."}
+{"text":"qq专卖战术直刀","category":"violence","level":"medium","review_note":"Tactical fixed-blade knife sale phrase; violence/medium is clearer than ad/low."}

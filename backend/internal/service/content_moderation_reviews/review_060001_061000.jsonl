@@ -1,0 +1,604 @@
+{"text":"铅弹销售","category":"illegal","level":"high","review_note":"铅弹销售指向枪弹耗材交易，低风险标注过低。"}
+{"text":"铊出售qq","category":"illegal","level":"high","review_note":"铊为高毒物质，出售导流语义明确，低风险标注过低。"}
+{"text":"铊批发","category":"illegal","level":"high","review_note":"铊为高毒物质，批发交易语义明确，低风险标注过低。"}
+{"text":"铊盐","category":"illegal","level":"high","review_note":"铊盐为高毒物质，原 other/low 过低。"}
+{"text":"铊盐供应","category":"illegal","level":"high","review_note":"铊盐供应指向高毒物质交易，低风险标注过低。"}
+{"text":"铊盐供应qq","category":"illegal","level":"high","review_note":"铊盐供应并含 QQ 导流，低风险标注过低。"}
+{"text":"铊盐出售","category":"illegal","level":"high","review_note":"铊盐出售指向高毒物质交易，低风险标注过低。"}
+{"text":"铊盐出售qq","category":"illegal","level":"high","review_note":"铊盐出售并含 QQ 导流，低风险标注过低。"}
+{"text":"铊盐批发","category":"illegal","level":"high","review_note":"铊盐批发指向高毒物质交易，低风险标注过低。"}
+{"text":"铊盐批发qq","category":"illegal","level":"high","review_note":"铊盐批发并含 QQ 导流，低风险标注过低。"}
+{"text":"铊盐提供","category":"illegal","level":"high","review_note":"铊盐提供指向高毒物质交易，低风险标注过低。"}
+{"text":"铊盐销售qq","category":"illegal","level":"high","review_note":"铊盐销售并含 QQ 导流，低风险标注过低。"}
+{"text":"铊粉供应","category":"illegal","level":"high","review_note":"铊粉供应指向高毒物质交易，低风险标注过低。"}
+{"text":"铊粉提供","category":"illegal","level":"high","review_note":"铊粉提供指向高毒物质交易，低风险标注过低。"}
+{"text":"铊粉订购","category":"illegal","level":"high","review_note":"铊粉订购指向高毒物质交易，低风险标注过低。"}
+{"text":"铝热剂燃烧弹","category":"illegal","level":"high","review_note":"燃烧弹制作/武器语义明确，原 other/low 过低。"}
+{"text":"银氰化钾","category":"illegal","level":"high","review_note":"银氰化钾为氰化物类高毒化学品，原 other/low 过低。"}
+{"text":"银氰化钾供应","category":"illegal","level":"high","review_note":"银氰化钾供应指向高毒化学品交易，低风险标注过低。"}
+{"text":"银氰化钾供应qq","category":"illegal","level":"high","review_note":"银氰化钾供应并含 QQ 导流，低风险标注过低。"}
+{"text":"银氰化钾批发","category":"illegal","level":"high","review_note":"银氰化钾批发指向高毒化学品交易，低风险标注过低。"}
+{"text":"银氰化钾批发qq","category":"illegal","level":"high","review_note":"银氰化钾批发并含 QQ 导流，低风险标注过低。"}
+{"text":"银氰化钾直销qq","category":"illegal","level":"high","review_note":"银氰化钾直销并含 QQ 导流，低风险标注过低。"}
+{"text":"银氰化钾订购","category":"illegal","level":"high","review_note":"银氰化钾订购指向高毒化学品交易，低风险标注过低。"}
+{"text":"银氰化钾订购qq","category":"illegal","level":"high","review_note":"银氰化钾订购并含 QQ 导流，低风险标注过低。"}
+{"text":"银氰化钾销售","category":"illegal","level":"high","review_note":"银氰化钾销售指向高毒化学品交易，低风险标注过低。"}
+{"text":"银氰化钾销售qq","category":"illegal","level":"high","review_note":"银氰化钾销售并含 QQ 导流，低风险标注过低。"}
+{"text":"银联卡出售","category":"illegal","level":"high","review_note":"银联卡出售涉及银行卡黑产交易，原 ad/low 过低。"}
+{"text":"银联卡出售qq","category":"illegal","level":"high","review_note":"银联卡出售并含 QQ 导流，涉及银行卡黑产交易，原 ad/low 过低。"}
+{"text":"银行代开流水帐单","category":"illegal","level":"high","review_note":"代开银行流水账单属于伪造金融材料服务，原 other/low 过低。"}
+{"text":"银行储户信息","category":"illegal","level":"high","review_note":"银行储户信息涉及个人金融数据泄露，原 other/low 过低。"}
+{"text":"银行卡专卖","category":"illegal","level":"high","review_note":"银行卡专卖涉及非法买卖银行卡，原 other/low 过低。"}
+{"text":"银行卡专卖qq","category":"illegal","level":"high","review_note":"银行卡专卖并含 QQ 导流，原 ad/low 过低。"}
+{"text":"银行卡买卖","category":"illegal","level":"high","review_note":"银行卡买卖属于银行卡黑产交易，原 other/low 过低。"}
+{"text":"银行卡买卖qq","category":"illegal","level":"high","review_note":"银行卡买卖并含 QQ 导流，原 ad/low 过低。"}
+{"text":"银行卡买卖电话","category":"illegal","level":"high","review_note":"银行卡买卖并含电话导流，原 ad/low 过低。"}
+{"text":"银行卡代办服务","category":"illegal","level":"high","review_note":"银行卡代办服务存在非法开卡交易风险，原 ad/low 过低。"}
+{"text":"银行卡代售","category":"illegal","level":"high","review_note":"银行卡代售属于银行卡黑产交易，原 other/low 过低。"}
+{"text":"银行卡供应","category":"illegal","level":"high","review_note":"银行卡供应属于银行卡黑产交易，原 other/low 过低。"}
+{"text":"银行卡供应qq","category":"illegal","level":"high","review_note":"银行卡供应并含 QQ 导流，原 ad/low 过低。"}
+{"text":"银行卡出售qq","category":"illegal","level":"high","review_note":"银行卡出售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"银行卡出售买卖qq","category":"illegal","level":"high","review_note":"银行卡出售买卖并含 QQ 导流，原 ad/low 过低。"}
+{"text":"银行卡出售电话","category":"illegal","level":"high","review_note":"银行卡出售并含电话导流，原 ad/low 过低。"}
+{"text":"银行卡号信息出售","category":"illegal","level":"high","review_note":"银行卡号信息出售涉及个人金融信息交易，原 ad/low 过低。"}
+{"text":"银行卡复制","category":"illegal","level":"high","review_note":"银行卡复制属于克隆银行卡黑产语义，原 other/low 过低。"}
+{"text":"银行卡复制器","category":"illegal","level":"high","review_note":"银行卡复制器属于金融黑产工具，原 other/low 过低。"}
+{"text":"银行卡复制器专售","category":"illegal","level":"high","review_note":"银行卡复制器专售属于金融黑产工具交易，原 other/low 过低。"}
+{"text":"银行卡复制器出售","category":"illegal","level":"high","review_note":"银行卡复制器出售属于金融黑产工具交易，原 ad/low 过低。"}
+{"text":"银行卡复制器转让qq","category":"illegal","level":"high","review_note":"银行卡复制器转让并含 QQ 导流，原 ad/low 过低。"}
+{"text":"银行卡复制设备","category":"illegal","level":"high","review_note":"银行卡复制设备属于金融黑产工具，原 other/low 过低。"}
+{"text":"银行卡批发出售","category":"illegal","level":"high","review_note":"银行卡批发出售属于银行卡黑产交易，原 ad/low 过低。"}
+{"text":"银行卡磁条复制器出售","category":"illegal","level":"high","review_note":"银行卡磁条复制器出售属于金融黑产工具交易，原 ad/low 过低。"}
+{"text":"银行卡解码器供应","category":"illegal","level":"high","review_note":"银行卡解码器供应属于金融黑产工具交易，原 other/low 过低。"}
+{"text":"银行卡解码器供应qq","category":"illegal","level":"high","review_note":"银行卡解码器供应并含 QQ 导流，原 ad/low 过低。"}
+{"text":"银行卡读卡器批发","category":"illegal","level":"high","review_note":"银行卡读卡器批发在该语境中指向金融黑产设备交易，原 other/low 过低。"}
+{"text":"银行卡读卡器软件","category":"illegal","level":"high","review_note":"银行卡读卡器软件在该语境中指向金融黑产工具，原 other/low 过低。"}
+{"text":"银行客户数据","category":"illegal","level":"high","review_note":"银行客户数据交易涉及个人金融信息泄露，原 other/low 过低。"}
+{"text":"银行客户数据提供","category":"illegal","level":"high","review_note":"银行客户数据提供涉及个人金融信息黑产，原 other/low 过低。"}
+{"text":"银行客户资料qq","category":"illegal","level":"high","review_note":"银行客户资料导流交易涉及个人金融信息泄露，原 ad/low 过低。"}
+{"text":"银行透支卡出售","category":"illegal","level":"high","review_note":"银行透支卡出售涉及非法金融卡交易，原 ad/low 过低。"}
+{"text":"销售132氯丙酮","category":"illegal","level":"high","review_note":"受管制/高危化学品销售语义，原 other/low 过低。"}
+{"text":"销售1体直刀","category":"illegal","level":"high","review_note":"一体直刀销售属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"销售1元假硬币","category":"illegal","level":"high","review_note":"销售假硬币属于假币交易，原 other/low 过低。"}
+{"text":"销售1元假硬币qq","category":"illegal","level":"high","review_note":"销售假硬币并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售1字强开工具","category":"illegal","level":"high","review_note":"强开工具销售属于开锁黑产工具交易，原 other/low 过低。"}
+{"text":"销售1字强开工具qq","category":"illegal","level":"high","review_note":"强开工具销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售2已基色胺","category":"illegal","level":"high","review_note":"疑似色胺类致幻物质销售，原 other/low 过低。"}
+{"text":"销售2氢埃托啡","category":"illegal","level":"high","review_note":"二氢埃托啡为受管制阿片类药物，销售语义应高风险。"}
+{"text":"销售3利达弓弩","category":"illegal","level":"high","review_note":"弓弩销售属于武器交易语义，原 other/low 过低。"}
+{"text":"销售3利达弓弩qq","category":"illegal","level":"high","review_note":"弓弩销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售3利达弩qq","category":"illegal","level":"high","review_note":"弩类销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售3利达手弓弩","category":"illegal","level":"high","review_note":"手弓弩销售属于武器交易语义，原 other/low 过低。"}
+{"text":"销售3唑仑","category":"illegal","level":"high","review_note":"三唑仑为受管制精神药物，销售语义应高风险。"}
+{"text":"销售3唑仑qq","category":"illegal","level":"high","review_note":"三唑仑销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售3唑仑片qq","category":"illegal","level":"high","review_note":"三唑仑片销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售3棱军刀","category":"illegal","level":"high","review_note":"三棱军刀销售属于管制刀具交易，原 other/low 过低。"}
+{"text":"销售3棱军刀qq","category":"illegal","level":"high","review_note":"三棱军刀销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售3棱军刺","category":"illegal","level":"high","review_note":"三棱军刺销售属于管制刀具交易，原 other/low 过低。"}
+{"text":"销售3棱军刺qq","category":"illegal","level":"high","review_note":"三棱军刺销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售3棱刀","category":"illegal","level":"high","review_note":"三棱刀销售属于管制刀具交易，原 other/low 过低。"}
+{"text":"销售3棱刀qq","category":"illegal","level":"high","review_note":"三棱刀销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售3棱刀具","category":"illegal","level":"high","review_note":"三棱刀具销售属于管制刀具交易，原 other/low 过低。"}
+{"text":"销售3棱刀具qq","category":"illegal","level":"high","review_note":"三棱刀具销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售3棱刮刀","category":"illegal","level":"high","review_note":"三棱刮刀销售属于管制刀具交易，原 other/low 过低。"}
+{"text":"销售3棱刮刀qq","category":"illegal","level":"high","review_note":"三棱刮刀销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售3棱刺刀","category":"illegal","level":"high","review_note":"三棱刺刀销售属于管制刀具交易，原 other/low 过低。"}
+{"text":"销售3棱尖刀","category":"illegal","level":"high","review_note":"三棱尖刀销售属于管制刀具交易，原 other/low 过低。"}
+{"text":"销售3棱尖刀qq","category":"illegal","level":"high","review_note":"三棱尖刀销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售3棱尖刺","category":"illegal","level":"high","review_note":"三棱尖刺销售属于管制刀具交易，原 other/low 过低。"}
+{"text":"销售3棱尖刺qq","category":"illegal","level":"high","review_note":"三棱尖刺销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售3棱毒刺","category":"illegal","level":"high","review_note":"三棱毒刺销售属于管制刀具交易，原 other/low 过低。"}
+{"text":"销售3步倒弩箭","category":"illegal","level":"high","review_note":"弩箭销售属于武器交易语义，原 other/low 过低。"}
+{"text":"销售3氧化2砷","category":"illegal","level":"high","review_note":"三氧化二砷为高毒物质，销售语义应高风险。"}
+{"text":"销售3箭气狗","category":"illegal","level":"high","review_note":"气狗为气枪隐语，销售语义明确，原 other/low 过低。"}
+{"text":"销售3箭气狗qq","category":"illegal","level":"high","review_note":"气狗为气枪隐语，销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售45mm狗粮","category":"illegal","level":"high","review_note":"狗粮在该语境中为枪弹隐语，销售语义明确，原 other/low 过低。"}
+{"text":"销售46级答案","category":"illegal","level":"high","review_note":"销售四六级答案属于考试作弊黑产，原 other/low 过低。"}
+{"text":"销售46级证书","category":"illegal","level":"high","review_note":"销售四六级证书属于假证交易语义，原 other/low 过低。"}
+{"text":"销售46级证书qq","category":"illegal","level":"high","review_note":"销售四六级证书并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售54军用手狗","category":"illegal","level":"high","review_note":"手狗为手枪隐语，销售语义明确，原 other/low 过低。"}
+{"text":"销售54式图纸","category":"illegal","level":"high","review_note":"54 式枪械图纸销售指向枪支制作资料交易，原 other/low 过低。"}
+{"text":"销售54式手木仓","category":"illegal","level":"high","review_note":"手木仓为手枪拆字规避，销售语义明确，原 other/low 过低。"}
+{"text":"销售54式气木仓","category":"illegal","level":"high","review_note":"气木仓为气枪拆字规避，销售语义明确，原 other/low 过低。"}
+{"text":"销售54式汽狗","category":"illegal","level":"high","review_note":"汽狗为气枪隐语，销售语义明确，原 other/low 过低。"}
+{"text":"销售54手qiang","category":"illegal","level":"high","review_note":"手qiang为手枪规避写法，销售语义明确，原 other/low 过低。"}
+{"text":"销售54狗","category":"illegal","level":"high","review_note":"54 狗在该语境中指向枪支黑话，销售语义明确，原 other/low 过低。"}
+{"text":"销售54短狗","category":"illegal","level":"high","review_note":"短狗为枪支隐语，销售语义明确，原 other/low 过低。"}
+{"text":"销售56式军刺","category":"illegal","level":"high","review_note":"56 式军刺销售属于管制刀具交易，原 other/low 过低。"}
+{"text":"销售56式军刺qq","category":"illegal","level":"high","review_note":"56 式军刺销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售56式刺刀","category":"illegal","level":"high","review_note":"56 式刺刀销售属于管制刀具交易，原 other/low 过低。"}
+{"text":"销售64军用手狗","category":"illegal","level":"high","review_note":"手狗为手枪隐语，销售语义明确，原 other/low 过低。"}
+{"text":"销售64式图纸","category":"illegal","level":"high","review_note":"64 式枪械图纸销售指向枪支制作资料交易，原 other/low 过低。"}
+{"text":"销售64式手木仓","category":"illegal","level":"high","review_note":"手木仓为手枪拆字规避，销售语义明确，原 other/low 过低。"}
+{"text":"销售64式手狗","category":"illegal","level":"high","review_note":"手狗为手枪隐语，销售语义明确，原 other/low 过低。"}
+{"text":"销售64式手狗qq","category":"illegal","level":"high","review_note":"手狗为手枪隐语，销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售64式气木仓","category":"illegal","level":"high","review_note":"气木仓为气枪拆字规避，销售语义明确，原 other/low 过低。"}
+{"text":"销售64手qiang","category":"illegal","level":"high","review_note":"手qiang为手枪规避写法，销售语义明确，原 other/low 过低。"}
+{"text":"销售64狗","category":"illegal","level":"high","review_note":"64 狗在该语境中指向枪支黑话，销售语义明确，原 other/low 过低。"}
+{"text":"销售64狗qq","category":"illegal","level":"high","review_note":"64 狗销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售64短狗","category":"illegal","level":"high","review_note":"短狗为枪支隐语，销售语义明确，原 other/low 过低。"}
+{"text":"销售77式手木仓","category":"illegal","level":"high","review_note":"手木仓为手枪拆字规避，销售语义明确，原 other/low 过低。"}
+{"text":"销售77式气木仓","category":"illegal","level":"high","review_note":"气木仓为气枪拆字规避，销售语义明确，原 other/low 过低。"}
+{"text":"销售77手qiang","category":"illegal","level":"high","review_note":"手qiang为手枪规避写法，销售语义明确，原 other/low 过低。"}
+{"text":"销售77短狗","category":"illegal","level":"high","review_note":"短狗为枪支隐语，销售语义明确，原 other/low 过低。"}
+{"text":"销售92式手木仓","category":"illegal","level":"high","review_note":"手木仓为手枪拆字规避，销售语义明确，原 other/low 过低。"}
+{"text":"销售92式手狗","category":"illegal","level":"high","review_note":"手狗为手枪隐语，销售语义明确，原 other/low 过低。"}
+{"text":"销售92式手狗qq","category":"illegal","level":"high","review_note":"手狗为手枪隐语，销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售92式气木仓","category":"illegal","level":"high","review_note":"气木仓为气枪拆字规避，销售语义明确，原 other/low 过低。"}
+{"text":"销售92手qiang","category":"illegal","level":"high","review_note":"手qiang为手枪规避写法，销售语义明确，原 other/low 过低。"}
+{"text":"销售ak军刀","category":"illegal","level":"high","review_note":"AK 军刀销售属于管制刀具交易，原 other/low 过低。"}
+{"text":"销售awp配件","category":"illegal","level":"high","review_note":"AWP 配件在该上下文指向枪支配件交易，原 other/low 过低。"}
+{"text":"销售awp配件qq","category":"illegal","level":"high","review_note":"AWP 配件销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售b50气狗","category":"illegal","level":"high","review_note":"气狗为气枪隐语，销售语义明确，原 other/low 过低。"}
+{"text":"销售co2狗","category":"illegal","level":"high","review_note":"CO2 狗在该语境中指向气枪黑话，销售语义明确，原 other/low 过低。"}
+{"text":"销售cp99配件","category":"illegal","level":"high","review_note":"CP99 配件在该上下文指向气枪/仿真枪配件交易，原 other/low 过低。"}
+{"text":"销售cs狗","category":"illegal","level":"high","review_note":"狗在该枪械上下文中为枪支隐语，销售语义明确，原 other/low 过低。"}
+{"text":"销售d9军刺","category":"illegal","level":"high","review_note":"军刺销售属于管制刀具交易，原 other/low 过低。"}
+{"text":"销售ems客户数据","category":"illegal","level":"high","review_note":"EMS 客户数据销售属于个人信息黑产，原 other/low 过低。"}
+{"text":"销售ems客户数据qq","category":"illegal","level":"high","review_note":"EMS 客户数据销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售ems客户资料","category":"illegal","level":"high","review_note":"EMS 客户资料销售属于个人信息黑产，原 other/low 过低。"}
+{"text":"销售ems客户资料qq","category":"illegal","level":"high","review_note":"EMS 客户资料销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售fapiao","category":"illegal","level":"high","review_note":"销售 fapiao 指向非法票据交易，原 other/low 过低。"}
+{"text":"销售fa票","category":"illegal","level":"high","review_note":"销售 fa 票为发票规避写法，原 other/low 过低。"}
+{"text":"销售fm2粉","category":"illegal","level":"high","review_note":"FM2 粉在该语境中指向迷药/管制药物交易，原 other/low 过低。"}
+{"text":"销售fox格斗砍刀qq","category":"illegal","level":"high","review_note":"格斗砍刀销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售fx气皇","category":"illegal","level":"high","review_note":"气皇在该语境中指向气枪器具，销售语义明确，原 other/low 过低。"}
+{"text":"销售ghb催情水","category":"illegal","level":"high","review_note":"GHB 催情水为违禁迷奸药物语境，原 other/low 过低。"}
+{"text":"销售ghb原液","category":"illegal","level":"high","review_note":"GHB 原液销售属于违禁药物交易语义，原 other/low 过低。"}
+{"text":"销售ghb水","category":"illegal","level":"high","review_note":"GHB 水销售属于违禁药物交易语义，原 other/low 过低。"}
+{"text":"销售ghb水qq","category":"illegal","level":"high","review_note":"GHB 水销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售ghb迷情水","category":"illegal","level":"high","review_note":"GHB 迷情水为迷奸类违禁药物，原 other/low 过低。"}
+{"text":"销售gηb迷情水","category":"illegal","level":"high","review_note":"GHB 规避写法的迷情水销售，原 other/low 过低。"}
+{"text":"销售g水","category":"illegal","level":"high","review_note":"G 水常指 GHB 类违禁药物，销售语义应高风险。"}
+{"text":"销售happy水","category":"illegal","level":"high","review_note":"Happy 水在该语境中指向违禁迷幻/迷奸药物，原 other/low 过低。"}
+{"text":"销售jia币","category":"illegal","level":"high","review_note":"jia 币为假币规避写法，销售语义应高风险。"}
+{"text":"销售jia币qq","category":"illegal","level":"high","review_note":"jia 币销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售king粉","category":"illegal","level":"high","review_note":"King 粉在该语境中指向毒品交易，原 other/low 过低。"}
+{"text":"销售lsd迷幻药","category":"illegal","level":"high","review_note":"LSD 迷幻药销售属于违禁药物交易，原 other/low 过低。"}
+{"text":"销售lsd迷幻药qq","category":"illegal","level":"high","review_note":"LSD 迷幻药销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售mp654k配件","category":"illegal","level":"high","review_note":"MP654K 配件在该上下文指向气枪/仿真枪配件交易，原 other/low 过低。"}
+{"text":"销售mp654k配件qq","category":"illegal","level":"high","review_note":"MP654K 配件销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售pcp套件","category":"illegal","level":"high","review_note":"PCP 套件指向气枪套件交易，原 other/low 过低。"}
+{"text":"销售pcp套件qq","category":"illegal","level":"high","review_note":"PCP 套件销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售pcp新贵配件","category":"illegal","level":"high","review_note":"PCP 新贵配件指向气枪配件交易，原 other/low 过低。"}
+{"text":"销售pcp新贵配件qq","category":"illegal","level":"high","review_note":"PCP 新贵配件销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售pcp消声器","category":"illegal","level":"high","review_note":"PCP 消声器属于气枪配件交易语义，原 other/low 过低。"}
+{"text":"销售pcp秃鹰套件","category":"illegal","level":"high","review_note":"PCP 秃鹰套件指向气枪套件交易，原 other/low 过低。"}
+{"text":"销售pcp配件","category":"illegal","level":"high","review_note":"PCP 配件指向气枪配件交易，原 other/low 过低。"}
+{"text":"销售pcp配件qq","category":"illegal","level":"high","review_note":"PCP 配件销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售pcp骚本配件","category":"illegal","level":"high","review_note":"PCP 骚本配件指向气枪配件交易，原 other/low 过低。"}
+{"text":"销售pcp骚本配件qq","category":"illegal","level":"high","review_note":"PCP 骚本配件销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售qi狗","category":"illegal","level":"high","review_note":"qi 狗为枪支规避黑话，销售语义明确，原 other/low 过低。"}
+{"text":"销售丁丙诺啡","category":"illegal","level":"high","review_note":"丁丙诺啡为受管制药物，销售语义应高风险。"}
+{"text":"销售万利达弓弩","category":"illegal","level":"high","review_note":"弓弩销售属于武器交易语义，原 other/low 过低。"}
+{"text":"销售万利达弩","category":"illegal","level":"high","review_note":"弩类销售属于武器交易语义，原 other/low 过低。"}
+{"text":"销售万能开锁器qq","category":"illegal","level":"high","review_note":"万能开锁器销售并含 QQ 导流，属于开锁黑产工具交易。"}
+{"text":"销售万能开锁钥匙","category":"illegal","level":"high","review_note":"万能开锁钥匙销售属于开锁黑产工具交易，原 other/low 过低。"}
+{"text":"销售万能汽车解码器","category":"illegal","level":"high","review_note":"汽车解码器销售可用于盗车黑产，原 other/low 过低。"}
+{"text":"销售万能钥匙qq","category":"illegal","level":"high","review_note":"万能钥匙销售并含 QQ 导流，属于开锁黑产工具交易。"}
+{"text":"销售上海工字气狗","category":"illegal","level":"high","review_note":"气狗为气枪隐语，销售语义明确，原 other/low 过低。"}
+{"text":"销售丙2酸铊","category":"illegal","level":"high","review_note":"丙酸铊为高毒铊化合物，销售语义应高风险。"}
+{"text":"销售业主信息","category":"illegal","level":"high","review_note":"业主信息销售属于个人信息黑产，原 other/low 过低。"}
+{"text":"销售业主名单","category":"illegal","level":"high","review_note":"业主名单销售属于个人信息黑产，原 other/low 过低。"}
+{"text":"销售业主名单qq","category":"illegal","level":"high","review_note":"业主名单销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售业主数据qq","category":"illegal","level":"high","review_note":"业主数据销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售业主资料","category":"illegal","level":"high","review_note":"业主资料销售属于个人信息黑产，原 other/low 过低。"}
+{"text":"销售业主资料qq","category":"illegal","level":"high","review_note":"业主资料销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售业主资源","category":"illegal","level":"high","review_note":"业主资源销售属于个人信息黑产，原 other/low 过低。"}
+{"text":"销售业主身份信息qq","category":"illegal","level":"high","review_note":"业主身份信息销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售丛林刀","category":"illegal","level":"high","review_note":"丛林刀销售属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"销售丛林刀qq","category":"illegal","level":"high","review_note":"丛林刀销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售个人信息数据","category":"illegal","level":"high","review_note":"个人信息数据销售属于数据黑产，原 other/low 过低。"}
+{"text":"销售个人信息资料qq","category":"illegal","level":"high","review_note":"个人信息资料销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售个人商务数据资料","category":"illegal","level":"high","review_note":"个人商务数据资料销售属于数据黑产，原 other/low 过低。"}
+{"text":"销售个人商务数据资料qq","category":"illegal","level":"high","review_note":"个人商务数据资料销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售个人银行卡qq","category":"illegal","level":"high","review_note":"个人银行卡销售并含 QQ 导流，涉及银行卡黑产交易。"}
+{"text":"销售中控解码器","category":"illegal","level":"high","review_note":"中控解码器销售可用于车辆黑产，原 other/low 过低。"}
+{"text":"销售中握pcp","category":"illegal","level":"high","review_note":"中握 PCP 指向气枪器件交易，原 other/low 过低。"}
+{"text":"销售乌头碱","category":"illegal","level":"high","review_note":"乌头碱为高毒物质，销售语义应高风险。"}
+{"text":"销售乖乖水","category":"illegal","level":"high","review_note":"乖乖水指涉迷奸/迷昏药物，销售语义应高风险。"}
+{"text":"销售乖乖水qq","category":"illegal","level":"high","review_note":"乖乖水销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售乖乖药qq","category":"illegal","level":"high","review_note":"乖乖药销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售乙基吗啡","category":"illegal","level":"high","review_note":"乙基吗啡为受管制阿片类药物，销售语义应高风险。"}
+{"text":"销售乙硼烷","category":"illegal","level":"high","review_note":"乙硼烷为高危化学品，销售语义应高风险。"}
+{"text":"销售乙酸亚铊","category":"illegal","level":"high","review_note":"乙酸亚铊为高毒铊化合物，销售语义应高风险。"}
+{"text":"销售乙酸苯汞","category":"illegal","level":"high","review_note":"乙酸苯汞为高毒汞化合物，销售语义应高风险。"}
+{"text":"销售乙醚qq","category":"illegal","level":"high","review_note":"乙醚销售并含 QQ 导流，涉及易制毒/管制化学品交易风险。"}
+{"text":"销售云南情蛊","category":"illegal","level":"high","review_note":"云南情蛊在该语境中指向催情/迷奸类药物，原 other/low 过低。"}
+{"text":"销售云南情蛊qq","category":"illegal","level":"high","review_note":"云南情蛊销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售云南情蛊药qq","category":"illegal","level":"high","review_note":"云南情蛊药销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售亚砷酸钠","category":"illegal","level":"high","review_note":"亚砷酸钠为高毒砷化物，销售语义应高风险。"}
+{"text":"销售亚砷酸钾","category":"illegal","level":"high","review_note":"亚砷酸钾为高毒砷化物，销售语义应高风险。"}
+{"text":"销售交警警服","category":"illegal","level":"high","review_note":"交警警服销售涉及非法警用标识/制服交易，原 other/low 过低。"}
+{"text":"销售交警警服qq","category":"illegal","level":"high","review_note":"交警警服销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售任意改号软件","category":"illegal","level":"high","review_note":"任意改号软件可用于诈骗伪装，销售语义应高风险。"}
+{"text":"销售仿54式","category":"illegal","level":"high","review_note":"仿 54 式在该语境中指向仿真枪/枪支交易，原 other/low 过低。"}
+{"text":"销售仿制警服","category":"illegal","level":"high","review_note":"仿制警服销售涉及非法警用制服交易，原 other/low 过低。"}
+{"text":"销售仿真1元硬币qq","category":"illegal","level":"high","review_note":"仿真假硬币销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售仿真人民币qq","category":"illegal","level":"high","review_note":"仿真人民币销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售仿真假钞","category":"illegal","level":"high","review_note":"仿真假钞销售属于假币交易语义，原 other/low 过低。"}
+{"text":"销售仿真假钱","category":"illegal","level":"high","review_note":"仿真假钱销售属于假币交易语义，原 other/low 过低。"}
+{"text":"销售仿真假钱qq","category":"illegal","level":"high","review_note":"仿真假钱销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售仿真军刀","category":"illegal","level":"high","review_note":"仿真军刀销售属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"销售仿真军刺","category":"illegal","level":"high","review_note":"仿真军刺销售属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"销售仿真军刺qq","category":"illegal","level":"high","review_note":"仿真军刺销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售仿真金属狗","category":"illegal","level":"high","review_note":"金属狗在该语境中为枪支隐语，销售语义明确，原 other/low 过低。"}
+{"text":"销售仿真金属狗qq","category":"illegal","level":"high","review_note":"金属狗销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售仿美秃鹰","category":"illegal","level":"high","review_note":"秃鹰在该语境中指向气枪，销售语义明确，原 other/low 过低。"}
+{"text":"销售仿美秃鹰qq","category":"illegal","level":"high","review_note":"秃鹰气枪销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售会计证qq","category":"illegal","level":"high","review_note":"会计证销售并含 QQ 导流，疑似假证交易，原 ad/low 过低。"}
+{"text":"销售作弊器","category":"illegal","level":"high","review_note":"作弊器销售属于考试/赌博作弊黑产工具交易，原 other/low 过低。"}
+{"text":"销售依托利定","category":"illegal","level":"high","review_note":"依托利定为受管制阿片类药物，销售语义应高风险。"}
+{"text":"销售依托尼秦","category":"illegal","level":"high","review_note":"依托尼秦为强效阿片类物质，销售语义应高风险。"}
+{"text":"销售便携式弩","category":"illegal","level":"high","review_note":"便携式弩销售属于武器交易语义，原 other/low 过低。"}
+{"text":"销售俄罗斯654k","category":"illegal","level":"high","review_note":"654K 在该枪械上下文中指向气枪/仿真枪，销售语义明确。"}
+{"text":"销售俄罗斯mp654k","category":"illegal","level":"high","review_note":"MP654K 在该上下文中指向气枪/仿真枪，销售语义明确。"}
+{"text":"销售保健品客户资料","category":"illegal","level":"high","review_note":"保健品客户资料销售属于个人信息黑产，原 other/low 过低。"}
+{"text":"销售保险人员数据","category":"illegal","level":"high","review_note":"保险人员数据销售属于个人信息黑产，原 other/low 过低。"}
+{"text":"销售保险人员数据qq","category":"illegal","level":"high","review_note":"保险人员数据销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售保险人数据","category":"illegal","level":"high","review_note":"保险人数据销售属于个人信息黑产，原 other/low 过低。"}
+{"text":"销售保险人数据qq","category":"illegal","level":"high","review_note":"保险人数据销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售保险客户资料","category":"illegal","level":"high","review_note":"保险客户资料销售属于个人信息黑产，原 other/low 过低。"}
+{"text":"销售保险用户数据","category":"illegal","level":"high","review_note":"保险用户数据销售属于个人信息黑产，原 other/low 过低。"}
+{"text":"销售保险用户数据qq","category":"illegal","level":"high","review_note":"保险用户数据销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售保险用户资料","category":"illegal","level":"high","review_note":"保险用户资料销售属于个人信息黑产，原 other/low 过低。"}
+{"text":"销售信用卡qq","category":"illegal","level":"high","review_note":"信用卡销售并含 QQ 导流，涉及金融卡黑产交易。"}
+{"text":"销售倍他美沙朵","category":"illegal","level":"high","review_note":"倍他美沙朵为受管制阿片类药物，销售语义应高风险。"}
+{"text":"销售倍他美罗定","category":"illegal","level":"high","review_note":"倍他美罗定为受管制阿片类药物，销售语义应高风险。"}
+{"text":"销售倍醋美沙朵","category":"illegal","level":"high","review_note":"倍醋美沙朵为受管制阿片类药物，销售语义应高风险。"}
+{"text":"销售假1元硬币","category":"illegal","level":"high","review_note":"销售假硬币属于假币交易，原 other/low 过低。"}
+{"text":"销售假人民币","category":"illegal","level":"high","review_note":"销售假人民币属于假币交易，原 other/low 过低。"}
+{"text":"销售假人民币qq","category":"illegal","level":"high","review_note":"销售假人民币并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售假学位证qq","category":"illegal","level":"high","review_note":"销售假学位证并含 QQ 导流，属于假证交易。"}
+{"text":"销售假学位证书qq","category":"illegal","level":"high","review_note":"销售假学位证书并含 QQ 导流，属于假证交易。"}
+{"text":"销售假文凭","category":"illegal","level":"high","review_note":"销售假文凭属于假证交易，原 other/low 过低。"}
+{"text":"销售假文凭qq","category":"illegal","level":"high","review_note":"销售假文凭并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售假毕业证","category":"illegal","level":"high","review_note":"销售假毕业证属于假证交易，原 other/low 过低。"}
+{"text":"销售假毕业证qq","category":"illegal","level":"high","review_note":"销售假毕业证并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售假硬币","category":"illegal","level":"high","review_note":"销售假硬币属于假币交易，原 other/low 过低。"}
+{"text":"销售假硬币qq","category":"illegal","level":"high","review_note":"销售假硬币并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售假证","category":"illegal","level":"high","review_note":"销售假证属于违法证件交易，原 other/low 过低。"}
+{"text":"销售假证qq","category":"illegal","level":"high","review_note":"销售假证并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售假证书qq","category":"illegal","level":"high","review_note":"销售假证书并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售假资格证qq","category":"illegal","level":"high","review_note":"销售假资格证并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售假钞","category":"illegal","level":"high","review_note":"销售假钞属于假币交易，原 other/low 过低。"}
+{"text":"销售假钞qq","category":"illegal","level":"high","review_note":"销售假钞并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售假钞票","category":"illegal","level":"high","review_note":"销售假钞票属于假币交易，原 other/low 过低。"}
+{"text":"销售假钞票qq","category":"illegal","level":"high","review_note":"销售假钞票并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售假钱qq","category":"illegal","level":"high","review_note":"销售假钱并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售健卫小口径","category":"illegal","level":"high","review_note":"健卫小口径在该语境中指向小口径枪支，销售语义明确。"}
+{"text":"销售催情口香糖","category":"illegal","level":"high","review_note":"催情口香糖销售涉及催情/迷奸类药物交易，原 other/low 过低。"}
+{"text":"销售催情口香糖qq","category":"illegal","level":"high","review_note":"催情口香糖销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售催情水","category":"illegal","level":"high","review_note":"催情水销售涉及催情/迷奸类药物交易，原 other/low 过低。"}
+{"text":"销售催情液qq","category":"illegal","level":"high","review_note":"催情液销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售催情粉qq","category":"illegal","level":"high","review_note":"催情粉销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售催情药qq","category":"illegal","level":"high","review_note":"催情药销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售催情药水qq","category":"illegal","level":"high","review_note":"催情药水销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售催情速溶片","category":"illegal","level":"high","review_note":"催情速溶片销售涉及催情/迷奸类药物交易，原 other/low 过低。"}
+{"text":"销售催眠喷雾剂","category":"illegal","level":"high","review_note":"催眠喷雾剂销售涉及迷药/药物侵害语境，原 other/low 过低。"}
+{"text":"销售兄弟连弓弩","category":"illegal","level":"high","review_note":"弓弩销售属于武器交易语义，原 other/low 过低。"}
+{"text":"销售全国移动用户资料qq","category":"illegal","level":"high","review_note":"移动用户资料销售并含 QQ 导流，属于个人信息黑产。"}
+{"text":"销售全国联通用户资料qq","category":"illegal","level":"high","review_note":"联通用户资料销售并含 QQ 导流，属于个人信息黑产。"}
+{"text":"销售全球通名单","category":"illegal","level":"high","review_note":"全球通名单销售属于个人信息黑产，原 other/low 过低。"}
+{"text":"销售全球通用户资料","category":"illegal","level":"high","review_note":"全球通用户资料销售属于个人信息黑产，原 other/low 过低。"}
+{"text":"销售全球通用户资料qq","category":"illegal","level":"high","review_note":"全球通用户资料销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售全金属狩猎弓弩","category":"illegal","level":"high","review_note":"全金属狩猎弓弩销售属于武器交易语义，原 other/low 过低。"}
+{"text":"销售公司法人资料","category":"illegal","level":"high","review_note":"公司法人资料销售涉及个人信息黑产，原 other/low 过低。"}
+{"text":"销售公司法人资料qq","category":"illegal","level":"high","review_note":"公司法人资料销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售公安制服","category":"illegal","level":"high","review_note":"公安制服销售涉及非法警用制服交易，原 other/low 过低。"}
+{"text":"销售兰博军刀qq","category":"illegal","level":"high","review_note":"军刀销售并含 QQ 导流，属于管制刀具交易语义。"}
+{"text":"销售兰博刀具","category":"illegal","level":"high","review_note":"兰博刀具销售属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"销售兰博刀具qq","category":"illegal","level":"high","review_note":"兰博刀具销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售兰博武士刀","category":"illegal","level":"high","review_note":"武士刀销售属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"销售内部成单数据","category":"illegal","level":"high","review_note":"内部成单数据销售属于客户数据黑产，原 other/low 过低。"}
+{"text":"销售内部成单数据qq","category":"illegal","level":"high","review_note":"内部成单数据销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售军刀qq","category":"illegal","level":"high","review_note":"军刀销售并含 QQ 导流，属于管制刀具交易语义。"}
+{"text":"销售军刀军刺","category":"illegal","level":"high","review_note":"军刀军刺销售属于管制刀具交易，原 other/low 过低。"}
+{"text":"销售军刀军刺qq","category":"illegal","level":"high","review_note":"军刀军刺销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售军刺qq","category":"illegal","level":"high","review_note":"军刺销售并含 QQ 导流，属于管制刀具交易语义。"}
+{"text":"销售军品刀具qq","category":"illegal","level":"high","review_note":"军品刀具销售并含 QQ 导流，属于管制刀具交易语义。"}
+{"text":"销售军品刺刀qq","category":"illegal","level":"high","review_note":"军品刺刀销售并含 QQ 导流，属于管制刀具交易语义。"}
+{"text":"销售军官证qq","category":"illegal","level":"high","review_note":"军官证销售并含 QQ 导流，疑似假证交易。"}
+{"text":"销售军用54","category":"illegal","level":"high","review_note":"军用 54 在该语境中指向枪支交易，原 other/low 过低。"}
+{"text":"销售军用54qq","category":"illegal","level":"high","review_note":"军用 54 销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售军用54式","category":"illegal","level":"high","review_note":"军用 54 式销售指向枪支交易，原 other/low 过低。"}
+{"text":"销售军用64式","category":"illegal","level":"high","review_note":"军用 64 式销售指向枪支交易，原 other/low 过低。"}
+{"text":"销售军用刺刀","category":"illegal","level":"high","review_note":"军用刺刀销售属于管制刀具交易，原 other/low 过低。"}
+{"text":"销售军用刺刀qq","category":"illegal","level":"high","review_note":"军用刺刀销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售军用匕首qq","category":"illegal","level":"high","review_note":"军用匕首销售并含 QQ 导流，属于管制刀具交易语义。"}
+{"text":"销售军用弓弩","category":"illegal","level":"high","review_note":"军用弓弩销售属于武器交易，原 other/low 过低。"}
+{"text":"销售军用弩折叠弩","category":"illegal","level":"high","review_note":"军用弩/折叠弩销售属于武器交易，原 other/low 过低。"}
+{"text":"销售军用折刀","category":"illegal","level":"high","review_note":"军用折刀销售属于管制刀具交易，原 other/low 过低。"}
+{"text":"销售军用狙击弓弩","category":"illegal","level":"high","review_note":"军用狙击弓弩销售属于武器交易，原 other/low 过低。"}
+{"text":"销售军用狙击弩","category":"illegal","level":"high","review_note":"军用狙击弩销售属于武器交易，原 other/low 过低。"}
+{"text":"销售军用猎刀","category":"illegal","level":"high","review_note":"军用猎刀销售属于管制刀具交易，原 other/low 过低。"}
+{"text":"销售军用钢珠弩","category":"illegal","level":"high","review_note":"军用钢珠弩销售属于武器交易，原 other/low 过低。"}
+{"text":"销售军用钢珠弩qq","category":"illegal","level":"high","review_note":"军用钢珠弩销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售军用雷鸣登qq","category":"illegal","level":"high","review_note":"雷鸣登在该语境中指向枪械，销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售军警服","category":"illegal","level":"high","review_note":"军警服销售涉及非法制服交易，原 other/low 过低。"}
+{"text":"销售军警服qq","category":"illegal","level":"high","review_note":"军警服销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售军队制服","category":"illegal","level":"high","review_note":"军队制服销售涉及非法制服交易，原 other/low 过低。"}
+{"text":"销售冰古","category":"illegal","level":"high","review_note":"冰古在该语境中指涉毒品，销售语义应高风险。"}
+{"text":"销售冰古qq","category":"illegal","level":"high","review_note":"冰古销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售冰古毒","category":"illegal","level":"high","review_note":"冰古毒指涉毒品，销售语义应高风险。"}
+{"text":"销售冰油qq","category":"illegal","level":"high","review_note":"冰油在该语境中指涉毒品，销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售冰牙签","category":"illegal","level":"high","review_note":"冰牙签在该语境中指涉毒品，销售语义应高风险。"}
+{"text":"销售冰牙签qq","category":"illegal","level":"high","review_note":"冰牙签销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售冰砖","category":"illegal","level":"high","review_note":"冰砖在该语境中指涉冰毒，销售语义应高风险。"}
+{"text":"销售冰砖qq","category":"illegal","level":"high","review_note":"冰砖销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售冷钢刀具","category":"illegal","level":"high","review_note":"冷钢刀具销售属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"销售刺刀qq","category":"illegal","level":"high","review_note":"刺刀销售并含 QQ 导流，属于管制刀具交易语义。"}
+{"text":"销售力思曼弓弩","category":"illegal","level":"high","review_note":"力思曼弓弩销售属于武器交易，原 other/low 过低。"}
+{"text":"销售力斯曼弓弩","category":"illegal","level":"high","review_note":"力斯曼弓弩销售属于武器交易，原 other/low 过低。"}
+{"text":"销售加长两用弩","category":"illegal","level":"high","review_note":"加长两用弩销售属于武器交易，原 other/low 过低。"}
+{"text":"销售勃朗宁军刀","category":"illegal","level":"high","review_note":"勃朗宁军刀销售属于管制刀具交易，原 other/low 过低。"}
+{"text":"销售匕首","category":"illegal","level":"high","review_note":"匕首销售属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"销售匕首qq","category":"illegal","level":"high","review_note":"匕首销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售匕首刀具","category":"illegal","level":"high","review_note":"匕首刀具销售属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"销售化学冰","category":"illegal","level":"high","review_note":"化学冰在该语境中指涉冰毒，销售语义应高风险。"}
+{"text":"销售化学冰qq","category":"illegal","level":"high","review_note":"化学冰销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售北朝鲜冰","category":"illegal","level":"high","review_note":"北朝鲜冰在该语境中指涉冰毒，销售语义应高风险。"}
+{"text":"销售北朝鲜冰qq","category":"illegal","level":"high","review_note":"北朝鲜冰销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售十字开锁工具","category":"illegal","level":"high","review_note":"十字开锁工具销售属于开锁黑产工具交易，原 other/low 过低。"}
+{"text":"销售十字开锁工具qq","category":"illegal","level":"high","review_note":"十字开锁工具销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售十字强开工具","category":"illegal","level":"high","review_note":"十字强开工具销售属于开锁黑产工具交易，原 other/low 过低。"}
+{"text":"销售十字强开工具qq","category":"illegal","level":"high","review_note":"十字强开工具销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售十字快开工具","category":"illegal","level":"high","review_note":"十字快开工具销售属于开锁黑产工具交易，原 other/low 过低。"}
+{"text":"销售十字快开工具qq","category":"illegal","level":"high","review_note":"十字快开工具销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售十字锁快开工具","category":"illegal","level":"high","review_note":"十字锁快开工具销售属于开锁黑产工具交易，原 other/low 过低。"}
+{"text":"销售十字锁快开工具qq","category":"illegal","level":"high","review_note":"十字锁快开工具销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售半自动pcp","category":"illegal","level":"high","review_note":"半自动 PCP 指向气枪交易，原 other/low 过低。"}
+{"text":"销售卡西酮","category":"illegal","level":"high","review_note":"卡西酮为受管制/毒品类物质，销售语义应高风险。"}
+{"text":"销售印花税票","category":"illegal","level":"high","review_note":"印花税票销售属于非法票据交易语义，原 other/low 过低。"}
+{"text":"销售原装秃鹰","category":"illegal","level":"high","review_note":"秃鹰在该语境中指向气枪，销售语义明确，原 other/low 过低。"}
+{"text":"销售原装秃鹰qq","category":"illegal","level":"high","review_note":"秃鹰气枪销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售去氧麻黄碱qq","category":"illegal","level":"high","review_note":"去氧麻黄碱销售并含 QQ 导流，涉及受管制毒品交易。"}
+{"text":"销售去甲可待因","category":"illegal","level":"high","review_note":"去甲可待因为阿片类受管制药物，销售语义应高风险。"}
+{"text":"销售去甲吗啡","category":"illegal","level":"high","review_note":"去甲吗啡为阿片类受管制药物，销售语义应高风险。"}
+{"text":"销售去甲左啡诺","category":"illegal","level":"high","review_note":"去甲左啡诺为受管制阿片类药物，销售语义应高风险。"}
+{"text":"销售双刃尖刀","category":"illegal","level":"high","review_note":"双刃尖刀销售属于管制刀具交易，原 other/low 过低。"}
+{"text":"销售双刃尖刀qq","category":"illegal","level":"high","review_note":"双刃尖刀销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售双氢可待因","category":"illegal","level":"high","review_note":"双氢可待因为受管制阿片类药物，销售语义应高风险。"}
+{"text":"销售双氢吗啡","category":"illegal","level":"high","review_note":"双氢吗啡为受管制阿片类药物，销售语义应高风险。"}
+{"text":"销售反屏蔽考试作弊设备","category":"illegal","level":"high","review_note":"反屏蔽考试作弊设备销售属于考试作弊黑产，原 other/low 过低。"}
+{"text":"销售反屏蔽考试设备","category":"illegal","level":"high","review_note":"反屏蔽考试设备销售属于考试作弊黑产，原 other/low 过低。"}
+{"text":"销售反恐弩","category":"illegal","level":"high","review_note":"反恐弩销售属于武器交易语义，原 other/low 过低。"}
+{"text":"销售口服型昏迷药qq","category":"illegal","level":"high","review_note":"口服型昏迷药销售并含 QQ 导流，涉及迷药交易。"}
+{"text":"销售口香糖型春药","category":"illegal","level":"high","review_note":"口香糖型春药销售涉及催情/迷奸药物交易，原 other/low 过低。"}
+{"text":"销售口香糖型迷药","category":"illegal","level":"high","review_note":"口香糖型迷药销售属于迷药交易语义，原 other/low 过低。"}
+{"text":"销售古柯叶","category":"illegal","level":"high","review_note":"古柯叶销售涉及毒品原料交易，原 other/low 过低。"}
+{"text":"销售古柯叶qq","category":"illegal","level":"high","review_note":"古柯叶销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售可多克辛","category":"illegal","level":"high","review_note":"可多克辛为受管制阿片类药物，销售语义应高风险。"}
+{"text":"销售可多克辛qq","category":"illegal","level":"high","review_note":"可多克辛销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售可待因","category":"illegal","level":"high","review_note":"可待因为受管制药物，销售语义应高风险。"}
+{"text":"销售可待因qq","category":"illegal","level":"high","review_note":"可待因销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售台湾秃鹰","category":"illegal","level":"high","review_note":"秃鹰在该语境中指向气枪，销售语义明确，原 other/low 过低。"}
+{"text":"销售台湾秃鹰qq","category":"illegal","level":"high","review_note":"秃鹰气枪销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售台秃","category":"illegal","level":"high","review_note":"台秃在该语境中指向秃鹰气枪，销售语义明确，原 other/low 过低。"}
+{"text":"销售台秃qq","category":"illegal","level":"high","review_note":"台秃气枪销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售台秃配件qq","category":"illegal","level":"high","review_note":"台秃配件销售并含 QQ 导流，指向气枪配件交易。"}
+{"text":"销售右丙氧芬","category":"illegal","level":"high","review_note":"右丙氧芬为受管制阿片类药物，销售语义应高风险。"}
+{"text":"销售右吗拉胺","category":"illegal","level":"high","review_note":"右吗拉胺为受管制阿片类药物，销售语义应高风险。"}
+{"text":"销售司马系列气狗","category":"illegal","level":"high","review_note":"气狗为气枪隐语，销售语义明确，原 other/low 过低。"}
+{"text":"销售各类银行卡","category":"illegal","level":"high","review_note":"各类银行卡销售属于银行卡黑产交易，原 other/low 过低。"}
+{"text":"销售吗啡qq","category":"illegal","level":"high","review_note":"吗啡销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售吗啡电话","category":"illegal","level":"high","review_note":"吗啡销售并含电话导流，原 ad/low 过低。"}
+{"text":"销售吗啡联系","category":"illegal","level":"high","review_note":"吗啡销售并含联系导流，原 ad/low 过低。"}
+{"text":"销售吗啡阿托品注射液","category":"illegal","level":"high","review_note":"吗啡阿托品注射液销售涉及受管制药物交易，原 other/low 过低。"}
+{"text":"销售听话喷雾水","category":"illegal","level":"high","review_note":"听话喷雾水销售属于迷药/药物侵害语境，原 other/low 过低。"}
+{"text":"销售听话喷雾水qq","category":"illegal","level":"high","review_note":"听话喷雾水销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售听话水","category":"illegal","level":"high","review_note":"听话水销售属于迷药/药物侵害语境，原 other/low 过低。"}
+{"text":"销售听话药水","category":"illegal","level":"high","review_note":"听话药水销售属于迷药/药物侵害语境，原 other/low 过低。"}
+{"text":"销售听话药水qq","category":"illegal","level":"high","review_note":"听话药水销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售哌替啶","category":"illegal","level":"high","review_note":"哌替啶为受管制阿片类药物，销售语义应高风险。"}
+{"text":"销售喵喵药","category":"illegal","level":"high","review_note":"喵喵药为毒品类物质俗称，销售语义应高风险。"}
+{"text":"销售喵喵药qq","category":"illegal","level":"high","review_note":"喵喵药销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售喵喵药销售qq","category":"illegal","level":"high","review_note":"喵喵药销售导流语义重复明确，原 ad/low 过低。"}
+{"text":"销售喷雾型迷药","category":"illegal","level":"high","review_note":"喷雾型迷药销售属于迷药交易语义，原 other/low 过低。"}
+{"text":"销售喷雾蒙汗药","category":"illegal","level":"high","review_note":"喷雾蒙汗药销售属于迷药交易语义，原 other/low 过低。"}
+{"text":"销售喷雾蒙汗药qq","category":"illegal","level":"high","review_note":"喷雾蒙汗药销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售喷雾迷幻药qq","category":"illegal","level":"high","review_note":"喷雾迷幻药销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售喷雾迷情水qq","category":"illegal","level":"high","review_note":"喷雾迷情水销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售喷雾迷药","category":"illegal","level":"high","review_note":"喷雾迷药销售属于迷药交易语义，原 other/low 过低。"}
+{"text":"销售喷雾迷药qq","category":"illegal","level":"high","review_note":"喷雾迷药销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售国产气狗","category":"illegal","level":"high","review_note":"气狗为气枪隐语，国产气狗销售语义明确，原 other/low 过低。"}
+{"text":"销售国产短狗","category":"illegal","level":"high","review_note":"短狗为枪支隐语，国产短狗销售语义明确，原 other/low 过低。"}
+{"text":"销售国内外文凭qq","category":"illegal","level":"high","review_note":"国内外文凭销售并含 QQ 导流，疑似假证交易。"}
+{"text":"销售国考答案qq","category":"illegal","level":"high","review_note":"国考答案销售并含 QQ 导流，属于考试作弊黑产。"}
+{"text":"销售地索吗啡","category":"illegal","level":"high","review_note":"地索吗啡为强效阿片类毒品，销售语义应高风险。"}
+{"text":"销售地芬诺辛","category":"illegal","level":"high","review_note":"地芬诺辛为受管制阿片类药物，销售语义应高风险。"}
+{"text":"销售地芬诺酯","category":"illegal","level":"high","review_note":"地芬诺酯为受管制药物，销售语义应高风险。"}
+{"text":"销售地西泮","category":"illegal","level":"high","review_note":"地西泮为受管制精神药物，销售语义应高风险。"}
+{"text":"销售地西泮qq","category":"illegal","level":"high","review_note":"地西泮销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售埃托啡","category":"illegal","level":"high","review_note":"埃托啡为强效阿片类受管制药物，销售语义应高风险。"}
+{"text":"销售基金人员数据qq","category":"illegal","level":"high","review_note":"基金人员数据销售并含 QQ 导流，属于个人信息黑产。"}
+{"text":"销售增值税票","category":"illegal","level":"high","review_note":"销售增值税票属于非法票据交易，原 other/low 过低。"}
+{"text":"销售增值税票qq","category":"illegal","level":"high","review_note":"销售增值税票并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售外国文凭qq","category":"illegal","level":"high","review_note":"外国文凭销售并含 QQ 导流，疑似假证交易。"}
+{"text":"销售大冰砖","category":"illegal","level":"high","review_note":"大冰砖在该语境中指涉冰毒，销售语义应高风险。"}
+{"text":"销售大冰砖电话","category":"illegal","level":"high","review_note":"大冰砖销售并含电话导流，原 ad/low 过低。"}
+{"text":"销售大威力弓弩","category":"illegal","level":"high","review_note":"大威力弓弩销售属于武器交易，原 other/low 过低。"}
+{"text":"销售大学毕业文凭","category":"illegal","level":"high","review_note":"大学毕业文凭销售疑似假文凭交易，原 other/low 过低。"}
+{"text":"销售大黑鹰弓弩","category":"illegal","level":"high","review_note":"大黑鹰弓弩销售属于武器交易，原 other/low 过低。"}
+{"text":"销售大黑鹰弓弩qq","category":"illegal","level":"high","review_note":"大黑鹰弓弩销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售大黑鹰弩","category":"illegal","level":"high","review_note":"大黑鹰弩销售属于武器交易，原 other/low 过低。"}
+{"text":"销售大黑鹰弩qq","category":"illegal","level":"high","review_note":"大黑鹰弩销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售失忆水","category":"illegal","level":"high","review_note":"失忆水销售属于迷药/药物侵害语境，原 other/low 过低。"}
+{"text":"销售失忆水qq","category":"illegal","level":"high","review_note":"失忆水销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售失忆粉qq","category":"illegal","level":"high","review_note":"失忆粉销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售失意粉","category":"illegal","level":"high","review_note":"失意粉为失忆粉规避写法，销售语义应高风险。"}
+{"text":"销售失意粉qq","category":"illegal","level":"high","review_note":"失意粉销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售失身水qq","category":"illegal","level":"high","review_note":"失身水销售并含 QQ 导流，涉及迷奸类药物交易。"}
+{"text":"销售女性数据","category":"illegal","level":"high","review_note":"女性数据销售属于个人信息黑产，原 other/low 过低。"}
+{"text":"销售女性数据qq","category":"illegal","level":"high","review_note":"女性数据销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售奶油冰qq","category":"illegal","level":"high","review_note":"奶油冰在该语境中指涉毒品，销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售学位证","category":"illegal","level":"high","review_note":"学位证销售疑似假证交易，原 other/low 过低。"}
+{"text":"销售学历文凭","category":"illegal","level":"high","review_note":"学历文凭销售疑似假证交易，原 other/low 过低。"}
+{"text":"销售学生信息资料qq","category":"illegal","level":"high","review_note":"学生信息资料销售并含 QQ 导流，属于个人信息黑产。"}
+{"text":"销售学生名单数据","category":"illegal","level":"high","review_note":"学生名单数据销售属于个人信息黑产，原 other/low 过低。"}
+{"text":"销售学生家长名单","category":"illegal","level":"high","review_note":"学生家长名单销售属于个人信息黑产，原 other/low 过低。"}
+{"text":"销售学生家长数据","category":"illegal","level":"high","review_note":"学生家长数据销售属于个人信息黑产，原 other/low 过低。"}
+{"text":"销售学生家长数据qq","category":"illegal","level":"high","review_note":"学生家长数据销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售学生家长资料","category":"illegal","level":"high","review_note":"学生家长资料销售属于个人信息黑产，原 other/low 过低。"}
+{"text":"销售学生家长资料qq","category":"illegal","level":"high","review_note":"学生家长资料销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售学生数据","category":"illegal","level":"high","review_note":"学生数据销售属于个人信息黑产，原 other/low 过低。"}
+{"text":"销售学生数据qq","category":"illegal","level":"high","review_note":"学生数据销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售学生资料","category":"illegal","level":"high","review_note":"学生资料销售属于个人信息黑产，原 other/low 过低。"}
+{"text":"销售学生资料qq","category":"illegal","level":"high","review_note":"学生资料销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售宅急送数据","category":"illegal","level":"high","review_note":"宅急送数据销售属于物流个人信息黑产，原 other/low 过低。"}
+{"text":"销售宅急送数据qq","category":"illegal","level":"high","review_note":"宅急送数据销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售安乐死药qq","category":"illegal","level":"high","review_note":"安乐死药销售并含 QQ 导流，涉及高危药物交易。"}
+{"text":"销售安乐死迷药","category":"illegal","level":"high","review_note":"安乐死迷药销售涉及高危药物/迷药交易，原 other/low 过低。"}
+{"text":"销售安眠酮","category":"illegal","level":"high","review_note":"安眠酮为受管制镇静催眠药，销售语义应高风险。"}
+{"text":"销售安纳咖","category":"illegal","level":"high","review_note":"安纳咖为受管制兴奋剂类药物，销售语义应高风险。"}
+{"text":"销售安纳咖qq","category":"illegal","level":"high","review_note":"安纳咖销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售定额税票","category":"illegal","level":"high","review_note":"销售定额税票属于非法票据交易，原 other/low 过低。"}
+{"text":"销售定额税票qq","category":"illegal","level":"high","review_note":"销售定额税票并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售客户数据qq","category":"illegal","level":"high","review_note":"客户数据销售并含 QQ 导流，属于个人信息黑产。"}
+{"text":"销售客户资料qq","category":"illegal","level":"high","review_note":"客户资料销售并含 QQ 导流，属于个人信息黑产。"}
+{"text":"销售家长资料","category":"illegal","level":"high","review_note":"家长资料销售属于个人信息黑产，原 other/low 过低。"}
+{"text":"销售小冰砖qq","category":"illegal","level":"high","review_note":"小冰砖在该语境中指涉冰毒，销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售小区业主信息","category":"illegal","level":"high","review_note":"小区业主信息销售属于个人信息黑产，原 other/low 过低。"}
+{"text":"销售小区业主信息qq","category":"illegal","level":"high","review_note":"小区业主信息销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售小区业主名单","category":"illegal","level":"high","review_note":"小区业主名单销售属于个人信息黑产，原 other/low 过低。"}
+{"text":"销售小区业主名单qq","category":"illegal","level":"high","review_note":"小区业主名单销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售小区业主名录","category":"illegal","level":"high","review_note":"小区业主名录销售属于个人信息黑产，原 other/low 过低。"}
+{"text":"销售小区业主手机号","category":"illegal","level":"high","review_note":"小区业主手机号销售属于个人信息黑产，原 ad/low 过低。"}
+{"text":"销售小区业主手机号qq","category":"illegal","level":"high","review_note":"小区业主手机号销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售小区业主资料","category":"illegal","level":"high","review_note":"小区业主资料销售属于个人信息黑产，原 other/low 过低。"}
+{"text":"销售小区业主资料qq","category":"illegal","level":"high","review_note":"小区业主资料销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售小区住户资料","category":"illegal","level":"high","review_note":"小区住户资料销售属于个人信息黑产，原 other/low 过低。"}
+{"text":"销售小口径手qiang","category":"illegal","level":"high","review_note":"手qiang为手枪规避写法，小口径手枪销售语义明确。"}
+{"text":"销售小口径步狗qq","category":"illegal","level":"high","review_note":"步狗为枪支隐语，小口径步狗销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售小口径运动步狗","category":"illegal","level":"high","review_note":"步狗为枪支隐语，小口径运动步狗销售语义明确。"}
+{"text":"销售小口径运动步狗qq","category":"illegal","level":"high","review_note":"步狗为枪支隐语，小口径运动步狗销售并含 QQ 导流。"}
+{"text":"销售少儿数据qq","category":"illegal","level":"high","review_note":"少儿数据销售并含 QQ 导流，涉及未成年人个人信息黑产。"}
+{"text":"销售少女催情粉","category":"illegal","level":"high","review_note":"少女催情粉销售涉及迷奸类药物且对象指向未成年人风险，原 other/low 过低。"}
+{"text":"销售少女催情粉qq","category":"illegal","level":"high","review_note":"少女催情粉销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售少女迷情粉qq","category":"illegal","level":"high","review_note":"少女迷情粉销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售少女迷情药qq","category":"illegal","level":"high","review_note":"少女迷情药销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售尼2氢可待因","category":"illegal","level":"high","review_note":"二氢可待因为受管制阿片类药物，销售语义应高风险。"}
+{"text":"销售尼可吗啡","category":"illegal","level":"high","review_note":"尼可吗啡为受管制阿片类药物，销售语义应高风险。"}
+{"text":"销售尼可待因","category":"illegal","level":"high","review_note":"尼可待因为受管制阿片类药物，销售语义应高风险。"}
+{"text":"销售尼泊尔军刀","category":"illegal","level":"high","review_note":"尼泊尔军刀销售属于管制刀具交易，原 other/low 过低。"}
+{"text":"销售尼美西泮","category":"illegal","level":"high","review_note":"尼美西泮为受管制精神药物，销售语义应高风险。"}
+{"text":"销售尼美西泮qq","category":"illegal","level":"high","review_note":"尼美西泮销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售山奈钾","category":"illegal","level":"high","review_note":"山奈钾为氰化钾谐音，销售语义应高风险。"}
+{"text":"销售山奈钾qq","category":"illegal","level":"high","review_note":"山奈钾销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售工字牌汽狗","category":"illegal","level":"high","review_note":"汽狗为气枪隐语，工字牌汽狗销售语义明确，原 other/low 过低。"}
+{"text":"销售左啡诺","category":"illegal","level":"high","review_note":"左啡诺为受管制阿片类药物，销售语义应高风险。"}
+{"text":"销售左旋麻黄素","category":"illegal","level":"high","review_note":"左旋麻黄素涉及易制毒/管制药品交易，原 other/low 过低。"}
+{"text":"销售左旋麻黄素qq","category":"illegal","level":"high","review_note":"左旋麻黄素销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售左轮短狗","category":"illegal","level":"high","review_note":"短狗为枪支隐语，左轮短狗销售语义明确，原 other/low 过低。"}
+{"text":"销售左轮钢珠狗","category":"illegal","level":"high","review_note":"钢珠狗为枪支/气枪隐语，销售语义明确，原 other/low 过低。"}
+{"text":"销售已环利定","category":"illegal","level":"high","review_note":"疑似苯环利定类致幻物质销售，原 other/low 过低。"}
+{"text":"销售已甲噻丁","category":"illegal","level":"high","review_note":"疑似受管制药物销售语义，原 other/low 过低。"}
+{"text":"销售已色胺","category":"illegal","level":"high","review_note":"疑似色胺类致幻物质销售，原 other/low 过低。"}
+{"text":"销售广州3箭气","category":"illegal","level":"high","review_note":"广州三箭气枪省略写法，销售语义明确，原 other/low 过低。"}
+{"text":"销售开他敏qq","category":"illegal","level":"high","review_note":"开他敏为氯胺酮谐写，销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售开刃3棱刀qq","category":"illegal","level":"high","review_note":"开刃三棱刀销售并含 QQ 导流，属于管制刀具交易。"}
+{"text":"销售开山刀","category":"illegal","level":"high","review_note":"开山刀销售属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"销售开山刀qq","category":"illegal","level":"high","review_note":"开山刀销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售开山砍刀","category":"illegal","level":"high","review_note":"开山砍刀销售属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"销售开山砍刀qq","category":"illegal","level":"high","review_note":"开山砍刀销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售开心水qq","category":"illegal","level":"high","review_note":"开心水在该语境中指向迷幻/迷奸药物，销售并含 QQ 导流。"}
+{"text":"销售开锁器qq","category":"illegal","level":"high","review_note":"开锁器销售并含 QQ 导流，属于开锁黑产工具交易。"}
+{"text":"销售开锁工具qq","category":"illegal","level":"high","review_note":"开锁工具销售并含 QQ 导流，属于开锁黑产工具交易。"}
+{"text":"销售异美沙酮","category":"illegal","level":"high","review_note":"异美沙酮为受管制阿片类药物，销售语义应高风险。"}
+{"text":"销售弓nu","category":"illegal","level":"high","review_note":"弓nu 为弓弩规避写法，销售属于武器交易语义。"}
+{"text":"销售弓弩","category":"illegal","level":"high","review_note":"弓弩销售属于武器交易语义，原 other/low 过低。"}
+{"text":"销售弓弩qq","category":"illegal","level":"high","review_note":"弓弩销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售弓弩之家","category":"illegal","level":"high","review_note":"弓弩之家在销售语境中指向弓弩交易渠道，原 other/low 过低。"}
+{"text":"销售弓弩弦","category":"illegal","level":"high","review_note":"弓弩弦销售属于武器配件交易语义，原 other/low 过低。"}
+{"text":"销售弩狩猎网","category":"illegal","level":"high","review_note":"狩猎弩销售网站语义明确，原 other/low 过低。"}
+{"text":"销售弹簧刀","category":"illegal","level":"high","review_note":"弹簧刀销售属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"销售弹药","category":"illegal","level":"high","review_note":"弹药销售属于枪弹交易语义，原 other/low 过低。"}
+{"text":"销售强开工具","category":"illegal","level":"high","review_note":"强开工具销售属于开锁黑产工具交易，原 other/low 过低。"}
+{"text":"销售强开工具qq","category":"illegal","level":"high","review_note":"强开工具销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售强暴药qq","category":"illegal","level":"high","review_note":"强暴药销售并含 QQ 导流，涉及迷奸类药物交易。"}
+{"text":"销售快递公司面单数据","category":"illegal","level":"high","review_note":"快递面单数据销售属于个人信息黑产，原 other/low 过低。"}
+{"text":"销售快递公司面单数据qq","category":"illegal","level":"high","review_note":"快递面单数据销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售快递客户资料","category":"illegal","level":"high","review_note":"快递客户资料销售属于个人信息黑产，原 other/low 过低。"}
+{"text":"销售快递综合数据","category":"illegal","level":"high","review_note":"快递综合数据销售属于个人信息黑产，原 other/low 过低。"}
+{"text":"销售快递综合数据qq","category":"illegal","level":"high","review_note":"快递综合数据销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售快递面单数据","category":"illegal","level":"high","review_note":"快递面单数据销售属于个人信息黑产，原 other/low 过低。"}
+{"text":"销售情蛊","category":"illegal","level":"high","review_note":"情蛊在该语境中指向催情/迷奸类药物，原 other/low 过低。"}
+{"text":"销售成品冰qq","category":"illegal","level":"high","review_note":"成品冰在该语境中指涉冰毒，销售并含 QQ 导流。"}
+{"text":"销售成考文凭qq","category":"illegal","level":"high","review_note":"成考文凭销售并含 QQ 导流，疑似假证交易。"}
+{"text":"销售战术军刀","category":"illegal","level":"high","review_note":"战术军刀销售属于管制刀具交易，原 other/low 过低。"}
+{"text":"销售战术折刀","category":"illegal","level":"high","review_note":"战术折刀销售属于管制刀具交易，原 other/low 过低。"}
+{"text":"销售战神弓弩","category":"illegal","level":"high","review_note":"战神弓弩销售属于武器交易语义，原 other/low 过低。"}
+{"text":"销售户主资料","category":"illegal","level":"high","review_note":"户主资料销售属于个人信息黑产，原 other/low 过低。"}
+{"text":"销售户主资料qq","category":"illegal","level":"high","review_note":"户主资料销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售户外军刀qq","category":"illegal","level":"high","review_note":"户外军刀销售并含 QQ 导流，属于管制刀具交易。"}
+{"text":"销售户外刀具","category":"illegal","level":"high","review_note":"户外刀具销售在该语境中指向管制刀具交易，原 other/low 过低。"}
+{"text":"销售户外刀具qq","category":"illegal","level":"high","review_note":"户外刀具销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售户外狩猎弓弩","category":"illegal","level":"high","review_note":"户外狩猎弓弩销售属于武器交易，原 other/low 过低。"}
+{"text":"销售户外狩猎弩","category":"illegal","level":"high","review_note":"户外狩猎弩销售属于武器交易，原 other/low 过低。"}
+{"text":"销售户外砍刀","category":"illegal","level":"high","review_note":"户外砍刀销售属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"销售户外砍刀qq","category":"illegal","level":"high","review_note":"户外砍刀销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售房主数据qq","category":"illegal","level":"high","review_note":"房主数据销售并含 QQ 导流，属于个人信息黑产。"}
+{"text":"销售房地产客户资料","category":"illegal","level":"high","review_note":"房地产客户资料销售属于个人信息黑产，原 other/low 过低。"}
+{"text":"销售手qiang","category":"illegal","level":"high","review_note":"手qiang 为手枪规避写法，销售语义明确，原 other/low 过低。"}
+{"text":"销售手弩qq","category":"illegal","level":"high","review_note":"手弩销售并含 QQ 导流，属于武器交易语义。"}
+{"text":"销售手拉狗","category":"illegal","level":"high","review_note":"手拉狗为枪支隐语，销售语义明确，原 other/low 过低。"}
+{"text":"销售手拉短狗","category":"illegal","level":"high","review_note":"短狗为枪支隐语，销售语义明确，原 other/low 过低。"}
+{"text":"销售手拉短狗qq","category":"illegal","level":"high","review_note":"短狗为枪支隐语，销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售手拉长狗","category":"illegal","level":"high","review_note":"长狗为枪支隐语，销售语义明确，原 other/low 过低。"}
+{"text":"销售手拉鸡qq","category":"illegal","level":"high","review_note":"手拉鸡在该语境中为枪支黑话，销售并含 QQ 导流。"}
+{"text":"销售手木仓","category":"illegal","level":"high","review_note":"手木仓为手枪拆字规避，销售语义明确，原 other/low 过低。"}
+{"text":"销售手机任意改号软件","category":"illegal","level":"high","review_note":"手机任意改号软件可用于诈骗伪装，原 ad/low 过低。"}
+{"text":"销售手机偷听器软件","category":"illegal","level":"high","review_note":"手机偷听器软件销售涉及非法监听工具，原 ad/low 过低。"}
+{"text":"销售手机变号软件","category":"illegal","level":"high","review_note":"手机变号软件可用于诈骗伪装，原 ad/low 过低。"}
+{"text":"销售手机窃听软件","category":"illegal","level":"high","review_note":"手机窃听软件销售涉及非法监听工具，原 ad/low 过低。"}
+{"text":"销售手榴弹","category":"illegal","level":"high","review_note":"手榴弹销售属于爆炸物交易语义，原 other/low 过低。"}
+{"text":"销售手榴弹qq","category":"illegal","level":"high","review_note":"手榴弹销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售手狗","category":"illegal","level":"high","review_note":"手狗为手枪隐语，销售语义明确，原 other/low 过低。"}
+{"text":"销售手狗配件","category":"illegal","level":"high","review_note":"手狗配件指向枪支配件交易，原 other/low 过低。"}
+{"text":"销售手铐","category":"illegal","level":"high","review_note":"手铐销售涉及警用/约束器械交易，原 other/low 过低。"}
+{"text":"销售手铐qq","category":"illegal","level":"high","review_note":"手铐销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售技术开锁工具","category":"illegal","level":"high","review_note":"技术开锁工具销售属于开锁黑产工具交易，原 other/low 过低。"}
+{"text":"销售折叠刀qq","category":"illegal","level":"high","review_note":"折叠刀销售并含 QQ 导流，属于管制刀具交易语义。"}
+{"text":"销售折叠手弓弩","category":"illegal","level":"high","review_note":"折叠手弓弩销售属于武器交易，原 other/low 过低。"}
+{"text":"销售拍肩听话粉","category":"illegal","level":"high","review_note":"拍肩听话粉销售属于迷药/药物侵害语境，原 other/low 过低。"}
+{"text":"销售拍肩型昏迷药","category":"illegal","level":"high","review_note":"拍肩型昏迷药销售属于迷药交易语义，原 other/low 过低。"}
+{"text":"销售拍肩型昏迷药qq","category":"illegal","level":"high","review_note":"拍肩型昏迷药销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售拍肩型迷幻剂qq","category":"illegal","level":"high","review_note":"拍肩型迷幻剂销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售拍肩型迷幻药","category":"illegal","level":"high","review_note":"拍肩型迷幻药销售属于迷药/致幻药物交易，原 other/low 过低。"}
+{"text":"销售拍肩粉qq","category":"illegal","level":"high","review_note":"拍肩粉销售并含 QQ 导流，涉及迷药交易。"}
+{"text":"销售拍肩药qq","category":"illegal","level":"high","review_note":"拍肩药销售并含 QQ 导流，涉及迷药交易。"}
+{"text":"销售拍肩药水qq","category":"illegal","level":"high","review_note":"拍肩药水销售并含 QQ 导流，涉及迷药交易。"}
+{"text":"销售拍肩迷药","category":"illegal","level":"high","review_note":"拍肩迷药销售属于迷药交易语义，原 other/low 过低。"}
+{"text":"销售拍肩迷药qq","category":"illegal","level":"high","review_note":"拍肩迷药销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售挥发型迷药","category":"illegal","level":"high","review_note":"挥发型迷药销售属于迷药交易语义，原 other/low 过低。"}
+{"text":"销售挥发性迷药","category":"illegal","level":"high","review_note":"挥发性迷药销售属于迷药交易语义，原 other/low 过低。"}
+{"text":"销售捷克左轮","category":"illegal","level":"high","review_note":"捷克左轮销售指向枪支交易，原 other/low 过低。"}
+{"text":"销售掌心雷","category":"illegal","level":"high","review_note":"掌心雷在该语境中指向枪械/爆炸物黑话，销售语义明确。"}
+{"text":"销售掌心雷qq","category":"illegal","level":"high","review_note":"掌心雷销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售摇头糖qq","category":"illegal","level":"high","review_note":"摇头糖指涉毒品，销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售收藏品数据","category":"illegal","level":"high","review_note":"收藏品数据销售属于客户数据黑产，原 other/low 过低。"}
+{"text":"销售收藏品面单","category":"illegal","level":"high","review_note":"收藏品面单销售涉及个人信息/物流数据交易，原 other/low 过低。"}
+{"text":"销售收藏品面单qq","category":"illegal","level":"high","review_note":"收藏品面单销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售改号软件","category":"illegal","level":"high","review_note":"改号软件可用于诈骗伪装，销售语义应高风险。"}
+{"text":"销售改号软件qq","category":"illegal","level":"high","review_note":"改号软件销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售散弹狗","category":"illegal","level":"high","review_note":"散弹狗为枪支隐语，销售语义明确，原 other/low 过低。"}
+{"text":"销售文凭证书qq","category":"illegal","level":"high","review_note":"文凭证书销售并含 QQ 导流，疑似假证交易。"}
+{"text":"销售无线电作弊器材","category":"illegal","level":"high","review_note":"无线电作弊器材销售属于考试作弊黑产，原 other/low 过低。"}
+{"text":"销售暴力开锁工具","category":"illegal","level":"high","review_note":"暴力开锁工具销售属于开锁黑产工具交易，原 other/low 过低。"}
+{"text":"销售暴力开锁工具qq","category":"illegal","level":"high","review_note":"暴力开锁工具销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售曲马多","category":"illegal","level":"high","review_note":"曲马多为受管制药品，销售语义应高风险。"}
+{"text":"销售曲马多qq","category":"illegal","level":"high","review_note":"曲马多销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售替力定","category":"illegal","level":"high","review_note":"替力定为受管制阿片类药物，销售语义应高风险。"}
+{"text":"销售替马西泮","category":"illegal","level":"high","review_note":"替马西泮为受管制精神药物，销售语义应高风险。"}
+{"text":"销售替马西泮qq","category":"illegal","level":"high","review_note":"替马西泮销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售最新保险数据","category":"illegal","level":"high","review_note":"保险数据销售属于个人信息黑产，原 other/low 过低。"}
+{"text":"销售最新保险数据qq","category":"illegal","level":"high","review_note":"保险数据销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售最新女性数据qq","category":"illegal","level":"high","review_note":"女性数据销售并含 QQ 导流，属于个人信息黑产。"}
+{"text":"销售最新股民数据","category":"illegal","level":"high","review_note":"股民数据销售属于个人信息黑产，原 other/low 过低。"}
+{"text":"销售最新股民电话qq","category":"illegal","level":"high","review_note":"股民电话销售并含 QQ 导流，属于个人信息黑产。"}
+{"text":"销售服刑人员资料","category":"illegal","level":"high","review_note":"服刑人员资料销售属于个人信息黑产，原 other/low 过低。"}
+{"text":"销售朝版假人民币","category":"illegal","level":"high","review_note":"朝版假人民币销售属于假币交易，原 other/low 过低。"}
+{"text":"销售朝鲜冰qq","category":"illegal","level":"high","review_note":"朝鲜冰在该语境中指涉冰毒，销售并含 QQ 导流。"}
+{"text":"销售期货客户资源","category":"illegal","level":"high","review_note":"期货客户资源销售属于个人信息黑产，原 other/low 过低。"}
+{"text":"销售期货客户资源qq","category":"illegal","level":"high","review_note":"期货客户资源销售并含 QQ 导流，原 ad/low 过低。"}
+{"text":"销售木仓","category":"illegal","level":"high","review_note":"木仓为枪的拆字规避写法，销售语义明确，原 other/low 过低。"}

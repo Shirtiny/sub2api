@@ -1,0 +1,175 @@
+{"text":"提供股民开户数据","category":"illegal","level":"high","review_note":"涉及股民开户个人数据交易风险，原 other/low 分类过低。"}
+{"text":"提供股民数据","category":"illegal","level":"high","review_note":"涉及股民个人数据交易风险，原 other/low 分类过低。"}
+{"text":"提供股民资源","category":"illegal","level":"high","review_note":"在数据资源交易语境中指向股民个人信息资源，原 other/low 分类过低。"}
+{"text":"提供胡椒基甲基","category":"other","level":"medium","review_note":"疑似涉管制化学品/前体词但名称不完整，无法准确判定，按规则由 other/low 改为 other/medium。"}
+{"text":"提供胡椒醛","category":"other","level":"medium","review_note":"疑似涉制毒前体化学品但单词条用途无法准确判定，按规则由 other/low 改为 other/medium。"}
+{"text":"提供臊冰","category":"other","level":"medium","review_note":"疑似毒品隐语但无法准确判定，按规则由 other/low 改为 other/medium。"}
+{"text":"提供自制式64式","category":"illegal","level":"high","review_note":"含自制64式枪支语义，原 other/low 分类过低。"}
+{"text":"提供自制手狗","category":"illegal","level":"high","review_note":"手狗在该词簇中为枪支隐语，原 other/low 分类过低。"}
+{"text":"提供自用电狗","category":"illegal","level":"high","review_note":"电狗在该词簇中为枪支/电击武器隐语，原 other/low 分类过低。"}
+{"text":"提供致幻剂","category":"illegal","level":"high","review_note":"含提供致幻类违禁药物语义，原 other/low 分类过低。"}
+{"text":"提供良家性息","category":"pornographic","level":"high","review_note":"性息为色情服务信息谐音，含提供色情信息语义，原 other/low 分类过低。"}
+{"text":"提供芽子碱","category":"other","level":"medium","review_note":"疑似涉管制药物/生物碱但无法准确判定，按规则由 other/low 改为 other/medium。"}
+{"text":"提供英语4级证书","category":"illegal","level":"high","review_note":"含提供考试证书造假语义，原 other/low 分类过低。"}
+{"text":"提供英语6级证书","category":"illegal","level":"high","review_note":"含提供考试证书造假语义，原 other/low 分类过低。"}
+{"text":"提供英语等级证","category":"illegal","level":"high","review_note":"含提供等级证件造假语义，原 other/low 分类过低。"}
+{"text":"提供英语等级证书","category":"illegal","level":"high","review_note":"含提供等级证书造假语义，原 other/low 分类过低。"}
+{"text":"提供蓖麻毒素","category":"illegal","level":"high","review_note":"含提供高危毒素语义，原 other/low 分类过低。"}
+{"text":"提供虎头双管","category":"illegal","level":"high","review_note":"在枪械词簇中指向双管枪支，原 other/low 分类过低。"}
+{"text":"提供行驶证","category":"illegal","level":"high","review_note":"含提供车辆证件造假/交易风险，原 other/low 分类过低。"}
+{"text":"提供警帽","category":"illegal","level":"medium","review_note":"含提供警用制式装备语义，存在冒充执法风险，原 other/low 过低。"}
+{"text":"提供警徽","category":"illegal","level":"medium","review_note":"含提供警用标识语义，存在冒充执法风险，原 other/low 过低。"}
+{"text":"提供警服","category":"illegal","level":"medium","review_note":"含提供警用制式服装语义，存在冒充执法风险，原 other/low 过低。"}
+{"text":"提供警服春秋执勤装","category":"illegal","level":"medium","review_note":"含提供警用制式执勤装语义，存在冒充执法风险，原 other/low 过低。"}
+{"text":"提供警用手铐","category":"illegal","level":"medium","review_note":"含提供警用约束器具语义，原 other/low 分类过低。"}
+{"text":"提供警用报警器","category":"illegal","level":"medium","review_note":"含提供警用装备语义，存在冒充执法风险，原 other/low 过低。"}
+{"text":"提供警用棍刀","category":"violence","level":"medium","review_note":"含提供警用攻击性武器语义，原 other/low 分类过低。"}
+{"text":"提供警用电棍","category":"violence","level":"medium","review_note":"含提供电击武器语义，原 other/low 分类过低。"}
+{"text":"提供警用电棒","category":"violence","level":"medium","review_note":"含提供电击武器语义，原 other/low 分类过低。"}
+{"text":"提供订制人皮面具","category":"illegal","level":"medium","review_note":"含定制仿真人皮面具语义，存在伪装欺诈风险，原 other/low 过低。"}
+{"text":"提供论坛删帖","category":"illegal","level":"medium","review_note":"含有偿删帖/干预信息发布风险，原 other/low 分类过低。"}
+{"text":"提供论坛删帖服务","category":"illegal","level":"medium","review_note":"含提供有偿删帖服务语义，原 other/low 分类过低。"}
+{"text":"提供负面信息删除","category":"illegal","level":"medium","review_note":"含有偿删除负面信息风险，原 other/low 分类过低。"}
+{"text":"提供负面信息压制","category":"illegal","level":"medium","review_note":"含有偿压制负面信息风险，原 other/low 分类过低。"}
+{"text":"提供负面信息清理","category":"illegal","level":"medium","review_note":"含有偿清理负面信息风险，原 other/low 分类过低。"}
+{"text":"提供负面删除","category":"illegal","level":"medium","review_note":"含有偿删除负面信息风险，原 other/low 分类过低。"}
+{"text":"提供负面处理","category":"illegal","level":"medium","review_note":"含有偿处理负面信息风险，原 other/low 分类过低。"}
+{"text":"提供资质证书","category":"illegal","level":"high","review_note":"含提供资质证书造假/交易风险，原 other/low 分类过低。"}
+{"text":"提供赭曲毒素","category":"illegal","level":"high","review_note":"含提供高危毒素语义，原 other/low 分类过低。"}
+{"text":"提供车用锁强开工具","category":"illegal","level":"high","review_note":"含提供强开车锁工具语义，具有盗窃工具风险，原 other/low 过低。"}
+{"text":"提供车辆牌照","category":"illegal","level":"high","review_note":"含提供车辆牌照造假/交易风险，原 other/low 分类过低。"}
+{"text":"提供车门干扰器","category":"illegal","level":"high","review_note":"含提供车门干扰设备语义，具有盗窃工具风险，原 other/low 过低。"}
+{"text":"提供进口手狗","category":"illegal","level":"high","review_note":"手狗在该词簇中为枪支隐语，原 other/low 分类过低。"}
+{"text":"提供进口汽狗","category":"illegal","level":"high","review_note":"汽狗在该词簇中为气枪/枪支隐语，原 other/low 分类过低。"}
+{"text":"提供进口钢珠狗","category":"illegal","level":"high","review_note":"钢珠狗在该词簇中为枪支隐语，原 other/low 分类过低。"}
+{"text":"提供连弩","category":"violence","level":"medium","review_note":"含提供弩类攻击性武器语义，原 other/low 分类过低。"}
+{"text":"提供遥控信号复制器","category":"illegal","level":"high","review_note":"含提供遥控信号复制工具语义，具有盗窃/非法开锁风险，原 other/low 过低。"}
+{"text":"提供遥控屏蔽工具","category":"illegal","level":"high","review_note":"含提供遥控屏蔽工具语义，具有盗窃/干扰风险，原 other/low 过低。"}
+{"text":"提供遥控干扰器","category":"illegal","level":"high","review_note":"含提供遥控干扰设备语义，具有盗窃/干扰风险，原 other/low 过低。"}
+{"text":"提供遥控解码器","category":"illegal","level":"high","review_note":"含提供遥控解码工具语义，具有盗窃/非法开锁风险，原 other/low 过低。"}
+{"text":"提供酣乐欣","category":"illegal","level":"high","review_note":"酣乐欣为管制镇静催眠药物相关词，原 other/low 分类过低。"}
+{"text":"提供醋酸铊","category":"illegal","level":"high","review_note":"含提供高毒铊化合物语义，原 other/low 分类过低。"}
+{"text":"提供重铬酸钠","category":"other","level":"medium","review_note":"含提供危险化学品语义但具体违法性需结合语境，按规则由 other/low 改为 other/medium。"}
+{"text":"提供野战刀","category":"violence","level":"medium","review_note":"含提供攻击性刀具语义，原 other/low 分类过低。"}
+{"text":"提供野营军刀","category":"violence","level":"medium","review_note":"含提供军刀类武器语义，原 other/low 分类过低。"}
+{"text":"提供钢珠左轮狗","category":"illegal","level":"high","review_note":"钢珠左轮狗为枪支隐语，原 other/low 分类过低。"}
+{"text":"提供钢珠弩","category":"violence","level":"medium","review_note":"含提供弩类攻击性武器语义，原 other/low 分类过低。"}
+{"text":"提供钢珠弹","category":"violence","level":"medium","review_note":"含提供攻击性武器弹丸配件语义，原 other/low 分类过低。"}
+{"text":"提供钢珠狗","category":"illegal","level":"high","review_note":"钢珠狗在该词簇中为枪支隐语，原 other/low 分类过低。"}
+{"text":"提供钢珠猎狗","category":"illegal","level":"high","review_note":"钢珠猎狗在该词簇中为枪支隐语，原 other/low 分类过低。"}
+{"text":"提供锡纸开锁工具","category":"illegal","level":"high","review_note":"含提供开锁工具语义，具有入侵/盗窃工具风险，原 other/low 过低。"}
+{"text":"提供长治筋","category":"other","level":"medium","review_note":"疑似违禁品隐语但无法准确判定，按规则由 other/low 改为 other/medium。"}
+{"text":"提供防暴警棍刀","category":"violence","level":"medium","review_note":"含提供攻击性警棍刀语义，原 other/low 分类过低。"}
+{"text":"提供雷鸣登","category":"illegal","level":"high","review_note":"雷鸣登在枪械词簇中指向枪支品牌/型号，原 other/low 分类过低。"}
+{"text":"提供顺丰面单","category":"illegal","level":"high","review_note":"含提供快递面单个人信息风险，原 other/low 分类过低。"}
+{"text":"提供飞行员飞叶子","category":"illegal","level":"medium","review_note":"含吸食叶子类毒品隐语语义，原 other/low 分类过低。"}
+{"text":"提供香港ghb水","category":"illegal","level":"high","review_note":"GHB 水为违禁/迷奸药物相关词，原 other/low 分类过低。"}
+{"text":"提供马拉硫磷","category":"other","level":"medium","review_note":"含提供高毒农药/危险化学品语义但具体违法性需结合语境，按规则由 other/low 改为 other/medium。"}
+{"text":"提供马钱子碱","category":"illegal","level":"high","review_note":"含提供高毒生物碱语义，原 other/low 分类过低。"}
+{"text":"提供高仿军刺","category":"violence","level":"medium","review_note":"含提供高仿军刺武器语义，原 other/low 分类过低。"}
+{"text":"提供高仿刺刀","category":"violence","level":"medium","review_note":"含提供刺刀类武器语义，原 other/low 分类过低。"}
+{"text":"提供高仿真人皮面具","category":"illegal","level":"medium","review_note":"含提供高仿人皮面具语义，存在伪装欺诈风险，原 other/low 过低。"}
+{"text":"提供高仿真易容面具","category":"illegal","level":"medium","review_note":"含提供高仿易容面具语义，存在伪装欺诈风险，原 other/low 过低。"}
+{"text":"提供高仿警服","category":"illegal","level":"medium","review_note":"含提供高仿警服语义，存在冒充执法风险，原 other/low 过低。"}
+{"text":"提供高考学生信息","category":"illegal","level":"high","review_note":"涉及高考学生个人信息数据，原 other/low 分类过低。"}
+{"text":"提供高考答案","category":"illegal","level":"high","review_note":"含提供考试作弊答案语义，原 other/low 分类过低。"}
+{"text":"提供高考考中答案","category":"illegal","level":"high","review_note":"含提供考试作弊答案语义，原 other/low 分类过低。"}
+{"text":"提供高考考生数据","category":"illegal","level":"high","review_note":"涉及高考考生个人信息数据，原 other/low 分类过低。"}
+{"text":"提供麦角醇","category":"other","level":"medium","review_note":"疑似涉制毒前体/管制化学品但无法准确判定，按规则由 other/low 改为 other/medium。"}
+{"text":"提供麻姑","category":"other","level":"medium","review_note":"疑似麻古毒品变体但也可能为普通词，无法准确判定，按规则由 other/low 改为 other/medium。"}
+{"text":"提供黄曲霉素","category":"illegal","level":"high","review_note":"含提供高危毒素语义，原 other/low 分类过低。"}
+{"text":"提供黄牙签","category":"other","level":"medium","review_note":"疑似违禁品隐语但无法准确判定，按规则由 other/low 改为 other/medium。"}
+{"text":"提供黄牙签提炼技术","category":"other","level":"medium","review_note":"疑似违禁品提炼技术但无法准确判定，按规则由 other/low 改为 other/medium。"}
+{"text":"提供黄白牙签","category":"other","level":"medium","review_note":"疑似违禁品隐语但无法准确判定，按规则由 other/low 改为 other/medium。"}
+{"text":"插10p","category":"pornographic","level":"medium","review_note":"含多人性行为隐语，原 other/low 分类过低。"}
+{"text":"插11p","category":"pornographic","level":"medium","review_note":"含多人性行为隐语，原 other/low 分类过低。"}
+{"text":"插12p","category":"pornographic","level":"medium","review_note":"含多人性行为隐语，原 other/low 分类过低。"}
+{"text":"插13p","category":"pornographic","level":"medium","review_note":"含多人性行为隐语，原 other/low 分类过低。"}
+{"text":"插14p","category":"pornographic","level":"medium","review_note":"含多人性行为隐语，原 other/low 分类过低。"}
+{"text":"插15p","category":"pornographic","level":"medium","review_note":"含多人性行为隐语，原 other/low 分类过低。"}
+{"text":"插3p","category":"pornographic","level":"medium","review_note":"含多人性行为隐语，原 other/low 分类过低。"}
+{"text":"插4p","category":"pornographic","level":"medium","review_note":"含多人性行为隐语，原 other/low 分类过低。"}
+{"text":"插5p","category":"pornographic","level":"medium","review_note":"含多人性行为隐语，原 other/low 分类过低。"}
+{"text":"插6p","category":"pornographic","level":"medium","review_note":"含多人性行为隐语，原 other/low 分类过低。"}
+{"text":"插7p","category":"pornographic","level":"medium","review_note":"含多人性行为隐语，原 other/low 分类过低。"}
+{"text":"插8p","category":"pornographic","level":"medium","review_note":"含多人性行为隐语，原 other/low 分类过低。"}
+{"text":"插9p","category":"pornographic","level":"medium","review_note":"含多人性行为隐语，原 other/low 分类过低。"}
+{"text":"插b","category":"pornographic","level":"medium","review_note":"含露骨性行为隐语，原 other/low 分类过低。"}
+{"text":"插meimei图","category":"pornographic","level":"medium","review_note":"含成人图片语境下的性行为隐语，原 other/low 分类过低。"}
+{"text":"插meimei小穴","category":"pornographic","level":"high","review_note":"含露骨性行为和性器官隐语，原 other/low 分类过低。"}
+{"text":"插你全家","category":"abuse","level":"medium","review_note":"含针对全家的侮辱性辱骂，原 other/low 分类过低。"}
+{"text":"插你奶奶","category":"abuse","level":"medium","review_note":"含针对亲属的侮辱性辱骂，原 other/low 分类过低。"}
+{"text":"插你娘","category":"abuse","level":"medium","review_note":"含针对亲属的侮辱性辱骂，原 other/low 分类过低。"}
+{"text":"插你爷爷","category":"abuse","level":"medium","review_note":"含针对亲属的侮辱性辱骂，原 other/low 分类过低。"}
+{"text":"插你爸","category":"abuse","level":"medium","review_note":"含针对亲属的侮辱性辱骂，原 other/low 分类过低。"}
+{"text":"插你祖宗","category":"abuse","level":"medium","review_note":"含针对祖辈的侮辱性辱骂，原 other/low 分类过低。"}
+{"text":"插你老母","category":"abuse","level":"medium","review_note":"含针对亲属的侮辱性辱骂，原 other/low 分类过低。"}
+{"text":"插处女bb","category":"pornographic","level":"medium","review_note":"含处女性行为隐语，原 other/low 分类过低。"}
+{"text":"插奶","category":"pornographic","level":"medium","review_note":"含性行为/性部位隐语，原 other/low 分类过低。"}
+{"text":"插妹妹图","category":"pornographic","level":"medium","review_note":"含成人图片语境下的性行为隐语，原 other/low 分类过低。"}
+{"text":"插妹妹电影","category":"pornographic","level":"medium","review_note":"含成人电影语境下的性行为隐语，原 other/low 分类过低。"}
+{"text":"插妹妹综合","category":"pornographic","level":"medium","review_note":"含成人站点综合内容语境，原 other/low 分类过低。"}
+{"text":"插小姐","category":"pornographic","level":"medium","review_note":"含性服务/性行为隐语，原 other/low 分类过低。"}
+{"text":"插屁屁","category":"pornographic","level":"medium","review_note":"含性行为隐语，原 other/low 分类过低。"}
+{"text":"插得好爽啊","category":"pornographic","level":"medium","review_note":"含性行为快感描述，原 other/low 分类过低。"}
+{"text":"插护士","category":"pornographic","level":"medium","review_note":"在色情词簇中含职业色情化性行为语义，原 other/low 分类过低。"}
+{"text":"插深些","category":"pornographic","level":"medium","review_note":"含性行为动作描述，原 other/low 分类过低。"}
+{"text":"插穴止痒","category":"pornographic","level":"medium","review_note":"含性器官隐语和性行为语义，原 other/low 分类过低。"}
+{"text":"插那吗逼","category":"abuse","level":"medium","review_note":"含辱骂性粗口变体，原 other/low 分类过低。"}
+{"text":"插阴","category":"pornographic","level":"medium","review_note":"含性器官/性行为隐语，原 other/low 分类过低。"}
+{"text":"援交女教师","category":"pornographic","level":"high","review_note":"含援交性交易语义，原 other/low 分类过低。"}
+{"text":"撬锁","category":"illegal","level":"medium","review_note":"含非法开锁/入侵风险语义，原 other/low 分类过低。"}
+{"text":"撸撸网","category":"pornographic","level":"medium","review_note":"在成人站点词簇中指向色情网站，原 other/low 分类过低。"}
+{"text":"撸管","category":"pornographic","level":"medium","review_note":"含自慰性行为俗语，原 other/low 分类过低。"}
+{"text":"摇头丸qq","category":"ad","level":"low","review_note":"含 QQ 导流标识，按用户规则由 illegal/high 改为 ad/low。"}
+{"text":"摇头丸专供qq","category":"ad","level":"low","review_note":"含 QQ 导流标识，按用户规则由 illegal/high 改为 ad/low。"}
+{"text":"摇头丸专卖qq","category":"ad","level":"low","review_note":"含 QQ 导流标识，按用户规则由 illegal/high 改为 ad/low。"}
+{"text":"摇头丸买卖qq","category":"ad","level":"low","review_note":"含 QQ 导流标识，按用户规则由 illegal/high 改为 ad/low。"}
+{"text":"摇头丸供应qq","category":"ad","level":"low","review_note":"含 QQ 导流标识，按用户规则由 illegal/high 改为 ad/low。"}
+{"text":"摇头丸出售qq","category":"ad","level":"low","review_note":"含 QQ 导流标识，按用户规则由 illegal/high 改为 ad/low。"}
+{"text":"摇头丸制造制作技术配方qq","category":"ad","level":"low","review_note":"含 QQ 导流标识，按用户规则由 illegal/high 改为 ad/low。"}
+{"text":"摇头丸批发qq","category":"ad","level":"low","review_note":"含 QQ 导流标识，按用户规则由 illegal/high 改为 ad/low。"}
+{"text":"摇头丸提供qq","category":"ad","level":"low","review_note":"含 QQ 导流标识，按用户规则由 illegal/high 改为 ad/low。"}
+{"text":"摇头丸直销qq","category":"ad","level":"low","review_note":"含 QQ 导流标识，按用户规则由 illegal/high 改为 ad/low。"}
+{"text":"摇头丸订购qq","category":"ad","level":"low","review_note":"含 QQ 导流标识，按用户规则由 illegal/high 改为 ad/low。"}
+{"text":"摇头丸购买qq","category":"ad","level":"low","review_note":"含 QQ 导流标识，按用户规则由 illegal/high 改为 ad/low。"}
+{"text":"摇头丸送货上门qq","category":"ad","level":"low","review_note":"含 QQ 导流标识，按用户规则由 illegal/high 改为 ad/low。"}
+{"text":"摇头丸销售qq","category":"ad","level":"low","review_note":"含 QQ 导流标识，按用户规则由 illegal/high 改为 ad/low。"}
+{"text":"摸jj","category":"pornographic","level":"medium","review_note":"含性器官触摸隐语，原 other/low 分类过低。"}
+{"text":"摸你鶏巴","category":"pornographic","level":"medium","review_note":"含性器官触摸语义，原 other/low 分类过低。"}
+{"text":"摸你鸡巴","category":"pornographic","level":"medium","review_note":"含性器官触摸语义，原 other/low 分类过低。"}
+{"text":"摸咪咪","category":"pornographic","level":"medium","review_note":"含性化触摸语义，原 other/low 分类过低。"}
+{"text":"摸奶","category":"pornographic","level":"medium","review_note":"含性化触摸语义，原 other/low 分类过低。"}
+{"text":"摸摸你的小馒头","category":"pornographic","level":"medium","review_note":"含胸部隐语和性化触摸语义，原 other/low 分类过低。"}
+{"text":"摸胸","category":"pornographic","level":"medium","review_note":"含性化触摸语义，原 other/low 分类过低。"}
+{"text":"摸逼","category":"pornographic","level":"medium","review_note":"含性器官触摸隐语，原 other/low 分类过低。"}
+{"text":"操b","category":"pornographic","level":"medium","review_note":"含露骨性行为隐语，原 other/low 分类过低。"}
+{"text":"操bb","category":"pornographic","level":"medium","review_note":"含露骨性行为隐语，原 other/low 分类过低。"}
+{"text":"操bibi","category":"pornographic","level":"medium","review_note":"含露骨性行为隐语，原 other/low 分类过低。"}
+{"text":"操b影院","category":"pornographic","level":"high","review_note":"含色情影院资源语义，原 other/low 分类过低。"}
+{"text":"操b指南","category":"pornographic","level":"medium","review_note":"含露骨性行为指南语义，原 other/low 分类过低。"}
+{"text":"操meimei","category":"pornographic","level":"medium","review_note":"含性行为隐语，原 other/low 分类过低。"}
+{"text":"操你8辈祖宗","category":"abuse","level":"medium","review_note":"含针对祖辈的侮辱性辱骂，原 other/low 分类过低。"}
+{"text":"操你全家","category":"abuse","level":"medium","review_note":"含针对全家的侮辱性辱骂，原 other/low 分类过低。"}
+{"text":"操你奶奶","category":"abuse","level":"medium","review_note":"含针对亲属的侮辱性辱骂，原 other/low 分类过低。"}
+{"text":"操你爷爷","category":"abuse","level":"medium","review_note":"含针对亲属的侮辱性辱骂，原 other/low 分类过低。"}
+{"text":"操你爸","category":"abuse","level":"medium","review_note":"含针对亲属的侮辱性辱骂，原 other/low 分类过低。"}
+{"text":"操你祖宗","category":"abuse","level":"medium","review_note":"含针对祖辈的侮辱性辱骂，原 other/low 分类过低。"}
+{"text":"操吹喇叭","category":"pornographic","level":"medium","review_note":"含口交隐语，原 other/low 分类过低。"}
+{"text":"操大b","category":"pornographic","level":"medium","review_note":"含露骨性行为隐语，原 other/low 分类过低。"}
+{"text":"操大波波","category":"pornographic","level":"medium","review_note":"含性化胸部隐语，原 other/low 分类过低。"}
+{"text":"操她妈","category":"abuse","level":"medium","review_note":"含针对亲属的侮辱性辱骂，原 other/low 分类过低。"}
+{"text":"操妳全家","category":"abuse","level":"medium","review_note":"含针对全家的侮辱性辱骂，原 other/low 分类过低。"}
+{"text":"操妳祖宗","category":"abuse","level":"medium","review_note":"含针对祖辈的侮辱性辱骂，原 other/low 分类过低。"}
+{"text":"操妹妹","category":"pornographic","level":"medium","review_note":"含性行为隐语，原 other/low 分类过低。"}
+{"text":"操妻","category":"pornographic","level":"medium","review_note":"含性行为隐语，原 other/low 分类过低。"}
+{"text":"操小姐b","category":"pornographic","level":"medium","review_note":"含性服务/性行为隐语，原 other/low 分类过低。"}
+{"text":"操小姐穴","category":"pornographic","level":"high","review_note":"含露骨性行为和性器官隐语，原 other/low 分类过低。"}
+{"text":"操小姨子","category":"pornographic","level":"medium","review_note":"含乱伦化性行为隐语，原 other/low 分类过低。"}
+{"text":"操得直叫爽","category":"pornographic","level":"medium","review_note":"含性行为快感描述，原 other/low 分类过低。"}
+{"text":"操打炮","category":"pornographic","level":"medium","review_note":"含性行为俗语，原 other/low 分类过低。"}
+{"text":"操护士","category":"pornographic","level":"medium","review_note":"在色情词簇中含职业色情化性行为语义，原 other/low 分类过低。"}
+{"text":"操操你8辈祖宗","category":"abuse","level":"medium","review_note":"含针对祖辈的侮辱性辱骂，原 other/low 分类过低。"}
+{"text":"操操逼","category":"pornographic","level":"medium","review_note":"含露骨性行为隐语，原 other/low 分类过低。"}
+{"text":"操粗制吗啡","category":"illegal","level":"high","review_note":"含粗制吗啡毒品语义，原 other/low 分类过低。"}
+{"text":"操逼免费","category":"pornographic","level":"medium","review_note":"含露骨性行为资源语义，原 other/low 分类过低。"}

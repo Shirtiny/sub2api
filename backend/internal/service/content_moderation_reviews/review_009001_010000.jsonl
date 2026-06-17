@@ -1,0 +1,624 @@
+{"text":"专业帮人打架报仇","category":"violence","level":"high","review_note":"Assault/revenge-for-hire phrase; original other/low is too weak."}
+{"text":"专业帮人打架报仇qq","category":"violence","level":"high","review_note":"Contact phrase for assault/revenge-for-hire; ad/low understates violent content."}
+{"text":"专业帮人报仇电话","category":"violence","level":"high","review_note":"Phone contact for revenge-for-hire; should be violence/high rather than ad/low."}
+{"text":"专业帮人报复","category":"violence","level":"high","review_note":"Retaliation-for-hire phrase; original other/low is mislabeled."}
+{"text":"专业帮人敲诈","category":"illegal","level":"high","review_note":"Extortion-for-hire phrase; should be illegal/high rather than other/low."}
+{"text":"专业帮人杀人","category":"violence","level":"critical","review_note":"Murder-for-hire phrase; violence/critical is clearer than violence/high."}
+{"text":"专业帮人毁容","category":"violence","level":"high","review_note":"Disfigurement-for-hire phrase; should be violence/high."}
+{"text":"专业帮人清债","category":"illegal","level":"medium","review_note":"Debt collection service in this retaliation cluster likely implies coercive collection; other/low is too weak."}
+{"text":"专业帮人讨债","category":"illegal","level":"medium","review_note":"Debt-collection-for-hire phrase in a violent-services cluster; illegal/medium is clearer than other/low."}
+{"text":"专业帮人追债","category":"illegal","level":"medium","review_note":"Debt pursuit service in this coercive cluster; original other/low is too weak."}
+{"text":"专业帮你报仇","category":"violence","level":"high","review_note":"Revenge-for-hire phrase; should be violence/high rather than other/low."}
+{"text":"专业帮你报仇qq","category":"violence","level":"high","review_note":"Contact phrase for revenge-for-hire; ad/low understates violent content."}
+{"text":"专业帮忙复仇","category":"violence","level":"high","review_note":"Revenge-for-hire phrase; original other/low is mislabeled."}
+{"text":"专业帮忙报仇","category":"violence","level":"high","review_note":"Revenge-for-hire phrase; should be violence/high."}
+{"text":"专业开票","category":"illegal","level":"high","review_note":"Invoice issuing phrase in this illegal invoice cluster; original other/low is too weak."}
+{"text":"专业开锁工具专卖","category":"illegal","level":"high","review_note":"Sale of lock-picking tools; should be illegal/high rather than other/low."}
+{"text":"专业开锁工具出售","category":"illegal","level":"high","review_note":"Lock-picking tool sale phrase; ad/low understates illegal tooling."}
+{"text":"专业开锁工具出售qq","category":"illegal","level":"high","review_note":"QQ contact for lock-picking tool sale; should be illegal/high."}
+{"text":"专业打手","category":"violence","level":"high","review_note":"Hired thug/attacker phrase; original other/low is mislabeled."}
+{"text":"专业打手公司","category":"violence","level":"high","review_note":"Hired-thug company phrase; should be violence/high."}
+{"text":"专业批发警棍","category":"violence","level":"medium","review_note":"Baton wholesale phrase; violence/medium is clearer than other/low."}
+{"text":"专业批发警棍qq","category":"violence","level":"medium","review_note":"Baton wholesale contact phrase; ad/low is too generic."}
+{"text":"专业找人办事毁容","category":"violence","level":"high","review_note":"Arranging disfigurement is violent harm-for-hire; original other/low is mislabeled."}
+{"text":"专业找人复仇","category":"violence","level":"high","review_note":"Seeking revenge-for-hire; should be violence/high."}
+{"text":"专业找人报仇","category":"violence","level":"high","review_note":"Seeking revenge-for-hire; original other/low is too weak."}
+{"text":"专业找人讨债","category":"illegal","level":"medium","review_note":"Coercive debt-collection service phrase in this cluster; illegal/medium is clearer than other/low."}
+{"text":"专业找打手","category":"violence","level":"high","review_note":"Seeking hired attackers; should be violence/high."}
+{"text":"专业找杀手","category":"violence","level":"critical","review_note":"Seeking a killer is solicitation of lethal violence; original other/low is critically understated."}
+{"text":"专业找职业杀手","category":"violence","level":"critical","review_note":"Seeking a professional killer; should be violence/critical."}
+{"text":"专业找逼操","category":"pornographic","level":"high","review_note":"Explicit sexual phrase with forced-sex wording; original other/low is mislabeled."}
+{"text":"专业报仇","category":"violence","level":"high","review_note":"Revenge-for-hire phrase; should be violence/high."}
+{"text":"专业报仇qq","category":"violence","level":"high","review_note":"Revenge-for-hire contact phrase; ad/low understates violent content."}
+{"text":"专业报仇公司","category":"violence","level":"high","review_note":"Revenge-for-hire company phrase; original other/low is too weak."}
+{"text":"专业推油飞机筷餐苞夜佺套丄冂苞爽","category":"pornographic","level":"high","review_note":"Obfuscated sexual-service wording including massage, handjob, overnight and full-service terms."}
+{"text":"专业提供国内外女郎","category":"pornographic","level":"medium","review_note":"Offering domestic/foreign girls in this services cluster indicates adult escort content; other/low is too weak."}
+{"text":"专业提供开锁工具","category":"illegal","level":"high","review_note":"Offering lock-picking tools is illegal tooling content; should be illegal/high."}
+{"text":"专业提供打手","category":"violence","level":"high","review_note":"Offering hired attackers; original other/low is mislabeled."}
+{"text":"专业提供杀手","category":"violence","level":"critical","review_note":"Offering killers is lethal violence-for-hire; should be violence/critical."}
+{"text":"专业提供车主信息","category":"illegal","level":"high","review_note":"Vehicle-owner personal-data trafficking; should be illegal/high."}
+{"text":"专业替人了仇","category":"violence","level":"high","review_note":"Revenge-for-hire phrase; original other/low is too weak."}
+{"text":"专业替人出气","category":"violence","level":"high","review_note":"Retaliation/assault-for-hire phrase; should be violence/high."}
+{"text":"专业替人制造意外死亡","category":"violence","level":"critical","review_note":"Murder-for-hire phrased as accidental death; original other/low is critically understated."}
+{"text":"专业替人勒索","category":"illegal","level":"high","review_note":"Extortion-for-hire phrase; should be illegal/high."}
+{"text":"专业替人处理恩怨","category":"violence","level":"high","review_note":"Settling grudges for hire implies violent retaliation; original other/low is too weak."}
+{"text":"专业替人复仇","category":"violence","level":"high","review_note":"Revenge-for-hire phrase; should be violence/high."}
+{"text":"专业替人打架","category":"violence","level":"high","review_note":"Assault-for-hire phrase; original other/low is mislabeled."}
+{"text":"专业替人打架报仇","category":"violence","level":"high","review_note":"Assault/revenge-for-hire phrase; should be violence/high."}
+{"text":"专业替人报仇","category":"violence","level":"high","review_note":"Revenge-for-hire phrase; original other/low is too weak."}
+{"text":"专业替人报仇qq","category":"violence","level":"high","review_note":"Revenge-for-hire contact phrase; ad/low understates violent content."}
+{"text":"专业替人报仇电话","category":"violence","level":"high","review_note":"Phone contact for revenge-for-hire; should be violence/high rather than ad/low."}
+{"text":"专业替人报复","category":"violence","level":"high","review_note":"Retaliation-for-hire phrase; should be violence/high."}
+{"text":"专业替人敲诈","category":"illegal","level":"high","review_note":"Extortion-for-hire phrase; original other/low is mislabeled."}
+{"text":"专业替人杀人","category":"violence","level":"critical","review_note":"Murder-for-hire phrase; violence/critical is clearer than violence/high."}
+{"text":"专业替人毁容","category":"violence","level":"high","review_note":"Disfigurement-for-hire phrase; should be violence/high."}
+{"text":"专业替人清债","category":"illegal","level":"medium","review_note":"Coercive debt-cleanup phrase in a violence-for-hire cluster; other/low is too weak."}
+{"text":"专业替人讨债","category":"illegal","level":"medium","review_note":"Debt-collection-for-hire phrase in this coercive cluster; illegal/medium is clearer than other/low."}
+{"text":"专业替人讨债qq","category":"illegal","level":"medium","review_note":"Debt-collection contact phrase in a coercive services cluster; ad/low is too weak."}
+{"text":"专业替人追债","category":"illegal","level":"medium","review_note":"Coercive debt pursuit service phrase; original other/low is too weak."}
+{"text":"专业杀手qq","category":"violence","level":"critical","review_note":"Killer-for-hire contact phrase; ad/low is critically understated."}
+{"text":"专业毁容","category":"violence","level":"high","review_note":"Disfigurement service phrase; should be violence/high."}
+{"text":"专业特种兵打手","category":"violence","level":"high","review_note":"Special-forces hired-thug phrase; original other/low is too weak."}
+{"text":"专业特种兵杀手","category":"violence","level":"critical","review_note":"Special-forces killer-for-hire phrase; should be violence/critical."}
+{"text":"专业电动长狗","category":"illegal","level":"high","review_note":"长狗 is long-gun slang in this weapon cluster; original other/low is mislabeled."}
+{"text":"专业税票代开","category":"illegal","level":"high","review_note":"Tax-invoice issuing service is invoice fraud content; should be illegal/high."}
+{"text":"专业税票代开qq","category":"illegal","level":"high","review_note":"QQ contact for tax-invoice issuing service; ad/low understates fraud content."}
+{"text":"专业经销假钞","category":"illegal","level":"high","review_note":"Counterfeit banknote distribution phrase; should be illegal/high."}
+{"text":"专业网上刷票","category":"illegal","level":"medium","review_note":"Online vote manipulation service; illegal/medium is clearer than other/low."}
+{"text":"专业英国骚本","category":"illegal","level":"high","review_note":"Soben/PCP air-gun phrase in weapons cluster; should be illegal/high."}
+{"text":"专业职业复仇","category":"violence","level":"high","review_note":"Professional revenge-for-hire phrase; original other/low is too weak."}
+{"text":"专业解决个人恩怨","category":"violence","level":"high","review_note":"Settling personal grudges for hire implies violent retaliation; should be violence/high."}
+{"text":"专业解决恩怨qq","category":"violence","level":"high","review_note":"Contact phrase for settling grudges; ad/low understates violent-service content."}
+{"text":"专业解决情敌","category":"violence","level":"high","review_note":"Handling a romantic rival implies harm-for-hire; original other/low is too weak."}
+{"text":"专业警官证制作","category":"illegal","level":"high","review_note":"Police-officer ID production phrase; should be illegal/high."}
+{"text":"专业警棍出售","category":"violence","level":"medium","review_note":"Baton sale phrase; ad/low is too generic."}
+{"text":"专业警棍出售qq","category":"violence","level":"medium","review_note":"Baton sale contact phrase; should be violence/medium rather than ad/low."}
+{"text":"专业资格证代考","category":"illegal","level":"high","review_note":"Qualification-exam proxy taking is exam fraud; original other/low is mislabeled."}
+{"text":"专业资格证替考","category":"illegal","level":"high","review_note":"Proxy exam-taking phrase; should be illegal/high."}
+{"text":"专业退5兵打手","category":"violence","level":"high","review_note":"Retired-soldier hired-thug phrase; original other/low is too weak."}
+{"text":"专业退5兵杀手","category":"violence","level":"critical","review_note":"Retired-soldier killer-for-hire phrase; should be violence/critical."}
+{"text":"专业银行卡出售","category":"illegal","level":"high","review_note":"Bank-card sale phrase suggests financial fraud trafficking; ad/low is too weak."}
+{"text":"专业雇人复仇","category":"violence","level":"high","review_note":"Hiring someone for revenge; should be violence/high."}
+{"text":"专业雇人打架","category":"violence","level":"high","review_note":"Hiring someone to fight/assault; original other/low is mislabeled."}
+{"text":"专业雇人报仇","category":"violence","level":"high","review_note":"Hiring someone for revenge; should be violence/high."}
+{"text":"专业高考作弊","category":"illegal","level":"high","review_note":"Gaokao cheating phrase; original other/low is mislabeled."}
+{"text":"专买肝源qq","category":"illegal","level":"high","review_note":"Organ-source purchase contact phrase; ad/low understates organ trafficking."}
+{"text":"专买肝脏qq","category":"illegal","level":"high","review_note":"Liver purchase contact phrase; should be illegal/high."}
+{"text":"专买肾源qq","category":"illegal","level":"high","review_note":"Kidney-source purchase contact phrase; should be illegal/high."}
+{"text":"专买肾脏qq","category":"illegal","level":"high","review_note":"Kidney purchase contact phrase; ad/low understates organ trafficking."}
+{"text":"专供植物冰","category":"illegal","level":"high","review_note":"Plant ice is drug slang in this cluster; original other/low is too weak."}
+{"text":"专供猎豹弓弩","category":"violence","level":"medium","review_note":"Crossbow supply phrase; should be violence/medium rather than other/low."}
+{"text":"专供赵氏弩","category":"violence","level":"medium","review_note":"Crossbow supply phrase; original other/low is too generic."}
+{"text":"专供赵氏弩qq","category":"violence","level":"medium","review_note":"Crossbow supply contact phrase; ad/low is too generic."}
+{"text":"专制","category":"political","level":"medium","review_note":"Authoritarian-rule political term; political/medium is clearer than other/low."}
+{"text":"专制政权","category":"political","level":"medium","review_note":"Political phrase describing authoritarian regime; original other/low is mislabeled."}
+{"text":"专卖1元假硬币","category":"illegal","level":"high","review_note":"Counterfeit coin sale phrase; should be illegal/high."}
+{"text":"专卖1元假硬币qq","category":"illegal","level":"high","review_note":"Counterfeit coin sale contact phrase; ad/low understates fraud content."}
+{"text":"专卖3利达弓弩","category":"violence","level":"medium","review_note":"Crossbow sale phrase; violence/medium is clearer than other/low."}
+{"text":"专卖3利达弓弩qq","category":"violence","level":"medium","review_note":"Crossbow sale contact phrase; ad/low is too generic."}
+{"text":"专卖3利达手弓弩","category":"violence","level":"medium","review_note":"Hand crossbow sale phrase; should be violence/medium."}
+{"text":"专卖3唑仑qq","category":"illegal","level":"high","review_note":"Triazolam sale contact phrase; ad/low understates controlled-drug content."}
+{"text":"专卖3唑仑片","category":"illegal","level":"high","review_note":"Triazolam pill sale phrase; should be illegal/high."}
+{"text":"专卖3唑仑片qq","category":"illegal","level":"high","review_note":"Triazolam pill sale contact phrase; ad/low is too weak."}
+{"text":"专卖3棱军刀","category":"violence","level":"medium","review_note":"Triangular military knife sale phrase; should be violence/medium."}
+{"text":"专卖3棱军刀qq","category":"violence","level":"medium","review_note":"Military knife sale contact phrase; ad/low is too generic."}
+{"text":"专卖3棱军刺","category":"violence","level":"medium","review_note":"Military spike/bayonet sale phrase; original other/low is too weak."}
+{"text":"专卖3棱军刺qq","category":"violence","level":"medium","review_note":"Military spike/bayonet sale contact phrase; ad/low is too generic."}
+{"text":"专卖3棱刀具","category":"violence","level":"medium","review_note":"Triangular blade sale phrase; should be violence/medium."}
+{"text":"专卖3棱刀具qq","category":"violence","level":"medium","review_note":"Triangular blade sale contact phrase; ad/low is too generic."}
+{"text":"专卖3棱刺刀","category":"violence","level":"medium","review_note":"Bayonet sale phrase; original other/low is too weak."}
+{"text":"专卖3棱尖刀","category":"violence","level":"medium","review_note":"Triangular pointed knife sale phrase; should be violence/medium."}
+{"text":"专卖3棱尖刺","category":"violence","level":"medium","review_note":"Triangular spike sale phrase; should be violence/medium."}
+{"text":"专卖3棱尖刺qq","category":"violence","level":"medium","review_note":"Triangular spike sale contact phrase; ad/low is too generic."}
+{"text":"专卖3棱毒刺","category":"violence","level":"medium","review_note":"Poison-spike/triangular spike weapon sale phrase; original other/low is too weak."}
+{"text":"专卖45mm狗粮","category":"illegal","level":"high","review_note":"狗粮 is ammunition/pellet slang in this weapons cluster; should be illegal/high."}
+{"text":"专卖45mm狗粮qq","category":"illegal","level":"high","review_note":"Ammunition slang sale contact phrase; ad/low understates weapons content."}
+{"text":"专卖4级证qq","category":"illegal","level":"high","review_note":"CET-4 certificate sale contact phrase implies forged credential trafficking."}
+{"text":"专卖54式64式","category":"illegal","level":"high","review_note":"Firearm model sale phrase; original other/low is mislabeled."}
+{"text":"专卖54式qiang","category":"illegal","level":"high","review_note":"Obfuscated handgun sale phrase; should be illegal/high."}
+{"text":"专卖54手qiang","category":"illegal","level":"high","review_note":"Obfuscated handgun sale phrase; original other/low is too weak."}
+{"text":"专卖56式军刺","category":"violence","level":"medium","review_note":"Bayonet sale phrase; should be violence/medium."}
+{"text":"专卖56式军刺qq","category":"violence","level":"medium","review_note":"Bayonet sale contact phrase; ad/low is too generic."}
+{"text":"专卖64式qiang","category":"illegal","level":"high","review_note":"Obfuscated firearm sale phrase; should be illegal/high."}
+{"text":"专卖64式手狗","category":"illegal","level":"high","review_note":"手狗 is handgun slang; original other/low is mislabeled."}
+{"text":"专卖64式手狗qq","category":"illegal","level":"high","review_note":"Handgun-slang sale contact phrase; ad/low understates weapons content."}
+{"text":"专卖64手qiang","category":"illegal","level":"high","review_note":"Obfuscated handgun sale phrase; should be illegal/high."}
+{"text":"专卖77式qiang","category":"illegal","level":"high","review_note":"Obfuscated firearm sale phrase; original other/low is too weak."}
+{"text":"专卖77手qiang","category":"illegal","level":"high","review_note":"Obfuscated handgun sale phrase; should be illegal/high."}
+{"text":"专卖92式qiang","category":"illegal","level":"high","review_note":"Obfuscated firearm sale phrase; original other/low is mislabeled."}
+{"text":"专卖92手qiang","category":"illegal","level":"high","review_note":"Obfuscated handgun sale phrase; should be illegal/high."}
+{"text":"专卖fox格斗砍刀qq","category":"violence","level":"medium","review_note":"Combat machete sale contact phrase; ad/low is too generic."}
+{"text":"专卖ghb","category":"illegal","level":"high","review_note":"GHB controlled-drug sale phrase; should be illegal/high."}
+{"text":"专卖ghb原液","category":"illegal","level":"high","review_note":"GHB concentrate sale phrase; original other/low is mislabeled."}
+{"text":"专卖ghb水","category":"illegal","level":"high","review_note":"GHB liquid sale phrase; should be illegal/high."}
+{"text":"专卖ghb水配方","category":"illegal","level":"critical","review_note":"GHB formula sale phrase; illegal/critical is clearer than other/low."}
+{"text":"专卖ghb迷情水","category":"illegal","level":"critical","review_note":"GHB date-rape drug sale phrase; should be illegal/critical."}
+{"text":"专卖gηb迷情水","category":"illegal","level":"critical","review_note":"Obfuscated GHB date-rape drug sale phrase; original other/low is critically understated."}
+{"text":"专卖g水","category":"illegal","level":"high","review_note":"G-water/GHB drug slang sale phrase; should be illegal/high."}
+{"text":"专卖happy水","category":"illegal","level":"high","review_note":"Happy water is drug slang; sale phrase should be illegal/high."}
+{"text":"专卖high药","category":"illegal","level":"high","review_note":"Drug sale phrase; original other/low is too weak."}
+{"text":"专卖king粉","category":"illegal","level":"high","review_note":"Drug powder sale phrase; should be illegal/high."}
+{"text":"专卖lsd迷幻药","category":"illegal","level":"high","review_note":"LSD sale phrase; original other/low is mislabeled."}
+{"text":"专卖lsd迷幻药qq","category":"illegal","level":"high","review_note":"LSD sale contact phrase; ad/low understates controlled-drug content."}
+{"text":"专卖mp654k配件","category":"illegal","level":"high","review_note":"MP-654K gun/air-pistol parts sale phrase; original other/low is too weak."}
+{"text":"专卖pcp新贵","category":"illegal","level":"high","review_note":"PCP air-gun phrase in weapons cluster; should be illegal/high."}
+{"text":"专卖万能开锁器","category":"illegal","level":"high","review_note":"Lock-picking tool sale phrase; original other/low is mislabeled."}
+{"text":"专卖万能开锁器qq","category":"illegal","level":"high","review_note":"Lock-picking tool sale contact phrase; ad/low is too weak."}
+{"text":"专卖万能开锁钥匙","category":"illegal","level":"high","review_note":"Master-key/lock-opening tool sale phrase; should be illegal/high."}
+{"text":"专卖万能钥匙","category":"illegal","level":"high","review_note":"Master-key sale phrase; original other/low is too weak."}
+{"text":"专卖万能钥匙qq","category":"illegal","level":"high","review_note":"Master-key sale contact phrase; ad/low understates illegal tooling."}
+{"text":"专卖业主名单","category":"illegal","level":"high","review_note":"Property-owner list sale phrase; should be illegal/high."}
+{"text":"专卖业主名单qq","category":"illegal","level":"high","review_note":"Property-owner list sale contact phrase; ad/low is too weak."}
+{"text":"专卖丛林刀","category":"violence","level":"medium","review_note":"Jungle knife sale phrase; violence/medium is clearer than other/low."}
+{"text":"专卖丛林刀qq","category":"violence","level":"medium","review_note":"Jungle knife sale contact phrase; ad/low is too generic."}
+{"text":"专卖仿真军刺","category":"violence","level":"medium","review_note":"Replica military spike/bayonet sale phrase; should be violence/medium."}
+{"text":"专卖仿真军刺qq","category":"violence","level":"medium","review_note":"Replica military spike/bayonet sale contact phrase; ad/low is too generic."}
+{"text":"专卖仿真汽狗","category":"illegal","level":"high","review_note":"汽狗 is firearm/airgun slang; original other/low is mislabeled."}
+{"text":"专卖仿真汽狗qq","category":"illegal","level":"high","review_note":"Replica gun slang sale contact phrase; ad/low understates weapons content."}
+{"text":"专卖侦察兵折叠弓弩","category":"violence","level":"medium","review_note":"Folding crossbow sale phrase; should be violence/medium."}
+{"text":"专卖俄罗斯mp654k","category":"illegal","level":"high","review_note":"MP-654K air-pistol sale phrase; original other/low is too weak."}
+{"text":"专卖假人民币","category":"illegal","level":"high","review_note":"Counterfeit RMB sale phrase; should be illegal/high."}
+{"text":"专卖假人民币qq","category":"illegal","level":"high","review_note":"Counterfeit RMB sale contact phrase; ad/low understates fraud content."}
+{"text":"专卖假军官证qq","category":"illegal","level":"high","review_note":"Fake military-officer ID sale contact phrase; should be illegal/high."}
+{"text":"专卖假学位证qq","category":"illegal","level":"high","review_note":"Fake degree certificate sale contact phrase; ad/low is too weak."}
+{"text":"专卖假文凭","category":"illegal","level":"high","review_note":"Fake diploma sale phrase; should be illegal/high."}
+{"text":"专卖假文凭qq","category":"illegal","level":"high","review_note":"Fake diploma sale contact phrase; ad/low understates document fraud."}
+{"text":"专卖假毕业证qq","category":"illegal","level":"high","review_note":"Fake graduation certificate sale contact phrase; should be illegal/high."}
+{"text":"专卖假钞qq","category":"illegal","level":"high","review_note":"Counterfeit banknote sale contact phrase; ad/low is too weak."}
+{"text":"专卖假钱","category":"illegal","level":"high","review_note":"Counterfeit money sale phrase; original other/low is mislabeled."}
+{"text":"专卖假钱qq","category":"illegal","level":"high","review_note":"Counterfeit money sale contact phrase; ad/low understates fraud content."}
+{"text":"专卖催情水qq","category":"pornographic","level":"medium","review_note":"Aphrodisiac/sexual product sale contact phrase; ad/low is too generic."}
+{"text":"专卖催眠喷雾剂","category":"illegal","level":"high","review_note":"Sedating/drugging spray sale phrase; should be illegal/high."}
+{"text":"专卖兄弟连弓弩","category":"violence","level":"medium","review_note":"Crossbow sale phrase; original other/low is too generic."}
+{"text":"专卖全金属狩猎弓弩","category":"violence","level":"medium","review_note":"Hunting crossbow sale phrase; should be violence/medium."}
+{"text":"专卖兰博刀","category":"violence","level":"medium","review_note":"Combat knife sale phrase; original other/low is too weak."}
+{"text":"专卖兰博刀qq","category":"violence","level":"medium","review_note":"Combat knife sale contact phrase; ad/low is too generic."}
+{"text":"专卖兰博刀具qq","category":"violence","level":"medium","review_note":"Combat knife sale contact phrase; should be violence/medium."}
+{"text":"专卖兰州弓弩网","category":"violence","level":"medium","review_note":"Crossbow sales/site phrase; original other/low is too generic."}
+{"text":"专卖军刀","category":"violence","level":"medium","review_note":"Military knife sale phrase; should be violence/medium."}
+{"text":"专卖军刀qq","category":"violence","level":"medium","review_note":"Military knife sale contact phrase; ad/low is too generic."}
+{"text":"专卖军品刀具","category":"violence","level":"medium","review_note":"Military knife sale phrase; original other/low is too weak."}
+{"text":"专卖军品刀具qq","category":"violence","level":"medium","review_note":"Military knife sale contact phrase; should be violence/medium."}
+{"text":"专卖军品刺刀qq","category":"violence","level":"medium","review_note":"Bayonet sale contact phrase; ad/low is too generic."}
+{"text":"专卖军用刺刀","category":"violence","level":"medium","review_note":"Military bayonet sale phrase; should be violence/medium."}
+{"text":"专卖军用刺刀qq","category":"violence","level":"medium","review_note":"Military bayonet sale contact phrase; ad/low is too generic."}
+{"text":"专卖军用匕首","category":"violence","level":"medium","review_note":"Military dagger sale phrase; original other/low is too weak."}
+{"text":"专卖军用弓弩","category":"violence","level":"medium","review_note":"Military crossbow sale phrase; should be violence/medium."}
+{"text":"专卖军用弩","category":"violence","level":"medium","review_note":"Military crossbow sale phrase; original other/low is too generic."}
+{"text":"专卖军用弹簧刀","category":"violence","level":"medium","review_note":"Military switchblade sale phrase; should be violence/medium."}
+{"text":"专卖军用潜水刀","category":"violence","level":"medium","review_note":"Military diving knife sale phrase; should be violence/medium."}
+{"text":"专卖军用狙击弓弩","category":"violence","level":"medium","review_note":"Sniper crossbow sale phrase; original other/low is too generic."}
+{"text":"专卖军用狙击弩","category":"violence","level":"medium","review_note":"Sniper crossbow sale phrase; should be violence/medium."}
+{"text":"专卖军警用品","category":"violence","level":"medium","review_note":"Military/police gear sale phrase; violence/medium is clearer than other/low."}
+{"text":"专卖冰古","category":"illegal","level":"high","review_note":"Drug slang sale phrase in this narcotics cluster; original other/low is too weak."}
+{"text":"专卖冰古qq","category":"illegal","level":"high","review_note":"Drug slang sale contact phrase; ad/low understates narcotics content."}
+{"text":"专卖冰牙签","category":"illegal","level":"high","review_note":"Meth/drug slang phrase in this cluster; should be illegal/high."}
+{"text":"专卖冰砖","category":"illegal","level":"high","review_note":"Drug brick sale phrase; original other/low is too weak."}
+{"text":"专卖冰砖qq","category":"illegal","level":"high","review_note":"Drug brick sale contact phrase; ad/low understates narcotics content."}
+{"text":"专卖出售弓弩","category":"violence","level":"medium","review_note":"Crossbow sale phrase; ad/low is too generic."}
+{"text":"专卖力斯曼弓弩","category":"violence","level":"medium","review_note":"Crossbow sale phrase; should be violence/medium."}
+{"text":"专卖力斯曼弩","category":"violence","level":"medium","review_note":"Crossbow sale phrase; original other/low is too generic."}
+{"text":"专卖匕首qq","category":"violence","level":"medium","review_note":"Dagger sale contact phrase; ad/low is too generic."}
+{"text":"专卖匕首刀具","category":"violence","level":"medium","review_note":"Dagger/knife sale phrase; should be violence/medium."}
+{"text":"专卖北朝鲜冰","category":"illegal","level":"high","review_note":"Meth/drug sale phrase; original other/low is mislabeled."}
+{"text":"专卖北朝鲜冰qq","category":"illegal","level":"high","review_note":"Drug sale contact phrase; ad/low understates narcotics content."}
+{"text":"专卖去氧麻黄素qq","category":"illegal","level":"high","review_note":"Methamphetamine-related drug/precursor sale contact phrase; should be illegal/high."}
+{"text":"专卖双刃尖刀","category":"violence","level":"medium","review_note":"Double-edged stabbing knife sale phrase; original other/low is too weak."}
+{"text":"专卖双刃尖刀qq","category":"violence","level":"medium","review_note":"Double-edged stabbing knife sale contact phrase; ad/low is too generic."}
+{"text":"专卖古可叶","category":"illegal","level":"high","review_note":"Coca leaf sale phrase; should be illegal/high."}
+{"text":"专卖古可叶qq","category":"illegal","level":"high","review_note":"Coca leaf sale contact phrase; ad/low is too weak."}
+{"text":"专卖古柯叶","category":"illegal","level":"high","review_note":"Coca leaf sale phrase; original other/low is mislabeled."}
+{"text":"专卖古柯叶qq","category":"illegal","level":"high","review_note":"Coca leaf sale contact phrase; should be illegal/high."}
+{"text":"专卖可待因","category":"illegal","level":"high","review_note":"Codeine sale phrase; should be illegal/high."}
+{"text":"专卖可待因qq","category":"illegal","level":"high","review_note":"Codeine sale contact phrase; ad/low understates controlled-drug content."}
+{"text":"专卖司马电狗qq","category":"illegal","level":"high","review_note":"电狗 is firearm/airgun slang in this weapons cluster; ad/low is too weak."}
+{"text":"专卖各类防身电棍","category":"violence","level":"medium","review_note":"Stun baton sale phrase; should be violence/medium."}
+{"text":"专卖各类防身电警棍","category":"violence","level":"medium","review_note":"Stun/police baton sale phrase; original other/low is too generic."}
+{"text":"专卖吗啡qq","category":"illegal","level":"high","review_note":"Morphine sale contact phrase; ad/low understates controlled-drug content."}
+{"text":"专卖喵喵药","category":"illegal","level":"high","review_note":"Mephedrone/drug slang sale phrase; should be illegal/high."}
+{"text":"专卖喵喵药qq","category":"illegal","level":"high","review_note":"Drug slang sale contact phrase; ad/low is too weak."}
+{"text":"专卖喷雾迷药","category":"illegal","level":"high","review_note":"Drugging spray sale phrase; should be illegal/high."}
+{"text":"专卖国产秃鹰","category":"illegal","level":"high","review_note":"Condor air-gun sale phrase; original other/low is mislabeled."}
+{"text":"专卖国产秃鹰qq","category":"illegal","level":"high","review_note":"Condor air-gun sale contact phrase; ad/low is too weak."}
+{"text":"专卖地西泮","category":"illegal","level":"high","review_note":"Diazepam sale phrase; should be illegal/high."}
+{"text":"专卖地西泮qq","category":"illegal","level":"high","review_note":"Diazepam sale contact phrase; ad/low understates controlled-drug content."}
+{"text":"专卖多功能弹簧刀","category":"violence","level":"medium","review_note":"Switchblade sale phrase; original other/low is too generic."}
+{"text":"专卖大冰砖qq","category":"illegal","level":"high","review_note":"Drug brick sale contact phrase; ad/low is too weak."}
+{"text":"专卖学位证qq","category":"illegal","level":"high","review_note":"Degree certificate sale contact phrase implies forged credential trafficking."}
+{"text":"专卖学位证书qq","category":"illegal","level":"high","review_note":"Degree certificate sale contact phrase; should be illegal/high."}
+{"text":"专卖安乐死药物qq","category":"illegal","level":"high","review_note":"Euthanasia-drug sale contact phrase; ad/low understates illegal drug content."}
+{"text":"专卖安纳咖","category":"illegal","level":"high","review_note":"Controlled stimulant sale phrase; should be illegal/high."}
+{"text":"专卖安纳咖qq","category":"illegal","level":"high","review_note":"Controlled stimulant sale contact phrase; ad/low is too weak."}
+{"text":"专卖定额税票","category":"illegal","level":"high","review_note":"Fixed-amount tax invoice sale phrase; original other/low is too weak."}
+{"text":"专卖小区业主名单qq","category":"illegal","level":"high","review_note":"Residential owner list sale contact phrase; should be illegal/high."}
+{"text":"专卖小口径手qiang","category":"illegal","level":"high","review_note":"Obfuscated small-caliber handgun sale phrase; original other/low is mislabeled."}
+{"text":"专卖小口径步qiang","category":"illegal","level":"high","review_note":"Obfuscated small-caliber rifle sale phrase; should be illegal/high."}
+{"text":"专卖尼泊尔军刀","category":"violence","level":"medium","review_note":"Military knife sale phrase; original other/low is too weak."}
+{"text":"专卖尼泊尔军刀qq","category":"violence","level":"medium","review_note":"Military knife sale contact phrase; ad/low is too generic."}
+{"text":"专卖尼美西泮qq","category":"illegal","level":"high","review_note":"Nimetazepam sale contact phrase; should be illegal/high."}
+{"text":"专卖山奈qq","category":"illegal","level":"high","review_note":"Cyanide slang sale contact phrase; ad/low understates poison content."}
+{"text":"专卖山奈钾","category":"illegal","level":"high","review_note":"氰化钾/cyanide poison sale phrase; should be illegal/high."}
+{"text":"专卖山奈钾qq","category":"illegal","level":"high","review_note":"Cyanide sale contact phrase; ad/low is too weak."}
+{"text":"专卖工字牌钢珠狗","category":"illegal","level":"high","review_note":"钢珠狗 is gun slang; original other/low is mislabeled."}
+{"text":"专卖工字牌钢珠狗qq","category":"illegal","level":"high","review_note":"Gun slang sale contact phrase; ad/low understates weapons content."}
+{"text":"专卖左旋麻黄素","category":"illegal","level":"high","review_note":"Ephedrine/precursor sale phrase; should be illegal/high."}
+{"text":"专卖左轮手狗","category":"illegal","level":"high","review_note":"Revolver handgun slang sale phrase; original other/low is too weak."}
+{"text":"专卖左轮钢珠狗","category":"illegal","level":"high","review_note":"Steel-ball revolver gun slang sale phrase; should be illegal/high."}
+{"text":"专卖左轮钢珠狗qq","category":"illegal","level":"high","review_note":"Steel-ball revolver gun slang sale contact phrase; ad/low is too weak."}
+{"text":"专卖度冷丁qq","category":"illegal","level":"high","review_note":"Pethidine/Dolantin sale contact phrase; should be illegal/high."}
+{"text":"专卖开刃短刀","category":"violence","level":"medium","review_note":"Sharpened short knife sale phrase; original other/low is too generic."}
+{"text":"专卖开山刀","category":"violence","level":"medium","review_note":"Machete sale phrase; should be violence/medium."}
+{"text":"专卖开山刀qq","category":"violence","level":"medium","review_note":"Machete sale contact phrase; ad/low is too generic."}
+{"text":"专卖开锁器","category":"illegal","level":"high","review_note":"Lock-picking device sale phrase; original other/low is mislabeled."}
+{"text":"专卖开锁器qq","category":"illegal","level":"high","review_note":"Lock-picking device sale contact phrase; ad/low understates illegal tooling."}
+{"text":"专卖开锁器材","category":"illegal","level":"high","review_note":"Lock-picking equipment sale phrase; should be illegal/high."}
+{"text":"专卖开锁器材qq","category":"illegal","level":"high","review_note":"Lock-picking equipment sale contact phrase; ad/low is too weak."}
+{"text":"专卖开锁器材电话","category":"illegal","level":"high","review_note":"Lock-picking equipment phone contact phrase; should be illegal/high."}
+{"text":"专卖弓弩","category":"violence","level":"medium","review_note":"Crossbow sale phrase; original other/low is too generic."}
+{"text":"专卖弓弩qq","category":"violence","level":"medium","review_note":"Crossbow sale contact phrase; ad/low is too generic."}
+{"text":"专卖弓弩之家","category":"violence","level":"medium","review_note":"Crossbow sales/site phrase; should be violence/medium."}
+{"text":"专卖弓弩器材","category":"violence","level":"medium","review_note":"Crossbow equipment sale phrase; original other/low is too generic."}
+{"text":"专卖弓弩狩猎网","category":"violence","level":"medium","review_note":"Crossbow hunting site/sale phrase; should be violence/medium."}
+{"text":"专卖弩","category":"violence","level":"medium","review_note":"Crossbow sale phrase; original other/low is too generic."}
+{"text":"专卖弹弓弩","category":"violence","level":"medium","review_note":"Slingshot/crossbow weapon sale phrase; should be violence/medium."}
+{"text":"专卖弹簧刀","category":"violence","level":"medium","review_note":"Switchblade sale phrase; original other/low is too generic."}
+{"text":"专卖弹簧刀qq","category":"violence","level":"medium","review_note":"Switchblade sale contact phrase; ad/low is too generic."}
+{"text":"专卖强效催情水","category":"pornographic","level":"medium","review_note":"Strong aphrodisiac sale phrase; pornographic/medium is clearer than other/low."}
+{"text":"专卖慢性毒药","category":"illegal","level":"high","review_note":"Slow poison sale phrase; should be illegal/high."}
+{"text":"专卖战术折刀","category":"violence","level":"medium","review_note":"Tactical folding knife sale phrase; original other/low is too generic."}
+{"text":"专卖战术折刀qq","category":"violence","level":"medium","review_note":"Tactical folding knife sale contact phrase; ad/low is too generic."}
+{"text":"专卖战术直刀","category":"violence","level":"medium","review_note":"Tactical fixed-blade knife sale phrase; should be violence/medium."}
+{"text":"专卖战神弓弩","category":"violence","level":"medium","review_note":"Crossbow sale phrase; original other/low is too generic."}
+{"text":"专卖战神弩","category":"violence","level":"medium","review_note":"Crossbow sale phrase; should be violence/medium."}
+{"text":"专卖户外刀具","category":"violence","level":"medium","review_note":"Outdoor knife sale phrase; original other/low is too generic."}
+{"text":"专卖户外刀具qq","category":"violence","level":"medium","review_note":"Outdoor knife sale contact phrase; ad/low is too generic."}
+{"text":"专卖户外狩猎弓弩","category":"violence","level":"medium","review_note":"Hunting crossbow sale phrase; should be violence/medium."}
+{"text":"专卖户外狩猎弩","category":"violence","level":"medium","review_note":"Hunting crossbow sale phrase; original other/low is too generic."}
+{"text":"专卖户外砍刀","category":"violence","level":"medium","review_note":"Outdoor machete sale phrase; should be violence/medium."}
+{"text":"专卖户外砍刀qq","category":"violence","level":"medium","review_note":"Outdoor machete sale contact phrase; ad/low is too generic."}
+{"text":"专卖手弩","category":"violence","level":"medium","review_note":"Hand crossbow sale phrase; original other/low is too generic."}
+{"text":"专卖手弩qq","category":"violence","level":"medium","review_note":"Hand crossbow sale contact phrase; ad/low is too generic."}
+{"text":"专卖手机窃听软件","category":"illegal","level":"high","review_note":"Phone eavesdropping software sale phrase; ad/low understates surveillance tooling."}
+{"text":"专卖手狗","category":"illegal","level":"high","review_note":"手狗 is handgun slang; original other/low is mislabeled."}
+{"text":"专卖手狗狗粮","category":"illegal","level":"high","review_note":"Handgun/ammunition slang sale phrase; should be illegal/high."}
+{"text":"专卖手铐","category":"violence","level":"medium","review_note":"Restraint equipment sale phrase; violence/medium is clearer than other/low."}
+{"text":"专卖手铐qq","category":"violence","level":"medium","review_note":"Restraint equipment sale contact phrase; ad/low is too generic."}
+{"text":"专卖折刀qq","category":"violence","level":"medium","review_note":"Folding knife sale contact phrase; ad/low is too generic."}
+{"text":"专卖折叠手弓弩","category":"violence","level":"medium","review_note":"Folding hand crossbow sale phrase; should be violence/medium."}
+{"text":"专卖折叠蝴蝶刀","category":"violence","level":"medium","review_note":"Butterfly knife sale phrase; original other/low is too generic."}
+{"text":"专卖折叠阻击弓弩","category":"violence","level":"medium","review_note":"Sniper/folding crossbow sale phrase; should be violence/medium."}
+{"text":"专卖暴力开锁工具","category":"illegal","level":"high","review_note":"Forced-entry lock tool sale phrase; original other/low is mislabeled."}
+{"text":"专卖森林之狼弓弩","category":"violence","level":"medium","review_note":"Crossbow sale phrase; should be violence/medium."}
+{"text":"专卖植物冰","category":"illegal","level":"high","review_note":"Drug slang sale phrase; original other/low is too weak."}
+{"text":"专卖植物冰qq","category":"illegal","level":"high","review_note":"Drug slang sale contact phrase; ad/low understates narcotics content."}
+{"text":"专卖气动狗qq","category":"illegal","level":"high","review_note":"气动狗 is firearm/airgun slang; ad/low is too weak."}
+{"text":"专卖气狗","category":"illegal","level":"high","review_note":"气狗 is firearm/airgun slang; original other/low is mislabeled."}
+{"text":"专卖气狗qq","category":"illegal","level":"high","review_note":"Airgun slang sale contact phrase; ad/low understates weapons content."}
+{"text":"专卖气狗狗粮","category":"illegal","level":"high","review_note":"Airgun/ammunition slang sale phrase; should be illegal/high."}
+{"text":"专卖氟硝安定qq","category":"illegal","level":"high","review_note":"Flunitrazepam sale contact phrase; should be illegal/high."}
+{"text":"专卖氯胺酮","category":"illegal","level":"high","review_note":"Ketamine sale phrase; original other/low is mislabeled."}
+{"text":"专卖氯胺酮qq","category":"illegal","level":"high","review_note":"Ketamine sale contact phrase; ad/low is too weak."}
+{"text":"专卖氰化钾qq","category":"illegal","level":"high","review_note":"Cyanide sale contact phrase; should be illegal/high."}
+{"text":"专卖求生刀","category":"violence","level":"medium","review_note":"Survival knife sale phrase; original other/low is too generic."}
+{"text":"专卖汽狗","category":"illegal","level":"high","review_note":"汽狗 is firearm/airgun slang; original other/low is mislabeled."}
+{"text":"专卖汽狗狗粮","category":"illegal","level":"high","review_note":"Airgun/ammunition slang sale phrase; should be illegal/high."}
+{"text":"专卖汽车拦截器","category":"illegal","level":"high","review_note":"Vehicle interception tool sale phrase; original other/low is too weak."}
+{"text":"专卖汽车拦截器qq","category":"illegal","level":"high","review_note":"Vehicle interception tool sale contact phrase; ad/low is too weak."}
+{"text":"专卖汽车遥控解码","category":"illegal","level":"high","review_note":"Vehicle remote decoder sale phrase enables theft; should be illegal/high."}
+{"text":"专卖沙漠之鹰qq","category":"illegal","level":"high","review_note":"Desert Eagle firearm sale contact phrase; ad/low understates weapons content."}
+{"text":"专卖海乐神","category":"illegal","level":"high","review_note":"Halcion/triazolam sale phrase; original other/low is too weak."}
+{"text":"专卖海乐神qq","category":"illegal","level":"high","review_note":"Halcion/triazolam sale contact phrase; ad/low understates controlled-drug content."}
+{"text":"专卖特种部队专用弓弩","category":"violence","level":"medium","review_note":"Special-forces crossbow sale phrase; should be violence/medium."}
+{"text":"专卖特警作战服","category":"illegal","level":"medium","review_note":"SWAT uniform sale phrase can enable impersonation; original other/low is too weak."}
+{"text":"专卖狙击弓弩","category":"violence","level":"medium","review_note":"Sniper crossbow sale phrase; should be violence/medium."}
+{"text":"专卖狩猎刀","category":"violence","level":"medium","review_note":"Hunting knife sale phrase; original other/low is too generic."}
+{"text":"专卖狩猎刀qq","category":"violence","level":"medium","review_note":"Hunting knife sale contact phrase; ad/low is too generic."}
+{"text":"专卖狩猎弓弩","category":"violence","level":"medium","review_note":"Hunting crossbow sale phrase; should be violence/medium."}
+{"text":"专卖狩猎弩","category":"violence","level":"medium","review_note":"Hunting crossbow sale phrase; original other/low is too generic."}
+{"text":"专卖猎刀","category":"violence","level":"medium","review_note":"Hunting knife sale phrase; should be violence/medium."}
+{"text":"专卖猎刀qq","category":"violence","level":"medium","review_note":"Hunting knife sale contact phrase; ad/low is too generic."}
+{"text":"专卖猎豹弓弩","category":"violence","level":"medium","review_note":"Crossbow sale phrase; original other/low is too generic."}
+{"text":"专卖猎豹弓弩qq","category":"violence","level":"medium","review_note":"Crossbow sale contact phrase; ad/low is too generic."}
+{"text":"专卖猎豹弩","category":"violence","level":"medium","review_note":"Crossbow sale phrase; should be violence/medium."}
+{"text":"专卖甲卡西酮","category":"illegal","level":"high","review_note":"Methcathinone sale phrase; original other/low is mislabeled."}
+{"text":"专卖甲卡西酮qq","category":"illegal","level":"high","review_note":"Methcathinone sale contact phrase; ad/low is too weak."}
+{"text":"专卖甲基安非他命","category":"illegal","level":"high","review_note":"Methamphetamine sale phrase; should be illegal/high."}
+{"text":"专卖甲硝西泮","category":"illegal","level":"high","review_note":"Nimetazepam sale phrase; original other/low is too weak."}
+{"text":"专卖甲硝西泮qq","category":"illegal","level":"high","review_note":"Nimetazepam sale contact phrase; ad/low understates controlled-drug content."}
+{"text":"专卖电击器电棍网","category":"violence","level":"medium","review_note":"Stun weapon/baton sales-site phrase; should be violence/medium."}
+{"text":"专卖电警棍","category":"violence","level":"medium","review_note":"Electric police baton sale phrase; original other/low is too generic."}
+{"text":"专卖电警棍qq","category":"violence","level":"medium","review_note":"Electric police baton sale contact phrase; ad/low is too generic."}
+{"text":"专卖白砒","category":"illegal","level":"high","review_note":"White arsenic poison sale phrase; should be illegal/high."}
+{"text":"专卖白粉","category":"illegal","level":"high","review_note":"White powder/heroin slang sale phrase; original other/low is too weak."}
+{"text":"专卖盐酸哌替啶qq","category":"illegal","level":"high","review_note":"Pethidine sale contact phrase; should be illegal/high."}
+{"text":"专卖盐酸曲马多","category":"illegal","level":"high","review_note":"Tramadol hydrochloride sale phrase; original other/low is mislabeled."}
+{"text":"专卖盐酸曲马多qq","category":"illegal","level":"high","review_note":"Tramadol hydrochloride sale contact phrase; ad/low is too weak."}
+{"text":"专卖盐酸氯胺酮","category":"illegal","level":"high","review_note":"Ketamine hydrochloride sale phrase; should be illegal/high."}
+{"text":"专卖盐酸氯胺酮qq","category":"illegal","level":"high","review_note":"Ketamine hydrochloride sale contact phrase; ad/low is too weak."}
+{"text":"专卖盐酸羟亚胺","category":"illegal","level":"high","review_note":"Hydroxylimine drug-precursor sale phrase; should be illegal/high."}
+{"text":"专卖盐酸羟亚胺qq","category":"illegal","level":"high","review_note":"Drug-precursor sale contact phrase; ad/low understates illegal content."}
+{"text":"专卖真实银行卡qq","category":"illegal","level":"high","review_note":"Real bank-card sale contact phrase; should be illegal/high."}
+{"text":"专卖砍刀","category":"violence","level":"medium","review_note":"Machete sale phrase; original other/low is too generic."}
+{"text":"专卖砍刀qq","category":"violence","level":"medium","review_note":"Machete sale contact phrase; ad/low is too generic."}
+{"text":"专卖砒霜","category":"illegal","level":"high","review_note":"Arsenic poison sale phrase; should be illegal/high."}
+{"text":"专卖硝甲西泮","category":"illegal","level":"high","review_note":"Nimetazepam sale phrase; original other/low is too weak."}
+{"text":"专卖礼花弹","category":"illegal","level":"medium","review_note":"Firework shell sale phrase; illegal/medium is clearer than other/low."}
+{"text":"专卖礼花弹qq","category":"illegal","level":"medium","review_note":"Firework shell sale contact phrase; ad/low is too generic."}
+{"text":"专卖神仙水qq","category":"illegal","level":"high","review_note":"神仙水 is GHB/date-rape drug slang in this cluster; ad/low is too weak."}
+{"text":"专卖秦氏弓弩","category":"violence","level":"medium","review_note":"Crossbow sale phrase; original other/low is too generic."}
+{"text":"专卖秦氏弩","category":"violence","level":"medium","review_note":"Crossbow sale phrase; should be violence/medium."}
+{"text":"专卖秦氏弩qq","category":"violence","level":"medium","review_note":"Crossbow sale contact phrase; ad/low is too generic."}
+{"text":"专卖粉末型迷药","category":"illegal","level":"high","review_note":"Powder-form drugging medicine sale phrase; should be illegal/high."}
+{"text":"专卖粉末型迷药qq","category":"illegal","level":"high","review_note":"Drugging medicine sale contact phrase; ad/low is too weak."}
+{"text":"专卖美国进口军用弓弩","category":"violence","level":"medium","review_note":"Imported military crossbow sale phrase; should be violence/medium."}
+{"text":"专卖美沙酮","category":"illegal","level":"high","review_note":"Methadone sale phrase; original other/low is too weak."}
+{"text":"专卖美沙酮qq","category":"illegal","level":"high","review_note":"Methadone sale contact phrase; ad/low understates controlled-drug content."}
+{"text":"专卖职业资格证qq","category":"illegal","level":"high","review_note":"Professional qualification certificate sale contact phrase implies credential fraud."}
+{"text":"专卖肝源qq","category":"illegal","level":"high","review_note":"Liver-source sale contact phrase; organ trafficking should be illegal/high."}
+{"text":"专卖肝脏qq","category":"illegal","level":"high","review_note":"Liver sale contact phrase; ad/low understates organ trafficking."}
+{"text":"专卖股民信息qq","category":"illegal","level":"high","review_note":"Investor personal-data sale contact phrase; should be illegal/high."}
+{"text":"专卖股民名录","category":"illegal","level":"high","review_note":"Investor directory sale phrase; original other/low is too weak."}
+{"text":"专卖股民名录qq","category":"illegal","level":"high","review_note":"Investor directory sale contact phrase; ad/low understates personal-data trafficking."}
+{"text":"专卖股民资料","category":"illegal","level":"high","review_note":"Investor personal-data sale phrase; should be illegal/high."}
+{"text":"专卖肾源qq","category":"illegal","level":"high","review_note":"Kidney-source sale contact phrase; organ trafficking should be illegal/high."}
+{"text":"专卖肾脏","category":"illegal","level":"high","review_note":"Kidney sale phrase; original other/low is mislabeled."}
+{"text":"专卖肾脏qq","category":"illegal","level":"high","review_note":"Kidney sale contact phrase; ad/low understates organ trafficking."}
+{"text":"专卖胡椒醛","category":"illegal","level":"high","review_note":"Piperonal drug-precursor sale phrase; should be illegal/high."}
+{"text":"专卖胡椒醛qq","category":"illegal","level":"high","review_note":"Drug-precursor sale contact phrase; ad/low is too weak."}
+{"text":"专卖腰刀qq","category":"violence","level":"medium","review_note":"Waist knife sale contact phrase; ad/low is too generic."}
+{"text":"专卖苍蝇水","category":"pornographic","level":"medium","review_note":"Spanish fly aphrodisiac sale phrase; pornographic/medium is clearer than other/low."}
+{"text":"专卖蒙汗药配方","category":"illegal","level":"high","review_note":"Knockout-drug formula sale phrase; should be illegal/high."}
+{"text":"专卖藏刀qq","category":"violence","level":"medium","review_note":"Tibetan knife sale contact phrase; ad/low is too generic."}
+{"text":"专卖蜘蛛刀","category":"violence","level":"medium","review_note":"Spider knife sale phrase; original other/low is too generic."}
+{"text":"专卖蝴蝶刀qq","category":"violence","level":"medium","review_note":"Butterfly knife sale contact phrase; ad/low is too generic."}
+{"text":"专卖蝴蝶刀具","category":"violence","level":"medium","review_note":"Butterfly knife sale phrase; original other/low is too generic."}
+{"text":"专卖蝴蝶跳刀","category":"violence","level":"medium","review_note":"Butterfly/switchblade sale phrase; should be violence/medium."}
+{"text":"专卖蝴蝶跳刀qq","category":"violence","level":"medium","review_note":"Butterfly/switchblade sale contact phrase; ad/low is too generic."}
+{"text":"专卖警号","category":"illegal","level":"high","review_note":"Police number/identity sale phrase can enable impersonation; should be illegal/high."}
+{"text":"专卖警官证","category":"illegal","level":"high","review_note":"Police-officer ID sale phrase; original other/low is mislabeled."}
+{"text":"专卖警官证qq","category":"illegal","level":"high","review_note":"Police-officer ID sale contact phrase; ad/low understates document fraud."}
+{"text":"专卖警察作训服","category":"illegal","level":"medium","review_note":"Police training uniform sale phrase can enable impersonation; original other/low is too weak."}
+{"text":"专卖警察手铐","category":"violence","level":"medium","review_note":"Police handcuffs sale phrase; violence/medium is clearer than other/low."}
+{"text":"专卖警察证","category":"illegal","level":"high","review_note":"Police ID sale phrase; should be illegal/high."}
+{"text":"专卖警徽","category":"illegal","level":"high","review_note":"Police badge sale phrase can enable impersonation; original other/low is mislabeled."}
+{"text":"专卖警徽qq","category":"illegal","level":"high","review_note":"Police badge sale contact phrase; ad/low understates impersonation tooling."}
+{"text":"专卖警服","category":"illegal","level":"high","review_note":"Police uniform sale phrase can enable impersonation; should be illegal/high."}
+{"text":"专卖警服qq","category":"illegal","level":"high","review_note":"Police uniform sale contact phrase; ad/low is too weak."}
+{"text":"专卖警棍","category":"violence","level":"medium","review_note":"Baton sale phrase; original other/low is too generic."}
+{"text":"专卖警棍qq","category":"violence","level":"medium","review_note":"Baton sale contact phrase; ad/low is too generic."}
+{"text":"专卖警用手铐","category":"violence","level":"medium","review_note":"Police handcuffs sale phrase; should be violence/medium."}
+{"text":"专卖警用手铐qq","category":"violence","level":"medium","review_note":"Police handcuffs sale contact phrase; ad/low is too generic."}
+{"text":"专卖警用棍","category":"violence","level":"medium","review_note":"Police baton sale phrase; original other/low is too generic."}
+{"text":"专卖警用甩棍","category":"violence","level":"medium","review_note":"Police telescopic baton sale phrase; should be violence/medium."}
+{"text":"专卖警用电棍","category":"violence","level":"medium","review_note":"Police stun baton sale phrase; original other/low is too generic."}
+{"text":"专卖警用装备","category":"violence","level":"medium","review_note":"Police tactical equipment sale phrase; violence/medium is clearer than other/low."}
+{"text":"专卖警用装备电话","category":"violence","level":"medium","review_note":"Police equipment sale phone contact phrase; ad/low is too generic."}
+{"text":"专卖警衔","category":"illegal","level":"high","review_note":"Police rank insignia sale phrase can enable impersonation; should be illegal/high."}
+{"text":"专卖赵氏弓弩","category":"violence","level":"medium","review_note":"Crossbow sale phrase; original other/low is too generic."}
+{"text":"专卖赵氏弓弩qq","category":"violence","level":"medium","review_note":"Crossbow sale contact phrase; ad/low is too generic."}
+{"text":"专卖赵氏弩","category":"violence","level":"medium","review_note":"Crossbow sale phrase; should be violence/medium."}
+{"text":"专卖赵氏弩qq","category":"violence","level":"medium","review_note":"Crossbow sale contact phrase; ad/low is too generic."}
+{"text":"专卖赵氏钢珠弓弩","category":"violence","level":"medium","review_note":"Steel-ball crossbow sale phrase; original other/low is too generic."}
+{"text":"专卖赵氏钢珠弩","category":"violence","level":"medium","review_note":"Steel-ball crossbow sale phrase; should be violence/medium."}
+{"text":"专卖跳刀","category":"violence","level":"medium","review_note":"Switchblade sale phrase; original other/low is too generic."}
+{"text":"专卖车主资料","category":"illegal","level":"high","review_note":"Vehicle-owner personal-data sale phrase; should be illegal/high."}
+{"text":"专卖车主资料qq","category":"illegal","level":"high","review_note":"Vehicle-owner data sale contact phrase; ad/low understates personal-data trafficking."}
+{"text":"专卖进口弓弩","category":"violence","level":"medium","review_note":"Imported crossbow sale phrase; should be violence/medium."}
+{"text":"专卖进口气木仓","category":"illegal","level":"high","review_note":"Obfuscated imported airgun sale phrase; original other/low is too weak."}
+{"text":"专卖进口汽狗","category":"illegal","level":"high","review_note":"Imported airgun slang sale phrase; original other/low is mislabeled."}
+{"text":"专卖进口汽狗qq","category":"illegal","level":"high","review_note":"Imported airgun slang sale contact phrase; ad/low understates weapons content."}
+{"text":"专卖迷奸药qq","category":"illegal","level":"critical","review_note":"Date-rape drug sale contact phrase; ad/low is critically understated."}
+{"text":"专卖迷奸药水","category":"illegal","level":"critical","review_note":"Date-rape drug liquid sale phrase; should be illegal/critical."}
+{"text":"专卖迷奸药配方","category":"illegal","level":"critical","review_note":"Date-rape drug formula sale phrase; original other/low is critically understated."}
+{"text":"专卖迷幻水","category":"illegal","level":"high","review_note":"Hallucinogenic liquid sale phrase; should be illegal/high."}
+{"text":"专卖迷幻水qq","category":"illegal","level":"high","review_note":"Hallucinogenic liquid sale contact phrase; ad/low is too weak."}
+{"text":"专卖迷幻药","category":"illegal","level":"high","review_note":"Hallucinogen sale phrase; original other/low is mislabeled."}
+{"text":"专卖迷幻药qq","category":"illegal","level":"high","review_note":"Hallucinogen sale contact phrase; ad/low understates drug content."}
+{"text":"专卖迷药qq","category":"illegal","level":"high","review_note":"Drugging medicine sale contact phrase; should be illegal/high."}
+{"text":"专卖迷魂药qq","category":"illegal","level":"high","review_note":"Knockout/drugging medicine sale contact phrase; ad/low is too weak."}
+{"text":"专卖酣乐欣","category":"illegal","level":"high","review_note":"Halcion/triazolam sale phrase; original other/low is too weak."}
+{"text":"专卖酣乐欣qq","category":"illegal","level":"high","review_note":"Halcion/triazolam sale contact phrase; should be illegal/high."}
+{"text":"专卖野战刀","category":"violence","level":"medium","review_note":"Combat field knife sale phrase; original other/low is too generic."}
+{"text":"专卖野战刀qq","category":"violence","level":"medium","review_note":"Combat field knife sale contact phrase; ad/low is too generic."}
+{"text":"专卖野营刀","category":"violence","level":"medium","review_note":"Camping knife sale phrase in weapon-sales cluster; should be violence/medium."}
+{"text":"专卖野营刀具qq","category":"violence","level":"medium","review_note":"Camping knife sale contact phrase; ad/low is too generic."}
+{"text":"专卖野营砍刀qq","category":"violence","level":"medium","review_note":"Camping machete sale contact phrase; should be violence/medium."}
+{"text":"专卖钢珠左轮狗","category":"illegal","level":"high","review_note":"Steel-ball revolver gun slang sale phrase; original other/low is mislabeled."}
+{"text":"专卖钢珠左轮狗qq","category":"illegal","level":"high","review_note":"Steel-ball revolver gun slang sale contact phrase; ad/low is too weak."}
+{"text":"专卖钢珠弓弩","category":"violence","level":"medium","review_note":"Steel-ball crossbow sale phrase; should be violence/medium."}
+{"text":"专卖钢珠弩","category":"violence","level":"medium","review_note":"Steel-ball crossbow sale phrase; original other/low is too generic."}
+{"text":"专卖钢珠狗","category":"illegal","level":"high","review_note":"钢珠狗 is gun slang; should be illegal/high."}
+{"text":"专卖钢珠狗qq","category":"illegal","level":"high","review_note":"Steel-ball gun slang sale contact phrase; ad/low understates weapons content."}
+{"text":"专卖铅弹","category":"illegal","level":"high","review_note":"Lead pellet/ammunition sale phrase; original other/low is too weak."}
+{"text":"专卖铅弹qq","category":"illegal","level":"high","review_note":"Lead pellet/ammunition sale contact phrase; ad/low is too weak."}
+{"text":"专卖销售弓弩","category":"violence","level":"medium","review_note":"Crossbow sales phrase; original other/low is too generic."}
+{"text":"专卖锡锋b51","category":"illegal","level":"high","review_note":"B51 airgun phrase in weapons cluster; should be illegal/high."}
+{"text":"专卖防身电棍","category":"violence","level":"medium","review_note":"Stun baton sale phrase; original other/low is too generic."}
+{"text":"专卖防身电警棍","category":"violence","level":"medium","review_note":"Stun/police baton sale phrase; should be violence/medium."}
+{"text":"专卖防身电警棍网","category":"violence","level":"medium","review_note":"Stun/police baton sales-site phrase; original other/low is too generic."}
+{"text":"专卖阳江刀","category":"violence","level":"medium","review_note":"Yangjiang knife sale phrase; should be violence/medium."}
+{"text":"专卖阳江刀qq","category":"violence","level":"medium","review_note":"Yangjiang knife sale contact phrase; ad/low is too generic."}
+{"text":"专卖阳江刀具","category":"violence","level":"medium","review_note":"Yangjiang knife sale phrase; original other/low is too generic."}
+{"text":"专卖阻击弩qq","category":"violence","level":"medium","review_note":"Sniper crossbow sale contact phrase; ad/low is too generic."}
+{"text":"专卖阿普唑仑","category":"illegal","level":"high","review_note":"Alprazolam sale phrase; should be illegal/high."}
+{"text":"专卖阿普唑仑qq","category":"illegal","level":"high","review_note":"Alprazolam sale contact phrase; ad/low understates controlled-drug content."}
+{"text":"专卖雅思答案","category":"illegal","level":"medium","review_note":"IELTS answer sale phrase; should be illegal/medium rather than other/low."}
+{"text":"专卖雅思答案qq","category":"illegal","level":"medium","review_note":"IELTS answer sale contact phrase; ad/low understates exam-fraud content."}
+{"text":"专卖驾驶证qq","category":"illegal","level":"high","review_note":"Driver's license sale contact phrase implies forged credential trafficking."}
+{"text":"专卖高仿4级证","category":"illegal","level":"high","review_note":"High-imitation CET-4 certificate sale phrase; original other/low is too weak."}
+{"text":"专卖高仿4级证qq","category":"illegal","level":"high","review_note":"High-imitation CET-4 certificate sale contact phrase; should be illegal/high."}
+{"text":"专卖高仿假钱","category":"illegal","level":"high","review_note":"High-imitation counterfeit money sale phrase; original other/low is mislabeled."}
+{"text":"专卖高仿假钱qq","category":"illegal","level":"high","review_note":"Counterfeit money sale contact phrase; ad/low understates fraud content."}
+{"text":"专卖高仿军刺","category":"violence","level":"medium","review_note":"High-imitation military spike/bayonet sale phrase; should be violence/medium."}
+{"text":"专卖高仿军刺qq","category":"violence","level":"medium","review_note":"High-imitation bayonet sale contact phrase; ad/low is too generic."}
+{"text":"专卖高仿刺刀qq","category":"violence","level":"medium","review_note":"High-imitation bayonet sale contact phrase; should be violence/medium."}
+{"text":"专卖高仿学位证qq","category":"illegal","level":"high","review_note":"Counterfeit degree certificate sale contact phrase; ad/low is too weak."}
+{"text":"专卖高仿文凭","category":"illegal","level":"high","review_note":"Counterfeit diploma sale phrase; original other/low is mislabeled."}
+{"text":"专卖高仿文凭qq","category":"illegal","level":"high","review_note":"Counterfeit diploma sale contact phrase; ad/low understates document fraud."}
+{"text":"专卖高仿真人民币","category":"illegal","level":"high","review_note":"High-imitation RMB sale phrase; should be illegal/high."}
+{"text":"专卖高仿真人民币qq","category":"illegal","level":"high","review_note":"High-imitation RMB sale contact phrase; ad/low understates counterfeit-money content."}
+{"text":"专卖高压电击棒","category":"violence","level":"medium","review_note":"High-voltage shock baton sale phrase; original other/low is too generic."}
+{"text":"专卖高压电警棍","category":"violence","level":"medium","review_note":"High-voltage stun baton sale phrase; should be violence/medium."}
+{"text":"专卖高压钢珠狗","category":"illegal","level":"high","review_note":"High-pressure steel-ball gun slang sale phrase; original other/low is mislabeled."}
+{"text":"专卖高压钢珠狗qq","category":"illegal","level":"high","review_note":"Steel-ball gun slang sale contact phrase; ad/low is too weak."}
+{"text":"专卖麦角胺","category":"illegal","level":"high","review_note":"Ergotamine sale phrase can be drug-precursor trafficking; original other/low is too weak."}
+{"text":"专卖麦角胺qq","category":"illegal","level":"high","review_note":"Ergotamine sale contact phrase; ad/low understates controlled precursor content."}
+{"text":"专卖麦角酸","category":"illegal","level":"high","review_note":"Lysergic acid precursor sale phrase; should be illegal/high."}
+{"text":"专卖麦角酸qq","category":"illegal","level":"high","review_note":"Lysergic acid precursor sale contact phrase; ad/low is too weak."}
+{"text":"专卖麻醉弓弩箭","category":"violence","level":"medium","review_note":"Anesthetic crossbow-arrow sale phrase; should be violence/medium."}
+{"text":"专卖麻黄碱","category":"illegal","level":"high","review_note":"Ephedrine sale phrase; original other/low is mislabeled."}
+{"text":"专卖麻黄碱qq","category":"illegal","level":"high","review_note":"Ephedrine sale contact phrase; ad/low is too weak."}
+{"text":"专卖麻黄素qq","category":"illegal","level":"high","review_note":"Ephedrine sale contact phrase; should be illegal/high."}
+{"text":"专卖黑曼巴弓弩qq","category":"violence","level":"medium","review_note":"Crossbow sale contact phrase; ad/low is too generic."}
+{"text":"专卖黑鹰弓弩","category":"violence","level":"medium","review_note":"Crossbow sale phrase; original other/low is too generic."}
+{"text":"专卖黑鹰弓弩qq","category":"violence","level":"medium","review_note":"Crossbow sale contact phrase; ad/low is too generic."}
+{"text":"专卖黑鹰弩","category":"violence","level":"medium","review_note":"Crossbow sale phrase; should be violence/medium."}
+{"text":"专卖黑鹰弩qq","category":"violence","level":"medium","review_note":"Crossbow sale contact phrase; ad/low is too generic."}
+{"text":"专售喷雾蒙汗药","category":"illegal","level":"high","review_note":"Knockout spray sale phrase; should be illegal/high."}
+{"text":"专售西班牙苍蝇水","category":"pornographic","level":"medium","review_note":"Spanish fly aphrodisiac sale phrase; pornographic/medium is clearer than other/low."}
+{"text":"专售迷晕药","category":"illegal","level":"high","review_note":"Knockout/drugging medicine sale phrase; original other/low is too weak."}
+{"text":"专属vip会员均可全国提供上门或酒店","category":"pornographic","level":"high","review_note":"Nationwide home/hotel service wording in this adult-service cluster indicates commercial sex content."}
+{"text":"专政","category":"political","level":"medium","review_note":"Political term for dictatorship/authoritarian rule; original other/low is mislabeled."}
+{"text":"专榠眔听器","category":"illegal","level":"high","review_note":"Obfuscated listening/eavesdropping device sale phrase; should be illegal/high."}
+{"text":"专用弩","category":"violence","level":"medium","review_note":"Crossbow weapon phrase; original other/low is too generic."}
+{"text":"专科毕业证制作","category":"illegal","level":"high","review_note":"College diploma production phrase implies forged credentials; should be illegal/high."}
+{"text":"专职打手qq","category":"violence","level":"high","review_note":"Hired attacker contact phrase; ad/low understates violent content."}
+{"text":"专职打手电话","category":"violence","level":"high","review_note":"Hired attacker phone contact phrase; should be violence/high."}
+{"text":"专职杀手qq","category":"violence","level":"critical","review_note":"Killer-for-hire contact phrase; ad/low is critically understated."}
+{"text":"专营气狗","category":"illegal","level":"high","review_note":"气狗 is firearm/airgun slang; original other/low is mislabeled."}
+{"text":"专门批发秦氏弓弩","category":"violence","level":"medium","review_note":"Crossbow wholesale phrase; should be violence/medium."}
+{"text":"专门替考","category":"illegal","level":"high","review_note":"Proxy exam-taking phrase; original other/low is mislabeled."}
+{"text":"专门销售各种手弩","category":"violence","level":"medium","review_note":"Hand crossbow sales phrase; should be violence/medium."}
+{"text":"且大且粗","category":"pornographic","level":"medium","review_note":"Sexualized size descriptor; pornographic/medium is clearer than other/low."}
+{"text":"世界十大独裁者","category":"political","level":"medium","review_note":"Political phrase about dictators; original other/low is too generic."}
+{"text":"世界维吾尔大会","category":"political","level":"medium","review_note":"World Uyghur Congress reference is political content; original other/low is mislabeled."}
+{"text":"世界都在笑中国傻","category":"political","level":"medium","review_note":"Political/national insult phrase involving China; political/medium is clearer than other/low."}
+{"text":"世维会","category":"political","level":"medium","review_note":"Abbreviation for World Uyghur Congress; should be political/medium."}
+{"text":"丙2酸亚铊批发","category":"illegal","level":"high","review_note":"Thallium poison wholesale phrase; original other/low is too weak."}
+{"text":"丙2酸铊供应","category":"illegal","level":"high","review_note":"Thallium acetate supply phrase; should be illegal/high."}
+{"text":"丙2酸铊批发","category":"illegal","level":"high","review_note":"Thallium acetate wholesale phrase; original other/low is too weak."}
+{"text":"丙2酸铊提供","category":"illegal","level":"high","review_note":"Thallium acetate offer phrase; should be illegal/high."}
+{"text":"丙2酸铊直销","category":"illegal","level":"high","review_note":"Thallium acetate direct-sale phrase; original other/low is too weak."}
+{"text":"丙2酸铊销售","category":"illegal","level":"high","review_note":"Thallium acetate sales phrase; should be illegal/high."}
+{"text":"丙3醇3硝酸酯","category":"illegal","level":"high","review_note":"Obfuscated nitroglycerin/explosive chemical term; original other/low is too weak."}
+{"text":"业主信息供应","category":"illegal","level":"high","review_note":"Property-owner personal-data supply phrase; should be illegal/high."}
+{"text":"业主信息供应qq","category":"illegal","level":"high","review_note":"Property-owner personal-data supply contact phrase; ad/low is too weak."}
+{"text":"业主信息出售","category":"illegal","level":"high","review_note":"Property-owner personal-data sale phrase; ad/low understates data trafficking."}
+{"text":"业主信息提供","category":"illegal","level":"high","review_note":"Property-owner personal-data provision phrase; should be illegal/high."}
+{"text":"业主信息提供qq","category":"illegal","level":"high","review_note":"Property-owner personal-data provision contact phrase; ad/low is too weak."}
+{"text":"业主信息销售","category":"illegal","level":"high","review_note":"Property-owner personal-data sales phrase; original other/low is mislabeled."}
+{"text":"业主信息销售qq","category":"illegal","level":"high","review_note":"Property-owner personal-data sales contact phrase; should be illegal/high."}
+{"text":"业主名单专卖","category":"illegal","level":"high","review_note":"Property-owner list sale phrase; original other/low is too weak."}
+{"text":"业主名单专卖qq","category":"illegal","level":"high","review_note":"Property-owner list sale contact phrase; ad/low is too weak."}
+{"text":"业主名单供应","category":"illegal","level":"high","review_note":"Property-owner list supply phrase; should be illegal/high."}
+{"text":"业主名单供应qq","category":"illegal","level":"high","review_note":"Property-owner list supply contact phrase; ad/low understates personal-data trafficking."}
+{"text":"业主名单出售","category":"illegal","level":"high","review_note":"Property-owner list sale phrase; ad/low should be illegal/high."}
+{"text":"业主名单出售qq","category":"illegal","level":"high","review_note":"Property-owner list sale contact phrase; should be illegal/high."}
+{"text":"业主名单销售","category":"illegal","level":"high","review_note":"Property-owner list sales phrase; original other/low is too weak."}
+{"text":"业主名单销售qq","category":"illegal","level":"high","review_note":"Property-owner list sales contact phrase; ad/low is too weak."}
+{"text":"业主名录供应qq","category":"illegal","level":"high","review_note":"Property-owner directory supply contact phrase; should be illegal/high."}
+{"text":"业主手机号出售","category":"illegal","level":"high","review_note":"Property-owner mobile-number sale phrase; ad/low understates personal-data trafficking."}
+{"text":"业主数据专卖","category":"illegal","level":"high","review_note":"Property-owner data sale phrase; original other/low is mislabeled."}
+{"text":"业主数据专卖qq","category":"illegal","level":"high","review_note":"Property-owner data sale contact phrase; ad/low is too weak."}
+{"text":"业主数据供应","category":"illegal","level":"high","review_note":"Property-owner data supply phrase; should be illegal/high."}
+{"text":"业主数据出售","category":"illegal","level":"high","review_note":"Property-owner data sale phrase; ad/low should be illegal/high."}
+{"text":"业主数据出售qq","category":"illegal","level":"high","review_note":"Property-owner data sale contact phrase; should be illegal/high."}
+{"text":"业主数据销售","category":"illegal","level":"high","review_note":"Property-owner data sales phrase; original other/low is too weak."}
+{"text":"业主电话信息出售","category":"illegal","level":"high","review_note":"Property-owner phone data sale phrase; ad/low understates personal-data trafficking."}
+{"text":"业主电话信息出售qq","category":"illegal","level":"high","review_note":"Property-owner phone data sale contact phrase; should be illegal/high."}
+{"text":"业主资料qq","category":"illegal","level":"high","review_note":"Property-owner personal-data contact phrase; ad/low is too weak."}
+{"text":"业主资料专卖","category":"illegal","level":"high","review_note":"Property-owner personal-data sale phrase; original other/low is mislabeled."}
+{"text":"业主资料专卖qq","category":"illegal","level":"high","review_note":"Property-owner personal-data sale contact phrase; ad/low is too weak."}
+{"text":"业主资料供应","category":"illegal","level":"high","review_note":"Property-owner personal-data supply phrase; should be illegal/high."}
+{"text":"业主资料出售","category":"illegal","level":"high","review_note":"Property-owner personal-data sale phrase; ad/low should be illegal/high."}
+{"text":"业主资料出售qq","category":"illegal","level":"high","review_note":"Property-owner personal-data sale contact phrase; should be illegal/high."}
+{"text":"业主资料提供","category":"illegal","level":"high","review_note":"Property-owner personal-data provision phrase; original other/low is too weak."}
+{"text":"业主资料销售","category":"illegal","level":"high","review_note":"Property-owner personal-data sales phrase; should be illegal/high."}
+{"text":"业主资料销售qq","category":"illegal","level":"high","review_note":"Property-owner personal-data sales contact phrase; ad/low is too weak."}
+{"text":"业主资源供应qq","category":"illegal","level":"high","review_note":"Property-owner resource/list supply contact phrase; should be illegal/high."}
+{"text":"业余小姐","category":"pornographic","level":"high","review_note":"小姐 in this services context indicates sex-worker/escort content; original other/low is too weak."}
+{"text":"丛林军刀专卖网","category":"violence","level":"medium","review_note":"Military/jungle knife sales-site phrase; original other/low is too generic."}
+{"text":"丛林刀专卖","category":"violence","level":"medium","review_note":"Jungle knife sale phrase; should be violence/medium."}
+{"text":"丛林刀专卖qq","category":"violence","level":"medium","review_note":"Jungle knife sale contact phrase; ad/low is too generic."}
+{"text":"丛林刀供应","category":"violence","level":"medium","review_note":"Jungle knife supply phrase; original other/low is too generic."}
+{"text":"丛林刀供应qq","category":"violence","level":"medium","review_note":"Jungle knife supply contact phrase; ad/low is too generic."}
+{"text":"丛林刀出售","category":"violence","level":"medium","review_note":"Jungle knife sale phrase; ad/low is too generic."}
+{"text":"丛林刀出售qq","category":"violence","level":"medium","review_note":"Jungle knife sale contact phrase; should be violence/medium."}
+{"text":"丛林刀批发qq","category":"violence","level":"medium","review_note":"Jungle knife wholesale contact phrase; ad/low is too generic."}
+{"text":"丛林刀提供","category":"violence","level":"medium","review_note":"Jungle knife supply phrase; original other/low is too generic."}
+{"text":"丛林刀直销","category":"violence","level":"medium","review_note":"Jungle knife direct-sale phrase; should be violence/medium."}
+{"text":"丛林刀直销qq","category":"violence","level":"medium","review_note":"Jungle knife direct-sale contact phrase; ad/low is too generic."}
+{"text":"丛林刀转让","category":"violence","level":"medium","review_note":"Jungle knife transfer phrase; original other/low is too generic."}
+{"text":"丛林刀转让qq","category":"violence","level":"medium","review_note":"Jungle knife transfer contact phrase; ad/low is too generic."}
+{"text":"丛林刀销售","category":"violence","level":"medium","review_note":"Jungle knife sales phrase; should be violence/medium."}
+{"text":"丛林刀销售qq","category":"violence","level":"medium","review_note":"Jungle knife sales contact phrase; ad/low is too generic."}
+{"text":"丛林开山刀","category":"violence","level":"medium","review_note":"Jungle machete phrase; original other/low is too generic."}
+{"text":"丛林户外军刀专卖","category":"violence","level":"medium","review_note":"Outdoor military knife sale phrase; should be violence/medium."}
+{"text":"丛林直刀","category":"violence","level":"medium","review_note":"Jungle fixed-blade knife phrase; original other/low is too generic."}
+{"text":"丛林砍刀专卖","category":"violence","level":"medium","review_note":"Jungle machete sale phrase; should be violence/medium."}
+{"text":"东亚共荣","category":"political","level":"medium","review_note":"Greater East Asia Co-Prosperity political slogan/reference; original other/low is too generic."}
+{"text":"东亚病夫","category":"abuse","level":"medium","review_note":"Ethnic/national insult phrase; abuse/medium is clearer than other/low."}
+{"text":"东京hot视频下载","category":"pornographic","level":"high","review_note":"Tokyo Hot adult-video brand plus download phrase; should be pornographic/high."}
+{"text":"东京热","category":"pornographic","level":"high","review_note":"Tokyo Hot adult-video brand reference; original other/low is mislabeled."}
+{"text":"东京热5月新片","category":"pornographic","level":"high","review_note":"Tokyo Hot adult-video new-release phrase; should be pornographic/high."}
+{"text":"东京热bt","category":"pornographic","level":"high","review_note":"Tokyo Hot adult-video torrent phrase; original other/low is too weak."}
+{"text":"东京热rmvb","category":"pornographic","level":"high","review_note":"Tokyo Hot adult-video file format phrase; should be pornographic/high."}
+{"text":"东京热下载","category":"pornographic","level":"high","review_note":"Tokyo Hot adult-video download phrase; original other/low is mislabeled."}
+{"text":"东京热午夜电影","category":"pornographic","level":"high","review_note":"Tokyo Hot adult-film phrase; should be pornographic/high."}
+{"text":"东京热合集","category":"pornographic","level":"high","review_note":"Tokyo Hot adult-video collection phrase; original other/low is too weak."}
+{"text":"东京热图库","category":"pornographic","level":"high","review_note":"Tokyo Hot adult image-gallery phrase; should be pornographic/high."}
+{"text":"东京热影视","category":"pornographic","level":"high","review_note":"Tokyo Hot adult film/video phrase; original other/low is mislabeled."}
+{"text":"东京热最受欢迎长腿meinv藤泽安奈腿长人又漂亮","category":"pornographic","level":"high","review_note":"Tokyo Hot adult-video performer/title phrase; should be pornographic/high."}
+{"text":"东京热最受欢迎长腿美女藤泽安奈腿长人又漂亮","category":"pornographic","level":"high","review_note":"Tokyo Hot adult-video performer/title phrase; original other/low is too weak."}
+{"text":"东京热电影","category":"pornographic","level":"high","review_note":"Tokyo Hot adult movie phrase; should be pornographic/high."}
+{"text":"东京热种子","category":"pornographic","level":"high","review_note":"Tokyo Hot adult-video seed/torrent phrase; original other/low is mislabeled."}
+{"text":"东京热精选辑","category":"pornographic","level":"high","review_note":"Tokyo Hot adult-video compilation phrase; should be pornographic/high."}
+{"text":"东京热视频","category":"pornographic","level":"high","review_note":"Tokyo Hot adult-video phrase; original other/low is too weak."}
+{"text":"东京热视频下载","category":"pornographic","level":"high","review_note":"Tokyo Hot adult-video download phrase; should be pornographic/high."}
+{"text":"东京热视频网络","category":"pornographic","level":"high","review_note":"Tokyo Hot adult-video network/site phrase; original other/low is mislabeled."}
+{"text":"东京热迅雷下载","category":"pornographic","level":"high","review_note":"Tokyo Hot adult-video download phrase; should be pornographic/high."}
+{"text":"东京热雨宫琴音东热流中出","category":"pornographic","level":"high","review_note":"Adult-video performer/title phrase includes 中出; original other/low is too weak."}
+{"text":"东伊运","category":"political","level":"medium","review_note":"East Turkestan Islamic Movement reference; political/medium is clearer than other/low."}
+{"text":"东北风情熟女之惑","category":"pornographic","level":"medium","review_note":"Erotic mature-woman title phrase; pornographic/medium is clearer than other/low."}
+{"text":"东北风情熟女之惑txt","category":"pornographic","level":"medium","review_note":"Erotic novel title with TXT marker; original other/low is too weak."}
+{"text":"东北风情熟女之惑txt全集","category":"pornographic","level":"medium","review_note":"Erotic novel title/full-text phrase; should be pornographic/medium."}
+{"text":"东北风情熟女之惑下载","category":"pornographic","level":"medium","review_note":"Erotic novel download phrase; original other/low is too weak."}
+{"text":"东北风情熟女之惑小说下载","category":"pornographic","level":"medium","review_note":"Erotic novel download phrase; should be pornographic/medium."}
+{"text":"东北风情熟女之惑电子书下载","category":"pornographic","level":"medium","review_note":"Erotic ebook download phrase; original other/low is too weak."}
+{"text":"东土耳其斯坦","category":"political","level":"medium","review_note":"East Turkestan political term; original other/low is mislabeled."}
+{"text":"东洋屄","category":"abuse","level":"medium","review_note":"Vulgar sexual slur using 屄; abuse/medium is clearer than other/low."}
+{"text":"东热meinv1个比1个强","category":"pornographic","level":"medium","review_note":"Tokyo Hot adult-video branding with sexualized performer wording; original other/low is too weak."}
+{"text":"东热rq大乱交2007","category":"pornographic","level":"high","review_note":"Adult-video phrase includes 大乱交; should be pornographic/high."}
+{"text":"东热空姐","category":"pornographic","level":"medium","review_note":"Tokyo Hot adult-video branding with flight-attendant title phrase; original other/low is too weak."}
+{"text":"东热美女1个比1个强","category":"pornographic","level":"medium","review_note":"Tokyo Hot adult-video branding with sexualized performer wording; should be pornographic/medium."}
+{"text":"东突","category":"political","level":"medium","review_note":"East Turkestan political term; original other/low is mislabeled."}
+{"text":"东突厥","category":"political","level":"medium","review_note":"East Turkestan/Turkic political reference; should be political/medium."}
+{"text":"东突厥斯坦","category":"political","level":"medium","review_note":"East Turkestan political term; original other/low is mislabeled."}
+{"text":"东突厥斯坦伊斯兰","category":"political","level":"medium","review_note":"East Turkestan Islamic political phrase; should be political/medium."}
+{"text":"东突厥斯坦伊斯兰运动","category":"political","level":"medium","review_note":"East Turkestan Islamic Movement reference; original other/low is mislabeled."}
+{"text":"东突厥斯坦解放组织","category":"political","level":"medium","review_note":"East Turkestan liberation organization reference; should be political/medium."}
+{"text":"东突组织","category":"political","level":"medium","review_note":"East Turkestan organization phrase; original other/low is mislabeled."}
+{"text":"东突解放组织","category":"political","level":"medium","review_note":"East Turkestan liberation organization reference; should be political/medium."}
+{"text":"东莞上门服务","category":"pornographic","level":"high","review_note":"Dongguan home-service wording in this adult-service cluster indicates commercial sex content."}
+{"text":"东莞桑拿","category":"pornographic","level":"medium","review_note":"Dongguan sauna phrase in adult-service context; pornographic/medium is clearer than other/low."}
+{"text":"东莞桑拿网","category":"pornographic","level":"medium","review_note":"Dongguan sauna site phrase in adult-service context; original other/low is too weak."}
+{"text":"东莞童奴","category":"abuse","level":"critical","review_note":"Child-slave phrase; abuse/critical is clearer than other/low."}
+{"text":"东莨菪碱","category":"illegal","level":"high","review_note":"Scopolamine drugging substance term; original other/low is too weak."}
+{"text":"丝袜上门性息","category":"pornographic","level":"high","review_note":"Sex-service information phrase with stockings fetish; original other/low is mislabeled."}
+{"text":"丝袜上门按摩","category":"pornographic","level":"medium","review_note":"Sexualized massage-service phrase; pornographic/medium is clearer than other/low."}
+{"text":"丝袜上门服务","category":"pornographic","level":"high","review_note":"Sexualized home-service phrase; original other/low is too weak."}
+{"text":"丝袜内射","category":"pornographic","level":"high","review_note":"Explicit ejaculation porn phrase; should be pornographic/high."}
+{"text":"丝袜写真","category":"pornographic","level":"medium","review_note":"Stockings fetish photo phrase; pornographic/medium is clearer than other/low."}
+{"text":"丝袜制服","category":"pornographic","level":"medium","review_note":"Stockings/uniform fetish phrase; original other/low is too weak."}
+{"text":"丝袜制服自慰道具黄瓜茄子","category":"pornographic","level":"high","review_note":"Explicit masturbation/fetish phrase with sex-toy wording; should be pornographic/high."}
+{"text":"丝袜女qq","category":"pornographic","level":"medium","review_note":"Stockings girl contact phrase in adult-service cluster; ad/low is too generic."}
+{"text":"丝袜妹","category":"pornographic","level":"medium","review_note":"Stockings girl fetish phrase; pornographic/medium is clearer than other/low."}
+{"text":"丝袜妹妹兼职","category":"pornographic","level":"high","review_note":"Stockings girl兼职 phrase in adult-service cluster indicates commercial sexual service."}
+{"text":"丝袜妹妹服务","category":"pornographic","level":"high","review_note":"Stockings girl service phrase; original other/low is too weak."}
+{"text":"丝袜小姐qq","category":"pornographic","level":"high","review_note":"Stockings escort/sex-worker contact phrase; ad/low understates adult-service content."}
+{"text":"丝袜小姐按摩","category":"pornographic","level":"medium","review_note":"Sexualized stockings massage-service phrase; original other/low is too weak."}
+{"text":"丝袜恋","category":"pornographic","level":"medium","review_note":"Stockings fetish phrase; should be pornographic/medium rather than other/low."}
+{"text":"丝袜打飞机推油","category":"pornographic","level":"high","review_note":"Explicit handjob/oil-massage service phrase; original other/low is mislabeled."}
+{"text":"丝袜按摩","category":"pornographic","level":"medium","review_note":"Sexualized stockings massage phrase; pornographic/medium is clearer than other/low."}
+{"text":"丝袜按摩qq","category":"pornographic","level":"medium","review_note":"Sexualized massage contact phrase; ad/low is too generic."}
+{"text":"丝袜按摩服务","category":"pornographic","level":"medium","review_note":"Sexualized stockings massage-service phrase; original other/low is too weak."}

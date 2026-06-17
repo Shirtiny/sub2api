@@ -1,0 +1,86 @@
+{"text":"bb弹出售","category":"illegal","level":"high","review_note":"BB 弹出售属于枪弹/气枪弹交易语义，原 ad/low 过低。"}
+{"text":"bb弹批发","category":"illegal","level":"high","review_note":"BB 弹批发属于枪弹/气枪弹交易语义，原 other/low 过低。"}
+{"text":"bb弹销售","category":"illegal","level":"high","review_note":"BB 弹销售属于枪弹/气枪弹交易语义，原 other/low 过低。"}
+{"text":"cao你","category":"abuse","level":"medium","review_note":"操你拼音规避写法，粗俗辱骂语义明确，原 other/low 过低。"}
+{"text":"cdjp李鹏","category":"political","level":"medium","review_note":"包含政治人物姓名并带政治语境缩写，原 other/low 分类过低。"}
+{"text":"cp100配件订购qq","category":"illegal","level":"high","review_note":"CP 系列枪/气枪配件订购并带 QQ 导流，原 ad/low 过低。"}
+{"text":"cp99出售","category":"illegal","level":"high","review_note":"CP99 为气枪/仿真枪型号，出售语义明确，原 ad/low 过低。"}
+{"text":"dalailama自传","category":"political","level":"medium","review_note":"涉及达赖喇嘛政治敏感人物，原 other/low 分类过低。"}
+{"text":"dl喇嘛","category":"political","level":"medium","review_note":"达赖喇嘛缩写混写，政治敏感人物语义明确，原 other/low 分类过低。"}
+{"text":"dpp大法","category":"political","level":"medium","review_note":"DPP 与大法组合具政治/组织语境，原 other/low 分类过低。"}
+{"text":"fapiao大量供应","category":"illegal","level":"high","review_note":"fapiao 为发票拼音规避，大量供应指向非法票据交易，原 other/low 过低。"}
+{"text":"fapiao销售","category":"illegal","level":"high","review_note":"fapiao 销售指向非法票据交易，原 other/low 过低。"}
+{"text":"falun功","category":"political","level":"medium","review_note":"法轮功拼音混写，政治敏感组织语义明确，原 other/low 分类过低。"}
+{"text":"fa轮","category":"political","level":"medium","review_note":"法轮拼音混写，涉及法轮功相关敏感组织语义，原 other/low 分类过低。"}
+{"text":"fa轮功","category":"political","level":"medium","review_note":"法轮功拼音混写，政治敏感组织语义明确，原 other/low 分类过低。"}
+{"text":"flg妈b发抡","category":"political","level":"medium","review_note":"FLG 及发抡为法轮功规避写法并带辱骂语境，原 other/low 分类过低。"}
+{"text":"flg妈批","category":"political","level":"medium","review_note":"FLG 为法轮功缩写并带辱骂语境，原 other/low 分类过低。"}
+{"text":"flg旗帜","category":"political","level":"medium","review_note":"FLG 为法轮功缩写，旗帜语义指向相关组织宣传，原 other/low 分类过低。"}
+{"text":"fl功","category":"political","level":"medium","review_note":"法轮功缩写变体，政治敏感组织语义明确，原 other/low 分类过低。"}
+{"text":"fl大法","category":"political","level":"medium","review_note":"法轮大法缩写变体，政治敏感组织语义明确，原 other/low 分类过低。"}
+{"text":"fx季候风出售qq","category":"illegal","level":"high","review_note":"FX 季候风为气枪相关型号，出售并带 QQ 导流，原 ad/low 过低。"}
+{"text":"fx季候风销售qq","category":"illegal","level":"high","review_note":"FX 季候风为气枪相关型号，销售并带 QQ 导流，原 ad/low 过低。"}
+{"text":"fx气皇专卖","category":"illegal","level":"high","review_note":"气皇在该上下文中指向气枪器具，专卖语义明确，原 other/low 过低。"}
+{"text":"fx气皇出售","category":"illegal","level":"high","review_note":"气皇在该上下文中指向气枪器具，出售语义明确，原 ad/low 过低。"}
+{"text":"gan你","category":"abuse","level":"medium","review_note":"干你拼音规避写法，粗俗辱骂语义明确，原 other/low 过低。"}
+{"text":"gay上门服务电话","category":"pornographic","level":"high","review_note":"同性上门性服务电话导流，招嫖语义明确，原 ad/low 过低。"}
+{"text":"gre答案出售","category":"illegal","level":"medium","review_note":"GRE 答案出售属于考试作弊交易语义，原 ad/low 过低。"}
+{"text":"g点我找的很准","category":"pornographic","level":"medium","review_note":"包含明确性敏感部位和性挑逗语义，原 other/low 过低。"}
+{"text":"hgame下载","category":"pornographic","level":"medium","review_note":"H game 通常指成人游戏资源下载，原 other/low 过低。"}
+{"text":"high乐神","category":"illegal","level":"high","review_note":"结合 high 与海乐神类管制药物语境，涉毒/管制药物风险明确，原 other/low 过低。"}
+{"text":"high水","category":"illegal","level":"high","review_note":"high 水为违禁药物/迷幻饮品黑话语境，原 other/low 过低。"}
+{"text":"high水批发","category":"illegal","level":"high","review_note":"high 水批发指向违禁药物交易，原 other/low 过低。"}
+{"text":"high水批发qq","category":"illegal","level":"high","review_note":"high 水批发并带 QQ 导流，涉毒交易语义明确，原 ad/low 过低。"}
+{"text":"high粉","category":"illegal","level":"high","review_note":"high 粉为毒品粉末黑话，原 other/low 过低。"}
+{"text":"high粉出售","category":"illegal","level":"high","review_note":"high 粉出售指向毒品交易，原 ad/low 过低。"}
+{"text":"high粉出售qq","category":"illegal","level":"high","review_note":"high 粉出售并带 QQ 导流，涉毒交易语义明确，原 ad/low 过低。"}
+{"text":"high粉出货","category":"illegal","level":"high","review_note":"high 粉出货指向毒品供货交易，原 other/low 过低。"}
+{"text":"high粉到货","category":"illegal","level":"high","review_note":"high 粉到货指向毒品供货交易，原 other/low 过低。"}
+{"text":"high粉订购","category":"illegal","level":"high","review_note":"high 粉订购指向毒品交易，原 other/low 过低。"}
+{"text":"high粉送货上门","category":"illegal","level":"high","review_note":"high 粉送货上门指向毒品配送交易，原 other/low 过低。"}
+{"text":"high粉配方","category":"illegal","level":"critical","review_note":"high 粉配方涉及毒品制作配方，原 other/low 严重过低。"}
+{"text":"high粉销售","category":"illegal","level":"high","review_note":"high 粉销售指向毒品交易，原 other/low 过低。"}
+{"text":"high粉销售qq","category":"illegal","level":"high","review_note":"high 粉销售并带 QQ 导流，涉毒交易语义明确，原 ad/low 过低。"}
+{"text":"high药","category":"illegal","level":"high","review_note":"high 药为涉毒药物黑话，原 other/low 过低。"}
+{"text":"high药专卖","category":"illegal","level":"high","review_note":"high 药专卖指向违禁药物交易，原 other/low 过低。"}
+{"text":"high药出售","category":"illegal","level":"high","review_note":"high 药出售指向违禁药物交易，原 ad/low 过低。"}
+{"text":"high药出售qq","category":"illegal","level":"high","review_note":"high 药出售并带 QQ 导流，涉毒交易语义明确，原 ad/low 过低。"}
+{"text":"high药批发","category":"illegal","level":"high","review_note":"high 药批发指向违禁药物交易，原 other/low 过低。"}
+{"text":"high药批发qq","category":"illegal","level":"high","review_note":"high 药批发并带 QQ 导流，涉毒交易语义明确，原 ad/low 过低。"}
+{"text":"high药直销","category":"illegal","level":"high","review_note":"high 药直销指向违禁药物交易，原 other/low 过低。"}
+{"text":"high药直销qq","category":"illegal","level":"high","review_note":"high 药直销并带 QQ 导流，涉毒交易语义明确，原 ad/low 过低。"}
+{"text":"high药销售","category":"illegal","level":"high","review_note":"high 药销售指向违禁药物交易，原 other/low 过低。"}
+{"text":"high药销售qq","category":"illegal","level":"high","review_note":"high 药销售并带 QQ 导流，涉毒交易语义明确，原 ad/low 过低。"}
+{"text":"himiko010rikokurusu来栖中出","category":"pornographic","level":"high","review_note":"包含成人视频资源标题和中出色情行为词，原 other/low 过低。"}
+{"text":"hmx3硝酸纤维酯","category":"illegal","level":"high","review_note":"HMX 与硝酸纤维酯均指向爆炸物/危险化学品语境，原 other/low 过低。"}
+{"text":"h游戏下载","category":"pornographic","level":"medium","review_note":"H 游戏下载通常指成人游戏资源，原 other/low 过低。"}
+{"text":"h站靠","category":"pornographic","level":"medium","review_note":"H 站指向成人色情站点，原 other/low 过低。"}
+{"text":"id卡拷贝机","category":"illegal","level":"high","review_note":"ID 卡拷贝机指向证卡复制/伪造设备风险，原 other/low 过低。"}
+{"text":"j8靠","category":"abuse","level":"medium","review_note":"J8 为粗俗性器官辱骂变体，原 other/low 过低。"}
+{"text":"jb靠","category":"abuse","level":"medium","review_note":"JB 为粗俗性器官辱骂变体，原 other/low 过低。"}
+{"text":"jian你","category":"abuse","level":"medium","review_note":"奸你拼音规避写法，带粗俗攻击/性侮辱语义，原 other/low 过低。"}
+{"text":"jia币出售","category":"illegal","level":"high","review_note":"jia 币为假币规避写法，出售语义明确，原 ad/low 过低。"}
+{"text":"jia币销售","category":"illegal","level":"high","review_note":"jia 币为假币规避写法，销售语义明确，原 other/low 过低。"}
+{"text":"jie严","category":"political","level":"medium","review_note":"戒严拼音混写，涉及敏感政治/公共秩序语境，原 other/low 分类过低。"}
+{"text":"jing坐","category":"political","level":"medium","review_note":"静坐拼音混写，涉及集会抗议政治语境，原 other/low 分类过低。"}
+{"text":"kamikazegirlsvol23harukakaede枫はるか","category":"pornographic","level":"medium","review_note":"Kamikaze Girls 成人资源系列标题与女优名语境，原 other/low 过低。"}
+{"text":"kamikazegirlsvol27高清晰版本","category":"pornographic","level":"medium","review_note":"Kamikaze Girls 成人资源系列版本语境，原 other/low 过低。"}
+{"text":"kamikazegirlsvol29铃房ありさ","category":"pornographic","level":"medium","review_note":"Kamikaze Girls 成人资源系列标题与女优名语境，原 other/low 过低。"}
+{"text":"kamikazegirlsvol30中野美奈","category":"pornographic","level":"medium","review_note":"Kamikaze Girls 成人资源系列标题与女优名语境，原 other/low 过低。"}
+{"text":"kamikazepremiumvol25特级神风榊彩弥","category":"pornographic","level":"medium","review_note":"Kamikaze Premium 成人资源系列标题与女优名语境，原 other/low 过低。"}
+{"text":"ktv小姐","category":"pornographic","level":"medium","review_note":"KTV 小姐在该词库语境中常指陪侍/性服务，原 other/low 过低。"}
+{"text":"ladysonia熟女丝袜13","category":"pornographic","level":"high","review_note":"成人演员/熟女丝袜资源标题语义，原 other/low 过低。"}
+{"text":"ladysonia熟女丝袜3","category":"pornographic","level":"high","review_note":"成人演员/熟女丝袜资源标题语义，原 other/low 过低。"}
+{"text":"love城免费激情聊天","category":"pornographic","level":"medium","review_note":"免费激情聊天指向成人色情聊天服务语境，原 other/low 过低。"}
+{"text":"m14手拉鸡","category":"illegal","level":"high","review_note":"M14 结合手拉鸡为枪支/气枪隐语语境，原 other/low 过低。"}
+{"text":"m92f式","category":"illegal","level":"high","review_note":"M92F 为手枪型号，原 other/low 过低。"}
+{"text":"m92f手","category":"illegal","level":"high","review_note":"M92F 手枪缩写语境明确，原 other/low 过低。"}
+{"text":"m9长刺","category":"violence","level":"medium","review_note":"M9 长刺为军刀/刺刀语义，原 other/low 过低。"}
+{"text":"meimeimm激情","category":"pornographic","level":"medium","review_note":"结合 meimei/mm 与激情语境指向成人色情内容，原 other/low 过低。"}
+{"text":"meinv发春激情在线电影","category":"pornographic","level":"high","review_note":"发春激情在线电影指向色情影片资源，原 other/low 过低。"}
+{"text":"mm上门","category":"pornographic","level":"medium","review_note":"MM 上门在该词库语境中指向上门性服务招嫖，原 other/low 过低。"}
+{"text":"mm上门服务","category":"pornographic","level":"high","review_note":"MM 上门服务在该语境中指向招嫖性服务，原 other/low 过低。"}
+{"text":"mm兼职","category":"pornographic","level":"medium","review_note":"MM 兼职在该类词库语境中常指成人陪侍/性服务，原 other/low 过低。"}
+{"text":"mm兼职服务","category":"pornographic","level":"medium","review_note":"MM 兼职服务在该类词库语境中常指成人陪侍/性服务，原 other/low 过低。"}
+{"text":"mm收费视频","category":"pornographic","level":"medium","review_note":"MM 收费视频在色情资源语境中指向成人付费视频，原 other/low 过低。"}
+{"text":"mo你全身","category":"pornographic","level":"medium","review_note":"摸你全身拼音规避写法，带明显性骚扰/色情挑逗语义，原 other/low 过低。"}

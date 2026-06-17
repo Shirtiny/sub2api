@@ -1,0 +1,225 @@
+{"text":"做1单结算1单完成马上结算决不拖欠","category":"ad","level":"low","review_note":"任务兼职结算广告语义，风险不足，按 low 不拦截规则归为 ad/low。"}
+{"text":"做假言正","category":"illegal","level":"high","review_note":"“言正”为证件规避写法，做假证件语义明确，原 other/low 过低。"}
+{"text":"做台","category":"pornographic","level":"medium","review_note":"“做台”在该词库上下文中指向陪侍/色情服务暗示，原 other/low 过低。"}
+{"text":"做台小妞","category":"pornographic","level":"medium","review_note":"“做台小妞”指向陪侍/色情服务暗示，原 other/low 过低。"}
+{"text":"做台小姐","category":"pornographic","level":"medium","review_note":"“做台小姐”指向陪侍/色情服务暗示，原 other/low 过低。"}
+{"text":"偷听器","category":"illegal","level":"medium","review_note":"偷听器可用于非法窃听，单独工具词存在隐私侵害风险，原 other/low 过低。"}
+{"text":"偷情","category":"pornographic","level":"medium","review_note":"偷情在成人语境中具有情色内容指向，原 other/low 过低。"}
+{"text":"偷情少妇txt","category":"pornographic","level":"medium","review_note":"偷情少妇 txt 指向成人小说资源，原 other/low 过低。"}
+{"text":"偷情男女","category":"pornographic","level":"medium","review_note":"偷情男女在成人词库上下文中具有情色内容指向，原 other/low 过低。"}
+{"text":"偷情网","category":"pornographic","level":"medium","review_note":"偷情网指向成人/婚外情站点，原 other/low 过低。"}
+{"text":"偷拍","category":"pornographic","level":"medium","review_note":"偷拍在该成人词簇中指向隐私侵害型色情内容，原 other/low 过低。"}
+{"text":"偷拍1自拍","category":"pornographic","level":"medium","review_note":"偷拍自拍在该成人词簇中指向色情影像资源，原 other/low 过低。"}
+{"text":"偷欢","category":"pornographic","level":"medium","review_note":"偷欢在成人语境中具有情色内容指向，原 other/low 过低。"}
+{"text":"偷欢诱子txt","category":"pornographic","level":"medium","review_note":"偷欢诱子 txt 指向成人小说资源，原 other/low 过低。"}
+{"text":"偷税","category":"illegal","level":"medium","review_note":"偷税涉及违法逃税行为，原 other/low 过低。"}
+{"text":"偷窃偷拍","category":"illegal","level":"medium","review_note":"偷窃偷拍同时指向违法盗窃和偷拍侵权，原 other/low 过低。"}
+{"text":"偷窥","category":"pornographic","level":"medium","review_note":"偷窥在该成人词簇中指向色情/隐私侵害内容，原 other/low 过低。"}
+{"text":"偷窥合租女生txt","category":"pornographic","level":"medium","review_note":"偷窥合租女生 txt 指向成人小说资源，原 other/low 过低。"}
+{"text":"偷窥图片","category":"pornographic","level":"medium","review_note":"偷窥图片在该词簇中指向色情/隐私侵害图片，原 other/low 过低。"}
+{"text":"偷窥拍摄","category":"pornographic","level":"medium","review_note":"偷窥拍摄指向偷拍偷窥类色情/隐私侵害内容，原 other/low 过低。"}
+{"text":"偷窥无罪","category":"pornographic","level":"medium","review_note":"偷窥无罪在该词簇中指向偷窥色情内容合理化，原 other/low 过低。"}
+{"text":"偷窥有罪","category":"pornographic","level":"medium","review_note":"偷窥有罪在该词簇中仍指向偷窥色情内容，原 other/low 过低。"}
+{"text":"偷窥盗摄系列","category":"pornographic","level":"medium","review_note":"偷窥盗摄系列指向盗摄偷窥类成人资源，原 other/low 过低。"}
+{"text":"偷窥社区","category":"pornographic","level":"medium","review_note":"偷窥社区指向偷窥类成人社区，原 other/low 过低。"}
+{"text":"偷窥网","category":"pornographic","level":"medium","review_note":"偷窥网指向偷窥类成人站点，原 other/low 过低。"}
+{"text":"偷窥迷情","category":"pornographic","level":"medium","review_note":"偷窥迷情在该词簇中具有情色内容指向，原 other/low 过低。"}
+{"text":"偷腥","category":"pornographic","level":"medium","review_note":"偷腥在成人语境中具有情色/出轨内容指向，原 other/low 过低。"}
+{"text":"催情口香糖批发","category":"illegal","level":"high","review_note":"催情口香糖批发属于催情/迷奸类药物交易语义，原 other/low 过低。"}
+{"text":"催情口香糖提供","category":"illegal","level":"high","review_note":"催情口香糖提供属于催情/迷奸类药物交易语义，原 other/low 过低。"}
+{"text":"催情口香糖直销","category":"illegal","level":"high","review_note":"催情口香糖直销属于催情/迷奸类药物交易语义，原 other/low 过低。"}
+{"text":"催情口香糖购买","category":"illegal","level":"high","review_note":"催情口香糖购买属于催情/迷奸类药物交易语义，原 other/low 过低。"}
+{"text":"催情口香糖销售","category":"illegal","level":"high","review_note":"催情口香糖销售属于催情/迷奸类药物交易语义，原 other/low 过低。"}
+{"text":"催情口香糖销售qq","category":"illegal","level":"high","review_note":"催情口香糖销售并带 QQ 导流，属于催情/迷奸类药物交易语义，原 ad/low 过低。"}
+{"text":"催情喷雾","category":"illegal","level":"medium","review_note":"催情喷雾属于催情/迷奸类用品风险词，原 other/low 过低。"}
+{"text":"催情水","category":"illegal","level":"medium","review_note":"催情水属于催情/迷奸类用品风险词，原 other/low 过低。"}
+{"text":"催情水销售","category":"illegal","level":"high","review_note":"催情水销售属于催情/迷奸类药物交易语义，原 other/low 过低。"}
+{"text":"催情液","category":"illegal","level":"medium","review_note":"催情液属于催情/迷奸类用品风险词，原 other/low 过低。"}
+{"text":"催情液专卖","category":"illegal","level":"high","review_note":"催情液专卖属于催情/迷奸类药物交易语义，原 other/low 过低。"}
+{"text":"催情液买卖","category":"illegal","level":"high","review_note":"催情液买卖属于催情/迷奸类药物交易语义，原 other/low 过低。"}
+{"text":"催情液供应","category":"illegal","level":"high","review_note":"催情液供应属于催情/迷奸类药物交易语义，原 other/low 过低。"}
+{"text":"催情液批发","category":"illegal","level":"high","review_note":"催情液批发属于催情/迷奸类药物交易语义，原 other/low 过低。"}
+{"text":"催情液提供qq","category":"illegal","level":"high","review_note":"催情液提供并带 QQ 导流，属于催情/迷奸类药物交易语义，原 ad/low 过低。"}
+{"text":"催情液直销","category":"illegal","level":"high","review_note":"催情液直销属于催情/迷奸类药物交易语义，原 other/low 过低。"}
+{"text":"催情液直销qq","category":"illegal","level":"high","review_note":"催情液直销并带 QQ 导流，属于催情/迷奸类药物交易语义，原 ad/low 过低。"}
+{"text":"催情液订购","category":"illegal","level":"high","review_note":"催情液订购属于催情/迷奸类药物交易语义，原 other/low 过低。"}
+{"text":"催情液购买","category":"illegal","level":"high","review_note":"催情液购买属于催情/迷奸类药物交易语义，原 other/low 过低。"}
+{"text":"催情液销售","category":"illegal","level":"high","review_note":"催情液销售属于催情/迷奸类药物交易语义，原 other/low 过低。"}
+{"text":"催情液销售qq","category":"illegal","level":"high","review_note":"催情液销售并带 QQ 导流，属于催情/迷奸类药物交易语义，原 ad/low 过低。"}
+{"text":"催情粉","category":"illegal","level":"medium","review_note":"催情粉属于催情/迷奸类用品风险词，原 other/low 过低。"}
+{"text":"催情粉专卖","category":"illegal","level":"high","review_note":"催情粉专卖属于催情/迷奸类药物交易语义，原 other/low 过低。"}
+{"text":"催情粉专卖qq","category":"illegal","level":"high","review_note":"催情粉专卖并带 QQ 导流，属于催情/迷奸类药物交易语义，原 ad/low 过低。"}
+{"text":"催情粉出售","category":"illegal","level":"high","review_note":"催情粉出售属于催情/迷奸类药物交易语义，原 ad/low 过低。"}
+{"text":"催情粉批发qq","category":"illegal","level":"high","review_note":"催情粉批发并带 QQ 导流，属于催情/迷奸类药物交易语义，原 ad/low 过低。"}
+{"text":"催情粉订购qq","category":"illegal","level":"high","review_note":"催情粉订购并带 QQ 导流，属于催情/迷奸类药物交易语义，原 ad/low 过低。"}
+{"text":"催情药","category":"illegal","level":"medium","review_note":"催情药属于催情/迷奸类药物风险词，原 other/low 过低。"}
+{"text":"催情药专卖","category":"illegal","level":"high","review_note":"催情药专卖属于催情/迷奸类药物交易语义，原 other/low 过低。"}
+{"text":"催情药专卖qq","category":"illegal","level":"high","review_note":"催情药专卖并带 QQ 导流，属于催情/迷奸类药物交易语义，原 ad/low 过低。"}
+{"text":"催情药供应","category":"illegal","level":"high","review_note":"催情药供应属于催情/迷奸类药物交易语义，原 other/low 过低。"}
+{"text":"催情药水","category":"illegal","level":"medium","review_note":"催情药水属于催情/迷奸类药物风险词，原 other/low 过低。"}
+{"text":"催情药水供应","category":"illegal","level":"high","review_note":"催情药水供应属于催情/迷奸类药物交易语义，原 other/low 过低。"}
+{"text":"催情药水出售","category":"illegal","level":"high","review_note":"催情药水出售属于催情/迷奸类药物交易语义，原 ad/low 过低。"}
+{"text":"催情药水出售qq","category":"illegal","level":"high","review_note":"催情药水出售并带 QQ 导流，属于催情/迷奸类药物交易语义，原 ad/low 过低。"}
+{"text":"催情药水批发","category":"illegal","level":"high","review_note":"催情药水批发属于催情/迷奸类药物交易语义，原 other/low 过低。"}
+{"text":"催情药水提供","category":"illegal","level":"high","review_note":"催情药水提供属于催情/迷奸类药物交易语义，原 other/low 过低。"}
+{"text":"催情药水提供qq","category":"illegal","level":"high","review_note":"催情药水提供并带 QQ 导流，属于催情/迷奸类药物交易语义，原 ad/low 过低。"}
+{"text":"催情药水直销","category":"illegal","level":"high","review_note":"催情药水直销属于催情/迷奸类药物交易语义，原 other/low 过低。"}
+{"text":"催情药水直销qq","category":"illegal","level":"high","review_note":"催情药水直销并带 QQ 导流，属于催情/迷奸类药物交易语义，原 ad/low 过低。"}
+{"text":"催情药水订购","category":"illegal","level":"high","review_note":"催情药水订购属于催情/迷奸类药物交易语义，原 other/low 过低。"}
+{"text":"催情药水订购qq","category":"illegal","level":"high","review_note":"催情药水订购并带 QQ 导流，属于催情/迷奸类药物交易语义，原 ad/low 过低。"}
+{"text":"催情药水购买","category":"illegal","level":"high","review_note":"催情药水购买属于催情/迷奸类药物交易语义，原 other/low 过低。"}
+{"text":"催情药水购买qq","category":"illegal","level":"high","review_note":"催情药水购买并带 QQ 导流，属于催情/迷奸类药物交易语义，原 ad/low 过低。"}
+{"text":"催情药水销售","category":"illegal","level":"high","review_note":"催情药水销售属于催情/迷奸类药物交易语义，原 other/low 过低。"}
+{"text":"催情药水销售qq","category":"illegal","level":"high","review_note":"催情药水销售并带 QQ 导流，属于催情/迷奸类药物交易语义，原 ad/low 过低。"}
+{"text":"催情迷情香水","category":"illegal","level":"medium","review_note":"催情迷情香水属于催情/迷奸类用品风险词，原 other/low 过低。"}
+{"text":"催情香水专卖qq","category":"illegal","level":"high","review_note":"催情香水专卖并带 QQ 导流，属于催情/迷奸类用品交易语义，原 ad/low 过低。"}
+{"text":"催泪喷射器","category":"violence","level":"medium","review_note":"催泪喷射器属于防暴/攻击性器械，原 other/low 过低。"}
+{"text":"催泪弹","category":"violence","level":"medium","review_note":"催泪弹属于攻击/防暴器械，原 other/low 过低。"}
+{"text":"催眠喷雾剂","category":"illegal","level":"medium","review_note":"催眠喷雾剂属于迷奸/致昏类用品风险词，原 other/low 过低。"}
+{"text":"催眠喷雾剂专卖","category":"illegal","level":"high","review_note":"催眠喷雾剂专卖属于迷奸/致昏类用品交易语义，原 other/low 过低。"}
+{"text":"催眠喷雾剂专卖qq","category":"illegal","level":"high","review_note":"催眠喷雾剂专卖并带 QQ 导流，属于迷奸/致昏类用品交易语义，原 ad/low 过低。"}
+{"text":"催眠喷雾剂买卖","category":"illegal","level":"high","review_note":"催眠喷雾剂买卖属于迷奸/致昏类用品交易语义，原 other/low 过低。"}
+{"text":"催眠喷雾剂买卖qq","category":"illegal","level":"high","review_note":"催眠喷雾剂买卖并带 QQ 导流，属于迷奸/致昏类用品交易语义，原 ad/low 过低。"}
+{"text":"催眠喷雾剂供应","category":"illegal","level":"high","review_note":"催眠喷雾剂供应属于迷奸/致昏类用品交易语义，原 other/low 过低。"}
+{"text":"催眠喷雾剂批发","category":"illegal","level":"high","review_note":"催眠喷雾剂批发属于迷奸/致昏类用品交易语义，原 other/low 过低。"}
+{"text":"催眠喷雾剂批发qq","category":"illegal","level":"high","review_note":"催眠喷雾剂批发并带 QQ 导流，属于迷奸/致昏类用品交易语义，原 ad/low 过低。"}
+{"text":"催眠喷雾剂提供","category":"illegal","level":"high","review_note":"催眠喷雾剂提供属于迷奸/致昏类用品交易语义，原 other/low 过低。"}
+{"text":"催眠喷雾剂提供qq","category":"illegal","level":"high","review_note":"催眠喷雾剂提供并带 QQ 导流，属于迷奸/致昏类用品交易语义，原 ad/low 过低。"}
+{"text":"催眠喷雾剂直销","category":"illegal","level":"high","review_note":"催眠喷雾剂直销属于迷奸/致昏类用品交易语义，原 other/low 过低。"}
+{"text":"催眠喷雾剂直销qq","category":"illegal","level":"high","review_note":"催眠喷雾剂直销并带 QQ 导流，属于迷奸/致昏类用品交易语义，原 ad/low 过低。"}
+{"text":"催眠喷雾剂销售","category":"illegal","level":"high","review_note":"催眠喷雾剂销售属于迷奸/致昏类用品交易语义，原 other/low 过低。"}
+{"text":"催眠喷雾剂销售qq","category":"illegal","level":"high","review_note":"催眠喷雾剂销售并带 QQ 导流，属于迷奸/致昏类用品交易语义，原 ad/low 过低。"}
+{"text":"催眠水","category":"illegal","level":"medium","review_note":"催眠水属于迷奸/致昏类药物风险词，原 other/low 过低。"}
+{"text":"催眠水订购qq","category":"illegal","level":"high","review_note":"催眠水订购并带 QQ 导流，属于迷奸/致昏类药物交易语义，原 ad/low 过低。"}
+{"text":"催眠美丽的奴隶txt","category":"pornographic","level":"medium","review_note":"催眠美丽的奴隶 txt 指向成人小说资源，原 other/low 过低。"}
+{"text":"催眠药","category":"illegal","level":"medium","review_note":"催眠药属于受管制药物/致昏药风险词，原 other/low 过低。"}
+{"text":"傻b江核心","category":"abuse","level":"medium","review_note":"含“傻b”辱骂并关联政治人物称谓，应至少归辱骂类，原 other/low 过低。"}
+{"text":"儿园凶","category":"violence","level":"medium","review_note":"“儿园凶”为幼儿园凶案类规避写法，涉及暴力事件，原 other/low 过低。"}
+{"text":"儿园惨","category":"violence","level":"medium","review_note":"“儿园惨”为幼儿园惨案类规避写法，涉及暴力事件，原 other/low 过低。"}
+{"text":"儿园杀","category":"violence","level":"medium","review_note":"“儿园杀”为幼儿园杀人类规避写法，涉及暴力事件，原 other/low 过低。"}
+{"text":"儿园砍","category":"violence","level":"medium","review_note":"“儿园砍”为幼儿园砍杀类规避写法，涉及暴力事件，原 other/low 过低。"}
+{"text":"儿届中央政治局委员","category":"political","level":"medium","review_note":"“儿届中央政治局委员”为届次政治局委员规避写法，应归政治类，原 other/low 过低。"}
+{"text":"元1夜","category":"pornographic","level":"medium","review_note":"“元1夜”疑似“一夜情/包夜”规避写法，成人服务暗示明显，原 other/low 过低。"}
+{"text":"充气娃娃出售","category":"pornographic","level":"medium","review_note":"充气娃娃出售属于成人用品交易语义，原 ad/low 过低。"}
+{"text":"先吃后爱将军恶如狼","category":"pornographic","level":"medium","review_note":"小说标题含“先吃后爱”等情色暗示，原 other/low 过低。"}
+{"text":"先赌再嫖","category":"illegal","level":"medium","review_note":"含赌博和嫖娼行为语义，原 other/low 过低。"}
+{"text":"光咲玲奈种子","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加种子指向色情资源下载，原 other/low 过低。"}
+{"text":"光学变色油墨","category":"illegal","level":"medium","review_note":"光学变色油墨可用于伪造证照/货币，存在违法工具风险，原 other/low 过低。"}
+{"text":"光月夜也种子","category":"pornographic","level":"medium","review_note":"成人演员姓名加种子指向色情资源下载，原 other/low 过低。"}
+{"text":"光气","category":"illegal","level":"medium","review_note":"光气为高危有毒化学品，单独词也存在违禁品风险，原 other/low 过低。"}
+{"text":"克百威","category":"illegal","level":"medium","review_note":"克百威为高毒农药/毒物，单独词存在违禁品风险，原 other/low 过低。"}
+{"text":"克隆银行卡电qq","category":"illegal","level":"high","review_note":"克隆银行卡并带 QQ 导流，属于银行卡犯罪服务语义，原 ad/low 过低。"}
+{"text":"免学免考拿驾照qq","category":"illegal","level":"high","review_note":"免学免考拿驾照并带 QQ 导流，属于违规办证语义，原 ad/low 过低。"}
+{"text":"免注册台湾18dy","category":"pornographic","level":"medium","review_note":"免注册台湾18dy 指向成人影视站点资源，原 other/low 过低。"}
+{"text":"免费bb电影","category":"pornographic","level":"medium","review_note":"免费 bb 电影在成人电影词簇中疑似色情资源，原 other/low 过低。"}
+{"text":"免费g片下载","category":"pornographic","level":"medium","review_note":"免费 g 片下载在成人影片词簇中指向色情资源下载，原 other/low 过低。"}
+{"text":"免费偷窥网","category":"pornographic","level":"medium","review_note":"免费偷窥网指向偷窥类成人站点，原 other/low 过低。"}
+{"text":"免费午夜电影","category":"pornographic","level":"medium","review_note":"免费午夜电影在成人影视词簇中具有色情资源指向，原 other/low 过低。"}
+{"text":"免费手机任意改号软件下载","category":"illegal","level":"high","review_note":"手机任意改号软件下载指向改号诈骗工具，原 ad/low 过低。"}
+{"text":"免费手机任意改号软件提供","category":"illegal","level":"high","review_note":"手机任意改号软件提供指向改号诈骗工具，原 ad/low 过低。"}
+{"text":"免费手机变号软件下载","category":"illegal","level":"high","review_note":"手机变号软件下载指向改号诈骗工具，原 ad/low 过低。"}
+{"text":"免费手机改号软件","category":"illegal","level":"high","review_note":"手机改号软件指向改号诈骗工具，原 ad/low 过低。"}
+{"text":"免费推荐牛股","category":"ad","level":"low","review_note":"推荐牛股属于荐股广告语义，风险不足，按 low 不拦截规则归为 ad/low。"}
+{"text":"免费注册看免费电影通道","category":"pornographic","level":"medium","review_note":"免费注册看免费电影通道位于成人影视资源词簇，疑似色情站点导流，原 other/low 过低。"}
+{"text":"免费注册试看50部","category":"pornographic","level":"medium","review_note":"免费注册试看50部位于成人影视资源词簇，疑似色情试看导流，原 other/low 过低。"}
+{"text":"免费激情聊天室","category":"pornographic","level":"medium","review_note":"免费激情聊天室指向成人激情聊天服务，原 ad/low 过低。"}
+{"text":"免费激情视频聊天室","category":"pornographic","level":"medium","review_note":"免费激情视频聊天室指向成人视频聊天服务，原 ad/low 过低。"}
+{"text":"免费电影meinv电影","category":"pornographic","level":"medium","review_note":"免费电影 meinv 电影位于成人影视资源词簇，疑似色情资源，原 other/low 过低。"}
+{"text":"免费电影美女电影","category":"pornographic","level":"medium","review_note":"免费电影美女电影位于成人影视资源词簇，疑似色情资源，原 other/low 过低。"}
+{"text":"免费秀聊视舞聊天网","category":"ad","level":"low","review_note":"免费秀聊视舞聊天网属于视频聊天站点广告语义，按 low 不拦截规则归为 ad/low。"}
+{"text":"免费聊天室","category":"ad","level":"low","review_note":"免费聊天室属于泛聊天站点广告语义，按 low 不拦截规则维持 ad/low。"}
+{"text":"免费视讯meimei","category":"ad","level":"low","review_note":"免费视讯 meimei 属于视频聊天招揽语义，按 low 不拦截规则归为 ad/low。"}
+{"text":"免费视讯妹妹","category":"ad","level":"low","review_note":"免费视讯妹妹属于视频聊天招揽语义，按 low 不拦截规则归为 ad/low。"}
+{"text":"免费视频激情聊天室","category":"pornographic","level":"medium","review_note":"免费视频激情聊天室指向成人视频聊天服务，原 ad/low 过低。"}
+{"text":"免费试看片","category":"pornographic","level":"medium","review_note":"免费试看片位于成人影视资源词簇，疑似色情试看资源，原 other/low 过低。"}
+{"text":"児岛香绪里种子","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加种子指向色情资源下载，原 other/low 过低。"}
+{"text":"兔meimei色色贴图区","category":"pornographic","level":"medium","review_note":"含“色色贴图区”，指向成人贴图区，原 other/low 过低。"}
+{"text":"兔妹妹色色贴图区","category":"pornographic","level":"medium","review_note":"含“色色贴图区”，指向成人贴图区，原 other/low 过低。"}
+{"text":"党中央","category":"political","level":"medium","review_note":"党中央属于政治组织相关词，应归政治类，原 other/low 过低。"}
+{"text":"党主席","category":"political","level":"medium","review_note":"党主席属于政治职务相关词，应归政治类，原 other/low 过低。"}
+{"text":"党产共","category":"political","level":"medium","review_note":"党产共为共产党相关规避写法，应归政治类，原 other/low 过低。"}
+{"text":"党内内部资料","category":"political","level":"medium","review_note":"党内内部资料涉及党内政治资料，应归政治类，原 other/low 过低。"}
+{"text":"党内危机","category":"political","level":"medium","review_note":"党内危机涉及党内政治议题，应归政治类，原 other/low 过低。"}
+{"text":"党内权争","category":"political","level":"medium","review_note":"党内权争涉及党内政治权力斗争，应归政治类，原 other/low 过低。"}
+{"text":"党内权力","category":"political","level":"medium","review_note":"党内权力涉及党内政治权力议题，应归政治类，原 other/low 过低。"}
+{"text":"党内言事潮","category":"political","level":"medium","review_note":"党内言事潮涉及党内政治议题，应归政治类，原 other/low 过低。"}
+{"text":"党卫兵","category":"political","level":"medium","review_note":"党卫兵为政治语境词，应归政治类，原 other/low 过低。"}
+{"text":"党和人民对立了","category":"political","level":"medium","review_note":"党和人民对立了为政治评价语句，应归政治类，原 other/low 过低。"}
+{"text":"党国","category":"political","level":"medium","review_note":"党国为政治语境词，应归政治类，原 other/low 过低。"}
+{"text":"党在玩社会","category":"political","level":"medium","review_note":"党在玩社会为政治评价语句，应归政治类，原 other/low 过低。"}
+{"text":"党政1把手","category":"political","level":"medium","review_note":"党政一把手涉及政治职务，应归政治类，原 other/low 过低。"}
+{"text":"党政人事","category":"political","level":"medium","review_note":"党政人事涉及政治人事议题，应归政治类，原 other/low 过低。"}
+{"text":"党政干部十大特征","category":"political","level":"medium","review_note":"党政干部十大特征涉及政治干部评价，应归政治类，原 other/low 过低。"}
+{"text":"党文化","category":"political","level":"medium","review_note":"党文化为政治语境词，应归政治类，原 other/low 过低。"}
+{"text":"党校安插亲信","category":"political","level":"medium","review_note":"党校安插亲信涉及党内政治人事议题，应归政治类，原 other/low 过低。"}
+{"text":"党棍","category":"political","level":"medium","review_note":"党棍为政治贬称，应归政治类，原 other/low 过低。"}
+{"text":"党的喉舌","category":"political","level":"medium","review_note":"党的喉舌涉及政治宣传机构表述，应归政治类，原 other/low 过低。"}
+{"text":"党的宗旨成空谈","category":"political","level":"medium","review_note":"党的宗旨成空谈为政治评价语句，应归政治类，原 other/low 过低。"}
+{"text":"党的官","category":"political","level":"medium","review_note":"党的官涉及政治组织官员，应归政治类，原 other/low 过低。"}
+{"text":"党禁","category":"political","level":"medium","review_note":"党禁为政治制度/禁令相关词，应归政治类，原 other/low 过低。"}
+{"text":"党章","category":"political","level":"medium","review_note":"党章为政治组织章程相关词，应归政治类，原 other/low 过低。"}
+{"text":"党鞭","category":"political","level":"medium","review_note":"党鞭为政治组织职务/纪律相关词，应归政治类，原 other/low 过低。"}
+{"text":"党风日下","category":"political","level":"medium","review_note":"党风日下为政治评价语句，应归政治类，原 other/low 过低。"}
+{"text":"党魁","category":"political","level":"medium","review_note":"党魁为政治组织首领贬称，应归政治类，原 other/low 过低。"}
+{"text":"入联","category":"political","level":"medium","review_note":"入联涉及台湾/国际政治议题，应归政治类，原 other/low 过低。"}
+{"text":"全免激情聊天室","category":"pornographic","level":"medium","review_note":"全免激情聊天室指向成人激情聊天服务，原 ad/low 过低。"}
+{"text":"全国2nai大赛","category":"pornographic","level":"medium","review_note":"全国二奶大赛具有色情/低俗婚外情语境，原 other/low 过低。"}
+{"text":"全国业主资料qq","category":"illegal","level":"high","review_note":"全国业主资料并带 QQ 导流，涉及个人信息交易，原 ad/low 过低。"}
+{"text":"全国两会","category":"political","level":"medium","review_note":"全国两会属于政治会议相关词，应归政治类，原 other/low 过低。"}
+{"text":"全国人大","category":"political","level":"medium","review_note":"全国人大属于政治机构相关词，应归政治类，原 other/low 过低。"}
+{"text":"全国股民数据库出售","category":"illegal","level":"high","review_note":"全国股民数据库出售涉及个人信息交易，原 ad/low 过低。"}
+{"text":"全国车主资料出售","category":"illegal","level":"high","review_note":"全国车主资料出售涉及个人信息交易，原 ad/low 过低。"}
+{"text":"全国车主资料批发qq","category":"illegal","level":"high","review_note":"全国车主资料批发并带 QQ 导流，涉及个人信息交易，原 ad/low 过低。"}
+{"text":"全国高分meimei","category":"ad","level":"low","review_note":"全国高分 meimei 属于交友/陪聊招揽语义，风险不足，按 low 不拦截规则归为 ad/low。"}
+{"text":"全套保健按摩","category":"pornographic","level":"medium","review_note":"全套保健按摩在该服务词簇中具有色情服务暗示，原 other/low 过低。"}
+{"text":"全新色站出售","category":"pornographic","level":"medium","review_note":"全新色站出售指向成人站点交易，原 ad/low 过低。"}
+{"text":"全日制文凭代办qq","category":"illegal","level":"high","review_note":"全日制文凭代办并带 QQ 导流，属于假文凭/违规办证语义，原 ad/low 过低。"}
+{"text":"全能神","category":"political","level":"medium","review_note":"全能神为敏感宗教/组织词，应归政治/敏感组织类，原 other/low 过低。"}
+{"text":"全能者","category":"political","level":"medium","review_note":"全能者为全能神相关称谓，敏感组织语境明显，原 other/low 过低。"}
+{"text":"全范围教会","category":"political","level":"medium","review_note":"全范围教会为敏感宗教组织相关词，原 other/low 过低。"}
+{"text":"全钢刀","category":"violence","level":"medium","review_note":"全钢刀属于刀具武器风险词，原 other/low 过低。"}
+{"text":"公产党","category":"political","level":"medium","review_note":"公产党为共产党规避写法，应归政治类，原 other/low 过低。"}
+{"text":"公产小丑","category":"political","level":"medium","review_note":"公产小丑为共产党相关政治贬称，原 other/low 过低。"}
+{"text":"公产王朝","category":"political","level":"medium","review_note":"公产王朝为共产党相关政治表述，原 other/low 过低。"}
+{"text":"公仆工资涨得快","category":"political","level":"medium","review_note":"公仆工资涨得快涉及公务员/政府政治评价，原 other/low 过低。"}
+{"text":"公仆真是笨蛋","category":"political","level":"medium","review_note":"公仆真是笨蛋涉及公职群体政治评价，原 other/low 过低。"}
+{"text":"公僿真是笨蛋","category":"political","level":"medium","review_note":"公僿真是笨蛋为公仆相关规避写法，涉及政治评价，原 other/low 过低。"}
+{"text":"公关删除","category":"ad","level":"low","review_note":"公关删除属于网络公关服务广告语义，风险不足，按 low 不拦截规则归为 ad/low。"}
+{"text":"公关删除百度信息","category":"ad","level":"low","review_note":"公关删除百度信息属于网络公关服务广告语义，按 low 不拦截规则归为 ad/low。"}
+{"text":"公关删除论坛信息","category":"ad","level":"low","review_note":"公关删除论坛信息属于网络公关服务广告语义，按 low 不拦截规则归为 ad/low。"}
+{"text":"公务员","category":"political","level":"medium","review_note":"公务员属于政府公职政治语境词，应归政治类，原 other/low 过低。"}
+{"text":"公务员代考答案qq","category":"illegal","level":"high","review_note":"公务员代考答案并带 QQ 导流，属于考试作弊交易语义，原 ad/low 过低。"}
+{"text":"公务员十大丑陋","category":"political","level":"medium","review_note":"公务员十大丑陋涉及公职群体政治评价，原 other/low 过低。"}
+{"text":"公务员工资","category":"political","level":"medium","review_note":"公务员工资涉及公职政治议题，原 other/low 过低。"}
+{"text":"公务员李文娟","category":"political","level":"medium","review_note":"公务员姓名/身份语境涉及公职政治议题，原 other/low 过低。"}
+{"text":"公务员的工资","category":"political","level":"medium","review_note":"公务员的工资涉及公职政治议题，原 other/low 过低。"}
+{"text":"公务员考生信息","category":"illegal","level":"medium","review_note":"公务员考生信息涉及考试个人信息数据风险，原 other/low 过低。"}
+{"text":"公务员考试答案qq","category":"illegal","level":"high","review_note":"公务员考试答案并带 QQ 导流，属于考试作弊交易语义，原 ad/low 过低。"}
+{"text":"公务员考试答案出售","category":"illegal","level":"high","review_note":"公务员考试答案出售属于考试作弊交易语义，原 ad/low 过低。"}
+{"text":"公务员调资","category":"political","level":"medium","review_note":"公务员调资涉及公职薪资政治议题，原 other/low 过低。"}
+{"text":"公务唗和教师的工赕差距","category":"political","level":"medium","review_note":"公务员和教师工资差距涉及公职薪资政治议题，原 other/low 过低。"}
+{"text":"公务奢华程度","category":"political","level":"medium","review_note":"公务奢华程度涉及政府公务消费评价，原 other/low 过低。"}
+{"text":"公司同事的诱惑txt","category":"pornographic","level":"medium","review_note":"公司同事的诱惑 txt 指向成人小说资源，原 other/low 过低。"}
+{"text":"公司税票代开qq","category":"illegal","level":"high","review_note":"公司税票代开并带 QQ 导流，属于非法代开发票语义，原 ad/low 过低。"}
+{"text":"公子党","category":"political","level":"medium","review_note":"公子党为政治权贵群体相关词，应归政治类，原 other/low 过低。"}
+{"text":"公安","category":"political","level":"medium","review_note":"公安属于国家执法机关相关词，应归政治类，原 other/low 过低。"}
+{"text":"公安局","category":"political","level":"medium","review_note":"公安局属于国家执法机关相关词，应归政治类，原 other/low 过低。"}
+{"text":"公安局女局长安丽明","category":"political","level":"medium","review_note":"公安局女局长安丽明涉及公安系统官员，原 other/low 过低。"}
+{"text":"公安把秩序搞乱","category":"political","level":"medium","review_note":"公安把秩序搞乱为执法机关政治评价，原 other/low 过低。"}
+{"text":"公安网监","category":"political","level":"medium","review_note":"公安网监涉及公安网络监管，原 other/low 过低。"}
+{"text":"公安部","category":"political","level":"medium","review_note":"公安部属于国家执法机关相关词，应归政治类，原 other/low 过低。"}
+{"text":"公安错打","category":"political","level":"medium","review_note":"公安错打涉及执法机关负面事件，原 other/low 过低。"}
+{"text":"公审","category":"political","level":"medium","review_note":"公审在该政治词簇中指向政治清算/审判诉求，原 other/low 过低。"}
+{"text":"公开信","category":"political","level":"medium","review_note":"公开信在该政治词簇中指向政治诉求文本，原 other/low 过低。"}
+{"text":"公开信胡","category":"political","level":"medium","review_note":"公开信胡涉及向政治领导人的公开信，原 other/low 过低。"}
+{"text":"公开小姐","category":"pornographic","level":"medium","review_note":"公开小姐在该词库上下文中具有色情服务招揽暗示，原 other/low 过低。"}
+{"text":"公投","category":"political","level":"medium","review_note":"公投属于政治程序相关词，应归政治类，原 other/low 过低。"}
+{"text":"公文","category":"political","level":"medium","review_note":"公文在该政治/办证词簇中涉及官方文件语境，原 other/low 过低。"}
+{"text":"公检法","category":"political","level":"medium","review_note":"公检法属于国家司法执法机构，应归政治类，原 other/low 过低。"}
+{"text":"公款","category":"political","level":"medium","review_note":"公款涉及公共财政/腐败政治语境，原 other/low 过低。"}
+{"text":"公车上的女大学生","category":"pornographic","level":"medium","review_note":"公车上的女大学生位于公车色情词簇，具有成人内容指向，原 other/low 过低。"}
+{"text":"兰博军刀专卖qq","category":"violence","level":"medium","review_note":"兰博军刀专卖并带 QQ 导流，属于刀具武器交易语义，原 ad/low 过低。"}
+{"text":"兰博刀","category":"violence","level":"medium","review_note":"兰博刀属于刀具武器风险词，原 other/low 过低。"}
+{"text":"兰博刀专卖qq","category":"violence","level":"medium","review_note":"兰博刀专卖并带 QQ 导流，属于刀具武器交易语义，原 ad/low 过低。"}
+{"text":"兰博刀具买卖qq","category":"violence","level":"medium","review_note":"兰博刀具买卖并带 QQ 导流，属于刀具武器交易语义，原 ad/low 过低。"}
+{"text":"兰博刀具供应qq","category":"violence","level":"medium","review_note":"兰博刀具供应并带 QQ 导流，属于刀具武器交易语义，原 ad/low 过低。"}

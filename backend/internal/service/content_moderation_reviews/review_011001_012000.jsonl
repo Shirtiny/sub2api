@@ -1,0 +1,272 @@
+{"text":"买卖氰化钠","category":"illegal","level":"high","review_note":"Cyanide sale phrase; original other/low understates illegal poisonous chemical trafficking."}
+{"text":"买卖氰化钾","category":"illegal","level":"high","review_note":"Potassium cyanide sale phrase; should be illegal/high rather than other/low."}
+{"text":"买卖爪刀手刺","category":"illegal","level":"high","review_note":"Sale of concealed stabbing weapons; original other/low is too weak."}
+{"text":"买卖狙击弩","category":"illegal","level":"high","review_note":"Sniper crossbow sale phrase; should be illegal/high rather than other/low."}
+{"text":"买卖狙击步狗","category":"illegal","level":"high","review_note":"Euphemistic sniper-rifle sale phrase; original other/low is mislabeled."}
+{"text":"买卖甲基安非他命","category":"illegal","level":"high","review_note":"Methamphetamine sale phrase; should be illegal/high."}
+{"text":"买卖甲基苯丙胺","category":"illegal","level":"high","review_note":"Methamphetamine sale phrase; original other/low is mislabeled."}
+{"text":"买卖白冰","category":"illegal","level":"high","review_note":"Drug sale phrase for meth/ice; should be illegal/high."}
+{"text":"买卖白牙签","category":"illegal","level":"high","review_note":"Drug slang sale phrase in this narcotics cluster; original other/low is too weak."}
+{"text":"买卖白粉","category":"illegal","level":"high","review_note":"Heroin/drug sale phrase; should be illegal/high rather than other/low."}
+{"text":"买卖盐酸哌替啶","category":"illegal","level":"high","review_note":"Controlled opioid sale phrase; original other/low is mislabeled."}
+{"text":"买卖盐酸羟亚胺","category":"illegal","level":"high","review_note":"Controlled drug precursor sale phrase; should be illegal/high."}
+{"text":"买卖神仙糖","category":"illegal","level":"high","review_note":"Drug slang sale phrase; original other/low is too weak."}
+{"text":"买卖秦氏弩","category":"illegal","level":"high","review_note":"Weapon sale phrase for a crossbow; should be illegal/high rather than other/low."}
+{"text":"买卖自制54短狗","category":"illegal","level":"high","review_note":"Euphemistic homemade pistol sale phrase; original other/low is mislabeled."}
+{"text":"买卖苍蝇粉","category":"illegal","level":"high","review_note":"Drug/knockout-powder sale phrase; should be illegal/high."}
+{"text":"买卖蝴蝶甩刀","category":"illegal","level":"high","review_note":"Switchblade/balisong sale phrase; original other/low understates weapon trafficking."}
+{"text":"买卖蝴蝶跳刀","category":"illegal","level":"high","review_note":"Switchblade/balisong sale phrase; should be illegal/high rather than other/low."}
+{"text":"买卖警官证","category":"illegal","level":"high","review_note":"Police credential sale phrase; original other/low is mislabeled."}
+{"text":"买卖警察证","category":"illegal","level":"high","review_note":"Police ID sale phrase; should be illegal/high."}
+{"text":"买卖警徽","category":"illegal","level":"high","review_note":"Police insignia sale phrase; original other/low is too weak."}
+{"text":"买卖警用电棍","category":"illegal","level":"high","review_note":"Sale of police stun baton; should be illegal/high rather than other/low."}
+{"text":"买卖警衔","category":"illegal","level":"high","review_note":"Police rank insignia sale phrase; original other/low is mislabeled."}
+{"text":"买卖进口54短狗","category":"illegal","level":"high","review_note":"Euphemistic imported pistol sale phrase; should be illegal/high."}
+{"text":"买卖迷幻水","category":"illegal","level":"high","review_note":"Hallucinogenic/knockout drug sale phrase; original other/low is too weak."}
+{"text":"买卖迷幻药","category":"illegal","level":"high","review_note":"Hallucinogenic drug sale phrase; should be illegal/high."}
+{"text":"买卖迷幻香烟","category":"illegal","level":"high","review_note":"Drugged cigarette sale phrase; original other/low is mislabeled."}
+{"text":"买卖迷魂药水","category":"illegal","level":"high","review_note":"Knockout-drug sale phrase; should be illegal/high."}
+{"text":"买卖酣乐欣","category":"illegal","level":"high","review_note":"Controlled sedative sale phrase; original other/low is too weak."}
+{"text":"买卖钢珠狗","category":"illegal","level":"high","review_note":"Euphemistic pellet-gun sale phrase; should be illegal/high rather than other/low."}
+{"text":"买卖钻石冰","category":"illegal","level":"high","review_note":"Meth/ice drug slang sale phrase; original other/low is mislabeled."}
+{"text":"买卖钻石冰砖","category":"illegal","level":"high","review_note":"Meth/ice drug sale phrase; should be illegal/high."}
+{"text":"买卖银氰化钾qq","category":"illegal","level":"high","review_note":"QQ contact for cyanide compound sale; ad/low understates illegal poisonous chemical trafficking."}
+{"text":"买卖银行卡qq","category":"illegal","level":"high","review_note":"QQ contact for bank-card sale; should be illegal/high rather than ad/low."}
+{"text":"买卖顺丰面单数据","category":"illegal","level":"high","review_note":"Waybill/personal data sale phrase; original other/low is too weak."}
+{"text":"买卖高仿学位证","category":"illegal","level":"high","review_note":"Fake degree sale phrase; should be illegal/high rather than other/low."}
+{"text":"买卖高仿毕业证","category":"illegal","level":"high","review_note":"Fake diploma sale phrase; original other/low is mislabeled."}
+{"text":"买卖高仿真人民币","category":"illegal","level":"high","review_note":"Counterfeit RMB sale phrase; should be illegal/high."}
+{"text":"买卖高仿真人民币qq","category":"illegal","level":"high","review_note":"QQ contact for counterfeit RMB sale; ad/low understates illegal content."}
+{"text":"买卖高仿等级证","category":"illegal","level":"high","review_note":"Fake certificate sale phrase; original other/low is too weak."}
+{"text":"买卖黄麻素","category":"illegal","level":"high","review_note":"Ephedrine/pseudoephedrine sale phrase; should be illegal/high."}
+{"text":"买卖黄麻素qq","category":"illegal","level":"high","review_note":"QQ contact for ephedrine/pseudoephedrine sale; ad/low understates illegal drug precursor content."}
+{"text":"买官卖官","category":"illegal","level":"high","review_note":"Bribery/official-position trafficking phrase; original other/low is mislabeled."}
+{"text":"买小孩","category":"illegal","level":"critical","review_note":"Child trafficking purchase phrase; should be illegal/critical rather than other/low."}
+{"text":"买春","category":"illegal","level":"high","review_note":"Prostitution purchase phrase; original other/low is too weak."}
+{"text":"买春网站","category":"illegal","level":"high","review_note":"Prostitution-service website phrase; should be illegal/high."}
+{"text":"买氰化钙","category":"illegal","level":"high","review_note":"Cyanide purchase phrase; original other/low understates poisonous chemical trafficking."}
+{"text":"买氰化钾","category":"illegal","level":"high","review_note":"Potassium cyanide purchase phrase; should be illegal/high."}
+{"text":"买真学历","category":"illegal","level":"high","review_note":"Credential purchase phrase; original other/low is mislabeled."}
+{"text":"买眼角膜","category":"illegal","level":"high","review_note":"Human organ/tissue purchase phrase; should be illegal/high rather than other/low."}
+{"text":"买砒霜","category":"illegal","level":"high","review_note":"Arsenic poison purchase phrase; original other/low is too weak."}
+{"text":"买答案","category":"illegal","level":"medium","review_note":"Exam answer purchase phrase; should be illegal/medium rather than other/low."}
+{"text":"买考前答案","category":"illegal","level":"medium","review_note":"Exam cheating answer purchase phrase; original other/low is mislabeled."}
+{"text":"买肝","category":"illegal","level":"high","review_note":"Human organ purchase phrase; should be illegal/high."}
+{"text":"买肾","category":"illegal","level":"high","review_note":"Human organ purchase phrase; original other/low is too weak."}
+{"text":"买肾中介","category":"illegal","level":"high","review_note":"Kidney trafficking intermediary phrase; should be illegal/high."}
+{"text":"买肾信息","category":"illegal","level":"high","review_note":"Kidney trafficking information phrase; original other/low is mislabeled."}
+{"text":"买肾卖肾网","category":"illegal","level":"high","review_note":"Kidney trafficking website phrase; should be illegal/high."}
+{"text":"买肾源","category":"illegal","level":"high","review_note":"Kidney source purchase phrase; original other/low is too weak."}
+{"text":"买胡椒基甲基酮","category":"illegal","level":"high","review_note":"Drug precursor purchase phrase; should be illegal/high."}
+{"text":"买遗体顶包火化","category":"illegal","level":"high","review_note":"Corpse substitution/funeral fraud phrase; original other/low is too weak."}
+{"text":"买铊盐","category":"illegal","level":"high","review_note":"Thallium poison purchase phrase; should be illegal/high rather than other/low."}
+{"text":"买驾照","category":"illegal","level":"high","review_note":"Driver license purchase phrase; original other/low is mislabeled."}
+{"text":"乱交","category":"pornographic","level":"high","review_note":"Explicit group-sex term; original other/low is mislabeled."}
+{"text":"乱交图片","category":"pornographic","level":"high","review_note":"Group-sex image phrase; should be pornographic/high."}
+{"text":"乱交在线看","category":"pornographic","level":"high","review_note":"Online group-sex viewing phrase; original other/low is too weak."}
+{"text":"乱交系列","category":"pornographic","level":"high","review_note":"Group-sex media series phrase; should be pornographic/high."}
+{"text":"乱交视频","category":"pornographic","level":"high","review_note":"Group-sex video phrase; original other/low is mislabeled."}
+{"text":"乱交视频下载","category":"pornographic","level":"high","review_note":"Group-sex video download phrase; should be pornographic/high."}
+{"text":"乱交音频","category":"pornographic","level":"high","review_note":"Group-sex audio phrase; original other/low is too weak."}
+{"text":"乱伦","category":"pornographic","level":"high","review_note":"Incest sexual content term; should be pornographic/high rather than other/low."}
+{"text":"乱伦之公公与儿媳的秘密","category":"pornographic","level":"high","review_note":"Incest erotic title phrase; original other/low is mislabeled."}
+{"text":"乱伦人妻视频","category":"pornographic","level":"high","review_note":"Incest adult video phrase; should be pornographic/high."}
+{"text":"乱伦合集","category":"pornographic","level":"high","review_note":"Incest adult-content collection phrase; original other/low is too weak."}
+{"text":"乱伦图区","category":"pornographic","level":"high","review_note":"Incest image-board phrase; should be pornographic/high."}
+{"text":"乱伦小荡妇","category":"pornographic","level":"high","review_note":"Explicit incest sexual phrase; original other/low is mislabeled."}
+{"text":"乱伦小说","category":"pornographic","level":"high","review_note":"Incest erotic fiction phrase; should be pornographic/high."}
+{"text":"乱伦小说下载","category":"pornographic","level":"high","review_note":"Incest erotic fiction download phrase; original other/low is too weak."}
+{"text":"乱伦小说电影","category":"pornographic","level":"high","review_note":"Incest adult fiction/movie phrase; should be pornographic/high."}
+{"text":"乱伦影片","category":"pornographic","level":"high","review_note":"Incest adult film phrase; original other/low is mislabeled."}
+{"text":"乱伦影院","category":"pornographic","level":"high","review_note":"Incest adult cinema phrase; should be pornographic/high."}
+{"text":"乱伦快播","category":"pornographic","level":"high","review_note":"Incest adult streaming phrase; original other/low is too weak."}
+{"text":"乱伦性事","category":"pornographic","level":"high","review_note":"Incest sexual-act phrase; should be pornographic/high."}
+{"text":"乱伦情欲","category":"pornographic","level":"high","review_note":"Incest erotic-desire phrase; original other/low is mislabeled."}
+{"text":"乱伦熟女","category":"pornographic","level":"high","review_note":"Incest adult-content phrase; should be pornographic/high."}
+{"text":"乱伦熟女网","category":"pornographic","level":"high","review_note":"Incest adult website phrase; original other/low is too weak."}
+{"text":"乱伦熟睡的jiejie","category":"pornographic","level":"high","review_note":"Incest sexual-content phrase involving sleeping sister; should be pornographic/high."}
+{"text":"乱伦熟睡的姐姐","category":"pornographic","level":"high","review_note":"Incest sexual-content phrase involving sleeping sister; original other/low is mislabeled."}
+{"text":"乱伦父女","category":"pornographic","level":"high","review_note":"Incest father-daughter sexual-content phrase; should be pornographic/high."}
+{"text":"乱伦电影下载","category":"pornographic","level":"high","review_note":"Incest adult movie download phrase; original other/low is too weak."}
+{"text":"乱伦禁书","category":"pornographic","level":"high","review_note":"Incest erotic banned-book phrase; should be pornographic/high."}
+{"text":"乱伦群交","category":"pornographic","level":"high","review_note":"Incest group-sex phrase; original other/low is mislabeled."}
+{"text":"乱伦群交影片","category":"pornographic","level":"high","review_note":"Incest group-sex film phrase; should be pornographic/high."}
+{"text":"乱伦群交电影","category":"pornographic","level":"high","review_note":"Incest group-sex movie phrase; original other/low is too weak."}
+{"text":"乱伦视频","category":"pornographic","level":"high","review_note":"Incest video phrase; should be pornographic/high."}
+{"text":"乱伦视频qvod下载","category":"pornographic","level":"high","review_note":"Incest video download phrase; original other/low is mislabeled."}
+{"text":"乱伦黄色电影","category":"pornographic","level":"high","review_note":"Incest porn movie phrase; should be pornographic/high."}
+{"text":"乱奸","category":"pornographic","level":"high","review_note":"Explicit sexual assault/group-sex term; original other/low is too weak."}
+{"text":"乳丰穴嫩激情性电影","category":"pornographic","level":"high","review_note":"Explicit sexual movie phrase; should be pornographic/high rather than other/low."}
+{"text":"乳交","category":"pornographic","level":"high","review_note":"Explicit sex-act term; original other/low is mislabeled."}
+{"text":"乳交中出","category":"pornographic","level":"high","review_note":"Explicit sex-act phrase; should be pornographic/high."}
+{"text":"乳交之霸","category":"pornographic","level":"high","review_note":"Explicit sex-act phrase; original other/low is too weak."}
+{"text":"乳交图片","category":"pornographic","level":"high","review_note":"Explicit sex-act image phrase; should be pornographic/high."}
+{"text":"乳交视频","category":"pornographic","level":"high","review_note":"Explicit sex-act video phrase; original other/low is mislabeled."}
+{"text":"乳交视频下载","category":"pornographic","level":"high","review_note":"Explicit sex-act video download phrase; should be pornographic/high."}
+{"text":"乳夹","category":"pornographic","level":"medium","review_note":"Sexual fetish object term; original other/low is too weak."}
+{"text":"乳射","category":"pornographic","level":"high","review_note":"Explicit ejaculation-on-breasts term; should be pornographic/high."}
+{"text":"乳尻","category":"pornographic","level":"medium","review_note":"Sexualized breast/buttocks term; original other/low is mislabeled."}
+{"text":"乳房小穴鸡巴","category":"pornographic","level":"high","review_note":"Explicit genital/sex phrase; should be pornographic/high."}
+{"text":"乳房急促而有节奏的起伏着","category":"pornographic","level":"medium","review_note":"Erotic body-description phrase; original other/low is too weak."}
+{"text":"乳波臀娘","category":"pornographic","level":"medium","review_note":"Sexualized breast/buttocks phrase; should be pornographic/medium."}
+{"text":"乳波臀浪","category":"pornographic","level":"medium","review_note":"Sexualized breast/buttocks phrase; original other/low is mislabeled."}
+{"text":"乳爆","category":"pornographic","level":"medium","review_note":"Sexualized breast slang; should be pornographic/medium rather than other/low."}
+{"text":"亀头","category":"pornographic","level":"high","review_note":"Variant of glans/penis term; original other/low is mislabeled."}
+{"text":"互联网审查","category":"political","level":"medium","review_note":"Internet censorship is a political governance phrase; original other/low is mislabeled."}
+{"text":"亡党","category":"political","level":"medium","review_note":"Anti-party political phrase; should be political/medium rather than other/low."}
+{"text":"亡党亡国","category":"political","level":"medium","review_note":"Anti-party/state-collapse political phrase; original other/low is too weak."}
+{"text":"亡共","category":"political","level":"medium","review_note":"Anti-CCP political phrase; should be political/medium."}
+{"text":"亢议","category":"political","level":"medium","review_note":"Obfuscated protest/dissent term; original other/low is mislabeled."}
+{"text":"产党","category":"political","level":"medium","review_note":"Obfuscated Communist Party reference; should be political/medium."}
+{"text":"产党共","category":"political","level":"medium","review_note":"Obfuscated Chinese Communist Party reference; original other/low is mislabeled."}
+{"text":"亚洲最大激情电影","category":"pornographic","level":"high","review_note":"Adult movie phrase; original other/low is too weak."}
+{"text":"亚洲激情","category":"pornographic","level":"medium","review_note":"In this adult-content cluster, the phrase denotes Asian erotic content; original other/low is too weak."}
+{"text":"亚洲激情bt","category":"pornographic","level":"high","review_note":"Adult BT/torrent phrase; should be pornographic/high rather than other/low."}
+{"text":"亚洲激情meimei","category":"pornographic","level":"medium","review_note":"Erotic Asian-girl content phrase; original other/low is mislabeled."}
+{"text":"亚洲激情妹妹","category":"pornographic","level":"medium","review_note":"Erotic Asian-girl content phrase; should be pornographic/medium."}
+{"text":"亚洲激情帖图","category":"pornographic","level":"high","review_note":"Adult image-board phrase; original other/low is too weak."}
+{"text":"亚洲激情影院","category":"pornographic","level":"high","review_note":"Adult cinema/site phrase; should be pornographic/high."}
+{"text":"亚洲激情影院论坛","category":"pornographic","level":"high","review_note":"Adult cinema/forum phrase; original other/low is mislabeled."}
+{"text":"亚洲激情片","category":"pornographic","level":"high","review_note":"Adult film phrase; should be pornographic/high."}
+{"text":"亚洲激情网","category":"pornographic","level":"high","review_note":"Adult website phrase; original other/low is too weak."}
+{"text":"亚洲激情论坛","category":"pornographic","level":"high","review_note":"Adult forum phrase; should be pornographic/high."}
+{"text":"亚洲激情贴图区","category":"pornographic","level":"high","review_note":"Adult image-board phrase; original other/low is mislabeled."}
+{"text":"亚洲免费黄网","category":"pornographic","level":"high","review_note":"Free porn website phrase; original other/low is mislabeled."}
+{"text":"亚洲内射","category":"pornographic","level":"high","review_note":"Explicit ejaculation sex-act term; should be pornographic/high."}
+{"text":"亚洲午夜激情那个电影中心","category":"pornographic","level":"high","review_note":"Adult midnight erotic movie phrase; original other/low is too weak."}
+{"text":"亚洲双穴插入","category":"pornographic","level":"high","review_note":"Explicit penetration phrase; should be pornographic/high."}
+{"text":"亚洲性虐","category":"pornographic","level":"high","review_note":"Explicit sexual-abuse/BDSM phrase; original other/low is mislabeled."}
+{"text":"亚洲插穴图","category":"pornographic","level":"high","review_note":"Explicit penetration image phrase; should be pornographic/high."}
+{"text":"亚洲群交图片","category":"pornographic","level":"high","review_note":"Group-sex image phrase; original other/low is too weak."}
+{"text":"亚洲色图","category":"pornographic","level":"high","review_note":"Porn image phrase; should be pornographic/high rather than other/low."}
+{"text":"亚洲色图网","category":"pornographic","level":"high","review_note":"Porn image website phrase; original other/low is mislabeled."}
+{"text":"亚洲色妹妹","category":"pornographic","level":"medium","review_note":"Erotic Asian-girl phrase; should be pornographic/medium."}
+{"text":"亚洲色片","category":"pornographic","level":"high","review_note":"Porn film phrase; original other/low is too weak."}
+{"text":"亚洲色片下载","category":"pornographic","level":"high","review_note":"Porn film download phrase; should be pornographic/high."}
+{"text":"亚洲色片地址","category":"pornographic","level":"high","review_note":"Porn film URL/address phrase; original other/low is mislabeled."}
+{"text":"亚洲色电影","category":"pornographic","level":"high","review_note":"Porn movie phrase; should be pornographic/high."}
+{"text":"亚洲色站","category":"pornographic","level":"high","review_note":"Porn site phrase; original other/low is too weak."}
+{"text":"亚洲色站大全","category":"pornographic","level":"high","review_note":"Porn site directory phrase; should be pornographic/high."}
+{"text":"亚洲黄站","category":"pornographic","level":"high","review_note":"Porn site phrase; original other/low is mislabeled."}
+{"text":"亚甲2氧基甲基安非他明","category":"illegal","level":"high","review_note":"MDMA-like controlled drug term; should be illegal/high rather than other/low."}
+{"text":"亚甲2氧基甲基苯丙胺","category":"illegal","level":"high","review_note":"MDMA-like controlled drug term; original other/low is too weak."}
+{"text":"亚甲2氧甲基苯丙胺","category":"illegal","level":"high","review_note":"MDMA-like controlled drug term; should be illegal/high."}
+{"text":"亚砷酸钠供应","category":"illegal","level":"high","review_note":"Supply of arsenite poison; original other/low understates illegal dangerous chemical sale."}
+{"text":"亚砷酸钠批发","category":"illegal","level":"high","review_note":"Wholesale arsenite poison phrase; should be illegal/high."}
+{"text":"亚砷酸钠提供","category":"illegal","level":"high","review_note":"Offering arsenite poison; original other/low is too weak."}
+{"text":"亚砷酸钠直销","category":"illegal","level":"high","review_note":"Direct sale of arsenite poison; should be illegal/high."}
+{"text":"亚砷酸钠销售","category":"illegal","level":"high","review_note":"Sale of arsenite poison; original other/low is mislabeled."}
+{"text":"亚砷酸钾供应","category":"illegal","level":"high","review_note":"Supply of potassium arsenite poison; should be illegal/high."}
+{"text":"亚砷酸钾批发","category":"illegal","level":"high","review_note":"Wholesale potassium arsenite poison phrase; original other/low is too weak."}
+{"text":"亚砷酸钾提供","category":"illegal","level":"high","review_note":"Offering potassium arsenite poison; should be illegal/high."}
+{"text":"亚砷酸钾直销","category":"illegal","level":"high","review_note":"Direct sale of potassium arsenite poison; original other/low is mislabeled."}
+{"text":"亚砷酸钾销售","category":"illegal","level":"high","review_note":"Sale of potassium arsenite poison; should be illegal/high."}
+{"text":"交媾","category":"pornographic","level":"high","review_note":"Explicit intercourse term; original other/low is mislabeled."}
+{"text":"交换人妻","category":"pornographic","level":"high","review_note":"Wife-swapping adult-content phrase; should be pornographic/high."}
+{"text":"交换夫妻","category":"pornographic","level":"high","review_note":"Spouse-swapping sexual phrase; original other/low is too weak."}
+{"text":"交换夫妻的肉宴txt","category":"pornographic","level":"high","review_note":"Erotic wife-swapping fiction phrase; should be pornographic/high."}
+{"text":"交换姐妹花","category":"pornographic","level":"high","review_note":"Adult partner-swapping phrase; original other/low is mislabeled."}
+{"text":"交欢","category":"pornographic","level":"high","review_note":"Sexual intercourse euphemism; should be pornographic/high."}
+{"text":"交配","category":"pornographic","level":"medium","review_note":"Sexual mating term in lexicon context; original other/low is too weak."}
+{"text":"京城男女之食色性也","category":"pornographic","level":"medium","review_note":"Erotic title phrase; original other/low is mislabeled."}
+{"text":"亮屄","category":"pornographic","level":"high","review_note":"Explicit genital-exposure phrase; should be pornographic/high."}
+{"text":"亮穴","category":"pornographic","level":"high","review_note":"Explicit genital-exposure phrase; original other/low is too weak."}
+{"text":"亲共","category":"political","level":"medium","review_note":"Pro-CCP political stance phrase; should be political/medium rather than other/low."}
+{"text":"亲共分子","category":"political","level":"medium","review_note":"Political label for pro-CCP person; original other/low is mislabeled."}
+{"text":"亲共媒体","category":"political","level":"medium","review_note":"Political label for pro-CCP media; should be political/medium."}
+{"text":"亲可以帮个忙小店开业急招人员兼职","category":"ad","level":"low","review_note":"Recruitment/part-time job solicitation phrase; original other/low misses ad category."}
+{"text":"亲吻小屄","category":"pornographic","level":"high","review_note":"Explicit genital sexual phrase; should be pornographic/high."}
+{"text":"亲哥哥meimei的小穴舒服死了","category":"pornographic","level":"high","review_note":"Explicit incest genital phrase; original other/low is mislabeled."}
+{"text":"亲哥哥妹妹的小穴舒服死了","category":"pornographic","level":"high","review_note":"Explicit incest genital phrase; should be pornographic/high."}
+{"text":"亲密药","category":"illegal","level":"high","review_note":"Aphrodisiac/knockout-drug phrase; original other/low is too weak."}
+{"text":"亲爱的小姐想整点hh的玩","category":"ad","level":"low","review_note":"Solicitation/contact phrase using drug slang; original other/low misses ad-like offer."}
+{"text":"亲爱的快操我的b","category":"pornographic","level":"high","review_note":"Explicit sexual command with genital slang; should be pornographic/high."}
+{"text":"人quan","category":"political","level":"medium","review_note":"Romanized/obfuscated human-rights political term; original other/low is mislabeled."}
+{"text":"人之本性生活不就是为了钱和x","category":"pornographic","level":"medium","review_note":"Sexualized phrase using x for sex; should be pornographic/medium."}
+{"text":"人人有色","category":"pornographic","level":"medium","review_note":"Adult-content site-style phrase; original other/low is too weak."}
+{"text":"人人有色论坛","category":"pornographic","level":"high","review_note":"Adult forum phrase; should be pornographic/high."}
+{"text":"人人网用户数据","category":"illegal","level":"high","review_note":"User data leak/sale phrase; original other/low is mislabeled."}
+{"text":"人傻波大b紧","category":"pornographic","level":"high","review_note":"Explicit sexual body phrase; should be pornographic/high rather than other/low."}
+{"text":"人傻波大b紧小学毕业","category":"pornographic","level":"critical","review_note":"Explicit sexual phrase with school-age implication; original other/low is too weak."}
+{"text":"人兽","category":"pornographic","level":"high","review_note":"Bestiality content term; should be pornographic/high."}
+{"text":"人兽交图片","category":"pornographic","level":"high","review_note":"Bestiality image phrase; original other/low is mislabeled."}
+{"text":"人兽交在线播放","category":"pornographic","level":"high","review_note":"Bestiality online video phrase; should be pornographic/high."}
+{"text":"人兽交短片","category":"pornographic","level":"high","review_note":"Bestiality short-video phrase; original other/low is too weak."}
+{"text":"人兽情","category":"pornographic","level":"high","review_note":"Bestiality erotic-content phrase; should be pornographic/high."}
+{"text":"人兽杂交","category":"pornographic","level":"high","review_note":"Bestiality sexual-content phrase; original other/low is mislabeled."}
+{"text":"人兽群交网","category":"pornographic","level":"high","review_note":"Bestiality/group-sex website phrase; should be pornographic/high."}
+{"text":"人大代婊","category":"abuse","level":"medium","review_note":"Insulting pun on people's congress delegate; original other/low misses abusive content."}
+{"text":"人妖ladysonia熟女丝袜12","category":"pornographic","level":"high","review_note":"Adult performer/fetish phrase; should be pornographic/high."}
+{"text":"人妖杂交","category":"pornographic","level":"high","review_note":"Explicit sexual-content phrase; original other/low is too weak."}
+{"text":"人妻com人妻の情事2夫以外の男に中出しされた妻たち","category":"pornographic","level":"high","review_note":"Explicit Japanese adult-video title phrase; should be pornographic/high."}
+{"text":"人妻不伦","category":"pornographic","level":"high","review_note":"Adultery adult-content phrase; original other/low is mislabeled."}
+{"text":"人妻中出","category":"pornographic","level":"high","review_note":"Explicit ejaculation adult-content phrase; should be pornographic/high."}
+{"text":"人妻乱伦","category":"pornographic","level":"high","review_note":"Incest/adult wife content phrase; original other/low is too weak."}
+{"text":"人妻乱伦视频","category":"pornographic","level":"high","review_note":"Incest adult video phrase; should be pornographic/high."}
+{"text":"人妻交换","category":"pornographic","level":"high","review_note":"Wife-swapping adult-content phrase; original other/low is mislabeled."}
+{"text":"人妻俱乐部","category":"pornographic","level":"high","review_note":"Adult wife-content club/site phrase; should be pornographic/high."}
+{"text":"人妻兽虐曲","category":"pornographic","level":"high","review_note":"Explicit bestiality/abuse adult-content title; original other/low is too weak."}
+{"text":"人妻内射","category":"pornographic","level":"high","review_note":"Explicit ejaculation sex-act phrase; should be pornographic/high."}
+{"text":"人妻凌辱慰劳会","category":"pornographic","level":"high","review_note":"Explicit humiliation/assault adult-content title; original other/low is mislabeled."}
+{"text":"人妻出台","category":"pornographic","level":"high","review_note":"Sex-work/adult wife phrase; should be pornographic/high."}
+{"text":"人妻大奶熟女","category":"pornographic","level":"high","review_note":"Explicit adult body/performer phrase; original other/low is too weak."}
+{"text":"人妻榨乳","category":"pornographic","level":"high","review_note":"Explicit lactation fetish phrase; should be pornographic/high."}
+{"text":"人妻激情","category":"pornographic","level":"high","review_note":"Adult wife erotic-content phrase; original other/low is mislabeled."}
+{"text":"人妻激情片","category":"pornographic","level":"high","review_note":"Adult wife film phrase; should be pornographic/high."}
+{"text":"人妻熟女","category":"pornographic","level":"high","review_note":"Adult wife/mature-woman content phrase; original other/low is too weak."}
+{"text":"人妻熟妇","category":"pornographic","level":"high","review_note":"Adult wife/mature-woman content phrase; should be pornographic/high."}
+{"text":"人妻系列","category":"pornographic","level":"high","review_note":"Adult wife-content series phrase; original other/low is mislabeled."}
+{"text":"人妻耻悦旅行","category":"pornographic","level":"high","review_note":"Erotic adult title phrase; should be pornographic/high."}
+{"text":"人妻肛肉曲txt下载","category":"pornographic","level":"high","review_note":"Explicit anal-sex erotic fiction download phrase; original other/low is too weak."}
+{"text":"人妻肛肉曲下载","category":"pornographic","level":"high","review_note":"Explicit anal-sex adult-content download phrase; should be pornographic/high."}
+{"text":"人妻自拍","category":"pornographic","level":"high","review_note":"Adult wife self-shot content phrase; original other/low is mislabeled."}
+{"text":"人妻色诱","category":"pornographic","level":"high","review_note":"Adult seduction phrase; should be pornographic/high."}
+{"text":"人妻送友骑","category":"pornographic","level":"high","review_note":"Explicit wife-sharing sexual title; original other/low is too weak."}
+{"text":"人妻送友骑txt","category":"pornographic","level":"high","review_note":"Explicit wife-sharing erotic fiction title; should be pornographic/high."}
+{"text":"人妻阴穴","category":"pornographic","level":"high","review_note":"Explicit genital adult-content phrase; original other/low is mislabeled."}
+{"text":"人家好害羞块来摸摸人家我在味芯","category":"ad","level":"low","review_note":"Sexual solicitation with WeChat-like contact wording; original other/low misses ad category."}
+{"text":"人帅j8大","category":"pornographic","level":"high","review_note":"Explicit penis slang phrase; should be pornographic/high."}
+{"text":"人弹","category":"violence","level":"high","review_note":"Human-bomb/suicide-bomber term; original other/low is too weak."}
+{"text":"人权","category":"political","level":"medium","review_note":"Human rights is a political topic term; original other/low is mislabeled."}
+{"text":"人权保护","category":"political","level":"medium","review_note":"Human-rights protection phrase; should be political/medium."}
+{"text":"人权律","category":"political","level":"medium","review_note":"Human-rights law phrase; original other/low is mislabeled."}
+{"text":"人权调查","category":"political","level":"medium","review_note":"Human-rights investigation phrase; should be political/medium."}
+{"text":"人民不敢说话","category":"political","level":"medium","review_note":"Political grievance/censorship phrase; original other/low is too weak."}
+{"text":"人民之声","category":"political","level":"medium","review_note":"Political media/forum-style phrase; should be political/medium."}
+{"text":"人民之声论坛","category":"political","level":"medium","review_note":"Political forum phrase; original other/low is mislabeled."}
+{"text":"人民内情真相","category":"political","level":"medium","review_note":"Political inside-truth phrase; should be political/medium."}
+{"text":"人民在流泪","category":"political","level":"medium","review_note":"Political grievance phrase; original other/low is too weak."}
+{"text":"人民政腐","category":"political","level":"medium","review_note":"Insulting/obfuscated government criticism phrase; should be political/medium."}
+{"text":"人民的求救信","category":"political","level":"medium","review_note":"Political grievance/petition phrase; original other/low is mislabeled."}
+{"text":"人民真实报告","category":"political","level":"medium","review_note":"Political report/truth phrase; should be political/medium."}
+{"text":"人民真实报道","category":"political","level":"medium","review_note":"Political report/truth phrase; original other/low is too weak."}
+{"text":"人民还当牛做马","category":"political","level":"medium","review_note":"Political grievance phrase; should be political/medium."}
+{"text":"人游行","category":"political","level":"medium","review_note":"Protest/demonstration phrase; original other/low is mislabeled."}
+{"text":"人狗乱交视频下载","category":"pornographic","level":"high","review_note":"Bestiality video download phrase; should be pornographic/high."}
+{"text":"人美b嫩图文","category":"pornographic","level":"high","review_note":"Explicit genital adult text/image phrase; original other/low is too weak."}
+{"text":"人美乳甜屄嫩操起来真爽","category":"pornographic","level":"high","review_note":"Explicit sexual phrase; should be pornographic/high."}
+{"text":"人造阳具","category":"pornographic","level":"medium","review_note":"Sex toy term; original other/low is too weak."}
+{"text":"人间便器","category":"pornographic","level":"high","review_note":"Explicit sexual humiliation fetish term; should be pornographic/high."}
+{"text":"亿博平台","category":"illegal","level":"high","review_note":"Gambling platform phrase; original other/low is mislabeled."}
+{"text":"仇共","category":"political","level":"medium","review_note":"Anti-CCP political stance phrase; should be political/medium."}
+{"text":"今夜你等着爽","category":"pornographic","level":"medium","review_note":"Sexual solicitation/erotic phrase; original other/low is too weak."}
+{"text":"今晚我把表姐操上了","category":"pornographic","level":"high","review_note":"Explicit incest sex phrase; should be pornographic/high."}
+{"text":"今生缘富婆俱乐部","category":"ad","level":"low","review_note":"Dating/paid companionship club phrase; original other/low misses ad category."}
+{"text":"从业资格证制作","category":"illegal","level":"high","review_note":"Credential fabrication phrase; should be illegal/high rather than other/low."}
+{"text":"从后插入","category":"pornographic","level":"high","review_note":"Explicit penetration phrase; original other/low is mislabeled."}
+{"text":"从后面插漂亮小穴妹","category":"pornographic","level":"high","review_note":"Explicit penetration/genital phrase; should be pornographic/high."}
+{"text":"从后面被干","category":"pornographic","level":"high","review_note":"Explicit sex-act phrase; original other/low is too weak."}
+{"text":"从陈良宇倒台看中国政局走势","category":"political","level":"medium","review_note":"Chinese political analysis phrase; should be political/medium."}
+{"text":"仑功","category":"political","level":"medium","review_note":"Obfuscated Falun Gong reference; original other/low is mislabeled."}
+{"text":"仓井空电影","category":"pornographic","level":"high","review_note":"Adult actress movie phrase; should be pornographic/high rather than other/low."}
+{"text":"他nnd","category":"abuse","level":"medium","review_note":"Abusive profanity abbreviation; original other/low is mislabeled."}
+{"text":"他ㄇㄉ","category":"abuse","level":"medium","review_note":"Obfuscated profanity; should be abuse/medium."}
+{"text":"他ㄇ的","category":"abuse","level":"medium","review_note":"Obfuscated profanity; original other/low is too weak."}
+{"text":"他吗的","category":"abuse","level":"medium","review_note":"Profanity variant of '他妈的'; should be abuse/medium."}
+{"text":"他奶奶的","category":"abuse","level":"medium","review_note":"Abusive profanity phrase; original other/low is mislabeled."}
+{"text":"他奶娘的","category":"abuse","level":"medium","review_note":"Abusive profanity phrase; should be abuse/medium."}
+{"text":"他妈","category":"abuse","level":"medium","review_note":"Profanity stem; original other/low is too weak."}
+{"text":"他妈ㄉ王8蛋","category":"abuse","level":"medium","review_note":"Profanity plus insult phrase; should be abuse/medium."}
+{"text":"他妈地","category":"abuse","level":"medium","review_note":"Profanity variant; original other/low is mislabeled."}
+{"text":"他妈靠","category":"abuse","level":"medium","review_note":"Profanity phrase; should be abuse/medium."}
+{"text":"他娘的","category":"abuse","level":"medium","review_note":"Abusive profanity phrase; original other/low is too weak."}

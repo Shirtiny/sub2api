@@ -1,0 +1,106 @@
+{"text":"支联会","category":"political","level":"medium","review_note":"涉及敏感政治组织，原 other/low 过低。"}
+{"text":"收单管猎狗","category":"illegal","level":"high","review_note":"单管猎狗为枪支黑话并含收购语义，原 other/low 过低。"}
+{"text":"收复台湾","category":"political","level":"medium","review_note":"涉及两岸军事/政治主张，原 other/low 过低。"}
+{"text":"收肾买卖肾","category":"ad","level":"low","review_note":"含买卖广告导流语义，按规则由 illegal/high 改为 ad/low。"}
+{"text":"收藏品数据供应","category":"ad","level":"low","review_note":"含数据供应导流语义，按规则由 other/low 改为 ad/low。"}
+{"text":"收藏品数据批发","category":"ad","level":"low","review_note":"含批发广告导流语义，按规则由 other/low 改为 ad/low。"}
+{"text":"收藏品数据提供","category":"ad","level":"low","review_note":"含数据提供导流语义，按规则由 other/low 改为 ad/low。"}
+{"text":"收藏品数据直销","category":"ad","level":"low","review_note":"含直销广告导流语义，按规则由 other/low 改为 ad/low。"}
+{"text":"收费激情","category":"pornographic","level":"medium","review_note":"含收费成人激情服务语义，原 other/low 过低。"}
+{"text":"收费裸聊qq","category":"ad","level":"low","review_note":"含 QQ 联系导流，按规则由 pornographic/high 改为 ad/low。"}
+{"text":"收费裸聊室qq","category":"ad","level":"low","review_note":"含 QQ 联系导流，按规则由 pornographic/high 改为 ad/low。"}
+{"text":"改号软件批发","category":"ad","level":"low","review_note":"含批发广告导流语义，按规则由 illegal/high 改为 ad/low。"}
+{"text":"改号软件提供","category":"ad","level":"low","review_note":"含提供广告导流语义，按规则由 illegal/high 改为 ad/low。"}
+{"text":"改号软件直销","category":"ad","level":"low","review_note":"含直销广告导流语义，按规则由 illegal/high 改为 ad/low。"}
+{"text":"改号软件销售","category":"ad","level":"low","review_note":"含销售广告导流语义，按规则由 illegal/high 改为 ad/low。"}
+{"text":"改装发令枪qq","category":"ad","level":"low","review_note":"含 QQ 联系导流，按规则由 illegal/high 改为 ad/low。"}
+{"text":"改装发令枪专卖","category":"ad","level":"low","review_note":"含专卖广告导流语义，按规则由 illegal/high 改为 ad/low。"}
+{"text":"改装发令枪专卖qq","category":"ad","level":"low","review_note":"含 QQ 和专卖导流，按规则由 illegal/high 改为 ad/low。"}
+{"text":"改装射钉枪qq","category":"ad","level":"low","review_note":"含 QQ 联系导流，按规则由 illegal/high 改为 ad/low。"}
+{"text":"改装射钉枪专卖","category":"ad","level":"low","review_note":"含专卖广告导流语义，按规则由 illegal/high 改为 ad/low。"}
+{"text":"放线菌酮供应","category":"ad","level":"low","review_note":"含供应广告导流语义，按规则由 other/low 改为 ad/low。"}
+{"text":"放线菌酮批发","category":"ad","level":"low","review_note":"含批发广告导流语义，按规则由 other/low 改为 ad/low。"}
+{"text":"放线菌酮提供","category":"ad","level":"low","review_note":"含提供广告导流语义，按规则由 other/low 改为 ad/low。"}
+{"text":"放线菌酮直销","category":"ad","level":"low","review_note":"含直销广告导流语义，按规则由 other/low 改为 ad/low。"}
+{"text":"放线菌酮销售","category":"ad","level":"low","review_note":"含销售广告导流语义，按规则由 other/low 改为 ad/low。"}
+{"text":"放荡中的灵与肉","category":"pornographic","level":"medium","review_note":"含成人情色语义，原 other/low 过低。"}
+{"text":"放荡少女少妇","category":"pornographic","level":"medium","review_note":"含成人情色人群描述，原 other/low 过低。"}
+{"text":"放荡少妇","category":"pornographic","level":"medium","review_note":"含成人情色描述，原 other/low 过低。"}
+{"text":"放荡少妇宾馆","category":"pornographic","level":"medium","review_note":"含成人情色和宾馆场景语义，原 other/low 过低。"}
+{"text":"放荡熟女","category":"pornographic","level":"medium","review_note":"含成人情色描述，原 other/low 过低。"}
+{"text":"放荡的女人","category":"pornographic","level":"medium","review_note":"含成人情色描述，原 other/low 过低。"}
+{"text":"效率办证","category":"ad","level":"low","review_note":"含办证广告导流语义，按规则由 illegal/high 改为 ad/low。"}
+{"text":"敌恶磷供应","category":"ad","level":"low","review_note":"含供应广告导流语义，按规则由 other/low 改为 ad/low。"}
+{"text":"敌恶磷批发","category":"ad","level":"low","review_note":"含批发广告导流语义，按规则由 other/low 改为 ad/low。"}
+{"text":"敌恶磷直销","category":"ad","level":"low","review_note":"含直销广告导流语义，按规则由 other/low 改为 ad/low。"}
+{"text":"敌杀磷供应","category":"ad","level":"low","review_note":"含供应广告导流语义，按规则由 other/low 改为 ad/low。"}
+{"text":"敌杀磷批发","category":"ad","level":"low","review_note":"含批发广告导流语义，按规则由 other/low 改为 ad/low。"}
+{"text":"敌杀磷直销","category":"ad","level":"low","review_note":"含直销广告导流语义，按规则由 other/low 改为 ad/low。"}
+{"text":"教你做弹","category":"illegal","level":"high","review_note":"在炸弹制作词簇中指向爆炸物制作，原 other/low 过低。"}
+{"text":"教授氯胺酮制作方法qq","category":"ad","level":"low","review_note":"含 QQ 联系导流，按规则由 illegal/high 改为 ad/low。"}
+{"text":"教授海洛因制造方法qq","category":"ad","level":"low","review_note":"含 QQ 联系导流，按规则由 illegal/high 改为 ad/low。"}
+{"text":"教授甲基苯丙胺制作方法qq","category":"ad","level":"low","review_note":"含 QQ 联系导流，按规则由 illegal/high 改为 ad/low。"}
+{"text":"散坞2儿武泗i厮浏榴","category":"other","level":"medium","review_note":"疑似规避式编码短语，语义无法稳定判断，按规则标 other/medium。"}
+{"text":"散寺散散散留寺把把尔","category":"other","level":"medium","review_note":"疑似规避式编码短语，语义无法稳定判断，按规则标 other/medium。"}
+{"text":"散弹枪专供","category":"ad","level":"low","review_note":"含专供广告导流语义，按规则由 illegal/high 改为 ad/low。"}
+{"text":"散弹枪买卖","category":"ad","level":"low","review_note":"含买卖广告导流语义，按规则由 illegal/high 改为 ad/low。"}
+{"text":"散弹枪出售","category":"ad","level":"low","review_note":"含出售广告导流语义，按规则由 illegal/high 改为 ad/low。"}
+{"text":"散弹枪在线订购","category":"ad","level":"low","review_note":"含在线订购广告导流语义，按规则由 illegal/high 改为 ad/low。"}
+{"text":"散灵思吧吧吧儿思酒散","category":"other","level":"medium","review_note":"疑似数字/联系信息规避写法，语义无法稳定判断，按规则标 other/medium。"}
+{"text":"散灵酒期巴腰午遛散","category":"other","level":"medium","review_note":"疑似数字/联系信息规避写法，语义无法稳定判断，按规则标 other/medium。"}
+{"text":"散玲伊玲伊刘似儿玲似","category":"other","level":"medium","review_note":"疑似数字/联系信息规避写法，语义无法稳定判断，按规则标 other/medium。"}
+{"text":"数百人围殴","category":"violence","level":"high","review_note":"明确群体殴打暴力语义，原 other/low 过低。"}
+{"text":"整点hh的试吗","category":"other","level":"medium","review_note":"疑似规避式招揽短语，语义无法稳定判断，按规则标 other/medium。"}
+{"text":"整点开的放的试","category":"other","level":"medium","review_note":"疑似规避式招揽短语，语义无法稳定判断，按规则标 other/medium。"}
+{"text":"整点很爽的敢吗","category":"other","level":"medium","review_note":"疑似规避式招揽短语，语义无法稳定判断，按规则标 other/medium。"}
+{"text":"文凭办证","category":"ad","level":"low","review_note":"含办证广告导流语义，按规则由 illegal/high 改为 ad/low。"}
+{"text":"文凭证件代办","category":"ad","level":"low","review_note":"含证件代办广告导流语义，按规则由 illegal/high 改为 ad/low。"}
+{"text":"文凭证件代办qq","category":"ad","level":"low","review_note":"含 QQ 和代办导流，按规则由 illegal/high 改为 ad/low。"}
+{"text":"文爱","category":"pornographic","level":"medium","review_note":"文爱通常指文字性互动，原 other/low 过低。"}
+{"text":"斗欧","category":"violence","level":"medium","review_note":"疑似斗殴变体，含暴力冲突语义，原 other/low 过低。"}
+{"text":"新东泰娱乐城开户","category":"ad","level":"low","review_note":"含娱乐城开户广告导流语义，按规则由 illegal/high 改为 ad/low。"}
+{"text":"新义安枪械专卖","category":"ad","level":"low","review_note":"含专卖广告导流语义，按规则由 illegal/high 改为 ad/low。"}
+{"text":"新去门这几个的首字母午期泗这几个是数字","category":"other","level":"medium","review_note":"疑似账号/数字规避说明，语义无法稳定判断，按规则标 other/medium。"}
+{"text":"新型汽车遥控干扰器","category":"illegal","level":"high","review_note":"汽车遥控干扰器可用于违法干扰锁车，原 other/low 过低。"}
+{"text":"新开户送300彩金","category":"ad","level":"low","review_note":"含开户送彩金广告导流语义，按规则由 illegal/high 改为 ad/low。"}
+{"text":"新式电警棍出售","category":"ad","level":"low","review_note":"含出售广告导流语义，按规则由 illegal/high 改为 ad/low。"}
+{"text":"新注册送彩金","category":"ad","level":"low","review_note":"含注册送彩金赌博推广语义，按规则由 other/low 改为 ad/low。"}
+{"text":"新浪博客专业删帖","category":"illegal","level":"high","review_note":"专业删帖属于有偿删除负面信息服务风险，原 other/low 过低。"}
+{"text":"新浪微博专业删帖","category":"illegal","level":"high","review_note":"专业删帖属于有偿删除负面信息服务风险，原 other/low 过低。"}
+{"text":"新澳门娱乐城开户","category":"ad","level":"low","review_note":"含娱乐城开户广告导流语义，按规则由 illegal/high 改为 ad/low。"}
+{"text":"新版假币出售qq","category":"ad","level":"low","review_note":"含 QQ 和出售导流，按规则由 illegal/high 改为 ad/low。"}
+{"text":"新版假币销售qq","category":"ad","level":"low","review_note":"含 QQ 和销售导流，按规则由 illegal/high 改为 ad/low。"}
+{"text":"新疆75","category":"political","level":"medium","review_note":"指向新疆七五事件，原 other/low 过低。"}
+{"text":"新疆75事件","category":"political","level":"medium","review_note":"明确指向敏感政治社会事件，原 other/low 过低。"}
+{"text":"新疆分裂","category":"political","level":"medium","review_note":"涉及分裂主义政治语义，原 other/low 过低。"}
+{"text":"新疆叛","category":"political","level":"medium","review_note":"疑似新疆叛乱/叛独相关规避词，原 other/low 过低。"}
+{"text":"新疆国","category":"political","level":"medium","review_note":"疑似新疆独立建国语义，原 other/low 过低。"}
+{"text":"新疆恐怖分子","category":"violence","level":"medium","review_note":"涉及恐怖分子暴力风险语义，原 other/low 过低。"}
+{"text":"新疆打砸抢","category":"violence","level":"high","review_note":"明确群体暴力打砸抢语义，原 other/low 过低。"}
+{"text":"新疆暴乱","category":"violence","level":"high","review_note":"明确暴乱群体暴力语义，原 other/low 过低。"}
+{"text":"新疆独","category":"political","level":"medium","review_note":"新疆独立相关规避表述，原 other/low 过低。"}
+{"text":"新疆骚乱","category":"violence","level":"medium","review_note":"涉及群体骚乱暴力风险，原 other/low 过低。"}
+{"text":"无修正","category":"pornographic","level":"medium","review_note":"在成人资源语境中指无码/无修正内容，原 other/low 过低。"}
+{"text":"无味毒药qq","category":"ad","level":"low","review_note":"含 QQ 联系导流，按规则由 illegal/high 改为 ad/low。"}
+{"text":"无声爆破剂","category":"illegal","level":"medium","review_note":"爆破剂具有爆破材料风险，原 other/low 过低。"}
+{"text":"无声爆破剂配方","category":"illegal","level":"high","review_note":"爆破剂配方涉及危险制作资料，原 other/low 过低。"}
+{"text":"无毛穴","category":"pornographic","level":"medium","review_note":"含性器官隐语，原 other/low 过低。"}
+{"text":"无毛美少女","category":"pornographic","level":"medium","review_note":"含情色化美少女语义，原 other/low 过低。"}
+{"text":"无码成人影院qq","category":"ad","level":"low","review_note":"含 QQ 联系导流，按规则由 pornographic/high 改为 ad/low。"}
+{"text":"无码成人电影qq","category":"ad","level":"low","review_note":"含 QQ 联系导流，按规则由 pornographic/high 改为 ad/low。"}
+{"text":"无码黄片种子qq","category":"ad","level":"low","review_note":"含 QQ 联系导流，按规则由 pornographic/high 改为 ad/low。"}
+{"text":"无线电作弊器材专卖","category":"ad","level":"low","review_note":"含专卖广告导流语义，按规则由 other/low 改为 ad/low。"}
+{"text":"无良少妇综合网","category":"pornographic","level":"medium","review_note":"指向成人色情网类资源，原 other/low 过低。"}
+{"text":"无马步兵营","category":"pornographic","level":"medium","review_note":"疑似成人无码资源隐语，原 other/low 过低。"}
+{"text":"日太深","category":"pornographic","level":"medium","review_note":"含性行为露骨描述，原 other/low 过低。"}
+{"text":"日批","category":"pornographic","level":"medium","review_note":"为性行为粗俗表述，原 other/low 过低。"}
+{"text":"日日色影院","category":"pornographic","level":"high","review_note":"指向色情影院/网站资源，原 other/low 过低。"}
+{"text":"日本免费激情学生美","category":"pornographic","level":"medium","review_note":"含激情学生成人资源语义，原 other/low 过低。"}
+{"text":"日本免费黄站","category":"pornographic","level":"high","review_note":"黄站明确指向色情网站，原 other/low 过低。"}
+{"text":"日本兽交内射","category":"pornographic","level":"high","review_note":"含兽交和内射色情语义，原 other/low 过低。"}
+{"text":"日本军刀专卖","category":"ad","level":"low","review_note":"含专卖广告导流语义，按规则由 other/low 改为 ad/low。"}
+{"text":"日本幼交","category":"pornographic","level":"high","review_note":"原 level 为不允许的 critical，按允许枚举改为 high。"}
+{"text":"日本幼女合集","category":"pornographic","level":"high","review_note":"原 level 为不允许的 critical，按允许枚举改为 high。"}
+{"text":"日本幼幼合集","category":"pornographic","level":"high","review_note":"原 level 为不允许的 critical，按允许枚举改为 high。"}
+{"text":"日本无码o幼齿女学生","category":"pornographic","level":"high","review_note":"原 level 为不允许的 critical，按允许枚举改为 high。"}
+{"text":"日本武士刀批发","category":"ad","level":"low","review_note":"含批发广告导流语义，按规则由 other/low 改为 ad/low。"}

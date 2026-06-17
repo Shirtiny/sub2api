@@ -1,0 +1,207 @@
+{"text":"工业硝酸铵供应","category":"illegal","level":"high","review_note":"硝酸铵在供应语境下涉及爆炸物原料交易风险，other/low 过低。"}
+{"text":"工业黑索今出售","category":"illegal","level":"high","review_note":"黑索今为爆炸物，出售语义属于违法交易，ad/low 过低。"}
+{"text":"工口动漫下载","category":"pornographic","level":"high","review_note":"工口动漫下载指向成人色情资源，other/low 过低。"}
+{"text":"工口动漫大全","category":"pornographic","level":"high","review_note":"工口动漫大全指向成人色情资源聚合，other/low 过低。"}
+{"text":"工口动漫种子","category":"pornographic","level":"high","review_note":"工口动漫种子指向成人色情资源下载，other/low 过低。"}
+{"text":"工口动漫网","category":"pornographic","level":"high","review_note":"工口动漫网指向色情动漫站点，other/low 过低。"}
+{"text":"工口动漫网站","category":"pornographic","level":"high","review_note":"工口动漫网站指向色情动漫站点，other/low 过低。"}
+{"text":"工口动画","category":"pornographic","level":"medium","review_note":"工口动画为成人色情动画语义，other/low 偏低。"}
+{"text":"工口图片","category":"pornographic","level":"medium","review_note":"工口图片为色情图片语义，other/low 偏低。"}
+{"text":"工口小说","category":"pornographic","level":"medium","review_note":"工口小说为成人色情小说语义，other/low 偏低。"}
+{"text":"工口游戏","category":"pornographic","level":"medium","review_note":"工口游戏为成人色情游戏语义，other/low 偏低。"}
+{"text":"工口漫画","category":"pornographic","level":"medium","review_note":"工口漫画为成人色情漫画语义，other/low 偏低。"}
+{"text":"工口视频","category":"pornographic","level":"high","review_note":"工口视频指向成人视频资源，other/low 过低。"}
+{"text":"工字牌钢珠狗专卖","category":"illegal","level":"high","review_note":"钢珠狗为枪支类隐语，专卖语境属于违法武器交易，other/low 过低。"}
+{"text":"工字牌钢珠狗专卖qq","category":"illegal","level":"high","review_note":"钢珠狗专卖带 QQ 导流，仍是明确违法武器交易，ad/low 过低。"}
+{"text":"工字牌钢珠狗供应","category":"illegal","level":"high","review_note":"钢珠狗为枪支类隐语，供应语境属于违法武器交易，other/low 过低。"}
+{"text":"工字牌钢珠狗供应qq","category":"illegal","level":"high","review_note":"钢珠狗供应带 QQ 导流，仍是明确违法武器交易，ad/low 过低。"}
+{"text":"工字牌钢珠狗出售","category":"illegal","level":"high","review_note":"钢珠狗出售属于违法武器交易，ad/low 过低。"}
+{"text":"工字牌钢珠狗出售qq","category":"illegal","level":"high","review_note":"钢珠狗出售带 QQ 导流，仍是违法武器交易，ad/low 过低。"}
+{"text":"工字牌钢珠狗批发","category":"illegal","level":"high","review_note":"钢珠狗批发属于违法武器交易，other/low 过低。"}
+{"text":"工字牌钢珠狗批发qq","category":"illegal","level":"high","review_note":"钢珠狗批发带 QQ 导流，仍是违法武器交易，ad/low 过低。"}
+{"text":"工字牌钢珠狗提供","category":"illegal","level":"high","review_note":"钢珠狗提供属于违法武器交易，other/low 过低。"}
+{"text":"工字牌钢珠狗提供qq","category":"illegal","level":"high","review_note":"钢珠狗提供带 QQ 导流，仍是违法武器交易，ad/low 过低。"}
+{"text":"工字牌钢珠狗订购","category":"illegal","level":"high","review_note":"钢珠狗订购属于违法武器交易，other/low 过低。"}
+{"text":"工字牌钢珠狗订购qq","category":"illegal","level":"high","review_note":"钢珠狗订购带 QQ 导流，仍是违法武器交易，ad/low 过低。"}
+{"text":"工字牌钢珠狗购买","category":"illegal","level":"high","review_note":"钢珠狗购买属于违法武器交易，other/low 过低。"}
+{"text":"工字牌钢珠狗购买qq","category":"illegal","level":"high","review_note":"钢珠狗购买带 QQ 导流，仍是违法武器交易，ad/low 过低。"}
+{"text":"工字钢珠狗供应qq","category":"illegal","level":"high","review_note":"钢珠狗供应带 QQ 导流，仍是违法武器交易，ad/low 过低。"}
+{"text":"左旋麻黄素供应","category":"illegal","level":"high","review_note":"左旋麻黄素为受管制制毒前体，供应语境属于违法交易风险，other/low 过低。"}
+{"text":"左旋麻黄素供应qq","category":"illegal","level":"high","review_note":"左旋麻黄素供应带 QQ 导流，属于制毒前体违法交易风险，ad/low 过低。"}
+{"text":"左旋麻黄素出售","category":"illegal","level":"high","review_note":"左旋麻黄素出售属于制毒前体违法交易风险，ad/low 过低。"}
+{"text":"左旋麻黄素出货","category":"illegal","level":"high","review_note":"左旋麻黄素出货属于制毒前体交易语境，other/low 过低。"}
+{"text":"左旋麻黄素到货","category":"illegal","level":"high","review_note":"左旋麻黄素到货属于制毒前体交易语境，other/low 过低。"}
+{"text":"左旋麻黄素合成","category":"illegal","level":"high","review_note":"涉及制毒前体合成，other/low 过低。"}
+{"text":"左旋麻黄素合成配方","category":"illegal","level":"high","review_note":"涉及制毒前体合成配方，other/low 明显过低。"}
+{"text":"左旋麻黄素批发","category":"illegal","level":"high","review_note":"左旋麻黄素批发属于制毒前体违法交易风险，other/low 过低。"}
+{"text":"左旋麻黄素批发qq","category":"illegal","level":"high","review_note":"左旋麻黄素批发带 QQ 导流，属于制毒前体违法交易风险，ad/low 过低。"}
+{"text":"左旋麻黄素提供","category":"illegal","level":"high","review_note":"左旋麻黄素提供属于制毒前体违法交易风险，other/low 过低。"}
+{"text":"左旋麻黄素提供qq","category":"illegal","level":"high","review_note":"左旋麻黄素提供带 QQ 导流，属于制毒前体违法交易风险，ad/low 过低。"}
+{"text":"左旋麻黄素直销","category":"illegal","level":"high","review_note":"左旋麻黄素直销属于制毒前体违法交易风险，other/low 过低。"}
+{"text":"左旋麻黄素直销qq","category":"illegal","level":"high","review_note":"左旋麻黄素直销带 QQ 导流，属于制毒前体违法交易风险，ad/low 过低。"}
+{"text":"左旋麻黄素订购","category":"illegal","level":"high","review_note":"左旋麻黄素订购属于制毒前体违法交易风险，other/low 过低。"}
+{"text":"左旋麻黄素订购qq","category":"illegal","level":"high","review_note":"左旋麻黄素订购带 QQ 导流，属于制毒前体违法交易风险，ad/low 过低。"}
+{"text":"左旋麻黄素购买","category":"illegal","level":"high","review_note":"左旋麻黄素购买属于制毒前体违法交易风险，other/low 过低。"}
+{"text":"左旋麻黄素购买qq","category":"illegal","level":"high","review_note":"左旋麻黄素购买带 QQ 导流，属于制毒前体违法交易风险，ad/low 过低。"}
+{"text":"左旋麻黄素送货上门","category":"illegal","level":"high","review_note":"左旋麻黄素送货上门属于制毒前体违法交易风险，other/low 过低。"}
+{"text":"左旋麻黄素配方","category":"illegal","level":"high","review_note":"涉及制毒前体配方，other/low 明显过低。"}
+{"text":"左旋麻黄素销售","category":"illegal","level":"high","review_note":"左旋麻黄素销售属于制毒前体违法交易风险，other/low 过低。"}
+{"text":"左旋麻黄素销售qq","category":"illegal","level":"high","review_note":"左旋麻黄素销售带 QQ 导流，属于制毒前体违法交易风险，ad/low 过低。"}
+{"text":"左轮手狗专卖","category":"illegal","level":"high","review_note":"左轮手狗为手枪隐语，专卖语境属于违法枪支交易，other/low 过低。"}
+{"text":"左轮手狗出售","category":"illegal","level":"high","review_note":"左轮手狗出售属于违法枪支交易，ad/low 过低。"}
+{"text":"左轮手狗出售qq","category":"illegal","level":"high","review_note":"左轮手狗出售带 QQ 导流，仍是违法枪支交易，ad/low 过低。"}
+{"text":"左轮手狗转让","category":"illegal","level":"high","review_note":"左轮手狗转让属于违法枪支交易，other/low 过低。"}
+{"text":"左轮手狗销售qq","category":"illegal","level":"high","review_note":"左轮手狗销售带 QQ 导流，仍是违法枪支交易，ad/low 过低。"}
+{"text":"左轮钢珠狗专卖","category":"illegal","level":"high","review_note":"左轮钢珠狗为枪支类隐语，专卖语境属于违法武器交易，other/low 过低。"}
+{"text":"左轮钢珠狗专卖qq","category":"illegal","level":"high","review_note":"左轮钢珠狗专卖带 QQ 导流，仍是违法武器交易，ad/low 过低。"}
+{"text":"左轮钢珠狗供应qq","category":"illegal","level":"high","review_note":"左轮钢珠狗供应带 QQ 导流，仍是违法武器交易，ad/low 过低。"}
+{"text":"左轮钢珠狗出售","category":"illegal","level":"high","review_note":"左轮钢珠狗出售属于违法武器交易，ad/low 过低。"}
+{"text":"左轮钢珠狗批发qq","category":"illegal","level":"high","review_note":"左轮钢珠狗批发带 QQ 导流，仍是违法武器交易，ad/low 过低。"}
+{"text":"左轮钢珠狗直销qq","category":"illegal","level":"high","review_note":"左轮钢珠狗直销带 QQ 导流，仍是违法武器交易，ad/low 过低。"}
+{"text":"左轮钢珠狗订购qq","category":"illegal","level":"high","review_note":"左轮钢珠狗订购带 QQ 导流，仍是违法武器交易，ad/low 过低。"}
+{"text":"左轮钢珠狗购买qq","category":"illegal","level":"high","review_note":"左轮钢珠狗购买带 QQ 导流，仍是违法武器交易，ad/low 过低。"}
+{"text":"巨乳女优千秋大合集","category":"pornographic","level":"high","review_note":"指向成人女优色情资源合集，other/low 过低。"}
+{"text":"巨乳护士南つかさ20连发中出","category":"pornographic","level":"high","review_note":"包含明确成人视频标题和露骨性行为词，other/low 过低。"}
+{"text":"巨大的鸡巴戳了进去","category":"pornographic","level":"high","review_note":"包含明确露骨性行为描写，other/low 过低。"}
+{"text":"巨炮肉穴","category":"pornographic","level":"high","review_note":"包含露骨色情器官描写，other/low 过低。"}
+{"text":"市场专销进口气狗","category":"illegal","level":"high","review_note":"气狗为枪支类隐语，专销语境属于违法武器交易，other/low 过低。"}
+{"text":"市场专销进口汽狗","category":"illegal","level":"high","review_note":"汽狗为枪支类隐语，专销语境属于违法武器交易，other/low 过低。"}
+{"text":"带开增值税票","category":"illegal","level":"high","review_note":"疑似代开增值税票，属于非法票据交易，other/low 过低。"}
+{"text":"帮人专业勒索","category":"illegal","level":"high","review_note":"明确提供勒索服务，属于违法黑产，other/low 过低。"}
+{"text":"帮人制造意外死亡","category":"violence","level":"high","review_note":"明确提供制造死亡的伤害服务，other/low 明显过低。"}
+{"text":"帮人勒索","category":"illegal","level":"high","review_note":"明确提供勒索服务，属于违法黑产，other/low 过低。"}
+{"text":"帮人打架","category":"violence","level":"medium","review_note":"明确提供打架伤害服务，other/low 偏低。"}
+{"text":"帮人报仇毁容","category":"violence","level":"high","review_note":"明确包含毁容伤害语义，other/low 明显过低。"}
+{"text":"帮人敲诈","category":"illegal","level":"high","review_note":"明确提供敲诈服务，属于违法黑产，other/low 过低。"}
+{"text":"帮人毁容","category":"violence","level":"high","review_note":"明确提供毁容伤害服务，other/low 明显过低。"}
+{"text":"干8个meinv的小穴","category":"pornographic","level":"high","review_note":"包含明确露骨性行为描写，other/low 过低。"}
+{"text":"干8个美女的小穴","category":"pornographic","level":"high","review_note":"包含明确露骨性行为描写，other/low 过低。"}
+{"text":"干jiejie小穴","category":"pornographic","level":"high","review_note":"包含明确露骨性行为描写，other/low 过低。"}
+{"text":"干meimei小穴","category":"pornographic","level":"high","review_note":"包含明确露骨性行为描写，other/low 过低。"}
+{"text":"干meinv小穴","category":"pornographic","level":"high","review_note":"包含明确露骨性行为描写，other/low 过低。"}
+{"text":"干他妈","category":"abuse","level":"medium","review_note":"常见辱骂脏话，other/low 偏低。"}
+{"text":"干丰满少妇","category":"pornographic","level":"medium","review_note":"含明显性行为和性对象描述，other/low 偏低。"}
+{"text":"干你娘","category":"abuse","level":"medium","review_note":"常见辱骂脏话，other/low 偏低。"}
+{"text":"干你老母","category":"abuse","level":"medium","review_note":"常见辱骂脏话，other/low 偏低。"}
+{"text":"干你老比","category":"abuse","level":"medium","review_note":"含侮辱性粗口，other/low 偏低。"}
+{"text":"干保姆小穴","category":"pornographic","level":"high","review_note":"包含明确露骨性行为描写，other/low 过低。"}
+{"text":"干出淫水","category":"pornographic","level":"high","review_note":"包含明确露骨色情描写，other/low 过低。"}
+{"text":"干妈妈的小穴穴","category":"pornographic","level":"high","review_note":"包含露骨乱伦色情描写，abuse/medium 分类不准。"}
+{"text":"干妈妈的爽","category":"pornographic","level":"high","review_note":"包含乱伦色情语境，abuse/medium 分类不准。"}
+{"text":"干妳妈","category":"abuse","level":"medium","review_note":"常见辱骂脏话，other/low 偏低。"}
+{"text":"干妳娘","category":"abuse","level":"medium","review_note":"常见辱骂脏话，other/low 偏低。"}
+{"text":"干妳老母","category":"abuse","level":"medium","review_note":"常见辱骂脏话，other/low 偏低。"}
+{"text":"干妳马","category":"abuse","level":"medium","review_note":"疑似辱骂脏话变体，other/low 偏低。"}
+{"text":"干妹妹小穴","category":"pornographic","level":"high","review_note":"包含明确露骨性行为描写，other/low 过低。"}
+{"text":"干姐姐小穴","category":"pornographic","level":"high","review_note":"包含明确露骨性行为描写，other/low 过低。"}
+{"text":"干小姐小穴","category":"pornographic","level":"high","review_note":"包含明确露骨性行为描写，other/low 过低。"}
+{"text":"干小姨子小穴","category":"pornographic","level":"high","review_note":"包含明确露骨性行为描写，other/low 过低。"}
+{"text":"干小蜜洞","category":"pornographic","level":"high","review_note":"包含露骨色情器官描写，other/low 过低。"}
+{"text":"干少妇小穴","category":"pornographic","level":"high","review_note":"包含明确露骨性行为描写，other/low 过低。"}
+{"text":"干干我用力地干我","category":"pornographic","level":"high","review_note":"包含明确露骨性行为语境，other/low 过低。"}
+{"text":"干插我的穴","category":"pornographic","level":"high","review_note":"包含明确露骨性行为描写，other/low 过低。"}
+{"text":"干死你","category":"violence","level":"medium","review_note":"含直接伤害威胁语义，other/low 偏低。"}
+{"text":"干死客服","category":"violence","level":"medium","review_note":"含对客服的直接伤害威胁语义，ad/low 分类不准。"}
+{"text":"干死狂插操","category":"pornographic","level":"high","review_note":"包含露骨色情行为描写，other/low 过低。"}
+{"text":"干洋妞穴","category":"pornographic","level":"high","review_note":"包含明确露骨性行为描写，other/low 过低。"}
+{"text":"干炮插穴","category":"pornographic","level":"high","review_note":"包含明确露骨性行为描写，other/low 过低。"}
+{"text":"干穴","category":"pornographic","level":"high","review_note":"包含露骨性行为和性器官语义，other/low 过低。"}
+{"text":"干空姐小穴","category":"pornographic","level":"high","review_note":"包含明确露骨性行为描写，other/low 过低。"}
+{"text":"干美女小穴","category":"pornographic","level":"high","review_note":"包含明确露骨性行为描写，other/low 过低。"}
+{"text":"干老师小穴","category":"pornographic","level":"high","review_note":"包含明确露骨性行为描写，other/low 过低。"}
+{"text":"干老师的穴","category":"pornographic","level":"high","review_note":"包含明确露骨性行为描写，other/low 过低。"}
+{"text":"干老师的穴好爽","category":"pornographic","level":"high","review_note":"包含明确露骨性行为描写，other/low 过低。"}
+{"text":"干进meimei的小穴","category":"pornographic","level":"high","review_note":"包含明确露骨性行为描写，other/low 过低。"}
+{"text":"干进妹妹的小穴","category":"pornographic","level":"high","review_note":"包含明确露骨性行为描写，other/low 过低。"}
+{"text":"干逼","category":"pornographic","level":"medium","review_note":"含粗俗色情器官/性行为语义，other/low 偏低。"}
+{"text":"干阿姨小穴","category":"pornographic","level":"high","review_note":"包含明确露骨性行为描写，other/low 过低。"}
+{"text":"干阿姨的骚穴","category":"pornographic","level":"high","review_note":"包含明确露骨性行为描写，other/low 过低。"}
+{"text":"干骚女","category":"pornographic","level":"medium","review_note":"含粗俗色情性对象描述，other/low 偏低。"}
+{"text":"平反64","category":"political","level":"medium","review_note":"涉及六四相关政治诉求，other/low 过低。"}
+{"text":"平成女忍者奥义中出し陵辱","category":"pornographic","level":"high","review_note":"包含成人色情标题和露骨性行为词，other/low 过低。"}
+{"text":"幵苞价格","category":"pornographic","level":"high","review_note":"开苞价格涉及明确色情服务交易语义，other/low 过低。"}
+{"text":"幼交","category":"pornographic","level":"critical","review_note":"涉及未成年人性内容语义，other/low 明显过低。"}
+{"text":"幼交乱伦","category":"pornographic","level":"critical","review_note":"涉及未成年人乱伦性内容，other/low 明显过低。"}
+{"text":"幼交乱伦qq","category":"pornographic","level":"critical","review_note":"涉及未成年人乱伦性内容并带 QQ 导流，ad/low 明显过低。"}
+{"text":"幼交乱伦qvod","category":"pornographic","level":"critical","review_note":"涉及未成年人乱伦色情资源，other/low 明显过低。"}
+{"text":"幼交同志","category":"pornographic","level":"critical","review_note":"涉及未成年人性内容语义，other/low 明显过低。"}
+{"text":"幼交图嫩女兽交","category":"pornographic","level":"critical","review_note":"涉及未成年人色情图片和兽交内容，other/low 明显过低。"}
+{"text":"幼交片下载","category":"pornographic","level":"critical","review_note":"涉及未成年人色情视频下载，other/low 明显过低。"}
+{"text":"幼交片下载qq","category":"pornographic","level":"critical","review_note":"涉及未成年人色情视频下载并带 QQ 导流，ad/low 明显过低。"}
+{"text":"幼交电影快播","category":"pornographic","level":"critical","review_note":"涉及未成年人色情电影资源，other/low 明显过低。"}
+{"text":"幼交电影种子","category":"pornographic","level":"critical","review_note":"涉及未成年人色情电影种子，other/low 明显过低。"}
+{"text":"幼图","category":"pornographic","level":"critical","review_note":"在该语境下为未成年人色情图片隐语，other/low 明显过低。"}
+{"text":"幼妓","category":"pornographic","level":"critical","review_note":"涉及未成年人卖淫/性剥削语义，other/low 明显过低。"}
+{"text":"幼幼之家论坛","category":"pornographic","level":"critical","review_note":"幼幼论坛指向未成年人色情社区，other/low 明显过低。"}
+{"text":"幼幼兽交图","category":"pornographic","level":"critical","review_note":"涉及未成年人色情图片和兽交内容，other/low 明显过低。"}
+{"text":"幼幼兽交电影","category":"pornographic","level":"critical","review_note":"涉及未成年人色情电影和兽交内容，other/low 明显过低。"}
+{"text":"幼幼同志","category":"pornographic","level":"critical","review_note":"涉及未成年人色情语境，other/low 明显过低。"}
+{"text":"幼幼极品","category":"pornographic","level":"critical","review_note":"在幼幼色情语境下指向未成年人色情内容，other/low 明显过低。"}
+{"text":"幼幼片下载","category":"pornographic","level":"critical","review_note":"涉及未成年人色情视频下载，other/low 明显过低。"}
+{"text":"幼幼电影","category":"pornographic","level":"critical","review_note":"涉及未成年人色情电影语境，other/low 明显过低。"}
+{"text":"幼幼秘书","category":"pornographic","level":"critical","review_note":"在幼幼色情语境下指向未成年人色情内容，other/low 明显过低。"}
+{"text":"幼幼色图","category":"pornographic","level":"critical","review_note":"涉及未成年人色情图片，other/low 明显过低。"}
+{"text":"幼幼论","category":"pornographic","level":"critical","review_note":"疑似未成年人色情论坛/论区隐语，other/low 明显过低。"}
+{"text":"幼幼诱女","category":"pornographic","level":"critical","review_note":"涉及未成年人色情诱导语义，other/low 明显过低。"}
+{"text":"幼幼调教","category":"pornographic","level":"critical","review_note":"涉及未成年人色情调教语义，other/low 明显过低。"}
+{"text":"幼幼黄色电影","category":"pornographic","level":"critical","review_note":"明确未成年人色情电影语义，other/low 明显过低。"}
+{"text":"幼男","category":"pornographic","level":"critical","review_note":"在该色情词库语境下指向未成年人性内容对象，other/low 明显过低。"}
+{"text":"幼童买卖","category":"illegal","level":"critical","review_note":"涉及儿童买卖/人口贩卖，other/low 明显过低。"}
+{"text":"幼童出售","category":"illegal","level":"critical","review_note":"涉及儿童出售/人口贩卖，ad/low 明显过低。"}
+{"text":"幼色网","category":"pornographic","level":"critical","review_note":"指向未成年人色情网站，other/low 明显过低。"}
+{"text":"幼逼","category":"pornographic","level":"critical","review_note":"涉及未成年人性器官粗俗色情语义，other/low 明显过低。"}
+{"text":"幼香阁","category":"pornographic","level":"critical","review_note":"在幼香阁/美幼语境下指向未成年人色情站点，other/low 明显过低。"}
+{"text":"幼香阁最新地址","category":"pornographic","level":"critical","review_note":"未成年人色情站点最新地址导流，other/low 明显过低。"}
+{"text":"幼香阁美幼专区","category":"pornographic","level":"critical","review_note":"明确指向未成年人色情专区，other/low 明显过低。"}
+{"text":"广州小姐找上门服务","category":"pornographic","level":"high","review_note":"明确同城小姐上门服务，属于招嫖/色情服务，other/low 过低。"}
+{"text":"广州找小姐服务","category":"pornographic","level":"high","review_note":"明确寻找小姐服务，属于招嫖/色情服务，other/low 过低。"}
+{"text":"广州找应招小姐","category":"pornographic","level":"high","review_note":"明确寻找应招小姐，属于招嫖/色情服务，other/low 过低。"}
+{"text":"广州找按摩女服务","category":"pornographic","level":"high","review_note":"在找小姐相邻语境下指向色情按摩服务，other/low 过低。"}
+{"text":"广州漂亮小姐服务","category":"pornographic","level":"high","review_note":"明确小姐服务语义，属于招嫖/色情服务，other/low 过低。"}
+{"text":"床上夫妻激情自拍图","category":"pornographic","level":"high","review_note":"指向露骨色情自拍图片资源，other/low 过低。"}
+{"text":"床上激情自拍图","category":"pornographic","level":"high","review_note":"指向露骨色情自拍图片资源，other/low 过低。"}
+{"text":"床上销魂照","category":"pornographic","level":"medium","review_note":"含明显色情照片语义，other/low 偏低。"}
+{"text":"庐江3对夫妻种子","category":"pornographic","level":"high","review_note":"指向群体性爱事件色情资源种子，other/low 过低。"}
+{"text":"庐江5p","category":"pornographic","level":"high","review_note":"5p 在该事件语境下为群体色情内容，other/low 过低。"}
+{"text":"庐江5p下载","category":"pornographic","level":"high","review_note":"指向群体色情内容下载，other/low 过低。"}
+{"text":"庐江5p下载多图","category":"pornographic","level":"high","review_note":"指向群体色情图片下载，other/low 过低。"}
+{"text":"庐江6p","category":"pornographic","level":"high","review_note":"6p 在该事件语境下为群体色情内容，other/low 过低。"}
+{"text":"庐江6p下载","category":"pornographic","level":"high","review_note":"指向群体色情内容下载，other/low 过低。"}
+{"text":"庐江6p事件","category":"pornographic","level":"medium","review_note":"指向群体色情事件，other/low 偏低。"}
+{"text":"庐江6p全套图","category":"pornographic","level":"high","review_note":"指向群体色情图片全套资源，other/low 过低。"}
+{"text":"庐江6p合集","category":"pornographic","level":"high","review_note":"指向群体色情内容合集，other/low 过低。"}
+{"text":"庐江6p打包下载","category":"pornographic","level":"high","review_note":"指向群体色情内容打包下载，other/low 过低。"}
+{"text":"庐江6p种子","category":"pornographic","level":"high","review_note":"指向群体色情内容种子下载，other/low 过低。"}
+{"text":"庐江6p门","category":"pornographic","level":"high","review_note":"指向群体色情事件内容，other/low 过低。"}
+{"text":"庐江6p门事件","category":"pornographic","level":"medium","review_note":"指向群体色情事件，other/low 偏低。"}
+{"text":"庐江不县雅照","category":"pornographic","level":"high","review_note":"疑似不雅照变体，指向色情照片资源，other/low 过低。"}
+{"text":"庐江不雅照bt","category":"pornographic","level":"high","review_note":"指向不雅照 BT 资源，other/low 过低。"}
+{"text":"庐江不雅照全集种子","category":"pornographic","level":"high","review_note":"指向不雅照全集种子资源，other/low 过低。"}
+{"text":"庐江不雅照图片种子","category":"pornographic","level":"high","review_note":"指向不雅照图片种子资源，other/low 过低。"}
+{"text":"庐江不雅照片全集","category":"pornographic","level":"high","review_note":"指向不雅照片全集资源，other/low 过低。"}
+{"text":"庐江不雅照视频种子","category":"pornographic","level":"high","review_note":"指向不雅照视频种子资源，other/low 过低。"}
+{"text":"庐江书记不雅照","category":"pornographic","level":"high","review_note":"指向不雅照色情内容，other/low 过低。"}
+{"text":"庐江书记群p","category":"pornographic","level":"high","review_note":"群 p 指向群体色情内容，other/low 过低。"}
+{"text":"庐江书记群p照片","category":"pornographic","level":"high","review_note":"指向群体色情照片资源，other/low 过低。"}
+{"text":"庐江书记群p艳照","category":"pornographic","level":"high","review_note":"指向群体色情艳照资源，other/low 过低。"}
+{"text":"庐江书记高清艳照","category":"pornographic","level":"high","review_note":"指向高清色情艳照资源，other/low 过低。"}
+{"text":"庐江何婷婷群p照","category":"pornographic","level":"high","review_note":"指向群体色情照片资源，other/low 过低。"}
+{"text":"庐江何婷婷艳照","category":"pornographic","level":"high","review_note":"指向色情艳照资源，other/low 过低。"}
+{"text":"庐江县6p","category":"pornographic","level":"high","review_note":"6p 在该事件语境下为群体色情内容，other/low 过低。"}
+{"text":"庐江县不雅照下载bt","category":"pornographic","level":"high","review_note":"指向不雅照 BT 下载资源，other/low 过低。"}
+{"text":"庐江县县委书记群p不雅照","category":"pornographic","level":"high","review_note":"指向群体色情不雅照资源，other/low 过低。"}
+{"text":"庐江县委不雅照bt","category":"pornographic","level":"high","review_note":"指向不雅照 BT 资源，other/low 过低。"}
+{"text":"庐江县委不雅照女主角","category":"pornographic","level":"medium","review_note":"指向不雅照事件色情内容，other/low 偏低。"}
+{"text":"庐江县委书记5p全套","category":"pornographic","level":"high","review_note":"指向群体色情内容全套资源，other/low 过低。"}
+{"text":"庐江县委书记5p照","category":"pornographic","level":"high","review_note":"指向群体色情照片资源，other/low 过低。"}
+{"text":"庐江县委书记6p全套","category":"pornographic","level":"high","review_note":"指向群体色情内容全套资源，other/low 过低。"}
+{"text":"庐江县委书记不雅照片下载","category":"pornographic","level":"high","review_note":"指向不雅照片下载资源，other/low 过低。"}
+{"text":"庐江县委书记不雅照片全套","category":"pornographic","level":"high","review_note":"指向不雅照片全套资源，other/low 过低。"}
+{"text":"庐江县委书记不雅照片全集","category":"pornographic","level":"high","review_note":"指向不雅照片全集资源，other/low 过低。"}
+{"text":"庐江县委书记王民生6p","category":"pornographic","level":"high","review_note":"6p 在该事件语境下为群体色情内容，other/low 过低。"}
+{"text":"庐江县委书记群p120","category":"pornographic","level":"high","review_note":"群 p 指向群体色情内容，other/low 过低。"}
+{"text":"庐江县委书记群pbt下载","category":"pornographic","level":"high","review_note":"指向群体色情内容 BT 下载，other/low 过低。"}
+{"text":"庐江县委书记群p下载","category":"pornographic","level":"high","review_note":"指向群体色情内容下载，other/low 过低。"}
+{"text":"庐江县委书记群p图","category":"pornographic","level":"high","review_note":"指向群体色情图片资源，other/low 过低。"}
+{"text":"庐江县委书记群p照","category":"pornographic","level":"high","review_note":"指向群体色情照片资源，other/low 过低。"}
+{"text":"庐江县委书记群p照全集","category":"pornographic","level":"high","review_note":"指向群体色情照片全集资源，other/low 过低。"}

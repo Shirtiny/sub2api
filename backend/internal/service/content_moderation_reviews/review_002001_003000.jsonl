@@ -1,0 +1,255 @@
+{"text":"64时期","category":"political","level":"medium","review_note":"References the June Fourth period; original other/low should be political."}
+{"text":"64杀学生","category":"violence","level":"high","review_note":"Mentions killing students; violence/high is clearer than other/low."}
+{"text":"64正名","category":"political","level":"medium","review_note":"Political slogan about rehabilitating June Fourth; original other/low is mislabeled."}
+{"text":"64死难者","category":"political","level":"medium","review_note":"References June Fourth victims; politically sensitive memorial term rather than generic other."}
+{"text":"64民主运动","category":"political","level":"medium","review_note":"Explicit democracy movement reference; should be political instead of other/low."}
+{"text":"64民运","category":"political","level":"medium","review_note":"Abbreviation for June Fourth democracy movement; original other/low is too generic."}
+{"text":"64真相","category":"political","level":"medium","review_note":"Political June Fourth truth-seeking phrase; original other/low is mislabeled."}
+{"text":"64穿黑衣","category":"political","level":"medium","review_note":"June Fourth mourning/protest reference; should be political rather than other."}
+{"text":"64纪念","category":"political","level":"medium","review_note":"Direct June Fourth commemoration phrase; original other/low should be political."}
+{"text":"64资料馆","category":"political","level":"medium","review_note":"References June Fourth archive/materials; political category fits better than other."}
+{"text":"64运动","category":"political","level":"medium","review_note":"References June Fourth movement; original other/low is a political mislabel."}
+{"text":"64风波","category":"political","level":"medium","review_note":"Common political euphemism for the 1989 Tiananmen events; should not be other."}
+{"text":"68插穴色网","category":"pornographic","level":"high","review_note":"Contains explicit sexual term and adult-site wording; original other/low is mislabeled."}
+{"text":"69式","category":"pornographic","level":"medium","review_note":"Common sexual-position term; original other/low misses pornographic meaning."}
+{"text":"6合同彩开奖","category":"illegal","level":"high","review_note":"Lottery/gambling result term; should be illegal gambling rather than other/low."}
+{"text":"6合平台出租","category":"illegal","level":"high","review_note":"Advertising rental of a gambling platform; illegal/high is more accurate than other/low."}
+{"text":"6合彩","category":"illegal","level":"high","review_note":"Mark Six gambling term; original other/low understates illegal gambling content."}
+{"text":"6合彩下注","category":"illegal","level":"high","review_note":"Explicit gambling betting phrase; should be illegal/high."}
+{"text":"6合彩下注网","category":"illegal","level":"high","review_note":"Gambling betting website phrase; original other/low is mislabeled."}
+{"text":"6合彩公司","category":"illegal","level":"high","review_note":"Gambling operation term; should be illegal/high rather than other/low."}
+{"text":"6合彩内参","category":"illegal","level":"high","review_note":"Gambling prediction/tip term; illegal gambling classification fits better."}
+{"text":"6合彩券","category":"illegal","level":"high","review_note":"Lottery/gambling ticket term; original other/low is too weak."}
+{"text":"6合彩在线下注","category":"illegal","level":"high","review_note":"Explicit online gambling betting phrase; should be illegal/high."}
+{"text":"6合彩在线投注","category":"illegal","level":"high","review_note":"Explicit online gambling wagering phrase; should be illegal/high."}
+{"text":"6合彩在线投注网","category":"illegal","level":"high","review_note":"Online gambling site phrase; original other/low is mislabeled."}
+{"text":"6合彩娱乐网","category":"illegal","level":"high","review_note":"Gambling entertainment site phrase; should be illegal/high."}
+{"text":"6合彩投注平台","category":"illegal","level":"high","review_note":"Betting-platform phrase for gambling; original other/low is mislabeled."}
+{"text":"6合彩报码网址","category":"illegal","level":"high","review_note":"Gambling result-code website phrase; should be illegal/high."}
+{"text":"6合彩曾道人白小姐","category":"illegal","level":"high","review_note":"Mark Six gambling prediction phrase; original other/low should be illegal."}
+{"text":"6合彩特码","category":"illegal","level":"high","review_note":"Gambling special-number phrase; should be illegal/high."}
+{"text":"6合彩特码开奖","category":"illegal","level":"high","review_note":"Gambling draw phrase; original other/low is mislabeled."}
+{"text":"6合彩特码论坛","category":"illegal","level":"high","review_note":"Gambling forum phrase; should be illegal/high."}
+{"text":"6合彩现金投注","category":"illegal","level":"high","review_note":"Explicit cash gambling phrase; should be illegal/high."}
+{"text":"6合彩现金网","category":"illegal","level":"high","review_note":"Cash gambling website phrase; original other/low is mislabeled."}
+{"text":"6合彩白小姐曾道人特码","category":"illegal","level":"high","review_note":"Mark Six gambling prediction phrase; should be illegal/high."}
+{"text":"6合彩白小组特码","category":"illegal","level":"high","review_note":"Gambling special-number phrase; should be illegal/high."}
+{"text":"6合彩网","category":"illegal","level":"high","review_note":"Gambling website term; original other/low is mislabeled."}
+{"text":"6合彩网上开户","category":"illegal","level":"high","review_note":"Opening an online gambling account; should be illegal/high."}
+{"text":"6合彩网址","category":"illegal","level":"high","review_note":"Gambling URL term; original other/low should be illegal."}
+{"text":"6合彩网站","category":"illegal","level":"high","review_note":"Gambling website term; should be illegal/high."}
+{"text":"6合彩论坛","category":"illegal","level":"high","review_note":"Gambling forum term; original other/low is mislabeled."}
+{"text":"6合彩资料图库","category":"illegal","level":"high","review_note":"Gambling information/prediction resource phrase; should be illegal/high."}
+{"text":"6合采","category":"illegal","level":"high","review_note":"Variant of六合彩/Mark Six gambling term; original other/low should be illegal."}
+{"text":"6合采白小姐曾道人特码","category":"illegal","level":"high","review_note":"Variant Mark Six gambling prediction phrase; should be illegal/high."}
+{"text":"6和采","category":"illegal","level":"high","review_note":"Homophone variant of六合彩 gambling; original other/low is mislabeled."}
+{"text":"6月4日大学生","category":"political","level":"medium","review_note":"References June Fourth student movement; should be political."}
+{"text":"6月4日纪念","category":"political","level":"medium","review_note":"Direct June Fourth commemoration phrase; original other/low is mislabeled."}
+{"text":"6月4穿黑衣","category":"political","level":"medium","review_note":"June Fourth mourning/protest phrase; should be political."}
+{"text":"6月4纪念","category":"political","level":"medium","review_note":"Direct June Fourth commemoration phrase; should be political."}
+{"text":"6月four日","category":"political","level":"medium","review_note":"Obfuscated June Fourth date reference; original other/low should be political."}
+{"text":"6河蟹4","category":"political","level":"medium","review_note":"Censored/obfuscated June Fourth phrase using 河蟹; should be political."}
+{"text":"6百度4","category":"political","level":"medium","review_note":"Obfuscated June Fourth phrase; original other/low should be political."}
+{"text":"6级答案考后付款","category":"ad","level":"medium","review_note":"Commercial cheating/test-answer sale phrase; ad is clearer than other/low."}
+{"text":"777黄站","category":"pornographic","level":"high","review_note":"黄站 means porn site; original other/low is mislabeled."}
+{"text":"77军用出售qq","category":"illegal","level":"high","review_note":"QQ sale of military weapon-related item; illegal/high is clearer than ad/low."}
+{"text":"77式短狗销售","category":"illegal","level":"high","review_note":"短狗 is slang for a firearm; sale should be illegal/high, not other/low."}
+{"text":"77式销售qq","category":"illegal","level":"high","review_note":"QQ sale of 77式 handgun; illegal/high is clearer than ad/low."}
+{"text":"77手qiang价格","category":"illegal","level":"high","review_note":"Obfuscated handgun price term; original other/low is mislabeled."}
+{"text":"77手狗买卖","category":"illegal","level":"high","review_note":"手狗 is firearm slang; buy/sell phrase should be illegal/high."}
+{"text":"77短狗出售","category":"illegal","level":"high","review_note":"短狗 is firearm slang; sale should be illegal/high rather than ad/low."}
+{"text":"7乐娱乐城","category":"illegal","level":"high","review_note":"Online gambling/casino phrase; illegal category fits."}
+{"text":"7孔狗腿刀","category":"violence","level":"medium","review_note":"Weapon/knife term; violence category is more accurate than other/low."}
+{"text":"7尺大乳","category":"pornographic","level":"medium","review_note":"Sexualized body-part phrase; pornographic is clearer than other/low."}
+{"text":"7连发猎狗出售","category":"illegal","level":"high","review_note":"猎狗 is firearm slang here; sale should be illegal/high, not ad/low."}
+{"text":"80色区","category":"pornographic","level":"high","review_note":"Porn section/site wording; original other/low is mislabeled."}
+{"text":"81军刺专卖","category":"violence","level":"medium","review_note":"Military dagger sales phrase; violence/medium is clearer than other/low."}
+{"text":"81式军刺批发","category":"violence","level":"medium","review_note":"Military dagger wholesale phrase; original other/low is mislabeled."}
+{"text":"81式刺刀供应","category":"violence","level":"medium","review_note":"Bayonet supply phrase; violence/medium is more accurate than other/low."}
+{"text":"89","category":"political","level":"medium","review_note":"In this cluster it is shorthand for 1989 political events; original other/low is too generic."}
+{"text":"8964","category":"political","level":"medium","review_note":"Standard shorthand for 1989 June Fourth; should be political."}
+{"text":"89事件","category":"political","level":"medium","review_note":"References 1989 political event; original other/low should be political."}
+{"text":"89动乱","category":"political","level":"medium","review_note":"Political label for 1989 unrest; should be political."}
+{"text":"89学潮","category":"political","level":"medium","review_note":"1989 student movement term; original other/low is mislabeled."}
+{"text":"89学运","category":"political","level":"medium","review_note":"1989 student movement abbreviation; should be political."}
+{"text":"89年学生","category":"political","level":"medium","review_note":"References 1989 student movement; political category fits better."}
+{"text":"89年春夏之交","category":"political","level":"medium","review_note":"Common euphemism for 1989 Tiananmen events; should be political."}
+{"text":"89年的斗争","category":"political","level":"medium","review_note":"References 1989 political struggle; original other/low is mislabeled."}
+{"text":"89年那个春夏之交","category":"political","level":"medium","review_note":"Euphemistic 1989 Tiananmen reference; should be political."}
+{"text":"89政治","category":"political","level":"medium","review_note":"Explicit 1989 political reference; original other/low is mislabeled."}
+{"text":"89暴乱","category":"political","level":"medium","review_note":"Political label for 1989 unrest; should be political."}
+{"text":"89死难","category":"political","level":"medium","review_note":"References victims of 1989 events; political category fits better than other."}
+{"text":"89民主运动","category":"political","level":"medium","review_note":"Explicit democracy movement reference; original other/low is mislabeled."}
+{"text":"89民运","category":"political","level":"medium","review_note":"1989 democracy movement abbreviation; should be political."}
+{"text":"89运动","category":"political","level":"medium","review_note":"References 1989 movement; political category fits better."}
+{"text":"89风波","category":"political","level":"medium","review_note":"Common euphemism for 1989 political events; should be political."}
+{"text":"8岁女生主动让男生开苞全过程","category":"pornographic","level":"critical","review_note":"Sexual content involving an 8-year-old; critical pornographic classification is required."}
+{"text":"90后露点自拍","category":"pornographic","level":"high","review_note":"Nude/exposure selfie phrase; original other/low is pornographic."}
+{"text":"90后黄色片","category":"pornographic","level":"high","review_note":"黄色情片 phrase; should be pornographic/high."}
+{"text":"91色色色","category":"pornographic","level":"high","review_note":"Repeated 色 indicates pornographic content; original other/low is mislabeled."}
+{"text":"92式出售qq","category":"illegal","level":"high","review_note":"QQ sale of 92式 firearm; illegal/high is clearer than ad/low."}
+{"text":"92式手狗出售","category":"illegal","level":"high","review_note":"手狗 is firearm slang; sale should be illegal/high rather than ad/low."}
+{"text":"92式手狗批发","category":"illegal","level":"high","review_note":"手狗 is firearm slang; wholesale should be illegal/high."}
+{"text":"92式手狗直销","category":"illegal","level":"high","review_note":"手狗 is firearm slang; direct sale should be illegal/high."}
+{"text":"92式直销","category":"illegal","level":"high","review_note":"In the 92式 firearm cluster, direct-sale term should be illegal/high."}
+{"text":"92式转让","category":"illegal","level":"high","review_note":"In the 92式 firearm cluster, transfer/sale should be illegal/high."}
+{"text":"92式销售","category":"illegal","level":"high","review_note":"In the 92式 firearm cluster, sales term should be illegal/high."}
+{"text":"92式销售qq","category":"illegal","level":"high","review_note":"QQ sale of 92式 firearm; illegal/high is clearer than ad/low."}
+{"text":"92式销售电话","category":"illegal","level":"high","review_note":"Phone sale of 92式 firearm; illegal/high is clearer than ad/low."}
+{"text":"92手qiang价格","category":"illegal","level":"high","review_note":"Obfuscated handgun price term; original other/low is mislabeled."}
+{"text":"92手qiang出售","category":"illegal","level":"high","review_note":"Obfuscated handgun sale term; illegal/high is clearer than ad/low."}
+{"text":"92手狗买卖","category":"illegal","level":"high","review_note":"手狗 is firearm slang; buy/sell phrase should be illegal/high."}
+{"text":"92手狗出售","category":"illegal","level":"high","review_note":"手狗 is firearm slang; sale should be illegal/high rather than ad/low."}
+{"text":"92手狗销售","category":"illegal","level":"high","review_note":"手狗 is firearm slang; sales phrase should be illegal/high."}
+{"text":"97激情网","category":"pornographic","level":"high","review_note":"Adult激情 website phrase; original other/low is pornographic."}
+{"text":"97色色","category":"pornographic","level":"high","review_note":"色色 phrase indicates pornographic content; should be pornographic/high."}
+{"text":"97色色导航","category":"pornographic","level":"high","review_note":"Porn navigation-site phrase; original other/low is mislabeled."}
+{"text":"99的冰","category":"illegal","level":"high","review_note":"冰 is common slang for methamphetamine; original other/low should be illegal."}
+{"text":"9jiu评","category":"political","level":"medium","review_note":"Obfuscated 九评 political term; original other/low is mislabeled."}
+{"text":"9ping","category":"political","level":"medium","review_note":"Pinyin/number obfuscation of 九评; should be political."}
+{"text":"9评","category":"political","level":"medium","review_note":"Number substitution for 九评; should be political."}
+{"text":"9评共","category":"political","level":"medium","review_note":"Obfuscated 九评共产党 phrase; should be political."}
+{"text":"9评共产党","category":"political","level":"medium","review_note":"Obfuscated 九评共产党 political phrase; original other/low is mislabeled."}
+{"text":"9阴争茎","category":"pornographic","level":"medium","review_note":"Sexual pun using 阴/茎; pornographic is clearer than other/low."}
+{"text":"aaaa级电影","category":"pornographic","level":"high","review_note":"AAAA/成人 rating-style movie term; original other/low should be pornographic."}
+{"text":"aaa级黄图","category":"pornographic","level":"high","review_note":"Explicit 黄图/porn image phrase; original other/low is mislabeled."}
+{"text":"asianhot018岸田香织女阴破壊","category":"pornographic","level":"high","review_note":"Explicit AV title with female-genital wording; should be pornographic/high."}
+{"text":"athena奥様欲情日记エプロンをめくって犯してうずく人妻美巨乳スペシャル","category":"pornographic","level":"high","review_note":"Japanese adult-video title with explicit sexual wording; original other/low is mislabeled."}
+{"text":"atom弹制造","category":"illegal","level":"high","review_note":"Weapon/bomb construction phrase; illegal/high is more accurate than other/low."}
+{"text":"awp配件供应","category":"illegal","level":"high","review_note":"AWP firearm parts supply; should be illegal/high rather than other/low."}
+{"text":"awp配件供应qq","category":"illegal","level":"high","review_note":"QQ supply of AWP firearm parts; illegal/high is clearer than ad/low."}
+{"text":"awp配件出售","category":"illegal","level":"high","review_note":"Sale of AWP firearm parts; illegal/high is clearer than ad/low."}
+{"text":"awp配件出售qq","category":"illegal","level":"high","review_note":"QQ sale of AWP firearm parts; illegal/high is clearer than ad/low."}
+{"text":"awp配件批发","category":"illegal","level":"high","review_note":"Wholesale AWP firearm parts; should be illegal/high."}
+{"text":"awp配件批发qq","category":"illegal","level":"high","review_note":"QQ wholesale of AWP firearm parts; illegal/high is clearer than ad/low."}
+{"text":"awp配件提供","category":"illegal","level":"high","review_note":"Providing AWP firearm parts; should be illegal/high."}
+{"text":"awp配件提供qq","category":"illegal","level":"high","review_note":"QQ provision of AWP firearm parts; illegal/high is clearer than ad/low."}
+{"text":"awp配件直销","category":"illegal","level":"high","review_note":"Direct sale of AWP firearm parts; should be illegal/high."}
+{"text":"awp配件直销qq","category":"illegal","level":"high","review_note":"QQ direct sale of AWP firearm parts; illegal/high is clearer than ad/low."}
+{"text":"awp配件订购","category":"illegal","level":"high","review_note":"Ordering AWP firearm parts; should be illegal/high."}
+{"text":"awp配件订购qq","category":"illegal","level":"high","review_note":"QQ ordering of AWP firearm parts; illegal/high is clearer than ad/low."}
+{"text":"awp配件销售","category":"illegal","level":"high","review_note":"Sales of AWP firearm parts; should be illegal/high."}
+{"text":"awp配件销售qq","category":"illegal","level":"high","review_note":"QQ sale of AWP firearm parts; illegal/high is clearer than ad/low."}
+{"text":"a级情片","category":"pornographic","level":"high","review_note":"Adult erotic film phrase; original other/low is mislabeled."}
+{"text":"bao炸","category":"violence","level":"medium","review_note":"Obfuscated 爆炸/explosion term; violence category fits better than other."}
+{"text":"bing毒出售","category":"illegal","level":"high","review_note":"Obfuscated 冰毒 sale phrase; illegal/high is clearer than ad/low."}
+{"text":"bb体育投注","category":"illegal","level":"high","review_note":"Sports betting phrase; should be illegal/high rather than other/low."}
+{"text":"bb论坛操bb图","category":"pornographic","level":"high","review_note":"Contains explicit sexual verb and image/forum wording; original other/low is pornographic."}
+{"text":"biao子","category":"abuse","level":"medium","review_note":"Pinyin-obfuscated insult 婊子; abuse category fits better than other."}
+{"text":"big吊","category":"pornographic","level":"medium","review_note":"Sexual body-part phrase; pornographic is clearer than other/low."}
+{"text":"bt色工厂","category":"pornographic","level":"high","review_note":"Adult 色 content site phrase; should be pornographic/high."}
+{"text":"bt黄色","category":"pornographic","level":"high","review_note":"Explicit adult/yellow content phrase; original other/low is mislabeled."}
+{"text":"c4制作方法","category":"illegal","level":"high","review_note":"C4 explosive-making phrase; should be illegal/high."}
+{"text":"c4的制作方法","category":"illegal","level":"high","review_note":"C4 explosive-making phrase; original other/low is mislabeled."}
+{"text":"cha你","category":"abuse","level":"medium","review_note":"Obfuscated insult/profanity; abuse category fits better than other."}
+{"text":"cp99转让","category":"illegal","level":"high","review_note":"Transfer of CP99 firearm/airgun item; should be illegal/high."}
+{"text":"cp99配件专供","category":"illegal","level":"high","review_note":"CP99 weapon parts supply; should be illegal/high."}
+{"text":"cp99配件专供qq","category":"illegal","level":"high","review_note":"QQ supply of CP99 weapon parts; illegal/high is clearer than ad/low."}
+{"text":"cp99配件专卖","category":"illegal","level":"high","review_note":"CP99 weapon parts sale; should be illegal/high."}
+{"text":"cp99配件专卖qq","category":"illegal","level":"high","review_note":"QQ sale of CP99 weapon parts; illegal/high is clearer than ad/low."}
+{"text":"cp99配件出售","category":"illegal","level":"high","review_note":"Sale of CP99 weapon parts; illegal/high is clearer than ad/low."}
+{"text":"cp99配件出售qq","category":"illegal","level":"high","review_note":"QQ sale of CP99 weapon parts; illegal/high is clearer than ad/low."}
+{"text":"cp99配件批发","category":"illegal","level":"high","review_note":"Wholesale CP99 weapon parts; should be illegal/high."}
+{"text":"cp99配件提供qq","category":"illegal","level":"high","review_note":"QQ provision of CP99 weapon parts; illegal/high is clearer than ad/low."}
+{"text":"cp99配件直销","category":"illegal","level":"high","review_note":"Direct sale of CP99 weapon parts; should be illegal/high."}
+{"text":"cp99配件直销qq","category":"illegal","level":"high","review_note":"QQ direct sale of CP99 weapon parts; illegal/high is clearer than ad/low."}
+{"text":"cp99配件销售","category":"illegal","level":"high","review_note":"Sale of CP99 weapon parts; should be illegal/high."}
+{"text":"cp99配件销售qq","category":"illegal","level":"high","review_note":"QQ sale of CP99 weapon parts; illegal/high is clearer than ad/low."}
+{"text":"crazyfuckmikiuehara上原美纪","category":"pornographic","level":"high","review_note":"Adult-video style title/name with explicit English term; original other/low is pornographic."}
+{"text":"cup爆乳家庭教师","category":"pornographic","level":"medium","review_note":"Sexualized adult phrase with 爆乳; pornographic is clearer than other/low."}
+{"text":"d80军刺","category":"violence","level":"medium","review_note":"Military dagger term; violence category fits better than other/low."}
+{"text":"d9军刺供应","category":"violence","level":"medium","review_note":"Military dagger supply phrase; original other/low is mislabeled."}
+{"text":"d9军刺军刀","category":"violence","level":"medium","review_note":"Military dagger/knife term; violence category fits better than other/low."}
+{"text":"d9军刺出售","category":"violence","level":"medium","review_note":"Military dagger sale phrase; violence/medium is clearer than ad/low."}
+{"text":"ddk迷奸药","category":"illegal","level":"critical","review_note":"Date-rape drug phrase; illegal/critical is clearer than other/low."}
+{"text":"diy化学燃烧弹","category":"illegal","level":"high","review_note":"Improvised incendiary weapon phrase; should be illegal/high."}
+{"text":"diy化学燃烧弹教程","category":"illegal","level":"critical","review_note":"Instructional incendiary weapon phrase; critical illegal classification is warranted."}
+{"text":"diy化学燃烧弹方法","category":"illegal","level":"critical","review_note":"Instructional incendiary weapon phrase; critical illegal classification is warranted."}
+{"text":"diy核弹","category":"illegal","level":"high","review_note":"Nuclear weapon construction phrase; original other/low is mislabeled."}
+{"text":"diy汽油燃烧弹","category":"illegal","level":"high","review_note":"Improvised incendiary weapon phrase; should be illegal/high."}
+{"text":"diy汽油燃烧弹方法","category":"illegal","level":"critical","review_note":"Instructional incendiary weapon phrase; critical illegal classification is warranted."}
+{"text":"diy汽油燃烧瓶","category":"illegal","level":"high","review_note":"Molotov/incendiary weapon phrase; should be illegal/high."}
+{"text":"diy汽油燃烧瓶方法","category":"illegal","level":"critical","review_note":"Instructional Molotov/incendiary weapon phrase; critical illegal classification is warranted."}
+{"text":"diy燃烧弹","category":"illegal","level":"high","review_note":"Improvised incendiary weapon phrase; should be illegal/high."}
+{"text":"diy燃烧弹方法","category":"illegal","level":"critical","review_note":"Instructional incendiary weapon phrase; critical illegal classification is warranted."}
+{"text":"diy燃烧瓶","category":"illegal","level":"high","review_note":"Molotov/incendiary weapon phrase; should be illegal/high."}
+{"text":"diy燃烧瓶方法","category":"illegal","level":"critical","review_note":"Instructional Molotov/incendiary weapon phrase; critical illegal classification is warranted."}
+{"text":"dutyvol50背徳の近亲相奸","category":"pornographic","level":"high","review_note":"Adult-video title with incest sexual wording; original other/low is mislabeled."}
+{"text":"ed2k肉蒲团","category":"pornographic","level":"medium","review_note":"Adult erotic-film download phrase; pornographic is clearer than other/low."}
+{"text":"e世博线上娱乐","category":"illegal","level":"high","review_note":"Online gambling/casino phrase; should be illegal/high rather than other/low."}
+{"text":"e夜情","category":"pornographic","level":"medium","review_note":"One-night stand/adult hookup phrase; pornographic is more accurate than other/low."}
+{"text":"e夜情交友","category":"pornographic","level":"medium","review_note":"Adult hookup/dating phrase; pornographic is clearer than ad/low."}
+{"text":"e夜情俱乐部","category":"pornographic","level":"medium","review_note":"Adult hookup club phrase; should be pornographic/medium."}
+{"text":"e夜情电话","category":"pornographic","level":"medium","review_note":"Adult hookup phone phrase; pornographic is clearer than ad/low."}
+{"text":"e夜情聊天室","category":"pornographic","level":"medium","review_note":"Adult hookup chat-room phrase; pornographic is clearer than ad/low."}
+{"text":"e夜情论坛","category":"pornographic","level":"medium","review_note":"Adult hookup forum phrase; should be pornographic/medium."}
+{"text":"flexispy下载","category":"illegal","level":"high","review_note":"Spyware download phrase; illegal category fits better than other/low."}
+{"text":"flexispy专业版","category":"illegal","level":"high","review_note":"Spyware product phrase; should be illegal/high."}
+{"text":"flexispy免费版","category":"illegal","level":"high","review_note":"Spyware product phrase; should be illegal/high."}
+{"text":"flexispy增强版","category":"illegal","level":"high","review_note":"Spyware product phrase; should be illegal/high."}
+{"text":"flexispy官方网站","category":"illegal","level":"high","review_note":"Spyware official-site phrase; should be illegal/high."}
+{"text":"flexispy官网","category":"illegal","level":"high","review_note":"Spyware official-site phrase; should be illegal/high."}
+{"text":"flexispy改良版","category":"illegal","level":"high","review_note":"Spyware product phrase; should be illegal/high."}
+{"text":"flexispy破解版","category":"illegal","level":"high","review_note":"Spyware/cracked-software phrase; should be illegal/high."}
+{"text":"fm2约会强爆药片","category":"illegal","level":"critical","review_note":"Drug-facilitated sexual assault pill phrase; illegal/critical is clearer than other/low."}
+{"text":"fox格斗砍刀专卖","category":"violence","level":"medium","review_note":"Combat machete sale phrase; violence category fits better than other/low."}
+{"text":"fox格斗砍刀买卖","category":"violence","level":"medium","review_note":"Combat machete buy/sell phrase; violence category fits better than other/low."}
+{"text":"fox格斗砍刀买卖qq","category":"violence","level":"medium","review_note":"QQ buy/sell of combat machete; violence is clearer than ad/low."}
+{"text":"fox格斗砍刀供应qq","category":"violence","level":"medium","review_note":"QQ supply of combat machete; violence is clearer than ad/low."}
+{"text":"fox格斗砍刀出售","category":"violence","level":"medium","review_note":"Combat machete sale phrase; violence is clearer than ad/low."}
+{"text":"fox格斗砍刀批发qq","category":"violence","level":"medium","review_note":"QQ wholesale of combat machete; violence is clearer than ad/low."}
+{"text":"fox格斗砍刀直销","category":"violence","level":"medium","review_note":"Combat machete direct-sale phrase; violence category fits better than other/low."}
+{"text":"fox格斗砍刀直销qq","category":"violence","level":"medium","review_note":"QQ direct sale of combat machete; violence is clearer than ad/low."}
+{"text":"fox格斗砍刀订购","category":"violence","level":"medium","review_note":"Combat machete ordering phrase; violence category fits better than other/low."}
+{"text":"fox格斗砍刀转让","category":"violence","level":"medium","review_note":"Combat machete transfer/sale phrase; violence category fits better than other/low."}
+{"text":"fox格斗砍刀销售","category":"violence","level":"medium","review_note":"Combat machete sales phrase; violence category fits better than other/low."}
+{"text":"fox格斗砍刀销售qq","category":"violence","level":"medium","review_note":"QQ sale of combat machete; violence is clearer than ad/low."}
+{"text":"fuck4人帮","category":"political","level":"medium","review_note":"Political reference to the Gang of Four; original other/low should be political."}
+{"text":"fuck5星红旗","category":"political","level":"medium","review_note":"Political/national-symbol insult; should be political rather than other/low."}
+{"text":"fuck万税","category":"political","level":"medium","review_note":"Political tax/government insult phrase; political category fits better than other."}
+{"text":"fuck上你","category":"abuse","level":"medium","review_note":"Profane targeted phrase; abuse is clearer than other/low."}
+{"text":"fuck上妳","category":"abuse","level":"medium","review_note":"Profane targeted phrase; abuse is clearer than other/low."}
+{"text":"fuck乡巴佬","category":"abuse","level":"medium","review_note":"Insulting slur phrase; abuse category fits better than other/low."}
+{"text":"fuck他妈","category":"abuse","level":"medium","review_note":"Profanity phrase; abuse is clearer than other/low."}
+{"text":"fuck他母亲","category":"abuse","level":"medium","review_note":"Profanity targeting mother; abuse is clearer than other/low."}
+{"text":"fuck他爹","category":"abuse","level":"medium","review_note":"Profanity targeting father; abuse is clearer than other/low."}
+{"text":"fuck他祖宗","category":"abuse","level":"medium","review_note":"Profanity targeting ancestors; abuse is clearer than other/low."}
+{"text":"fuck他马的","category":"abuse","level":"medium","review_note":"Obfuscated 他妈的 profanity; abuse is clearer than other/low."}
+{"text":"fuck倭国","category":"abuse","level":"medium","review_note":"Ethnic/national insult phrase; abuse category fits better than other/low."}
+{"text":"fuck倭寇","category":"abuse","level":"medium","review_note":"Ethnic/national insult phrase; abuse category fits better than other/low."}
+{"text":"fuck傻b","category":"abuse","level":"medium","review_note":"Insult phrase; abuse is clearer than other/low."}
+{"text":"fuck傻卵","category":"abuse","level":"medium","review_note":"Insult phrase; abuse is clearer than other/low."}
+{"text":"fuck傻吊","category":"abuse","level":"medium","review_note":"Insult phrase; abuse is clearer than other/low."}
+{"text":"fuck傻子","category":"abuse","level":"medium","review_note":"Insult phrase; abuse is clearer than other/low."}
+{"text":"fuck傻屄","category":"abuse","level":"medium","review_note":"Insult phrase; abuse is clearer than other/low."}
+{"text":"fuck傻比","category":"abuse","level":"medium","review_note":"Insult phrase; abuse is clearer than other/low."}
+{"text":"fuck十8摸","category":"pornographic","level":"medium","review_note":"十八摸 is a sexual phrase; pornographic is clearer than other/low."}
+{"text":"fuck十年动乱","category":"political","level":"medium","review_note":"Political Cultural Revolution phrase; should be political."}
+{"text":"fuck卖国","category":"political","level":"medium","review_note":"Political accusation phrase; political category fits better than other."}
+{"text":"fuck双峰微颤","category":"pornographic","level":"medium","review_note":"Sexualized body-description phrase; pornographic is clearer than other/low."}
+{"text":"fuck受虐狂","category":"pornographic","level":"medium","review_note":"Sexual kink-related phrase; pornographic is clearer than other/low."}
+{"text":"fuck台湾共和国","category":"political","level":"medium","review_note":"Taiwan sovereignty phrase; should be political rather than other."}
+{"text":"fuck台湾国","category":"political","level":"medium","review_note":"Taiwan sovereignty phrase; should be political rather than other."}
+{"text":"fuck台湾帝国","category":"political","level":"medium","review_note":"Taiwan political/sovereignty phrase; should be political."}
+{"text":"fuck台湾民国","category":"political","level":"medium","review_note":"Taiwan political/sovereignty phrase; should be political."}
+{"text":"fuck台湾狗","category":"abuse","level":"medium","review_note":"National/identity insult phrase; abuse fits better than other."}
+{"text":"fuck台独","category":"political","level":"medium","review_note":"Taiwan independence abbreviation; original other/low should be political."}
+{"text":"fuck天安门","category":"political","level":"medium","review_note":"Tiananmen political reference; original other/low should be political."}
+{"text":"fuck天安门1代","category":"political","level":"medium","review_note":"Tiananmen political reference; original other/low should be political."}
+{"text":"fuck天安门事件","category":"political","level":"medium","review_note":"Tiananmen event reference; should be political."}
+{"text":"fuck天安门录像带","category":"political","level":"medium","review_note":"Tiananmen event media reference; should be political."}
+{"text":"fuck天安门档案","category":"political","level":"medium","review_note":"Tiananmen archive/reference phrase; should be political."}
+{"text":"fuck天皇","category":"political","level":"medium","review_note":"Political/national-symbol insult; political is clearer than other/low."}
+{"text":"fuck天皇陛下","category":"political","level":"medium","review_note":"Political/national-symbol insult; political is clearer than other/low."}
+{"text":"fuck太子党","category":"political","level":"medium","review_note":"Chinese political faction phrase; should be political."}
+{"text":"fuck太监","category":"abuse","level":"medium","review_note":"Insult phrase; abuse category fits better than other/low."}
+{"text":"fuck威而柔","category":"ad","level":"medium","review_note":"Sexual drug/product phrase; ad is clearer than other/low."}
+{"text":"fuck威而钢","category":"ad","level":"medium","review_note":"Sexual drug/product phrase; ad is clearer than other/low."}
+{"text":"fuck射精","category":"pornographic","level":"high","review_note":"Explicit sexual act term; pornographic/high is clearer than other/low."}
+{"text":"fuck小日本","category":"abuse","level":"medium","review_note":"National/ethnic insult phrase; abuse category fits better than other/low."}
+{"text":"fuck小穴","category":"pornographic","level":"high","review_note":"Explicit sexual body-part term; pornographic/high is clearer than other/low."}
+{"text":"fuck小鸡鸡","category":"pornographic","level":"medium","review_note":"Sexual body-part phrase; pornographic is clearer than other/low."}
+{"text":"fuck希特勒","category":"political","level":"medium","review_note":"Political extremist historical figure reference with profanity; political fits better than other."}
+{"text":"fuck想上你","category":"abuse","level":"medium","review_note":"Profane sexualized targeted phrase; abuse is clearer than other/low."}
+{"text":"fuck我妳老爸","category":"abuse","level":"medium","review_note":"Profanity targeting a family member; abuse category fits better than other/low."}
+{"text":"fuck我干","category":"abuse","level":"medium","review_note":"Profanity phrase; abuse category fits better than other/low."}

@@ -1,0 +1,168 @@
+{"text":"直销军用猎刀","category":"illegal","level":"high","review_note":"军用猎刀直销属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"直销冰古","category":"illegal","level":"high","review_note":"冰古在该词簇中为毒品黑话，直销语义明确，原 other/low 过低。"}
+{"text":"直销冰牙签","category":"illegal","level":"high","review_note":"冰牙签在毒品词簇中指向冰毒类黑话，原 other/low 过低。"}
+{"text":"直销冰砖","category":"illegal","level":"high","review_note":"冰砖在毒品词簇中指向冰毒类黑话，直销语义明确，原 other/low 过低。"}
+{"text":"直销刺刀","category":"illegal","level":"high","review_note":"刺刀直销属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"直销勃朗宁军刀","category":"illegal","level":"high","review_note":"军刀直销属于武器/管制刀具交易语义，原 other/low 过低。"}
+{"text":"直销匕首","category":"illegal","level":"high","review_note":"匕首直销属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"直销北朝鲜冰","category":"illegal","level":"high","review_note":"北朝鲜冰在该词簇中指向毒品黑话，原 other/low 过低。"}
+{"text":"直销十字开锁工具","category":"illegal","level":"high","review_note":"开锁工具直销具有盗窃工具交易语义，原 other/low 过低。"}
+{"text":"直销十字强开工具","category":"illegal","level":"high","review_note":"强开工具直销具有盗窃工具交易语义，原 other/low 过低。"}
+{"text":"直销双刃尖刀","category":"illegal","level":"high","review_note":"双刃尖刀直销属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"直销口服型昏迷药qq","category":"ad","level":"low","review_note":"含 QQ 导流标，按用户规则改为 ad/low。"}
+{"text":"直销咖啡因qq","category":"ad","level":"low","review_note":"含 QQ 导流标，按用户规则改为 ad/low。"}
+{"text":"直销喵喵药qq","category":"ad","level":"low","review_note":"含 QQ 导流标，按用户规则改为 ad/low。"}
+{"text":"直销喷雾迷幻药qq","category":"ad","level":"low","review_note":"含 QQ 导流标，按用户规则改为 ad/low。"}
+{"text":"直销喷雾迷情水qq","category":"ad","level":"low","review_note":"含 QQ 导流标，按用户规则改为 ad/low。"}
+{"text":"直销喷雾迷药qq","category":"ad","level":"low","review_note":"含 QQ 导流标，按用户规则改为 ad/low。"}
+{"text":"直销国产秃鹰","category":"illegal","level":"high","review_note":"秃鹰在该词簇中指气枪/枪械黑话，直销语义明确，原 other/low 过低。"}
+{"text":"直销地西泮qq","category":"ad","level":"low","review_note":"含 QQ 导流标，按用户规则改为 ad/low。"}
+{"text":"直销失忆水qq","category":"ad","level":"low","review_note":"含 QQ 导流标，按用户规则改为 ad/low。"}
+{"text":"直销失忆粉qq","category":"ad","level":"low","review_note":"含 QQ 导流标，按用户规则改为 ad/low。"}
+{"text":"直销奶油冰","category":"illegal","level":"high","review_note":"奶油冰在毒品词簇中指向冰毒类黑话，原 other/low 过低。"}
+{"text":"直销安眠酮qq","category":"ad","level":"low","review_note":"含 QQ 导流标，按用户规则改为 ad/low。"}
+{"text":"直销安纳咖qq","category":"ad","level":"low","review_note":"含 QQ 导流标，按用户规则改为 ad/low。"}
+{"text":"直销小冰砖","category":"illegal","level":"high","review_note":"小冰砖在毒品词簇中指向冰毒类黑话，原 other/low 过低。"}
+{"text":"直销尼泊尔军刀","category":"illegal","level":"high","review_note":"军刀直销属于武器/管制刀具交易语义，原 other/low 过低。"}
+{"text":"直销尼美西泮qq","category":"ad","level":"low","review_note":"含 QQ 导流标，按用户规则改为 ad/low。"}
+{"text":"直销左旋麻黄素qq","category":"ad","level":"low","review_note":"含 QQ 导流标，按用户规则改为 ad/low。"}
+{"text":"直销左轮短狗","category":"illegal","level":"high","review_note":"短狗为枪支黑话，左轮短狗直销语义明确，原 other/low 过低。"}
+{"text":"直销开他敏qq","category":"ad","level":"low","review_note":"含 QQ 导流标，按用户规则改为 ad/low。"}
+{"text":"直销开心水","category":"illegal","level":"high","review_note":"开心水在该词簇中指向毒品/迷药黑话，直销语义明确，原 other/low 过低。"}
+{"text":"直销弓弩qq","category":"ad","level":"low","review_note":"含 QQ 导流标，按用户规则改为 ad/low。"}
+{"text":"直销快开工具","category":"illegal","level":"high","review_note":"快开工具直销具有盗窃工具交易语义，原 other/low 过低。"}
+{"text":"直销战术刀","category":"violence","level":"medium","review_note":"战术刀直销属于武器交易语义，原 other/low 过低。"}
+{"text":"直销手工猎刀","category":"violence","level":"medium","review_note":"猎刀直销属于刀具武器交易语义，原 other/low 过低。"}
+{"text":"直销手铐","category":"illegal","level":"high","review_note":"手铐直销属于约束器械交易语义，原 other/low 过低。"}
+{"text":"直销拍肩型昏迷药qq","category":"ad","level":"low","review_note":"含 QQ 导流标，按用户规则改为 ad/low。"}
+{"text":"直销拍肩型迷幻剂qq","category":"ad","level":"low","review_note":"含 QQ 导流标，按用户规则改为 ad/low。"}
+{"text":"直销拍肩药qq","category":"ad","level":"low","review_note":"含 QQ 导流标，按用户规则改为 ad/low。"}
+{"text":"直销拍肩药水qq","category":"ad","level":"low","review_note":"含 QQ 导流标，按用户规则改为 ad/low。"}
+{"text":"直销拍肩迷药qq","category":"ad","level":"low","review_note":"含 QQ 导流标，按用户规则改为 ad/low。"}
+{"text":"直销挥发型迷药qq","category":"ad","level":"low","review_note":"含 QQ 导流标，按用户规则改为 ad/low。"}
+{"text":"直销挥发性迷药qq","category":"ad","level":"low","review_note":"含 QQ 导流标，按用户规则改为 ad/low。"}
+{"text":"直销曲马多qq","category":"ad","level":"low","review_note":"含 QQ 导流标，按用户规则改为 ad/low。"}
+{"text":"直销朝鲜冰","category":"illegal","level":"high","review_note":"朝鲜冰在该词簇中指向毒品黑话，原 other/low 过低。"}
+{"text":"直销植物冰","category":"illegal","level":"high","review_note":"植物冰在毒品词簇中指向冰毒类黑话，原 other/low 过低。"}
+{"text":"直销正品军刺","category":"illegal","level":"high","review_note":"军刺直销属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"直销氟乙酸钠","category":"illegal","level":"high","review_note":"氟乙酸钠为剧毒物质，直销语义具有违法交易风险，原 other/low 过低。"}
+{"text":"直销氯胺酮qq","category":"ad","level":"low","review_note":"含 QQ 导流标，按用户规则改为 ad/low。"}
+{"text":"直销氰化银钾qq","category":"ad","level":"low","review_note":"含 QQ 导流标，按用户规则改为 ad/low。"}
+{"text":"直销氰化镉qq","category":"ad","level":"low","review_note":"含 QQ 导流标，按用户规则改为 ad/low。"}
+{"text":"直销汽狗配件qq","category":"ad","level":"low","review_note":"含 QQ 导流标，按用户规则改为 ad/low。"}
+{"text":"直销汽车中控拦截器qq","category":"ad","level":"low","review_note":"含 QQ 导流标，按用户规则改为 ad/low。"}
+{"text":"直销海乐神qq","category":"ad","level":"low","review_note":"含 QQ 导流标，按用户规则改为 ad/low。"}
+{"text":"直销液态冰","category":"illegal","level":"high","review_note":"液态冰在毒品词簇中指向冰毒类黑话，原 other/low 过低。"}
+{"text":"直销狙击弓弩","category":"violence","level":"medium","review_note":"狙击弓弩直销属于攻击性器械交易语义，原 other/low 过低。"}
+{"text":"直销狙击弩","category":"violence","level":"medium","review_note":"狙击弩直销属于攻击性器械交易语义，原 other/low 过低。"}
+{"text":"直销猎豹弓弩","category":"violence","level":"medium","review_note":"弓弩直销属于武器器械交易语义，原 other/low 过低。"}
+{"text":"直销甲硝西泮","category":"illegal","level":"high","review_note":"甲硝西泮疑为受管制镇静催眠药物，直销语义具有违法交易风险，原 other/low 过低。"}
+{"text":"直销电警棍","category":"illegal","level":"high","review_note":"电警棍直销属于警用/攻击性器械交易语义，原 other/low 过低。"}
+{"text":"直销相思红娘剂","category":"illegal","level":"high","review_note":"相思红娘剂在迷药/催情药词簇中指向非法药物交易，原 other/low 过低。"}
+{"text":"直销硝甲西泮","category":"illegal","level":"high","review_note":"硝甲西泮为受管制镇静催眠药物，直销语义具有违法交易风险，原 other/low 过低。"}
+{"text":"直销纯古","category":"illegal","level":"high","review_note":"纯古为麻古类毒品黑话，直销语义明确，原 other/low 过低。"}
+{"text":"直销缅古","category":"illegal","level":"high","review_note":"缅古为麻古类毒品黑话，直销语义明确，原 other/low 过低。"}
+{"text":"直销缅果","category":"illegal","level":"high","review_note":"缅果为麻古/麻果类毒品黑话，直销语义明确，原 other/low 过低。"}
+{"text":"直销秦氏弩","category":"violence","level":"medium","review_note":"弩类器械直销属于武器交易语义，原 other/low 过低。"}
+{"text":"直销警用手拷","category":"illegal","level":"high","review_note":"警用手拷直销属于警用约束器械交易语义，原 other/low 过低。"}
+{"text":"直销赵氏弩","category":"violence","level":"medium","review_note":"弩类器械直销属于武器交易语义，原 other/low 过低。"}
+{"text":"直销赵氏弩弓","category":"violence","level":"medium","review_note":"弩弓直销属于武器器械交易语义，原 other/low 过低。"}
+{"text":"直销跳刀","category":"illegal","level":"high","review_note":"跳刀直销属于管制刀具交易语义，原 other/low 过低。"}
+{"text":"直销连弩","category":"violence","level":"medium","review_note":"连弩直销属于武器器械交易语义，原 other/low 过低。"}
+{"text":"直销野战刀","category":"violence","level":"medium","review_note":"野战刀直销属于刀具武器交易语义，原 other/low 过低。"}
+{"text":"直销钢珠弓弩","category":"violence","level":"medium","review_note":"钢珠弓弩直销属于攻击性器械交易语义，原 other/low 过低。"}
+{"text":"直销钢珠弩","category":"violence","level":"medium","review_note":"钢珠弩直销属于攻击性器械交易语义，原 other/low 过低。"}
+{"text":"直销钢珠弩弓","category":"violence","level":"medium","review_note":"钢珠弩弓直销属于攻击性器械交易语义，原 other/low 过低。"}
+{"text":"直销铅弹模具","category":"illegal","level":"high","review_note":"铅弹模具直销涉及气枪/弹药配套器材交易，原 other/low 过低。"}
+{"text":"直销黑曼巴弩","category":"violence","level":"medium","review_note":"弩类器械直销属于武器交易语义，原 other/low 过低。"}
+{"text":"相乐琴美种子","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加种子，原 other/low 过低。"}
+{"text":"相互满足下生理","category":"pornographic","level":"medium","review_note":"含满足生理的成人性暗示语义，原 other/low 过低。"}
+{"text":"相互满足生理","category":"pornographic","level":"medium","review_note":"含满足生理的成人性暗示语义，原 other/low 过低。"}
+{"text":"相助匿曰党","category":"political","level":"medium","review_note":"疑似政治组织规避写法，原 other/low 过低。"}
+{"text":"相原夏海种子","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加种子，原 other/low 过低。"}
+{"text":"相原梨花种子","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加种子，原 other/low 过低。"}
+{"text":"相原留美种子","category":"pornographic","level":"medium","review_note":"成人演员名加种子资源语义，原 other/low 过低。"}
+{"text":"相叶沙织种子","category":"pornographic","level":"medium","review_note":"成人演员名加种子资源语义，原 other/low 过低。"}
+{"text":"相川未希种子","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加种子，原 other/low 过低。"}
+{"text":"相川百合子种子","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加种子，原 other/low 过低。"}
+{"text":"相川真由种子","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加种子，原 other/low 过低。"}
+{"text":"相思红娘","category":"illegal","level":"medium","review_note":"在迷药/催情药词簇中指向可疑药物黑话，原 other/low 过低。"}
+{"text":"相思红娘剂供应","category":"illegal","level":"high","review_note":"相思红娘剂供应指向迷药/催情药交易，原 other/low 过低。"}
+{"text":"相思红娘剂批发","category":"illegal","level":"high","review_note":"相思红娘剂批发指向迷药/催情药交易，原 other/low 过低。"}
+{"text":"相思红娘剂提供","category":"illegal","level":"high","review_note":"相思红娘剂提供指向迷药/催情药交易，原 other/low 过低。"}
+{"text":"相思红娘剂直销","category":"illegal","level":"high","review_note":"相思红娘剂直销指向迷药/催情药交易，原 other/low 过低。"}
+{"text":"相思红娘剂订购","category":"illegal","level":"high","review_note":"相思红娘剂订购指向迷药/催情药交易，原 other/low 过低。"}
+{"text":"相思红娘剂销售","category":"illegal","level":"high","review_note":"相思红娘剂销售指向迷药/催情药交易，原 other/low 过低。"}
+{"text":"相户爱全集","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加全集，原 other/low 过低。"}
+{"text":"相泽优香种子","category":"pornographic","level":"medium","review_note":"成人演员名加种子资源语义，原 other/low 过低。"}
+{"text":"相泽梦全集","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加全集，原 other/low 过低。"}
+{"text":"相泽梦种子","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加种子，原 other/low 过低。"}
+{"text":"相泽麻帆种子","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加种子，原 other/low 过低。"}
+{"text":"相田凉种子","category":"pornographic","level":"medium","review_note":"成人演员名加种子资源语义，原 other/low 过低。"}
+{"text":"相田由美种子","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加种子，原 other/low 过低。"}
+{"text":"省委大门集合","category":"political","level":"medium","review_note":"涉及省委场所集合动员，政治公共事件语义明确，原 other/low 过低。"}
+{"text":"省政府大门集合","category":"political","level":"medium","review_note":"涉及省政府场所集合动员，政治公共事件语义明确，原 other/low 过低。"}
+{"text":"省港流莺","category":"pornographic","level":"medium","review_note":"流莺指卖淫相关成人服务语义，原 other/low 过低。"}
+{"text":"看中国","category":"political","level":"medium","review_note":"涉及政治媒体语境，原 other/low 分类过低。"}
+{"text":"看底牌器","category":"illegal","level":"medium","review_note":"底牌器用于赌博作弊，原 other/low 过低。"}
+{"text":"看片神器","category":"pornographic","level":"medium","review_note":"看片神器在成人内容语境中指向色情资源工具，原 other/low 过低。"}
+{"text":"看牌器","category":"illegal","level":"medium","review_note":"看牌器用于赌博作弊，原 other/low 过低。"}
+{"text":"看牌软件","category":"illegal","level":"medium","review_note":"看牌软件用于赌博作弊，原 other/low 过低。"}
+{"text":"看牌软体","category":"illegal","level":"medium","review_note":"看牌软体用于赌博作弊，原 other/low 过低。"}
+{"text":"真n善n忍","category":"political","level":"medium","review_note":"真善忍规避写法，涉及敏感政治/宗教组织语境，原 other/low 过低。"}
+{"text":"真中美铃种子","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加种子，原 other/low 过低。"}
+{"text":"真中香织种子","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加种子，原 other/low 过低。"}
+{"text":"真人做爱qq","category":"ad","level":"low","review_note":"含 QQ 导流标，按用户规则改为 ad/low。"}
+{"text":"真人在线娱乐平台","category":"illegal","level":"high","review_note":"真人在线娱乐平台处于博彩词簇中，指向赌博平台，原 other/low 过低。"}
+{"text":"真人在线麻将","category":"illegal","level":"high","review_note":"真人在线麻将处于赌博词簇中，原 other/low 过低。"}
+{"text":"真人娱乐城qq","category":"ad","level":"low","review_note":"含 QQ 导流标，按用户规则改为 ad/low。"}
+{"text":"真人德州扑克","category":"illegal","level":"high","review_note":"德州扑克在真钱/真人博彩语境中指向赌博，原 other/low 过低。"}
+{"text":"真人激情裸聊qq","category":"ad","level":"low","review_note":"含 QQ 导流标，按用户规则改为 ad/low。"}
+{"text":"真人现金21点","category":"illegal","level":"high","review_note":"现金 21 点指向真钱赌博，原 other/low 过低。"}
+{"text":"真人现金棋牌","category":"illegal","level":"high","review_note":"现金棋牌指向真钱赌博，原 other/low 过低。"}
+{"text":"真人裸体陪聊qq","category":"ad","level":"low","review_note":"含 QQ 导流标，按用户规则改为 ad/low。"}
+{"text":"真人裸聊网qq","category":"ad","level":"low","review_note":"含 QQ 导流标，按用户规则改为 ad/low。"}
+{"text":"真人裸聊网站qq","category":"ad","level":"low","review_note":"含 QQ 导流标，按用户规则改为 ad/low。"}
+{"text":"真人视频裸体聊天qq","category":"ad","level":"low","review_note":"含 QQ 导流标，按用户规则改为 ad/low。"}
+{"text":"真人视频裸聊qq","category":"ad","level":"low","review_note":"含 QQ 导流标，按用户规则改为 ad/low。"}
+{"text":"真人轮盘","category":"illegal","level":"high","review_note":"轮盘在真人博彩语境中指向赌博，原 other/low 过低。"}
+{"text":"真他妈","category":"abuse","level":"medium","review_note":"粗俗辱骂/脏话表达，原 other/low 过低。"}
+{"text":"真善忍","category":"political","level":"medium","review_note":"涉及敏感政治/宗教组织语境，原 other/low 过低。"}
+{"text":"真城丽美种子","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加种子，原 other/low 过低。"}
+{"text":"真实偷拍","category":"pornographic","level":"high","review_note":"偷拍在成人资源语境中指向非自愿色情内容，原 other/low 过低。"}
+{"text":"真实自拍片","category":"pornographic","level":"medium","review_note":"自拍片在该成人资源词簇中指向色情影像，原 other/low 过低。"}
+{"text":"真宫梨沙子种子","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加种子，原 other/low 过低。"}
+{"text":"真岛裕花种子","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加种子，原 other/low 过低。"}
+{"text":"真崎爱美种子","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加种子，原 other/low 过低。"}
+{"text":"真木亚里沙电驴下载","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加电驴下载，原 other/low 过低。"}
+{"text":"真树樱种子","category":"pornographic","level":"medium","review_note":"成人演员名加种子资源语义，原 other/low 过低。"}
+{"text":"真消息国人看不见","category":"political","level":"medium","review_note":"涉及信息封锁/政治宣传语境，原 other/low 过低。"}
+{"text":"真空失身","category":"pornographic","level":"medium","review_note":"含失身成人题材语义，原 other/low 过低。"}
+{"text":"真钱娱乐平台","category":"illegal","level":"high","review_note":"真钱娱乐平台在博彩语境中指向赌博，原 other/low 过低。"}
+{"text":"真钱娱乐游戏","category":"illegal","level":"high","review_note":"真钱娱乐游戏在博彩语境中指向赌博，原 other/low 过低。"}
+{"text":"真钱斗地","category":"illegal","level":"high","review_note":"真钱斗地疑指真钱斗地主赌博玩法，原 other/low 过低。"}
+{"text":"真钱棋牌导航","category":"illegal","level":"high","review_note":"真钱棋牌导航指向赌博平台入口，原 other/low 过低。"}
+{"text":"真钱游戏","category":"illegal","level":"high","review_note":"真钱游戏在博彩语境中指向赌博，原 other/low 过低。"}
+{"text":"真钱游戏网","category":"illegal","level":"high","review_note":"真钱游戏网在博彩语境中指向赌博网站，原 other/low 过低。"}
+{"text":"真钱电子游戏","category":"illegal","level":"high","review_note":"真钱电子游戏在博彩语境中指向赌博，原 other/low 过低。"}
+{"text":"眯眯俱乐部","category":"pornographic","level":"medium","review_note":"处于黄站/成人词簇中，疑指成人俱乐部，原 other/low 过低。"}
+{"text":"着护士的胸","category":"pornographic","level":"medium","review_note":"含性化身体部位描写，原 other/low 过低。"}
+{"text":"睾大阴俊","category":"pornographic","level":"medium","review_note":"含生殖器谐音色情表达，原 other/low 过低。"}
+{"text":"瞎改委抢劫司司长","category":"political","level":"medium","review_note":"含政治机构/官职讽刺语义，原 other/low 过低。"}
+{"text":"瞳佳乃种子","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加种子，原 other/low 过低。"}
+{"text":"瞳爱bt","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加 BT 资源，原 other/low 过低。"}
+{"text":"瞿秋白","category":"political","level":"medium","review_note":"政治历史人物名称，原 other/low 分类过低。"}
+{"text":"矢吹优奈种子","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加种子，原 other/low 过低。"}
+{"text":"矢吹小百合种子","category":"pornographic","level":"medium","review_note":"成人演员名加种子资源语义，原 other/low 过低。"}
+{"text":"矢吹玛利亚种子","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加种子，原 other/low 过低。"}
+{"text":"矢崎茜种子","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加种子，原 other/low 过低。"}
+{"text":"矢泽洋子种子","category":"pornographic","level":"medium","review_note":"成人演员名加种子资源语义，原 other/low 过低。"}
+{"text":"矢泽种子","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名/演员名加种子，原 other/low 过低。"}
+{"text":"矢田亚纪种子","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加种子，原 other/low 过低。"}
+{"text":"矢田凉子种子","category":"pornographic","level":"medium","review_note":"成人演员名加种子资源语义，原 other/low 过低。"}
+{"text":"矢野明奈种子","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加种子，原 other/low 过低。"}
+{"text":"矢野美雪种子","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加种子，原 other/low 过低。"}
+{"text":"知性大婊哥","category":"abuse","level":"medium","review_note":"含婊类侮辱性表达，原 other/low 过低。"}
+{"text":"知譺分子刘晓波","category":"political","level":"medium","review_note":"涉及刘晓波政治人物/公共事件语境，原 other/low 过低。"}
+{"text":"知道64","category":"political","level":"medium","review_note":"含 64 政治事件规避表达，原 other/low 过低。"}
+{"text":"知障","category":"abuse","level":"medium","review_note":"针对智力障碍的贬损辱骂词，原 other/low 过低。"}

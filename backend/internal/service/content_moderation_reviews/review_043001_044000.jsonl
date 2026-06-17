@@ -1,0 +1,341 @@
+{"text":"水浴法制tnt","category":"illegal","level":"high","review_note":"指向 TNT 制备方法，涉及爆炸物制作，原 other/low 过低。"}
+{"text":"永利博娱乐","category":"illegal","level":"high","review_note":"指向博彩娱乐网站，原 other/low 过低。"}
+{"text":"永利娱乐场","category":"illegal","level":"high","review_note":"娱乐场在该上下文中指向赌博平台，原 other/low 过低。"}
+{"text":"永利现金网","category":"illegal","level":"high","review_note":"现金网指向赌博资金平台，原 other/low 过低。"}
+{"text":"永利足球打水扫货软件","category":"illegal","level":"high","review_note":"指向足球博彩打水工具，原 other/low 过低。"}
+{"text":"永利高投注网","category":"illegal","level":"high","review_note":"明确投注网站，原 other/low 过低。"}
+{"text":"永利高现金投注","category":"illegal","level":"high","review_note":"明确现金投注赌博语义，原 other/low 过低。"}
+{"text":"永利高网","category":"illegal","level":"high","review_note":"结合相邻词为赌博平台名称，原 other/low 过低。"}
+{"text":"永利高网址","category":"illegal","level":"high","review_note":"指向赌博平台网址，原 other/low 过低。"}
+{"text":"永利高足球投注网","category":"illegal","level":"high","review_note":"明确足球投注平台，原 other/low 过低。"}
+{"text":"求交配","category":"pornographic","level":"medium","review_note":"明确性行为求约语义，原 other/low 过低。"}
+{"text":"求你插插我吧好痒","category":"pornographic","level":"high","review_note":"露骨性交请求，原 other/low 明显过低。"}
+{"text":"求哥插","category":"pornographic","level":"high","review_note":"明确性交请求，原 other/low 过低。"}
+{"text":"求女男妓","category":"pornographic","level":"high","review_note":"涉及性服务/招嫖语义，原 other/low 过低。"}
+{"text":"求姐脱","category":"pornographic","level":"medium","review_note":"明显色情挑逗语义，原 other/low 过低。"}
+{"text":"求年炮同居","category":"pornographic","level":"high","review_note":"约炮同居语义明确，原 other/low 过低。"}
+{"text":"求性关系","category":"pornographic","level":"medium","review_note":"明确性关系求约，原 other/low 过低。"}
+{"text":"求把自己第1次献给姐姐们","category":"pornographic","level":"medium","review_note":"明显性暗示求约，原 other/low 过低。"}
+{"text":"求操","category":"pornographic","level":"high","review_note":"粗俗性交请求，原 other/low 过低。"}
+{"text":"求欢","category":"pornographic","level":"medium","review_note":"性求欢语义，原 other/low 过低。"}
+{"text":"求爆插","category":"pornographic","level":"high","review_note":"露骨性交请求，原 other/low 过低。"}
+{"text":"求男友求爱爱玩点激情的","category":"pornographic","level":"medium","review_note":"明显性求约语义，原 other/low 过低。"}
+{"text":"求美女床上","category":"pornographic","level":"medium","review_note":"指向床上色情互动，原 other/low 过低。"}
+{"text":"求肾","category":"illegal","level":"high","review_note":"在器官交易语境中指向求购肾源，原 other/low 过低。"}
+{"text":"求自己的爸爸和她干","category":"pornographic","level":"high","review_note":"露骨乱伦性交语义，原 other/low 过低。"}
+{"text":"求被搞","category":"pornographic","level":"medium","review_note":"明确性交求约语义，原 other/low 过低。"}
+{"text":"求购3唑仑片","category":"illegal","level":"high","review_note":"求购三唑仑等管制药物，原 other/low 过低。"}
+{"text":"求购人体器官","category":"illegal","level":"high","review_note":"明确人体器官交易，原 other/low 过低。"}
+{"text":"求购子炮弹壳","category":"illegal","level":"high","review_note":"求购弹壳类武器相关物，原 other/low 过低。"}
+{"text":"求购手拉短狗","category":"illegal","level":"high","review_note":"手拉短狗为枪支谐称，求购语义明确，原 other/low 过低。"}
+{"text":"求购手拉鸡","category":"illegal","level":"high","review_note":"在枪支黑话上下文中指向枪械求购，原 other/low 过低。"}
+{"text":"求购氯胺酮","category":"illegal","level":"high","review_note":"明确求购毒品氯胺酮，原 other/low 过低。"}
+{"text":"汉人反扑持械上街","category":"violence","level":"medium","review_note":"包含群体持械上街和暴力冲突语义，原 other/low 过低。"}
+{"text":"汉人持械出动","category":"violence","level":"medium","review_note":"包含群体持械行动语义，原 other/low 过低。"}
+{"text":"汉奸","category":"abuse","level":"medium","review_note":"常见政治/民族侮辱词，原 other/low 过低。"}
+{"text":"汔狗销售","category":"illegal","level":"high","review_note":"汔狗为气枪谐写，销售指向枪支交易，原 other/low 过低。"}
+{"text":"汕头学生妹服务","category":"pornographic","level":"high","review_note":"学生妹服务在该语境中指向色情服务，原 other/low 过低。"}
+{"text":"江8点江独裁","category":"political","level":"medium","review_note":"针对政治人物的敏感政治攻击词，原 other/low 过低。"}
+{"text":"江丑闻","category":"political","level":"medium","review_note":"针对政治人物的敏感攻击/负面政治词，原 other/low 过低。"}
+{"text":"江恶人","category":"political","level":"medium","review_note":"针对政治人物的攻击性称谓，原 other/low 过低。"}
+{"text":"江昏君","category":"political","level":"medium","review_note":"针对政治人物的攻击性称谓，原 other/low 过低。"}
+{"text":"江氏政治委员","category":"political","level":"medium","review_note":"涉及敏感政治派系组织化表述，原 other/low 过低。"}
+{"text":"江氏政治局","category":"political","level":"medium","review_note":"涉及敏感政治派系组织化表述，原 other/low 过低。"}
+{"text":"江氏集团","category":"political","level":"medium","review_note":"涉及敏感政治派系表述，原 other/low 过低。"}
+{"text":"江泽公审","category":"political","level":"medium","review_note":"针对政治人物的敏感政治动员/攻击语义，原 other/low 过低。"}
+{"text":"江泽民靠","category":"political","level":"medium","review_note":"针对政治人物的辱骂攻击，原 other/low 过低。"}
+{"text":"江派","category":"political","level":"medium","review_note":"敏感政治派系词，原 other/low 过低。"}
+{"text":"江派人马","category":"political","level":"medium","review_note":"敏感政治派系词，原 other/low 过低。"}
+{"text":"江派和胡派","category":"political","level":"medium","review_note":"涉及敏感政治派系对立，原 other/low 过低。"}
+{"text":"江流氓","category":"political","level":"medium","review_note":"针对政治人物的攻击性称谓，原 other/low 过低。"}
+{"text":"江湖艳情录","category":"pornographic","level":"high","review_note":"艳情录指向色情小说/成人内容，原 other/low 过低。"}
+{"text":"江独裁","category":"political","level":"medium","review_note":"针对政治人物的敏感政治攻击词，原 other/low 过低。"}
+{"text":"江猪","category":"political","level":"medium","review_note":"针对政治人物的侮辱性称谓，原 other/low 过低。"}
+{"text":"江猪媳","category":"political","level":"medium","review_note":"针对政治人物及家属的侮辱性称谓，原 other/low 过低。"}
+{"text":"江猪江猪媳","category":"political","level":"medium","review_note":"针对政治人物及家属的侮辱性称谓，原 other/low 过低。"}
+{"text":"江系","category":"political","level":"medium","review_note":"敏感政治派系词，原 other/low 过低。"}
+{"text":"江系人","category":"political","level":"medium","review_note":"敏感政治派系词，原 other/low 过低。"}
+{"text":"江系人马","category":"political","level":"medium","review_note":"敏感政治派系词，原 other/low 过低。"}
+{"text":"江老贼","category":"political","level":"medium","review_note":"针对政治人物的侮辱性称谓，原 other/low 过低。"}
+{"text":"江胡内斗","category":"political","level":"medium","review_note":"涉及敏感政治高层派系斗争，原 other/low 过低。"}
+{"text":"江蛤蟆","category":"political","level":"medium","review_note":"针对政治人物的侮辱性称谓，原 other/low 过低。"}
+{"text":"江蛤蟆江核心","category":"political","level":"medium","review_note":"针对政治人物的敏感侮辱性称谓，原 other/low 过低。"}
+{"text":"江贼","category":"political","level":"medium","review_note":"针对政治人物的侮辱性称谓，原 other/low 过低。"}
+{"text":"江贼民","category":"political","level":"medium","review_note":"针对政治人物姓名的侮辱性变体，原 other/low 过低。"}
+{"text":"江贼民江折民","category":"political","level":"medium","review_note":"针对政治人物姓名的侮辱性变体，原 other/low 过低。"}
+{"text":"江魔头","category":"political","level":"medium","review_note":"针对政治人物的攻击性称谓，原 other/low 过低。"}
+{"text":"江黑心","category":"political","level":"medium","review_note":"针对政治人物的攻击性称谓，原 other/low 过低。"}
+{"text":"汽gou专卖","category":"illegal","level":"high","review_note":"汽gou 为气枪谐写，专卖指向枪支交易，原 other/low 过低。"}
+{"text":"汽gou专卖网","category":"illegal","level":"high","review_note":"汽gou 为气枪谐写，专卖网指向枪支交易，原 other/low 过低。"}
+{"text":"汽gou出售","category":"illegal","level":"high","review_note":"汽gou 为气枪谐写，出售指向枪支交易，原 ad/low 过低。"}
+{"text":"汽gou批发","category":"illegal","level":"high","review_note":"汽gou 为气枪谐写，批发指向枪支交易，原 other/low 过低。"}
+{"text":"汽gou销售","category":"illegal","level":"high","review_note":"汽gou 为气枪谐写，销售指向枪支交易，原 other/low 过低。"}
+{"text":"汽动狗供应","category":"illegal","level":"high","review_note":"汽动狗为气枪谐称，供应指向枪支交易，原 other/low 过低。"}
+{"text":"汽动狗出售","category":"illegal","level":"high","review_note":"汽动狗为气枪谐称，出售指向枪支交易，原 ad/low 过低。"}
+{"text":"汽动狗批发","category":"illegal","level":"high","review_note":"汽动狗为气枪谐称，批发指向枪支交易，原 other/low 过低。"}
+{"text":"汽动狗提供","category":"illegal","level":"high","review_note":"汽动狗为气枪谐称，提供指向枪支交易，原 other/low 过低。"}
+{"text":"汽动狗直销","category":"illegal","level":"high","review_note":"汽动狗为气枪谐称，直销指向枪支交易，原 other/low 过低。"}
+{"text":"汽动狗订购","category":"illegal","level":"high","review_note":"汽动狗为气枪谐称，订购指向枪支交易，原 other/low 过低。"}
+{"text":"汽动狗购买","category":"illegal","level":"high","review_note":"汽动狗为气枪谐称，购买指向枪支交易，原 other/low 过低。"}
+{"text":"汽动狗转让","category":"illegal","level":"high","review_note":"汽动狗为气枪谐称，转让指向枪支交易，原 other/low 过低。"}
+{"text":"汽动狗销售","category":"illegal","level":"high","review_note":"汽动狗为气枪谐称，销售指向枪支交易，原 other/low 过低。"}
+{"text":"汽动钢珠枪订购qq","category":"ad","level":"low","review_note":"含 qq 导流，按规则应归 ad/low，不直接按枪支高危拦截。"}
+{"text":"汽手枪供应qq","category":"ad","level":"low","review_note":"含 qq 导流，按规则应归 ad/low，不直接按枪支高危拦截。"}
+{"text":"汽手枪批发qq","category":"ad","level":"low","review_note":"含 qq 导流，按规则应归 ad/low，不直接按枪支高危拦截。"}
+{"text":"汽手枪提供qq","category":"ad","level":"low","review_note":"含 qq 导流，按规则应归 ad/low，不直接按枪支高危拦截。"}
+{"text":"汽手枪直销qq","category":"ad","level":"low","review_note":"含 qq 导流，按规则应归 ad/low，不直接按枪支高危拦截。"}
+{"text":"汽手枪订购qq","category":"ad","level":"low","review_note":"含 qq 导流，按规则应归 ad/low，不直接按枪支高危拦截。"}
+{"text":"汽手枪购买qq","category":"ad","level":"low","review_note":"含 qq 导流，按规则应归 ad/low，不直接按枪支高危拦截。"}
+{"text":"汽手狗专卖","category":"illegal","level":"high","review_note":"汽手狗为气手枪谐称，专卖指向枪支交易，原 other/low 过低。"}
+{"text":"汽木仓专卖","category":"illegal","level":"high","review_note":"汽木仓为气枪谐写，专卖指向枪支交易，原 other/low 过低。"}
+{"text":"汽木仓供应","category":"illegal","level":"high","review_note":"汽木仓为气枪谐写，供应指向枪支交易，原 other/low 过低。"}
+{"text":"汽木仓出售","category":"illegal","level":"high","review_note":"汽木仓为气枪谐写，出售指向枪支交易，原 ad/low 过低。"}
+{"text":"汽木仓销售","category":"illegal","level":"high","review_note":"汽木仓为气枪谐写，销售指向枪支交易，原 other/low 过低。"}
+{"text":"汽枪qq","category":"ad","level":"low","review_note":"含 qq 导流，按规则应归 ad/low，不直接按枪支高危拦截。"}
+{"text":"汽枪专卖qq","category":"ad","level":"low","review_note":"含 qq 导流，按规则应归 ad/low，不直接按枪支高危拦截。"}
+{"text":"汽枪专卖热线","category":"ad","level":"low","review_note":"含热线导流，按规则应归 ad/low，不直接按枪支高危拦截。"}
+{"text":"汽枪打猎qq","category":"ad","level":"low","review_note":"含 qq 导流，按规则应归 ad/low，不直接按枪支高危拦截。"}
+{"text":"汽枪提供qq","category":"ad","level":"low","review_note":"含 qq 导流，按规则应归 ad/low，不直接按枪支高危拦截。"}
+{"text":"汽枪联系qq","category":"ad","level":"low","review_note":"含 qq 导流，按规则应归 ad/low，不直接按枪支高危拦截。"}
+{"text":"汽枪订购qq","category":"ad","level":"low","review_note":"含 qq 导流，按规则应归 ad/low，不直接按枪支高危拦截。"}
+{"text":"汽枪购买qq","category":"ad","level":"low","review_note":"含 qq 导流，按规则应归 ad/low，不直接按枪支高危拦截。"}
+{"text":"汽枪转让qq","category":"ad","level":"low","review_note":"含 qq 导流，按规则应归 ad/low，不直接按枪支高危拦截。"}
+{"text":"汽枪配件供应qq","category":"ad","level":"low","review_note":"含 qq 导流，按规则应归 ad/low，不直接按枪支高危拦截。"}
+{"text":"汽枪配件出售qq","category":"ad","level":"low","review_note":"含 qq 导流，按规则应归 ad/low，不直接按枪支高危拦截。"}
+{"text":"汽枪配件批发qq","category":"ad","level":"low","review_note":"含 qq 导流，按规则应归 ad/low，不直接按枪支高危拦截。"}
+{"text":"汽枪配件直销qq","category":"ad","level":"low","review_note":"含 qq 导流，按规则应归 ad/low，不直接按枪支高危拦截。"}
+{"text":"汽枪配件购买qq","category":"ad","level":"low","review_note":"含 qq 导流，按规则应归 ad/low，不直接按枪支高危拦截。"}
+{"text":"汽枪配件销售qq","category":"ad","level":"low","review_note":"含 qq 导流，按规则应归 ad/low，不直接按枪支高危拦截。"}
+{"text":"汽枪铅弹供应qq","category":"ad","level":"low","review_note":"含 qq 导流，按规则应归 ad/low，不直接按枪支高危拦截。"}
+{"text":"汽枪铅弹出售qq","category":"ad","level":"low","review_note":"含 qq 导流，按规则应归 ad/low，不直接按枪支高危拦截。"}
+{"text":"汽枪铅弹批发qq","category":"ad","level":"low","review_note":"含 qq 导流，按规则应归 ad/low，不直接按枪支高危拦截。"}
+{"text":"汽枪铅弹销售qq","category":"ad","level":"low","review_note":"含 qq 导流，按规则应归 ad/low，不直接按枪支高危拦截。"}
+{"text":"汽枪销售qq","category":"ad","level":"low","review_note":"含 qq 导流，按规则应归 ad/low，不直接按枪支高危拦截。"}
+{"text":"汽步枪买卖qq","category":"ad","level":"low","review_note":"含 qq 导流，按规则应归 ad/low，不直接按枪支高危拦截。"}
+{"text":"汽步枪供应qq","category":"ad","level":"low","review_note":"含 qq 导流，按规则应归 ad/low，不直接按枪支高危拦截。"}
+{"text":"汽步枪出售qq","category":"ad","level":"low","review_note":"含 qq 导流，按规则应归 ad/low，不直接按枪支高危拦截。"}
+{"text":"汽步枪批发qq","category":"ad","level":"low","review_note":"含 qq 导流，按规则应归 ad/low，不直接按枪支高危拦截。"}
+{"text":"汽步枪提供qq","category":"ad","level":"low","review_note":"含 qq 导流，按规则应归 ad/low，不直接按枪支高危拦截。"}
+{"text":"汽步枪直销qq","category":"ad","level":"low","review_note":"含 qq 导流，按规则应归 ad/low，不直接按枪支高危拦截。"}
+{"text":"汽步枪订购qq","category":"ad","level":"low","review_note":"含 qq 导流，按规则应归 ad/low，不直接按枪支高危拦截。"}
+{"text":"汽步枪转让qq","category":"ad","level":"low","review_note":"含 qq 导流，按规则应归 ad/low，不直接按枪支高危拦截。"}
+{"text":"汽步枪销售qq","category":"ad","level":"low","review_note":"含 qq 导流，按规则应归 ad/low，不直接按枪支高危拦截。"}
+{"text":"汽油3分之1白糖混合","category":"violence","level":"high","review_note":"指向燃烧/破坏性混合物配方，原 other/low 过低。"}
+{"text":"汽油弹","category":"violence","level":"high","review_note":"明确燃烧武器，原 other/low 过低。"}
+{"text":"汽油弹简易制作教程","category":"violence","level":"high","review_note":"明确燃烧武器制作教程，原 other/low 过低。"}
+{"text":"汽油燃烧弹diy","category":"violence","level":"high","review_note":"明确燃烧武器自制内容，原 other/low 过低。"}
+{"text":"汽油燃烧瓶diy","category":"violence","level":"high","review_note":"明确燃烧瓶自制内容，原 other/low 过低。"}
+{"text":"汽油燃烧瓶自制方法","category":"violence","level":"high","review_note":"明确燃烧瓶制作方法，原 other/low 过低。"}
+{"text":"汽狗专卖","category":"illegal","level":"high","review_note":"汽狗为气枪谐称，专卖指向枪支交易，原 other/low 过低。"}
+{"text":"汽狗专卖0售","category":"illegal","level":"high","review_note":"汽狗为气枪谐称，专卖零售指向枪支交易，原 other/low 过低。"}
+{"text":"汽狗专卖网","category":"illegal","level":"high","review_note":"汽狗为气枪谐称，专卖网指向枪支交易，原 other/low 过低。"}
+{"text":"汽狗专销","category":"illegal","level":"high","review_note":"汽狗为气枪谐称，专销指向枪支交易，原 other/low 过低。"}
+{"text":"汽狗买卖","category":"illegal","level":"high","review_note":"汽狗为气枪谐称，买卖指向枪支交易，原 other/low 过低。"}
+{"text":"汽狗供应","category":"illegal","level":"high","review_note":"汽狗为气枪谐称，供应指向枪支交易，原 other/low 过低。"}
+{"text":"汽狗出售","category":"illegal","level":"high","review_note":"汽狗为气枪谐称，出售指向枪支交易，原 ad/low 过低。"}
+{"text":"汽狗出货","category":"illegal","level":"high","review_note":"汽狗为气枪谐称，出货指向枪支交易，原 other/low 过低。"}
+{"text":"汽狗到货","category":"illegal","level":"high","review_note":"汽狗为气枪谐称，到货指向枪支交易，原 other/low 过低。"}
+{"text":"汽狗制造图","category":"illegal","level":"high","review_note":"汽狗为气枪谐称，制造图涉及枪支制作，原 other/low 过低。"}
+{"text":"汽狗批发","category":"illegal","level":"high","review_note":"汽狗为气枪谐称，批发指向枪支交易，原 other/low 过低。"}
+{"text":"汽狗支付宝专卖","category":"illegal","level":"high","review_note":"汽狗为气枪谐称，支付宝专卖指向枪支交易，原 other/low 过低。"}
+{"text":"汽狗狗粮专卖","category":"illegal","level":"high","review_note":"狗粮为弹药黑话，专卖指向枪支弹药交易，原 other/low 过低。"}
+{"text":"汽狗狗粮批发","category":"illegal","level":"high","review_note":"狗粮为弹药黑话，批发指向枪支弹药交易，原 other/low 过低。"}
+{"text":"汽狗订购","category":"illegal","level":"high","review_note":"汽狗为气枪谐称，订购指向枪支交易，原 other/low 过低。"}
+{"text":"汽狗配件供应","category":"illegal","level":"high","review_note":"汽狗配件供应指向枪支配件交易，原 other/low 过低。"}
+{"text":"汽狗配件批发","category":"illegal","level":"high","review_note":"汽狗配件批发指向枪支配件交易，原 other/low 过低。"}
+{"text":"汽狗配件提供","category":"illegal","level":"high","review_note":"汽狗配件提供指向枪支配件交易，原 other/low 过低。"}
+{"text":"汽狗销售","category":"illegal","level":"high","review_note":"汽狗为气枪谐称，销售指向枪支交易，原 other/low 过低。"}
+{"text":"汽短狗批发","category":"illegal","level":"high","review_note":"汽短狗为短气枪谐称，批发指向枪支交易，原 other/low 过低。"}
+{"text":"汽短狗提供","category":"illegal","level":"high","review_note":"汽短狗为短气枪谐称，提供指向枪支交易，原 other/low 过低。"}
+{"text":"汽短狗直销","category":"illegal","level":"high","review_note":"汽短狗为短气枪谐称，直销指向枪支交易，原 other/low 过低。"}
+{"text":"汽短狗订购","category":"illegal","level":"high","review_note":"汽短狗为短气枪谐称，订购指向枪支交易，原 other/low 过低。"}
+{"text":"汽短狗购买","category":"illegal","level":"high","review_note":"汽短狗为短气枪谐称，购买指向枪支交易，原 other/low 过低。"}
+{"text":"汽短狗转让","category":"illegal","level":"high","review_note":"汽短狗为短气枪谐称，转让指向枪支交易，原 other/low 过低。"}
+{"text":"汽车万能钥匙","category":"illegal","level":"high","review_note":"万能钥匙可用于非法开锁，原 other/low 过低。"}
+{"text":"汽车专用解码器出售","category":"illegal","level":"high","review_note":"汽车解码器出售指向盗车黑产工具交易，原 ad/low 过低。"}
+{"text":"汽车中控干扰器","category":"illegal","level":"high","review_note":"汽车中控干扰器属于盗车/干扰黑产工具，原 other/low 过低。"}
+{"text":"汽车中控干扰器直销","category":"illegal","level":"high","review_note":"汽车中控干扰器直销指向黑产工具交易，原 other/low 过低。"}
+{"text":"汽车信号屏蔽器出售","category":"illegal","level":"high","review_note":"汽车信号屏蔽器出售指向盗车黑产工具交易，原 ad/low 过低。"}
+{"text":"汽车信号屏蔽器销售","category":"illegal","level":"high","review_note":"汽车信号屏蔽器销售指向黑产工具交易，原 other/low 过低。"}
+{"text":"汽车信号干扰器出售","category":"illegal","level":"high","review_note":"汽车信号干扰器出售指向盗车黑产工具交易，原 ad/low 过低。"}
+{"text":"汽车信号干扰器批发","category":"illegal","level":"high","review_note":"汽车信号干扰器批发指向黑产工具交易，原 other/low 过低。"}
+{"text":"汽车信号干扰器销售","category":"illegal","level":"high","review_note":"汽车信号干扰器销售指向黑产工具交易，原 other/low 过低。"}
+{"text":"汽车套开","category":"illegal","level":"high","review_note":"疑似套牌/套开相关黑产词，原 other/low 过低。"}
+{"text":"汽车屏蔽器供应","category":"illegal","level":"high","review_note":"汽车屏蔽器供应指向黑产工具交易，原 other/low 过低。"}
+{"text":"汽车干扰器","category":"illegal","level":"high","review_note":"汽车干扰器属于盗车/干扰黑产工具，原 other/low 过低。"}
+{"text":"汽车干扰器哪里买","category":"illegal","level":"high","review_note":"求购汽车干扰器黑产工具，原 other/low 过低。"}
+{"text":"汽车干扰器批发","category":"illegal","level":"high","review_note":"汽车干扰器批发指向黑产工具交易，原 other/low 过低。"}
+{"text":"汽车干扰器提供","category":"illegal","level":"high","review_note":"汽车干扰器提供指向黑产工具交易，原 other/low 过低。"}
+{"text":"汽车干扰器直销","category":"illegal","level":"high","review_note":"汽车干扰器直销指向黑产工具交易，原 other/low 过低。"}
+{"text":"汽车开锁工具批发","category":"illegal","level":"high","review_note":"汽车开锁工具批发指向非法开锁工具交易，原 other/low 过低。"}
+{"text":"汽车拦截器专卖","category":"illegal","level":"high","review_note":"汽车拦截器专卖指向盗车黑产工具交易，原 other/low 过低。"}
+{"text":"汽车拦截器供应","category":"illegal","level":"high","review_note":"汽车拦截器供应指向盗车黑产工具交易，原 other/low 过低。"}
+{"text":"汽车拦截器批发","category":"illegal","level":"high","review_note":"汽车拦截器批发指向盗车黑产工具交易，原 other/low 过低。"}
+{"text":"汽车拦截器直销","category":"illegal","level":"high","review_note":"汽车拦截器直销指向盗车黑产工具交易，原 other/low 过低。"}
+{"text":"汽车拦截解码器","category":"illegal","level":"high","review_note":"汽车拦截解码器属于盗车黑产工具，原 other/low 过低。"}
+{"text":"汽车电子干扰器专卖","category":"illegal","level":"high","review_note":"汽车电子干扰器专卖指向黑产工具交易，原 other/low 过低。"}
+{"text":"汽车电子干扰器出售","category":"illegal","level":"high","review_note":"汽车电子干扰器出售指向黑产工具交易，原 ad/low 过低。"}
+{"text":"汽车电子干扰器批发","category":"illegal","level":"high","review_note":"汽车电子干扰器批发指向黑产工具交易，原 other/low 过低。"}
+{"text":"汽车电子干扰器直销","category":"illegal","level":"high","review_note":"汽车电子干扰器直销指向黑产工具交易，原 other/low 过低。"}
+{"text":"汽车电子干扰器销售","category":"illegal","level":"high","review_note":"汽车电子干扰器销售指向黑产工具交易，原 other/low 过低。"}
+{"text":"汽车电子干扰器销售网","category":"illegal","level":"high","review_note":"汽车电子干扰器销售网指向黑产工具交易，原 other/low 过低。"}
+{"text":"汽车翻转牌照架","category":"illegal","level":"high","review_note":"翻转牌照架用于规避车牌识别，属于违法工具，原 other/low 过低。"}
+{"text":"汽车芯片解码器出售","category":"illegal","level":"high","review_note":"汽车芯片解码器出售指向盗车黑产工具交易，原 ad/low 过低。"}
+{"text":"汽车芯片解码器销售","category":"illegal","level":"high","review_note":"汽车芯片解码器销售指向盗车黑产工具交易，原 other/low 过低。"}
+{"text":"汽车解码","category":"illegal","level":"high","review_note":"在该黑产上下文中指向汽车非法解码，原 other/low 过低。"}
+{"text":"汽车解码仪器","category":"illegal","level":"high","review_note":"汽车解码仪器属于盗车黑产工具，原 other/low 过低。"}
+{"text":"汽车解码器供应","category":"illegal","level":"high","review_note":"汽车解码器供应指向盗车黑产工具交易，原 other/low 过低。"}
+{"text":"汽车解码器提供","category":"illegal","level":"high","review_note":"汽车解码器提供指向盗车黑产工具交易，原 other/low 过低。"}
+{"text":"汽车解码器直销","category":"illegal","level":"high","review_note":"汽车解码器直销指向盗车黑产工具交易，原 other/low 过低。"}
+{"text":"汽车走表器","category":"illegal","level":"high","review_note":"走表器涉及里程表造假工具，原 other/low 过低。"}
+{"text":"汽车进口干扰器供应","category":"illegal","level":"high","review_note":"汽车干扰器供应指向黑产工具交易，原 other/low 过低。"}
+{"text":"汽车遥控器干扰器","category":"illegal","level":"high","review_note":"汽车遥控器干扰器属于盗车/干扰黑产工具，原 other/low 过低。"}
+{"text":"汽车遥控干扰器专卖","category":"illegal","level":"high","review_note":"汽车遥控干扰器专卖指向黑产工具交易，原 other/low 过低。"}
+{"text":"汽车遥控干扰器供应","category":"illegal","level":"high","review_note":"汽车遥控干扰器供应指向黑产工具交易，原 other/low 过低。"}
+{"text":"汽车遥控干扰器出售","category":"illegal","level":"high","review_note":"汽车遥控干扰器出售指向黑产工具交易，原 ad/low 过低。"}
+{"text":"汽车遥控干扰器提供","category":"illegal","level":"high","review_note":"汽车遥控干扰器提供指向黑产工具交易，原 other/low 过低。"}
+{"text":"汽车遥控拦截器","category":"illegal","level":"high","review_note":"汽车遥控拦截器属于盗车黑产工具，原 other/low 过低。"}
+{"text":"汽车遥控拦截器出售","category":"illegal","level":"high","review_note":"汽车遥控拦截器出售指向黑产工具交易，原 ad/low 过低。"}
+{"text":"汽车遥控拦截器直销","category":"illegal","level":"high","review_note":"汽车遥控拦截器直销指向黑产工具交易，原 other/low 过低。"}
+{"text":"汽车遥控拦截器网站","category":"illegal","level":"high","review_note":"汽车遥控拦截器网站指向黑产工具渠道，原 other/low 过低。"}
+{"text":"汽车遥控拦截器销售","category":"illegal","level":"high","review_note":"汽车遥控拦截器销售指向黑产工具交易，原 other/low 过低。"}
+{"text":"汽车遥控破解器销售","category":"illegal","level":"high","review_note":"汽车遥控破解器销售指向盗车黑产工具交易，原 other/low 过低。"}
+{"text":"汽车遥控解码专卖","category":"illegal","level":"high","review_note":"汽车遥控解码专卖指向盗车黑产工具交易，原 other/low 过低。"}
+{"text":"汽车遥控解码器出售","category":"illegal","level":"high","review_note":"汽车遥控解码器出售指向盗车黑产工具交易，原 ad/low 过低。"}
+{"text":"汽车遥控解码器批发","category":"illegal","level":"high","review_note":"汽车遥控解码器批发指向盗车黑产工具交易，原 other/low 过低。"}
+{"text":"汽车门锁解码器直销","category":"illegal","level":"high","review_note":"汽车门锁解码器直销指向盗车黑产工具交易，原 other/low 过低。"}
+{"text":"汽车防盗解码器批发","category":"illegal","level":"high","review_note":"汽车防盗解码器批发指向盗车黑产工具交易，原 other/low 过低。"}
+{"text":"汽长狗批发","category":"illegal","level":"high","review_note":"汽长狗为长气枪谐称，批发指向枪支交易，原 other/low 过低。"}
+{"text":"汽长狗提供","category":"illegal","level":"high","review_note":"汽长狗为长气枪谐称，提供指向枪支交易，原 other/low 过低。"}
+{"text":"汽长狗直销","category":"illegal","level":"high","review_note":"汽长狗为长气枪谐称，直销指向枪支交易，原 other/low 过低。"}
+{"text":"汽长狗订购","category":"illegal","level":"high","review_note":"汽长狗为长气枪谐称，订购指向枪支交易，原 other/low 过低。"}
+{"text":"汽长狗购买","category":"illegal","level":"high","review_note":"汽长狗为长气枪谐称，购买指向枪支交易，原 other/low 过低。"}
+{"text":"汽长狗转让","category":"illegal","level":"high","review_note":"汽长狗为长气枪谐称，转让指向枪支交易，原 other/low 过低。"}
+{"text":"汽长狗销售","category":"illegal","level":"high","review_note":"汽长狗为长气枪谐称，销售指向枪支交易，原 other/low 过低。"}
+{"text":"沙林","category":"illegal","level":"high","review_note":"沙林为化学毒剂/化学武器，原 other/low 过低。"}
+{"text":"沙比","category":"abuse","level":"medium","review_note":"傻逼谐写，属于明显辱骂词，原 other/low 过低。"}
+{"text":"沙漠之鹰","category":"illegal","level":"high","review_note":"明确枪支型号，原 other/low 过低。"}
+{"text":"沙漠之鹰专卖","category":"illegal","level":"high","review_note":"明确枪支专卖，原 other/low 过低。"}
+{"text":"沙漠之鹰供应","category":"illegal","level":"high","review_note":"明确枪支供应，原 other/low 过低。"}
+{"text":"沙漠之鹰出售","category":"illegal","level":"high","review_note":"明确枪支出售，原 ad/low 过低。"}
+{"text":"沙漠之鹰批发","category":"illegal","level":"high","review_note":"明确枪支批发，原 other/low 过低。"}
+{"text":"沙漠之鹰提供","category":"illegal","level":"high","review_note":"明确枪支提供，原 other/low 过低。"}
+{"text":"沙漠之鹰直销","category":"illegal","level":"high","review_note":"明确枪支直销，原 other/low 过低。"}
+{"text":"沙漠之鹰订购","category":"illegal","level":"high","review_note":"明确枪支订购，原 other/low 过低。"}
+{"text":"沙漠之鹰转让","category":"illegal","level":"high","review_note":"明确枪支转让，原 other/low 过低。"}
+{"text":"沙漠之鹰销售","category":"illegal","level":"high","review_note":"明确枪支销售，原 other/low 过低。"}
+{"text":"沙鹰","category":"illegal","level":"high","review_note":"沙鹰为沙漠之鹰枪支简称，原 other/low 过低。"}
+{"text":"没事还可以兼职日赚800不是问题","category":"ad","level":"low","review_note":"典型兼职日赚广告导流话术，原 other/low 分类不准。"}
+{"text":"没事还可以搛职日赚800不是问题","category":"ad","level":"low","review_note":"兼职日赚广告导流话术的错写，原 other/low 分类不准。"}
+{"text":"泄欲罢了","category":"pornographic","level":"medium","review_note":"明显性欲宣泄语义，原 other/low 过低。"}
+{"text":"法0功","category":"political","level":"medium","review_note":"法轮功变体，属于敏感政治/组织词，原 other/low 过低。"}
+{"text":"法1轮","category":"political","level":"medium","review_note":"法轮功相关变体，属于敏感政治/组织词，原 other/low 过低。"}
+{"text":"法1轮1功","category":"political","level":"medium","review_note":"法轮功变体，属于敏感政治/组织词，原 other/low 过低。"}
+{"text":"法lg","category":"political","level":"medium","review_note":"法轮功缩写变体，属于敏感政治/组织词，原 other/low 过低。"}
+{"text":"法lun","category":"political","level":"medium","review_note":"法轮功拼音变体，属于敏感政治/组织词，原 other/low 过低。"}
+{"text":"法lungong","category":"political","level":"medium","review_note":"法轮功拼音变体，属于敏感政治/组织词，原 other/low 过低。"}
+{"text":"法lun功","category":"political","level":"medium","review_note":"法轮功混写变体，属于敏感政治/组织词，原 other/low 过低。"}
+{"text":"法lun大法","category":"political","level":"medium","review_note":"法轮功宣传词混写，原 other/low 过低。"}
+{"text":"法l功","category":"political","level":"medium","review_note":"法轮功混写变体，属于敏感政治/组织词，原 other/low 过低。"}
+{"text":"法o功","category":"political","level":"medium","review_note":"法轮功变体，属于敏感政治/组织词，原 other/low 过低。"}
+{"text":"法x功","category":"political","level":"medium","review_note":"法轮功变体，属于敏感政治/组织词，原 other/low 过低。"}
+{"text":"法仑公","category":"political","level":"medium","review_note":"法轮功谐写，属于敏感政治/组织词，原 other/low 过低。"}
+{"text":"法仑共","category":"political","level":"medium","review_note":"法轮功谐写，属于敏感政治/组织词，原 other/low 过低。"}
+{"text":"法仑功","category":"political","level":"medium","review_note":"法轮功谐写，属于敏感政治/组织词，原 other/low 过低。"}
+{"text":"法仑工","category":"political","level":"medium","review_note":"法轮功谐写，属于敏感政治/组织词，原 other/low 过低。"}
+{"text":"法仑攻","category":"political","level":"medium","review_note":"法轮功谐写，属于敏感政治/组织词，原 other/low 过低。"}
+{"text":"法伦功","category":"political","level":"medium","review_note":"法轮功谐写，属于敏感政治/组织词，原 other/low 过低。"}
+{"text":"法光照耀快快回家","category":"political","level":"medium","review_note":"疑似法轮功宣传动员话术，原 other/low 过低。"}
+{"text":"法功","category":"political","level":"medium","review_note":"法轮功简称/变体，属于敏感政治/组织词，原 other/low 过低。"}
+{"text":"法十轮十功","category":"political","level":"medium","review_note":"法轮功拆字变体，属于敏感政治/组织词，原 other/low 过低。"}
+{"text":"法囵功","category":"political","level":"medium","review_note":"法轮功谐写，属于敏感政治/组织词，原 other/low 过低。"}
+{"text":"法埨功","category":"political","level":"medium","review_note":"法轮功谐写，属于敏感政治/组织词，原 other/low 过低。"}
+{"text":"法婨功","category":"political","level":"medium","review_note":"法轮功谐写，属于敏感政治/组织词，原 other/low 过低。"}
+{"text":"法崘功","category":"political","level":"medium","review_note":"法轮功谐写，属于敏感政治/组织词，原 other/low 过低。"}
+{"text":"法惀功","category":"political","level":"medium","review_note":"法轮功谐写，属于敏感政治/组织词，原 other/low 过低。"}
+{"text":"法抡功","category":"political","level":"medium","review_note":"法轮功谐写，属于敏感政治/组织词，原 other/low 过低。"}
+{"text":"法某功","category":"political","level":"medium","review_note":"法轮功规避写法，属于敏感政治/组织词，原 other/low 过低。"}
+{"text":"法棆功","category":"political","level":"medium","review_note":"法轮功谐写，属于敏感政治/组织词，原 other/low 过低。"}
+{"text":"法沦功","category":"political","level":"medium","review_note":"法轮功谐写，属于敏感政治/组织词，原 other/low 过低。"}
+{"text":"法溣功","category":"political","level":"medium","review_note":"法轮功谐写，属于敏感政治/组织词，原 other/low 过低。"}
+{"text":"法碖功","category":"political","level":"medium","review_note":"法轮功谐写，属于敏感政治/组织词，原 other/low 过低。"}
+{"text":"法磮功","category":"political","level":"medium","review_note":"法轮功谐写，属于敏感政治/组织词，原 other/low 过低。"}
+{"text":"法稐功","category":"political","level":"medium","review_note":"法轮功谐写，属于敏感政治/组织词，原 other/low 过低。"}
+{"text":"法耣功","category":"political","level":"medium","review_note":"法轮功谐写，属于敏感政治/组织词，原 other/low 过低。"}
+{"text":"法腀功","category":"political","level":"medium","review_note":"法轮功谐写，属于敏感政治/组织词，原 other/low 过低。"}
+{"text":"法芲功","category":"political","level":"medium","review_note":"法轮功谐写，属于敏感政治/组织词，原 other/low 过低。"}
+{"text":"法蜦功","category":"political","level":"medium","review_note":"法轮功谐写，属于敏感政治/组织词，原 other/low 过低。"}
+{"text":"法西藏主义","category":"political","level":"medium","review_note":"涉及敏感政治分离主义表述，原 other/low 过低。"}
+{"text":"法论公","category":"political","level":"medium","review_note":"法轮功谐写，属于敏感政治/组织词，原 other/low 过低。"}
+{"text":"法论共","category":"political","level":"medium","review_note":"法轮功谐写，属于敏感政治/组织词，原 other/low 过低。"}
+{"text":"法论功","category":"political","level":"medium","review_note":"法轮功谐写，属于敏感政治/组织词，原 other/low 过低。"}
+{"text":"法论工","category":"political","level":"medium","review_note":"法轮功谐写，属于敏感政治/组织词，原 other/low 过低。"}
+{"text":"法论攻","category":"political","level":"medium","review_note":"法轮功谐写，属于敏感政治/组织词，原 other/low 过低。"}
+{"text":"法谪功","category":"political","level":"medium","review_note":"法轮功谐写，属于敏感政治/组织词，原 other/low 过低。"}
+{"text":"法踚功","category":"political","level":"medium","review_note":"法轮功谐写，属于敏感政治/组织词，原 other/low 过低。"}
+{"text":"法车仑功","category":"political","level":"medium","review_note":"法轮功拆字变体，属于敏感政治/组织词，原 other/low 过低。"}
+{"text":"法车仑工力","category":"political","level":"medium","review_note":"法轮功拆字变体，属于敏感政治/组织词，原 other/low 过低。"}
+{"text":"法轮gong","category":"political","level":"medium","review_note":"法轮功混写变体，属于敏感政治/组织词，原 other/low 过低。"}
+{"text":"法轮义","category":"political","level":"medium","review_note":"法轮功相关组织变体，原 other/low 过低。"}
+{"text":"法轮会","category":"political","level":"medium","review_note":"法轮功相关组织词，原 other/low 过低。"}
+{"text":"法轮佛","category":"political","level":"medium","review_note":"法轮功相关宣传词，原 other/low 过低。"}
+{"text":"法轮佛法","category":"political","level":"medium","review_note":"法轮功相关宣传词，原 other/low 过低。"}
+{"text":"法轮公","category":"political","level":"medium","review_note":"法轮功谐写，属于敏感政治/组织词，原 other/low 过低。"}
+{"text":"法轮共","category":"political","level":"medium","review_note":"法轮功谐写，属于敏感政治/组织词，原 other/low 过低。"}
+{"text":"法轮功","category":"political","level":"medium","review_note":"明确敏感政治/组织词，原 other/low 过低。"}
+{"text":"法轮功靠","category":"political","level":"medium","review_note":"法轮功相关辱骂/变体词，原 other/low 过低。"}
+{"text":"法轮大法","category":"political","level":"medium","review_note":"明确法轮功宣传词，原 other/low 过低。"}
+{"text":"法轮大法靠","category":"political","level":"medium","review_note":"法轮功宣传词并带辱骂语义，原 other/low 过低。"}
+{"text":"法轮工","category":"political","level":"medium","review_note":"法轮功谐写，属于敏感政治/组织词，原 other/low 过低。"}
+{"text":"法轮攻","category":"political","level":"medium","review_note":"法轮功谐写，属于敏感政治/组织词，原 other/low 过低。"}
+{"text":"法轮村","category":"political","level":"medium","review_note":"法轮功相关组织/群体变体，原 other/low 过低。"}
+{"text":"法陯功","category":"political","level":"medium","review_note":"法轮功谐写，属于敏感政治/组织词，原 other/low 过低。"}
+{"text":"法鯩功","category":"political","level":"medium","review_note":"法轮功谐写，属于敏感政治/组织词，原 other/low 过低。"}
+{"text":"法黁功","category":"political","level":"medium","review_note":"法轮功谐写，属于敏感政治/组织词，原 other/low 过低。"}
+{"text":"法𬬭功","category":"political","level":"medium","review_note":"法轮功谐写，属于敏感政治/组织词，原 other/low 过低。"}
+{"text":"波多野结衣qvod","category":"pornographic","level":"high","review_note":"成人女优名加播放资源词，指向色情资源，原 other/low 过低。"}
+{"text":"波多野结衣tokyo247套图","category":"pornographic","level":"high","review_note":"成人女优套图资源，原 other/low 过低。"}
+{"text":"波多野结衣下载","category":"pornographic","level":"high","review_note":"成人女优资源下载语义，原 other/low 过低。"}
+{"text":"波多野结衣作品下载","category":"pornographic","level":"high","review_note":"成人女优作品下载语义，原 other/low 过低。"}
+{"text":"波多野结衣合集下载","category":"pornographic","level":"high","review_note":"成人女优合集下载语义，原 other/low 过低。"}
+{"text":"波多野结衣种子","category":"pornographic","level":"high","review_note":"成人女优种子资源语义，原 other/low 过低。"}
+{"text":"波多野结衣视频","category":"pornographic","level":"high","review_note":"成人女优视频资源语义，原 other/low 过低。"}
+{"text":"波霸乳交器具","category":"pornographic","level":"high","review_note":"明确色情器具/性行为语义，原 other/low 过低。"}
+{"text":"注册激情电影","category":"pornographic","level":"high","review_note":"指向成人激情电影资源，原 other/low 过低。"}
+{"text":"注册激情电影切记只允许法规年龄的人注册注册快感吧","category":"pornographic","level":"high","review_note":"成人影片注册导流语义明确，原 other/low 过低。"}
+{"text":"注册美女捰聊网","category":"pornographic","level":"high","review_note":"捰聊为裸聊错写，指向色情服务网站，原 other/low 过低。"}
+{"text":"注册送20元真人棋牌","category":"ad","level":"low","review_note":"真人棋牌注册送彩金广告导流，按规则应归 ad/low。"}
+{"text":"注册送现金真人棋牌","category":"ad","level":"low","review_note":"真人棋牌注册送现金广告导流，按规则应归 ad/low。"}
+{"text":"泰式帝王欲","category":"pornographic","level":"medium","review_note":"明显色情服务擦边语义，原 other/low 过低。"}
+{"text":"泳衣丝袜让你销魂舒畅","category":"pornographic","level":"medium","review_note":"明显色情挑逗语义，原 other/low 过低。"}
+{"text":"泽民颈导贪污犯","category":"political","level":"medium","review_note":"针对政治人物的腐败攻击表述，原 other/low 过低。"}
+{"text":"洋妞上宾馆陪服","category":"pornographic","level":"high","review_note":"指向陪侍/色情服务，原 other/low 过低。"}
+{"text":"洋妞上门性服务","category":"pornographic","level":"high","review_note":"明确上门性服务，原 other/low 过低。"}
+{"text":"洋妞上门按摩","category":"pornographic","level":"medium","review_note":"在该语境中指向色情按摩服务，原 other/low 过低。"}
+{"text":"洋妞上门服务","category":"pornographic","level":"high","review_note":"在该语境中指向上门色情服务，原 other/low 过低。"}
+{"text":"洋妞保健上门","category":"pornographic","level":"medium","review_note":"保健上门在该语境中指向色情服务，原 other/low 过低。"}
+{"text":"洋妞包夜","category":"pornographic","level":"high","review_note":"明确包夜色情服务语义，原 other/low 过低。"}
+{"text":"洋妞援交","category":"pornographic","level":"high","review_note":"明确援交色情服务，原 other/low 过低。"}
+{"text":"洋妞服务","category":"pornographic","level":"medium","review_note":"在该语境中指向色情服务，原 other/low 过低。"}
+{"text":"洋妞特服上门","category":"pornographic","level":"high","review_note":"特服上门指向色情服务，原 other/low 过低。"}
+{"text":"洋溢的感情与体液","category":"pornographic","level":"medium","review_note":"明显色情体液描写，原 other/low 过低。"}
+{"text":"洗浴小妹包夜","category":"pornographic","level":"high","review_note":"洗浴小妹包夜指向色情服务，原 other/low 过低。"}
+{"text":"洗浴小姐","category":"pornographic","level":"medium","review_note":"在该语境中指向色情服务人员，原 other/low 过低。"}
+{"text":"洗浴间爽奸白嫩美乳少女","category":"pornographic","level":"high","review_note":"露骨色情描写，原 other/low 明显过低。"}
+{"text":"洗着鸳鸯浴操屄真惬意","category":"pornographic","level":"high","review_note":"露骨性交描写，原 other/low 明显过低。"}
+{"text":"洗肠射尿","category":"pornographic","level":"high","review_note":"露骨色情/性癖描写，原 other/low 过低。"}
+{"text":"洝嚤洤套","category":"pornographic","level":"high","review_note":"按摩全套谐写，指向色情服务，原 other/low 过低。"}
+{"text":"洞小口紧","category":"pornographic","level":"medium","review_note":"明显色情器官擦边描写，原 other/low 过低。"}
+{"text":"洞房的滋味","category":"pornographic","level":"medium","review_note":"在该语境中为色情擦边描写，原 other/low 过低。"}
+{"text":"洞抽少妇","category":"pornographic","level":"high","review_note":"露骨性行为和少妇色情语义，原 other/low 过低。"}
+{"text":"洞茎结合","category":"pornographic","level":"high","review_note":"露骨性交描写，原 other/low 过低。"}
+{"text":"洞里春光","category":"pornographic","level":"medium","review_note":"明显色情擦边语义，原 other/low 过低。"}
+{"text":"活体卖肾","category":"illegal","level":"high","review_note":"明确人体器官交易，原 other/low 过低。"}
+{"text":"活体取肾","category":"illegal","level":"high","review_note":"明确非法取肾/器官交易语义，原 other/low 过低。"}
+{"text":"活体肾脏","category":"illegal","level":"high","review_note":"在器官交易语境中指向活体肾源，原 other/low 过低。"}
+{"text":"活大器粗","category":"pornographic","level":"medium","review_note":"明显性器官/性服务擦边语义，原 other/low 过低。"}
+{"text":"活好不粘人","category":"pornographic","level":"medium","review_note":"性服务招徕常见话术，原 other/low 过低。"}
+{"text":"活好裆下","category":"pornographic","level":"medium","review_note":"明显性服务/性暗示语义，原 other/low 过低。"}
+{"text":"活摘器","category":"illegal","level":"high","review_note":"疑似活摘器官相关词，涉及人体器官非法行为，原 other/low 过低。"}
+{"text":"活摘器官","category":"illegal","level":"high","review_note":"明确非法摘取人体器官，原 other/low 过低。"}
+{"text":"洽谈复仇","category":"violence","level":"medium","review_note":"指向商谈报复行为，具有暴力风险，原 other/low 过低。"}

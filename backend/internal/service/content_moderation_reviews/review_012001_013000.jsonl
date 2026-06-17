@@ -1,0 +1,263 @@
+{"text":"代人了仇","category":"violence","level":"high","review_note":"Revenge-for-hire wording; original other/low understates violent retaliation content."}
+{"text":"代人了仇qq","category":"violence","level":"high","review_note":"QQ contact for revenge-for-hire; ad/low understates violent content."}
+{"text":"代人了仇了事","category":"violence","level":"high","review_note":"Settling a grudge for someone implies retaliation-for-hire; should be violence/high."}
+{"text":"代人了仇了事qq","category":"violence","level":"high","review_note":"Contact phrase for settling grudges by retaliation; ad/low is too generic."}
+{"text":"代人了仇出气","category":"violence","level":"high","review_note":"Revenge/venting anger on someone's behalf is violent service wording."}
+{"text":"代人了仇出气qq","category":"violence","level":"high","review_note":"QQ contact for revenge/retaliation service; should be violence/high."}
+{"text":"代人出气","category":"violence","level":"high","review_note":"Phrase means retaliating or attacking on another person's behalf; original other/low is too weak."}
+{"text":"代人出气qq","category":"violence","level":"high","review_note":"Contact phrase for retaliation-for-hire; ad/low understates violent content."}
+{"text":"代人出气了仇qq","category":"violence","level":"high","review_note":"Contact phrase for revenge-for-hire; should be violence/high."}
+{"text":"代人出气报仇","category":"violence","level":"high","review_note":"Revenge-for-hire phrase; original other/low is mislabeled."}
+{"text":"代人出气报仇qq","category":"violence","level":"high","review_note":"QQ contact for revenge-for-hire; ad/low understates violent content."}
+{"text":"代人制造意外死亡","category":"violence","level":"critical","review_note":"Arranging an accidental death is lethal harm-for-hire; should be violence/critical."}
+{"text":"代人制造特殊意外","category":"violence","level":"high","review_note":"Euphemism for arranging harmful accidents; original other/low is too weak."}
+{"text":"代人办事复仇","category":"violence","level":"high","review_note":"Revenge service wording; should be violence/high rather than other/low."}
+{"text":"代人复仇qq","category":"violence","level":"high","review_note":"QQ contact for revenge-for-hire; ad/low is too generic."}
+{"text":"代人复仇了事","category":"violence","level":"high","review_note":"Revenge-for-hire phrase; original other/low is mislabeled."}
+{"text":"代人复仇了事qq","category":"violence","level":"high","review_note":"Contact phrase for revenge-for-hire; should be violence/high."}
+{"text":"代人寻仇","category":"violence","level":"high","review_note":"Seeking revenge on another person's behalf is violent retaliation content."}
+{"text":"代人报仇","category":"violence","level":"high","review_note":"Revenge-for-hire phrase; original other/low is too weak."}
+{"text":"代人报仇qq","category":"violence","level":"high","review_note":"QQ contact for revenge-for-hire; ad/low understates violent content."}
+{"text":"代人报仇电话","category":"violence","level":"high","review_note":"Phone contact for revenge-for-hire; should be violence/high."}
+{"text":"代人报复","category":"violence","level":"high","review_note":"Retaliation-for-hire phrase; original other/low is mislabeled."}
+{"text":"代人解决恩怨qq","category":"violence","level":"high","review_note":"Contact phrase for settling personal grudges; in this context it implies retaliatory violence."}
+{"text":"代人解决私人恩怨","category":"violence","level":"high","review_note":"Settling private grudges for someone is retaliation-for-hire wording."}
+{"text":"代删负面新闻","category":"ad","level":"low","review_note":"Reputation-removal service offer; ad/low is clearer than other/low."}
+{"text":"代删负面贴子","category":"ad","level":"low","review_note":"Post-removal service offer; should be ad/low rather than other/low."}
+{"text":"代刷各彩票平台","category":"illegal","level":"high","review_note":"Service for manipulating gambling/lottery platforms; original other/low is too weak."}
+{"text":"代办假军官证","category":"illegal","level":"high","review_note":"Fake military officer certificate service; ad/low understates forged-document content."}
+{"text":"代办假医师资格证","category":"illegal","level":"high","review_note":"Fake medical qualification certificate service; should be illegal/high."}
+{"text":"代办假学位证书","category":"illegal","level":"high","review_note":"Fake degree certificate service; ad/low understates document forgery."}
+{"text":"代办假学历","category":"illegal","level":"high","review_note":"Fake education credential service; should be illegal/high."}
+{"text":"代办假学历qq","category":"illegal","level":"high","review_note":"QQ contact for fake education credentials; ad/low is too generic."}
+{"text":"代办假户口本qq","category":"illegal","level":"high","review_note":"QQ contact for fake household registration document; should be illegal/high."}
+{"text":"代办假文凭","category":"illegal","level":"high","review_note":"Fake diploma service; ad/low understates forged credential content."}
+{"text":"代办假文凭qq","category":"illegal","level":"high","review_note":"QQ contact for fake diploma service; should be illegal/high."}
+{"text":"代办假文凭证书qq","category":"illegal","level":"high","review_note":"QQ contact for fake diploma/certificate service; ad/low is too weak."}
+{"text":"代办假毕业证","category":"illegal","level":"high","review_note":"Fake graduation certificate service; should be illegal/high."}
+{"text":"代办假毕业证qq","category":"illegal","level":"high","review_note":"QQ contact for fake graduation certificate service; ad/low understates forgery."}
+{"text":"代办假警官证","category":"illegal","level":"high","review_note":"Fake police officer certificate service; should be illegal/high."}
+{"text":"代办假证qq","category":"illegal","level":"high","review_note":"QQ contact for fake document service; ad/low understates illegal forgery."}
+{"text":"代办假证书","category":"illegal","level":"high","review_note":"Fake certificate service; should be illegal/high."}
+{"text":"代办假证书qq","category":"illegal","level":"high","review_note":"QQ contact for fake certificate service; ad/low is too weak."}
+{"text":"代办假证公司","category":"illegal","level":"high","review_note":"Company offering fake documents; should be illegal/high."}
+{"text":"代办假证公司qq","category":"illegal","level":"high","review_note":"QQ contact for fake document company; ad/low understates illegal content."}
+{"text":"代办假证电话","category":"illegal","level":"high","review_note":"Phone contact for fake document service; should be illegal/high."}
+{"text":"代办假资格证","category":"illegal","level":"high","review_note":"Fake qualification certificate service; ad/low understates document forgery."}
+{"text":"代办假驾照qq","category":"illegal","level":"high","review_note":"QQ contact for fake driver's license; should be illegal/high."}
+{"text":"代办假驾驶证","category":"illegal","level":"high","review_note":"Fake driver's license service; ad/low is too weak."}
+{"text":"代办免考正规驾照","category":"illegal","level":"high","review_note":"Driver's license without examination implies illegal credential procurement."}
+{"text":"代办免考驾驶证","category":"illegal","level":"high","review_note":"Driver's license without examination; should be illegal/high rather than ad/low."}
+{"text":"代办军人证qq","category":"illegal","level":"high","review_note":"QQ contact for military ID/certificate procurement; ad/low understates forged official document risk."}
+{"text":"代办军官证","category":"illegal","level":"high","review_note":"Military officer certificate procurement; should be illegal/high."}
+{"text":"代办军官证qq","category":"illegal","level":"high","review_note":"QQ contact for military officer certificate service; ad/low is too generic."}
+{"text":"代办各类假证","category":"illegal","level":"high","review_note":"Fake document service; ad/low understates illegal forgery."}
+{"text":"代办高仿军官证","category":"illegal","level":"high","review_note":"High-quality counterfeit military officer certificate; should be illegal/high."}
+{"text":"代办高仿军官证qq","category":"illegal","level":"high","review_note":"QQ contact for counterfeit military officer certificate; ad/low understates forgery."}
+{"text":"代办高仿户口本","category":"illegal","level":"high","review_note":"Counterfeit household registration document; should be illegal/high."}
+{"text":"代办高仿户口本qq","category":"illegal","level":"high","review_note":"QQ contact for counterfeit household registration document; ad/low is too weak."}
+{"text":"代办高仿户口薄","category":"illegal","level":"high","review_note":"Counterfeit household registration booklet; should be illegal/high."}
+{"text":"代售高仿真人民币","category":"illegal","level":"high","review_note":"Selling counterfeit RMB; original other/low is clearly mislabeled."}
+{"text":"代开fapiao","category":"illegal","level":"high","review_note":"Pinyin obfuscation for issuing invoices; should be illegal/high."}
+{"text":"代开fa票qq","category":"illegal","level":"high","review_note":"Obfuscated invoice-issuing contact phrase; ad/low understates illegal invoice content."}
+{"text":"代开专业税票","category":"illegal","level":"high","review_note":"Tax invoice issuing service; original other/low is too weak."}
+{"text":"代开专业税票qq","category":"illegal","level":"high","review_note":"QQ contact for tax invoice issuing; ad/low should be illegal/high."}
+{"text":"代开企业税票","category":"illegal","level":"high","review_note":"Corporate tax invoice issuing service; original other/low is mislabeled."}
+{"text":"代开企业税票qq","category":"illegal","level":"high","review_note":"QQ contact for corporate tax invoice issuing; ad/low understates illegal content."}
+{"text":"代开住宿发漂","category":"illegal","level":"high","review_note":"Misspelled accommodation invoice issuing phrase; should be illegal/high."}
+{"text":"代开假fapiao","category":"illegal","level":"high","review_note":"Obfuscated fake invoice phrase; original other/low is clearly too weak."}
+{"text":"代开假发piao","category":"illegal","level":"high","review_note":"Mixed-character fake invoice phrase; should be illegal/high."}
+{"text":"代开公司税票","category":"illegal","level":"high","review_note":"Company tax invoice issuing service; original other/low is mislabeled."}
+{"text":"代开公司税票qq","category":"illegal","level":"high","review_note":"QQ contact for company tax invoice issuing; ad/low should be illegal/high."}
+{"text":"代开加油票","category":"illegal","level":"high","review_note":"Fuel receipt/invoice issuing service; original other/low is too weak."}
+{"text":"代开发piao","category":"illegal","level":"high","review_note":"Obfuscated invoice issuing phrase; should be illegal/high."}
+{"text":"代开发嘌","category":"illegal","level":"high","review_note":"Homophone obfuscation for invoice issuing; original other/low is mislabeled."}
+{"text":"代开发嘌qq","category":"illegal","level":"high","review_note":"QQ contact using invoice homophone; ad/low understates illegal invoice content."}
+{"text":"代开发漂","category":"illegal","level":"high","review_note":"Misspelled invoice issuing phrase; should be illegal/high."}
+{"text":"代开发瞟qq","category":"illegal","level":"high","review_note":"QQ contact using invoice homophone; ad/low should be illegal/high."}
+{"text":"代开商品税票","category":"illegal","level":"high","review_note":"Commodity tax invoice issuing service; original other/low is too weak."}
+{"text":"代开商品税票qq","category":"illegal","level":"high","review_note":"QQ contact for commodity tax invoice issuing; ad/low understates illegal content."}
+{"text":"代开国税税票","category":"illegal","level":"high","review_note":"National-tax invoice issuing service; original other/low is mislabeled."}
+{"text":"代开国税税票qq","category":"illegal","level":"high","review_note":"QQ contact for national-tax invoice issuing; should be illegal/high."}
+{"text":"代开地税票","category":"illegal","level":"high","review_note":"Local-tax invoice issuing service; original other/low is too weak."}
+{"text":"代开地税税票","category":"illegal","level":"high","review_note":"Local-tax invoice issuing service; should be illegal/high."}
+{"text":"代开地税税票qq","category":"illegal","level":"high","review_note":"QQ contact for local-tax invoice issuing; ad/low understates illegal content."}
+{"text":"代开增值税票","category":"illegal","level":"high","review_note":"VAT invoice issuing service; original other/low is clearly mislabeled."}
+{"text":"代开增值税票qq","category":"illegal","level":"high","review_note":"QQ contact for VAT invoice issuing; ad/low should be illegal/high."}
+{"text":"代开增值税税票","category":"illegal","level":"high","review_note":"VAT tax invoice issuing service; original other/low is too weak."}
+{"text":"代开增值税税票qq","category":"illegal","level":"high","review_note":"QQ contact for VAT tax invoice issuing; ad/low understates illegal content."}
+{"text":"代开增值税酦票","category":"illegal","level":"high","review_note":"Misspelled VAT invoice issuing phrase; should be illegal/high."}
+{"text":"代开定额税票","category":"illegal","level":"high","review_note":"Fixed-amount tax invoice issuing service; original other/low is mislabeled."}
+{"text":"代开定额税票qq","category":"illegal","level":"high","review_note":"QQ contact for fixed-amount tax invoice issuing; should be illegal/high."}
+{"text":"代开普通发漂","category":"illegal","level":"high","review_note":"Misspelled ordinary invoice issuing phrase; original other/low is too weak."}
+{"text":"代开普通增值票","category":"illegal","level":"high","review_note":"Ordinary VAT invoice issuing phrase; should be illegal/high."}
+{"text":"代开普通税票","category":"illegal","level":"high","review_note":"Ordinary tax invoice issuing phrase; original other/low is mislabeled."}
+{"text":"代开机打税票","category":"illegal","level":"high","review_note":"Machine-printed tax invoice issuing service; should be illegal/high."}
+{"text":"代开机打税票qq","category":"illegal","level":"high","review_note":"QQ contact for machine-printed tax invoice issuing; ad/low is too weak."}
+{"text":"代开票据","category":"illegal","level":"high","review_note":"In this invoice-service cluster, issuing bills/receipts is illegal invoice content."}
+{"text":"代开票据qq","category":"illegal","level":"high","review_note":"QQ contact for bill/receipt issuing service; ad/low should be illegal/high."}
+{"text":"代开税收税票","category":"illegal","level":"high","review_note":"Tax invoice issuing service; original other/low is too weak."}
+{"text":"代开税收税票qq","category":"illegal","level":"high","review_note":"QQ contact for tax invoice issuing; ad/low understates illegal content."}
+{"text":"代开税票","category":"illegal","level":"high","review_note":"Tax invoice issuing service; original other/low is mislabeled."}
+{"text":"代开税票qq","category":"illegal","level":"high","review_note":"QQ contact for tax invoice issuing; ad/low should be illegal/high."}
+{"text":"代开空白税票","category":"illegal","level":"high","review_note":"Blank tax invoice issuing service; original other/low is clearly too weak."}
+{"text":"代开空白税票qq","category":"illegal","level":"high","review_note":"QQ contact for blank tax invoice issuing; should be illegal/high."}
+{"text":"代开营业税税票","category":"illegal","level":"high","review_note":"Business-tax invoice issuing service; original other/low is mislabeled."}
+{"text":"代开营业税税票qq","category":"illegal","level":"high","review_note":"QQ contact for business-tax invoice issuing; ad/low should be illegal/high."}
+{"text":"代开财务税票qq","category":"illegal","level":"high","review_note":"QQ contact for finance tax invoice issuing; ad/low understates illegal invoice content."}
+{"text":"代开财税税票","category":"illegal","level":"high","review_note":"Finance/tax invoice issuing service; original other/low is too weak."}
+{"text":"代开财税税票qq","category":"illegal","level":"high","review_note":"QQ contact for finance/tax invoice issuing; should be illegal/high."}
+{"text":"代开运输发漂","category":"illegal","level":"high","review_note":"Misspelled transport invoice issuing phrase; original other/low is mislabeled."}
+{"text":"代开通用税票","category":"illegal","level":"high","review_note":"General tax invoice issuing service; should be illegal/high."}
+{"text":"代开通用税票qq","category":"illegal","level":"high","review_note":"QQ contact for general tax invoice issuing; ad/low understates illegal content."}
+{"text":"代开酦漂","category":"illegal","level":"high","review_note":"Obfuscated invoice issuing phrase; original other/low is too weak."}
+{"text":"代开销售发嘌","category":"illegal","level":"high","review_note":"Homophone for sales invoice issuing; should be illegal/high."}
+{"text":"代理假证书","category":"illegal","level":"high","review_note":"Fake certificate agency service; ad/low understates document forgery."}
+{"text":"代理发漂","category":"illegal","level":"high","review_note":"Misspelled invoice agency phrase; should be illegal/high."}
+{"text":"代理增值票","category":"illegal","level":"high","review_note":"VAT invoice agency phrase; ad/low is too weak."}
+{"text":"代理增值票qq","category":"illegal","level":"high","review_note":"QQ contact for VAT invoice agency; should be illegal/high."}
+{"text":"代理复仇","category":"violence","level":"high","review_note":"Revenge-for-hire agency phrase; ad/low understates violent content."}
+{"text":"代理报仇","category":"violence","level":"high","review_note":"Revenge-for-hire agency phrase; should be violence/high."}
+{"text":"代理爪刀手刺","category":"violence","level":"medium","review_note":"Agency phrase for claw knives/hand spikes; weapon content is clearer as violence/medium."}
+{"text":"代理私彩","category":"illegal","level":"high","review_note":"Private lottery/gambling agency phrase; ad/low understates illegal gambling content."}
+{"text":"代理税票","category":"illegal","level":"high","review_note":"Tax invoice agency phrase; should be illegal/high rather than ad/low."}
+{"text":"代考","category":"illegal","level":"medium","review_note":"Exam-taking-for-hire service; original other/low is too weak."}
+{"text":"代考会计证qq","category":"illegal","level":"medium","review_note":"QQ contact for exam-taking service; ad/low understates credential fraud."}
+{"text":"代考假证","category":"illegal","level":"high","review_note":"Exam cheating plus fake certificate wording; should be illegal/high."}
+{"text":"代考服务qq","category":"illegal","level":"medium","review_note":"QQ contact for exam-taking service; ad/low is too generic."}
+{"text":"代讨债","category":"illegal","level":"medium","review_note":"Debt-collection-for-hire phrase in this coercive services cluster; other/low is too weak."}
+{"text":"代购flexispy专业版","category":"illegal","level":"high","review_note":"FlexiSPY is spyware; purchasing it should be illegal/high rather than other/low."}
+{"text":"代购flexispy免费版","category":"illegal","level":"high","review_note":"FlexiSPY spyware procurement phrase; original other/low is mislabeled."}
+{"text":"代购flexispy免费试用","category":"illegal","level":"high","review_note":"Trial spyware procurement phrase; should be illegal/high."}
+{"text":"代购flexispy增强版","category":"illegal","level":"high","review_note":"Enhanced spyware procurement phrase; original other/low is too weak."}
+{"text":"代购弓弩","category":"illegal","level":"high","review_note":"Crossbow procurement phrase; should be illegal/high in this weapons lexicon context."}
+{"text":"代购手机007","category":"illegal","level":"high","review_note":"Mobile 007 spyware procurement phrase; ad/low understates illegal surveillance tooling."}
+{"text":"代购手机碟中谍软件","category":"illegal","level":"high","review_note":"Mobile spy software procurement phrase; should be illegal/high."}
+{"text":"代购手机窃听软件","category":"illegal","level":"high","review_note":"Mobile eavesdropping software procurement; ad/low understates surveillance tooling."}
+{"text":"代购潜伏者专业版","category":"illegal","level":"high","review_note":"Spyware procurement phrase; original other/low is too weak."}
+{"text":"代购潜伏者免费版","category":"illegal","level":"high","review_note":"Spyware procurement phrase; should be illegal/high."}
+{"text":"代购潜伏者免费试用","category":"illegal","level":"high","review_note":"Trial spyware procurement phrase; original other/low is mislabeled."}
+{"text":"代购潜伏者增强版","category":"illegal","level":"high","review_note":"Enhanced spyware procurement phrase; should be illegal/high."}
+{"text":"代购潜伏者改良版","category":"illegal","level":"high","review_note":"Modified spyware procurement phrase; original other/low is too weak."}
+{"text":"代购潜伏者破解版","category":"illegal","level":"high","review_note":"Cracked spyware procurement phrase; should be illegal/high."}
+{"text":"代购高仿真人民币","category":"illegal","level":"high","review_note":"Counterfeit RMB procurement; original other/low is clearly mislabeled."}
+{"text":"代购高仿真人民币qq","category":"illegal","level":"high","review_note":"QQ contact for counterfeit RMB procurement; ad/low should be illegal/high."}
+{"text":"代追债","category":"illegal","level":"medium","review_note":"Debt pursuit service in this coercive cluster; other/low is too weak."}
+{"text":"代销高仿真人民币","category":"illegal","level":"high","review_note":"Counterfeit RMB distribution; original other/low is clearly mislabeled."}
+{"text":"代销高仿真人民币qq","category":"illegal","level":"high","review_note":"QQ contact for counterfeit RMB distribution; ad/low should be illegal/high."}
+{"text":"令人喷血的春宫108姿势","category":"pornographic","level":"high","review_note":"Explicit erotic sex-position content; original other/low is mislabeled."}
+{"text":"令人喷血的春宫108姿势组图18岁禁看","category":"pornographic","level":"high","review_note":"Adult erotic image-set phrase; should be pornographic/high."}
+{"text":"令人喷血的春宫108姿势组图19岁禁看","category":"pornographic","level":"high","review_note":"Adult erotic image-set phrase; original other/low is too weak."}
+{"text":"令人喷血的春宫108姿势组图20岁禁看","category":"pornographic","level":"high","review_note":"Adult erotic image-set phrase; should be pornographic/high."}
+{"text":"令人喷血的春宫108姿势组图21岁禁看","category":"pornographic","level":"high","review_note":"Adult erotic image-set phrase; original other/low is mislabeled."}
+{"text":"令人喷血的春宫108姿势组图22岁禁看","category":"pornographic","level":"high","review_note":"Adult erotic image-set phrase; should be pornographic/high."}
+{"text":"令家党","category":"political","level":"medium","review_note":"Political faction/reference associated with Chinese elite politics; other/low is mislabeled."}
+{"text":"令计划","category":"political","level":"medium","review_note":"Name of a Chinese political figure; should be political/medium rather than other/low."}
+{"text":"以色列大卫军刀批发","category":"violence","level":"medium","review_note":"Knife wholesale phrase; weapon content is clearer as violence/medium."}
+{"text":"以茎制洞","category":"pornographic","level":"medium","review_note":"Sexual euphemism using penis/vaginal imagery; original other/low is mislabeled."}
+{"text":"以茎治洞","category":"pornographic","level":"medium","review_note":"Sexual euphemism using penis/vaginal imagery; should be pornographic/medium."}
+{"text":"以茎至洞","category":"pornographic","level":"medium","review_note":"Sexual euphemism using penis/vaginal imagery; original other/low is too weak."}
+{"text":"仯妇笣液","category":"pornographic","level":"high","review_note":"Obfuscated sexual phrase around young married women and bodily fluids; should be pornographic/high."}
+{"text":"仯妇龅亱","category":"pornographic","level":"high","review_note":"Obfuscated 'young married woman overnight' sexual-service wording; original other/low is mislabeled."}
+{"text":"任意修改主叫号码","category":"illegal","level":"high","review_note":"Caller-ID spoofing phrase; original other/low understates fraud-enabling tooling."}
+{"text":"任意修改手机号码软件下载","category":"illegal","level":"high","review_note":"Download phrase for phone-number spoofing software; ad/low should be illegal/high."}
+{"text":"任意号码变号","category":"illegal","level":"high","review_note":"Arbitrary number spoofing phrase; original other/low is too weak."}
+{"text":"任意号码模拟器","category":"illegal","level":"high","review_note":"Phone-number spoofing simulator; should be illegal/high."}
+{"text":"任意号码软件","category":"illegal","level":"high","review_note":"Software for arbitrary number spoofing; original other/low is mislabeled."}
+{"text":"任意手机号码变号","category":"illegal","level":"high","review_note":"Mobile-number spoofing phrase; ad/low understates fraud-enabling tooling."}
+{"text":"任意改号","category":"illegal","level":"high","review_note":"Arbitrary caller-number changing phrase; should be illegal/high."}
+{"text":"任意改号码","category":"illegal","level":"high","review_note":"Arbitrary number-changing phrase; original other/low is too weak."}
+{"text":"任意改号码qq","category":"illegal","level":"high","review_note":"QQ contact for number-spoofing service; ad/low should be illegal/high."}
+{"text":"仿品军刺出售","category":"violence","level":"medium","review_note":"Replica military dagger sale; ad/low understates weapon content."}
+{"text":"仿品军刺网","category":"violence","level":"medium","review_note":"Replica military dagger site phrase; should be violence/medium."}
+{"text":"仿真qiang专卖","category":"illegal","level":"high","review_note":"Obfuscated 'gun' sale phrase; original other/low is clearly too weak."}
+{"text":"仿真qiang出售","category":"illegal","level":"high","review_note":"Obfuscated gun sale phrase; ad/low should be illegal/high."}
+{"text":"仿真qiang到货","category":"illegal","level":"high","review_note":"Obfuscated gun arrival/restock phrase; original other/low is mislabeled."}
+{"text":"仿真人民币","category":"illegal","level":"high","review_note":"Counterfeit/simulated RMB phrase in this illicit sales cluster; original other/low is too weak."}
+{"text":"仿真人民币出售","category":"illegal","level":"high","review_note":"Counterfeit RMB sale; ad/low should be illegal/high."}
+{"text":"仿真人民币销售","category":"illegal","level":"high","review_note":"Counterfeit RMB sales phrase; original other/low is clearly mislabeled."}
+{"text":"仿真仿美秃鹰","category":"illegal","level":"high","review_note":"Mei Tuo Ying is an airgun model reference; original other/low understates weapon content."}
+{"text":"仿真假钞","category":"illegal","level":"high","review_note":"Counterfeit banknote phrase; original other/low is clearly mislabeled."}
+{"text":"仿真假钞买卖","category":"illegal","level":"high","review_note":"Counterfeit banknote trading phrase; should be illegal/high."}
+{"text":"仿真假钱出售","category":"illegal","level":"high","review_note":"Counterfeit money sale; ad/low understates illegal content."}
+{"text":"仿真假钱提供qq","category":"illegal","level":"high","review_note":"QQ contact for counterfeit money supply; ad/low should be illegal/high."}
+{"text":"仿真军刺专卖","category":"violence","level":"medium","review_note":"Replica military dagger sale; original other/low understates weapon content."}
+{"text":"仿真军刺专卖qq","category":"violence","level":"medium","review_note":"QQ contact for replica military dagger sale; ad/low is too generic."}
+{"text":"仿真军刺买卖qq","category":"violence","level":"medium","review_note":"QQ contact for military dagger trading; should be violence/medium."}
+{"text":"仿真军刺交易qq","category":"violence","level":"medium","review_note":"QQ contact for military dagger trading; ad/low understates weapon content."}
+{"text":"仿真军刺供应qq","category":"violence","level":"medium","review_note":"QQ contact for military dagger supply; should be violence/medium."}
+{"text":"仿真军刺出售","category":"violence","level":"medium","review_note":"Military dagger sale phrase; ad/low understates weapon content."}
+{"text":"仿真军刺出售qq","category":"violence","level":"medium","review_note":"QQ contact for military dagger sale; should be violence/medium."}
+{"text":"仿真军刺批发","category":"violence","level":"medium","review_note":"Military dagger wholesale phrase; original other/low is too weak."}
+{"text":"仿真军刺批发qq","category":"violence","level":"medium","review_note":"QQ contact for military dagger wholesale; ad/low should be violence/medium."}
+{"text":"仿真军刺提供","category":"violence","level":"medium","review_note":"Military dagger supply phrase; original other/low understates weapon content."}
+{"text":"仿真军刺提供qq","category":"violence","level":"medium","review_note":"QQ contact for military dagger supply; should be violence/medium."}
+{"text":"仿真军刺直销","category":"violence","level":"medium","review_note":"Military dagger direct-sale phrase; original other/low is mislabeled."}
+{"text":"仿真军刺直销qq","category":"violence","level":"medium","review_note":"QQ contact for military dagger direct sales; ad/low is too generic."}
+{"text":"仿真军刺转让","category":"violence","level":"medium","review_note":"Military dagger transfer phrase; should be violence/medium."}
+{"text":"仿真军刺转让qq","category":"violence","level":"medium","review_note":"QQ contact for military dagger transfer; ad/low understates weapon content."}
+{"text":"仿真军刺销售","category":"violence","level":"medium","review_note":"Military dagger sales phrase; original other/low is too weak."}
+{"text":"仿真军刺销售qq","category":"violence","level":"medium","review_note":"QQ contact for military dagger sales; should be violence/medium."}
+{"text":"仿真手狗转让","category":"illegal","level":"high","review_note":"Handgun euphemism using 'dog'; transfer phrase should be illegal/high."}
+{"text":"仿真气木仓转让","category":"illegal","level":"high","review_note":"Obfuscated air-gun transfer phrase using 木仓 for 枪; original other/low is mislabeled."}
+{"text":"仿真气狗专卖","category":"illegal","level":"high","review_note":"Air-gun euphemism using 'dog'; sale phrase should be illegal/high."}
+{"text":"仿真气狗供应","category":"illegal","level":"high","review_note":"Air-gun euphemism supply phrase; original other/low is too weak."}
+{"text":"仿真气狗出售qq","category":"illegal","level":"high","review_note":"QQ contact for air-gun euphemism sale; ad/low should be illegal/high."}
+{"text":"仿真气狗销售qq","category":"illegal","level":"high","review_note":"QQ contact for air-gun euphemism sales; should be illegal/high."}
+{"text":"仿真汽qiang销售","category":"illegal","level":"high","review_note":"Mixed-character air-gun sales phrase; original other/low is clearly too weak."}
+{"text":"仿真汽狗专卖","category":"illegal","level":"high","review_note":"Air-gun euphemism sale phrase; original other/low is mislabeled."}
+{"text":"仿真汽狗专卖qq","category":"illegal","level":"high","review_note":"QQ contact for air-gun euphemism sale; ad/low should be illegal/high."}
+{"text":"仿真汽狗供应","category":"illegal","level":"high","review_note":"Air-gun euphemism supply phrase; original other/low is too weak."}
+{"text":"仿真汽狗供应qq","category":"illegal","level":"high","review_note":"QQ contact for air-gun euphemism supply; should be illegal/high."}
+{"text":"仿真汽狗出售","category":"illegal","level":"high","review_note":"Air-gun euphemism sale phrase; ad/low understates illegal weapon content."}
+{"text":"仿真汽狗出售qq","category":"illegal","level":"high","review_note":"QQ contact for air-gun euphemism sale; should be illegal/high."}
+{"text":"仿真汽狗批发qq","category":"illegal","level":"high","review_note":"QQ contact for air-gun euphemism wholesale; ad/low is too generic."}
+{"text":"仿真汽狗提供qq","category":"illegal","level":"high","review_note":"QQ contact for air-gun euphemism supply; should be illegal/high."}
+{"text":"仿真汽狗直销","category":"illegal","level":"high","review_note":"Air-gun euphemism direct-sale phrase; original other/low is mislabeled."}
+{"text":"仿真汽狗直销qq","category":"illegal","level":"high","review_note":"QQ contact for air-gun euphemism direct sales; should be illegal/high."}
+{"text":"仿真汽狗订购","category":"illegal","level":"high","review_note":"Air-gun euphemism ordering phrase; original other/low is too weak."}
+{"text":"仿真汽狗订购qq","category":"illegal","level":"high","review_note":"QQ contact for air-gun euphemism ordering; ad/low should be illegal/high."}
+{"text":"仿真汽狗购买","category":"illegal","level":"high","review_note":"Air-gun euphemism purchase phrase; original other/low is mislabeled."}
+{"text":"仿真汽狗购买qq","category":"illegal","level":"high","review_note":"QQ contact for air-gun euphemism purchase; should be illegal/high."}
+{"text":"仿真汽狗转让","category":"illegal","level":"high","review_note":"Air-gun euphemism transfer phrase; original other/low is too weak."}
+{"text":"仿真汽狗转让qq","category":"illegal","level":"high","review_note":"QQ contact for air-gun euphemism transfer; ad/low should be illegal/high."}
+{"text":"仿真汽狗销售","category":"illegal","level":"high","review_note":"Air-gun euphemism sales phrase; original other/low is mislabeled."}
+{"text":"仿真汽短狗qq","category":"illegal","level":"high","review_note":"QQ contact for short air-gun euphemism; ad/low understates illegal weapon content."}
+{"text":"仿真汽长狗qq","category":"illegal","level":"high","review_note":"QQ contact for long air-gun euphemism; should be illegal/high."}
+{"text":"仿真狗供应qq","category":"illegal","level":"high","review_note":"QQ contact for gun euphemism supply in this weapons cluster; ad/low is too generic."}
+{"text":"仿真狗出售","category":"illegal","level":"high","review_note":"Gun euphemism sale phrase in this weapons cluster; ad/low should be illegal/high."}
+{"text":"仿真狗直销qq","category":"illegal","level":"high","review_note":"QQ contact for gun euphemism direct sales; should be illegal/high."}
+{"text":"仿真狗销售网qq","category":"illegal","level":"high","review_note":"QQ contact for gun euphemism sales site; ad/low understates illegal weapon content."}
+{"text":"仿真狙击抢直销","category":"illegal","level":"high","review_note":"Typo for sniper-rifle direct sales; original other/low is clearly mislabeled."}
+{"text":"仿真短狗qq","category":"illegal","level":"high","review_note":"QQ contact for short-gun euphemism; ad/low should be illegal/high."}
+{"text":"仿真警服专卖","category":"illegal","level":"medium","review_note":"Police-uniform sale phrase; original other/low understates impersonation-enabling content."}
+{"text":"仿真警服批发qq","category":"illegal","level":"medium","review_note":"QQ contact for police-uniform wholesale; ad/low should be illegal/medium."}
+{"text":"仿真警服直销","category":"illegal","level":"medium","review_note":"Police-uniform direct-sale phrase; original other/low is too weak."}
+{"text":"仿美秃鹰qq","category":"illegal","level":"high","review_note":"Mei Tuo Ying airgun model contact phrase; ad/low understates weapon content."}
+{"text":"仿美秃鹰出售","category":"illegal","level":"high","review_note":"Mei Tuo Ying airgun sale phrase; ad/low should be illegal/high."}
+{"text":"仿美秃鹰出售qq","category":"illegal","level":"high","review_note":"QQ contact for Mei Tuo Ying airgun sale; should be illegal/high."}
+{"text":"仿美秃鹰订购","category":"illegal","level":"high","review_note":"Mei Tuo Ying airgun ordering phrase; original other/low is mislabeled."}
+{"text":"仿美秃鹰订购qq","category":"illegal","level":"high","review_note":"QQ contact for Mei Tuo Ying airgun ordering; ad/low should be illegal/high."}
+{"text":"仿钞出售","category":"illegal","level":"high","review_note":"Counterfeit banknote sale; ad/low is clearly mislabeled."}
+{"text":"企业税票代开","category":"illegal","level":"high","review_note":"Corporate tax invoice issuing service; original other/low is too weak."}
+{"text":"企业税票代开qq","category":"illegal","level":"high","review_note":"QQ contact for corporate tax invoice issuing; ad/low should be illegal/high."}
+{"text":"企业不良信息删除","category":"ad","level":"low","review_note":"Corporate negative-information removal service; ad/low is clearer than other/low."}
+{"text":"企业网络负面消息清除","category":"ad","level":"low","review_note":"Corporate reputation-cleanup service; should be ad/low rather than other/low."}
+{"text":"企业负面新闻删除","category":"ad","level":"low","review_note":"Corporate negative-news deletion service; original other/low is a service ad."}
+{"text":"企业负面新闻清除","category":"ad","level":"low","review_note":"Corporate negative-news cleanup service; should be ad/low."}
+{"text":"企业负面清理","category":"ad","level":"low","review_note":"Corporate reputation cleanup service; original other/low is better classified as ad/low."}
+{"text":"伊力哈木","category":"political","level":"medium","review_note":"Name of Ilham Tohti, a political dissident figure; other/low is mislabeled."}
+{"text":"伊扎布特","category":"political","level":"medium","review_note":"Chinese transliteration of Hizb ut-Tahrir; political/medium is clearer than other/low."}
+{"text":"伐仑","category":"political","level":"medium","review_note":"Obfuscated Falun/Falun Gong variant; should be political/medium."}
+{"text":"伐伦","category":"political","level":"medium","review_note":"Obfuscated Falun/Falun Gong variant; original other/low is mislabeled."}
+{"text":"伐囵","category":"political","level":"medium","review_note":"Obfuscated Falun/Falun Gong variant; should be political/medium."}
+{"text":"伐抡","category":"political","level":"medium","review_note":"Obfuscated Falun/Falun Gong variant; original other/low is too weak."}
+{"text":"伐沦","category":"political","level":"medium","review_note":"Obfuscated Falun/Falun Gong variant; should be political/medium."}
+{"text":"伐论","category":"political","level":"medium","review_note":"Obfuscated Falun/Falun Gong variant; original other/low is mislabeled."}
+{"text":"伐轮","category":"political","level":"medium","review_note":"Obfuscated Falun/Falun Gong variant; should be political/medium."}
+{"text":"优博娱乐","category":"illegal","level":"high","review_note":"Online casino/gambling brand phrase; original other/low is too weak."}
+{"text":"优博娱乐qq","category":"illegal","level":"high","review_note":"QQ contact for online gambling/casino; ad/low should be illegal/high."}
+{"text":"优质办证","category":"illegal","level":"high","review_note":"Certificate/document service in this fake-document lexicon context; original other/low is too weak."}
+{"text":"优质梅钕只位高端的你服物","category":"pornographic","level":"high","review_note":"Obfuscated 'quality beauties serving high-end clients' sexual-service ad; should be pornographic/high."}
+{"text":"会暖床","category":"pornographic","level":"medium","review_note":"Sexual-service euphemism meaning bed-warming; original other/low is mislabeled."}
+{"text":"会深喉","category":"pornographic","level":"high","review_note":"Explicit oral-sex phrase; should be pornographic/high rather than other/low."}

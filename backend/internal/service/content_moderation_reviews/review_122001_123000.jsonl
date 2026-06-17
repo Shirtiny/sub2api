@@ -1,0 +1,410 @@
+{"text":"诱惑1夜","category":"pornographic","level":"medium","review_note":"含诱惑一夜的成人暗示语义，原 other/low 过低。"}
+{"text":"诱惑ai情妇","category":"pornographic","level":"medium","review_note":"含情妇成人暗示语义，原 other/low 过低。"}
+{"text":"贝尔求生刀专卖","category":"ad","level":"low","review_note":"含专卖导流语义，按规则由 other/low 调为 ad/low。"}
+{"text":"贝尔求生刀批发","category":"ad","level":"low","review_note":"含批发导流语义，按规则由 other/low 调为 ad/low。"}
+{"text":"负面信息打压","category":"ad","level":"low","review_note":"指向有偿负面信息处理服务，原 other/low 分类不准。"}
+{"text":"负面信息清理","category":"ad","level":"low","review_note":"指向有偿负面信息清理服务，原 other/low 分类不准。"}
+{"text":"负面信息清除","category":"ad","level":"low","review_note":"指向有偿负面信息清除服务，原 other/low 分类不准。"}
+{"text":"负面删除公司","category":"ad","level":"low","review_note":"指向负面信息删除服务公司，原 other/low 分类不准。"}
+{"text":"负面帖子删除","category":"ad","level":"low","review_note":"指向有偿负面帖子删除服务，原 other/low 分类不准。"}
+{"text":"负面帖子压制","category":"ad","level":"low","review_note":"指向有偿负面帖子压制服务，原 other/low 分类不准。"}
+{"text":"负面帖子清理","category":"ad","level":"low","review_note":"指向有偿负面帖子清理服务，原 other/low 分类不准。"}
+{"text":"负面帖子清除","category":"ad","level":"low","review_note":"指向有偿负面帖子清除服务，原 other/low 分类不准。"}
+{"text":"负面撤稿","category":"ad","level":"low","review_note":"指向有偿撤稿/公关服务，原 other/low 分类不准。"}
+{"text":"负面新闻信息删除","category":"ad","level":"low","review_note":"指向有偿负面新闻信息删除服务，原 other/low 分类不准。"}
+{"text":"负面新闻信息清除","category":"ad","level":"low","review_note":"指向有偿负面新闻信息清除服务，原 other/low 分类不准。"}
+{"text":"负面新闻删除","category":"ad","level":"low","review_note":"指向有偿负面新闻删除服务，原 other/low 分类不准。"}
+{"text":"负面新闻压制","category":"ad","level":"low","review_note":"指向有偿负面新闻压制服务，原 other/low 分类不准。"}
+{"text":"负面新闻清除","category":"ad","level":"low","review_note":"指向有偿负面新闻清除服务，原 other/low 分类不准。"}
+{"text":"负面消息专业删除","category":"ad","level":"low","review_note":"指向有偿负面消息删除服务，原 other/low 分类不准。"}
+{"text":"负面消息清理","category":"ad","level":"low","review_note":"指向有偿负面消息清理服务，原 other/low 分类不准。"}
+{"text":"负面消息清除","category":"ad","level":"low","review_note":"指向有偿负面消息清除服务，原 other/low 分类不准。"}
+{"text":"负面消息网络删除","category":"ad","level":"low","review_note":"指向有偿网络负面消息删除服务，原 other/low 分类不准。"}
+{"text":"负面消息网络屏蔽","category":"ad","level":"low","review_note":"指向有偿网络负面消息屏蔽服务，原 other/low 分类不准。"}
+{"text":"负面消息网络消除","category":"ad","level":"low","review_note":"指向有偿网络负面消息消除服务，原 other/low 分类不准。"}
+{"text":"负面消息网络清理","category":"ad","level":"low","review_note":"指向有偿网络负面消息清理服务，原 other/low 分类不准。"}
+{"text":"负面论坛删除","category":"ad","level":"low","review_note":"指向有偿论坛负面内容删除服务，原 other/low 分类不准。"}
+{"text":"负面评价清理","category":"ad","level":"low","review_note":"指向有偿负面评价清理服务，原 other/low 分类不准。"}
+{"text":"负面评价清除","category":"ad","level":"low","review_note":"指向有偿负面评价清除服务，原 other/low 分类不准。"}
+{"text":"负面贴文清理","category":"ad","level":"low","review_note":"指向有偿负面贴文清理服务，原 other/low 分类不准。"}
+{"text":"财务发票代开","category":"ad","level":"low","review_note":"含代开导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"财务发票代开qq","category":"ad","level":"low","review_note":"含 QQ 联系导流，按规则由 illegal/high 调为 ad/low。"}
+{"text":"财务发票批发qq","category":"ad","level":"low","review_note":"含 QQ 和批发导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"财务税票代开","category":"ad","level":"low","review_note":"含代开导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"财务税票代开qq","category":"ad","level":"low","review_note":"含 QQ 联系导流，按规则由 illegal/high 调为 ad/low。"}
+{"text":"财税代开发票","category":"ad","level":"low","review_note":"含代开导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"财税发票代开","category":"ad","level":"low","review_note":"含代开导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"财税发票代开qq","category":"ad","level":"low","review_note":"含 QQ 联系导流，按规则由 illegal/high 调为 ad/low。"}
+{"text":"财税发票供应qq","category":"ad","level":"low","review_note":"含 QQ 和供应导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"财税发票提供qq","category":"ad","level":"low","review_note":"含 QQ 和提供导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"财税税票代开","category":"ad","level":"low","review_note":"含代开导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"财税税票代开qq","category":"ad","level":"low","review_note":"含 QQ 联系导流，按规则由 illegal/high 调为 ad/low。"}
+{"text":"贩卖银行卡qq","category":"ad","level":"low","review_note":"含 QQ 联系导流，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买2踢脚","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 other/low 调为 ad/low。"}
+{"text":"购买3棱刮刀","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买3棱尖刀","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买3氧化2砷qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买3箭气枪","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买45mm狗粮qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买4氢大麻酚","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买54式手枪","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买54式手枪qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买54手枪qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买64式手枪","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买64式手枪qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买77手枪","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买77手枪qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买7连发手枪","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买7连发手枪qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买92式手枪qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买av电视棒","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 pornographic/high 调为 ad/low。"}
+{"text":"购买awp气步枪","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买awp气步枪qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买pcp套件","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买pcp汽枪","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买qiang支","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买xwodi","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 other/low 调为 ad/low。"}
+{"text":"购买中握pcp","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买乖乖水qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买乖乖药qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买乙醚","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买乙醚qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买仿真枪","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买仿真枪模","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买仿真气枪qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买仿真汽枪","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买仿真汽枪qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买仿真汽狗","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买仿真汽狗qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买仿真狙击枪","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买仿真金属枪","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买仿美秃鹰","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买假币","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买假币qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买假币网","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买假文凭","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买催情口香糖qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买催情液qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买催情药水qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买冰毒qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买冰油qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买冰砖qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买刺刀","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买原装汽狗","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买口服型昏迷药qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买可卡因","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买可卡因qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买听话水qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买听话药qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买听话药水qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买唐刀","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 other/low 调为 ad/low。"}
+{"text":"购买喵喵药qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买喷雾型迷昏药qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买喷雾蒙汗药qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买喷雾迷幻药qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买喷雾迷情水qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买喷雾迷药qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买国产气枪","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买国产秃鹰","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买国产秃鹰qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买地西泮qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买大专文凭qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买大专毕业证qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买大学文凭qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买失忆水qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买失忆粉qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买学位证qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买学历qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买学历证","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买学历证书qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买射击枪","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买小口径步枪","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买小口径步狗qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买小口径运动步狗","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买小口径运动步狗qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买少女催情粉qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买山奈钾qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买工字牌汽枪","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买工字牌钢珠狗","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买工字牌钢珠狗qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买左旋麻黄素qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买左轮牌钢珠狗","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买左轮牌钢珠狗qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买左轮钢珠狗","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买左轮钢珠狗qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买开他敏qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买开锁工具qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买弓弩配件","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买弹簧刀qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买弹簧活塞式气枪","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买弹簧跳刀","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买手工猎刀","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买手拉狗","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买手拉短狗","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买手拉长狗","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买手铐","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买拍肩型昏迷药qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买拍肩型迷幻剂qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买拍肩粉qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买拍肩药qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买拍肩药水qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买拍肩迷幻药qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买拍肩迷药qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买文凭qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买易容面具","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 other/low 调为 ad/low。"}
+{"text":"购买春药qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买木邦刀","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 other/low 调为 ad/low。"}
+{"text":"购买本科文凭qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买本科毕业证qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买枪支","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买枪支qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买毕业证qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买毕业证书qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买气动狗","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买气枪专卖","category":"ad","level":"low","review_note":"含购买和专卖导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买气枪子弹qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买气步枪","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买氯化钾","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 other/low 调为 ad/low。"}
+{"text":"购买氰化金钾qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买氰化钾","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买氰化钾qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买氰化镉qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买汽动狗","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买汽手枪","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买汽手枪qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买汽枪","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买汽枪qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买汽枪子弹qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买汽枪配件","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买汽枪铅弹qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买汽步枪","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买汽车信号干扰器","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买汽车信号干扰器qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买汽车拦截器qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买汽长狗","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买沙漠之鹰","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买沙菲片qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买海洛因","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买海洛因qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买温切斯特气枪qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买爪刀手刺","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买狙击枪","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买狙击步狗qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买狙击气步枪","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买狙击气步枪qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买狩猎气枪","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买甲卡西酮qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买甲基安非他命","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买电警棍","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买盐酸哌替啶","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买盐酸曲马多qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买真实学历qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买真实文凭qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买真实毕业证qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买真枪","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买礼花弹","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买礼花弹qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买秃鹰pcp","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买秃鹰枪","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买秃鹰枪qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买秃鹰气枪","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买秃鹰气枪qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买秃鹰气步枪","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买秃鹰汽枪","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买秦氏弩qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买羟亚胺qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买肩迷药qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买胡椒醛qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买自爆材料","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买致癌药","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 other/low 调为 ad/low。"}
+{"text":"购买苍蝇水qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买苍蝇粉qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买英国骚本","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 other/low 调为 ad/low。"}
+{"text":"购买蝴蝶甩刀","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买西班牙苍蝇水qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买警官证","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买警察手铐","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买警察装备","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买警察证","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买警察防身装备","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买警棍","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买警用手铐","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买警用甩棍","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买警用电棍","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买警用防身装备","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买警衔","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买赌博粉","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买赌博药qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买赵氏弩qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买跳刀qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买进口气枪qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买迷奸药水qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买迷幻喷雾qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买迷幻药","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买迷幻蘑菇qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买迷幻香烟qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买迷情ghb水qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买迷情乖乖水qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买迷情粉qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买迷情药水qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买迷昏药","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买迷晕药qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买迷香药qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买迷魂烟qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买迷魂药水qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买迷魂香qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买迷魂香烟qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买钢珠左轮狗","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买钢珠左轮狗qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买钢珠气枪","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买钢珠气枪qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买钢珠汽枪","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买铅弹模具","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买铅弹汽枪","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买铅弹鸟枪","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买银行卡","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买防身警察装备","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买防身警用装备","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买香烟型昏迷药qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买香烟型迷幻剂qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买香烟型迷药qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买高仿手枪","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买高仿气枪","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买高仿汽枪","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买高仿汽枪qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买高仿真易容面具","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 other/low 调为 ad/low。"}
+{"text":"购买高压气步枪","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买高压气步枪qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买高压电警棍","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 other/low 调为 ad/low。"}
+{"text":"购买高压钢珠狗","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买高压钢珠狗qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买高考答案qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买麦角酸qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买麻果qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购买黄冰qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购物数据供应qq","category":"ad","level":"low","review_note":"含 QQ 和供应导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购物数据出售qq","category":"ad","level":"low","review_note":"含 QQ 和出售导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购肾qq","category":"ad","level":"low","review_note":"含 QQ 联系导流，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购肾电话","category":"ad","level":"low","review_note":"含电话联系导流，按规则由 illegal/high 调为 ad/low。"}
+{"text":"购蒙汗药","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"贱妇汤加丽","category":"abuse","level":"medium","review_note":"含明确辱骂词“贱妇”，原 other/low 分类不准。"}
+{"text":"贱货吴敏","category":"abuse","level":"medium","review_note":"含明确辱骂词“贱货”，原 other/low 分类不准。"}
+{"text":"贴身欲女","category":"pornographic","level":"medium","review_note":"含成人色情暗示语义，原 other/low 过低。"}
+{"text":"贴吧自动删帖","category":"ad","level":"low","review_note":"指向自动删帖服务，原 other/low 分类不准。"}
+{"text":"资格证书制作","category":"ad","level":"low","review_note":"含证书制作服务导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"资格证代考服务","category":"ad","level":"low","review_note":"含代考服务导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赌博粉专卖","category":"ad","level":"low","review_note":"含专卖导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赌博粉专卖qq","category":"ad","level":"low","review_note":"含 QQ 和专卖导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赌博粉供应","category":"ad","level":"low","review_note":"含供应导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赌博粉供应qq","category":"ad","level":"low","review_note":"含 QQ 和供应导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赌博粉出售qq","category":"ad","level":"low","review_note":"含 QQ 和出售导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赌博粉批发","category":"ad","level":"low","review_note":"含批发导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赌博粉批发qq","category":"ad","level":"low","review_note":"含 QQ 和批发导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赌博粉提供","category":"ad","level":"low","review_note":"含提供导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赌博粉提供qq","category":"ad","level":"low","review_note":"含 QQ 和提供导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赌博粉订购qq","category":"ad","level":"low","review_note":"含 QQ 和订购导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赌博粉购买qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赌博粉销售","category":"ad","level":"low","review_note":"含销售导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赌博粉销售qq","category":"ad","level":"low","review_note":"含 QQ 和销售导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赌博药供应","category":"ad","level":"low","review_note":"含供应导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赌博药供应qq","category":"ad","level":"low","review_note":"含 QQ 和供应导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赌博药出售","category":"ad","level":"low","review_note":"含出售导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赌博药出售qq","category":"ad","level":"low","review_note":"含 QQ 和出售导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赌博药批发","category":"ad","level":"low","review_note":"含批发导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赌博药批发qq","category":"ad","level":"low","review_note":"含 QQ 和批发导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赌博药提供","category":"ad","level":"low","review_note":"含提供导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赌博药提供qq","category":"ad","level":"low","review_note":"含 QQ 和提供导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赌博药直销","category":"ad","level":"low","review_note":"含直销导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赌博药直销qq","category":"ad","level":"low","review_note":"含 QQ 和直销导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赌博药订购","category":"ad","level":"low","review_note":"含订购导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赌博药订购qq","category":"ad","level":"low","review_note":"含 QQ 和订购导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赌博药购买qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赌博药销售","category":"ad","level":"low","review_note":"含销售导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赌博药销售qq","category":"ad","level":"low","review_note":"含 QQ 和销售导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赛丸丁供应","category":"ad","level":"low","review_note":"含供应导流语义，按规则由 other/low 调为 ad/low。"}
+{"text":"赛他娘","category":"abuse","level":"medium","review_note":"含辱骂他人母亲的粗口语义，原 other/low 分类不准。"}
+{"text":"赛你娘","category":"abuse","level":"medium","review_note":"含辱骂他人母亲的粗口语义，原 other/low 分类不准。"}
+{"text":"赛你老母","category":"abuse","level":"medium","review_note":"含辱骂他人母亲的粗口语义，原 other/low 分类不准。"}
+{"text":"赛她娘","category":"abuse","level":"medium","review_note":"含辱骂他人母亲的粗口语义，原 other/low 分类不准。"}
+{"text":"赛妳娘","category":"abuse","level":"medium","review_note":"含辱骂他人母亲的粗口语义，原 other/low 分类不准。"}
+{"text":"赛妳阿母","category":"abuse","level":"medium","review_note":"含辱骂他人母亲的粗口语义，原 other/low 分类不准。"}
+{"text":"赣您娘","category":"abuse","level":"medium","review_note":"含辱骂他人母亲的粗口语义，原 other/low 分类不准。"}
+{"text":"赭曲毒素a供应","category":"ad","level":"low","review_note":"含供应导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赭曲毒素a批发","category":"ad","level":"low","review_note":"含批发导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赭曲毒素a提供","category":"ad","level":"low","review_note":"含提供导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赭曲毒素a直销","category":"ad","level":"low","review_note":"含直销导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赭曲毒素a销售","category":"ad","level":"low","review_note":"含销售导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赭曲毒素供应","category":"ad","level":"low","review_note":"含供应导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赭曲毒素批发","category":"ad","level":"low","review_note":"含批发导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赭曲毒素批发qq","category":"ad","level":"low","review_note":"含 QQ 和批发导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赭曲毒素提供","category":"ad","level":"low","review_note":"含提供导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赭曲毒素直销","category":"ad","level":"low","review_note":"含直销导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赭曲毒素销售","category":"ad","level":"low","review_note":"含销售导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赵式弓弩专卖","category":"ad","level":"low","review_note":"含专卖导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赵氏弓弩专卖","category":"ad","level":"low","review_note":"含专卖导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赵氏弓弩专卖qq","category":"ad","level":"low","review_note":"含 QQ 和专卖导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赵氏弓弩专卖店","category":"ad","level":"low","review_note":"含专卖店导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赵氏弓弩专卖网","category":"ad","level":"low","review_note":"含专卖网导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赵氏弓弩供应","category":"ad","level":"low","review_note":"含供应导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赵氏弓弩供应qq","category":"ad","level":"low","review_note":"含 QQ 和供应导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赵氏弓弩出售","category":"ad","level":"low","review_note":"含出售导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赵氏弓弩出售qq","category":"ad","level":"low","review_note":"含 QQ 和出售导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赵氏弓弩批发","category":"ad","level":"low","review_note":"含批发导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赵氏弓弩批发qq","category":"ad","level":"low","review_note":"含 QQ 和批发导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赵氏弓弩提供qq","category":"ad","level":"low","review_note":"含 QQ 和提供导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赵氏弓弩直销","category":"ad","level":"low","review_note":"含直销导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赵氏弓弩直销qq","category":"ad","level":"low","review_note":"含 QQ 和直销导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赵氏弓弩订购qq","category":"ad","level":"low","review_note":"含 QQ 和订购导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赵氏弓弩转让","category":"ad","level":"low","review_note":"含转让导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赵氏弓弩销售","category":"ad","level":"low","review_note":"含销售导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赵氏弩专卖","category":"ad","level":"low","review_note":"含专卖导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赵氏弩专卖qq","category":"ad","level":"low","review_note":"含 QQ 和专卖导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赵氏弩买卖","category":"ad","level":"low","review_note":"含买卖导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赵氏弩买卖qq","category":"ad","level":"low","review_note":"含 QQ 和买卖导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赵氏弩供应","category":"ad","level":"low","review_note":"含供应导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赵氏弩出售","category":"ad","level":"low","review_note":"含出售导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赵氏弩出售qq","category":"ad","level":"low","review_note":"含 QQ 和出售导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赵氏弩弓供应","category":"ad","level":"low","review_note":"含供应导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赵氏弩弓供应qq","category":"ad","level":"low","review_note":"含 QQ 和供应导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赵氏弩弓出售","category":"ad","level":"low","review_note":"含出售导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赵氏弩弓出售qq","category":"ad","level":"low","review_note":"含 QQ 和出售导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赵氏弩弓批发","category":"ad","level":"low","review_note":"含批发导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赵氏弩弓提供","category":"ad","level":"low","review_note":"含提供导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赵氏弩弓直销","category":"ad","level":"low","review_note":"含直销导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赵氏弩弓销售","category":"ad","level":"low","review_note":"含销售导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赵氏弩弓销售qq","category":"ad","level":"low","review_note":"含 QQ 和销售导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赵氏弩弓预订","category":"ad","level":"low","review_note":"含预订导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赵氏弩批发","category":"ad","level":"low","review_note":"含批发导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赵氏弩批发qq","category":"ad","level":"low","review_note":"含 QQ 和批发导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赵氏弩提供qq","category":"ad","level":"low","review_note":"含 QQ 和提供导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赵氏弩直销","category":"ad","level":"low","review_note":"含直销导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赵氏弩直销qq","category":"ad","level":"low","review_note":"含 QQ 和直销导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赵氏弩订购","category":"ad","level":"low","review_note":"含订购导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赵氏弩购买","category":"ad","level":"low","review_note":"含购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赵氏弩购买qq","category":"ad","level":"low","review_note":"含 QQ 和购买导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赵氏弩销售","category":"ad","level":"low","review_note":"含销售导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赵氏弩销售qq","category":"ad","level":"low","review_note":"含 QQ 和销售导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赵氏弩预定","category":"ad","level":"low","review_note":"含预定导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赵氏猎鹰销售","category":"ad","level":"low","review_note":"含销售导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赵氏钢珠弩出售","category":"ad","level":"low","review_note":"含出售导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赵氏钢珠弩出售qq","category":"ad","level":"low","review_note":"含 QQ 和出售导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赵氏钢珠弩销售","category":"ad","level":"low","review_note":"含销售导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赵氏钢珠弩销售qq","category":"ad","level":"low","review_note":"含 QQ 和销售导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"赶你娘","category":"abuse","level":"medium","review_note":"含辱骂他人母亲的粗口语义，原 other/low 分类不准。"}
+{"text":"起爆药出售","category":"ad","level":"low","review_note":"含出售导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"起爆药批发","category":"ad","level":"low","review_note":"含批发导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"起爆药销售","category":"ad","level":"low","review_note":"含销售导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"超高压电警棍出售","category":"ad","level":"low","review_note":"含出售导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"足球现金开户","category":"ad","level":"low","review_note":"含开户导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"足球网络投注qq","category":"ad","level":"low","review_note":"含 QQ 联系导流，按规则由 illegal/high 调为 ad/low。"}
+{"text":"跳刀专卖","category":"ad","level":"low","review_note":"含专卖导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"跳刀专卖qq","category":"ad","level":"low","review_note":"含 QQ 和专卖导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"跳刀买卖qq","category":"ad","level":"low","review_note":"含 QQ 和买卖导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"跳刀出售","category":"ad","level":"low","review_note":"含出售导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"跳刀出售qq","category":"ad","level":"low","review_note":"含 QQ 和出售导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"跳刀批发","category":"ad","level":"low","review_note":"含批发导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"跳刀提供","category":"ad","level":"low","review_note":"含提供导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"跳刀直销","category":"ad","level":"low","review_note":"含直销导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"跳刀转让","category":"ad","level":"low","review_note":"含转让导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"跳刀销售","category":"ad","level":"low","review_note":"含销售导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"跳刀销售qq","category":"ad","level":"low","review_note":"含 QQ 和销售导流语义，按规则由 illegal/high 调为 ad/low。"}

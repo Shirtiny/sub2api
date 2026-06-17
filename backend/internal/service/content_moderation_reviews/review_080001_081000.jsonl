@@ -1,0 +1,167 @@
+{"text":"供应等级证书","category":"illegal","level":"high","review_note":"供应等级证书指向证书造假/非法证件交易，原 other/low 按 low 不拦截会漏放。"}
+{"text":"供应等级证书qq","category":"illegal","level":"high","review_note":"供应等级证书并带 QQ 导流，指向证书造假交易，原 ad/low 过低。"}
+{"text":"供应精品军刀","category":"illegal","level":"high","review_note":"军刀供应属于管制刀具交易语境，原 other/low 过低。"}
+{"text":"供应精品蝴蝶刀","category":"illegal","level":"high","review_note":"蝴蝶刀供应属于管制刀具交易语境，原 other/low 过低。"}
+{"text":"供应红海葱甙","category":"illegal","level":"high","review_note":"红海葱甙为有毒物质，供应语境风险较高，原 other/low 过低。"}
+{"text":"供应红矾钠","category":"illegal","level":"high","review_note":"红矾钠为有毒化学品，供应语境风险较高，原 other/low 过低。"}
+{"text":"供应红降汞","category":"illegal","level":"high","review_note":"红降汞为汞类毒物，供应语境风险较高，原 other/low 过低。"}
+{"text":"供应纯古","category":"illegal","level":"high","review_note":"纯古为毒品黑话，供应语义明确，原 other/low 过低。"}
+{"text":"供应纯古qq","category":"illegal","level":"high","review_note":"纯古为毒品黑话并带 QQ 导流，原 ad/low 过低。"}
+{"text":"供应组合棍刀","category":"illegal","level":"high","review_note":"棍刀供应属于管制刀具/武器交易语境，原 other/low 过低。"}
+{"text":"供应绿瓦瓦管","category":"illegal","level":"high","review_note":"瓦管在该武器器材语境中指向枪械配件供应，原 other/low 过低。"}
+{"text":"供应绿瓦瓦管qq","category":"illegal","level":"high","review_note":"瓦管枪械配件供应并带 QQ 导流，原 ad/low 过低。"}
+{"text":"供应绿皮瓦管","category":"illegal","level":"high","review_note":"瓦管在该武器器材语境中指向枪械配件供应，原 other/low 过低。"}
+{"text":"供应绿皮瓦管qq","category":"illegal","level":"high","review_note":"瓦管枪械配件供应并带 QQ 导流，原 ad/low 过低。"}
+{"text":"供应缅古","category":"illegal","level":"high","review_note":"缅古为麻古类毒品黑话，供应语义明确，原 other/low 过低。"}
+{"text":"供应缅古qq","category":"illegal","level":"high","review_note":"缅古为毒品黑话并带 QQ 导流，原 ad/low 过低。"}
+{"text":"供应缅果qq","category":"illegal","level":"high","review_note":"缅果为麻果/麻古类毒品黑话并带 QQ 导流，原 ad/low 过低。"}
+{"text":"供应美国军刀","category":"illegal","level":"high","review_note":"军刀供应属于管制刀具交易语境，原 other/low 过低。"}
+{"text":"供应美国卡巴军刀","category":"illegal","level":"high","review_note":"卡巴军刀供应属于管制刀具交易语境，原 other/low 过低。"}
+{"text":"供应美国秃鹰","category":"illegal","level":"high","review_note":"秃鹰在该语境中指向气枪/枪械器材，供应语义明确，原 other/low 过低。"}
+{"text":"供应美国秃鹰qq","category":"illegal","level":"high","review_note":"秃鹰气枪器材供应并带 QQ 导流，原 ad/low 过低。"}
+{"text":"供应美秃套件","category":"illegal","level":"high","review_note":"美秃套件指向秃鹰气枪配件供应，原 other/low 过低。"}
+{"text":"供应羟基乙腈","category":"illegal","level":"high","review_note":"羟基乙腈为高毒化学品，供应语境风险较高，原 other/low 过低。"}
+{"text":"供应胡椒基甲基","category":"illegal","level":"high","review_note":"胡椒基甲基为制毒前体相关物质语境，供应语义明确，原 other/low 过低。"}
+{"text":"供应胡椒基甲基qq","category":"illegal","level":"high","review_note":"胡椒基甲基供应并带 QQ 导流，涉及制毒前体交易，原 ad/low 过低。"}
+{"text":"供应胡椒基甲酮","category":"illegal","level":"high","review_note":"胡椒基甲酮为制毒前体相关物质，供应语义明确，原 other/low 过低。"}
+{"text":"供应胡椒醛","category":"illegal","level":"high","review_note":"胡椒醛为制毒前体相关物质，供应语义明确，原 other/low 过低。"}
+{"text":"供应胡椒醛qq","category":"illegal","level":"high","review_note":"胡椒醛供应并带 QQ 导流，涉及制毒前体交易，原 ad/low 过低。"}
+{"text":"供应腰刀","category":"illegal","level":"high","review_note":"腰刀供应属于刀具交易语境，原 other/low 过低。"}
+{"text":"供应腰刀qq","category":"illegal","level":"high","review_note":"腰刀供应并带 QQ 导流，原 ad/low 过低。"}
+{"text":"供应臊冰","category":"illegal","level":"high","review_note":"臊冰在该语境中指向冰毒类黑话，供应语义明确，原 other/low 过低。"}
+{"text":"供应臊冰qq","category":"illegal","level":"high","review_note":"臊冰为毒品黑话并带 QQ 导流，原 ad/low 过低。"}
+{"text":"供应自用电狗","category":"illegal","level":"high","review_note":"电狗在该语境中指向电击/枪械类器材，供应语义明确，原 other/low 过低。"}
+{"text":"供应花纹钢刀","category":"illegal","level":"high","review_note":"花纹钢刀供应属于刀具交易语境，原 other/low 过低。"}
+{"text":"供应苍蝇水qq","category":"illegal","level":"high","review_note":"苍蝇水指涉催情/迷奸类药物并带 QQ 导流，原 ad/low 过低。"}
+{"text":"供应苍蝇粉qq","category":"illegal","level":"high","review_note":"苍蝇粉指涉催情/迷奸类药物并带 QQ 导流，原 ad/low 过低。"}
+{"text":"供应英国骚本","category":"illegal","level":"high","review_note":"骚本在该语境中指向气枪/PCP 器材，供应语义明确，原 other/low 过低。"}
+{"text":"供应英国骚本qq","category":"illegal","level":"high","review_note":"骚本气枪器材供应并带 QQ 导流，原 ad/low 过低。"}
+{"text":"供应莫达非尼","category":"illegal","level":"medium","review_note":"莫达非尼为处方药，供应语境涉及药品违规交易，原 other/low 过低。"}
+{"text":"供应蝴蝶刀","category":"illegal","level":"high","review_note":"蝴蝶刀供应属于管制刀具交易语境，原 other/low 过低。"}
+{"text":"供应蝴蝶刀qq","category":"illegal","level":"high","review_note":"蝴蝶刀供应并带 QQ 导流，原 ad/low 过低。"}
+{"text":"供应蝴蝶刀具","category":"illegal","level":"high","review_note":"蝴蝶刀具供应属于管制刀具交易语境，原 other/low 过低。"}
+{"text":"供应蝴蝶甩刀","category":"illegal","level":"high","review_note":"蝴蝶甩刀供应属于管制刀具交易语境，原 other/low 过低。"}
+{"text":"供应蝴蝶甩刀qq","category":"illegal","level":"high","review_note":"蝴蝶甩刀供应并带 QQ 导流，原 ad/low 过低。"}
+{"text":"供应西班牙苍蝇水","category":"illegal","level":"high","review_note":"西班牙苍蝇水指涉催情/迷奸类药物供应，原 other/low 过低。"}
+{"text":"供应西班牙苍蝇水qq","category":"illegal","level":"high","review_note":"西班牙苍蝇水供应并带 QQ 导流，原 ad/low 过低。"}
+{"text":"供应西班牙苍蝇粉","category":"illegal","level":"high","review_note":"西班牙苍蝇粉指涉催情/迷奸类药物供应，原 other/low 过低。"}
+{"text":"供应贝尔戈博求生刀","category":"illegal","level":"high","review_note":"求生刀供应属于刀具交易语境，原 other/low 过低。"}
+{"text":"供应贝尔求生刀","category":"illegal","level":"high","review_note":"求生刀供应属于刀具交易语境，原 other/low 过低。"}
+{"text":"供应购物数据qq","category":"illegal","level":"high","review_note":"购物数据供应并带 QQ 导流，涉及个人信息非法交易，原 ad/low 过低。"}
+{"text":"供应赭曲毒","category":"illegal","level":"high","review_note":"赭曲毒为毒素类物质，供应语境风险较高，原 other/low 过低。"}
+{"text":"供应赭曲毒素","category":"illegal","level":"high","review_note":"赭曲毒素为毒素类物质，供应语境风险较高，原 other/low 过低。"}
+{"text":"供应赭曲毒素a","category":"illegal","level":"high","review_note":"赭曲毒素 A 为毒素类物质，供应语境风险较高，原 other/low 过低。"}
+{"text":"供应赭曲毒素qq","category":"illegal","level":"high","review_note":"赭曲毒素供应并带 QQ 导流，原 ad/low 过低。"}
+{"text":"供应车主信息qq","category":"illegal","level":"high","review_note":"车主信息供应并带 QQ 导流，涉及个人信息非法交易，原 ad/low 过低。"}
+{"text":"供应醋酸汞","category":"illegal","level":"high","review_note":"醋酸汞为汞类毒物，供应语境风险较高，原 other/low 过低。"}
+{"text":"供应醋酸甲氧基乙基汞","category":"illegal","level":"high","review_note":"有机汞化合物供应语境风险较高，原 other/low 过低。"}
+{"text":"供应醋酸铊","category":"illegal","level":"high","review_note":"醋酸铊为高毒物质，供应语境风险较高，原 other/low 过低。"}
+{"text":"供应野外求生刀","category":"illegal","level":"high","review_note":"求生刀供应属于刀具交易语境，原 other/low 过低。"}
+{"text":"供应野外求生刀qq","category":"illegal","level":"high","review_note":"求生刀供应并带 QQ 导流，原 ad/low 过低。"}
+{"text":"供应野战刀","category":"illegal","level":"high","review_note":"野战刀供应属于管制刀具交易语境，原 other/low 过低。"}
+{"text":"供应野战刀qq","category":"illegal","level":"high","review_note":"野战刀供应并带 QQ 导流，原 ad/low 过低。"}
+{"text":"供应野营军刀","category":"illegal","level":"high","review_note":"野营军刀供应属于管制刀具交易语境，原 other/low 过低。"}
+{"text":"供应野营刀具","category":"illegal","level":"high","review_note":"野营刀具供应在该语境中属于刀具交易，原 other/low 过低。"}
+{"text":"供应野营刀具qq","category":"illegal","level":"high","review_note":"野营刀具供应并带 QQ 导流，原 ad/low 过低。"}
+{"text":"供应野营猎刀","category":"illegal","level":"high","review_note":"野营猎刀供应属于刀具交易语境，原 other/low 过低。"}
+{"text":"供应野营猎刀qq","category":"illegal","level":"high","review_note":"野营猎刀供应并带 QQ 导流，原 ad/low 过低。"}
+{"text":"供应野营砍刀","category":"illegal","level":"high","review_note":"野营砍刀供应属于刀具交易语境，原 other/low 过低。"}
+{"text":"供应野营砍刀qq","category":"illegal","level":"high","review_note":"野营砍刀供应并带 QQ 导流，原 ad/low 过低。"}
+{"text":"供应金属仿真狗","category":"illegal","level":"high","review_note":"仿真狗在该语境中指向仿真枪/枪械器材，供应语义明确，原 other/low 过低。"}
+{"text":"供应金弓电狗qq","category":"illegal","level":"high","review_note":"电狗在该语境中指向枪械/电击器材并带 QQ 导流，原 ad/low 过低。"}
+{"text":"供应钢珠弓弩","category":"illegal","level":"high","review_note":"钢珠弓弩供应属于武器交易语境，原 other/low 过低。"}
+{"text":"供应钢珠弓弩qq","category":"illegal","level":"high","review_note":"钢珠弓弩供应并带 QQ 导流，原 ad/low 过低。"}
+{"text":"供应钢珠弩","category":"illegal","level":"high","review_note":"钢珠弩供应属于武器交易语境，原 other/low 过低。"}
+{"text":"供应铊","category":"illegal","level":"high","review_note":"铊为高毒物质，供应语境风险较高，原 other/low 过低。"}
+{"text":"供应铊盐qq","category":"illegal","level":"high","review_note":"铊盐供应并带 QQ 导流，涉及高毒物质交易风险，原 ad/low 过低。"}
+{"text":"供应铊粉","category":"illegal","level":"high","review_note":"铊粉为高毒物质，供应语境风险较高，原 other/low 过低。"}
+{"text":"供应银氰化钾qq","category":"illegal","level":"high","review_note":"银氰化钾供应并带 QQ 导流，涉及氰化物风险，原 ad/low 过低。"}
+{"text":"供应银行卡","category":"illegal","level":"high","review_note":"银行卡供应涉及金融黑产/违法交易，原 other/low 过低。"}
+{"text":"供应银行卡qq","category":"illegal","level":"high","review_note":"银行卡供应并带 QQ 导流，涉及金融黑产交易，原 ad/low 过低。"}
+{"text":"供应锡纸开锁工具","category":"illegal","level":"high","review_note":"锡纸开锁工具供应具有盗窃工具交易语义，原 other/low 过低。"}
+{"text":"供应防卫刀具","category":"illegal","level":"high","review_note":"防卫刀具供应属于刀具交易语境，原 other/low 过低。"}
+{"text":"供应防暴警棍刀","category":"illegal","level":"high","review_note":"警棍刀供应属于武器/警用器械交易语境，原 other/low 过低。"}
+{"text":"供应防身手狗","category":"illegal","level":"high","review_note":"手狗为手枪隐语，防身手狗供应语义明确，原 other/low 过低。"}
+{"text":"供应防身手狗qq","category":"illegal","level":"high","review_note":"防身手狗供应并带 QQ 导流，指向枪支交易，原 ad/low 过低。"}
+{"text":"供应防身武器","category":"illegal","level":"high","review_note":"防身武器供应属于武器交易语境，原 other/low 过低。"}
+{"text":"供应防身气狗","category":"illegal","level":"high","review_note":"气狗为气枪隐语，防身气狗供应语义明确，原 other/low 过低。"}
+{"text":"供应阳江刀","category":"illegal","level":"high","review_note":"阳江刀供应属于刀具交易语境，原 other/low 过低。"}
+{"text":"供应阳江刀具","category":"illegal","level":"high","review_note":"阳江刀具供应属于刀具交易语境，原 other/low 过低。"}
+{"text":"供应阳江刀具qq","category":"illegal","level":"high","review_note":"阳江刀具供应并带 QQ 导流，原 ad/low 过低。"}
+{"text":"供应阳江砍刀","category":"illegal","level":"high","review_note":"阳江砍刀供应属于刀具交易语境，原 other/low 过低。"}
+{"text":"供应顺丰面单qq","category":"illegal","level":"high","review_note":"顺丰面单供应并带 QQ 导流，涉及物流面单和个人信息非法交易，原 ad/low 过低。"}
+{"text":"供应骚冰","category":"illegal","level":"high","review_note":"骚冰在该语境中指向冰毒类黑话，供应语义明确，原 other/low 过低。"}
+{"text":"供应骚冰qq","category":"illegal","level":"high","review_note":"骚冰为毒品黑话并带 QQ 导流，原 ad/low 过低。"}
+{"text":"供应骚本汽木仓qq","category":"illegal","level":"high","review_note":"骚本汽木仓为气枪规避写法并带 QQ 导流，原 ad/low 过低。"}
+{"text":"供应高仿人皮面具","category":"illegal","level":"medium","review_note":"高仿人皮面具可用于伪装规避身份，原 other/low 过低。"}
+{"text":"供应高仿人皮面具qq","category":"illegal","level":"medium","review_note":"高仿人皮面具供应并带 QQ 导流，可用于伪装规避身份，原 ad/low 过低。"}
+{"text":"供应高仿军刺","category":"illegal","level":"high","review_note":"高仿军刺供应属于管制刀具交易语境，原 other/low 过低。"}
+{"text":"供应高仿军刺qq","category":"illegal","level":"high","review_note":"高仿军刺供应并带 QQ 导流，原 ad/low 过低。"}
+{"text":"供应高仿刺刀","category":"illegal","level":"high","review_note":"高仿刺刀供应属于管制刀具交易语境，原 other/low 过低。"}
+{"text":"供应高仿易容面具qq","category":"illegal","level":"medium","review_note":"高仿易容面具供应并带 QQ 导流，可用于伪装规避身份，原 ad/low 过低。"}
+{"text":"供应高仿真人皮面具","category":"illegal","level":"medium","review_note":"高仿真人皮面具可用于伪装规避身份，原 other/low 过低。"}
+{"text":"供应高仿真面具","category":"illegal","level":"medium","review_note":"高仿真面具可用于伪装规避身份，原 other/low 过低。"}
+{"text":"供应鹦鹉折刀","category":"illegal","level":"high","review_note":"折刀供应属于刀具交易语境，原 other/low 过低。"}
+{"text":"供应鹰飞凌军刀","category":"illegal","level":"high","review_note":"军刀供应属于管制刀具交易语境，原 other/low 过低。"}
+{"text":"供应麦角胺","category":"illegal","level":"high","review_note":"麦角胺为受管制毒品前体相关物质，供应语义明确，原 other/low 过低。"}
+{"text":"供应麦角胺qq","category":"illegal","level":"high","review_note":"麦角胺供应并带 QQ 导流，涉及受管制前体交易，原 ad/low 过低。"}
+{"text":"供应麦角酸","category":"illegal","level":"high","review_note":"麦角酸为 LSD 等毒品前体相关物质，供应语义明确，原 other/low 过低。"}
+{"text":"供应麦角酸2乙胺","category":"illegal","level":"high","review_note":"麦角酸2乙胺指向 LSD 相关受控物质，供应语义明确，原 other/low 过低。"}
+{"text":"供应麦角酸2乙胺qq","category":"illegal","level":"high","review_note":"麦角酸2乙胺供应并带 QQ 导流，原 ad/low 过低。"}
+{"text":"供应麦角酸qq","category":"illegal","level":"high","review_note":"麦角酸供应并带 QQ 导流，涉及受管制前体交易，原 ad/low 过低。"}
+{"text":"供应麦角醇","category":"illegal","level":"high","review_note":"麦角醇为毒品前体相关物质，供应语义明确，原 other/low 过低。"}
+{"text":"供应麻姑","category":"illegal","level":"high","review_note":"麻姑为麻古毒品谐音变体，供应语义明确，原 other/low 过低。"}
+{"text":"供应黄牙签","category":"illegal","level":"high","review_note":"黄牙签为毒品黑话，供应语义明确，原 other/low 过低。"}
+{"text":"供应黄牙签qq","category":"illegal","level":"high","review_note":"黄牙签为毒品黑话并带 QQ 导流，原 ad/low 过低。"}
+{"text":"供应黄白牙签","category":"illegal","level":"high","review_note":"黄白牙签为毒品黑话组合，供应语义明确，原 other/low 过低。"}
+{"text":"供应黄绿牙签","category":"illegal","level":"high","review_note":"黄绿牙签为毒品黑话组合，供应语义明确，原 other/low 过低。"}
+{"text":"供应黄麻素","category":"illegal","level":"high","review_note":"黄麻素疑似麻黄素规避写法，供应语境涉及制毒前体风险，原 other/low 过低。"}
+{"text":"供应黄麻素qq","category":"illegal","level":"high","review_note":"黄麻素供应并带 QQ 导流，疑似制毒前体交易，原 ad/low 过低。"}
+{"text":"供应黎城辣面","category":"illegal","level":"high","review_note":"黎城辣面在该毒品黑话语境中风险较高，供应语义明确，原 other/low 过低。"}
+{"text":"供应黎城辣面qq","category":"illegal","level":"high","review_note":"黎城辣面供应并带 QQ 导流，疑似毒品黑话交易，原 ad/low 过低。"}
+{"text":"供应黎城面","category":"illegal","level":"high","review_note":"黎城面在该毒品黑话语境中风险较高，供应语义明确，原 other/low 过低。"}
+{"text":"供应黎城面电话","category":"illegal","level":"high","review_note":"黎城面供应并带电话导流，疑似毒品黑话交易，原 ad/low 过低。"}
+{"text":"供应黑曼巴弓弩","category":"illegal","level":"high","review_note":"黑曼巴弓弩供应属于武器交易语境，原 other/low 过低。"}
+{"text":"供应黑曼巴弓弩qq","category":"illegal","level":"high","review_note":"黑曼巴弓弩供应并带 QQ 导流，原 ad/low 过低。"}
+{"text":"供应黑曼巴弩","category":"illegal","level":"high","review_note":"黑曼巴弩供应属于武器交易语境，原 other/low 过低。"}
+{"text":"供应黑曼巴弩qq","category":"illegal","level":"high","review_note":"黑曼巴弩供应并带 QQ 导流，原 ad/low 过低。"}
+{"text":"供应黑鹰弩","category":"illegal","level":"high","review_note":"黑鹰弩供应属于武器交易语境，原 other/low 过低。"}
+{"text":"供应黑鹰弩qq","category":"illegal","level":"high","review_note":"黑鹰弩供应并带 QQ 导流，原 ad/low 过低。"}
+{"text":"俄罗斯上门服务","category":"pornographic","level":"medium","review_note":"在色情/陪侍资源语境中指向上门性服务，原 other/low 过低。"}
+{"text":"俄罗斯美女学院快播","category":"pornographic","level":"medium","review_note":"美女学院加快播在该上下文中指向成人视频资源，原 other/low 过低。"}
+{"text":"俏臀摄魄","category":"pornographic","level":"medium","review_note":"成人情色标题/性化身体描写语义，原 other/low 过低。"}
+{"text":"俏黄蓉的洞房花烛夜","category":"pornographic","level":"medium","review_note":"成人同人/情色标题语义明显，原 other/low 过低。"}
+{"text":"保健品数据专卖","category":"illegal","level":"high","review_note":"保健品客户数据专卖涉及个人信息非法交易，原 other/low 过低。"}
+{"text":"保健品数据专卖qq","category":"illegal","level":"high","review_note":"保健品客户数据专卖并带 QQ 导流，原 ad/low 过低。"}
+{"text":"保健品数据供应","category":"illegal","level":"high","review_note":"保健品客户数据供应涉及个人信息非法交易，原 other/low 过低。"}
+{"text":"保健品数据供应qq","category":"illegal","level":"high","review_note":"保健品客户数据供应并带 QQ 导流，原 ad/low 过低。"}
+{"text":"保健品数据出售","category":"illegal","level":"high","review_note":"保健品客户数据出售涉及个人信息非法交易，原 ad/low 过低。"}
+{"text":"保健品数据出售qq","category":"illegal","level":"high","review_note":"保健品客户数据出售并带 QQ 导流，原 ad/low 过低。"}
+{"text":"保健品数据直销qq","category":"illegal","level":"high","review_note":"保健品客户数据直销并带 QQ 导流，原 ad/low 过低。"}
+{"text":"保健品数据销售qq","category":"illegal","level":"high","review_note":"保健品客户数据销售并带 QQ 导流，原 ad/low 过低。"}
+{"text":"保健品资料供应qq","category":"illegal","level":"high","review_note":"保健品客户资料供应并带 QQ 导流，涉及个人信息非法交易，原 ad/low 过低。"}
+{"text":"保健品资料提供qq","category":"illegal","level":"high","review_note":"保健品客户资料提供并带 QQ 导流，涉及个人信息非法交易，原 ad/low 过低。"}
+{"text":"保健品资源提供qq","category":"illegal","level":"high","review_note":"保健品客户资源提供并带 QQ 导流，涉及个人信息非法交易，原 ad/low 过低。"}
+{"text":"保证你打飞机","category":"pornographic","level":"medium","review_note":"含自慰色情语义，原 other/low 过低。"}
+{"text":"保证你打飞机免费电影网站","category":"pornographic","level":"medium","review_note":"指向色情电影网站并含自慰语义，原 other/low 过低。"}
+{"text":"保证很像学生妹","category":"pornographic","level":"medium","review_note":"在成人服务/色情语境中以学生妹作性化卖点，原 other/low 过低。"}
+{"text":"保险公司客户资料qq","category":"illegal","level":"high","review_note":"保险公司客户资料并带 QQ 导流，涉及个人信息非法交易，原 ad/low 过低。"}
+{"text":"保险客户数据专卖","category":"illegal","level":"high","review_note":"保险客户数据专卖涉及个人信息非法交易，原 other/low 过低。"}
+{"text":"保险客户数据专卖qq","category":"illegal","level":"high","review_note":"保险客户数据专卖并带 QQ 导流，原 ad/low 过低。"}
+{"text":"保险客户资料专卖","category":"illegal","level":"high","review_note":"保险客户资料专卖涉及个人信息非法交易，原 other/low 过低。"}
+{"text":"保险客户资料专卖qq","category":"illegal","level":"high","review_note":"保险客户资料专卖并带 QQ 导流，原 ad/low 过低。"}
+{"text":"保险数据qq","category":"illegal","level":"high","review_note":"保险数据并带 QQ 导流，涉及个人信息非法交易，原 ad/low 过低。"}
+{"text":"保险数据出售","category":"illegal","level":"high","review_note":"保险数据出售涉及个人信息非法交易，原 ad/low 过低。"}
+{"text":"保险数据出售qq","category":"illegal","level":"high","review_note":"保险数据出售并带 QQ 导流，原 ad/low 过低。"}
+{"text":"保险用户数据","category":"illegal","level":"high","review_note":"保险用户数据涉及个人信息黑产，原 other/low 过低。"}
+{"text":"保险用户数据qq","category":"illegal","level":"high","review_note":"保险用户数据并带 QQ 导流，涉及个人信息非法交易，原 ad/low 过低。"}
+{"text":"信用卡出售qq","category":"illegal","level":"high","review_note":"信用卡出售并带 QQ 导流，涉及金融黑产交易，原 ad/low 过低。"}
+{"text":"信用卡资料出售","category":"illegal","level":"high","review_note":"信用卡资料出售涉及金融个人信息非法交易，原 ad/low 过低。"}
+{"text":"修改手机号码软件","category":"illegal","level":"high","review_note":"修改手机号码软件属于号码伪装/诈骗工具语境，原 ad/low 过低。"}
+{"text":"修改证书","category":"illegal","level":"high","review_note":"修改证书指向证件/资质造假服务，原 other/low 过低。"}
+{"text":"借种","category":"pornographic","level":"medium","review_note":"在成人小说/情色词库语境中指向性题材，原 other/low 过低。"}
+{"text":"借腹生子","category":"pornographic","level":"medium","review_note":"在成人小说/情色词库语境中指向性题材，原 other/low 过低。"}
+{"text":"借色谈情","category":"pornographic","level":"medium","review_note":"情色小说标题语义，原 other/low 过低。"}
+{"text":"倩女云雨情","category":"pornographic","level":"medium","review_note":"云雨情为情色标题语义，原 other/low 过低。"}
+{"text":"倩女艳谭","category":"pornographic","level":"medium","review_note":"艳谭为成人情色标题语义，原 other/low 过低。"}
+{"text":"倩女销魂","category":"pornographic","level":"medium","review_note":"销魂在该成人标题语境中指向情色内容，原 other/low 过低。"}

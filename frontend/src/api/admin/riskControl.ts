@@ -3,6 +3,8 @@ import { apiClient } from '../client'
 export type ModerationMode = 'off' | 'observe' | 'pre_block'
 export type KeywordBlockingMode = 'keyword_only' | 'keyword_and_api' | 'api_only'
 export type ContentModerationModelFilterType = 'all' | 'include' | 'exclude'
+export type ContentModerationBuiltinCategory = 'political' | 'pornographic' | 'violence' | 'abuse' | 'ad' | 'illegal' | 'other'
+export type ContentModerationBuiltinLevel = 'low' | 'medium' | 'high' | 'critical'
 
 export interface ContentModerationModelFilter {
   type: ContentModerationModelFilterType
@@ -41,6 +43,8 @@ export interface ContentModerationConfig {
   keyword_whitelist: string[]
   keyword_blocking_mode: KeywordBlockingMode
   built_in_filter_enabled: boolean
+  built_in_filter_categories: ContentModerationBuiltinCategory[]
+  built_in_filter_levels: ContentModerationBuiltinLevel[]
   model_filter: ContentModerationModelFilter
 }
 
@@ -118,6 +122,8 @@ export interface UpdateContentModerationConfig {
   keyword_whitelist?: string[]
   keyword_blocking_mode?: KeywordBlockingMode
   built_in_filter_enabled?: boolean
+  built_in_filter_categories?: ContentModerationBuiltinCategory[]
+  built_in_filter_levels?: ContentModerationBuiltinLevel[]
   model_filter?: ContentModerationModelFilter
 }
 

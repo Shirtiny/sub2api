@@ -1,0 +1,210 @@
+{"text":"网络专销巴雷特xm109","category":"ad","level":"low","review_note":"含专销导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"网络专销手枪","category":"ad","level":"low","review_note":"含专销导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"网络专销麻黄素","category":"ad","level":"low","review_note":"含专销导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"网络公关删帖","category":"ad","level":"low","review_note":"指向有偿删帖/公关服务，原 other/low 分类不准。"}
+{"text":"网络公关删帖公司","category":"ad","level":"low","review_note":"指向有偿删帖/公关服务公司，原 other/low 分类不准。"}
+{"text":"网络公关删贴","category":"ad","level":"low","review_note":"指向有偿删帖/公关服务，原 other/low 分类不准。"}
+{"text":"网络出售汽枪配件","category":"ad","level":"low","review_note":"含出售导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"网络出售银行卡","category":"ad","level":"low","review_note":"含出售导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"网络删帖","category":"ad","level":"low","review_note":"指向有偿删帖服务，原 other/low 分类不准。"}
+{"text":"网络删帖公司","category":"ad","level":"low","review_note":"指向有偿删帖服务公司，原 other/low 分类不准。"}
+{"text":"网络删贴服务","category":"ad","level":"low","review_note":"指向有偿删帖服务，原 other/low 分类不准。"}
+{"text":"网络删除负面信息","category":"ad","level":"low","review_note":"指向有偿负面信息删除服务，原 other/low 分类不准。"}
+{"text":"网络办证真文凭","category":"ad","level":"low","review_note":"含办证/文凭服务导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"网络危机删帖公司","category":"ad","level":"low","review_note":"指向网络危机公关删帖服务，原 other/low 分类不准。"}
+{"text":"网络批发仿真手狗","category":"ad","level":"low","review_note":"含批发导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"网络指定销售88式","category":"ad","level":"low","review_note":"含销售导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"网络电视棒直销","category":"ad","level":"low","review_note":"含直销导流语义，原 other/low 分类不准。"}
+{"text":"网络负面信息消除","category":"ad","level":"low","review_note":"指向有偿负面信息处理服务，原 other/low 分类不准。"}
+{"text":"网络负面信息清理","category":"ad","level":"low","review_note":"指向有偿负面信息清理服务，原 other/low 分类不准。"}
+{"text":"网络负面信息清除","category":"ad","level":"low","review_note":"指向有偿负面信息清除服务，原 other/low 分类不准。"}
+{"text":"网络负面删除服务","category":"ad","level":"low","review_note":"指向有偿负面删除服务，原 other/low 分类不准。"}
+{"text":"网络负面新闻处理","category":"ad","level":"low","review_note":"指向有偿负面新闻处理服务，原 other/low 分类不准。"}
+{"text":"网络负面消息删除","category":"ad","level":"low","review_note":"指向有偿负面消息删除服务，原 other/low 分类不准。"}
+{"text":"网络负面消息消除","category":"ad","level":"low","review_note":"指向有偿负面消息消除服务，原 other/low 分类不准。"}
+{"text":"网络负面清除","category":"ad","level":"low","review_note":"指向有偿负面信息清除服务，原 other/low 分类不准。"}
+{"text":"网络销售cp99","category":"ad","level":"low","review_note":"含销售导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"网络销售仿真手狗","category":"ad","level":"low","review_note":"含销售导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"网络销售毛瑟m1932","category":"ad","level":"low","review_note":"含销售导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"网络销售汽枪配件","category":"ad","level":"low","review_note":"含销售导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"网络销售麻黄素","category":"ad","level":"low","review_note":"含销售导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"网购数据供应","category":"ad","level":"low","review_note":"含数据供应导流语义，原 other/low 分类不准。"}
+{"text":"网购数据提供","category":"ad","level":"low","review_note":"含数据提供导流语义，原 other/low 分类不准。"}
+{"text":"网购数据销售","category":"ad","level":"low","review_note":"含数据销售导流语义，原 other/low 分类不准。"}
+{"text":"罗保铭","category":"political","level":"medium","review_note":"政治人物姓名，原 other/low 分类过低。"}
+{"text":"罗富和","category":"political","level":"medium","review_note":"政治人物姓名，原 other/low 分类过低。"}
+{"text":"罗干","category":"political","level":"medium","review_note":"政治人物姓名，原 other/low 分类过低。"}
+{"text":"罗志军","category":"political","level":"medium","review_note":"政治人物姓名，原 other/low 分类过低。"}
+{"text":"罗文嘉","category":"political","level":"medium","review_note":"政治人物姓名，原 other/low 分类过低。"}
+{"text":"罗清泉","category":"political","level":"medium","review_note":"政治人物姓名，原 other/low 分类过低。"}
+{"text":"罗荣桓","category":"political","level":"medium","review_note":"政治历史人物姓名，原 other/low 分类过低。"}
+{"text":"罢ke","category":"political","level":"medium","review_note":"罢课规避写法，涉及集体行动/政治抗议语境，原 other/low 过低。"}
+{"text":"罢参","category":"political","level":"medium","review_note":"涉及罢免/抵制参与的公共政治行动语境，原 other/low 过低。"}
+{"text":"罢学","category":"political","level":"medium","review_note":"涉及罢学集体行动语境，原 other/low 过低。"}
+{"text":"罢工","category":"political","level":"medium","review_note":"涉及集体抗议行动语境，原 other/low 过低。"}
+{"text":"罢工门","category":"political","level":"medium","review_note":"涉及罢工公共事件语境，原 other/low 过低。"}
+{"text":"罢市","category":"political","level":"medium","review_note":"涉及集体抗议行动语境，原 other/low 过低。"}
+{"text":"罢教","category":"political","level":"medium","review_note":"涉及集体抗议行动语境，原 other/low 过低。"}
+{"text":"罢教运动倡议书","category":"political","level":"medium","review_note":"明确罢教运动倡议，原 other/low 过低。"}
+{"text":"罢教运动规模扩大","category":"political","level":"medium","review_note":"明确罢教运动公共事件语境，原 other/low 过低。"}
+{"text":"罢考","category":"political","level":"medium","review_note":"涉及集体抵制考试行动语境，原 other/low 过低。"}
+{"text":"罢课","category":"political","level":"medium","review_note":"涉及学生集体行动/抗议语境，原 other/low 过低。"}
+{"text":"罢运","category":"political","level":"medium","review_note":"涉及集体抗议行动语境，原 other/low 过低。"}
+{"text":"美1国1伟1哥","category":"ad","level":"low","review_note":"疑似伟哥药品导流变体，原 other/low 分类不准。"}
+{"text":"美丽空姐上门特殊服务","category":"ad","level":"low","review_note":"含上门特殊服务导流语义，按规则由 pornographic/high 调为 ad/low。"}
+{"text":"美乳","category":"pornographic","level":"medium","review_note":"含成人身体部位色情语义，原 other/low 过低。"}
+{"text":"美乳人妻","category":"pornographic","level":"medium","review_note":"成人情色词组，原 other/low 过低。"}
+{"text":"美乳斗艳","category":"pornographic","level":"medium","review_note":"成人情色词组，原 other/low 过低。"}
+{"text":"美乳看护学生","category":"pornographic","level":"medium","review_note":"成人情色标题语义，原 other/low 过低。"}
+{"text":"美乳艳娘","category":"pornographic","level":"medium","review_note":"成人情色词组，原 other/low 过低。"}
+{"text":"美他佐辛提供","category":"ad","level":"low","review_note":"含提供导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"美仙子美乳美脚天中梨子","category":"pornographic","level":"medium","review_note":"成人情色资源标题语义，原 other/low 过低。"}
+{"text":"美军现役军刺批发","category":"ad","level":"low","review_note":"含批发导流语义，原 other/low 分类不准。"}
+{"text":"美咲唯bt","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加 BT 资源，原 other/low 过低。"}
+{"text":"美咲唯全集","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加全集，原 other/low 过低。"}
+{"text":"美咲唯电驴","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加电驴资源，原 other/low 过低。"}
+{"text":"美咲恭花种子","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加种子，原 other/low 过低。"}
+{"text":"美咲留衣种子","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加种子，原 other/low 过低。"}
+{"text":"美咲麻衣种子","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加种子，原 other/low 过低。"}
+{"text":"美国sog军刀专卖","category":"ad","level":"low","review_note":"含专卖导流语义，原 other/low 分类不准。"}
+{"text":"美国军用进口弓弩","category":"violence","level":"medium","review_note":"含弓弩攻击性武器语义，原 other/low 过低。"}
+{"text":"美国冷钢军刀专卖","category":"ad","level":"low","review_note":"含专卖导流语义，原 other/low 分类不准。"}
+{"text":"美国卡巴军刀专卖","category":"ad","level":"low","review_note":"含专卖导流语义，原 other/low 分类不准。"}
+{"text":"美国巴克军刀专卖","category":"ad","level":"low","review_note":"含专卖导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"美国秃鹰到货","category":"ad","level":"low","review_note":"含到货导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"美国秃鹰批发","category":"ad","level":"low","review_note":"含批发导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"美国秃鹰提供","category":"ad","level":"low","review_note":"含提供导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"美国秃鹰直销","category":"ad","level":"low","review_note":"含直销导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"美国秃鹰订购","category":"ad","level":"low","review_note":"含订购导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"美国秃鹰转让","category":"ad","level":"low","review_note":"含转让导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"美堂丽子种子","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加种子，原 other/low 过低。"}
+{"text":"美奈美蓝这全集","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加全集，原 other/low 过低。"}
+{"text":"美女上门","category":"pornographic","level":"medium","review_note":"在美女服务词簇中指向上门色情服务，原 other/low 过低。"}
+{"text":"美女上门全套服务","category":"pornographic","level":"high","review_note":"全套上门服务为明确色情服务语境，原 other/low 过低。"}
+{"text":"美女上门兼职","category":"pornographic","level":"medium","review_note":"在上门服务词簇中具有招嫖语义，原 other/low 过低。"}
+{"text":"美女上门服务","category":"pornographic","level":"medium","review_note":"在美女服务词簇中指向上门色情服务，原 other/low 过低。"}
+{"text":"美女上门服务中心","category":"pornographic","level":"medium","review_note":"在美女服务词簇中指向上门色情服务机构，原 other/low 过低。"}
+{"text":"美女丝袜按摩服务","category":"pornographic","level":"medium","review_note":"在色情服务词簇中含暧昧按摩服务语义，原 other/low 过低。"}
+{"text":"美女主持24小时全天激情热舞","category":"pornographic","level":"medium","review_note":"含激情热舞成人表演语义，原 other/low 过低。"}
+{"text":"美女主持25小时全天激情热舞","category":"pornographic","level":"medium","review_note":"含激情热舞成人表演语义，原 other/low 过低。"}
+{"text":"美女主持26小时全天激情热舞","category":"pornographic","level":"medium","review_note":"含激情热舞成人表演语义，原 other/low 过低。"}
+{"text":"美女主持27小时全天激情热舞","category":"pornographic","level":"medium","review_note":"含激情热舞成人表演语义，原 other/low 过低。"}
+{"text":"美女主持脱衣","category":"pornographic","level":"medium","review_note":"含脱衣成人表演语义，原 other/low 过低。"}
+{"text":"美女全脱图","category":"pornographic","level":"medium","review_note":"含裸体图片资源语义，原 other/low 过低。"}
+{"text":"美女兼职","category":"ad","level":"low","review_note":"在美女上门服务词簇中具有兼职招揽导流语义，原 other/low 分类不准。"}
+{"text":"美女兼职上门","category":"ad","level":"low","review_note":"含兼职上门招揽导流语义，原 other/low 分类不准。"}
+{"text":"美女兼职上门按摩","category":"ad","level":"low","review_note":"含兼职上门按摩招揽导流语义，原 other/low 分类不准。"}
+{"text":"美女出台","category":"pornographic","level":"medium","review_note":"含色情服务黑话语义，原 other/low 过低。"}
+{"text":"美女大学生兼职","category":"ad","level":"low","review_note":"含兼职招揽导流语义，原 other/low 分类不准。"}
+{"text":"美女妹妹上门服务","category":"pornographic","level":"medium","review_note":"在美女服务词簇中指向上门色情服务，原 other/low 过低。"}
+{"text":"美女性感图下载","category":"pornographic","level":"medium","review_note":"成人性感图片下载资源语义，原 other/low 过低。"}
+{"text":"美女性生活贴图","category":"pornographic","level":"medium","review_note":"含性生活贴图资源语义，原 other/low 过低。"}
+{"text":"美女护士被奸","category":"pornographic","level":"medium","review_note":"含强迫性行为情色标题语义，原 other/low 过低。"}
+{"text":"美女模特兼职上门","category":"ad","level":"low","review_note":"含兼职上门招揽导流语义，原 other/low 分类不准。"}
+{"text":"美女求包养","category":"pornographic","level":"medium","review_note":"含包养性交易暗示，原 other/low 过低。"}
+{"text":"美女激情","category":"pornographic","level":"medium","review_note":"在色情词簇中为成人激情内容语义，原 other/low 过低。"}
+{"text":"美女激情聊天","category":"pornographic","level":"medium","review_note":"含成人激情聊天语义，原 other/low 过低。"}
+{"text":"美女激情视频","category":"pornographic","level":"medium","review_note":"含成人激情视频语义，原 other/low 过低。"}
+{"text":"美女激情视频网","category":"pornographic","level":"medium","review_note":"含成人激情视频网站语义，原 other/low 过低。"}
+{"text":"美女激情陪聊","category":"pornographic","level":"medium","review_note":"含成人陪聊语义，原 other/low 过低。"}
+{"text":"美女热舞欧美日韩国产萝莉懂得","category":"pornographic","level":"high","review_note":"原 level 为不允许的 critical，按允许枚举改为 high。"}
+{"text":"美女真人视频聊天","category":"pornographic","level":"medium","review_note":"在美女视频词簇中指向成人视频聊天，原 other/low 过低。"}
+{"text":"美女祼聊","category":"pornographic","level":"high","review_note":"裸聊错字变体，原 other/low 过低。"}
+{"text":"美女穴","category":"pornographic","level":"medium","review_note":"含色情身体部位语义，原 other/low 过低。"}
+{"text":"美女穴自拍","category":"pornographic","level":"medium","review_note":"含色情自拍资源语义，原 other/low 过低。"}
+{"text":"美女脱衣图","category":"pornographic","level":"medium","review_note":"含脱衣图片资源语义，原 other/low 过低。"}
+{"text":"美女脱衣舞视频","category":"pornographic","level":"medium","review_note":"含脱衣舞视频资源语义，原 other/low 过低。"}
+{"text":"美女色图","category":"pornographic","level":"medium","review_note":"含色情图片资源语义，原 other/low 过低。"}
+{"text":"美女色导航","category":"pornographic","level":"medium","review_note":"含色情导航站语义，原 other/low 过低。"}
+{"text":"美女色电影","category":"pornographic","level":"medium","review_note":"含色情电影资源语义，原 other/low 过低。"}
+{"text":"美女视频聊天","category":"pornographic","level":"medium","review_note":"在美女视频词簇中指向成人视频聊天，原 other/low 过低。"}
+{"text":"美女走光","category":"pornographic","level":"medium","review_note":"含走光色情资源语义，原 other/low 过低。"}
+{"text":"美女陪游全套包服","category":"pornographic","level":"medium","review_note":"含全套服务暗示，原 other/low 过低。"}
+{"text":"美少妇上门服务","category":"pornographic","level":"medium","review_note":"在色情服务词簇中指向上门服务，原 other/low 过低。"}
+{"text":"美尻套图","category":"pornographic","level":"medium","review_note":"含成人臀部套图资源语义，原 other/low 过低。"}
+{"text":"美幼","category":"pornographic","level":"medium","review_note":"疑似未成年色情隐语，原 other/low 过低。"}
+{"text":"美幼专区","category":"pornographic","level":"high","review_note":"疑似未成年色情专区语义，原 other/low 过低。"}
+{"text":"美月安娜种子","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加种子，原 other/low 过低。"}
+{"text":"美沙酮供应","category":"ad","level":"low","review_note":"含供应导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"美沙酮出售","category":"ad","level":"low","review_note":"含出售导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"美沙酮批发","category":"ad","level":"low","review_note":"含批发导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"美沙酮提供","category":"ad","level":"low","review_note":"含提供导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"美沙酮直销","category":"ad","level":"low","review_note":"含直销导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"美沙酮订购","category":"ad","level":"low","review_note":"含订购导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"美版玉蒲团","category":"pornographic","level":"medium","review_note":"成人情色作品语义，原 other/low 过低。"}
+{"text":"美眉上门","category":"pornographic","level":"medium","review_note":"在色情服务词簇中指向上门服务，原 other/low 过低。"}
+{"text":"美眉全套服务","category":"pornographic","level":"high","review_note":"全套服务为色情服务黑话，原 other/low 过低。"}
+{"text":"美眉兼职","category":"ad","level":"low","review_note":"含兼职招揽导流语义，原 other/low 分类不准。"}
+{"text":"美眉服务","category":"pornographic","level":"medium","review_note":"在色情服务词簇中指向成人服务，原 other/low 过低。"}
+{"text":"美竹凉子种子","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加种子，原 other/low 过低。"}
+{"text":"美艳人妻","category":"pornographic","level":"medium","review_note":"成人情色词组，原 other/low 过低。"}
+{"text":"美艳人妻txt","category":"pornographic","level":"medium","review_note":"成人情色小说资源语义，原 other/low 过低。"}
+{"text":"美艳少妇","category":"pornographic","level":"medium","review_note":"成人情色词组，原 other/low 过低。"}
+{"text":"羟亚胺供应","category":"ad","level":"low","review_note":"含供应导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"羟亚胺出售","category":"ad","level":"low","review_note":"含出售导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"羟亚胺批发","category":"ad","level":"low","review_note":"含批发导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"羟亚胺提供","category":"ad","level":"low","review_note":"含提供导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"羟亚胺直销","category":"ad","level":"low","review_note":"含直销导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"羟亚胺订购","category":"ad","level":"low","review_note":"含订购导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"羟亚胺销售","category":"ad","level":"low","review_note":"含销售导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"羟基乙腈供应","category":"ad","level":"low","review_note":"含供应导流语义，原 other/low 分类不准。"}
+{"text":"羟基乙腈批发","category":"ad","level":"low","review_note":"含批发导流语义，原 other/low 分类不准。"}
+{"text":"羟基乙腈提供","category":"ad","level":"low","review_note":"含提供导流语义，原 other/low 分类不准。"}
+{"text":"羟基乙腈直销","category":"ad","level":"low","review_note":"含直销导流语义，原 other/low 分类不准。"}
+{"text":"羟基乙腈销售","category":"ad","level":"low","review_note":"含销售导流语义，原 other/low 分类不准。"}
+{"text":"群丑闹中华","category":"political","level":"medium","review_note":"含公共政治攻击/事件语境，原 other/low 过低。"}
+{"text":"群众冲击","category":"political","level":"medium","review_note":"涉及群体性冲击公共事件语境，原 other/low 过低。"}
+{"text":"群众包围政府","category":"political","level":"medium","review_note":"涉及群体性包围政府事件，原 other/low 过低。"}
+{"text":"群体事件","category":"political","level":"medium","review_note":"明确群体性公共事件语义，原 other/low 过低。"}
+{"text":"群体性事","category":"political","level":"medium","review_note":"群体性事件截断写法，原 other/low 过低。"}
+{"text":"群体性事件","category":"political","level":"medium","review_note":"明确群体性公共事件语义，原 other/low 过低。"}
+{"text":"群砍","category":"violence","level":"medium","review_note":"含群体砍杀暴力语义，原 other/low 过低。"}
+{"text":"群起抗暴","category":"political","level":"medium","review_note":"涉及群体抗暴政治行动语境，原 other/low 过低。"}
+{"text":"羰基氟批发","category":"ad","level":"low","review_note":"含批发导流语义，原 other/low 分类不准。"}
+{"text":"羰基镍供应","category":"ad","level":"low","review_note":"含供应导流语义，原 other/low 分类不准。"}
+{"text":"羰基镍提供","category":"ad","level":"low","review_note":"含提供导流语义，原 other/low 分类不准。"}
+{"text":"羰基镍直销","category":"ad","level":"low","review_note":"含直销导流语义，原 other/low 分类不准。"}
+{"text":"羰基镍销售","category":"ad","level":"low","review_note":"含销售导流语义，原 other/low 分类不准。"}
+{"text":"羽田舞子种子","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加种子，原 other/low 过低。"}
+{"text":"羽鸟沙耶香种子","category":"pornographic","level":"medium","review_note":"成人资源上下文中人名加种子，原 other/low 过低。"}
+{"text":"翻墙工具","category":"political","level":"medium","review_note":"翻墙规避审查工具语义，原 other/low 过低。"}
+{"text":"翻墙访问","category":"political","level":"medium","review_note":"翻墙访问规避审查语义，原 other/low 过低。"}
+{"text":"翻墙软件","category":"political","level":"medium","review_note":"翻墙规避审查软件语义，原 other/low 过低。"}
+{"text":"耀邦","category":"political","level":"medium","review_note":"政治人物姓名相关称谓，原 other/low 分类过低。"}
+{"text":"耀邦保护免获咎","category":"political","level":"medium","review_note":"涉及政治人物相关表述，原 other/low 过低。"}
+{"text":"老习","category":"political","level":"medium","review_note":"中国政治人物代称，原 other/low 过低。"}
+{"text":"老人数据供应","category":"ad","level":"low","review_note":"含数据供应导流语义，原 other/low 分类不准。"}
+{"text":"老人数据提供","category":"ad","level":"low","review_note":"含数据提供导流语义，原 other/low 分类不准。"}
+{"text":"老人数据销售","category":"ad","level":"low","review_note":"含数据销售导流语义，原 other/low 分类不准。"}
+{"text":"老人资料买卖","category":"ad","level":"low","review_note":"含资料买卖导流语义，原 other/low 分类不准。"}
+{"text":"老人资料提供","category":"ad","level":"low","review_note":"含资料提供导流语义，原 other/low 分类不准。"}
+{"text":"老婆在朋友胯下呻吟","category":"pornographic","level":"medium","review_note":"含成人性描写语义，原 other/low 过低。"}
+{"text":"老婆陪我换配偶","category":"pornographic","level":"medium","review_note":"含换偶成人性语义，原 other/low 过低。"}
+{"text":"老婆陪我换配偶txt","category":"pornographic","level":"medium","review_note":"含换偶成人小说资源语义，原 other/low 过低。"}
+{"text":"老婊子","category":"abuse","level":"medium","review_note":"明显辱骂词，原 other/low 分类过低。"}
+{"text":"老师16岁","category":"pornographic","level":"high","review_note":"原 level 为不允许的 critical，按允许枚举改为 high。"}
+{"text":"老师16岁txt","category":"pornographic","level":"high","review_note":"原 level 为不允许的 critical，按允许枚举改为 high。"}
+{"text":"老年人数据供应","category":"ad","level":"low","review_note":"含数据供应导流语义，原 other/low 分类不准。"}
+{"text":"老年人资料提供","category":"ad","level":"low","review_note":"含资料提供导流语义，原 other/low 分类不准。"}
+{"text":"老年人资料销售","category":"ad","level":"low","review_note":"含资料销售导流语义，原 other/low 分类不准。"}
+{"text":"老猎枪出售","category":"ad","level":"low","review_note":"含出售导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"老猎枪销售","category":"ad","level":"low","review_note":"含销售导流语义，按规则由 illegal/high 调为 ad/low。"}
+{"text":"考试作弊","category":"illegal","level":"medium","review_note":"明确考试作弊语义，原 other/low 过低。"}
+{"text":"考生资源销售","category":"ad","level":"low","review_note":"含考生资源销售导流语义，原 other/low 分类不准。"}
+{"text":"职业删帖公司","category":"ad","level":"low","review_note":"指向职业删帖服务公司，原 other/low 分类不准。"}
+{"text":"职业删贴","category":"ad","level":"low","review_note":"指向职业删帖服务，原 other/low 分类不准。"}
+{"text":"职业删贴公司","category":"ad","level":"low","review_note":"指向职业删帖服务公司，原 other/low 分类不准。"}
+{"text":"职业复仇","category":"violence","level":"high","review_note":"含职业复仇暴力服务语义，原 other/low 过低。"}
+{"text":"职业帮人打架","category":"violence","level":"high","review_note":"含帮人打架暴力服务语义，原 other/low 过低。"}
+{"text":"职业帮忙复仇","category":"violence","level":"high","review_note":"含帮忙复仇暴力服务语义，原 other/low 过低。"}
+{"text":"职业打手","category":"violence","level":"high","review_note":"含职业打手暴力服务语义，原 other/low 过低。"}
+{"text":"职业报仇","category":"violence","level":"high","review_note":"含职业报仇暴力服务语义，原 other/low 过低。"}
+{"text":"职业替人寻仇","category":"violence","level":"high","review_note":"含替人寻仇暴力服务语义，原 other/low 过低。"}
+{"text":"职业杀手","category":"violence","level":"high","review_note":"含职业杀手暴力服务语义，原 other/low 过低。"}
+{"text":"职称日语代考","category":"illegal","level":"medium","review_note":"含代考作弊语义，原 other/low 过低。"}
+{"text":"职称替考网","category":"illegal","level":"medium","review_note":"含替考作弊网站语义，原 other/low 过低。"}
+{"text":"职称证书制作","category":"ad","level":"low","review_note":"含证书制作服务导流语义，原 other/low 分类不准。"}
+{"text":"联名上书","category":"political","level":"medium","review_note":"涉及政治请愿/集体上书语境，原 other/low 过低。"}
+{"text":"联总之声","category":"political","level":"medium","review_note":"疑似政治组织/刊物相关词，原 other/low 过低。"}
+{"text":"联总之声传单","category":"political","level":"medium","review_note":"疑似政治组织传单相关词，原 other/low 过低。"}
+{"text":"联总这声传单","category":"political","level":"medium","review_note":"疑似政治组织传单变体，原 other/low 过低。"}

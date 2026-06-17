@@ -14,6 +14,8 @@ import (
 	"time"
 
 	gosensitive "github.com/Karrecy/sensitive-go"
+	"github.com/Karrecy/sensitive-go/builtin"
+	"github.com/Karrecy/sensitive-go/dict"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
 	"github.com/stretchr/testify/require"
 )
@@ -456,17 +458,23 @@ func TestMatchCustomBlockedKeyword_FoldedTextVariants(t *testing.T) {
 
 func TestMatchBuiltInBlockedKeyword_FoldedTextVariants(t *testing.T) {
 	detector, err := gosensitive.New().
-		LoadMemory([]string{"badword", "sb", "用户"}).
+		LoadWords([]dict.Word{
+			{Text: "badword", Category: dict.CategoryIllegal, Level: dict.LevelHigh},
+			{Text: "sb", Category: dict.CategoryAbuse, Level: dict.LevelMedium},
+			{Text: "用户", Category: dict.CategoryOther, Level: dict.LevelLow},
+		}).
 		EnableSymbol().
 		SetCaseSensitive(false).
 		Build()
 	require.NoError(t, err)
 
-	keyword, hit := matchBuiltInBlockedKeyword(detector, "superpowers brainstorming 用户 B a-d Wörd", nil)
+	match, hit := matchBuiltInBlockedKeyword(detector, "superpowers brainstorming 用户 B a-d Wörd", nil, nil, nil)
 	require.True(t, hit)
-	require.Equal(t, "badword", keyword)
+	require.Equal(t, "badword", match.Keyword)
+	require.Equal(t, "illegal", match.Category)
+	require.Equal(t, "high", match.Level)
 
-	_, hit = matchBuiltInBlockedKeyword(detector, "B a-d Wörd", []string{"bad word"})
+	_, hit = matchBuiltInBlockedKeyword(detector, "B a-d Wörd", []string{"bad word"}, nil, nil)
 	require.False(t, hit)
 }
 
@@ -478,7 +486,98 @@ func TestMatchBuiltInBlockedKeyword_SkipsShortGenericWords(t *testing.T) {
 		Build()
 	require.NoError(t, err)
 
-	_, hit := matchBuiltInBlockedKeyword(detector, "superpowers brainstorming 用户 助理 伊朗 代码", nil)
+	_, hit := matchBuiltInBlockedKeyword(detector, "superpowers brainstorming 用户 助理 伊朗 代码", nil, nil, nil)
+	require.False(t, hit)
+}
+
+func TestTagContentModerationBuiltinWord_SeverityRules(t *testing.T) {
+	tests := []struct {
+		name     string
+		text     string
+		category dict.Category
+		level    dict.Level
+	}{
+		{name: "contact ad low", text: "QQ联系", category: dict.CategoryAd, level: dict.LevelLow},
+		{name: "digits low", text: "1234567890", category: dict.CategoryOther, level: dict.LevelLow},
+		{name: "two english words low", text: "adult movie", category: dict.CategoryOther, level: dict.LevelLow},
+		{name: "common tech word low", text: "监听", category: dict.CategoryOther, level: dict.LevelLow},
+		{name: "illegal spyware high", text: "手机监听软件", category: dict.CategoryIllegal, level: dict.LevelHigh},
+		{name: "minor sexual critical", text: "14岁幼女", category: dict.CategoryPornographic, level: dict.LevelCritical},
+		{name: "porn high", text: "成人小电影", category: dict.CategoryPornographic, level: dict.LevelHigh},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			word := tagContentModerationBuiltinWord(dict.Word{Text: tt.text})
+			require.Equal(t, tt.category, word.Category)
+			require.Equal(t, tt.level, word.Level)
+		})
+	}
+}
+
+func TestContentModerationTaggedBuiltinWords_TagsEveryBuiltinWord(t *testing.T) {
+	words := contentModerationTaggedBuiltinWords()
+	require.NotEmpty(t, words)
+	require.Len(t, words, len(builtin.GetDefaultWords()))
+
+	for _, word := range words {
+		require.NotEmpty(t, strings.TrimSpace(word.Text))
+		require.NotEqual(t, "unknown", word.Category.String(), "word %q must have a known category", word.Text)
+		require.NotEqual(t, "unknown", word.Level.String(), "word %q must have a known level", word.Text)
+	}
+}
+
+func TestLoadContentModerationBuiltinLexicon_UsesStaticAnnotations(t *testing.T) {
+	words, err := loadContentModerationBuiltinLexicon()
+	require.NoError(t, err)
+	require.Len(t, words, len(builtin.GetDefaultWords()))
+
+	byText := make(map[string]dict.Word, len(words))
+	for _, word := range words {
+		byText[word.Text] = word
+	}
+
+	require.Equal(t, dict.CategoryIllegal, byText["007间谍专业版"].Category)
+	require.Equal(t, dict.LevelHigh, byText["007间谍专业版"].Level)
+	require.Equal(t, dict.CategoryIllegal, byText["0售手机卧底定位软件"].Category)
+	require.Equal(t, dict.LevelHigh, byText["0售手机卧底定位软件"].Level)
+	require.Equal(t, dict.CategoryPornographic, byText["14岁幼女b嫩阴"].Category)
+	require.Equal(t, dict.LevelCritical, byText["14岁幼女b嫩阴"].Level)
+	require.Equal(t, dict.CategoryPornographic, byText["成人小电影"].Category)
+	require.Equal(t, dict.LevelHigh, byText["成人小电影"].Level)
+}
+
+func TestMatchBuiltInBlockedKeyword_FiltersByConfiguredCategoryAndLevel(t *testing.T) {
+	detector, err := gosensitive.New().
+		LoadWords([]dict.Word{
+			{Text: "QQ联系", Category: dict.CategoryAd, Level: dict.LevelLow},
+			{Text: "辱骂词", Category: dict.CategoryAbuse, Level: dict.LevelMedium},
+			{Text: "手机监听软件", Category: dict.CategoryIllegal, Level: dict.LevelHigh},
+		}).
+		EnableSymbol().
+		SetCaseSensitive(false).
+		Build()
+	require.NoError(t, err)
+
+	_, hit := matchBuiltInBlockedKeyword(detector, "请 QQ联系 我", nil, nil, nil)
+	require.False(t, hit)
+
+	_, hit = matchBuiltInBlockedKeyword(detector, "出现辱骂词", nil, nil, nil)
+	require.False(t, hit)
+
+	match, hit := matchBuiltInBlockedKeyword(detector, "安装手机监听软件", nil, nil, nil)
+	require.True(t, hit)
+	require.Equal(t, "手机监听软件", match.Keyword)
+	require.Equal(t, "illegal", match.Category)
+	require.Equal(t, "high", match.Level)
+
+	match, hit = matchBuiltInBlockedKeyword(detector, "请 QQ联系 我", nil, []string{"ad"}, []string{"low"})
+	require.True(t, hit)
+	require.Equal(t, "QQ联系", match.Keyword)
+	require.Equal(t, "ad", match.Category)
+	require.Equal(t, "low", match.Level)
+
+	_, hit = matchBuiltInBlockedKeyword(detector, "安装手机监听软件", nil, []string{"ad"}, []string{"high"})
 	require.False(t, hit)
 }
 

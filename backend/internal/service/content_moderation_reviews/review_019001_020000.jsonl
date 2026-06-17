@@ -1,0 +1,645 @@
+{"text":"出售朝鲜版高仿真假钞","category":"illegal","level":"high","review_note":"出售高仿真假钞属于假币交易，ad/low 低估风险。"}
+{"text":"出售期货客户资料","category":"illegal","level":"high","review_note":"出售客户资料属于个人信息交易。"}
+{"text":"出售期货客户资料qq","category":"illegal","level":"high","review_note":"QQ 导流的是客户资料买卖，仍应按个人信息交易处理。"}
+{"text":"出售期货客户资源","category":"illegal","level":"high","review_note":"出售期货客户资源属于个人信息交易。"}
+{"text":"出售期货客户资源qq","category":"illegal","level":"high","review_note":"QQ 导流出售客户资源，ad/low 低估隐私风险。"}
+{"text":"出售木仓qq","category":"illegal","level":"high","review_note":"木仓为枪的规避写法，出售枪支应标 illegal/high。"}
+{"text":"出售本科假文凭qq","category":"illegal","level":"high","review_note":"出售假文凭属于伪造证件交易。"}
+{"text":"出售本科学位证qq","category":"illegal","level":"high","review_note":"出售学位证属于证件造假或非法证件交易。"}
+{"text":"出售本科文凭","category":"illegal","level":"high","review_note":"出售学历文凭属于伪造或非法证件交易。"}
+{"text":"出售本科文凭qq","category":"illegal","level":"high","review_note":"QQ 导流出售学历文凭，仍属于非法证件交易。"}
+{"text":"出售本科毕业证qq","category":"illegal","level":"high","review_note":"出售毕业证属于伪造证件交易。"}
+{"text":"出售杜冷丁qq","category":"illegal","level":"high","review_note":"杜冷丁为受管制麻醉药品，出售应标 illegal/high。"}
+{"text":"出售植物冰qq","category":"illegal","level":"high","review_note":"植物冰在此语境为毒品暗语，出售应按毒品交易处理。"}
+{"text":"出售植物冰牙签","category":"illegal","level":"high","review_note":"冰、牙签组合为毒品暗语，ad/low 低估风险。"}
+{"text":"出售楼盘业主名单","category":"illegal","level":"high","review_note":"出售业主名单属于个人信息交易。"}
+{"text":"出售楼盘业主数据","category":"illegal","level":"high","review_note":"出售楼盘业主数据属于个人信息交易。"}
+{"text":"出售楼盘业主资料","category":"illegal","level":"high","review_note":"出售业主资料属于个人信息交易。"}
+{"text":"出售楼盘业主资料qq","category":"illegal","level":"high","review_note":"QQ 导流出售业主资料，仍应标 illegal/high。"}
+{"text":"出售步qiang","category":"illegal","level":"high","review_note":"步qiang 为步枪规避写法，出售枪支应标 illegal/high。"}
+{"text":"出售残疾证","category":"illegal","level":"high","review_note":"出售残疾证属于非法证件交易。"}
+{"text":"出售比赛手狗","category":"illegal","level":"high","review_note":"手狗为手枪暗语，出售应标 illegal/high。"}
+{"text":"出售毕业文凭","category":"illegal","level":"high","review_note":"出售毕业文凭属于非法证件交易。"}
+{"text":"出售毕业生数据qq","category":"illegal","level":"high","review_note":"QQ 导流出售毕业生数据，属于个人信息交易。"}
+{"text":"出售毕业生简历","category":"illegal","level":"high","review_note":"出售毕业生简历属于个人信息交易。"}
+{"text":"出售毕业生简历qq","category":"illegal","level":"high","review_note":"QQ 导流出售简历数据，属于个人信息交易。"}
+{"text":"出售毕业证","category":"illegal","level":"high","review_note":"出售毕业证属于非法证件交易。"}
+{"text":"出售毕业证qq","category":"illegal","level":"high","review_note":"QQ 导流出售毕业证，仍属于非法证件交易。"}
+{"text":"出售民用开锁工具","category":"illegal","level":"high","review_note":"出售开锁工具在该词库语境下属于盗窃工具交易。"}
+{"text":"出售气qiang","category":"illegal","level":"high","review_note":"气qiang 为气枪规避写法，出售枪支应标 illegal/high。"}
+{"text":"出售气动狗","category":"illegal","level":"high","review_note":"狗为枪支暗语，气动狗应按气枪交易处理。"}
+{"text":"出售气动长狗","category":"illegal","level":"high","review_note":"长狗为长枪暗语，出售气动长狗应标 illegal/high。"}
+{"text":"出售气动长狗qq","category":"illegal","level":"high","review_note":"QQ 导流出售长枪暗语商品，应标 illegal/high。"}
+{"text":"出售气手狗","category":"illegal","level":"high","review_note":"气手狗为气手枪暗语，出售应标 illegal/high。"}
+{"text":"出售气手狗qq","category":"illegal","level":"high","review_note":"QQ 导流出售气手枪暗语商品，应标 illegal/high。"}
+{"text":"出售气木仓","category":"illegal","level":"high","review_note":"木仓为枪的规避写法，气木仓应按气枪处理。"}
+{"text":"出售气木仓qq","category":"illegal","level":"high","review_note":"QQ 导流出售气枪规避词，应标 illegal/high。"}
+{"text":"出售气狗","category":"illegal","level":"high","review_note":"气狗为气枪暗语，出售应标 illegal/high。"}
+{"text":"出售气狗qq","category":"illegal","level":"high","review_note":"QQ 导流出售气枪暗语商品，应标 illegal/high。"}
+{"text":"出售气狗狗粮","category":"illegal","level":"high","review_note":"狗粮在枪支语境中指弹药，出售应标 illegal/high。"}
+{"text":"出售气狙狗","category":"illegal","level":"high","review_note":"气狙狗为狙击气枪暗语，出售应标 illegal/high。"}
+{"text":"出售气长狗qq","category":"illegal","level":"high","review_note":"QQ 导流出售长枪暗语商品，应标 illegal/high。"}
+{"text":"出售氟硝西泮","category":"illegal","level":"high","review_note":"氟硝西泮为受管制镇静催眠药，出售应标 illegal/high。"}
+{"text":"出售氧化胡椒醛","category":"illegal","level":"high","review_note":"氧化胡椒醛为毒品制造相关前体语境，出售应提高为 illegal/high。"}
+{"text":"出售氯氨酮","category":"illegal","level":"high","review_note":"氯氨酮为氯胺酮近似写法，属于受管制毒品交易。"}
+{"text":"出售氯胺酮","category":"illegal","level":"high","review_note":"氯胺酮为受管制毒品，出售应标 illegal/high。"}
+{"text":"出售氯胺酮qq","category":"illegal","level":"high","review_note":"QQ 导流出售氯胺酮，仍属于毒品交易。"}
+{"text":"出售氯胺酮教程","category":"illegal","level":"high","review_note":"出售氯胺酮教程涉及毒品制售帮助。"}
+{"text":"出售氯胺酮电话","category":"illegal","level":"high","review_note":"电话导流出售氯胺酮，应标 illegal/high。"}
+{"text":"出售氰化氢qq","category":"illegal","level":"high","review_note":"氰化氢为剧毒化学品，出售导流应标 illegal/high。"}
+{"text":"出售氰化钾安乐死药qq","category":"illegal","level":"high","review_note":"氰化钾为剧毒品，出售用于致死用途风险明确。"}
+{"text":"出售氰化铊","category":"illegal","level":"high","review_note":"氰化铊为剧毒品，出售应标 illegal/high。"}
+{"text":"出售水晶冰","category":"illegal","level":"high","review_note":"水晶冰为冰毒暗语，出售应标 illegal/high。"}
+{"text":"出售水晶冰qq","category":"illegal","level":"high","review_note":"QQ 导流出售冰毒暗语商品，应标 illegal/high。"}
+{"text":"出售水果冰","category":"illegal","level":"high","review_note":"水果冰在此语境为毒品暗语，出售应标 illegal/high。"}
+{"text":"出售水果冰qq","category":"illegal","level":"high","review_note":"QQ 导流出售毒品暗语商品，应标 illegal/high。"}
+{"text":"出售汔狗","category":"illegal","level":"high","review_note":"汔狗为汽枪暗语变体，出售应标 illegal/high。"}
+{"text":"出售汽gou","category":"illegal","level":"high","review_note":"汽gou 为汽枪暗语规避写法，出售应标 illegal/high。"}
+{"text":"出售汽qiang","category":"illegal","level":"high","review_note":"汽qiang 为汽枪规避写法，出售应标 illegal/high。"}
+{"text":"出售汽动狗","category":"illegal","level":"high","review_note":"汽动狗为汽枪暗语，出售应标 illegal/high。"}
+{"text":"出售汽木仓","category":"illegal","level":"high","review_note":"汽木仓为汽枪规避写法，出售应标 illegal/high。"}
+{"text":"出售汽狗","category":"illegal","level":"high","review_note":"汽狗为汽枪暗语，出售应标 illegal/high。"}
+{"text":"出售汽狗qq","category":"illegal","level":"high","review_note":"QQ 导流出售汽枪暗语商品，应标 illegal/high。"}
+{"text":"出售汽狗狗粮","category":"illegal","level":"high","review_note":"狗粮在枪支语境中指弹药，出售应标 illegal/high。"}
+{"text":"出售汽狗铅弹qq","category":"illegal","level":"high","review_note":"QQ 导流出售汽枪铅弹，ad/low 低估风险。"}
+{"text":"出售汽车专用解码器","category":"illegal","level":"high","review_note":"汽车解码器可用于盗车开锁，出售应按违法工具处理。"}
+{"text":"出售汽车中控干扰器","category":"illegal","level":"high","review_note":"汽车中控干扰器属于盗车相关违法工具。"}
+{"text":"出售汽车中控拦截器","category":"illegal","level":"high","review_note":"汽车中控拦截器可用于非法解锁盗车。"}
+{"text":"出售汽车中控拦截器qq","category":"illegal","level":"high","review_note":"QQ 导流出售汽车中控拦截器，应标 illegal/high。"}
+{"text":"出售汽车信号屏蔽器","category":"illegal","level":"high","review_note":"汽车信号屏蔽器可用于盗车或干扰锁车。"}
+{"text":"出售汽车信号拦截器","category":"illegal","level":"high","review_note":"汽车信号拦截器属于盗车相关违法工具。"}
+{"text":"出售汽车信号解码器","category":"illegal","level":"high","review_note":"汽车信号解码器可用于非法开锁盗车。"}
+{"text":"出售汽车信号解码器qq","category":"illegal","level":"high","review_note":"QQ 导流出售汽车信号解码器，应标 illegal/high。"}
+{"text":"出售汽车屏蔽器","category":"illegal","level":"high","review_note":"汽车屏蔽器可用于干扰车辆锁控信号。"}
+{"text":"出售汽车干扰信号器","category":"illegal","level":"high","review_note":"汽车干扰信号器属于盗车相关违法工具。"}
+{"text":"出售汽车干扰器","category":"illegal","level":"high","review_note":"汽车干扰器可用于干扰锁车和盗车。"}
+{"text":"出售汽车干扰器qq","category":"illegal","level":"high","review_note":"QQ 导流出售汽车干扰器，应标 illegal/high。"}
+{"text":"出售汽车开锁器","category":"illegal","level":"high","review_note":"汽车开锁器属于盗车开锁工具。"}
+{"text":"出售汽车开锁工具qq","category":"illegal","level":"high","review_note":"QQ 导流出售汽车开锁工具，应标 illegal/high。"}
+{"text":"出售汽车强开工具","category":"illegal","level":"high","review_note":"汽车强开工具明确用于非法开锁。"}
+{"text":"出售汽车强开工具qq","category":"illegal","level":"high","review_note":"QQ 导流出售汽车强开工具，应标 illegal/high。"}
+{"text":"出售汽车拦截器","category":"illegal","level":"high","review_note":"汽车拦截器可用于盗车信号拦截。"}
+{"text":"出售汽车拦截器qq","category":"illegal","level":"high","review_note":"QQ 导流出售汽车拦截器，应标 illegal/high。"}
+{"text":"出售汽车电子解码器","category":"illegal","level":"high","review_note":"汽车电子解码器属于盗车相关违法工具。"}
+{"text":"出售汽车电子解码器qq","category":"illegal","level":"high","review_note":"QQ 导流出售汽车电子解码器，应标 illegal/high。"}
+{"text":"出售汽车电脑解码器","category":"illegal","level":"high","review_note":"汽车电脑解码器可用于非法开锁盗车。"}
+{"text":"出售汽车芯片解码器","category":"illegal","level":"high","review_note":"汽车芯片解码器属于盗车相关工具。"}
+{"text":"出售汽车解码器","category":"illegal","level":"high","review_note":"汽车解码器可用于非法解锁车辆。"}
+{"text":"出售汽车解码器软件","category":"illegal","level":"high","review_note":"汽车解码软件可用于盗车开锁。"}
+{"text":"出售汽车遥控信号干扰器","category":"illegal","level":"high","review_note":"汽车遥控信号干扰器可用于盗车。"}
+{"text":"出售汽车遥控信号解码器","category":"illegal","level":"high","review_note":"汽车遥控信号解码器可用于非法解锁。"}
+{"text":"出售汽车遥控复制器","category":"illegal","level":"high","review_note":"汽车遥控复制器可用于复制车钥匙信号。"}
+{"text":"出售汽车遥控干扰器","category":"illegal","level":"high","review_note":"汽车遥控干扰器属于盗车相关工具。"}
+{"text":"出售汽车遥控干扰器qq","category":"illegal","level":"high","review_note":"QQ 导流出售汽车遥控干扰器，应标 illegal/high。"}
+{"text":"出售汽车遥控拦截器","category":"illegal","level":"high","review_note":"汽车遥控拦截器可用于盗车信号拦截。"}
+{"text":"出售汽车遥控拦截器qq","category":"illegal","level":"high","review_note":"QQ 导流出售汽车遥控拦截器，应标 illegal/high。"}
+{"text":"出售汽车遥控电子干扰器","category":"illegal","level":"high","review_note":"汽车遥控电子干扰器属于盗车相关违法工具。"}
+{"text":"出售汽车遥控解码器qq","category":"illegal","level":"high","review_note":"QQ 导流出售汽车遥控解码器，应标 illegal/high。"}
+{"text":"出售汽车锁解码器","category":"illegal","level":"high","review_note":"汽车锁解码器可用于非法开锁。"}
+{"text":"出售汽车锁解码器qq","category":"illegal","level":"high","review_note":"QQ 导流出售汽车锁解码器，应标 illegal/high。"}
+{"text":"出售沙漠之鹰","category":"illegal","level":"high","review_note":"沙漠之鹰为枪支名称，出售应标 illegal/high。"}
+{"text":"出售沙漠之鹰qq","category":"illegal","level":"high","review_note":"QQ 导流出售枪支名称商品，应标 illegal/high。"}
+{"text":"出售油冰","category":"illegal","level":"high","review_note":"油冰在此语境为毒品暗语，出售应标 illegal/high。"}
+{"text":"出售法人代表手机号","category":"illegal","level":"high","review_note":"出售法人手机号属于个人信息交易。"}
+{"text":"出售法人手机号码","category":"illegal","level":"high","review_note":"出售法人手机号码属于个人信息交易。"}
+{"text":"出售法人通讯录","category":"illegal","level":"high","review_note":"出售法人通讯录属于个人信息交易。"}
+{"text":"出售法人通讯录qq","category":"illegal","level":"high","review_note":"QQ 导流出售法人通讯录，应标 illegal/high。"}
+{"text":"出售活体肾脏","category":"illegal","level":"high","review_note":"出售活体肾脏属于人体器官交易。"}
+{"text":"出售海乐神qq","category":"illegal","level":"high","review_note":"海乐神为受管制镇静催眠药，出售导流应标 illegal/high。"}
+{"text":"出售液体迷幻药","category":"illegal","level":"high","review_note":"出售迷幻药属于毒品或致幻药交易。"}
+{"text":"出售淘宝账户资料qq","category":"illegal","level":"high","review_note":"QQ 导流出售账户资料，属于个人信息和账号黑产交易。"}
+{"text":"出售温切斯特","category":"illegal","level":"high","review_note":"温切斯特为枪械品牌语境，出售应标 illegal/high。"}
+{"text":"出售温切斯特1000x","category":"illegal","level":"high","review_note":"温切斯特1000x为气枪型号语境，出售应标 illegal/high。"}
+{"text":"出售温彻斯特","category":"illegal","level":"high","review_note":"温彻斯特为枪械品牌语境，出售应标 illegal/high。"}
+{"text":"出售温彻斯特1000x","category":"illegal","level":"high","review_note":"温彻斯特1000x为气枪型号语境，出售应标 illegal/high。"}
+{"text":"出售港38式左轮","category":"illegal","level":"high","review_note":"左轮为手枪语境，出售应标 illegal/high。"}
+{"text":"出售溜冰壶qq","category":"illegal","level":"high","review_note":"溜冰壶为吸毒工具语境，出售导流应标 illegal/high。"}
+{"text":"出售溜冰工具","category":"illegal","level":"high","review_note":"出售吸毒工具应按毒品相关违法内容处理。"}
+{"text":"出售潜伏者专业版","category":"illegal","level":"high","review_note":"潜伏者在此为监听/卧底软件系列，出售应按 spyware 处理。"}
+{"text":"出售潜伏者增强版","category":"illegal","level":"high","review_note":"潜伏者增强版为监听软件语境，ad/low 低估风险。"}
+{"text":"出售潜伏者改良版","category":"illegal","level":"high","review_note":"潜伏者改良版为监听软件语境，应标 illegal/high。"}
+{"text":"出售潜伏者破解版","category":"illegal","level":"high","review_note":"潜伏者破解版为非法监听软件语境，应标 illegal/high。"}
+{"text":"出售火枪游戏","category":"other","level":"low","review_note":"字面为出售游戏，缺少真实武器交易含义，illegal/high 过重。"}
+{"text":"出售火狗","category":"illegal","level":"high","review_note":"火狗为火药枪暗语，出售应标 illegal/high。"}
+{"text":"出售火药","category":"illegal","level":"high","review_note":"出售火药属于危险爆炸物交易。"}
+{"text":"出售烈性tnt","category":"illegal","level":"high","review_note":"TNT 为爆炸物，出售应标 illegal/high。"}
+{"text":"出售热武器","category":"illegal","level":"high","review_note":"热武器交易明确违法，ad/low 低估风险。"}
+{"text":"出售燃烧弹配方","category":"illegal","level":"high","review_note":"出售燃烧弹配方涉及武器制作帮助。"}
+{"text":"出售爆破剂","category":"illegal","level":"high","review_note":"爆破剂属于爆炸物，出售应标 illegal/high。"}
+{"text":"出售爆破剂qq","category":"illegal","level":"high","review_note":"QQ 导流出售爆破剂，应标 illegal/high。"}
+{"text":"出售牙签冰qq","category":"illegal","level":"high","review_note":"牙签冰为毒品暗语，出售导流应标 illegal/high。"}
+{"text":"出售物业业主资料","category":"illegal","level":"high","review_note":"出售业主资料属于个人信息交易。"}
+{"text":"出售物流公司内部数据","category":"illegal","level":"high","review_note":"出售物流公司内部数据属于数据黑产。"}
+{"text":"出售物流公司内部数据qq","category":"illegal","level":"high","review_note":"QQ 导流出售物流内部数据，应标 illegal/high。"}
+{"text":"出售物流客户数据","category":"illegal","level":"high","review_note":"出售物流客户数据属于个人信息交易。"}
+{"text":"出售物流客户数据qq","category":"illegal","level":"high","review_note":"QQ 导流出售物流客户数据，应标 illegal/high。"}
+{"text":"出售物流客户资料","category":"illegal","level":"high","review_note":"出售物流客户资料属于个人信息交易。"}
+{"text":"出售物流客户资料qq","category":"illegal","level":"high","review_note":"QQ 导流出售物流客户资料，应标 illegal/high。"}
+{"text":"出售物流成单数据","category":"illegal","level":"high","review_note":"出售物流成单数据属于个人信息或订单数据交易。"}
+{"text":"出售物流成单数据qq","category":"illegal","level":"high","review_note":"QQ 导流出售物流成单数据，应标 illegal/high。"}
+{"text":"出售物流数据","category":"illegal","level":"high","review_note":"出售物流数据属于数据黑产。"}
+{"text":"出售物流数据qq","category":"illegal","level":"high","review_note":"QQ 导流出售物流数据，应标 illegal/high。"}
+{"text":"出售物流进线数据","category":"illegal","level":"high","review_note":"出售物流进线数据属于个人信息交易。"}
+{"text":"出售物流进线数据qq","category":"illegal","level":"high","review_note":"QQ 导流出售物流进线数据，应标 illegal/high。"}
+{"text":"出售特洛伊智能偷听软件","category":"illegal","level":"high","review_note":"出售偷听软件属于非法监听/spyware 内容。"}
+{"text":"出售特洛伊远程窃听软件","category":"illegal","level":"high","review_note":"远程窃听软件属于非法监听工具。"}
+{"text":"出售犯人数据","category":"illegal","level":"high","review_note":"出售犯人数据属于个人信息交易。"}
+{"text":"出售犯人数据qq","category":"illegal","level":"high","review_note":"QQ 导流出售犯人数据，应标 illegal/high。"}
+{"text":"出售狗支","category":"illegal","level":"high","review_note":"狗支为枪支暗语，出售应标 illegal/high。"}
+{"text":"出售狗管","category":"illegal","level":"high","review_note":"狗管为枪管暗语，出售应标 illegal/high。"}
+{"text":"出售狗粮模具qq","category":"illegal","level":"high","review_note":"狗粮模具在枪弹语境中为弹药制作相关工具。"}
+{"text":"出售狙击弩","category":"illegal","level":"high","review_note":"出售狙击弩属于武器交易。"}
+{"text":"出售狙击弩qq","category":"illegal","level":"high","review_note":"QQ 导流出售狙击弩，应标 illegal/high。"}
+{"text":"出售狙击步狗","category":"illegal","level":"high","review_note":"步狗为步枪暗语，狙击步狗应标 illegal/high。"}
+{"text":"出售狙击步狗qq","category":"illegal","level":"high","review_note":"QQ 导流出售狙击步枪暗语商品，应标 illegal/high。"}
+{"text":"出售狩猎弓弩qq","category":"illegal","level":"high","review_note":"QQ 导流出售弓弩，属于武器交易。"}
+{"text":"出售狩猎弩","category":"illegal","level":"high","review_note":"出售狩猎弩属于武器交易。"}
+{"text":"出售狩猎弩qq","category":"illegal","level":"high","review_note":"QQ 导流出售狩猎弩，应标 illegal/high。"}
+{"text":"出售狩猎气狗","category":"illegal","level":"high","review_note":"气狗为气枪暗语，出售应标 illegal/high。"}
+{"text":"出售狩猎气狗qq","category":"illegal","level":"high","review_note":"QQ 导流出售气枪暗语商品，应标 illegal/high。"}
+{"text":"出售猎qiang","category":"illegal","level":"high","review_note":"猎qiang 为猎枪规避写法，出售应标 illegal/high。"}
+{"text":"出售猎弩","category":"illegal","level":"high","review_note":"出售猎弩属于武器交易。"}
+{"text":"出售猎弩qq","category":"illegal","level":"high","review_note":"QQ 导流出售猎弩，应标 illegal/high。"}
+{"text":"出售猎木仓","category":"illegal","level":"high","review_note":"猎木仓为猎枪规避写法，出售应标 illegal/high。"}
+{"text":"出售猎木仓qq","category":"illegal","level":"high","review_note":"QQ 导流出售猎枪规避词，应标 illegal/high。"}
+{"text":"出售猎豹弓弩qq","category":"illegal","level":"high","review_note":"QQ 导流出售弓弩，属于武器交易。"}
+{"text":"出售猎豹弩","category":"illegal","level":"high","review_note":"出售弩属于武器交易。"}
+{"text":"出售猪肉牙签","category":"illegal","level":"high","review_note":"猪肉牙签在此区间为毒品暗语组合，ad/low 低估风险。"}
+{"text":"出售猪肉白牙签","category":"illegal","level":"high","review_note":"白牙签为毒品暗语，出售应标 illegal/high。"}
+{"text":"出售猪肉钻石冰qq","category":"illegal","level":"high","review_note":"钻石冰为冰毒暗语，QQ 导流出售应标 illegal/high。"}
+{"text":"出售猪肉钻石白牙签","category":"illegal","level":"high","review_note":"钻石、白牙签组合为毒品暗语，出售应标 illegal/high。"}
+{"text":"出售瓦斯手狗","category":"illegal","level":"high","review_note":"手狗为手枪暗语，瓦斯手狗应按枪支交易处理。"}
+{"text":"出售瓦斯手狗qq","category":"illegal","level":"high","review_note":"QQ 导流出售瓦斯手枪暗语商品，应标 illegal/high。"}
+{"text":"出售生源信息","category":"illegal","level":"high","review_note":"出售生源信息属于个人信息交易。"}
+{"text":"出售甲卡西酮","category":"illegal","level":"high","review_note":"甲卡西酮为受管制毒品，出售应标 illegal/high。"}
+{"text":"出售甲卡西酮qq","category":"illegal","level":"high","review_note":"QQ 导流出售甲卡西酮，应标 illegal/high。"}
+{"text":"出售甲卡西酮合成教程","category":"illegal","level":"high","review_note":"出售毒品合成教程属于毒品制售帮助。"}
+{"text":"出售甲卡西酮教程","category":"illegal","level":"high","review_note":"出售甲卡西酮教程涉及毒品制售帮助。"}
+{"text":"出售甲基安非他命","category":"illegal","level":"high","review_note":"甲基安非他命为冰毒相关名称，出售应标 illegal/high。"}
+{"text":"出售甲基安非他明qq","category":"illegal","level":"high","review_note":"QQ 导流出售甲基安非他明，应标 illegal/high。"}
+{"text":"出售甲基苯丙","category":"illegal","level":"high","review_note":"甲基苯丙为甲基苯丙胺简称，属于毒品交易。"}
+{"text":"出售甲基苯丙胺","category":"illegal","level":"high","review_note":"甲基苯丙胺为冰毒主要成分，出售应标 illegal/high。"}
+{"text":"出售甲基苯丙胺qq","category":"illegal","level":"high","review_note":"QQ 导流出售甲基苯丙胺，应标 illegal/high。"}
+{"text":"出售甲基苯丙胺制作方法","category":"illegal","level":"high","review_note":"出售毒品制作方法属于毒品制售帮助。"}
+{"text":"出售甲基苯丙胺制作方法qq","category":"illegal","level":"high","review_note":"QQ 导流出售毒品制作方法，应标 illegal/high。"}
+{"text":"出售甲基苯丙胺合成方法","category":"illegal","level":"high","review_note":"出售毒品合成方法属于毒品制售帮助。"}
+{"text":"出售甲基苯甲胺","category":"illegal","level":"high","review_note":"该词为甲基苯丙胺近似/误写语境，出售应标 illegal/high。"}
+{"text":"出售甲子苯丙胺","category":"illegal","level":"high","review_note":"该词为甲基苯丙胺近似规避写法，出售应标 illegal/high。"}
+{"text":"出售甲氧麻黄酮","category":"illegal","level":"high","review_note":"甲氧麻黄酮为毒品相关物质，出售应标 illegal/high。"}
+{"text":"出售甲硝西泮","category":"illegal","level":"high","review_note":"甲硝西泮为受管制镇静催眠药，出售应标 illegal/high。"}
+{"text":"出售申通面单","category":"illegal","level":"high","review_note":"出售快递面单属于个人信息和物流数据交易。"}
+{"text":"出售电信用户资料","category":"illegal","level":"high","review_note":"出售电信用户资料属于个人信息交易。"}
+{"text":"出售电动开锁器","category":"illegal","level":"high","review_note":"电动开锁器属于盗窃开锁工具。"}
+{"text":"出售电动开锁器qq","category":"illegal","level":"high","review_note":"QQ 导流出售电动开锁器，应标 illegal/high。"}
+{"text":"出售电动开锁工具","category":"illegal","level":"high","review_note":"电动开锁工具属于盗窃工具。"}
+{"text":"出售电动开锁工具qq","category":"illegal","level":"high","review_note":"QQ 导流出售电动开锁工具，应标 illegal/high。"}
+{"text":"出售电动长狗","category":"illegal","level":"high","review_note":"长狗为长枪暗语，出售应标 illegal/high。"}
+{"text":"出售电子干扰器","category":"illegal","level":"high","review_note":"电子干扰器在该语境下属于违法干扰工具。"}
+{"text":"出售电子开锁器","category":"illegal","level":"high","review_note":"电子开锁器属于盗窃开锁工具。"}
+{"text":"出售电子开锁器qq","category":"illegal","level":"high","review_note":"QQ 导流出售电子开锁器，应标 illegal/high。"}
+{"text":"出售电子汽车解码器","category":"illegal","level":"high","review_note":"汽车解码器可用于盗车开锁。"}
+{"text":"出售电狗","category":"illegal","level":"high","review_note":"电狗在该语境为电击武器或枪支暗语，ad/low 低估风险。"}
+{"text":"出售电狗qq","category":"illegal","level":"high","review_note":"QQ 导流出售电狗，应标 illegal/high。"}
+{"text":"出售电视购物名录","category":"illegal","level":"high","review_note":"出售电视购物名录属于客户信息交易。"}
+{"text":"出售电视购物名录qq","category":"illegal","level":"high","review_note":"QQ 导流出售客户名录，应标 illegal/high。"}
+{"text":"出售电视购物数据qq","category":"illegal","level":"high","review_note":"QQ 导流出售电视购物数据，属于个人信息交易。"}
+{"text":"出售电视购物资料qq","category":"illegal","level":"high","review_note":"QQ 导流出售电视购物资料，应标 illegal/high。"}
+{"text":"出售电话营销数据","category":"illegal","level":"high","review_note":"出售电话营销数据属于个人信息交易。"}
+{"text":"出售电话营销数据qq","category":"illegal","level":"high","review_note":"QQ 导流出售电话营销数据，应标 illegal/high。"}
+{"text":"出售电购数据qq","category":"illegal","level":"high","review_note":"QQ 导流出售电购数据，属于个人信息交易。"}
+{"text":"出售电购综合面单","category":"illegal","level":"high","review_note":"出售电购面单属于订单和个人信息交易。"}
+{"text":"出售电购综合面单qq","category":"illegal","level":"high","review_note":"QQ 导流出售电购面单，应标 illegal/high。"}
+{"text":"出售电购资料","category":"illegal","level":"high","review_note":"出售电购资料属于个人信息交易。"}
+{"text":"出售电购资料qq","category":"illegal","level":"high","review_note":"QQ 导流出售电购资料，应标 illegal/high。"}
+{"text":"出售电购面单数据","category":"illegal","level":"high","review_note":"出售电购面单数据属于个人信息交易。"}
+{"text":"出售电购面单数据qq","category":"illegal","level":"high","review_note":"QQ 导流出售电购面单数据，应标 illegal/high。"}
+{"text":"出售男女性数据qq","category":"illegal","level":"high","review_note":"QQ 导流出售人群数据，属于个人信息交易。"}
+{"text":"出售男婴","category":"illegal","level":"high","review_note":"出售婴儿属于人口买卖。"}
+{"text":"出售留学文凭","category":"illegal","level":"high","review_note":"出售留学文凭属于非法证件交易。"}
+{"text":"出售留学文凭qq","category":"illegal","level":"high","review_note":"QQ 导流出售留学文凭，应标 illegal/high。"}
+{"text":"出售病人数据资料","category":"illegal","level":"high","review_note":"出售病人数据资料属于敏感个人信息交易。"}
+{"text":"出售白冰","category":"illegal","level":"high","review_note":"白冰为冰毒暗语，出售应标 illegal/high。"}
+{"text":"出售白冰qq","category":"illegal","level":"high","review_note":"QQ 导流出售冰毒暗语商品，应标 illegal/high。"}
+{"text":"出售白冰果子","category":"illegal","level":"high","review_note":"白冰、果子为毒品暗语组合，出售应标 illegal/high。"}
+{"text":"出售白冰牙签","category":"illegal","level":"high","review_note":"白冰牙签为毒品暗语，出售应标 illegal/high。"}
+{"text":"出售白冰牙签qq","category":"illegal","level":"high","review_note":"QQ 导流出售毒品暗语商品，应标 illegal/high。"}
+{"text":"出售白冰糖","category":"illegal","level":"high","review_note":"白冰糖在此语境为冰毒暗语，出售应标 illegal/high。"}
+{"text":"出售白冰糖qq","category":"illegal","level":"high","review_note":"QQ 导流出售冰毒暗语商品，应标 illegal/high。"}
+{"text":"出售白冰黄冰qq","category":"illegal","level":"high","review_note":"白冰、黄冰为毒品暗语，QQ 导流应标 illegal/high。"}
+{"text":"出售白冰黄牙签","category":"illegal","level":"high","review_note":"白冰、牙签为毒品暗语组合，出售应标 illegal/high。"}
+{"text":"出售白牙冰","category":"illegal","level":"high","review_note":"白牙冰为毒品暗语，出售应标 illegal/high。"}
+{"text":"出售白牙签","category":"illegal","level":"high","review_note":"白牙签为毒品暗语，出售应标 illegal/high。"}
+{"text":"出售白牙签qq","category":"illegal","level":"high","review_note":"QQ 导流出售毒品暗语商品，应标 illegal/high。"}
+{"text":"出售白牙签教程","category":"illegal","level":"high","review_note":"出售毒品暗语教程涉及毒品制售帮助。"}
+{"text":"出售白牙签电话","category":"illegal","level":"high","review_note":"电话导流出售毒品暗语商品，应标 illegal/high。"}
+{"text":"出售白粉qq","category":"illegal","level":"high","review_note":"白粉为毒品暗语，QQ 导流出售应标 illegal/high。"}
+{"text":"出售白粉教程","category":"illegal","level":"high","review_note":"出售白粉教程涉及毒品制售帮助。"}
+{"text":"出售白黄牙签","category":"illegal","level":"high","review_note":"白黄牙签为毒品暗语，出售应标 illegal/high。"}
+{"text":"出售盐酸哌替啶","category":"illegal","level":"high","review_note":"哌替啶为受管制麻醉药品，出售应标 illegal/high。"}
+{"text":"出售盐酸哌替啶qq","category":"illegal","level":"high","review_note":"QQ 导流出售哌替啶，应标 illegal/high。"}
+{"text":"出售盐酸曲马多","category":"illegal","level":"high","review_note":"曲马多为受管制药品，出售应标 illegal/high。"}
+{"text":"出售盐酸曲马多qq","category":"illegal","level":"high","review_note":"QQ 导流出售曲马多，应标 illegal/high。"}
+{"text":"出售盐酸曲马多片","category":"illegal","level":"high","review_note":"出售曲马多片属于受管制药品交易。"}
+{"text":"出售盐酸氯胺酮qq","category":"illegal","level":"high","review_note":"QQ 导流出售氯胺酮，应标 illegal/high。"}
+{"text":"出售盐酸羟亚胺","category":"illegal","level":"high","review_note":"羟亚胺为氯胺酮制毒前体，出售应标 illegal/high。"}
+{"text":"出售盐酸羟亚胺qq","category":"illegal","level":"high","review_note":"QQ 导流出售制毒前体，应标 illegal/high。"}
+{"text":"出售盐酸羟亚胺教程","category":"illegal","level":"high","review_note":"出售制毒前体相关教程，风险明显高于 ad/low。"}
+{"text":"出售盐酸羟亚胺电话","category":"illegal","level":"high","review_note":"电话导流出售制毒前体，应标 illegal/high。"}
+{"text":"出售盐酸麻黄碱","category":"illegal","level":"high","review_note":"麻黄碱为制毒前体，出售应标 illegal/high。"}
+{"text":"出售监狱个人资料","category":"illegal","level":"high","review_note":"出售监狱个人资料属于个人信息交易。"}
+{"text":"出售监狱数据","category":"illegal","level":"high","review_note":"出售监狱数据属于敏感个人信息交易。"}
+{"text":"出售监狱数据qq","category":"illegal","level":"high","review_note":"QQ 导流出售监狱数据，应标 illegal/high。"}
+{"text":"出售真实学历qq","category":"illegal","level":"high","review_note":"QQ 导流出售学历资质，属于非法证件交易。"}
+{"text":"出售真实文凭","category":"illegal","level":"high","review_note":"出售文凭属于非法证件交易。"}
+{"text":"出售真实文凭qq","category":"illegal","level":"high","review_note":"QQ 导流出售文凭，应标 illegal/high。"}
+{"text":"出售真实银行卡","category":"illegal","level":"high","review_note":"出售银行卡属于银行卡黑产交易。"}
+{"text":"出售真实银行卡qq","category":"illegal","level":"high","review_note":"QQ 导流出售银行卡，应标 illegal/high。"}
+{"text":"出售眼角膜","category":"illegal","level":"high","review_note":"出售眼角膜属于人体器官组织交易。"}
+{"text":"出售眼角膜源","category":"illegal","level":"high","review_note":"出售眼角膜源属于人体器官组织交易。"}
+{"text":"出售眼镜蛇弩","category":"illegal","level":"high","review_note":"出售弩属于武器交易。"}
+{"text":"出售短信任意改号软件qq","category":"illegal","level":"high","review_note":"短信改号软件可用于诈骗伪装，出售导流应标 illegal/high。"}
+{"text":"出售短信改号","category":"illegal","level":"high","review_note":"短信改号服务属于电诈黑产工具。"}
+{"text":"出售短信改号软件","category":"illegal","level":"high","review_note":"短信改号软件可用于诈骗，应标 illegal/high。"}
+{"text":"出售短狗","category":"illegal","level":"high","review_note":"短狗为手枪暗语，出售应标 illegal/high。"}
+{"text":"出售短狗qq","category":"illegal","level":"high","review_note":"QQ 导流出售手枪暗语商品，应标 illegal/high。"}
+{"text":"出售研究生文凭","category":"illegal","level":"high","review_note":"出售研究生文凭属于非法证件交易。"}
+{"text":"出售研究生考试答案qq","category":"illegal","level":"high","review_note":"QQ 导流出售考试答案，属于考试作弊黑产。"}
+{"text":"出售砖石冰糖","category":"illegal","level":"high","review_note":"钻石冰糖在此语境为冰毒暗语，出售应标 illegal/high。"}
+{"text":"出售硝化甘油","category":"illegal","level":"high","review_note":"硝化甘油为爆炸物，出售应标 illegal/high。"}
+{"text":"出售硝酸甘油","category":"illegal","level":"high","review_note":"硝酸甘油为爆炸物相关物质，出售应标 illegal/high。"}
+{"text":"出售硝酸甘油qq","category":"illegal","level":"high","review_note":"QQ 导流出售硝酸甘油，应标 illegal/high。"}
+{"text":"出售硝酸铊qq","category":"illegal","level":"high","review_note":"硝酸铊为剧毒化学品，出售导流应标 illegal/high。"}
+{"text":"出售硝酸铵qq","category":"illegal","level":"high","review_note":"硝酸铵为爆炸物前体，出售导流应标 illegal/high。"}
+{"text":"出售磁道信息","category":"illegal","level":"high","review_note":"出售磁道信息属于银行卡盗刷黑产。"}
+{"text":"出售社保用户信息","category":"illegal","level":"high","review_note":"出售社保用户信息属于敏感个人信息交易。"}
+{"text":"出售社保资料qq","category":"illegal","level":"high","review_note":"QQ 导流出售社保资料，应标 illegal/high。"}
+{"text":"出售社区业主名单","category":"illegal","level":"high","review_note":"出售社区业主名单属于个人信息交易。"}
+{"text":"出售社区业主名单qq","category":"illegal","level":"high","review_note":"QQ 导流出售业主名单，应标 illegal/high。"}
+{"text":"出售神仙水qq","category":"illegal","level":"high","review_note":"神仙水在此语境为迷奸/毒品暗语，出售导流应标 illegal/high。"}
+{"text":"出售神仙水教程","category":"illegal","level":"high","review_note":"出售神仙水教程涉及毒品或迷药制售帮助。"}
+{"text":"出售神仙糖制作教程","category":"illegal","level":"high","review_note":"神仙糖为毒品暗语，制作教程应标 illegal/high。"}
+{"text":"出售神仙糖教程","category":"illegal","level":"high","review_note":"出售毒品暗语教程涉及制售帮助。"}
+{"text":"出售神奇蘑菇","category":"illegal","level":"high","review_note":"神奇蘑菇为致幻毒品语境，出售应标 illegal/high。"}
+{"text":"出售秃鹰pcp","category":"illegal","level":"high","review_note":"秃鹰 PCP 为气枪相关词，出售应标 illegal/high。"}
+{"text":"出售秃鹰qq","category":"illegal","level":"high","review_note":"秃鹰在该语境为气枪品牌/暗语，QQ 导流应标 illegal/high。"}
+{"text":"出售秃鹰图纸","category":"illegal","level":"high","review_note":"出售气枪图纸涉及枪支制作帮助。"}
+{"text":"出售秃鹰套件","category":"illegal","level":"high","review_note":"出售气枪套件应按枪支配件交易处理。"}
+{"text":"出售秃鹰皮碗","category":"illegal","level":"high","review_note":"秃鹰皮碗为气枪配件语境，出售应标 illegal/high。"}
+{"text":"出售秃鹰管","category":"illegal","level":"high","review_note":"秃鹰管为气枪管件语境，出售应标 illegal/high。"}
+{"text":"出售秦氏弩","category":"illegal","level":"high","review_note":"出售弩属于武器交易。"}
+{"text":"出售秦氏弩qq","category":"illegal","level":"high","review_note":"QQ 导流出售弩，应标 illegal/high。"}
+{"text":"出售移动vip名单","category":"illegal","level":"high","review_note":"出售移动 VIP 名单属于个人信息交易。"}
+{"text":"出售移动vip名单qq","category":"illegal","level":"high","review_note":"QQ 导流出售移动用户名单，应标 illegal/high。"}
+{"text":"出售移动vip用户数据","category":"illegal","level":"high","review_note":"出售移动用户数据属于个人信息交易。"}
+{"text":"出售移动vip用户资料qq","category":"illegal","level":"high","review_note":"QQ 导流出售移动用户资料，应标 illegal/high。"}
+{"text":"出售移动电话窃听软件","category":"illegal","level":"high","review_note":"出售移动电话窃听软件属于非法监听工具交易。"}
+{"text":"出售移动联通vip资料","category":"illegal","level":"high","review_note":"出售运营商 VIP 资料属于个人信息交易。"}
+{"text":"出售税票qq","category":"illegal","level":"high","review_note":"QQ 导流出售税票属于非法票据交易。"}
+{"text":"出售窃听手机软件qq","category":"illegal","level":"high","review_note":"QQ 导流出售手机窃听软件，应标 illegal/high。"}
+{"text":"出售窃听软件","category":"illegal","level":"high","review_note":"出售窃听软件属于非法监听工具交易。"}
+{"text":"出售窃听软件qq","category":"illegal","level":"high","review_note":"QQ 导流出售窃听软件，应标 illegal/high。"}
+{"text":"出售等级证书qq","category":"illegal","level":"high","review_note":"QQ 导流出售等级证书，属于非法证件交易。"}
+{"text":"出售答案","category":"illegal","level":"high","review_note":"出售考试答案属于考试作弊黑产。"}
+{"text":"出售答案qq","category":"illegal","level":"high","review_note":"QQ 导流出售考试答案，应标 illegal/high。"}
+{"text":"出售粉末型迷药","category":"illegal","level":"high","review_note":"出售迷药属于药物侵害相关违法内容。"}
+{"text":"出售约会强暴粉","category":"illegal","level":"high","review_note":"强暴粉为迷奸药语义，出售应标 illegal/high。"}
+{"text":"出售纯冰","category":"illegal","level":"high","review_note":"纯冰为冰毒暗语，出售应标 illegal/high。"}
+{"text":"出售纯冰qq","category":"illegal","level":"high","review_note":"QQ 导流出售冰毒暗语商品，应标 illegal/high。"}
+{"text":"出售纯冰钻石","category":"illegal","level":"high","review_note":"纯冰、钻石为冰毒暗语，出售应标 illegal/high。"}
+{"text":"出售纯冰钻石白冰","category":"illegal","level":"high","review_note":"多重冰毒暗语组合，出售应标 illegal/high。"}
+{"text":"出售纯冰钻石黄冰","category":"illegal","level":"high","review_note":"冰毒暗语组合，出售应标 illegal/high。"}
+{"text":"出售纯冰黄冰","category":"illegal","level":"high","review_note":"纯冰、黄冰为毒品暗语，出售应标 illegal/high。"}
+{"text":"出售绿白牙签","category":"illegal","level":"high","review_note":"牙签在此为毒品暗语，出售应标 illegal/high。"}
+{"text":"出售缅古","category":"illegal","level":"high","review_note":"缅古为麻古毒品暗语，出售应标 illegal/high。"}
+{"text":"出售缅古qq","category":"illegal","level":"high","review_note":"QQ 导流出售麻古暗语商品，应标 illegal/high。"}
+{"text":"出售缅古制作技术","category":"illegal","level":"high","review_note":"出售麻古制作技术涉及毒品制售帮助。"}
+{"text":"出售缅古制作方法","category":"illegal","level":"high","review_note":"出售麻古制作方法属于毒品制售帮助。"}
+{"text":"出售缅古联系方式","category":"illegal","level":"high","review_note":"提供麻古交易联系方式，应标 illegal/high。"}
+{"text":"出售缅古配方","category":"illegal","level":"high","review_note":"出售麻古配方属于毒品制售帮助。"}
+{"text":"出售缅果","category":"illegal","level":"high","review_note":"缅果为麻古毒品暗语，出售应标 illegal/high。"}
+{"text":"出售缅果qq","category":"illegal","level":"high","review_note":"QQ 导流出售麻古暗语商品，应标 illegal/high。"}
+{"text":"出售缅果电话","category":"illegal","level":"high","review_note":"电话导流出售麻古暗语商品，应标 illegal/high。"}
+{"text":"出售罂子粟壳","category":"illegal","level":"high","review_note":"罂粟壳为涉毒物品，出售应标 illegal/high。"}
+{"text":"出售罂粟碱","category":"illegal","level":"high","review_note":"罂粟碱为受管制毒品相关物质，出售应标 illegal/high。"}
+{"text":"出售罂粟碱qq","category":"illegal","level":"high","review_note":"QQ 导流出售罂粟碱，应标 illegal/high。"}
+{"text":"出售罂粟种子qq","category":"illegal","level":"high","review_note":"QQ 导流出售罂粟种子，属于涉毒植物交易。"}
+{"text":"出售网络招嫖信息","category":"pornographic","level":"high","review_note":"招嫖信息属于明确色情服务内容，ad/low 低估风险。"}
+{"text":"出售网络购物数据qq","category":"illegal","level":"high","review_note":"QQ 导流出售网购数据，属于个人信息交易。"}
+{"text":"出售网购客户资料","category":"illegal","level":"high","review_note":"出售网购客户资料属于个人信息交易。"}
+{"text":"出售网购数据","category":"illegal","level":"high","review_note":"出售网购数据属于个人信息交易。"}
+{"text":"出售网购数据qq","category":"illegal","level":"high","review_note":"QQ 导流出售网购数据，应标 illegal/high。"}
+{"text":"出售网银卡","category":"illegal","level":"high","review_note":"出售网银卡属于银行卡和支付黑产交易。"}
+{"text":"出售美国秃鹰","category":"illegal","level":"high","review_note":"美国秃鹰为气枪品牌语境，出售应标 illegal/high。"}
+{"text":"出售美国雷鸣登","category":"illegal","level":"high","review_note":"雷鸣登为枪械品牌语境，出售应标 illegal/high。"}
+{"text":"出售美沙酮","category":"illegal","level":"high","review_note":"美沙酮为受管制麻醉药品，出售应标 illegal/high。"}
+{"text":"出售美沙酮qq","category":"illegal","level":"high","review_note":"QQ 导流出售美沙酮，应标 illegal/high。"}
+{"text":"出售羟亚胺qq","category":"illegal","level":"high","review_note":"羟亚胺为制毒前体，QQ 导流出售应标 illegal/high。"}
+{"text":"出售羟基环戊基","category":"illegal","level":"high","review_note":"该词为合成毒品相关化学中间体语境，出售应提高为 illegal/high。"}
+{"text":"出售老人保险资料","category":"illegal","level":"high","review_note":"出售老人保险资料属于敏感个人信息交易。"}
+{"text":"出售老人信息","category":"illegal","level":"high","review_note":"出售老人信息属于个人信息交易。"}
+{"text":"出售老人信息qq","category":"illegal","level":"high","review_note":"QQ 导流出售老人信息，应标 illegal/high。"}
+{"text":"出售老人数据","category":"illegal","level":"high","review_note":"出售老人数据属于个人信息交易。"}
+{"text":"出售老人数据qq","category":"illegal","level":"high","review_note":"QQ 导流出售老人数据，应标 illegal/high。"}
+{"text":"出售老人数据资料","category":"illegal","level":"high","review_note":"出售老人数据资料属于个人信息交易。"}
+{"text":"出售老人资料","category":"illegal","level":"high","review_note":"出售老人资料属于个人信息交易。"}
+{"text":"出售老年人信息","category":"illegal","level":"high","review_note":"出售老年人信息属于个人信息交易。"}
+{"text":"出售老年人数据qq","category":"illegal","level":"high","review_note":"QQ 导流出售老年人数据，应标 illegal/high。"}
+{"text":"出售老年人资料","category":"illegal","level":"high","review_note":"出售老年人资料属于个人信息交易。"}
+{"text":"出售老年人资料qq","category":"illegal","level":"high","review_note":"QQ 导流出售老年人资料，应标 illegal/high。"}
+{"text":"出售老板个人资料","category":"illegal","level":"high","review_note":"出售个人资料属于个人信息交易。"}
+{"text":"出售老板个人资料qq","category":"illegal","level":"high","review_note":"QQ 导流出售个人资料，应标 illegal/high。"}
+{"text":"出售老板名单","category":"illegal","level":"high","review_note":"出售老板名单属于个人信息交易。"}
+{"text":"出售老板手机号","category":"illegal","level":"high","review_note":"出售手机号属于个人信息交易。"}
+{"text":"出售老板手机号码","category":"illegal","level":"high","review_note":"出售手机号码属于个人信息交易。"}
+{"text":"出售老板手机号码qq","category":"illegal","level":"high","review_note":"QQ 导流出售手机号码，应标 illegal/high。"}
+{"text":"出售老板手机数据qq","category":"illegal","level":"high","review_note":"QQ 导流出售手机数据，应标 illegal/high。"}
+{"text":"出售老板私人电话","category":"illegal","level":"high","review_note":"出售私人电话属于个人信息交易。"}
+{"text":"出售老板资料信息","category":"illegal","level":"high","review_note":"出售资料信息属于个人信息交易。"}
+{"text":"出售老板通讯录","category":"illegal","level":"high","review_note":"出售通讯录属于个人信息交易。"}
+{"text":"出售老板通讯录qq","category":"illegal","level":"high","review_note":"QQ 导流出售通讯录，应标 illegal/high。"}
+{"text":"出售考前答案qq","category":"illegal","level":"high","review_note":"QQ 导流出售考前答案，属于考试作弊黑产。"}
+{"text":"出售考生数据qq","category":"illegal","level":"high","review_note":"QQ 导流出售考生数据，属于个人信息交易。"}
+{"text":"出售考生资源","category":"illegal","level":"high","review_note":"出售考生资源属于个人信息交易。"}
+{"text":"出售考研答案","category":"illegal","level":"high","review_note":"出售考研答案属于考试作弊黑产。"}
+{"text":"出售考研答案qq","category":"illegal","level":"high","review_note":"QQ 导流出售考研答案，应标 illegal/high。"}
+{"text":"出售考试专用设备","category":"illegal","level":"high","review_note":"出售考试作弊设备属于考试作弊黑产。"}
+{"text":"出售考试作弊器","category":"illegal","level":"high","review_note":"出售考试作弊器属于作弊黑产。"}
+{"text":"出售考试作弊器qq","category":"illegal","level":"high","review_note":"QQ 导流出售考试作弊器，应标 illegal/high。"}
+{"text":"出售考试作弊器材","category":"illegal","level":"high","review_note":"出售考试作弊器材属于作弊黑产。"}
+{"text":"出售考试作弊器材qq","category":"illegal","level":"high","review_note":"QQ 导流出售考试作弊器材，应标 illegal/high。"}
+{"text":"出售考试作弊工具qq","category":"illegal","level":"high","review_note":"QQ 导流出售考试作弊工具，应标 illegal/high。"}
+{"text":"出售考试作弊接收器","category":"illegal","level":"high","review_note":"出售考试作弊接收器属于作弊黑产。"}
+{"text":"出售考试作弊耳机","category":"illegal","level":"high","review_note":"出售考试作弊耳机属于作弊黑产。"}
+{"text":"出售考试答案qq","category":"illegal","level":"high","review_note":"QQ 导流出售考试答案，应标 illegal/high。"}
+{"text":"出售考试针孔摄像头","category":"illegal","level":"high","review_note":"考试针孔摄像头用于作弊，出售应标 illegal/high。"}
+{"text":"出售考试题","category":"illegal","level":"high","review_note":"出售考试题属于考试作弊黑产。"}
+{"text":"出售职业资格证qq","category":"illegal","level":"high","review_note":"QQ 导流出售职业资格证，属于非法证件交易。"}
+{"text":"出售职称证","category":"illegal","level":"high","review_note":"出售职称证属于非法证件交易。"}
+{"text":"出售联通vip名单qq","category":"illegal","level":"high","review_note":"QQ 导流出售联通用户名单，应标 illegal/high。"}
+{"text":"出售联通vip用户资料qq","category":"illegal","level":"high","review_note":"QQ 导流出售联通用户资料，应标 illegal/high。"}
+{"text":"出售联通客户资料","category":"illegal","level":"high","review_note":"出售联通客户资料属于个人信息交易。"}
+{"text":"出售联通客户资料qq","category":"illegal","level":"high","review_note":"QQ 导流出售联通客户资料，应标 illegal/high。"}
+{"text":"出售肝源","category":"illegal","level":"high","review_note":"出售肝源属于人体器官交易。"}
+{"text":"出售肝源qq","category":"illegal","level":"high","review_note":"QQ 导流出售肝源，应标 illegal/high。"}
+{"text":"出售肝脏","category":"illegal","level":"high","review_note":"出售肝脏属于人体器官交易。"}
+{"text":"出售肝脏qq","category":"illegal","level":"high","review_note":"QQ 导流出售肝脏，应标 illegal/high。"}
+{"text":"出售肝脏器官","category":"illegal","level":"high","review_note":"出售肝脏器官属于人体器官交易。"}
+{"text":"出售肝脏器官qq","category":"illegal","level":"high","review_note":"QQ 导流出售肝脏器官，应标 illegal/high。"}
+{"text":"出售股民个人信息","category":"illegal","level":"high","review_note":"出售股民个人信息属于个人信息交易。"}
+{"text":"出售股民信息","category":"illegal","level":"high","review_note":"出售股民信息属于个人信息交易。"}
+{"text":"出售股民信息qq","category":"illegal","level":"high","review_note":"QQ 导流出售股民信息，应标 illegal/high。"}
+{"text":"出售股民名单","category":"illegal","level":"high","review_note":"出售股民名单属于个人信息交易。"}
+{"text":"出售股民名单qq","category":"illegal","level":"high","review_note":"QQ 导流出售股民名单，应标 illegal/high。"}
+{"text":"出售股民名录","category":"illegal","level":"high","review_note":"出售股民名录属于个人信息交易。"}
+{"text":"出售股民名录qq","category":"illegal","level":"high","review_note":"QQ 导流出售股民名录，应标 illegal/high。"}
+{"text":"出售股民开户数据","category":"illegal","level":"high","review_note":"出售股民开户数据属于敏感个人信息交易。"}
+{"text":"出售股民数据qq","category":"illegal","level":"high","review_note":"QQ 导流出售股民数据，应标 illegal/high。"}
+{"text":"出售股民电话","category":"illegal","level":"high","review_note":"出售股民电话属于个人信息交易。"}
+{"text":"出售股民电话qq","category":"illegal","level":"high","review_note":"QQ 导流出售股民电话，应标 illegal/high。"}
+{"text":"出售股民电话号码","category":"illegal","level":"high","review_note":"出售电话号码属于个人信息交易。"}
+{"text":"出售股民电话号码qq","category":"illegal","level":"high","review_note":"QQ 导流出售电话号码，应标 illegal/high。"}
+{"text":"出售股民电话资料qq","category":"illegal","level":"high","review_note":"QQ 导流出售股民电话资料，应标 illegal/high。"}
+{"text":"出售股民电话资源","category":"illegal","level":"high","review_note":"出售股民电话资源属于个人信息交易。"}
+{"text":"出售股民电话资源qq","category":"illegal","level":"high","review_note":"QQ 导流出售股民电话资源，应标 illegal/high。"}
+{"text":"出售股民联系方式","category":"illegal","level":"high","review_note":"出售股民联系方式属于个人信息交易。"}
+{"text":"出售股民联系方式qq","category":"illegal","level":"high","review_note":"QQ 导流出售股民联系方式，应标 illegal/high。"}
+{"text":"出售股民详细信息","category":"illegal","level":"high","review_note":"出售股民详细信息属于个人信息交易。"}
+{"text":"出售股民资料","category":"illegal","level":"high","review_note":"出售股民资料属于个人信息交易。"}
+{"text":"出售股民资料qq","category":"illegal","level":"high","review_note":"QQ 导流出售股民资料，应标 illegal/high。"}
+{"text":"出售股民资源","category":"illegal","level":"high","review_note":"出售股民资源属于个人信息交易。"}
+{"text":"出售股民资源qq","category":"illegal","level":"high","review_note":"QQ 导流出售股民资源，应标 illegal/high。"}
+{"text":"出售股票客户资源","category":"illegal","level":"high","review_note":"出售股票客户资源属于个人信息交易。"}
+{"text":"出售股票数据","category":"illegal","level":"high","review_note":"出售股票客户数据属于个人信息交易。"}
+{"text":"出售肩迷药qq","category":"illegal","level":"high","review_note":"迷药导流出售属于药物侵害相关违法内容。"}
+{"text":"出售肺脏","category":"illegal","level":"high","review_note":"出售肺脏属于人体器官交易。"}
+{"text":"出售肾","category":"illegal","level":"high","review_note":"出售肾属于人体器官交易。"}
+{"text":"出售肾qq","category":"illegal","level":"high","review_note":"QQ 导流出售肾，应标 illegal/high。"}
+{"text":"出售肾源","category":"illegal","level":"high","review_note":"出售肾源属于人体器官交易。"}
+{"text":"出售肾源专卖","category":"illegal","level":"high","review_note":"肾源专卖明确属于人体器官交易。"}
+{"text":"出售肾脏","category":"illegal","level":"high","review_note":"出售肾脏属于人体器官交易。"}
+{"text":"出售胡椒基丙酮","category":"illegal","level":"high","review_note":"胡椒基丙酮为制毒前体语境，出售应标 illegal/high。"}
+{"text":"出售胡椒基甲酮","category":"illegal","level":"high","review_note":"胡椒基甲酮为制毒前体语境，出售应标 illegal/high。"}
+{"text":"出售胡椒基甲酮合成教程","category":"illegal","level":"high","review_note":"出售制毒前体合成教程，风险明显高于 ad/low。"}
+{"text":"出售胡椒基甲酮教程","category":"illegal","level":"high","review_note":"出售制毒前体教程涉及毒品制售帮助。"}
+{"text":"出售胡椒醛","category":"illegal","level":"high","review_note":"胡椒醛为制毒前体语境，出售应标 illegal/high。"}
+{"text":"出售胡椒醛qq","category":"illegal","level":"high","review_note":"QQ 导流出售制毒前体，应标 illegal/high。"}
+{"text":"出售胰腺","category":"illegal","level":"high","review_note":"出售胰腺属于人体器官交易。"}
+{"text":"出售脱氧麻黄碱","category":"illegal","level":"high","review_note":"脱氧麻黄碱为甲基苯丙胺相关名称，出售应标 illegal/high。"}
+{"text":"出售臊冰","category":"illegal","level":"high","review_note":"臊冰为冰毒暗语变体，出售应标 illegal/high。"}
+{"text":"出售自制92式","category":"illegal","level":"high","review_note":"92式为手枪型号语境，出售自制武器应标 illegal/high。"}
+{"text":"出售自制92式qq","category":"illegal","level":"high","review_note":"QQ 导流出售自制92式武器，应标 illegal/high。"}
+{"text":"出售自制tnt","category":"illegal","level":"high","review_note":"自制 TNT 属于爆炸物交易。"}
+{"text":"出售自制双管猎木仓","category":"illegal","level":"high","review_note":"猎木仓为猎枪规避写法，出售自制枪支应标 illegal/high。"}
+{"text":"出售自制导火索","category":"illegal","level":"high","review_note":"导火索为爆炸物组件，出售应标 illegal/high。"}
+{"text":"出售自制式64式","category":"illegal","level":"high","review_note":"64式为手枪型号语境，出售自制武器应标 illegal/high。"}
+{"text":"出售自制手木仓","category":"illegal","level":"high","review_note":"手木仓为手枪规避写法，出售应标 illegal/high。"}
+{"text":"出售自制手狗","category":"illegal","level":"high","review_note":"手狗为手枪暗语，出售自制手狗应标 illegal/high。"}
+{"text":"出售自制连弩qq","category":"illegal","level":"high","review_note":"QQ 导流出售自制连弩，属于武器交易。"}
+{"text":"出售自动开锁器","category":"illegal","level":"high","review_note":"自动开锁器属于盗窃开锁工具。"}
+{"text":"出售自考答案qq","category":"illegal","level":"high","review_note":"QQ 导流出售自考答案，属于考试作弊黑产。"}
+{"text":"出售自考考前答案","category":"illegal","level":"high","review_note":"出售考前答案属于考试作弊黑产。"}
+{"text":"出售致癌药","category":"illegal","level":"high","review_note":"出售致癌药属于危险药物/毒物交易。"}
+{"text":"出售色站","category":"pornographic","level":"high","review_note":"色站为色情网站资源，出售应标 pornographic/high。"}
+{"text":"出售色站qq","category":"pornographic","level":"high","review_note":"QQ 导流出售色情网站资源，应标 pornographic/high。"}
+{"text":"出售苍蝇水qq","category":"illegal","level":"high","review_note":"苍蝇水为催情/迷药语境，出售导流应标 illegal/high。"}
+{"text":"出售苍蝇粉qq","category":"illegal","level":"high","review_note":"苍蝇粉为催情/迷药语境，出售导流应标 illegal/high。"}
+{"text":"出售苯基丙酮","category":"illegal","level":"high","review_note":"苯基丙酮为制毒前体，出售应标 illegal/high。"}
+{"text":"出售苯基甲酮qq","category":"illegal","level":"high","review_note":"QQ 导流出售制毒前体，应标 illegal/high。"}
+{"text":"出售苯巴比妥","category":"illegal","level":"high","review_note":"苯巴比妥为受管制镇静药，出售应标 illegal/high。"}
+{"text":"出售英国骚本","category":"illegal","level":"high","review_note":"英国骚本为气枪品牌/型号语境，出售应标 illegal/high。"}
+{"text":"出售英语46级证","category":"illegal","level":"high","review_note":"出售英语等级证书属于非法证件交易。"}
+{"text":"出售英语6级答案","category":"illegal","level":"high","review_note":"出售考试答案属于考试作弊黑产。"}
+{"text":"出售英语等级考试答案","category":"illegal","level":"high","review_note":"出售英语等级考试答案属于考试作弊黑产。"}
+{"text":"出售茶叶客户资料","category":"illegal","level":"high","review_note":"出售客户资料属于个人信息交易。"}
+{"text":"出售荷兰叶子ak48","category":"illegal","level":"high","review_note":"叶子与 AK48 组合为毒品/大麻暗语，出售应标 illegal/high。"}
+{"text":"出售莫达非尼","category":"illegal","level":"high","review_note":"莫达非尼为处方管制药品语境，出售应标 illegal/high。"}
+{"text":"出售落榜生名单","category":"illegal","level":"high","review_note":"出售落榜生名单属于个人信息交易。"}
+{"text":"出售蒙汗药配方","category":"illegal","level":"high","review_note":"蒙汗药配方涉及迷药制售帮助。"}
+{"text":"出售蒙汗药配方qq","category":"illegal","level":"high","review_note":"QQ 导流出售蒙汗药配方，应标 illegal/high。"}
+{"text":"出售蓖麻毒素","category":"illegal","level":"high","review_note":"蓖麻毒素为剧毒物质，出售应标 illegal/high。"}
+{"text":"出售蓝鹰第3代电棍","category":"illegal","level":"high","review_note":"出售电棍属于管制警械/武器交易语境。"}
+{"text":"出售蜘蛛刀","category":"illegal","level":"high","review_note":"蜘蛛刀属于管制刀具语境，出售应高于 ad/low。"}
+{"text":"出售蜘蛛刀qq","category":"illegal","level":"high","review_note":"QQ 导流出售管制刀具，应标 illegal/high。"}
+{"text":"出售蝇毒磷","category":"illegal","level":"high","review_note":"蝇毒磷为高毒农药/毒物，出售应提高为 illegal/high。"}
+{"text":"出售蝴蝶刀","category":"illegal","level":"high","review_note":"蝴蝶刀属于管制刀具语境，出售应标 illegal/high。"}
+{"text":"出售蝴蝶刀qq","category":"illegal","level":"high","review_note":"QQ 导流出售蝴蝶刀，应标 illegal/high。"}
+{"text":"出售蝴蝶刀具","category":"illegal","level":"high","review_note":"出售蝴蝶刀具属于管制刀具交易语境。"}
+{"text":"出售蝴蝶刀具qq","category":"illegal","level":"high","review_note":"QQ 导流出售蝴蝶刀具，应标 illegal/high。"}
+{"text":"出售蝴蝶折刀","category":"illegal","level":"high","review_note":"蝴蝶折刀属于管制刀具语境，出售应标 illegal/high。"}
+{"text":"出售蝴蝶甩刀","category":"illegal","level":"high","review_note":"蝴蝶甩刀属于管制刀具语境，出售应标 illegal/high。"}
+{"text":"出售蝴蝶甩刀qq","category":"illegal","level":"high","review_note":"QQ 导流出售蝴蝶甩刀，应标 illegal/high。"}
+{"text":"出售蝴蝶跳刀","category":"illegal","level":"high","review_note":"蝴蝶跳刀属于管制刀具语境，出售应标 illegal/high。"}
+{"text":"出售蝴蝶跳刀qq","category":"illegal","level":"high","review_note":"QQ 导流出售蝴蝶跳刀，应标 illegal/high。"}
+{"text":"出售西班牙苍蝇水qq","category":"illegal","level":"high","review_note":"西班牙苍蝇水为催情/迷药语境，出售导流应标 illegal/high。"}
+{"text":"出售西班牙苍蝇粉qq","category":"illegal","level":"high","review_note":"西班牙苍蝇粉为催情/迷药语境，出售导流应标 illegal/high。"}
+{"text":"出售警号qq","category":"illegal","level":"high","review_note":"QQ 导流出售警号，属于警用标识非法交易。"}
+{"text":"出售警官证","category":"illegal","level":"high","review_note":"出售警官证属于非法证件交易。"}
+{"text":"出售警官证qq","category":"illegal","level":"high","review_note":"QQ 导流出售警官证，应标 illegal/high。"}
+{"text":"出售警察作训服","category":"illegal","level":"high","review_note":"出售警察制式服装可用于冒充执法人员。"}
+{"text":"出售警察徽","category":"illegal","level":"high","review_note":"出售警察徽章属于警用标识非法交易。"}
+{"text":"出售警察手铐电话","category":"illegal","level":"high","review_note":"电话导流出售警用手铐，应标 illegal/high。"}
+{"text":"出售警察执勤服","category":"illegal","level":"high","review_note":"出售警察执勤服可用于冒充执法人员。"}
+{"text":"出售警察胸标","category":"illegal","level":"high","review_note":"出售警察胸标属于警用标识非法交易。"}
+{"text":"出售警察腰带","category":"illegal","level":"high","review_note":"出售警用腰带属于警用装备非法交易语境。"}
+{"text":"出售警察证","category":"illegal","level":"high","review_note":"出售警察证属于非法证件交易。"}
+{"text":"出售警察钱包","category":"illegal","level":"high","review_note":"出售警察证件包/标识装备可用于冒充执法人员。"}
+{"text":"出售警徽","category":"illegal","level":"high","review_note":"出售警徽属于警用标识非法交易。"}
+{"text":"出售警徽qq","category":"illegal","level":"high","review_note":"QQ 导流出售警徽，应标 illegal/high。"}
+{"text":"出售警服","category":"illegal","level":"high","review_note":"出售警服可用于冒充执法人员。"}
+{"text":"出售警服qq","category":"illegal","level":"high","review_note":"QQ 导流出售警服，应标 illegal/high。"}
+{"text":"出售警服及警用品","category":"illegal","level":"high","review_note":"出售警服警用品属于警用装备非法交易。"}
+{"text":"出售警服常服","category":"illegal","level":"high","review_note":"出售警服常服可用于冒充执法人员。"}
+{"text":"出售警服常服qq","category":"illegal","level":"high","review_note":"QQ 导流出售警服常服，应标 illegal/high。"}
+{"text":"出售警服春秋执勤装","category":"illegal","level":"high","review_note":"出售警察执勤装可用于冒充执法人员。"}
+{"text":"出售警服电话","category":"illegal","level":"high","review_note":"电话导流出售警服，应标 illegal/high。"}
+{"text":"出售警服装备","category":"illegal","level":"high","review_note":"出售警服装备属于警用装备非法交易。"}
+{"text":"出售警服警用品","category":"illegal","level":"high","review_note":"出售警服警用品可用于冒充执法人员。"}
+{"text":"出售警械","category":"illegal","level":"high","review_note":"警械属于管制装备，出售应标 illegal/high。"}
+{"text":"出售警棍qq","category":"illegal","level":"high","review_note":"QQ 导流出售警棍，应标 illegal/high。"}
+{"text":"出售警棍电话","category":"illegal","level":"high","review_note":"电话导流出售警棍，应标 illegal/high。"}
+{"text":"出售警灯","category":"illegal","level":"high","review_note":"出售警灯属于警用标识装备非法交易。"}
+{"text":"出售警用催泪弹","category":"illegal","level":"high","review_note":"警用催泪弹属于管制警械，出售应标 illegal/high。"}
+{"text":"出售警用刀具","category":"illegal","level":"high","review_note":"警用刀具属于警用装备交易语境，应标 illegal/high。"}
+{"text":"出售警用刀具qq","category":"illegal","level":"high","review_note":"QQ 导流出售警用刀具，应标 illegal/high。"}
+{"text":"出售警用制式制服","category":"illegal","level":"high","review_note":"出售警用制式制服可用于冒充执法人员。"}
+{"text":"出售警用匕首","category":"illegal","level":"high","review_note":"警用匕首属于管制警用装备语境。"}
+{"text":"出售警用商品","category":"illegal","level":"high","review_note":"出售警用商品在该语境为警用装备非法交易。"}
+{"text":"出售警用器材","category":"illegal","level":"high","review_note":"警用器材属于管制装备语境，出售应标 illegal/high。"}
+{"text":"出售警用器材qq","category":"illegal","level":"high","review_note":"QQ 导流出售警用器材，应标 illegal/high。"}
+{"text":"出售警用头盔","category":"illegal","level":"high","review_note":"出售警用头盔属于警用装备交易语境。"}
+{"text":"出售警用头盔qq","category":"illegal","level":"high","review_note":"QQ 导流出售警用头盔，应标 illegal/high。"}
+{"text":"出售警用安全指示牌","category":"illegal","level":"high","review_note":"出售警用标识牌可用于冒充执法场景。"}
+{"text":"出售警用对讲机","category":"illegal","level":"high","review_note":"出售警用对讲机属于警用装备非法交易语境。"}
+{"text":"出售警用手铐","category":"illegal","level":"high","review_note":"警用手铐属于警械，出售应标 illegal/high。"}
+{"text":"出售警用手铐qq","category":"illegal","level":"high","review_note":"QQ 导流出售警用手铐，应标 illegal/high。"}
+{"text":"出售警用手铐电话","category":"illegal","level":"high","review_note":"电话导流出售警用手铐，应标 illegal/high。"}
+{"text":"出售警用手铐装备","category":"illegal","level":"high","review_note":"出售警用手铐装备属于警械交易。"}
+{"text":"出售警用标志qq","category":"illegal","level":"high","review_note":"QQ 导流出售警用标志，应标 illegal/high。"}
+{"text":"出售警用棍刀","category":"illegal","level":"high","review_note":"警用棍刀属于警械/管制装备语境。"}
+{"text":"出售警用棍刀qq","category":"illegal","level":"high","review_note":"QQ 导流出售警用棍刀，应标 illegal/high。"}
+{"text":"出售警用甩棍","category":"illegal","level":"high","review_note":"警用甩棍属于警械，出售应标 illegal/high。"}
+{"text":"出售警用甩棍qq","category":"illegal","level":"high","review_note":"QQ 导流出售警用甩棍，应标 illegal/high。"}
+{"text":"出售警用甩棍电话","category":"illegal","level":"high","review_note":"电话导流出售警用甩棍，应标 illegal/high。"}
+{"text":"出售警用电击器","category":"illegal","level":"high","review_note":"警用电击器属于管制警械，出售应标 illegal/high。"}
+{"text":"出售警用电棍qq","category":"illegal","level":"high","review_note":"QQ 导流出售警用电棍，应标 illegal/high。"}
+{"text":"出售警用电棒","category":"illegal","level":"high","review_note":"警用电棒属于警械，出售应标 illegal/high。"}
+{"text":"出售警用电棒qq","category":"illegal","level":"high","review_note":"QQ 导流出售警用电棒，应标 illegal/high。"}
+{"text":"出售警用电棒电话","category":"illegal","level":"high","review_note":"电话导流出售警用电棒，应标 illegal/high。"}
+{"text":"出售警用警棍","category":"illegal","level":"high","review_note":"警用警棍属于警械，出售应标 illegal/high。"}
+{"text":"出售警用车牌qq","category":"illegal","level":"high","review_note":"QQ 导流出售警用车牌，属于警用标识非法交易。"}
+{"text":"出售警用钢叉","category":"illegal","level":"high","review_note":"警用钢叉属于警械，出售应标 illegal/high。"}
+{"text":"出售警用防身电击棒","category":"illegal","level":"high","review_note":"警用电击棒属于管制警械语境。"}
+{"text":"出售警用高压棍","category":"illegal","level":"high","review_note":"警用高压棍属于警械，出售应标 illegal/high。"}
+{"text":"出售警衔","category":"illegal","level":"high","review_note":"出售警衔属于警用标识非法交易。"}
+{"text":"出售警衔qq","category":"illegal","level":"high","review_note":"QQ 导流出售警衔，应标 illegal/high。"}
+{"text":"出售警衔电话","category":"illegal","level":"high","review_note":"电话导流出售警衔，应标 illegal/high。"}
+{"text":"出售警衔警徽","category":"illegal","level":"high","review_note":"出售警衔警徽属于警用标识非法交易。"}
+{"text":"出售警衔警服","category":"illegal","level":"high","review_note":"出售警衔警服可用于冒充执法人员。"}
+{"text":"出售警车牌照qq","category":"illegal","level":"high","review_note":"QQ 导流出售警车牌照，应标 illegal/high。"}
+{"text":"出售试题","category":"illegal","level":"high","review_note":"出售试题属于考试作弊黑产。"}
+{"text":"出售购物数据","category":"illegal","level":"high","review_note":"出售购物数据属于个人信息和订单数据交易。"}
+{"text":"出售购物数据qq","category":"illegal","level":"high","review_note":"QQ 导流出售购物数据，应标 illegal/high。"}
+{"text":"出售资格正","category":"illegal","level":"high","review_note":"资格正为资格证误写，出售属于非法证件交易。"}
+{"text":"出售赭曲毒素qq","category":"illegal","level":"high","review_note":"赭曲毒素为毒素，出售导流应标 illegal/high。"}
+{"text":"出售走私军火","category":"illegal","level":"high","review_note":"走私军火交易明确违法，ad/low 低估风险。"}
+{"text":"出售走私狗","category":"illegal","level":"high","review_note":"狗为枪支暗语，走私狗应按走私枪支处理。"}
+{"text":"出售赵氏弓弩","category":"illegal","level":"high","review_note":"出售弓弩属于武器交易。"}
+{"text":"出售赵氏弓弩qq","category":"illegal","level":"high","review_note":"QQ 导流出售弓弩，应标 illegal/high。"}
+{"text":"出售赵氏弩qq","category":"illegal","level":"high","review_note":"QQ 导流出售弩，应标 illegal/high。"}
+{"text":"出售赵氏钢珠弩","category":"illegal","level":"high","review_note":"出售钢珠弩属于武器交易。"}
+{"text":"出售起爆器","category":"illegal","level":"high","review_note":"起爆器为爆炸物组件，出售应标 illegal/high。"}
+{"text":"出售跳刀","category":"illegal","level":"high","review_note":"跳刀属于管制刀具语境，出售应标 illegal/high。"}
+{"text":"出售跳刀qq","category":"illegal","level":"high","review_note":"QQ 导流出售跳刀，应标 illegal/high。"}
+{"text":"出售身份信息","category":"illegal","level":"high","review_note":"出售身份信息属于个人信息交易。"}
+{"text":"出售车主个人信息","category":"illegal","level":"high","review_note":"出售车主个人信息属于个人信息交易。"}
+{"text":"出售车主信息","category":"illegal","level":"high","review_note":"出售车主信息属于个人信息交易。"}
+{"text":"出售车主信息qq","category":"illegal","level":"high","review_note":"QQ 导流出售车主信息，应标 illegal/high。"}
+{"text":"出售车主信息数据","category":"illegal","level":"high","review_note":"出售车主信息数据属于个人信息交易。"}
+{"text":"出售车主信息资料","category":"illegal","level":"high","review_note":"出售车主信息资料属于个人信息交易。"}
+{"text":"出售车主信息资料qq","category":"illegal","level":"high","review_note":"QQ 导流出售车主信息资料，应标 illegal/high。"}
+{"text":"出售车主名单","category":"illegal","level":"high","review_note":"出售车主名单属于个人信息交易。"}
+{"text":"出售车主名单qq","category":"illegal","level":"high","review_note":"QQ 导流出售车主名单，应标 illegal/high。"}
+{"text":"出售车主名单数据","category":"illegal","level":"high","review_note":"出售车主名单数据属于个人信息交易。"}
+{"text":"出售车主名录","category":"illegal","level":"high","review_note":"出售车主名录属于个人信息交易。"}
+{"text":"出售车主名录qq","category":"illegal","level":"high","review_note":"QQ 导流出售车主名录，应标 illegal/high。"}
+{"text":"出售车主数据","category":"illegal","level":"high","review_note":"出售车主数据属于个人信息交易。"}
+{"text":"出售车主数据qq","category":"illegal","level":"high","review_note":"QQ 导流出售车主数据，应标 illegal/high。"}
+{"text":"出售车主档案","category":"illegal","level":"high","review_note":"出售车主档案属于个人信息交易。"}
+{"text":"出售车主资料","category":"illegal","level":"high","review_note":"出售车主资料属于个人信息交易。"}
+{"text":"出售车主资料qq","category":"illegal","level":"high","review_note":"QQ 导流出售车主资料，应标 illegal/high。"}
+{"text":"出售车主资源","category":"illegal","level":"high","review_note":"出售车主资源属于个人信息交易。"}
+{"text":"出售车主资源qq","category":"illegal","level":"high","review_note":"QQ 导流出售车主资源，应标 illegal/high。"}
+{"text":"出售车用锁强开工具","category":"illegal","level":"high","review_note":"出售车辆强开工具属于盗车工具交易。"}
+{"text":"出售车门干扰器","category":"illegal","level":"high","review_note":"车门干扰器可用于盗车，出售应标 illegal/high。"}
+{"text":"出售车门干扰器qq","category":"illegal","level":"high","review_note":"QQ 导流出售车门干扰器，应标 illegal/high。"}
+{"text":"出售过机假钞","category":"illegal","level":"high","review_note":"出售可过机假钞属于假币交易。"}
+{"text":"出售过机假钱","category":"illegal","level":"high","review_note":"出售过机假钱属于假币交易。"}
+{"text":"出售过机版假钞","category":"illegal","level":"high","review_note":"出售过机版假钞属于假币交易。"}
+{"text":"出售过机版假钱","category":"illegal","level":"high","review_note":"出售过机版假钱属于假币交易。"}
+{"text":"出售进口pcp","category":"illegal","level":"high","review_note":"PCP 在此为气枪语境，出售应标 illegal/high。"}
+{"text":"出售进口催情水","category":"illegal","level":"high","review_note":"催情水在此语境可用于药物侵害，出售应标 illegal/high。"}
+{"text":"出售进口催情药水","category":"illegal","level":"high","review_note":"催情药水出售属于药物侵害相关违法内容。"}
+{"text":"出售进口弓弩","category":"illegal","level":"high","review_note":"出售进口弓弩属于武器交易。"}
+{"text":"出售进口弓弩qq","category":"illegal","level":"high","review_note":"QQ 导流出售进口弓弩，应标 illegal/high。"}
+{"text":"出售进口手狗","category":"illegal","level":"high","review_note":"手狗为手枪暗语，出售应标 illegal/high。"}
+{"text":"出售进口手狗qq","category":"illegal","level":"high","review_note":"QQ 导流出售手枪暗语商品，应标 illegal/high。"}
+{"text":"出售进口气木仓","category":"illegal","level":"high","review_note":"气木仓为气枪规避写法，出售应标 illegal/high。"}
+{"text":"出售进口气狗","category":"illegal","level":"high","review_note":"气狗为气枪暗语，出售应标 illegal/high。"}
+{"text":"出售进口气狗qq","category":"illegal","level":"high","review_note":"QQ 导流出售气枪暗语商品，应标 illegal/high。"}
+{"text":"出售进口汽手狗","category":"illegal","level":"high","review_note":"汽手狗为汽手枪暗语，出售应标 illegal/high。"}
+{"text":"出售进口汽狗","category":"illegal","level":"high","review_note":"汽狗为汽枪暗语，出售应标 illegal/high。"}
+{"text":"出售进口汽狗qq","category":"illegal","level":"high","review_note":"QQ 导流出售汽枪暗语商品，应标 illegal/high。"}
+{"text":"出售进口汽车拦截器","category":"illegal","level":"high","review_note":"汽车拦截器可用于盗车信号拦截。"}
+{"text":"出售进口狙击弩","category":"illegal","level":"high","review_note":"出售狙击弩属于武器交易。"}
+{"text":"出售进口秃鹰","category":"illegal","level":"high","review_note":"秃鹰为气枪品牌/暗语，出售应标 illegal/high。"}
+{"text":"出售进口迷烟qq","category":"illegal","level":"high","review_note":"迷烟为迷药语境，QQ 导流出售应标 illegal/high。"}
+{"text":"出售进口钢珠狗","category":"illegal","level":"high","review_note":"钢珠狗为钢珠枪暗语，出售应标 illegal/high。"}
+{"text":"出售远程手机偷听器软件","category":"illegal","level":"high","review_note":"出售远程手机偷听软件属于非法监听工具交易。"}
+{"text":"出售连弩","category":"illegal","level":"high","review_note":"出售连弩属于武器交易。"}
+{"text":"出售迪卡昏迷粉","category":"illegal","level":"high","review_note":"昏迷粉属于迷药语境，出售应标 illegal/high。"}
+{"text":"出售迫击炮弹","category":"illegal","level":"high","review_note":"迫击炮弹属于军火弹药，出售应标 illegal/high。"}
+{"text":"出售迫击炮弹qq","category":"illegal","level":"high","review_note":"QQ 导流出售迫击炮弹，应标 illegal/high。"}
+{"text":"出售迷奸药qq","category":"illegal","level":"high","review_note":"迷奸药语义明确，QQ 导流出售应标 illegal/high。"}
+{"text":"出售迷奸药水qq","category":"illegal","level":"high","review_note":"迷奸药水语义明确，出售导流应标 illegal/high。"}
+{"text":"出售迷幻喷雾","category":"illegal","level":"high","review_note":"迷幻喷雾属于迷药/致幻药语境，出售应标 illegal/high。"}
+{"text":"出售迷幻水","category":"illegal","level":"high","review_note":"迷幻水属于迷药/致幻药语境，出售应标 illegal/high。"}
+{"text":"出售迷幻水qq","category":"illegal","level":"high","review_note":"QQ 导流出售迷幻水，应标 illegal/high。"}
+{"text":"出售迷幻药","category":"illegal","level":"high","review_note":"出售迷幻药属于毒品或迷药交易。"}
+{"text":"出售迷幻药qq","category":"illegal","level":"high","review_note":"QQ 导流出售迷幻药，应标 illegal/high。"}
+{"text":"出售迷幻药物","category":"illegal","level":"high","review_note":"出售迷幻药物属于毒品或迷药交易。"}
+{"text":"出售迷幻药物qq","category":"illegal","level":"high","review_note":"QQ 导流出售迷幻药物，应标 illegal/high。"}
+{"text":"出售迷幻香烟qq","category":"illegal","level":"high","review_note":"QQ 导流出售迷幻香烟，属于涉毒内容。"}
+{"text":"出售迷情催情粉","category":"illegal","level":"high","review_note":"迷情催情粉可用于药物侵害，出售应标 illegal/high。"}
+{"text":"出售迷情口香糖","category":"illegal","level":"high","review_note":"迷情口香糖为迷药/催情药语境，出售应标 illegal/high。"}
+{"text":"出售迷情药水","category":"illegal","level":"high","review_note":"迷情药水为迷药/催情药语境，出售应标 illegal/high。"}
+{"text":"出售迷情药水qq","category":"illegal","level":"high","review_note":"QQ 导流出售迷情药水，应标 illegal/high。"}
+{"text":"出售迷昏药","category":"illegal","level":"high","review_note":"迷昏药用于使人失去意识，出售应标 illegal/high。"}
+{"text":"出售迷昏药水qq","category":"illegal","level":"high","review_note":"QQ 导流出售迷昏药水，应标 illegal/high。"}
+{"text":"出售迷晕药qq","category":"illegal","level":"high","review_note":"QQ 导流出售迷晕药，应标 illegal/high。"}
+{"text":"出售迷烟qq","category":"illegal","level":"high","review_note":"QQ 导流出售迷烟，应标 illegal/high。"}
+{"text":"出售迷粉qq","category":"illegal","level":"high","review_note":"QQ 导流出售迷粉，应标 illegal/high。"}
+{"text":"出售迷药qq","category":"illegal","level":"high","review_note":"QQ 导流出售迷药，应标 illegal/high。"}
+{"text":"出售迷魂","category":"illegal","level":"high","review_note":"迷魂为迷药语境，出售应标 illegal/high。"}
+{"text":"出售迷魂水教程","category":"illegal","level":"high","review_note":"出售迷魂水教程涉及迷药制售帮助。"}
+{"text":"出售迷魂烟","category":"illegal","level":"high","review_note":"迷魂烟为迷药语境，出售应标 illegal/high。"}
+{"text":"出售迷魂烟qq","category":"illegal","level":"high","review_note":"QQ 导流出售迷魂烟，应标 illegal/high。"}
+{"text":"出售迷魂粉教程","category":"illegal","level":"high","review_note":"出售迷魂粉教程涉及迷药制售帮助。"}
+{"text":"出售迷魂药qq","category":"illegal","level":"high","review_note":"QQ 导流出售迷魂药，应标 illegal/high。"}
+{"text":"出售迷魂药教程","category":"illegal","level":"high","review_note":"出售迷魂药教程涉及迷药制售帮助。"}
+{"text":"出售迷魂药配方","category":"illegal","level":"high","review_note":"出售迷魂药配方涉及迷药制售帮助。"}
+{"text":"出售迷魂香qq","category":"illegal","level":"high","review_note":"QQ 导流出售迷魂香，应标 illegal/high。"}
+{"text":"出售迷魂香水","category":"illegal","level":"high","review_note":"迷魂香水为迷药语境，出售应标 illegal/high。"}
+{"text":"出售迷魂香水qq","category":"illegal","level":"high","review_note":"QQ 导流出售迷魂香水，应标 illegal/high。"}
+{"text":"出售迷魂香烟","category":"illegal","level":"high","review_note":"迷魂香烟为迷药语境，出售应标 illegal/high。"}
+{"text":"出售迷魂香烟qq","category":"illegal","level":"high","review_note":"QQ 导流出售迷魂香烟，应标 illegal/high。"}
+{"text":"出售追风弓弩","category":"illegal","level":"high","review_note":"出售弓弩属于武器交易。"}
+{"text":"出售速递数据","category":"illegal","level":"high","review_note":"出售速递数据属于个人信息和物流数据交易。"}
+{"text":"出售速递数据qq","category":"illegal","level":"high","review_note":"QQ 导流出售速递数据，应标 illegal/high。"}
+{"text":"出售遥控信号复制器","category":"illegal","level":"high","review_note":"遥控信号复制器可用于非法开锁盗车。"}
+{"text":"出售遥控信号干扰器","category":"illegal","level":"high","review_note":"遥控信号干扰器属于违法干扰工具。"}
+{"text":"出售遥控屏蔽信号器","category":"illegal","level":"high","review_note":"遥控屏蔽信号器可用于干扰车辆或门禁。"}
+{"text":"出售遥控屏蔽工具","category":"illegal","level":"high","review_note":"遥控屏蔽工具属于违法干扰工具。"}
+{"text":"出售遥控解码器","category":"illegal","level":"high","review_note":"遥控解码器可用于非法复制或破解门禁车锁。"}
+{"text":"出售酣乐欣","category":"illegal","level":"high","review_note":"酣乐欣为三唑仑等镇静催眠药商品名语境，出售应标 illegal/high。"}
+{"text":"出售酣乐欣qq","category":"illegal","level":"high","review_note":"QQ 导流出售受管制镇静药，应标 illegal/high。"}
+{"text":"出售野外狩猎汽动狗","category":"illegal","level":"high","review_note":"汽动狗为汽枪暗语，出售应标 illegal/high。"}

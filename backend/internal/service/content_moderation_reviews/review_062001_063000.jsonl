@@ -1,0 +1,368 @@
+{"text":"长狗","category":"illegal","level":"high","review_note":"Firearm slang in this context; illegal/high is clearer than other/low."}
+{"text":"长狗专卖","category":"ad","level":"low","review_note":"Sales marker makes this an ad/low lead-in term under the review rule."}
+{"text":"长篇乱伦小说","category":"pornographic","level":"high","review_note":"Incest erotic fiction phrase; pornographic/high is clearer than other/low."}
+{"text":"长警棒","category":"violence","level":"medium","review_note":"Weapon term; violence/medium is more precise than other/low."}
+{"text":"长谷川亜矢种子","category":"pornographic","level":"medium","review_note":"Adult performer torrent/resource phrase; pornographic/medium fits better than other/low."}
+{"text":"长谷川优种子","category":"pornographic","level":"medium","review_note":"Adult performer torrent/resource phrase; pornographic/medium fits better than other/low."}
+{"text":"长谷川泉种子","category":"pornographic","level":"medium","review_note":"Adult performer torrent/resource phrase; pornographic/medium fits better than other/low."}
+{"text":"长谷川留美子种子","category":"pornographic","level":"medium","review_note":"Adult performer torrent/resource phrase; pornographic/medium fits better than other/low."}
+{"text":"长谷川瞳种子","category":"pornographic","level":"medium","review_note":"Adult performer torrent/resource phrase; pornographic/medium fits better than other/low."}
+{"text":"长身丝袜meinv赤く烂れたマンコが痛","category":"pornographic","level":"high","review_note":"Explicit Japanese genital wording in a sexualized phrase; pornographic/high fits better than other/low."}
+{"text":"长身丝袜美女赤く烂れたマンコが痛","category":"pornographic","level":"high","review_note":"Explicit Japanese genital wording in a sexualized phrase; pornographic/high fits better than other/low."}
+{"text":"长野亚纱种子","category":"pornographic","level":"medium","review_note":"Adult performer torrent/resource phrase; pornographic/medium fits better than other/low."}
+{"text":"门徒会","category":"political","level":"medium","review_note":"Sensitive organized religious/political reference; political/medium is more precise than other/low."}
+{"text":"门禁卡复制","category":"illegal","level":"medium","review_note":"Access-card cloning phrase; illegal/medium is clearer than other/low."}
+{"text":"门禁卡拷贝机","category":"illegal","level":"medium","review_note":"Access-card copying device phrase; illegal/medium is clearer than other/low."}
+{"text":"门禁复制","category":"illegal","level":"medium","review_note":"Access-control cloning phrase; illegal/medium is clearer than other/low."}
+{"text":"门锁干扰仪","category":"illegal","level":"medium","review_note":"Lock interference device phrase; illegal/medium is clearer than other/low."}
+{"text":"闪光弹制作","category":"violence","level":"high","review_note":"Weapon-making phrase; violence/high fits better than other/low."}
+{"text":"闫凤娇1至十季套图","category":"pornographic","level":"medium","review_note":"Sex-scandal image set phrase; pornographic/medium fits better than other/low."}
+{"text":"问责风暴","category":"political","level":"medium","review_note":"Political accountability phrase; political/medium is more precise than other/low."}
+{"text":"间苯3酚出货","category":"ad","level":"low","review_note":"Supply/shipping marker makes this ad/low under the review rule."}
+{"text":"间苯3酚到货","category":"ad","level":"low","review_note":"Availability marker makes this ad/low under the review rule."}
+{"text":"间苯3酚批发","category":"ad","level":"low","review_note":"Wholesale marker makes this ad/low under the review rule."}
+{"text":"间苯3酚订购","category":"ad","level":"low","review_note":"Ordering marker makes this ad/low under the review rule."}
+{"text":"间苯3酚送货上门","category":"ad","level":"low","review_note":"Delivery-sales marker makes this ad/low under the review rule."}
+{"text":"间苯3酚配方","category":"illegal","level":"medium","review_note":"Chemical formula/trade phrase; illegal/medium is more precise than other/low."}
+{"text":"间苯3酚销售","category":"ad","level":"low","review_note":"Sales marker makes this ad/low under the review rule."}
+{"text":"间谍战","category":"other","level":"low","review_note":"Common genre phrase; should stay low and not be treated as illegal/high."}
+{"text":"闺蜜处百合","category":"pornographic","level":"medium","review_note":"Sexualized lesbian/virginity phrase; pornographic/medium fits better than other/low."}
+{"text":"闻封锁","category":"political","level":"medium","review_note":"Likely news-censorship phrase; political/medium is clearer than other/low."}
+{"text":"闻被控制","category":"political","level":"medium","review_note":"Likely news-control phrase; political/medium is clearer than other/low."}
+{"text":"阀仑","category":"political","level":"medium","review_note":"Obfuscated Falun reference; political/medium is clearer than other/low."}
+{"text":"阀伦","category":"political","level":"medium","review_note":"Obfuscated Falun reference; political/medium is clearer than other/low."}
+{"text":"阀囵","category":"political","level":"medium","review_note":"Obfuscated Falun reference; political/medium is clearer than other/low."}
+{"text":"阀抡","category":"political","level":"medium","review_note":"Obfuscated Falun reference; political/medium is clearer than other/low."}
+{"text":"阀沦","category":"political","level":"medium","review_note":"Obfuscated Falun reference; political/medium is clearer than other/low."}
+{"text":"阀纶","category":"political","level":"medium","review_note":"Obfuscated Falun reference; political/medium is clearer than other/low."}
+{"text":"阀论","category":"political","level":"medium","review_note":"Obfuscated Falun reference; political/medium is clearer than other/low."}
+{"text":"阅兵提前看","category":"political","level":"medium","review_note":"State military parade reference; political/medium fits better than other/low."}
+{"text":"阉割","category":"violence","level":"medium","review_note":"Mutilation term; violence/medium is more precise than other/low."}
+{"text":"阎明复","category":"political","level":"medium","review_note":"Political figure reference; political/medium is clearer than other/low."}
+{"text":"防卫刀具专卖","category":"ad","level":"low","review_note":"Sales marker makes this ad/low under the review rule."}
+{"text":"防卫刀具直销网","category":"ad","level":"low","review_note":"Direct-sale website marker makes this ad/low under the review rule."}
+{"text":"防卫棍刀专卖","category":"ad","level":"low","review_note":"Sales marker makes this ad/low under the review rule."}
+{"text":"防屏蔽考试作弊设备","category":"illegal","level":"medium","review_note":"Exam-cheating device phrase; illegal/medium is clearer than other/low."}
+{"text":"防暴枪买卖","category":"ad","level":"low","review_note":"Buying/selling marker makes this ad/low under the review rule."}
+{"text":"防暴枪批发","category":"ad","level":"low","review_note":"Wholesale marker makes this ad/low under the review rule."}
+{"text":"防暴枪订购","category":"ad","level":"low","review_note":"Ordering marker makes this ad/low under the review rule."}
+{"text":"防暴枪销售","category":"ad","level":"low","review_note":"Sales marker makes this ad/low under the review rule."}
+{"text":"防爆头盔","category":"other","level":"low","review_note":"Protective equipment alone should not be violence/high."}
+{"text":"防身刀具专卖","category":"ad","level":"low","review_note":"Sales marker makes this ad/low under the review rule."}
+{"text":"防身刀具批发","category":"ad","level":"low","review_note":"Wholesale marker makes this ad/low under the review rule."}
+{"text":"防身器材专卖","category":"ad","level":"low","review_note":"Sales marker makes this ad/low under the review rule."}
+{"text":"防身弓努专卖","category":"ad","level":"low","review_note":"Sales marker makes this ad/low under the review rule."}
+{"text":"防身手枪qq","category":"ad","level":"low","review_note":"Contains QQ contact marker; review rule requires ad/low."}
+{"text":"防身手枪专卖","category":"ad","level":"low","review_note":"Sales marker makes this ad/low under the review rule."}
+{"text":"防身手枪出售","category":"ad","level":"low","review_note":"Sales marker makes this ad/low under the review rule."}
+{"text":"防身手枪销售","category":"ad","level":"low","review_note":"Sales marker makes this ad/low under the review rule."}
+{"text":"防身手狗批发","category":"ad","level":"low","review_note":"Wholesale marker makes this ad/low under the review rule."}
+{"text":"防身手狗销售","category":"ad","level":"low","review_note":"Sales marker makes this ad/low under the review rule."}
+{"text":"防身武器制造图","category":"violence","level":"high","review_note":"Weapon-making diagram phrase; violence/high is clearer than other/low."}
+{"text":"防身武器订购","category":"ad","level":"low","review_note":"Ordering marker makes this ad/low under the review rule."}
+{"text":"防身武器转让","category":"ad","level":"low","review_note":"Transfer/sales marker makes this ad/low under the review rule."}
+{"text":"防身电警棍专卖","category":"ad","level":"low","review_note":"Sales marker makes this ad/low under the review rule."}
+{"text":"防身电警棍专卖网","category":"ad","level":"low","review_note":"Sales website marker makes this ad/low under the review rule."}
+{"text":"防身电警棍供应","category":"ad","level":"low","review_note":"Supply marker makes this ad/low under the review rule."}
+{"text":"防身电警棍提供","category":"ad","level":"low","review_note":"Offering marker makes this ad/low under the review rule."}
+{"text":"防身电警棍销售","category":"ad","level":"low","review_note":"Sales marker makes this ad/low under the review rule."}
+{"text":"防身电警棒供应","category":"ad","level":"low","review_note":"Supply marker makes this ad/low under the review rule."}
+{"text":"防身警用装备专卖","category":"ad","level":"low","review_note":"Sales marker makes this ad/low under the review rule."}
+{"text":"防身麻醉枪出售","category":"ad","level":"low","review_note":"Sales marker makes this ad/low under the review rule."}
+{"text":"阳具","category":"pornographic","level":"medium","review_note":"Explicit genital term; pornographic/medium is clearer than other/low."}
+{"text":"阳具在他的穴里大幅抽插","category":"pornographic","level":"high","review_note":"Explicit penetrative sex phrase; pornographic/high is clearer than other/low."}
+{"text":"阳具在她的蜜穴里抽插","category":"pornographic","level":"high","review_note":"Explicit penetrative sex phrase; pornographic/high is clearer than other/low."}
+{"text":"阳具对准她湿润的小穴口","category":"pornographic","level":"high","review_note":"Explicit sexual-genital phrase; pornographic/high is clearer than other/low."}
+{"text":"阳具插入小穴中","category":"pornographic","level":"high","review_note":"Explicit penetrative sex phrase; pornographic/high is clearer than other/low."}
+{"text":"阳具插入小肉穴","category":"pornographic","level":"high","review_note":"Explicit penetrative sex phrase; pornographic/high is clearer than other/low."}
+{"text":"阳江军刀批发","category":"ad","level":"low","review_note":"Wholesale marker makes this ad/low under the review rule."}
+{"text":"阳江刀专卖","category":"ad","level":"low","review_note":"Sales marker makes this ad/low under the review rule."}
+{"text":"阳江刀供应","category":"ad","level":"low","review_note":"Supply marker makes this ad/low under the review rule."}
+{"text":"阳江刀具专卖","category":"ad","level":"low","review_note":"Sales marker makes this ad/low under the review rule."}
+{"text":"阳江刀具专卖网","category":"ad","level":"low","review_note":"Sales website marker makes this ad/low under the review rule."}
+{"text":"阳江刀具专售","category":"ad","level":"low","review_note":"Sales marker makes this ad/low under the review rule."}
+{"text":"阳江刀具供应","category":"ad","level":"low","review_note":"Supply marker makes this ad/low under the review rule."}
+{"text":"阳江刀具商城","category":"ad","level":"low","review_note":"Marketplace marker makes this ad/low under the review rule."}
+{"text":"阳江刀具批发","category":"ad","level":"low","review_note":"Wholesale marker makes this ad/low under the review rule."}
+{"text":"阳江刀具批发网","category":"ad","level":"low","review_note":"Wholesale website marker makes this ad/low under the review rule."}
+{"text":"阳江刀具甩卖","category":"ad","level":"low","review_note":"Clear sales marker makes this ad/low under the review rule."}
+{"text":"阳江刀具直销","category":"ad","level":"low","review_note":"Direct-sale marker makes this ad/low under the review rule."}
+{"text":"阳江刀具直销网","category":"ad","level":"low","review_note":"Direct-sale website marker makes this ad/low under the review rule."}
+{"text":"阳江刀具网","category":"ad","level":"low","review_note":"Knife-sales website phrase; ad/low is more precise than other/low."}
+{"text":"阳江刀具销售","category":"ad","level":"low","review_note":"Sales marker makes this ad/low under the review rule."}
+{"text":"阳江刀剑批发","category":"ad","level":"low","review_note":"Wholesale marker makes this ad/low under the review rule."}
+{"text":"阳江刀批发","category":"ad","level":"low","review_note":"Wholesale marker makes this ad/low under the review rule."}
+{"text":"阳江刀直销","category":"ad","level":"low","review_note":"Direct-sale marker makes this ad/low under the review rule."}
+{"text":"阳江市刀具批发","category":"ad","level":"low","review_note":"Wholesale marker makes this ad/low under the review rule."}
+{"text":"阳江市刀具批发网","category":"ad","level":"low","review_note":"Wholesale website marker makes this ad/low under the review rule."}
+{"text":"阳江户外刀具销售","category":"ad","level":"low","review_note":"Sales marker makes this ad/low under the review rule."}
+{"text":"阳物","category":"pornographic","level":"medium","review_note":"Explicit genital term; pornographic/medium is clearer than other/low."}
+{"text":"阳精","category":"pornographic","level":"medium","review_note":"Sexual-fluid term; pornographic/medium is clearer than other/low."}
+{"text":"阴b","category":"pornographic","level":"medium","review_note":"Obfuscated vulgar genital term; pornographic/medium is clearer than other/low."}
+{"text":"阴你而湿","category":"pornographic","level":"medium","review_note":"Sexual arousal phrase; pornographic/medium is clearer than other/low."}
+{"text":"阴囊","category":"pornographic","level":"medium","review_note":"Explicit genital term; pornographic/medium is clearer than other/low."}
+{"text":"阴壁的嫩肉夹得我非常舒服","category":"pornographic","level":"high","review_note":"Explicit sex act phrase; pornographic/high is clearer than other/low."}
+{"text":"阴壁肌肉紧紧挤压着棒鸡巴","category":"pornographic","level":"high","review_note":"Explicit sex act phrase with genital slang; pornographic/high is clearer than other/low."}
+{"text":"阴屄","category":"pornographic","level":"medium","review_note":"Vulgar genital term; pornographic/medium is clearer than other/low."}
+{"text":"阴户","category":"pornographic","level":"medium","review_note":"Explicit genital term; pornographic/medium is clearer than other/low."}
+{"text":"阴户抽插","category":"pornographic","level":"high","review_note":"Explicit penetrative sex phrase; pornographic/high is clearer than other/low."}
+{"text":"阴户紧紧包含着肉棒","category":"pornographic","level":"high","review_note":"Explicit penetrative sex phrase; pornographic/high is clearer than other/low."}
+{"text":"阴核","category":"pornographic","level":"medium","review_note":"Explicit genital term; pornographic/medium is clearer than other/low."}
+{"text":"阴毛","category":"pornographic","level":"medium","review_note":"Explicit pubic-hair term; pornographic/medium is clearer than other/low."}
+{"text":"阴水","category":"pornographic","level":"medium","review_note":"Sexual-fluid term; pornographic/medium is clearer than other/low."}
+{"text":"阴液","category":"pornographic","level":"medium","review_note":"Sexual-fluid term; pornographic/medium is clearer than other/low."}
+{"text":"阴穴","category":"pornographic","level":"medium","review_note":"Explicit sexual genital slang; pornographic/medium is clearer than other/low."}
+{"text":"阴穴新玩法","category":"pornographic","level":"high","review_note":"Sexual play phrase; pornographic/high is clearer than other/low."}
+{"text":"阴精","category":"pornographic","level":"medium","review_note":"Sexual-fluid term; pornographic/medium is clearer than other/low."}
+{"text":"阴缔","category":"pornographic","level":"medium","review_note":"Obfuscated clitoris/genital term; pornographic/medium is clearer than other/low."}
+{"text":"阴道图打手枪专用","category":"pornographic","level":"high","review_note":"Masturbation image phrase; pornographic/high is clearer than illegal/high."}
+{"text":"阴部","category":"pornographic","level":"medium","review_note":"Explicit genital-area term; pornographic/medium is clearer than other/low."}
+{"text":"阴部特写","category":"pornographic","level":"high","review_note":"Explicit genital close-up phrase; pornographic/high is clearer than other/low."}
+{"text":"阴部翻过来看超拽","category":"pornographic","level":"medium","review_note":"Sexualized genital-display phrase; pornographic/medium is clearer than other/low."}
+{"text":"阴门","category":"pornographic","level":"medium","review_note":"Explicit genital term; pornographic/medium is clearer than other/low."}
+{"text":"阴阜","category":"pornographic","level":"medium","review_note":"Explicit genital-area term; pornographic/medium is clearer than other/low."}
+{"text":"阴阜高耸","category":"pornographic","level":"medium","review_note":"Sexualized genital-area phrase; pornographic/medium is clearer than other/low."}
+{"text":"阻止中华人民共和国统","category":"political","level":"medium","review_note":"Chinese national-unification political phrase; political/medium is clearer than other/low."}
+{"text":"阿不来提阿不都热西提","category":"political","level":"medium","review_note":"Political figure reference; political/medium is clearer than other/low."}
+{"text":"阿共","category":"political","level":"medium","review_note":"Political slang reference to the CCP; political/medium is clearer than other/low."}
+{"text":"阿姨和我乱伦理小说","category":"pornographic","level":"high","review_note":"Incest erotic fiction phrase; pornographic/high is clearer than other/low."}
+{"text":"阿姨帮我释放1下","category":"pornographic","level":"high","review_note":"Sexual release phrase; pornographic/high is clearer than other/low."}
+{"text":"阿姨流水","category":"pornographic","level":"medium","review_note":"Sexual-fluid phrase; pornographic/medium is clearer than other/low."}
+{"text":"阿姨的小穴","category":"pornographic","level":"medium","review_note":"Explicit sexual genital slang; pornographic/medium is clearer than other/low."}
+{"text":"阿姨的水穴txt","category":"pornographic","level":"medium","review_note":"Erotic fiction phrase with genital slang; pornographic/medium is clearer than other/low."}
+{"text":"阿姨的穴好爽","category":"pornographic","level":"high","review_note":"Explicit sexual pleasure phrase; pornographic/high is clearer than other/low."}
+{"text":"阿姨的阴户好大啊","category":"pornographic","level":"high","review_note":"Explicit sexual genital phrase; pornographic/high is clearer than other/low."}
+{"text":"阿姨的阴户好紧","category":"pornographic","level":"high","review_note":"Explicit sexual genital phrase; pornographic/high is clearer than other/low."}
+{"text":"阿姨的阴户好肥啊","category":"pornographic","level":"high","review_note":"Explicit sexual genital phrase; pornographic/high is clearer than other/low."}
+{"text":"阿扁","category":"political","level":"medium","review_note":"Political figure nickname; political/medium is clearer than other/low."}
+{"text":"阿扁万岁","category":"political","level":"medium","review_note":"Political-figure slogan; political/medium is clearer than other/low."}
+{"text":"阿拉法特","category":"political","level":"medium","review_note":"Political leader reference; political/medium is clearer than other/low."}
+{"text":"阿旺晋美","category":"political","level":"medium","review_note":"Tibetan political figure reference; political/medium is clearer than other/low."}
+{"text":"阿普唑仑","category":"illegal","level":"medium","review_note":"Controlled sedative term; illegal/medium is clearer than other/low."}
+{"text":"阿普唑仑批发","category":"ad","level":"low","review_note":"Wholesale marker makes this ad/low under the review rule."}
+{"text":"阿普唑仑片","category":"illegal","level":"medium","review_note":"Controlled sedative tablet phrase; illegal/medium is clearer than other/low."}
+{"text":"阿沛阿旺晋美","category":"political","level":"medium","review_note":"Tibetan political figure reference; political/medium is clearer than other/low."}
+{"text":"阿波罗网","category":"political","level":"medium","review_note":"Political media site reference; political/medium is clearer than other/low."}
+{"text":"阿片烟","category":"illegal","level":"high","review_note":"Opium smoking phrase; illegal/high is clearer than other/low."}
+{"text":"阿米吨","category":"illegal","level":"high","review_note":"Toxic chemical/nerve-agent related term; illegal/high is clearer than other/low."}
+{"text":"阿罗约","category":"political","level":"medium","review_note":"Political leader reference; political/medium is clearer than other/low."}
+{"text":"阿芙蓉","category":"illegal","level":"medium","review_note":"Opium slang term; illegal/medium is clearer than other/low."}
+{"text":"陈和受贿案","category":"political","level":"medium","review_note":"Political corruption case phrase; political/medium is clearer than other/low."}
+{"text":"陈奎元","category":"political","level":"medium","review_note":"Political figure reference; political/medium is clearer than other/low."}
+{"text":"陈娘宇下台","category":"political","level":"medium","review_note":"Obfuscated political downfall phrase; political/medium is clearer than other/low."}
+{"text":"陈子明","category":"political","level":"medium","review_note":"Dissident/political figure reference; political/medium is clearer than other/low."}
+{"text":"陈宝生","category":"political","level":"medium","review_note":"Political figure reference; political/medium is clearer than other/low."}
+{"text":"陈希","category":"political","level":"medium","review_note":"Political figure reference; political/medium is clearer than other/low."}
+{"text":"陈希同","category":"political","level":"medium","review_note":"Political figure reference; political/medium is clearer than other/low."}
+{"text":"陈总统","category":"political","level":"medium","review_note":"Political title/person reference; political/medium is clearer than other/low."}
+{"text":"陈敏尔","category":"political","level":"medium","review_note":"Political figure reference; political/medium is clearer than other/low."}
+{"text":"陈文清","category":"political","level":"medium","review_note":"Political/security official reference; political/medium is clearer than other/low."}
+{"text":"陈方安生","category":"political","level":"medium","review_note":"Political figure reference; political/medium is clearer than other/low."}
+{"text":"陈毅","category":"political","level":"medium","review_note":"Historical political figure reference; political/medium is clearer than other/low."}
+{"text":"陈水扁","category":"political","level":"medium","review_note":"Political figure reference; political/medium is clearer than other/low."}
+{"text":"陈独秀","category":"political","level":"medium","review_note":"Historical political figure reference; political/medium is clearer than other/low."}
+{"text":"陈破空","category":"political","level":"medium","review_note":"Political commentator/dissident reference; political/medium is clearer than other/low."}
+{"text":"陈良宇","category":"political","level":"medium","review_note":"Political figure reference; political/medium is clearer than other/low."}
+{"text":"陈菊","category":"political","level":"medium","review_note":"Political figure reference; political/medium is clearer than other/low."}
+{"text":"陈锡联","category":"political","level":"medium","review_note":"Historical political/military figure reference; political/medium is clearer than other/low."}
+{"text":"限制片下载","category":"pornographic","level":"medium","review_note":"Adult restricted-film download phrase; pornographic/medium is clearer than other/low."}
+{"text":"限制级女郎dj舞","category":"pornographic","level":"medium","review_note":"Adult restricted-content phrase; pornographic/medium is clearer than other/low."}
+{"text":"限制级色片","category":"pornographic","level":"high","review_note":"Explicit adult-film phrase; pornographic/high is clearer than other/low."}
+{"text":"陪伴小姐哪里找","category":"pornographic","level":"medium","review_note":"Escort/prostitution-seeking phrase; pornographic/medium is clearer than other/low."}
+{"text":"陪你睡","category":"pornographic","level":"medium","review_note":"Sex-service phrase; pornographic/medium is clearer than other/low."}
+{"text":"陪我玩时时彩的","category":"illegal","level":"medium","review_note":"Gambling phrase; illegal/medium is clearer than other/low."}
+{"text":"陪睡","category":"pornographic","level":"medium","review_note":"Sex-service phrase; pornographic/medium is clearer than other/low."}
+{"text":"陪睡的女人","category":"pornographic","level":"medium","review_note":"Sex-service phrase; pornographic/medium is clearer than other/low."}
+{"text":"陪聊裸体女qq","category":"ad","level":"low","review_note":"Contains QQ contact marker; review rule requires ad/low."}
+{"text":"陪聊裸女qq","category":"ad","level":"low","review_note":"Contains QQ contact marker; review rule requires ad/low."}
+{"text":"随便玩我","category":"pornographic","level":"medium","review_note":"Sexually suggestive availability phrase; pornographic/medium is clearer than other/low."}
+{"text":"难得魏芯吧","category":"ad","level":"low","review_note":"Obfuscated WeChat contact marker; ad/low fits the review rule."}
+{"text":"雅思成绩单","category":"illegal","level":"medium","review_note":"Credential-document phrase in this context; illegal/medium is clearer than other/low."}
+{"text":"雅蠛蝶","category":"pornographic","level":"medium","review_note":"Sexual Japanese phrase; pornographic/medium is clearer than other/low."}
+{"text":"雅蠛蝶影视网","category":"pornographic","level":"medium","review_note":"Adult-site phrase; pornographic/medium is clearer than other/low."}
+{"text":"集会","category":"political","level":"medium","review_note":"Public assembly/protest context term; political/medium is clearer than other/low."}
+{"text":"集体上访","category":"political","level":"medium","review_note":"Collective petitioning phrase; political/medium is clearer than other/low."}
+{"text":"集体打砸","category":"violence","level":"medium","review_note":"Collective smashing/riot phrase; violence/medium is clearer than other/low."}
+{"text":"集体抗议","category":"political","level":"medium","review_note":"Collective protest phrase; political/medium is clearer than other/low."}
+{"text":"集体自杀","category":"violence","level":"high","review_note":"Self-harm/suicide phrase; violence/high is clearer than other/low."}
+{"text":"集团出售手枪","category":"ad","level":"low","review_note":"Sales marker makes this ad/low under the review rule."}
+{"text":"集团出售手枪气枪","category":"ad","level":"low","review_note":"Sales marker makes this ad/low under the review rule."}
+{"text":"集团熟痴女川奈南智子泽宫有希樱田由加里4时间","category":"pornographic","level":"high","review_note":"Adult-video style phrase with explicit mature-woman wording; pornographic/high fits better than other/low."}
+{"text":"雇人复仇","category":"violence","level":"high","review_note":"Hiring violence/revenge phrase; violence/high is clearer than other/low."}
+{"text":"雇人打架","category":"violence","level":"medium","review_note":"Hiring people to fight; violence/medium is clearer than other/low."}
+{"text":"雇人报仇","category":"violence","level":"high","review_note":"Hiring revenge violence phrase; violence/high is clearer than other/low."}
+{"text":"雇佣杀手","category":"violence","level":"high","review_note":"Hiring a killer phrase; violence/high is clearer than other/low."}
+{"text":"雇佣杀手网","category":"ad","level":"low","review_note":"Service website marker makes this ad/low under the review rule."}
+{"text":"雇佣职业打手","category":"violence","level":"medium","review_note":"Hiring professional thugs phrase; violence/medium is clearer than other/low."}
+{"text":"雇凶复仇","category":"violence","level":"high","review_note":"Hiring assailants for revenge; violence/high is clearer than other/low."}
+{"text":"雇凶打人","category":"violence","level":"medium","review_note":"Hiring assailants to beat someone; violence/medium is clearer than other/low."}
+{"text":"雇打手办事","category":"violence","level":"medium","review_note":"Hiring thugs phrase; violence/medium is clearer than other/low."}
+{"text":"雇打手网","category":"ad","level":"low","review_note":"Service website marker makes this ad/low under the review rule."}
+{"text":"雇杀手报仇","category":"violence","level":"high","review_note":"Hiring a killer for revenge; violence/high is clearer than other/low."}
+{"text":"雇用打手","category":"violence","level":"medium","review_note":"Hiring thugs phrase; violence/medium is clearer than other/low."}
+{"text":"雇职业打手","category":"violence","level":"medium","review_note":"Hiring professional thugs phrase; violence/medium is clearer than other/low."}
+{"text":"雏乃椿美种子","category":"pornographic","level":"medium","review_note":"Adult performer torrent/resource phrase; pornographic/medium fits better than other/low."}
+{"text":"雏妓","category":"pornographic","level":"high","review_note":"Sexual exploitation of minors; high is the strongest allowed level and replaces disallowed critical."}
+{"text":"雏妓上门qq","category":"ad","level":"low","review_note":"Contains QQ contact marker; review rule requires ad/low and critical is not an allowed level."}
+{"text":"雨宫优种子","category":"pornographic","level":"medium","review_note":"Adult performer torrent/resource phrase; pornographic/medium fits better than other/low."}
+{"text":"雨宫沙纪种子","category":"pornographic","level":"medium","review_note":"Adult performer torrent/resource phrase; pornographic/medium fits better than other/low."}
+{"text":"雨宫琴种子","category":"pornographic","level":"medium","review_note":"Adult performer torrent/resource phrase; pornographic/medium fits better than other/low."}
+{"text":"雨宫琴音种子","category":"pornographic","level":"medium","review_note":"Adult performer torrent/resource phrase; pornographic/medium fits better than other/low."}
+{"text":"雨宫琴音种子下载","category":"pornographic","level":"medium","review_note":"Adult performer torrent/download phrase; pornographic/medium fits better than other/low."}
+{"text":"雨宫由依种子","category":"pornographic","level":"medium","review_note":"Adult performer torrent/resource phrase; pornographic/medium fits better than other/low."}
+{"text":"雪山狮子旗","category":"political","level":"medium","review_note":"Tibetan political flag reference; political/medium is clearer than other/low."}
+{"text":"雪村沙郁种子","category":"pornographic","level":"medium","review_note":"Adult performer torrent/resource phrase; pornographic/medium fits better than other/low."}
+{"text":"雪白屁股的诱惑txt","category":"pornographic","level":"medium","review_note":"Erotic fiction phrase; pornographic/medium is clearer than other/low."}
+{"text":"雪白的屁股对着肉棒","category":"pornographic","level":"high","review_note":"Explicit sexual phrase with genital slang; pornographic/high is clearer than other/low."}
+{"text":"雪白的肥臀","category":"pornographic","level":"medium","review_note":"Sexualized body phrase; pornographic/medium is clearer than other/low."}
+{"text":"雪野あいか电驴下载","category":"pornographic","level":"medium","review_note":"Adult performer download phrase; pornographic/medium fits better than other/low."}
+{"text":"雪野小春种子","category":"pornographic","level":"medium","review_note":"Adult performer torrent/resource phrase; pornographic/medium fits better than other/low."}
+{"text":"雪野弥生种子","category":"pornographic","level":"medium","review_note":"Adult performer torrent/resource phrase; pornographic/medium fits better than other/low."}
+{"text":"雪野爱佳种子","category":"pornographic","level":"medium","review_note":"Adult performer torrent/resource phrase; pornographic/medium fits better than other/low."}
+{"text":"雷明登猎狗","category":"illegal","level":"high","review_note":"Firearm slang phrase; illegal/high is clearer than other/low."}
+{"text":"雷明登猎狗转让","category":"ad","level":"low","review_note":"Transfer/sales marker makes this ad/low under the review rule."}
+{"text":"雷明顿销售","category":"ad","level":"low","review_note":"Sales marker makes this ad/low under the review rule."}
+{"text":"雷汞","category":"illegal","level":"high","review_note":"Explosive precursor term; illegal/high is clearer than other/low."}
+{"text":"雷管qq","category":"ad","level":"low","review_note":"Contains QQ contact marker; review rule requires ad/low."}
+{"text":"雷管专卖","category":"ad","level":"low","review_note":"Sales marker makes this ad/low under the review rule."}
+{"text":"雷管供应","category":"ad","level":"low","review_note":"Supply marker makes this ad/low under the review rule."}
+{"text":"雷管供应qq","category":"ad","level":"low","review_note":"Contains QQ contact marker; review rule requires ad/low."}
+{"text":"雷管出售","category":"ad","level":"low","review_note":"Sales marker makes this ad/low under the review rule."}
+{"text":"雷管出售qq","category":"ad","level":"low","review_note":"Contains QQ contact marker; review rule requires ad/low."}
+{"text":"雷管制造技术qq","category":"ad","level":"low","review_note":"Contains QQ contact marker; review rule requires ad/low."}
+{"text":"雷管炸药qq","category":"ad","level":"low","review_note":"Contains QQ contact marker; review rule requires ad/low."}
+{"text":"雷管炸药出售","category":"ad","level":"low","review_note":"Sales marker makes this ad/low under the review rule."}
+{"text":"雷管炸药出售qq","category":"ad","level":"low","review_note":"Contains QQ contact marker; review rule requires ad/low."}
+{"text":"雷管炸药看货付款","category":"ad","level":"low","review_note":"Transaction marker makes this ad/low under the review rule."}
+{"text":"雷管看货付款","category":"ad","level":"low","review_note":"Transaction marker makes this ad/low under the review rule."}
+{"text":"雷管销售","category":"ad","level":"low","review_note":"Sales marker makes this ad/low under the review rule."}
+{"text":"雷管销售qq","category":"ad","level":"low","review_note":"Contains QQ contact marker; review rule requires ad/low."}
+{"text":"雷豹气狗基地","category":"illegal","level":"medium","review_note":"Air-gun base phrase; illegal/medium is clearer than other/low."}
+{"text":"雷鸣登猎枪出售","category":"ad","level":"low","review_note":"Sales marker makes this ad/low under the review rule."}
+{"text":"需要裸聊服务的请加","category":"ad","level":"low","review_note":"Invite-to-add service marker makes this ad/low under the review rule."}
+{"text":"震源药柱","category":"illegal","level":"high","review_note":"Explosive charge phrase; illegal/high is clearer than other/low."}
+{"text":"霰弹","category":"violence","level":"medium","review_note":"Ammunition term; violence/medium is clearer than other/low."}
+{"text":"露b","category":"pornographic","level":"medium","review_note":"Obfuscated genital exposure phrase; pornographic/medium is clearer than other/low."}
+{"text":"露u点","category":"pornographic","level":"medium","review_note":"Obfuscated nipple-exposure phrase; pornographic/medium is clearer than other/low."}
+{"text":"露乳","category":"pornographic","level":"medium","review_note":"Breast exposure phrase; pornographic/medium is clearer than other/low."}
+{"text":"露出了娇小鲜嫩的小屄洞","category":"pornographic","level":"high","review_note":"Explicit genital exposure phrase; pornographic/high is clearer than other/low."}
+{"text":"露屄","category":"pornographic","level":"medium","review_note":"Vulgar genital exposure phrase; pornographic/medium is clearer than other/low."}
+{"text":"露毛","category":"pornographic","level":"medium","review_note":"Pubic exposure phrase; pornographic/medium is clearer than other/low."}
+{"text":"露点","category":"pornographic","level":"medium","review_note":"Nude/exposure phrase; pornographic/medium is clearer than other/low."}
+{"text":"露穴","category":"pornographic","level":"medium","review_note":"Genital exposure phrase; pornographic/medium is clearer than other/low."}
+{"text":"露胸图","category":"pornographic","level":"medium","review_note":"Breast-exposure image phrase; pornographic/medium is clearer than other/low."}
+{"text":"露逼","category":"pornographic","level":"medium","review_note":"Vulgar genital exposure phrase; pornographic/medium is clearer than other/low."}
+{"text":"露阴照","category":"pornographic","level":"medium","review_note":"Genital exposure photo phrase; pornographic/medium is clearer than other/low."}
+{"text":"露骨的激情","category":"pornographic","level":"medium","review_note":"Explicit passion/adult-content phrase; pornographic/medium is clearer than other/low."}
+{"text":"露鲍","category":"pornographic","level":"medium","review_note":"Vulgar genital exposure slang; pornographic/medium is clearer than other/low."}
+{"text":"露鲍私拍","category":"pornographic","level":"high","review_note":"Private explicit genital-photo phrase; pornographic/high is clearer than other/low."}
+{"text":"霸工","category":"political","level":"medium","review_note":"Likely obfuscated strike phrase; political/medium is clearer than other/low."}
+{"text":"霸课","category":"political","level":"medium","review_note":"Likely obfuscated class-boycott phrase; political/medium is clearer than other/low."}
+{"text":"靑楼十2房","category":"pornographic","level":"medium","review_note":"Brothel/adult-entertainment title phrase; pornographic/medium is clearer than other/low."}
+{"text":"青天白日","category":"political","level":"medium","review_note":"Political symbol phrase; political/medium is clearer than other/low."}
+{"text":"青天白日旗","category":"political","level":"medium","review_note":"Political flag reference; political/medium is clearer than other/low."}
+{"text":"青山可奈种子","category":"pornographic","level":"medium","review_note":"Adult performer torrent/resource phrase; pornographic/medium fits better than other/low."}
+{"text":"青山和希bt下载","category":"pornographic","level":"medium","review_note":"Adult performer BT download phrase; pornographic/medium fits better than other/low."}
+{"text":"青山来美种子","category":"pornographic","level":"medium","review_note":"Adult performer torrent/resource phrase; pornographic/medium fits better than other/low."}
+{"text":"青山由美种子","category":"pornographic","level":"medium","review_note":"Adult performer torrent/resource phrase; pornographic/medium fits better than other/low."}
+{"text":"青山美奈美种子","category":"pornographic","level":"medium","review_note":"Adult performer torrent/resource phrase; pornographic/medium fits better than other/low."}
+{"text":"青岛石化项目引发市民恐慌","category":"political","level":"medium","review_note":"Public protest/social incident phrase; political/medium is clearer than other/low."}
+{"text":"青木怜奈种子","category":"pornographic","level":"medium","review_note":"Adult performer torrent/resource phrase; pornographic/medium fits better than other/low."}
+{"text":"青木教授种子","category":"pornographic","level":"medium","review_note":"Adult torrent/resource phrase; pornographic/medium fits better than other/low."}
+{"text":"青木梦种子","category":"pornographic","level":"medium","review_note":"Adult performer torrent/resource phrase; pornographic/medium fits better than other/low."}
+{"text":"青木梨花种子","category":"pornographic","level":"medium","review_note":"Adult performer torrent/resource phrase; pornographic/medium fits better than other/low."}
+{"text":"青木沙罗and青木沙罗种子","category":"pornographic","level":"medium","review_note":"Adult performer torrent/resource phrase; pornographic/medium fits better than other/low."}
+{"text":"青木沙罗种子","category":"pornographic","level":"medium","review_note":"Adult performer torrent/resource phrase; pornographic/medium fits better than other/low."}
+{"text":"青木玲迅雷下载","category":"pornographic","level":"medium","review_note":"Adult performer download phrase; pornographic/medium fits better than other/low."}
+{"text":"青木琳种子","category":"pornographic","level":"medium","review_note":"Adult performer torrent/resource phrase; pornographic/medium fits better than other/low."}
+{"text":"青木絵里全集","category":"pornographic","level":"medium","review_note":"Adult performer collection phrase; pornographic/medium fits better than other/low."}
+{"text":"青木绘里种子","category":"pornographic","level":"medium","review_note":"Adult performer torrent/resource phrase; pornographic/medium fits better than other/low."}
+{"text":"青木诗央里种子","category":"pornographic","level":"medium","review_note":"Adult performer torrent/resource phrase; pornographic/medium fits better than other/low."}
+{"text":"青楼","category":"pornographic","level":"medium","review_note":"Brothel term; pornographic/medium is clearer than other/low."}
+{"text":"青楼十2房","category":"pornographic","level":"medium","review_note":"Brothel/adult-entertainment title phrase; pornographic/medium is clearer than other/low."}
+{"text":"青楼十2房下载","category":"pornographic","level":"medium","review_note":"Adult-entertainment download phrase; pornographic/medium is clearer than other/low."}
+{"text":"青楼吧","category":"pornographic","level":"medium","review_note":"Brothel/adult forum phrase; pornographic/medium is clearer than other/low."}
+{"text":"青沼知朝bt下载","category":"pornographic","level":"medium","review_note":"Adult performer BT download phrase; pornographic/medium fits better than other/low."}
+{"text":"青沼知朝种子","category":"pornographic","level":"medium","review_note":"Adult performer torrent/resource phrase; pornographic/medium fits better than other/low."}
+{"text":"青田早纪种子","category":"pornographic","level":"medium","review_note":"Adult performer torrent/resource phrase; pornographic/medium fits better than other/low."}
+{"text":"青花缘社区北京楼凤","category":"pornographic","level":"high","review_note":"Prostitution/escort phrase; pornographic/high is clearer than other/low."}
+{"text":"青蒿素供应","category":"ad","level":"low","review_note":"Supply marker makes this ad/low under the review rule."}
+{"text":"青蒿素出货","category":"ad","level":"low","review_note":"Shipping marker makes this ad/low under the review rule."}
+{"text":"青蒿素到货","category":"ad","level":"low","review_note":"Availability marker makes this ad/low under the review rule."}
+{"text":"青蒿素批发","category":"ad","level":"low","review_note":"Wholesale marker makes this ad/low under the review rule."}
+{"text":"青蒿素订购","category":"ad","level":"low","review_note":"Ordering marker makes this ad/low under the review rule."}
+{"text":"青蒿素送货上门","category":"ad","level":"low","review_note":"Delivery-sales marker makes this ad/low under the review rule."}
+{"text":"青蒿素销售","category":"ad","level":"low","review_note":"Sales marker makes this ad/low under the review rule."}
+{"text":"靓妹上门服务","category":"ad","level":"low","review_note":"Door-to-door service marker makes this ad/low under the review rule."}
+{"text":"靓妹仔之失贞","category":"pornographic","level":"medium","review_note":"Sexual virginity-loss phrase; pornographic/medium is clearer than other/low."}
+{"text":"靓穴meinv","category":"pornographic","level":"medium","review_note":"Sexual genital slang phrase; pornographic/medium is clearer than other/low."}
+{"text":"靓穴美女","category":"pornographic","level":"medium","review_note":"Sexual genital slang phrase; pornographic/medium is clearer than other/low."}
+{"text":"靖国","category":"political","level":"medium","review_note":"Yasukuni political/historical reference; political/medium is clearer than other/low."}
+{"text":"靖国神社","category":"political","level":"medium","review_note":"Yasukuni Shrine political/historical reference; political/medium is clearer than other/low."}
+{"text":"静态爆破剂","category":"illegal","level":"high","review_note":"Explosive/blasting agent phrase; illegal/high is clearer than other/low."}
+{"text":"非电导爆系统","category":"illegal","level":"high","review_note":"Detonation system phrase; illegal/high is clearer than other/low."}
+{"text":"非诺啡烷订购","category":"ad","level":"low","review_note":"Ordering marker makes this ad/low under the review rule."}
+{"text":"革命","category":"political","level":"medium","review_note":"Political revolution term; political/medium is clearer than other/low."}
+{"text":"鞑子","category":"abuse","level":"medium","review_note":"Ethnic slur; abuse/medium is clearer than other/low."}
+{"text":"鞭炮供应","category":"ad","level":"low","review_note":"Supply marker makes this ad/low under the review rule."}
+{"text":"鞭炮批发","category":"ad","level":"low","review_note":"Wholesale marker makes this ad/low under the review rule."}
+{"text":"鞭炮直销","category":"ad","level":"low","review_note":"Direct-sale marker makes this ad/low under the review rule."}
+{"text":"鞭炮送货上门","category":"ad","level":"low","review_note":"Delivery-sales marker makes this ad/low under the review rule."}
+{"text":"鞭炮销售","category":"ad","level":"low","review_note":"Sales marker makes this ad/low under the review rule."}
+{"text":"韦国清","category":"political","level":"medium","review_note":"Political/military figure reference; political/medium is clearer than other/low."}
+{"text":"韦小宝现代猎艳记","category":"pornographic","level":"medium","review_note":"Erotic title phrase; pornographic/medium is clearer than other/low."}
+{"text":"韦小宝现代猎艳记txt","category":"pornographic","level":"medium","review_note":"Erotic fiction download phrase; pornographic/medium is clearer than other/low."}
+{"text":"韩东方","category":"political","level":"medium","review_note":"Labor activist/political figure reference; political/medium is clearer than other/low."}
+{"text":"韩企工会围堵我使馆","category":"political","level":"medium","review_note":"Labor protest/diplomatic incident phrase; political/medium is clearer than other/low."}
+{"text":"韩伯平回忆","category":"political","level":"medium","review_note":"Political memoir/reference phrase; political/medium is clearer than other/low."}
+{"text":"韩启德","category":"political","level":"medium","review_note":"Political figure reference; political/medium is clearer than other/low."}
+{"text":"韩国3级电影","category":"pornographic","level":"high","review_note":"Adult category-III film phrase; pornographic/high is clearer than other/low."}
+{"text":"韩国嫩模高清爱爱","category":"pornographic","level":"high","review_note":"Explicit sex-video phrase; pornographic/high is clearer than other/low."}
+{"text":"韩国援交","category":"pornographic","level":"high","review_note":"Compensated dating/prostitution phrase; pornographic/high is clearer than other/low."}
+{"text":"韩国狗","category":"abuse","level":"medium","review_note":"Nationality-based insult; abuse/medium is clearer than other/low."}
+{"text":"韩正","category":"political","level":"medium","review_note":"Political figure reference; political/medium is clearer than other/low."}
+{"text":"韩正降职副市长","category":"political","level":"medium","review_note":"Political personnel rumor phrase; political/medium is clearer than other/low."}
+{"text":"韶关事件","category":"political","level":"medium","review_note":"Public incident phrase; political/medium is clearer than other/low."}
+{"text":"韶关斗","category":"violence","level":"medium","review_note":"Likely fight/riot incident phrase; violence/medium is clearer than other/low."}
+{"text":"韶关群殴","category":"violence","level":"medium","review_note":"Group assault phrase; violence/medium is clearer than other/low."}
+{"text":"顶到妈妈娇嫩的花心","category":"pornographic","level":"high","review_note":"Explicit incestuous sexual phrase; pornographic/high is clearer than other/low."}
+{"text":"顶到花蕊","category":"pornographic","level":"medium","review_note":"Sexualized genital metaphor phrase; pornographic/medium is clearer than other/low."}
+{"text":"顶到阿姨的花心","category":"pornographic","level":"high","review_note":"Explicit sexual phrase; pornographic/high is clearer than other/low."}
+{"text":"顶级影片禁书禁图","category":"other","level":"medium","review_note":"Sensitive mixed media phrase is unclear; other/medium fits the cannot-judge rule better than other/low."}
+{"text":"顶花心","category":"pornographic","level":"medium","review_note":"Sexualized genital metaphor phrase; pornographic/medium is clearer than other/low."}
+{"text":"顶贴机","category":"other","level":"medium","review_note":"Forum bumping automation tool; current category enum has no spam class, so keep it non-low as other/medium."}
+{"text":"顶进她的花蕊","category":"pornographic","level":"high","review_note":"Explicit penetrative sexual phrase; pornographic/high is clearer than other/low."}
+{"text":"顶进嫂子的花心","category":"pornographic","level":"high","review_note":"Explicit incest-adjacent sexual phrase; pornographic/high is clearer than other/low."}
+{"text":"顶进少妇的花心","category":"pornographic","level":"high","review_note":"Explicit sexual phrase; pornographic/high is clearer than other/low."}
+{"text":"项英","category":"political","level":"medium","review_note":"Historical political/military figure reference; political/medium is clearer than other/low."}
+{"text":"顺丰办证","category":"illegal","level":"medium","review_note":"Document-forging/service phrase; illegal/medium is clearer than other/low."}
+{"text":"顺丰数据销售","category":"ad","level":"low","review_note":"Sales marker makes this ad/low under the review rule."}
+{"text":"顺着大鸡巴湿淋淋的流下","category":"pornographic","level":"high","review_note":"Explicit genital/sexual-fluid phrase; pornographic/high is clearer than other/low."}
+{"text":"顺着红嫩的肉缝上下抚弄后插入小穴","category":"pornographic","level":"high","review_note":"Explicit sexual touching and penetration phrase; pornographic/high is clearer than other/low."}
+{"text":"顾顺章","category":"political","level":"medium","review_note":"Historical political figure reference; political/medium is clearer than other/low."}
+{"text":"预售2012年高考答案","category":"ad","level":"low","review_note":"Pre-sale marker makes this ad/low under the review rule."}
+{"text":"预售2012高考答案","category":"ad","level":"low","review_note":"Pre-sale marker makes this ad/low under the review rule."}
+{"text":"预定2013年北京户口指标","category":"ad","level":"low","review_note":"Reservation/sales marker makes this ad/low under the review rule."}
+{"text":"预定2013年户口指标","category":"ad","level":"low","review_note":"Reservation/sales marker makes this ad/low under the review rule."}
+{"text":"预定3利达弩","category":"ad","level":"low","review_note":"Reservation marker makes this ad/low under the review rule."}
+{"text":"预定大黑鹰弩","category":"ad","level":"low","review_note":"Reservation marker makes this ad/low under the review rule."}
+{"text":"预定温切斯特气枪qq","category":"ad","level":"low","review_note":"Contains QQ contact marker; review rule requires ad/low."}
+{"text":"预定赵氏弩","category":"ad","level":"low","review_note":"Reservation marker makes this ad/low under the review rule."}
+{"text":"预测答案","category":"illegal","level":"medium","review_note":"Exam-answer cheating phrase; illegal/medium is clearer than other/low."}
+{"text":"预订54式手枪qq","category":"ad","level":"low","review_note":"Contains QQ contact marker; review rule requires ad/low."}
+{"text":"预订77式手枪","category":"ad","level":"low","review_note":"Reservation/order marker makes this ad/low under the review rule."}
+{"text":"预订awp气步枪","category":"ad","level":"low","review_note":"Reservation/order marker makes this ad/low under the review rule."}
+{"text":"预订pcp汽枪qq","category":"ad","level":"low","review_note":"Contains QQ contact marker; review rule requires ad/low."}
+{"text":"预订仿真气枪","category":"ad","level":"low","review_note":"Reservation/order marker makes this ad/low under the review rule."}
+{"text":"预订左轮手枪qq","category":"ad","level":"low","review_note":"Contains QQ contact marker; review rule requires ad/low."}
+{"text":"预订温切斯特气枪qq","category":"ad","level":"low","review_note":"Contains QQ contact marker; review rule requires ad/low."}
+{"text":"预订狙击弓弩","category":"ad","level":"low","review_note":"Reservation/order marker makes this ad/low under the review rule."}
+{"text":"预订狙击步枪qq","category":"ad","level":"low","review_note":"Contains QQ contact marker; review rule requires ad/low."}
+{"text":"预订秃鹰汽枪qq","category":"ad","level":"low","review_note":"Contains QQ contact marker; review rule requires ad/low."}
+{"text":"预订考试答案","category":"ad","level":"low","review_note":"Reservation/order marker makes this ad/low under the review rule."}
+{"text":"预订赵氏弩弓","category":"ad","level":"low","review_note":"Reservation/order marker makes this ad/low under the review rule."}
+{"text":"预订进口气枪","category":"ad","level":"low","review_note":"Reservation/order marker makes this ad/low under the review rule."}
+{"text":"预订醋酸铊","category":"ad","level":"low","review_note":"Reservation/order marker makes this ad/low under the review rule."}
+{"text":"预订野营猎刀","category":"ad","level":"low","review_note":"Reservation/order marker makes this ad/low under the review rule."}
+{"text":"预订高考落榜生信息","category":"ad","level":"low","review_note":"Reservation/order marker makes this ad/low under the review rule."}
+{"text":"预订高考落榜生资料","category":"ad","level":"low","review_note":"Reservation/order marker makes this ad/low under the review rule."}
