@@ -423,9 +423,10 @@ func TestNormalizeBlockedKeywords_TrimsDedupesAndCaps(t *testing.T) {
 }
 
 func TestMatchBlockedKeyword_CaseInsensitiveSubstring(t *testing.T) {
-	keyword, hit := matchCustomBlockedKeyword("Please ignore the BadWord here", []string{"badword"}, nil)
+	match, hit := matchCustomBlockedKeyword("Please ignore the BadWord here", []string{"badword"}, nil)
 	require.True(t, hit)
-	require.Equal(t, "badword", keyword)
+	require.Equal(t, "badword", match.Keyword)
+	require.Equal(t, "BadWord", match.MatchedText)
 
 	_, hit = matchCustomBlockedKeyword("clean prompt", []string{"badword"}, nil)
 	require.False(t, hit)
@@ -435,25 +436,37 @@ func TestMatchBlockedKeyword_CaseInsensitiveSubstring(t *testing.T) {
 }
 
 func TestMatchCustomBlockedKeyword_SkipsWhitelistedMatches(t *testing.T) {
-	keyword, hit := matchCustomBlockedKeyword("safe-term plus SAFE-DANGER", []string{"safe-term", "safe-danger"}, []string{"safe-term"})
+	match, hit := matchCustomBlockedKeyword("safe-term plus SAFE-DANGER", []string{"safe-term", "safe-danger"}, []string{"safe-term"})
 	require.True(t, hit)
-	require.Equal(t, "safe-danger", keyword)
+	require.Equal(t, "safe-danger", match.Keyword)
 
 	_, hit = matchCustomBlockedKeyword("SAFE-TERM is approved", []string{"safe-term"}, []string{"safe-term"})
 	require.False(t, hit)
 }
 
 func TestMatchCustomBlockedKeyword_FoldedTextVariants(t *testing.T) {
-	keyword, hit := matchCustomBlockedKeyword("please B a-d_Word now", []string{"badword"}, nil)
+	match, hit := matchCustomBlockedKeyword("please B a-d_Word now", []string{"badword"}, nil)
 	require.True(t, hit)
-	require.Equal(t, "badword", keyword)
+	require.Equal(t, "badword", match.Keyword)
+	require.Equal(t, "B a-d_Word", match.MatchedText)
 
-	keyword, hit = matchCustomBlockedKeyword("order café today", []string{"cafe"}, nil)
+	match, hit = matchCustomBlockedKeyword("order café today", []string{"cafe"}, nil)
 	require.True(t, hit)
-	require.Equal(t, "cafe", keyword)
+	require.Equal(t, "cafe", match.Keyword)
+	require.Equal(t, "café", match.MatchedText)
 
 	_, hit = matchCustomBlockedKeyword("B a d W o r d is approved", []string{"badword"}, []string{"bad-word"})
 	require.False(t, hit)
+}
+
+func TestMatchCustomBlockedKeyword_FoldedTextRequiresAsciiBoundary(t *testing.T) {
+	_, hit := matchCustomBlockedKeyword("等待完整 WAV 下载", []string{"av下载"}, nil)
+	require.False(t, hit)
+
+	match, hit := matchCustomBlockedKeyword("等待完整 AV 下载", []string{"av下载"}, nil)
+	require.True(t, hit)
+	require.Equal(t, "av下载", match.Keyword)
+	require.Equal(t, "AV 下载", match.MatchedText)
 }
 
 func TestMatchBuiltInBlockedKeyword_FoldedTextVariants(t *testing.T) {
@@ -471,8 +484,10 @@ func TestMatchBuiltInBlockedKeyword_FoldedTextVariants(t *testing.T) {
 	match, hit := matchBuiltInBlockedKeyword(detector, "superpowers brainstorming 用户 B a-d Wörd", nil, nil, nil)
 	require.True(t, hit)
 	require.Equal(t, "badword", match.Keyword)
+	require.Equal(t, "B a-d Wörd", match.MatchedText)
 	require.Equal(t, "illegal", match.Category)
 	require.Equal(t, "high", match.Level)
+	require.Contains(t, buildKeywordContextExcerptForMatch("superpowers brainstorming 用户 B a-d Wörd", match), "B a-d Wörd")
 
 	_, hit = matchBuiltInBlockedKeyword(detector, "B a-d Wörd", []string{"bad word"}, nil, nil)
 	require.False(t, hit)
@@ -501,6 +516,7 @@ func TestTagContentModerationBuiltinWord_SeverityRules(t *testing.T) {
 		{name: "digits low", text: "1234567890", category: dict.CategoryOther, level: dict.LevelLow},
 		{name: "two english words low", text: "adult movie", category: dict.CategoryOther, level: dict.LevelLow},
 		{name: "common tech word low", text: "监听", category: dict.CategoryOther, level: dict.LevelLow},
+		{name: "bare identity card low", text: "身份证", category: dict.CategoryIllegal, level: dict.LevelLow},
 		{name: "illegal spyware high", text: "手机监听软件", category: dict.CategoryIllegal, level: dict.LevelHigh},
 		{name: "minor sexual critical", text: "14岁幼女", category: dict.CategoryPornographic, level: dict.LevelCritical},
 		{name: "porn high", text: "成人小电影", category: dict.CategoryPornographic, level: dict.LevelHigh},
@@ -545,6 +561,8 @@ func TestLoadContentModerationBuiltinLexicon_UsesStaticAnnotations(t *testing.T)
 	require.Equal(t, dict.LevelCritical, byText["14岁幼女b嫩阴"].Level)
 	require.Equal(t, dict.CategoryPornographic, byText["成人小电影"].Category)
 	require.Equal(t, dict.LevelHigh, byText["成人小电影"].Level)
+	require.Equal(t, dict.CategoryIllegal, byText["身份证"].Category)
+	require.Equal(t, dict.LevelLow, byText["身份证"].Level)
 }
 
 func TestMatchBuiltInBlockedKeyword_FiltersByConfiguredCategoryAndLevel(t *testing.T) {
@@ -587,6 +605,22 @@ func TestBuildKeywordContextExcerpt_CentersMatchedKeyword(t *testing.T) {
 	excerpt := buildKeywordContextExcerpt(prefix+" 乳头 "+suffix, "乳头")
 
 	require.Contains(t, excerpt, "乳头")
+	require.NotContains(t, excerpt, strings.Repeat("前", 240))
+	require.True(t, strings.HasPrefix(excerpt, "..."))
+	require.True(t, strings.HasSuffix(excerpt, "..."))
+	require.LessOrEqual(t, len([]rune(excerpt)), maxModerationExcerptRunes)
+}
+
+func TestBuildKeywordContextExcerptForMatch_UsesMatchedRange(t *testing.T) {
+	prefix := strings.Repeat("前", 300)
+	suffix := strings.Repeat("后", 300)
+	text := prefix + " 等待完整 AV 下载 " + suffix
+	match, hit := matchCustomBlockedKeyword(text, []string{"av下载"}, nil)
+	require.True(t, hit)
+
+	excerpt := buildKeywordContextExcerptForMatch(text, match)
+
+	require.Contains(t, excerpt, "AV 下载")
 	require.NotContains(t, excerpt, strings.Repeat("前", 240))
 	require.True(t, strings.HasPrefix(excerpt, "..."))
 	require.True(t, strings.HasSuffix(excerpt, "..."))

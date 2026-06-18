@@ -57795,7 +57795,7 @@
 {"text":"身份信息","category":"illegal","level":"high"}
 {"text":"身份生成器","category":"illegal","level":"high"}
 {"text":"身份譪生成器","category":"illegal","level":"high"}
-{"text":"身份证","category":"illegal","level":"high"}
+{"text":"身份证","category":"illegal","level":"low"}
 {"text":"身份证qq","category":"ad","level":"low"}
 {"text":"身份证专卖qq","category":"ad","level":"low"}
 {"text":"身份证买卖qq","category":"ad","level":"low"}
@@ -123004,7 +123004,7 @@
 {"text":"身份信息","category":"illegal","level":"high"}
 {"text":"身份生成器","category":"illegal","level":"high"}
 {"text":"身份譪生成器","category":"illegal","level":"high"}
-{"text":"身份证","category":"illegal","level":"high"}
+{"text":"身份证","category":"illegal","level":"low"}
 {"text":"身份证qq","category":"ad","level":"low"}
 {"text":"身份证专卖qq","category":"ad","level":"low"}
 {"text":"身份证买卖qq","category":"ad","level":"low"}

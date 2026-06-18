@@ -288,6 +288,10 @@ var contentModerationBuiltinIllegalTerms = []string{
 	"赌博",
 }
 
+var contentModerationBuiltinLowRiskExactTerms = []string{
+	"身份证",
+}
+
 var contentModerationBuiltinViolenceTerms = []string{
 	"杀人",
 	"砍人",
@@ -1131,7 +1135,7 @@ func (s *ContentModerationService) Check(ctx context.Context, input ContentModer
 				scores := map[string]float64{category: 1.0}
 				log := s.buildLog(input, cfg, ContentModerationActionKeywordBlock, true, category, 1.0, scores, content.ExcerptText(), nil, nil, "")
 				log.MatchedKeyword = match.Keyword
-				log.InputExcerpt = buildKeywordContextExcerpt(content.ExcerptText(), match.Keyword)
+				log.InputExcerpt = buildKeywordContextExcerptForMatch(content.Text, match)
 				s.enqueueRecord(input, cfg, log, hashText, false, true)
 				return &ContentModerationDecision{
 					Allowed:         false,
@@ -2482,6 +2486,10 @@ func tagContentModerationBuiltinWord(word dict.Word) dict.Word {
 	if contentModerationBuiltinLowSignal(text, lower, folded) {
 		return word
 	}
+	if contentModerationExactAny(lower, folded, contentModerationBuiltinLowRiskExactTerms) {
+		word.Category = dict.CategoryIllegal
+		return word
+	}
 	switch {
 	case contentModerationContainsAny(lower, folded, contentModerationBuiltinMinorSexualTerms):
 		word.Category = dict.CategoryPornographic
@@ -3020,25 +3028,26 @@ func contentModerationModelListContains(models []string, model string) bool {
 }
 
 type contentModerationKeywordMatch struct {
-	Keyword  string
-	Source   string
-	Category string
-	Level    string
-	Hit      bool
+	Keyword     string
+	MatchedText string
+	Start       int
+	End         int
+	Source      string
+	Category    string
+	Level       string
+	Hit         bool
 }
 
 func (s *ContentModerationService) matchBlockedKeyword(text string, cfg *ContentModerationConfig) contentModerationKeywordMatch {
 	if text == "" || cfg == nil {
 		return contentModerationKeywordMatch{}
 	}
-	if keyword, hit := matchCustomBlockedKeyword(text, cfg.BlockedKeywords, cfg.KeywordWhitelist); hit {
-		return contentModerationKeywordMatch{
-			Keyword:  keyword,
-			Source:   "admin",
-			Category: contentModerationKeywordCategory,
-			Level:    dict.LevelHigh.String(),
-			Hit:      true,
-		}
+	if match, hit := matchCustomBlockedKeyword(text, cfg.BlockedKeywords, cfg.KeywordWhitelist); hit {
+		match.Source = "admin"
+		match.Category = contentModerationKeywordCategory
+		match.Level = dict.LevelHigh.String()
+		match.Hit = true
+		return match
 	}
 	if !cfg.BuiltInFilterEnabled {
 		return contentModerationKeywordMatch{}
@@ -3058,11 +3067,40 @@ func matchBuiltInBlockedKeyword(detector *gosensitive.Detector, text string, whi
 	if match, hit := firstNonWhitelistedBuiltInMatch(detector.Find(text), whitelist, categories, levels); hit {
 		return match, true
 	}
-	foldedText := foldContentModerationKeywordText(text)
+	foldedRunes, foldedOriginalIndexes := foldContentModerationKeywordRunes(text)
+	foldedText := string(foldedRunes)
 	if foldedText == "" || foldedText == strings.ToLower(strings.TrimSpace(text)) {
 		return contentModerationKeywordMatch{}, false
 	}
-	return firstNonWhitelistedBuiltInMatch(detector.Find(foldedText), whitelist, categories, levels)
+	match, hit := firstNonWhitelistedBuiltInMatch(detector.Find(foldedText), whitelist, categories, levels)
+	if !hit {
+		return contentModerationKeywordMatch{}, false
+	}
+	return remapFoldedBuiltInKeywordMatch(match, foldedOriginalIndexes, []rune(text)), true
+}
+
+func remapFoldedBuiltInKeywordMatch(match contentModerationKeywordMatch, foldedOriginalIndexes []int, originalText []rune) contentModerationKeywordMatch {
+	if match.Start < 0 || match.End <= match.Start || match.End > len(foldedOriginalIndexes) || len(originalText) == 0 {
+		match.Start = -1
+		match.End = -1
+		match.MatchedText = ""
+		return match
+	}
+	originalStart := foldedOriginalIndexes[match.Start]
+	originalEnd := foldedOriginalIndexes[match.End-1] + 1
+	if originalStart < 0 || originalStart >= len(originalText) || originalEnd <= originalStart {
+		match.Start = -1
+		match.End = -1
+		match.MatchedText = ""
+		return match
+	}
+	if originalEnd > len(originalText) {
+		originalEnd = len(originalText)
+	}
+	match.Start = originalStart
+	match.End = originalEnd
+	match.MatchedText = string(originalText[originalStart:originalEnd])
+	return match
 }
 
 func firstNonWhitelistedBuiltInMatch(matches []gosensitive.Match, whitelist []string, categories []string, levels []string) (contentModerationKeywordMatch, bool) {
@@ -3076,11 +3114,14 @@ func firstNonWhitelistedBuiltInMatch(matches []gosensitive.Match, whitelist []st
 			continue
 		}
 		return contentModerationKeywordMatch{
-			Keyword:  keyword,
-			Source:   "built_in",
-			Category: category,
-			Level:    level,
-			Hit:      true,
+			Keyword:     keyword,
+			MatchedText: keyword,
+			Start:       matched.Start,
+			End:         matched.End,
+			Source:      "built_in",
+			Category:    category,
+			Level:       level,
+			Hit:         true,
 		}, true
 	}
 	return contentModerationKeywordMatch{}, false
@@ -3099,34 +3140,51 @@ func contentModerationBuiltinOptionAllowed(set map[string]struct{}, value string
 	return ok
 }
 
-func matchCustomBlockedKeyword(text string, keywords []string, whitelist []string) (string, bool) {
+func matchCustomBlockedKeyword(text string, keywords []string, whitelist []string) (contentModerationKeywordMatch, bool) {
 	if text == "" || len(keywords) == 0 {
-		return "", false
+		return contentModerationKeywordMatch{}, false
 	}
-	lower := strings.ToLower(text)
-	foldedText := foldContentModerationKeywordText(text)
+	runes := []rune(text)
+	lowerRunes := []rune(strings.ToLower(text))
+	foldedRunes, foldedOriginalIndexes := foldContentModerationKeywordRunes(text)
 	for _, kw := range keywords {
 		if kw == "" {
 			continue
 		}
-		if strings.Contains(lower, strings.ToLower(kw)) {
+		lowerKeywordRunes := []rune(strings.ToLower(kw))
+		if start := findKeywordStartRune(lowerRunes, lowerKeywordRunes); start >= 0 {
 			if isKeywordWhitelistedForMatch(kw, whitelist) {
 				continue
 			}
-			return kw, true
+			end := start + len(lowerKeywordRunes)
+			return contentModerationKeywordMatch{
+				Keyword:     kw,
+				MatchedText: string(runes[start:end]),
+				Start:       start,
+				End:         end,
+			}, true
 		}
-		foldedKeyword := foldContentModerationKeywordText(kw)
+		foldedKeywordRunes, _ := foldContentModerationKeywordRunes(kw)
+		foldedKeyword := string(foldedKeywordRunes)
 		if !contentModerationFoldedKeywordUsable(foldedKeyword) {
 			continue
 		}
-		if strings.Contains(foldedText, foldedKeyword) {
+		if start := findFoldedKeywordStartRune(foldedRunes, foldedKeywordRunes, foldedOriginalIndexes, runes); start >= 0 {
 			if isKeywordWhitelistedForMatch(kw, whitelist) {
 				continue
 			}
-			return kw, true
+			end := start + len(foldedKeywordRunes)
+			originalStart := foldedOriginalIndexes[start]
+			originalEnd := foldedOriginalIndexes[end-1] + 1
+			return contentModerationKeywordMatch{
+				Keyword:     kw,
+				MatchedText: string(runes[originalStart:originalEnd]),
+				Start:       originalStart,
+				End:         originalEnd,
+			}, true
 		}
 	}
-	return "", false
+	return contentModerationKeywordMatch{}, false
 }
 
 func isKeywordWhitelisted(keyword string, whitelist []string) bool {
@@ -3169,21 +3227,43 @@ func contentModerationBuiltInKeywordUsable(keyword string) bool {
 }
 
 func foldContentModerationKeywordText(text string) string {
+	folded, _ := foldContentModerationKeywordRunes(text)
+	return string(folded)
+}
+
+func foldContentModerationKeywordRunes(text string) ([]rune, []int) {
 	text = strings.TrimSpace(text)
+	if text == "" {
+		return nil, nil
+	}
+	var folded []rune
+	var originalIndexes []int
+	for originalIndex, originalRune := range []rune(text) {
+		for _, r := range norm.NFD.String(string(originalRune)) {
+			if unicode.Is(unicode.Mn, r) {
+				continue
+			}
+			if unicode.IsLetter(r) || unicode.IsDigit(r) {
+				folded = append(folded, unicode.ToLower(r))
+				originalIndexes = append(originalIndexes, originalIndex)
+			}
+		}
+	}
+	return folded, originalIndexes
+}
+
+func buildKeywordContextExcerptForMatch(text string, match contentModerationKeywordMatch) string {
+	text = normalizeContentModerationText(text)
 	if text == "" {
 		return ""
 	}
-	var builder strings.Builder
-	builder.Grow(len(text))
-	for _, r := range norm.NFD.String(text) {
-		if unicode.Is(unicode.Mn, r) {
-			continue
-		}
-		if unicode.IsLetter(r) || unicode.IsDigit(r) {
-			_, _ = builder.WriteRune(unicode.ToLower(r))
-		}
+	if match.Start >= 0 && match.End > match.Start {
+		return buildKeywordContextExcerptByRange(text, match.Start, match.End)
 	}
-	return builder.String()
+	if strings.TrimSpace(match.MatchedText) != "" {
+		return buildKeywordContextExcerpt(text, match.MatchedText)
+	}
+	return buildKeywordContextExcerpt(text, match.Keyword)
 }
 
 func buildKeywordContextExcerpt(text string, keyword string) string {
@@ -3201,7 +3281,18 @@ func buildKeywordContextExcerpt(text string, keyword string) string {
 	if startRune < 0 {
 		return trimRunes(redactContentModerationSecrets(text), maxModerationExcerptRunes)
 	}
-	endRune := startRune + len(keywordRunes)
+	return buildKeywordContextExcerptByRange(text, startRune, startRune+len(keywordRunes))
+}
+
+func buildKeywordContextExcerptByRange(text string, startRune int, endRune int) string {
+	runes := []rune(text)
+	if startRune < 0 || endRune <= startRune || startRune >= len(runes) {
+		return trimRunes(redactContentModerationSecrets(text), maxModerationExcerptRunes)
+	}
+	if endRune > len(runes) {
+		endRune = len(runes)
+	}
+	keywordRunes := runes[startRune:endRune]
 	if len(keywordRunes) >= moderationKeywordContextRunes {
 		return trimRunes(redactContentModerationSecrets(string(runes[startRune:endRune])), maxModerationExcerptRunes)
 	}
@@ -3248,6 +3339,52 @@ func findKeywordStartRune(text []rune, keyword []rune) int {
 		}
 	}
 	return -1
+}
+
+func findFoldedKeywordStartRune(text []rune, keyword []rune, originalIndexes []int, originalText []rune) int {
+	if len(text) == 0 || len(keyword) == 0 || len(keyword) > len(text) {
+		return -1
+	}
+	for i := 0; i <= len(text)-len(keyword); i++ {
+		if !runeSlicesEqual(text[i:i+len(keyword)], keyword) {
+			continue
+		}
+		if foldedMatchHasOriginalASCIIBoundary(originalIndexes, originalText, i, i+len(keyword)) {
+			return i
+		}
+	}
+	return -1
+}
+
+func runeSlicesEqual(a []rune, b []rune) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
+func foldedMatchHasOriginalASCIIBoundary(originalIndexes []int, originalText []rune, start int, end int) bool {
+	if len(originalIndexes) == 0 || len(originalText) == 0 || start < 0 || end <= start || end > len(originalIndexes) {
+		return true
+	}
+	originalStart := originalIndexes[start]
+	originalEnd := originalIndexes[end-1] + 1
+	if originalStart > 0 && contentModerationFoldedBoundaryRune(originalText[originalStart-1]) && contentModerationFoldedBoundaryRune(originalText[originalStart]) {
+		return false
+	}
+	if originalEnd < len(originalText) && contentModerationFoldedBoundaryRune(originalText[originalEnd-1]) && contentModerationFoldedBoundaryRune(originalText[originalEnd]) {
+		return false
+	}
+	return true
+}
+
+func contentModerationFoldedBoundaryRune(r rune) bool {
+	return r <= unicode.MaxASCII && (unicode.IsLetter(r) || unicode.IsDigit(r))
 }
 
 func normalizeModerationAPIKeys(keys []string) []string {
