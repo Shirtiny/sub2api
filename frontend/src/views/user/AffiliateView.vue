@@ -263,7 +263,7 @@
                 v-model.number="redeemForm.points"
                 type="number"
                 min="0"
-                step="0.01"
+                step="0.1"
                 class="input w-full pl-7"
                 :max="maxBalanceRedeemPoints"
                 :placeholder="t('affiliate.redeem.pointsPlaceholder')"
@@ -291,16 +291,12 @@
               <label class="mb-2 block text-sm font-medium text-content-secondary">
                 {{ t('affiliate.redeem.subscriptionLabel') }}
               </label>
-              <select v-model.number="redeemForm.plan_id" class="input">
-                <option :value="null">{{ t('common.selectOption') }}</option>
-                <option
-                  v-for="option in subscriptionRedeemOptions"
-                  :key="option.plan_id"
-                  :value="option.plan_id"
-                >
-                  {{ formatSubscriptionOption(option) }}
-                </option>
-              </select>
+              <Select
+                v-model="redeemForm.plan_id"
+                :options="subscriptionRedeemSelectOptions"
+                :placeholder="t('common.selectOption')"
+                class="w-full"
+              />
               <p v-if="selectedSubscriptionOption" class="mt-2 text-xs text-content-tertiary">
                 {{ selectedSubscriptionDetail }}
               </p>
@@ -329,6 +325,7 @@ import { useI18n } from 'vue-i18n'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import BaseDialog from '@/components/common/BaseDialog.vue'
 import Pagination from '@/components/common/Pagination.vue'
+import Select from '@/components/common/Select.vue'
 import Icon from '@/components/icons/Icon.vue'
 import userAPI, { type AffiliateRedeemTargetType } from '@/api/user'
 import { paymentAPI } from '@/api/payment'
@@ -394,6 +391,7 @@ const formattedRebateRate = computed(() => {
   return Number.isInteger(rounded) ? String(rounded) : rounded.toString()
 })
 
+const affiliatePointsEpsilon = 0.00000001
 const availableRebatePoints = computed(() => detail.value?.available_points ?? detail.value?.available_rebate_points ?? detail.value?.aff_quota ?? 0)
 const frozenRebatePoints = computed(() => detail.value?.frozen_rebate_points ?? detail.value?.aff_frozen_quota ?? 0)
 const rebatePerInviteeCap = computed(() => {
@@ -425,6 +423,13 @@ const subscriptionRedeemOptions = computed<SubscriptionRedeemOption[]>(() => {
     })
 })
 
+const subscriptionRedeemSelectOptions = computed(() => {
+  return subscriptionRedeemOptions.value.map((option) => ({
+    value: option.plan_id ?? null,
+    label: formatSubscriptionOption(option),
+  }))
+})
+
 const selectedSubscriptionOption = computed(() => {
   if (!redeemForm.plan_id) return null
   return subscriptionRedeemOptions.value.find((option) => option.plan_id === redeemForm.plan_id) ?? null
@@ -453,8 +458,10 @@ const redemptionRequiredPoints = computed(() => {
 })
 const estimatedBalanceCredit = computed(() => redeemPointsValue.value * (rechargeMultiplier.value ?? 1))
 const canSubmitRedemption = computed(() => {
-  if (redeeming.value || redemptionRequiredPoints.value <= 0 || redemptionRequiredPoints.value > availableRebatePoints.value) return false
-  if (redeemForm.target_type === 'balance' && redemptionRequiredPoints.value > maxBalanceRedeemPoints.value) return false
+  const required = redemptionRequiredPoints.value
+  const available = availableRebatePoints.value
+  if (redeeming.value || required <= 0 || required - available > affiliatePointsEpsilon) return false
+  if (redeemForm.target_type === 'balance' && required - maxBalanceRedeemPoints.value > affiliatePointsEpsilon) return false
   if (redeemForm.target_type === 'subscription') return !!selectedSubscriptionOption.value?.plan_id
   return true
 })
@@ -543,8 +550,12 @@ function formatEstimatedDays(value: number): string {
   return Number.isInteger(rounded) ? String(rounded) : rounded.toString()
 }
 
+function floorAffiliateRedeemPoints(value: number): number {
+  return Math.floor((value + 1e-9) * 10) / 10
+}
+
 function fillMaxBalanceRedeemPoints(): void {
-  redeemForm.points = Math.round(maxBalanceRedeemPoints.value * 100) / 100
+  redeemForm.points = floorAffiliateRedeemPoints(maxBalanceRedeemPoints.value)
 }
 
 function inviteeRebatePoints(item: AffiliateInvitee): number {
