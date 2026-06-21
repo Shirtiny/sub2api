@@ -473,6 +473,7 @@ func TestMatchBuiltInBlockedKeyword_FoldedTextVariants(t *testing.T) {
 	detector, err := gosensitive.New().
 		LoadWords([]dict.Word{
 			{Text: "badword", Category: dict.CategoryIllegal, Level: dict.LevelHigh},
+			{Text: "av下载", Category: dict.CategoryPornographic, Level: dict.LevelHigh},
 			{Text: "sb", Category: dict.CategoryAbuse, Level: dict.LevelMedium},
 			{Text: "用户", Category: dict.CategoryOther, Level: dict.LevelLow},
 		}).
@@ -491,6 +492,22 @@ func TestMatchBuiltInBlockedKeyword_FoldedTextVariants(t *testing.T) {
 
 	_, hit = matchBuiltInBlockedKeyword(detector, "B a-d Wörd", []string{"bad word"}, nil, nil)
 	require.False(t, hit)
+
+	_, hit = matchBuiltInBlockedKeyword(detector, "等待完整 WAV下载", nil, nil, nil)
+	require.False(t, hit)
+
+	_, hit = matchBuiltInBlockedKeyword(detector, "等待完整 WA-V下载", nil, nil, nil)
+	require.False(t, hit)
+
+	match, hit = matchBuiltInBlockedKeyword(detector, "等待完整 AV下载", nil, nil, nil)
+	require.True(t, hit)
+	require.Equal(t, "av下载", match.Keyword)
+	require.Equal(t, "AV下载", match.MatchedText)
+
+	match, hit = matchBuiltInBlockedKeyword(detector, "等待完整 A-V下载", nil, nil, nil)
+	require.True(t, hit)
+	require.Equal(t, "av下载", match.Keyword)
+	require.Equal(t, "A-V下载", match.MatchedText)
 }
 
 func TestMatchBuiltInBlockedKeyword_SkipsShortGenericWords(t *testing.T) {
@@ -571,6 +588,7 @@ func TestMatchBuiltInBlockedKeyword_FiltersByConfiguredCategoryAndLevel(t *testi
 			{Text: "QQ联系", Category: dict.CategoryAd, Level: dict.LevelLow},
 			{Text: "辱骂词", Category: dict.CategoryAbuse, Level: dict.LevelMedium},
 			{Text: "手机监听软件", Category: dict.CategoryIllegal, Level: dict.LevelHigh},
+			{Text: "14岁幼女", Category: dict.CategoryPornographic, Level: dict.LevelCritical},
 		}).
 		EnableSymbol().
 		SetCaseSensitive(false).
@@ -588,6 +606,12 @@ func TestMatchBuiltInBlockedKeyword_FiltersByConfiguredCategoryAndLevel(t *testi
 	require.Equal(t, "手机监听软件", match.Keyword)
 	require.Equal(t, "illegal", match.Category)
 	require.Equal(t, "high", match.Level)
+
+	match, hit = matchBuiltInBlockedKeyword(detector, "涉及14岁幼女", nil, nil, nil)
+	require.True(t, hit)
+	require.Equal(t, "14岁幼女", match.Keyword)
+	require.Equal(t, "pornographic", match.Category)
+	require.Equal(t, "critical", match.Level)
 
 	match, hit = matchBuiltInBlockedKeyword(detector, "请 QQ联系 我", nil, []string{"ad"}, []string{"low"})
 	require.True(t, hit)

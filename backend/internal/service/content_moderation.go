@@ -135,6 +135,7 @@ var contentModerationBuiltinLevelOrder = []string{
 
 var defaultContentModerationBuiltinLevels = []string{
 	dict.LevelHigh.String(),
+	dict.LevelCritical.String(),
 }
 
 var contentModerationBuiltinCommonTechnicalTerms = []string{
@@ -3064,7 +3065,9 @@ func matchBuiltInBlockedKeyword(detector *gosensitive.Detector, text string, whi
 	if detector == nil || text == "" {
 		return contentModerationKeywordMatch{}, false
 	}
-	if match, hit := firstNonWhitelistedBuiltInMatch(detector.Find(text), whitelist, categories, levels); hit {
+	originalText := []rune(text)
+	preprocessedOriginalIndexes := contentModerationBuiltInPreprocessedOriginalIndexes(text)
+	if match, hit := firstNonWhitelistedBuiltInMatch(detector.Find(text), whitelist, categories, levels, preprocessedOriginalIndexes, originalText); hit {
 		return match, true
 	}
 	foldedRunes, foldedOriginalIndexes := foldContentModerationKeywordRunes(text)
@@ -3072,22 +3075,22 @@ func matchBuiltInBlockedKeyword(detector *gosensitive.Detector, text string, whi
 	if foldedText == "" || foldedText == strings.ToLower(strings.TrimSpace(text)) {
 		return contentModerationKeywordMatch{}, false
 	}
-	match, hit := firstNonWhitelistedBuiltInMatch(detector.Find(foldedText), whitelist, categories, levels)
+	match, hit := firstNonWhitelistedBuiltInMatch(detector.Find(foldedText), whitelist, categories, levels, foldedOriginalIndexes, originalText)
 	if !hit {
 		return contentModerationKeywordMatch{}, false
 	}
-	return remapFoldedBuiltInKeywordMatch(match, foldedOriginalIndexes, []rune(text)), true
+	return match, true
 }
 
-func remapFoldedBuiltInKeywordMatch(match contentModerationKeywordMatch, foldedOriginalIndexes []int, originalText []rune) contentModerationKeywordMatch {
-	if match.Start < 0 || match.End <= match.Start || match.End > len(foldedOriginalIndexes) || len(originalText) == 0 {
+func remapBuiltInKeywordMatch(match contentModerationKeywordMatch, originalIndexes []int, originalText []rune) contentModerationKeywordMatch {
+	if match.Start < 0 || match.End <= match.Start || match.End > len(originalIndexes) || len(originalText) == 0 {
 		match.Start = -1
 		match.End = -1
 		match.MatchedText = ""
 		return match
 	}
-	originalStart := foldedOriginalIndexes[match.Start]
-	originalEnd := foldedOriginalIndexes[match.End-1] + 1
+	originalStart := originalIndexes[match.Start]
+	originalEnd := originalIndexes[match.End-1] + 1
 	if originalStart < 0 || originalStart >= len(originalText) || originalEnd <= originalStart {
 		match.Start = -1
 		match.End = -1
@@ -3103,17 +3106,17 @@ func remapFoldedBuiltInKeywordMatch(match contentModerationKeywordMatch, foldedO
 	return match
 }
 
-func firstNonWhitelistedBuiltInMatch(matches []gosensitive.Match, whitelist []string, categories []string, levels []string) (contentModerationKeywordMatch, bool) {
+func firstNonWhitelistedBuiltInMatch(matches []gosensitive.Match, whitelist []string, categories []string, levels []string, originalIndexes []int, originalText []rune) (contentModerationKeywordMatch, bool) {
 	categorySet := contentModerationBuiltinOptionSet(normalizeContentModerationBuiltinCategories(categories))
 	levelSet := contentModerationBuiltinOptionSet(normalizeContentModerationBuiltinLevels(levels))
 	for _, matched := range matches {
 		keyword := strings.TrimSpace(matched.Word)
 		category := matched.Category.String()
 		level := matched.Level.String()
-		if keyword == "" || !contentModerationBuiltInKeywordUsable(keyword) || !contentModerationBuiltinOptionAllowed(categorySet, category) || !contentModerationBuiltinOptionAllowed(levelSet, level) || isKeywordWhitelistedForMatch(keyword, whitelist) {
+		if keyword == "" || !contentModerationBuiltInKeywordUsable(keyword) || !contentModerationBuiltinOptionAllowed(categorySet, category) || !contentModerationBuiltinOptionAllowed(levelSet, level) || isKeywordWhitelistedForMatch(keyword, whitelist) || !foldedMatchHasOriginalASCIIBoundary(originalIndexes, originalText, matched.Start, matched.End) {
 			continue
 		}
-		return contentModerationKeywordMatch{
+		match := contentModerationKeywordMatch{
 			Keyword:     keyword,
 			MatchedText: keyword,
 			Start:       matched.Start,
@@ -3122,9 +3125,23 @@ func firstNonWhitelistedBuiltInMatch(matches []gosensitive.Match, whitelist []st
 			Category:    category,
 			Level:       level,
 			Hit:         true,
-		}, true
+		}
+		return remapBuiltInKeywordMatch(match, originalIndexes, originalText), true
 	}
 	return contentModerationKeywordMatch{}, false
+}
+
+func contentModerationBuiltInPreprocessedOriginalIndexes(text string) []int {
+	if text == "" {
+		return nil
+	}
+	var indexes []int
+	for originalIndex, r := range []rune(text) {
+		if unicode.IsLetter(r) || unicode.IsDigit(r) || unicode.IsSpace(r) {
+			indexes = append(indexes, originalIndex)
+		}
+	}
+	return indexes
 }
 
 func contentModerationBuiltinOptionSet(values []string) map[string]struct{} {

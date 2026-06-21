@@ -100,7 +100,7 @@ const baseConfig = (): ContentModerationConfig => ({
   keyword_blocking_mode: 'keyword_and_api',
   built_in_filter_enabled: false,
   built_in_filter_categories: ['political', 'pornographic', 'violence', 'abuse', 'ad', 'illegal', 'other'],
-  built_in_filter_levels: ['high'],
+  built_in_filter_levels: ['high', 'critical'],
   thresholds: {
     harassment: 0.98,
     sexual: 0.65,

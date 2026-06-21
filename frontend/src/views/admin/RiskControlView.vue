@@ -1265,7 +1265,7 @@ const riskThresholdDefaults: Record<string, number> = {
 }
 const riskThresholdCategories = Object.keys(riskThresholdDefaults)
 const defaultBuiltInFilterCategories: ContentModerationBuiltinCategory[] = ['political', 'pornographic', 'violence', 'abuse', 'ad', 'illegal', 'other']
-const defaultBuiltInFilterLevels: ContentModerationBuiltinLevel[] = ['high']
+const defaultBuiltInFilterLevels: ContentModerationBuiltinLevel[] = ['high', 'critical']
 
 const { t } = useI18n()
 const appStore = useAppStore()
