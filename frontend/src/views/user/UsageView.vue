@@ -36,6 +36,7 @@
               <p class="text-xl font-bold text-content-primary">
                 {{ formatTokens(usageStats?.total_tokens || 0) }}
               </p>
+              <!--
               <p class="text-xs text-gray-500 dark:text-gray-400">
                 <span>{{ t('usage.in') }} {{ formatTokens(usageStats?.total_input_tokens || 0) }}</span>
                 <span> · </span>
@@ -55,6 +56,7 @@
                 </template>
                 <template v-else>-</template>
               </p>
+              -->
             </div>
           </div>
         </div>
