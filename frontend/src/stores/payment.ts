@@ -6,7 +6,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { paymentAPI } from '@/api/payment'
-import type { PaymentConfig, PaymentOrder, SubscriptionPlan, CreateOrderRequest } from '@/types/payment'
+import type { PaymentConfig, PaymentOrder, SubscriptionPlan, CreateOrderRequest, CafeCouponApplyRequest, CafeCouponStatusResponse } from '@/types/payment'
 
 export const usePaymentStore = defineStore('payment', () => {
   // ==================== State ====================
@@ -66,6 +66,24 @@ export const usePaymentStore = defineStore('payment', () => {
     return response.data
   }
 
+  /** Claim a café coupon for the current user */
+  async function claimCafeCoupon() {
+    const response = await paymentAPI.claimCafeCoupon()
+    return response.data
+  }
+
+  /** Get current café coupon claim status for the current user */
+  async function getCafeCouponStatus(): Promise<CafeCouponStatusResponse> {
+    const response = await paymentAPI.getCafeCouponStatus()
+    return response.data
+  }
+
+  /** Preview/apply a café coupon before creating an order */
+  async function applyCafeCoupon(params: CafeCouponApplyRequest) {
+    const response = await paymentAPI.applyCafeCoupon(params)
+    return response.data
+  }
+
   /** Poll order status by ID (read-only, no upstream check) */
   async function pollOrderStatus(orderId: number): Promise<PaymentOrder | null> {
     try {
@@ -95,6 +113,9 @@ export const usePaymentStore = defineStore('payment', () => {
     fetchConfig,
     fetchPlans,
     createOrder,
+    claimCafeCoupon,
+    getCafeCouponStatus,
+    applyCafeCoupon,
     pollOrderStatus,
     clearCurrentOrder
   }

@@ -12,7 +12,11 @@ import type {
   CheckoutInfoResponse,
   CreateOrderRequest,
   CreateOrderResult,
-  PaymentOrder
+  PaymentOrder,
+  CafeCouponApplyRequest,
+  CafeCouponApplyResponse,
+  CafeCouponClaimResponse,
+  CafeCouponStatusResponse
 } from '@/types/payment'
 import type { BasePaginationResponse } from '@/types'
 
@@ -45,6 +49,21 @@ export const paymentAPI = {
   /** Create a new payment order */
   createOrder(data: CreateOrderRequest) {
     return apiClient.post<CreateOrderResult>('/payment/orders', data)
+  },
+
+  /** Claim a café coupon for the current user */
+  claimCafeCoupon() {
+    return apiClient.post<CafeCouponClaimResponse>('/payment/cafe-coupons/claim', { source: 'membership' })
+  },
+
+  /** Get current café coupon claim status for the current user */
+  getCafeCouponStatus() {
+    return apiClient.get<CafeCouponStatusResponse>('/payment/cafe-coupons/status')
+  },
+
+  /** Preview/apply a café coupon before creating an order */
+  applyCafeCoupon(data: CafeCouponApplyRequest) {
+    return apiClient.post<CafeCouponApplyResponse>('/payment/cafe-coupons/apply', data)
   },
 
   /** Get current user's orders */

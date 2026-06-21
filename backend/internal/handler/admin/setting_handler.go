@@ -237,11 +237,16 @@ func (h *SettingHandler) GetSettings(c *gin.Context) {
 		AffiliateRebateFreezeHours:             settings.AffiliateRebateFreezeHours,
 		AffiliateRebateDurationDays:            settings.AffiliateRebateDurationDays,
 		AffiliateRebatePerInviteeCap:           settings.AffiliateRebatePerInviteeCap,
+		AffiliateRebatePerInviteeCapLevel0:     settings.AffiliateRebatePerInviteeCapLevel0,
+		AffiliateRebatePerInviteeCapLevel1:     settings.AffiliateRebatePerInviteeCapLevel1,
+		AffiliateRebatePerInviteeCapLevel2:     settings.AffiliateRebatePerInviteeCapLevel2,
+		AffiliateRebatePerInviteeCapLevel3:     settings.AffiliateRebatePerInviteeCapLevel3,
 		AffiliateInviteLimit:                   settings.AffiliateInviteLimit,
 		AffiliateInviteLimitLevel0:             settings.AffiliateInviteLimitLevel0,
 		AffiliateInviteLimitLevel1:             settings.AffiliateInviteLimitLevel1,
 		AffiliateInviteLimitLevel2:             settings.AffiliateInviteLimitLevel2,
 		AffiliateInviteLimitLevel3:             settings.AffiliateInviteLimitLevel3,
+		CafeCouponConfig:                       settings.CafeCouponConfig,
 		DefaultUserRPMLimit:                    settings.DefaultUserRPMLimit,
 		DefaultSubscriptions:                   defaultSubscriptions,
 		EnableModelFallback:                    settings.EnableModelFallback,
@@ -537,6 +542,7 @@ type UpdateSettingsRequest struct {
 	AffiliateInviteLimitLevel1                *int                              `json:"affiliate_invite_limit_level1"`
 	AffiliateInviteLimitLevel2                *int                              `json:"affiliate_invite_limit_level2"`
 	AffiliateInviteLimitLevel3                *int                              `json:"affiliate_invite_limit_level3"`
+	CafeCouponConfig                          *service.CafeCouponConfig         `json:"cafe_coupon_config"`
 	DefaultUserRPMLimit                       int                               `json:"default_user_rpm_limit"`
 	DefaultSubscriptions                      []dto.DefaultSubscriptionSetting  `json:"default_subscriptions"`
 	AuthSourceDefaultEmailBalance             *float64                          `json:"auth_source_default_email_balance"`
@@ -1693,19 +1699,25 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		AffiliateInviteLimitLevel1:             affiliateInviteLimitLevel1,
 		AffiliateInviteLimitLevel2:             affiliateInviteLimitLevel2,
 		AffiliateInviteLimitLevel3:             affiliateInviteLimitLevel3,
-		DefaultUserRPMLimit:                    req.DefaultUserRPMLimit,
-		DefaultSubscriptions:                   defaultSubscriptions,
-		EnableModelFallback:                    req.EnableModelFallback,
-		FallbackModelAnthropic:                 req.FallbackModelAnthropic,
-		FallbackModelOpenAI:                    req.FallbackModelOpenAI,
-		FallbackModelGemini:                    req.FallbackModelGemini,
-		FallbackModelAntigravity:               req.FallbackModelAntigravity,
-		EnableIdentityPatch:                    req.EnableIdentityPatch,
-		IdentityPatchPrompt:                    req.IdentityPatchPrompt,
-		MinClaudeCodeVersion:                   req.MinClaudeCodeVersion,
-		MaxClaudeCodeVersion:                   req.MaxClaudeCodeVersion,
-		AllowUngroupedKeyScheduling:            req.AllowUngroupedKeyScheduling,
-		BackendModeEnabled:                     req.BackendModeEnabled,
+		CafeCouponConfig: func() service.CafeCouponConfig {
+			if req.CafeCouponConfig != nil {
+				return *req.CafeCouponConfig
+			}
+			return previousSettings.CafeCouponConfig
+		}(),
+		DefaultUserRPMLimit:         req.DefaultUserRPMLimit,
+		DefaultSubscriptions:        defaultSubscriptions,
+		EnableModelFallback:         req.EnableModelFallback,
+		FallbackModelAnthropic:      req.FallbackModelAnthropic,
+		FallbackModelOpenAI:         req.FallbackModelOpenAI,
+		FallbackModelGemini:         req.FallbackModelGemini,
+		FallbackModelAntigravity:    req.FallbackModelAntigravity,
+		EnableIdentityPatch:         req.EnableIdentityPatch,
+		IdentityPatchPrompt:         req.IdentityPatchPrompt,
+		MinClaudeCodeVersion:        req.MinClaudeCodeVersion,
+		MaxClaudeCodeVersion:        req.MaxClaudeCodeVersion,
+		AllowUngroupedKeyScheduling: req.AllowUngroupedKeyScheduling,
+		BackendModeEnabled:          req.BackendModeEnabled,
 		AllowUserViewErrorRequests: func() bool {
 			if req.AllowUserViewErrorRequests != nil {
 				return *req.AllowUserViewErrorRequests
@@ -2140,11 +2152,16 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		AffiliateRebateFreezeHours:             updatedSettings.AffiliateRebateFreezeHours,
 		AffiliateRebateDurationDays:            updatedSettings.AffiliateRebateDurationDays,
 		AffiliateRebatePerInviteeCap:           updatedSettings.AffiliateRebatePerInviteeCap,
+		AffiliateRebatePerInviteeCapLevel0:     updatedSettings.AffiliateRebatePerInviteeCapLevel0,
+		AffiliateRebatePerInviteeCapLevel1:     updatedSettings.AffiliateRebatePerInviteeCapLevel1,
+		AffiliateRebatePerInviteeCapLevel2:     updatedSettings.AffiliateRebatePerInviteeCapLevel2,
+		AffiliateRebatePerInviteeCapLevel3:     updatedSettings.AffiliateRebatePerInviteeCapLevel3,
 		AffiliateInviteLimit:                   updatedSettings.AffiliateInviteLimit,
 		AffiliateInviteLimitLevel0:             updatedSettings.AffiliateInviteLimitLevel0,
 		AffiliateInviteLimitLevel1:             updatedSettings.AffiliateInviteLimitLevel1,
 		AffiliateInviteLimitLevel2:             updatedSettings.AffiliateInviteLimitLevel2,
 		AffiliateInviteLimitLevel3:             updatedSettings.AffiliateInviteLimitLevel3,
+		CafeCouponConfig:                       updatedSettings.CafeCouponConfig,
 		DefaultUserRPMLimit:                    updatedSettings.DefaultUserRPMLimit,
 		DefaultSubscriptions:                   updatedDefaultSubscriptions,
 		EnableModelFallback:                    updatedSettings.EnableModelFallback,
@@ -2591,6 +2608,9 @@ func diffSettings(before *service.SystemSettings, after *service.SystemSettings,
 	}
 	if before.AffiliateInviteLimitLevel3 != after.AffiliateInviteLimitLevel3 {
 		changed = append(changed, "affiliate_invite_limit_level3")
+	}
+	if req.CafeCouponConfig != nil {
+		changed = append(changed, "cafe_coupon_config")
 	}
 	if !equalDefaultSubscriptions(before.DefaultSubscriptions, after.DefaultSubscriptions) {
 		changed = append(changed, "default_subscriptions")

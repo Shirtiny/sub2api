@@ -6,6 +6,7 @@ import (
 	"context"
 	"math"
 	"testing"
+	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
 	"github.com/stretchr/testify/require"
@@ -240,6 +241,55 @@ func TestAccrueInviteRebateForOrder_UsesLevelSpecificRateSetting(t *testing.T) {
 	require.NoError(t, err)
 	require.InDelta(t, 12.0, got, 1e-9)
 	require.Equal(t, 1, repo.accrueCalls)
+}
+
+func TestAccrueInviteRebateForOrder_UsesBoundAtForDuration(t *testing.T) {
+	t.Parallel()
+	inviterID := int64(2)
+	boundAt := time.Now().Add(-12 * time.Hour)
+	repo := &affiliateRepoThresholdStub{summaries: map[int64]*AffiliateSummary{
+		1: {UserID: 1, InviterID: &inviterID, CreatedAt: time.Now().Add(-72 * time.Hour), InviterBoundAt: &boundAt},
+		2: {UserID: 2, TotalRecharged: MembershipLevel1Threshold + 0.01},
+	}}
+	svc := &AffiliateService{
+		repo: repo,
+		settingService: NewSettingService(affiliateSettingRepoStub{values: map[string]string{
+			SettingKeyAffiliateEnabled:             "true",
+			SettingKeyAffiliateRebateDurationDays:  "1",
+			SettingKeyAffiliateRebateRateLevel1:    "10",
+			SettingKeyAffiliateRebatePerInviteeCap: "100",
+		}}, &config.Config{}),
+	}
+
+	got, err := svc.AccrueInviteRebateForOrder(context.Background(), 1, 100, nil)
+
+	require.NoError(t, err)
+	require.InDelta(t, 10.0, got, 1e-9)
+	require.Equal(t, 1, repo.accrueCalls)
+}
+
+func TestAccrueInviteRebateForOrder_SkipsExpiredBoundAt(t *testing.T) {
+	t.Parallel()
+	inviterID := int64(2)
+	boundAt := time.Now().Add(-48 * time.Hour)
+	repo := &affiliateRepoThresholdStub{summaries: map[int64]*AffiliateSummary{
+		1: {UserID: 1, InviterID: &inviterID, CreatedAt: time.Now(), InviterBoundAt: &boundAt},
+		2: {UserID: 2, TotalRecharged: MembershipLevel1Threshold + 0.01},
+	}}
+	svc := &AffiliateService{
+		repo: repo,
+		settingService: NewSettingService(affiliateSettingRepoStub{values: map[string]string{
+			SettingKeyAffiliateEnabled:            "true",
+			SettingKeyAffiliateRebateDurationDays: "1",
+			SettingKeyAffiliateRebateRateLevel1:   "10",
+		}}, &config.Config{}),
+	}
+
+	got, err := svc.AccrueInviteRebateForOrder(context.Background(), 1, 100, nil)
+
+	require.NoError(t, err)
+	require.Zero(t, got)
+	require.Zero(t, repo.accrueCalls)
 }
 
 func TestGetAffiliateDetail_HidesAffCodeForLevelZero(t *testing.T) {

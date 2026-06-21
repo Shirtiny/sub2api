@@ -116,19 +116,123 @@
                   </p>
                 </div>
 
-                <div v-if="affiliateFeatureEnabled && membershipLevel > 0" class="rounded-lg border border-[#EFE6D8] bg-gradient-to-br from-[#F7F4F1] via-[#F7F4F1] to-[#EFE6D8] px-3 py-2 dark:border-[#3D2E2A]/70 dark:from-[#1E293B] dark:via-[#1E293B] dark:to-[#2B1F3A]">
+                <div class="rounded-lg border border-[#EFE6D8] bg-gradient-to-br from-[#F7F4F1] via-[#F7F4F1] to-[#EFE6D8] px-3 py-2 dark:border-[#3D2E2A]/70 dark:from-[#1E293B] dark:via-[#1E293B] dark:to-[#2B1F3A]">
                   <div class="mb-2 text-sm font-semibold text-[#3D2E2A] dark:text-[#F5C66B]">
                     {{ t('membership.affiliateRebate') }}
                   </div>
-                  <div class="space-y-0.5 text-[12px] font-semibold leading-4 text-[#7A5AE6] dark:text-[#F0E9DF]">
-                    <div><span class="text-[#7A5AE6] dark:text-[#F5C66B]">1. </span><span v-html="highlightBenefitText(membershipBenefitText)"></span></div>
-                    <div><span class="text-[#7A5AE6] dark:text-[#F5C66B]">2. </span><span v-html="highlightBenefitText(t('membership.consumptionDiscount'))"></span></div>
+                  <div class="space-y-1.5 text-[12px] font-semibold leading-4 text-[#7A5AE6] dark:text-[#F0E9DF]">
+                    <div v-if="affiliateFeatureEnabled"><span class="text-[#7A5AE6] dark:text-[#F5C66B]">1. </span><span v-html="highlightBenefitText(membershipBenefitText)"></span></div>
+                    <div class="flex flex-wrap items-center gap-1">
+                      <span class="text-[#7A5AE6] dark:text-[#F5C66B]">{{ affiliateFeatureEnabled ? '2.' : '1.' }} </span>
+                      <span class="inline-flex items-start gap-0">
+                        <span>{{ t('membership.cafeCoupon.labelText') }}</span>
+                        <HelpTooltip :content="t('membership.cafeCoupon.tip')" class="!ml-0 relative -top-1.5 scale-75 text-[#8E8E93] dark:text-[#9DA3AF]">
+                          <template #trigger>
+                            <Icon name="questionCircle" size="xs" aria-label="Café coupon help" />
+                          </template>
+                        </HelpTooltip>
+                        <span>:</span>
+                      </span>
+                      <template v-if="cafeCouponClaimed">
+                        <span class="text-[11px] text-[#8E8E93] dark:text-[#9DA3AF]" v-html="highlightBenefitText(cafeCouponRemainingText)"></span>
+                        <button
+                          v-if="claimedCafeCouponCode"
+                          type="button"
+                          class="text-[11px] font-bold leading-none text-[#7A5AE6] underline underline-offset-2 transition-colors hover:text-[#5B34D6] disabled:cursor-not-allowed disabled:opacity-60 dark:text-[#F5C66B] dark:hover:text-[#FFD978]"
+                          @click.stop="openClaimedCafeCoupon"
+                        >
+                          {{ t('membership.cafeCoupon.view') }}
+                        </button>
+                      </template>
+                      <span
+                        v-else-if="showCafeCouponDisabled"
+                        class="text-[11px] font-normal text-[#8E8E93] dark:text-[#9DA3AF]"
+                      >
+                        {{ t('membership.cafeCoupon.disabled') }}
+                      </span>
+                      <span
+                        v-else-if="showCafeCouponClaimButton"
+                        class="text-[11px] font-normal text-[#8E8E93] dark:text-[#9DA3AF]"
+                      >
+                        {{ cafeCouponClaimHint }}
+                      </span>
+                      <button
+                        v-if="showCafeCouponClaimButton"
+                        type="button"
+                        class="text-[11px] font-semibold leading-none text-[#7A5AE6] underline underline-offset-2 decoration-1 transition-colors hover:text-[#5B34D6] hover:decoration-2 disabled:cursor-not-allowed disabled:opacity-60 dark:text-[#F5C66B] dark:hover:text-[#FFD978]"
+                        :disabled="claimingCafeCoupon"
+                        @click.stop="claimCafeCoupon"
+                      >
+                        {{ claimingCafeCoupon ? t('membership.cafeCoupon.claiming') : t('membership.cafeCoupon.claim') }}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </transition>
         </div>
+
+        <BaseDialog
+          :show="cafeCouponModalOpen"
+          :title="t('membership.cafeCoupon.modalTitle')"
+          title-class="!text-[#3D2E2A] dark:!text-[#F5C66B]"
+          width="narrow"
+          @close="closeCafeCouponModal"
+        >
+          <div class="space-y-4">
+            <p class="text-sm text-content-secondary">
+              {{ cafeCouponModalDescription }}
+            </p>
+            <div class="rounded-xl border border-[#EFE6D8] bg-[#F7F4F1] p-4 dark:border-[#3D2E2A]/70 dark:bg-dark-800">
+              <p class="text-xs font-medium uppercase tracking-wide text-content-tertiary">
+                {{ t('membership.cafeCoupon.codeLabel') }}<span v-if="showCafeCouponNonTransferableHint">（{{ t('membership.cafeCoupon.nonTransferableHint') }}）</span>
+              </p>
+              <div class="mt-2 flex items-center gap-2">
+                <div class="relative min-w-0 flex-1">
+                  <code
+                    class="block w-full cursor-pointer truncate rounded-lg bg-white px-3 py-2 pr-10 font-mono text-base font-semibold text-[#7A5AE6] dark:bg-dark-900 dark:text-[#F5C66B]"
+                    tabindex="0"
+                    @click="copyCafeCouponCode"
+                    @keydown.enter.prevent="copyCafeCouponCode"
+                    @keydown.space.prevent="copyCafeCouponCode"
+                  >
+                    {{ claimedCafeCouponCode }}
+                  </code>
+                  <Icon
+                    v-if="showCafeCouponCopiedIcon"
+                    name="checkCircle"
+                    size="sm"
+                    class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-status-success"
+                  />
+                </div>
+                <button
+                  type="button"
+                  class="btn btn-primary shrink-0"
+                  title="去使用"
+                  autocomplete="off"
+                  :disabled="cafeCouponUsed"
+                  @click="useCafeCouponCode"
+                >
+                  {{ cafeCouponModalBenefitText || t('membership.cafeCoupon.use') }}
+                </button>
+              </div>
+            </div>
+            <p class="text-xs text-content-tertiary">
+              {{ t('membership.cafeCoupon.useHint') }}
+            </p>
+          </div>
+          <template #footer>
+            <div class="flex w-full items-end justify-between gap-4 text-[11px] leading-5 text-content-tertiary">
+              <div class="flex items-center gap-2">
+                <span :class="['badge text-[11px]', cafeCouponStatusBadgeClass]">{{ cafeCouponStatusText }}</span>
+              </div>
+              <span class="text-right">
+                {{ t('membership.cafeCoupon.validCountdown', { time: cafeCouponExpiresInText }) }}
+              </span>
+            </div>
+          </template>
+        </BaseDialog>
 
         <!-- User Dropdown -->
         <div v-if="user" class="relative" ref="dropdownRef">
@@ -281,11 +385,13 @@ import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAppStore, useAuthStore, useOnboardingStore } from '@/stores'
 import { useAdminSettingsStore } from '@/stores/adminSettings'
+import { usePaymentStore } from '@/stores/payment'
+import type { CafeCouponStatusResponse, CafeCouponSummary } from '@/types/payment'
+import BaseDialog from '@/components/common/BaseDialog.vue'
 import LocaleSwitcher from '@/components/common/LocaleSwitcher.vue'
 import SubscriptionProgressMini from '@/components/common/SubscriptionProgressMini.vue'
-import AnnouncementBell from '@/components/common/AnnouncementBell.vue'
+import HelpTooltip from '@/components/common/HelpTooltip.vue'
 import Icon from '@/components/icons/Icon.vue'
-import { formatCurrency } from '@/utils/format'
 
 const router = useRouter()
 const route = useRoute()
@@ -293,6 +399,7 @@ const { t } = useI18n()
 const appStore = useAppStore()
 const authStore = useAuthStore()
 const adminSettingsStore = useAdminSettingsStore()
+const paymentStore = usePaymentStore()
 const onboardingStore = useOnboardingStore()
 
 const user = computed(() => authStore.user)
@@ -300,6 +407,16 @@ const dropdownOpen = ref(false)
 const dropdownRef = ref<HTMLElement | null>(null)
 const membershipRef = ref<HTMLElement | null>(null)
 const membershipPopoverOpen = ref(false)
+const claimingCafeCoupon = ref(false)
+const cafeCouponStatusLoading = ref(false)
+const cafeCouponStatusLoaded = ref(false)
+const cafeCouponModalOpen = ref(false)
+const claimedCafeCouponCode = ref('')
+const cafeCouponCopied = ref(false)
+const cafeCouponClaim = ref<CafeCouponSummary | null>(null)
+const cafeCouponStatus = ref<CafeCouponStatusResponse | null>(null)
+const nowTick = ref(Date.now())
+let cafeCouponTimer: number | null = null
 const contactInfo = computed(() => appStore.contactInfo)
 const docUrl = computed(() => appStore.docUrl)
 const avatarUrl = computed(() => user.value?.avatar_url?.trim() || '')
@@ -350,6 +467,81 @@ const affiliateRebateRate = computed(() => {
   return settings?.affiliate_rebate_rate_level0 ?? 0
 })
 const affiliateFeatureEnabled = computed(() => appStore.cachedPublicSettings?.affiliate_enabled === true)
+const cafeCouponEnabled = computed(() => cafeCouponStatus.value?.eligible === true)
+const cafeCouponClaimed = computed(() => cafeCouponStatus.value?.already_claimed === true || cafeCouponClaim.value?.already_claimed === true || !!claimedCafeCouponCode.value)
+const showCafeCouponDisabled = computed(() => membershipLevel.value >= 0 && !cafeCouponEnabled.value && !cafeCouponClaimed.value)
+const showCafeCouponClaimButton = computed(() => cafeCouponEnabled.value && !cafeCouponClaimed.value)
+const cafeCouponRemainingDays = computed(() => {
+  const explicit = cafeCouponClaim.value?.remaining_days
+  if (Number.isFinite(explicit)) return Math.max(0, Math.ceil(Number(explicit)))
+  const nextClaimAt = cafeCouponClaim.value?.next_claim_at || cafeCouponClaim.value?.expires_at
+  if (!nextClaimAt) return null
+  const diff = Date.parse(nextClaimAt) - nowTick.value
+  if (!Number.isFinite(diff)) return null
+  return Math.max(0, Math.ceil(diff / 86400000))
+})
+const cafeCouponRemainingText = computed(() => {
+  const days = cafeCouponRemainingDays.value
+  return days == null
+    ? t('membership.cafeCoupon.nextClaimLater')
+    : t('membership.cafeCoupon.remainingDays', { days })
+})
+const cafeCouponPeriodText = computed(() => {
+  switch (cafeCouponStatus.value?.period) {
+    case 'day':
+      return t('membership.cafeCoupon.period.day')
+    case 'week':
+      return t('membership.cafeCoupon.period.week')
+    default:
+      return t('membership.cafeCoupon.period.month')
+  }
+})
+const cafeCouponValueText = computed(() => Number(cafeCouponStatus.value?.value || 0).toLocaleString(undefined, {
+  maximumFractionDigits: 2,
+}))
+const cafeCouponClaimHint = computed(() => {
+  const params = { period: cafeCouponPeriodText.value, value: cafeCouponValueText.value }
+  return cafeCouponStatus.value?.type === 'cash'
+    ? t('membership.cafeCoupon.claimCashHint', params)
+    : t('membership.cafeCoupon.claimDiscountHint', params)
+})
+const showCafeCouponNonTransferableHint = computed(() => {
+  const transferable = cafeCouponClaim.value?.transferable ?? cafeCouponStatus.value?.coupon?.transferable ?? cafeCouponStatus.value?.transferable
+  return transferable === false
+})
+const cafeCouponModalDescription = computed(() => t('membership.cafeCoupon.modalDescription'))
+const cafeCouponModalBenefitText = computed(() => {
+  const coupon = cafeCouponClaim.value ?? cafeCouponStatus.value?.coupon
+  const type = coupon?.type ?? cafeCouponStatus.value?.type
+  const value = Number(coupon?.value ?? cafeCouponStatus.value?.value ?? 0)
+  if (!Number.isFinite(value) || value <= 0) return ''
+  return type === 'cash'
+    ? t('membership.cafeCoupon.benefitCash', { value: value.toLocaleString(undefined, { maximumFractionDigits: 2 }) })
+    : t('membership.cafeCoupon.benefitDiscount', { value: value.toLocaleString(undefined, { maximumFractionDigits: 2 }) })
+})
+const cafeCouponUsed = computed(() => cafeCouponClaim.value?.status === 'applied')
+const cafeCouponStatusText = computed(() => {
+  return cafeCouponUsed.value
+    ? t('membership.cafeCoupon.statusUsed')
+    : t('membership.cafeCoupon.statusUnused')
+})
+const cafeCouponStatusBadgeClass = computed(() => {
+  return cafeCouponUsed.value ? 'badge-danger' : 'badge-success'
+})
+const cafeCouponExpiresInText = computed(() => {
+  const expiresAt = cafeCouponClaim.value?.expires_at
+  if (!expiresAt) return t('membership.cafeCoupon.nextClaimLater')
+  const diff = Date.parse(expiresAt) - nowTick.value
+  if (!Number.isFinite(diff) || diff <= 0) return t('membership.cafeCoupon.expired')
+  const totalSeconds = Math.floor(diff / 1000)
+  const days = Math.floor(totalSeconds / 86400)
+  const hours = Math.floor((totalSeconds % 86400) / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  const seconds = totalSeconds % 60
+  return t('membership.cafeCoupon.countdown', { days, hours, minutes, seconds })
+})
+const showCafeCouponCopiedIcon = computed(() => cafeCouponCopied.value)
+
 const membershipInviteLimit = computed(() => {
   const settings = appStore.cachedPublicSettings
   if (membershipLevel.value >= 3) return settings?.affiliate_invite_limit_level3 ?? 5
@@ -461,12 +653,94 @@ function closeDropdown() {
 
 function toggleMembershipPopover() {
   membershipPopoverOpen.value = !membershipPopoverOpen.value
+  if (membershipPopoverOpen.value) {
+    loadCafeCouponStatus().catch(() => {})
+  }
 }
 
 function closeMembershipPopover() {
   membershipPopoverOpen.value = false
 }
 
+function closeCafeCouponModal() {
+  cafeCouponModalOpen.value = false
+  cafeCouponCopied.value = false
+}
+
+function syncCafeCouponClaim(claim: CafeCouponSummary | null) {
+  cafeCouponClaim.value = claim
+  const code = (claim?.copy_text || claim?.code || '').trim()
+  if (code) {
+    claimedCafeCouponCode.value = code
+  }
+}
+
+function syncCafeCouponStatus(status: CafeCouponStatusResponse | null) {
+  cafeCouponStatus.value = status
+  syncCafeCouponClaim(status?.coupon ?? null)
+}
+
+async function loadCafeCouponStatus(force = false) {
+  if (!user.value) return
+  if (cafeCouponStatusLoading.value || (cafeCouponStatusLoaded.value && !force)) return
+  cafeCouponStatusLoading.value = true
+  try {
+    syncCafeCouponStatus(await paymentStore.getCafeCouponStatus())
+    cafeCouponStatusLoaded.value = true
+  } catch (error) {
+    cafeCouponStatusLoaded.value = true
+    console.warn('Failed to load café coupon status:', error)
+  } finally {
+    cafeCouponStatusLoading.value = false
+  }
+}
+
+function openClaimedCafeCoupon() {
+  if (!claimedCafeCouponCode.value) return
+  cafeCouponModalOpen.value = true
+}
+
+async function claimCafeCoupon() {
+  if (claimingCafeCoupon.value) return
+  claimingCafeCoupon.value = true
+  try {
+    const response = await paymentStore.claimCafeCoupon()
+    const code = (response.copy_text || response.code || '').trim()
+    if (!code) {
+      throw new Error('Missing café coupon code')
+    }
+    syncCafeCouponClaim(response)
+    closeMembershipPopover()
+    cafeCouponModalOpen.value = true
+    appStore.showSuccess(response.already_claimed ? t('membership.cafeCoupon.alreadyClaimed') : t('membership.cafeCoupon.claimSuccess'))
+  } catch (error: unknown) {
+    console.error('Failed to claim café coupon:', error)
+    appStore.showError(t('membership.cafeCoupon.claimFailed'))
+  } finally {
+    claimingCafeCoupon.value = false
+  }
+}
+
+async function copyCafeCouponCode() {
+  const code = claimedCafeCouponCode.value.trim()
+  if (!code) return
+  try {
+    await navigator.clipboard.writeText(code)
+    cafeCouponCopied.value = true
+    appStore.showSuccess(t('membership.cafeCoupon.copied'))
+  } catch (error) {
+    console.error('Failed to copy café coupon code:', error)
+    appStore.showError(t('membership.cafeCoupon.copyFailed'))
+  }
+}
+
+function useCafeCouponCode() {
+  if (cafeCouponUsed.value) return
+  const code = claimedCafeCouponCode.value.trim()
+  if (!code) return
+  closeCafeCouponModal()
+  router.push({ path: '/purchase', query: { cafe_coupon_code: code } }).catch(() => {})
+}
 function highlightBenefitText(text: string) {
   return text.replace(/\d+(?:\.\d+)?%?/g, '<span class="font-bold text-[#7A5AE6] dark:text-[#F5C66B]">$&</span>')
 }
@@ -506,10 +780,19 @@ function handleClickOutside(event: MouseEvent) {
 
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
+  loadCafeCouponStatus().catch(() => {})
+  nowTick.value = Date.now()
+  cafeCouponTimer = window.setInterval(() => {
+    nowTick.value = Date.now()
+  }, 1000)
 })
 
 onBeforeUnmount(() => {
   document.removeEventListener('click', handleClickOutside)
+  if (cafeCouponTimer !== null) {
+    window.clearInterval(cafeCouponTimer)
+    cafeCouponTimer = null
+  }
 })
 </script>
 

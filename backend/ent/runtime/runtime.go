@@ -12,6 +12,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/apikey"
 	"github.com/Wei-Shaw/sub2api/ent/authidentity"
 	"github.com/Wei-Shaw/sub2api/ent/authidentitychannel"
+	"github.com/Wei-Shaw/sub2api/ent/cafecoupon"
 	"github.com/Wei-Shaw/sub2api/ent/channelmonitor"
 	"github.com/Wei-Shaw/sub2api/ent/channelmonitordailyrollup"
 	"github.com/Wei-Shaw/sub2api/ent/channelmonitorhistory"
@@ -432,6 +433,56 @@ func init() {
 	authidentitychannelDescMetadata := authidentitychannelFields[6].Descriptor()
 	// authidentitychannel.DefaultMetadata holds the default value on creation for the metadata field.
 	authidentitychannel.DefaultMetadata = authidentitychannelDescMetadata.Default.(func() map[string]interface{})
+	cafecouponFields := schema.CafeCoupon{}.Fields()
+	_ = cafecouponFields
+	// cafecouponDescCode is the schema descriptor for code field.
+	cafecouponDescCode := cafecouponFields[0].Descriptor()
+	// cafecoupon.CodeValidator is a validator for the "code" field. It is called by the builders before save.
+	cafecoupon.CodeValidator = func() func(string) error {
+		validators := cafecouponDescCode.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(code string) error {
+			for _, fn := range fns {
+				if err := fn(code); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// cafecouponDescMembershipLevel is the schema descriptor for membership_level field.
+	cafecouponDescMembershipLevel := cafecouponFields[2].Descriptor()
+	// cafecoupon.DefaultMembershipLevel holds the default value on creation for the membership_level field.
+	cafecoupon.DefaultMembershipLevel = cafecouponDescMembershipLevel.Default.(int)
+	// cafecouponDescCouponType is the schema descriptor for coupon_type field.
+	cafecouponDescCouponType := cafecouponFields[3].Descriptor()
+	// cafecoupon.CouponTypeValidator is a validator for the "coupon_type" field. It is called by the builders before save.
+	cafecoupon.CouponTypeValidator = cafecouponDescCouponType.Validators[0].(func(string) error)
+	// cafecouponDescPeriod is the schema descriptor for period field.
+	cafecouponDescPeriod := cafecouponFields[5].Descriptor()
+	// cafecoupon.DefaultPeriod holds the default value on creation for the period field.
+	cafecoupon.DefaultPeriod = cafecouponDescPeriod.Default.(string)
+	// cafecoupon.PeriodValidator is a validator for the "period" field. It is called by the builders before save.
+	cafecoupon.PeriodValidator = cafecouponDescPeriod.Validators[0].(func(string) error)
+	// cafecouponDescStatus is the schema descriptor for status field.
+	cafecouponDescStatus := cafecouponFields[8].Descriptor()
+	// cafecoupon.DefaultStatus holds the default value on creation for the status field.
+	cafecoupon.DefaultStatus = cafecouponDescStatus.Default.(string)
+	// cafecoupon.StatusValidator is a validator for the "status" field. It is called by the builders before save.
+	cafecoupon.StatusValidator = cafecouponDescStatus.Validators[0].(func(string) error)
+	// cafecouponDescCreatedAt is the schema descriptor for created_at field.
+	cafecouponDescCreatedAt := cafecouponFields[11].Descriptor()
+	// cafecoupon.DefaultCreatedAt holds the default value on creation for the created_at field.
+	cafecoupon.DefaultCreatedAt = cafecouponDescCreatedAt.Default.(func() time.Time)
+	// cafecouponDescUpdatedAt is the schema descriptor for updated_at field.
+	cafecouponDescUpdatedAt := cafecouponFields[12].Descriptor()
+	// cafecoupon.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	cafecoupon.DefaultUpdatedAt = cafecouponDescUpdatedAt.Default.(func() time.Time)
+	// cafecoupon.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	cafecoupon.UpdateDefaultUpdatedAt = cafecouponDescUpdatedAt.UpdateDefault.(func() time.Time)
 	channelmonitorMixin := schema.ChannelMonitor{}.Mixin()
 	channelmonitorMixinFields0 := channelmonitorMixin[0].Fields()
 	_ = channelmonitorMixinFields0
@@ -982,66 +1033,74 @@ func init() {
 	paymentorderDescRechargeCode := paymentorderFields[7].Descriptor()
 	// paymentorder.RechargeCodeValidator is a validator for the "recharge_code" field. It is called by the builders before save.
 	paymentorder.RechargeCodeValidator = paymentorderDescRechargeCode.Validators[0].(func(string) error)
+	// paymentorderDescCafeCouponCode is the schema descriptor for cafe_coupon_code field.
+	paymentorderDescCafeCouponCode := paymentorderFields[8].Descriptor()
+	// paymentorder.CafeCouponCodeValidator is a validator for the "cafe_coupon_code" field. It is called by the builders before save.
+	paymentorder.CafeCouponCodeValidator = paymentorderDescCafeCouponCode.Validators[0].(func(string) error)
+	// paymentorderDescCafeCouponDiscount is the schema descriptor for cafe_coupon_discount field.
+	paymentorderDescCafeCouponDiscount := paymentorderFields[9].Descriptor()
+	// paymentorder.DefaultCafeCouponDiscount holds the default value on creation for the cafe_coupon_discount field.
+	paymentorder.DefaultCafeCouponDiscount = paymentorderDescCafeCouponDiscount.Default.(float64)
 	// paymentorderDescOutTradeNo is the schema descriptor for out_trade_no field.
-	paymentorderDescOutTradeNo := paymentorderFields[8].Descriptor()
+	paymentorderDescOutTradeNo := paymentorderFields[10].Descriptor()
 	// paymentorder.DefaultOutTradeNo holds the default value on creation for the out_trade_no field.
 	paymentorder.DefaultOutTradeNo = paymentorderDescOutTradeNo.Default.(string)
 	// paymentorder.OutTradeNoValidator is a validator for the "out_trade_no" field. It is called by the builders before save.
 	paymentorder.OutTradeNoValidator = paymentorderDescOutTradeNo.Validators[0].(func(string) error)
 	// paymentorderDescPaymentType is the schema descriptor for payment_type field.
-	paymentorderDescPaymentType := paymentorderFields[9].Descriptor()
+	paymentorderDescPaymentType := paymentorderFields[11].Descriptor()
 	// paymentorder.PaymentTypeValidator is a validator for the "payment_type" field. It is called by the builders before save.
 	paymentorder.PaymentTypeValidator = paymentorderDescPaymentType.Validators[0].(func(string) error)
 	// paymentorderDescPaymentTradeNo is the schema descriptor for payment_trade_no field.
-	paymentorderDescPaymentTradeNo := paymentorderFields[10].Descriptor()
+	paymentorderDescPaymentTradeNo := paymentorderFields[12].Descriptor()
 	// paymentorder.PaymentTradeNoValidator is a validator for the "payment_trade_no" field. It is called by the builders before save.
 	paymentorder.PaymentTradeNoValidator = paymentorderDescPaymentTradeNo.Validators[0].(func(string) error)
 	// paymentorderDescOrderType is the schema descriptor for order_type field.
-	paymentorderDescOrderType := paymentorderFields[14].Descriptor()
+	paymentorderDescOrderType := paymentorderFields[16].Descriptor()
 	// paymentorder.DefaultOrderType holds the default value on creation for the order_type field.
 	paymentorder.DefaultOrderType = paymentorderDescOrderType.Default.(string)
 	// paymentorder.OrderTypeValidator is a validator for the "order_type" field. It is called by the builders before save.
 	paymentorder.OrderTypeValidator = paymentorderDescOrderType.Validators[0].(func(string) error)
 	// paymentorderDescProviderInstanceID is the schema descriptor for provider_instance_id field.
-	paymentorderDescProviderInstanceID := paymentorderFields[18].Descriptor()
+	paymentorderDescProviderInstanceID := paymentorderFields[20].Descriptor()
 	// paymentorder.ProviderInstanceIDValidator is a validator for the "provider_instance_id" field. It is called by the builders before save.
 	paymentorder.ProviderInstanceIDValidator = paymentorderDescProviderInstanceID.Validators[0].(func(string) error)
 	// paymentorderDescProviderKey is the schema descriptor for provider_key field.
-	paymentorderDescProviderKey := paymentorderFields[19].Descriptor()
+	paymentorderDescProviderKey := paymentorderFields[21].Descriptor()
 	// paymentorder.ProviderKeyValidator is a validator for the "provider_key" field. It is called by the builders before save.
 	paymentorder.ProviderKeyValidator = paymentorderDescProviderKey.Validators[0].(func(string) error)
 	// paymentorderDescStatus is the schema descriptor for status field.
-	paymentorderDescStatus := paymentorderFields[21].Descriptor()
+	paymentorderDescStatus := paymentorderFields[23].Descriptor()
 	// paymentorder.DefaultStatus holds the default value on creation for the status field.
 	paymentorder.DefaultStatus = paymentorderDescStatus.Default.(string)
 	// paymentorder.StatusValidator is a validator for the "status" field. It is called by the builders before save.
 	paymentorder.StatusValidator = paymentorderDescStatus.Validators[0].(func(string) error)
 	// paymentorderDescRefundAmount is the schema descriptor for refund_amount field.
-	paymentorderDescRefundAmount := paymentorderFields[22].Descriptor()
+	paymentorderDescRefundAmount := paymentorderFields[24].Descriptor()
 	// paymentorder.DefaultRefundAmount holds the default value on creation for the refund_amount field.
 	paymentorder.DefaultRefundAmount = paymentorderDescRefundAmount.Default.(float64)
 	// paymentorderDescForceRefund is the schema descriptor for force_refund field.
-	paymentorderDescForceRefund := paymentorderFields[25].Descriptor()
+	paymentorderDescForceRefund := paymentorderFields[27].Descriptor()
 	// paymentorder.DefaultForceRefund holds the default value on creation for the force_refund field.
 	paymentorder.DefaultForceRefund = paymentorderDescForceRefund.Default.(bool)
 	// paymentorderDescRefundRequestedBy is the schema descriptor for refund_requested_by field.
-	paymentorderDescRefundRequestedBy := paymentorderFields[28].Descriptor()
+	paymentorderDescRefundRequestedBy := paymentorderFields[30].Descriptor()
 	// paymentorder.RefundRequestedByValidator is a validator for the "refund_requested_by" field. It is called by the builders before save.
 	paymentorder.RefundRequestedByValidator = paymentorderDescRefundRequestedBy.Validators[0].(func(string) error)
 	// paymentorderDescClientIP is the schema descriptor for client_ip field.
-	paymentorderDescClientIP := paymentorderFields[34].Descriptor()
+	paymentorderDescClientIP := paymentorderFields[36].Descriptor()
 	// paymentorder.ClientIPValidator is a validator for the "client_ip" field. It is called by the builders before save.
 	paymentorder.ClientIPValidator = paymentorderDescClientIP.Validators[0].(func(string) error)
 	// paymentorderDescSrcHost is the schema descriptor for src_host field.
-	paymentorderDescSrcHost := paymentorderFields[35].Descriptor()
+	paymentorderDescSrcHost := paymentorderFields[37].Descriptor()
 	// paymentorder.SrcHostValidator is a validator for the "src_host" field. It is called by the builders before save.
 	paymentorder.SrcHostValidator = paymentorderDescSrcHost.Validators[0].(func(string) error)
 	// paymentorderDescCreatedAt is the schema descriptor for created_at field.
-	paymentorderDescCreatedAt := paymentorderFields[37].Descriptor()
+	paymentorderDescCreatedAt := paymentorderFields[39].Descriptor()
 	// paymentorder.DefaultCreatedAt holds the default value on creation for the created_at field.
 	paymentorder.DefaultCreatedAt = paymentorderDescCreatedAt.Default.(func() time.Time)
 	// paymentorderDescUpdatedAt is the schema descriptor for updated_at field.
-	paymentorderDescUpdatedAt := paymentorderFields[38].Descriptor()
+	paymentorderDescUpdatedAt := paymentorderFields[40].Descriptor()
 	// paymentorder.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	paymentorder.DefaultUpdatedAt = paymentorderDescUpdatedAt.Default.(func() time.Time)
 	// paymentorder.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

@@ -140,6 +140,9 @@ func expectedNotificationProviderKey(registry *payment.Registry, orderPaymentTyp
 }
 
 func (s *PaymentService) toPaid(ctx context.Context, o *dbent.PaymentOrder, tradeNo string, paid float64, pk string) error {
+	if err := s.ensureCafeCouponAppliedForPaidOrder(ctx, o); err != nil {
+		return err
+	}
 	previousStatus := o.Status
 	now := time.Now()
 	grace := now.Add(-paymentGraceMinutes * time.Minute)
@@ -307,11 +310,15 @@ func (s *PaymentService) markCompleted(ctx context.Context, o *dbent.PaymentOrde
 		return fmt.Errorf("mark completed: %w", err)
 	}
 	if !s.hasAuditLog(ctx, o.ID, auditAction) {
-		s.writeAuditLog(ctx, o.ID, auditAction, "system", map[string]any{
+		detail := map[string]any{
 			"rechargeCode":   o.RechargeCode,
 			"creditedAmount": o.Amount,
 			"payAmount":      o.PayAmount,
-		})
+		}
+		if coupon := cafeCouponOrderSnapshot(o); coupon != nil {
+			detail["cafeCoupon"] = coupon
+		}
+		s.writeAuditLog(ctx, o.ID, auditAction, "system", detail)
 	}
 	s.dispatchPaymentFulfillmentNotification(o, auditAction)
 	return nil
@@ -458,12 +465,16 @@ func (s *PaymentService) doSub(ctx context.Context, o *dbent.PaymentOrder) error
 			return fmt.Errorf("update membership points: %w", err)
 		}
 	}
-	if err := s.writeAuditLogStrict(txCtx, o.ID, "SUBSCRIPTION_SUCCESS", "system", map[string]any{
+	auditDetail := map[string]any{
 		"subscriptionGroupID": gid,
 		"subscriptionDays":    days,
 		"creditedAmount":      o.Amount,
 		"payAmount":           o.PayAmount,
-	}); err != nil {
+	}
+	if coupon := cafeCouponOrderSnapshot(o); coupon != nil {
+		auditDetail["cafeCoupon"] = coupon
+	}
+	if err := s.writeAuditLogStrict(txCtx, o.ID, "SUBSCRIPTION_SUCCESS", "system", auditDetail); err != nil {
 		_ = tx.Rollback()
 		return fmt.Errorf("write audit log: %w", err)
 	}

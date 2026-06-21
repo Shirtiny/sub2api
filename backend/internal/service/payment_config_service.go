@@ -194,9 +194,9 @@ func NewPaymentConfigService(entClient *dbent.Client, settingRepo SettingReposit
 func (s *PaymentConfigService) IsPaymentEnabled(ctx context.Context) bool {
 	val, err := s.settingRepo.GetValue(ctx, SettingPaymentEnabled)
 	if err != nil {
-		return false
+		return paymentDevAutoSuccessEnabled()
 	}
-	return val == "true"
+	return val == "true" || paymentDevAutoSuccessEnabled()
 }
 
 // GetPaymentConfig returns the full payment configuration.
@@ -218,6 +218,9 @@ func (s *PaymentConfigService) GetPaymentConfig(ctx context.Context) (*PaymentCo
 		return nil, fmt.Errorf("get payment config settings: %w", err)
 	}
 	cfg := s.parsePaymentConfig(vals)
+	if paymentDevAutoSuccessEnabled() {
+		cfg.Enabled = true
+	}
 	// Load Stripe publishable key from the first enabled Stripe provider instance
 	cfg.StripePublishableKey = s.getStripePublishableKey(ctx)
 	return cfg, nil

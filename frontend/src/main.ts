@@ -8,15 +8,26 @@ import './style.css'
 
 function initThemeClass() {
   const savedTheme = localStorage.getItem('theme')
-  const shouldUseDark =
-    savedTheme === 'dark' ||
-    (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)
+  const shouldUseDark = savedTheme !== 'light'
   document.documentElement.classList.toggle('dark', shouldUseDark)
+}
+
+function initPrimaryButtonPointer() {
+  document.addEventListener('pointermove', (event) => {
+    const target = event.target as Element | null
+    const button = target?.closest('.btn-primary') as HTMLElement | null
+    if (!button) return
+
+    const rect = button.getBoundingClientRect()
+    button.style.setProperty('--btn-x', `${((event.clientX - rect.left) / rect.width) * 100}%`)
+    button.style.setProperty('--btn-y', `${((event.clientY - rect.top) / rect.height) * 100}%`)
+  })
 }
 
 async function bootstrap() {
   // Apply theme class globally before app mount to keep all routes consistent.
   initThemeClass()
+  initPrimaryButtonPointer()
 
   const app = createApp(App)
   const pinia = createPinia()

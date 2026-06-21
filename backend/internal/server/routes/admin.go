@@ -409,6 +409,11 @@ func registerPromoCodeRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
 	promoCodes := admin.Group("/promo-codes")
 	{
 		promoCodes.GET("", h.Admin.Promo.List)
+		promoCodes.GET("/cafe-coupons", h.Admin.Promo.ListCafeCoupons)
+		promoCodes.GET("/cafe-coupons/:id", h.Admin.Promo.GetCafeCoupon)
+		promoCodes.PATCH("/cafe-coupons/:id/status", h.Admin.Promo.UpdateCafeCouponStatus)
+		promoCodes.POST("/cafe-coupons/:id/reset-claim-period", h.Admin.Promo.ResetCafeCouponClaimPeriod)
+		promoCodes.POST("/cafe-coupons/:id/void", h.Admin.Promo.VoidCafeCoupon)
 		promoCodes.GET("/:id", h.Admin.Promo.GetByID)
 		promoCodes.POST("", h.Admin.Promo.Create)
 		promoCodes.PUT("/:id", h.Admin.Promo.Update)

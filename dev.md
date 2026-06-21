@@ -117,6 +117,12 @@ PAYMENT_DEV_AUTO_SUCCESS=I_UNDERSTAND_THIS_BYPASSES_REAL_PAYMENTS
 PAYMENT_DEV_ENVIRONMENT=development
 ```
 
+```ps1
+$env:PAYMENT_DEV_AUTO_SUCCESS = "I_UNDERSTAND_THIS_BYPASSES_REAL_PAYMENTS"
+$env:PAYMENT_DEV_ENVIRONMENT = "development"
+$env:SERVER_PORT = "8080"
+```
+
 注意事项：
 
 1. **源码开发模式必须 source `deploy/.env`**
@@ -156,33 +162,6 @@ PAYMENT_DEV_ENVIRONMENT=development
    - 确认后端是通过 `set -a; . ./deploy/.env; set +a; go -C ./backend run ./cmd/server` 启动
    - 打开支付页，看按钮是否可点击
    - 如仍异常，检查 `/api/v1/payment/checkout-info` 返回的 `methods`
-
-## Docker Compose 启动方式
-
-如果使用 Docker Compose，而不是源码双进程开发：
-
-### local compose
-
-```bash
-cd deploy
-docker compose -f docker-compose.local.yml up -d --force-recreate
-```
-
-### dev compose
-
-```bash
-cd deploy
-docker compose -f docker-compose.dev.yml up -d --build --force-recreate
-```
-
-`docker-compose.dev.yml` 和 `docker-compose.local.yml` 都需要透传：
-
-```yaml
-- PAYMENT_DEV_AUTO_SUCCESS=${PAYMENT_DEV_AUTO_SUCCESS:-}
-- PAYMENT_DEV_ENVIRONMENT=${PAYMENT_DEV_ENVIRONMENT:-}
-```
-
-如果修改了 `deploy/.env`，需要 recreate 容器才能让新环境变量进入容器。
 
 ## 常用开发命令
 

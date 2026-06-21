@@ -533,6 +533,257 @@ func TestSettingHandler_UpdateSettings_PersistsAffiliateInviteLimit(t *testing.T
 	require.Equal(t, float64(123), getData["affiliate_invite_limit"])
 }
 
+func TestSettingHandler_UpdateSettings_PersistsCafeCouponConfig(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	repo := &settingHandlerRepoStub{
+		values: map[string]string{
+			service.SettingKeyRegistrationEnabled:                "true",
+			service.SettingKeyPromoCodeEnabled:                   "true",
+			service.SettingKeyCafeCouponConfig:                   `{"levels":{"1":{"enabled":false,"type":"cash","value":0,"period":"month"}}}`,
+			service.SettingKeyAffiliateRebatePerInviteeCapLevel1: "100.00000000",
+			service.SettingKeyAffiliateRebatePerInviteeCapLevel2: "300.00000000",
+			service.SettingKeyAffiliateRebatePerInviteeCapLevel3: "1000.00000000",
+			service.SettingKeyDefaultConcurrency:                 "5",
+			service.SettingKeyDefaultBalance:                     "0",
+			service.SettingKeyDefaultSubscriptions:               "[]",
+			service.SettingKeyTableDefaultPageSize:               "20",
+			service.SettingKeyTablePageSizeOptions:               "[10,20,50,100]",
+			service.SettingPaymentEnabled:                        "false",
+			service.SettingEnabledPaymentTypes:                   "[]",
+			service.SettingKeyAccountQuotaNotifyEmails:           "[]",
+		},
+	}
+	svc := service.NewSettingService(repo, &config.Config{Default: config.DefaultConfig{UserConcurrency: 5}})
+	handler := NewSettingHandler(svc, nil, nil, nil, nil, nil, nil)
+
+	body := map[string]any{
+		"promo_code_enabled": true,
+		"cafe_coupon_config": map[string]any{
+			"levels": map[string]any{
+				"1": map[string]any{
+					"enabled":      true,
+					"type":         "cash",
+					"value":        12.5,
+					"period":       "month",
+					"transferable": true,
+				},
+			},
+		},
+	}
+	rawBody, err := json.Marshal(body)
+	require.NoError(t, err)
+
+	putRec := httptest.NewRecorder()
+	putCtx, _ := gin.CreateTestContext(putRec)
+	putCtx.Request = httptest.NewRequest(http.MethodPut, "/api/v1/admin/settings", bytes.NewReader(rawBody))
+	putCtx.Request.Header.Set("Content-Type", "application/json")
+
+	handler.UpdateSettings(putCtx)
+
+	require.Equal(t, http.StatusOK, putRec.Code)
+	var saved service.CafeCouponConfig
+	require.NoError(t, json.Unmarshal([]byte(repo.values[service.SettingKeyCafeCouponConfig]), &saved))
+	require.True(t, saved.Levels[1].Enabled)
+	require.Equal(t, 12.5, saved.Levels[1].Value)
+	require.True(t, saved.Levels[1].Transferable)
+	require.Equal(t, "100.00000000", repo.values[service.SettingKeyAffiliateRebatePerInviteeCapLevel1])
+	require.Equal(t, "300.00000000", repo.values[service.SettingKeyAffiliateRebatePerInviteeCapLevel2])
+	require.Equal(t, "1000.00000000", repo.values[service.SettingKeyAffiliateRebatePerInviteeCapLevel3])
+
+	var putResp response.Response
+	require.NoError(t, json.Unmarshal(putRec.Body.Bytes(), &putResp))
+	putData, ok := putResp.Data.(map[string]any)
+	require.True(t, ok)
+	require.Contains(t, putData, "cafe_coupon_config")
+	require.Equal(t, float64(100), putData["affiliate_rebate_per_invitee_cap_level1"])
+	require.Equal(t, float64(300), putData["affiliate_rebate_per_invitee_cap_level2"])
+	require.Equal(t, float64(1000), putData["affiliate_rebate_per_invitee_cap_level3"])
+}
+
+func TestSettingHandler_UpdateSettings_RestoresAffiliateCapLevels(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	repo := &settingHandlerRepoStub{
+		values: map[string]string{
+			service.SettingKeyRegistrationEnabled:                "true",
+			service.SettingKeyPromoCodeEnabled:                   "true",
+			service.SettingKeyCafeCouponConfig:                   `{"levels":{"1":{"enabled":false,"type":"cash","value":0,"period":"month"}}}`,
+			service.SettingKeyAffiliateRebatePerInviteeCap:       "0.00000000",
+			service.SettingKeyAffiliateRebatePerInviteeCapLevel0: "0.00000000",
+			service.SettingKeyAffiliateRebatePerInviteeCapLevel1: "0.00000000",
+			service.SettingKeyAffiliateRebatePerInviteeCapLevel2: "0.00000000",
+			service.SettingKeyAffiliateRebatePerInviteeCapLevel3: "0.00000000",
+			service.SettingKeyDefaultConcurrency:                 "5",
+			service.SettingKeyDefaultBalance:                     "0",
+			service.SettingKeyDefaultSubscriptions:               "[]",
+			service.SettingKeyTableDefaultPageSize:               "20",
+			service.SettingKeyTablePageSizeOptions:               "[10,20,50,100]",
+			service.SettingPaymentEnabled:                        "false",
+			service.SettingEnabledPaymentTypes:                   "[]",
+			service.SettingKeyAccountQuotaNotifyEmails:           "[]",
+		},
+	}
+	svc := service.NewSettingService(repo, &config.Config{Default: config.DefaultConfig{UserConcurrency: 5}})
+	handler := NewSettingHandler(svc, nil, nil, nil, nil, nil, nil)
+
+	body := map[string]any{
+		"promo_code_enabled":                      true,
+		"affiliate_rebate_per_invitee_cap":        0,
+		"affiliate_rebate_per_invitee_cap_level0": 0,
+		"affiliate_rebate_per_invitee_cap_level1": 100,
+		"affiliate_rebate_per_invitee_cap_level2": 300,
+		"affiliate_rebate_per_invitee_cap_level3": 1000,
+	}
+	rawBody, err := json.Marshal(body)
+	require.NoError(t, err)
+
+	putRec := httptest.NewRecorder()
+	putCtx, _ := gin.CreateTestContext(putRec)
+	putCtx.Request = httptest.NewRequest(http.MethodPut, "/api/v1/admin/settings", bytes.NewReader(rawBody))
+	putCtx.Request.Header.Set("Content-Type", "application/json")
+
+	handler.UpdateSettings(putCtx)
+
+	require.Equal(t, http.StatusOK, putRec.Code)
+	require.Equal(t, "0.00000000", repo.values[service.SettingKeyAffiliateRebatePerInviteeCapLevel0])
+	require.Equal(t, "100.00000000", repo.values[service.SettingKeyAffiliateRebatePerInviteeCapLevel1])
+	require.Equal(t, "300.00000000", repo.values[service.SettingKeyAffiliateRebatePerInviteeCapLevel2])
+	require.Equal(t, "1000.00000000", repo.values[service.SettingKeyAffiliateRebatePerInviteeCapLevel3])
+
+	var putResp response.Response
+	require.NoError(t, json.Unmarshal(putRec.Body.Bytes(), &putResp))
+	putData, ok := putResp.Data.(map[string]any)
+	require.True(t, ok)
+	require.Equal(t, float64(0), putData["affiliate_rebate_per_invitee_cap_level0"])
+	require.Equal(t, float64(100), putData["affiliate_rebate_per_invitee_cap_level1"])
+	require.Equal(t, float64(300), putData["affiliate_rebate_per_invitee_cap_level2"])
+	require.Equal(t, float64(1000), putData["affiliate_rebate_per_invitee_cap_level3"])
+
+	getRec := httptest.NewRecorder()
+	getCtx, _ := gin.CreateTestContext(getRec)
+	getCtx.Request = httptest.NewRequest(http.MethodGet, "/api/v1/admin/settings", nil)
+
+	handler.GetSettings(getCtx)
+
+	require.Equal(t, http.StatusOK, getRec.Code)
+	var getResp response.Response
+	require.NoError(t, json.Unmarshal(getRec.Body.Bytes(), &getResp))
+	getData, ok := getResp.Data.(map[string]any)
+	require.True(t, ok)
+	require.Equal(t, float64(0), getData["affiliate_rebate_per_invitee_cap_level0"])
+	require.Equal(t, float64(100), getData["affiliate_rebate_per_invitee_cap_level1"])
+	require.Equal(t, float64(300), getData["affiliate_rebate_per_invitee_cap_level2"])
+	require.Equal(t, float64(1000), getData["affiliate_rebate_per_invitee_cap_level3"])
+}
+
+func TestSettingHandler_UpdateSettings_PersistsAffiliateCapLevelsFromFullSettingsPayload(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	repo := &settingHandlerRepoStub{
+		values: map[string]string{
+			service.SettingKeyRegistrationEnabled:                "true",
+			service.SettingKeyPromoCodeEnabled:                   "true",
+			service.SettingKeyCafeCouponConfig:                   `{"levels":{"1":{"enabled":false,"type":"cash","value":0,"period":"month"}}}`,
+			service.SettingKeyAffiliateRebatePerInviteeCap:       "0.00000000",
+			service.SettingKeyAffiliateRebatePerInviteeCapLevel0: "0.00000000",
+			service.SettingKeyAffiliateRebatePerInviteeCapLevel1: "0.00000000",
+			service.SettingKeyAffiliateRebatePerInviteeCapLevel2: "0.00000000",
+			service.SettingKeyAffiliateRebatePerInviteeCapLevel3: "0.00000000",
+			service.SettingKeyDefaultConcurrency:                 "5",
+			service.SettingKeyDefaultBalance:                     "0",
+			service.SettingKeyDefaultSubscriptions:               "[]",
+			service.SettingKeyTableDefaultPageSize:               "20",
+			service.SettingKeyTablePageSizeOptions:               "[10,20,50,100]",
+			service.SettingPaymentEnabled:                        "false",
+			service.SettingEnabledPaymentTypes:                   "[]",
+			service.SettingKeyAccountQuotaNotifyEmails:           "[]",
+		},
+	}
+	svc := service.NewSettingService(repo, &config.Config{Default: config.DefaultConfig{UserConcurrency: 5}})
+	handler := NewSettingHandler(svc, nil, nil, nil, nil, nil, nil)
+
+	getRec := httptest.NewRecorder()
+	getCtx, _ := gin.CreateTestContext(getRec)
+	getCtx.Request = httptest.NewRequest(http.MethodGet, "/api/v1/admin/settings", nil)
+
+	handler.GetSettings(getCtx)
+
+	require.Equal(t, http.StatusOK, getRec.Code)
+	var getResp response.Response
+	require.NoError(t, json.Unmarshal(getRec.Body.Bytes(), &getResp))
+	body, ok := getResp.Data.(map[string]any)
+	require.True(t, ok)
+	body["affiliate_rebate_per_invitee_cap"] = 0
+	body["affiliate_rebate_per_invitee_cap_level0"] = 0
+	body["affiliate_rebate_per_invitee_cap_level1"] = 100
+	body["affiliate_rebate_per_invitee_cap_level2"] = 300
+	body["affiliate_rebate_per_invitee_cap_level3"] = 1000
+	body["cafe_coupon_config"] = map[string]any{
+		"levels": map[string]any{
+			"1": map[string]any{
+				"enabled":      true,
+				"type":         "cash",
+				"value":        12.5,
+				"period":       "month",
+				"transferable": true,
+			},
+		},
+	}
+	rawBody, err := json.Marshal(body)
+	require.NoError(t, err)
+
+	putRec := httptest.NewRecorder()
+	putCtx, _ := gin.CreateTestContext(putRec)
+	putCtx.Request = httptest.NewRequest(http.MethodPut, "/api/v1/admin/settings", bytes.NewReader(rawBody))
+	putCtx.Request.Header.Set("Content-Type", "application/json")
+
+	handler.UpdateSettings(putCtx)
+
+	require.Equal(t, http.StatusOK, putRec.Code)
+	require.Equal(t, "0.00000000", repo.values[service.SettingKeyAffiliateRebatePerInviteeCapLevel0])
+	require.Equal(t, "100.00000000", repo.values[service.SettingKeyAffiliateRebatePerInviteeCapLevel1])
+	require.Equal(t, "300.00000000", repo.values[service.SettingKeyAffiliateRebatePerInviteeCapLevel2])
+	require.Equal(t, "1000.00000000", repo.values[service.SettingKeyAffiliateRebatePerInviteeCapLevel3])
+	var saved service.CafeCouponConfig
+	require.NoError(t, json.Unmarshal([]byte(repo.values[service.SettingKeyCafeCouponConfig]), &saved))
+	require.True(t, saved.Levels[1].Enabled)
+	require.Equal(t, 12.5, saved.Levels[1].Value)
+	require.True(t, saved.Levels[1].Transferable)
+
+	persisted, err := svc.GetAllSettings(putCtx.Request.Context())
+	require.NoError(t, err)
+	require.Equal(t, float64(0), persisted.AffiliateRebatePerInviteeCapLevel0)
+	require.Equal(t, float64(100), persisted.AffiliateRebatePerInviteeCapLevel1)
+	require.Equal(t, float64(300), persisted.AffiliateRebatePerInviteeCapLevel2)
+	require.Equal(t, float64(1000), persisted.AffiliateRebatePerInviteeCapLevel3)
+	require.True(t, persisted.CafeCouponConfig.Levels[1].Enabled)
+	require.Equal(t, 12.5, persisted.CafeCouponConfig.Levels[1].Value)
+	require.True(t, persisted.CafeCouponConfig.Levels[1].Transferable)
+
+	var putResp response.Response
+	require.NoError(t, json.Unmarshal(putRec.Body.Bytes(), &putResp))
+	putData, ok := putResp.Data.(map[string]any)
+	require.True(t, ok)
+	require.Equal(t, float64(0), putData["affiliate_rebate_per_invitee_cap_level0"])
+	require.Equal(t, float64(100), putData["affiliate_rebate_per_invitee_cap_level1"])
+	require.Equal(t, float64(300), putData["affiliate_rebate_per_invitee_cap_level2"])
+	require.Equal(t, float64(1000), putData["affiliate_rebate_per_invitee_cap_level3"])
+
+	followRec := httptest.NewRecorder()
+	followCtx, _ := gin.CreateTestContext(followRec)
+	followCtx.Request = httptest.NewRequest(http.MethodGet, "/api/v1/admin/settings", nil)
+
+	handler.GetSettings(followCtx)
+
+	require.Equal(t, http.StatusOK, followRec.Code)
+	var followResp response.Response
+	require.NoError(t, json.Unmarshal(followRec.Body.Bytes(), &followResp))
+	followData, ok := followResp.Data.(map[string]any)
+	require.True(t, ok)
+	require.Equal(t, float64(0), followData["affiliate_rebate_per_invitee_cap_level0"])
+	require.Equal(t, float64(100), followData["affiliate_rebate_per_invitee_cap_level1"])
+	require.Equal(t, float64(300), followData["affiliate_rebate_per_invitee_cap_level2"])
+	require.Equal(t, float64(1000), followData["affiliate_rebate_per_invitee_cap_level3"])
+}
+
 func TestDiffSettings_IncludesAuthSourceDefaultsAndForceEmail(t *testing.T) {
 	changed := diffSettings(
 		&service.SystemSettings{},

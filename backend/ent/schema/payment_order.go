@@ -52,6 +52,13 @@ func (PaymentOrder) Fields() []ent.Field {
 			Default(0),
 		field.String("recharge_code").
 			MaxLen(64),
+		field.String("cafe_coupon_code").
+			Optional().
+			Nillable().
+			MaxLen(48),
+		field.Float("cafe_coupon_discount").
+			SchemaType(map[string]string{dialect.Postgres: "decimal(20,2)"}).
+			Default(0),
 
 		// 支付信息
 		field.String("out_trade_no").

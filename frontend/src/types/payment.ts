@@ -160,9 +160,65 @@ export interface CreateOrderRequest {
   plan_id?: number
   return_url?: string
   payment_source?: string
+  cafe_coupon_code?: string
   openid?: string
   wechat_resume_token?: string
   is_mobile?: boolean
+}
+
+export interface CafeCouponSummary {
+  code: string
+  type: 'cash' | 'discount'
+  value: number
+  period: 'day' | 'week' | 'month'
+  expires_at: string
+  claimed_at: string
+  display_name: string
+  copy_text?: string
+  already_claimed?: boolean
+  can_claim?: boolean
+  remaining_days?: number
+  next_claim_at?: string
+  status?: 'issued' | 'applied' | 'void'
+  transferable?: boolean
+  validity?: string
+  valid_until_month_end?: boolean
+}
+
+export type CafeCouponClaimResponse = CafeCouponSummary
+
+export interface CafeCouponStatusResponse {
+  eligible: boolean
+  can_claim: boolean
+  already_claimed: boolean
+  next_claim_at?: string
+  remaining_days: number
+  membership_level: number
+  type?: 'cash' | 'discount'
+  value?: number
+  period: 'day' | 'week' | 'month'
+  period_start?: string
+  period_end?: string
+  expires_at?: string
+  transferable: boolean
+  validity: string
+  valid_until_month_end: boolean
+  coupon?: CafeCouponSummary
+}
+
+export interface CafeCouponApplyRequest {
+  code: string
+  amount: number
+  order_type: OrderType
+  plan_id?: number
+}
+
+export interface CafeCouponApplyResponse {
+  valid: boolean
+  discount_amount: number
+  pay_amount: number
+  coupon?: CafeCouponSummary
+  message?: string
 }
 
 export type CreateOrderResultType = 'order_created' | 'oauth_required' | 'jsapi_ready' | 'payment_completed'

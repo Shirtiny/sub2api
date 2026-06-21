@@ -1830,6 +1830,11 @@ export interface UserAttributeValuesMap {
 
 // ==================== Promo Code Types ====================
 
+export type CafeCouponStatus = 'issued' | 'applied' | 'void'
+export type CafeCouponType = 'cash' | 'discount'
+export type CafeCouponPeriod = 'day' | 'week' | 'month'
+export type CafeCouponMembershipLevel = 0 | 1 | 2 | 3
+
 export interface PromoCode {
   id: number
   code: string
@@ -1841,6 +1846,29 @@ export interface PromoCode {
   notes: string | null
   created_at: string
   updated_at: string
+}
+
+export interface AdminCafeCoupon {
+  id: number
+  code: string
+  user_id: number
+  membership_level: CafeCouponMembershipLevel
+  type: CafeCouponType
+  value: number
+  period: CafeCouponPeriod
+  period_start: string
+  period_end: string
+  expires_at: string
+  status: CafeCouponStatus
+  order_id?: number | null
+  applied_at?: string | null
+  created_at: string
+  updated_at: string
+  user?: User | null
+}
+
+export interface UpdateCafeCouponStatusRequest {
+  status: CafeCouponStatus
 }
 
 export interface PromoCodeUsage {

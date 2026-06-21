@@ -168,6 +168,47 @@ func (_u *PaymentOrderUpdate) SetNillableRechargeCode(v *string) *PaymentOrderUp
 	return _u
 }
 
+// SetCafeCouponCode sets the "cafe_coupon_code" field.
+func (_u *PaymentOrderUpdate) SetCafeCouponCode(v string) *PaymentOrderUpdate {
+	_u.mutation.SetCafeCouponCode(v)
+	return _u
+}
+
+// SetNillableCafeCouponCode sets the "cafe_coupon_code" field if the given value is not nil.
+func (_u *PaymentOrderUpdate) SetNillableCafeCouponCode(v *string) *PaymentOrderUpdate {
+	if v != nil {
+		_u.SetCafeCouponCode(*v)
+	}
+	return _u
+}
+
+// ClearCafeCouponCode clears the value of the "cafe_coupon_code" field.
+func (_u *PaymentOrderUpdate) ClearCafeCouponCode() *PaymentOrderUpdate {
+	_u.mutation.ClearCafeCouponCode()
+	return _u
+}
+
+// SetCafeCouponDiscount sets the "cafe_coupon_discount" field.
+func (_u *PaymentOrderUpdate) SetCafeCouponDiscount(v float64) *PaymentOrderUpdate {
+	_u.mutation.ResetCafeCouponDiscount()
+	_u.mutation.SetCafeCouponDiscount(v)
+	return _u
+}
+
+// SetNillableCafeCouponDiscount sets the "cafe_coupon_discount" field if the given value is not nil.
+func (_u *PaymentOrderUpdate) SetNillableCafeCouponDiscount(v *float64) *PaymentOrderUpdate {
+	if v != nil {
+		_u.SetCafeCouponDiscount(*v)
+	}
+	return _u
+}
+
+// AddCafeCouponDiscount adds value to the "cafe_coupon_discount" field.
+func (_u *PaymentOrderUpdate) AddCafeCouponDiscount(v float64) *PaymentOrderUpdate {
+	_u.mutation.AddCafeCouponDiscount(v)
+	return _u
+}
+
 // SetOutTradeNo sets the "out_trade_no" field.
 func (_u *PaymentOrderUpdate) SetOutTradeNo(v string) *PaymentOrderUpdate {
 	_u.mutation.SetOutTradeNo(v)
@@ -783,6 +824,11 @@ func (_u *PaymentOrderUpdate) check() error {
 			return &ValidationError{Name: "recharge_code", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.recharge_code": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.CafeCouponCode(); ok {
+		if err := paymentorder.CafeCouponCodeValidator(v); err != nil {
+			return &ValidationError{Name: "cafe_coupon_code", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.cafe_coupon_code": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.OutTradeNo(); ok {
 		if err := paymentorder.OutTradeNoValidator(v); err != nil {
 			return &ValidationError{Name: "out_trade_no", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.out_trade_no": %w`, err)}
@@ -883,6 +929,18 @@ func (_u *PaymentOrderUpdate) sqlSave(ctx context.Context) (_node int, err error
 	}
 	if value, ok := _u.mutation.RechargeCode(); ok {
 		_spec.SetField(paymentorder.FieldRechargeCode, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.CafeCouponCode(); ok {
+		_spec.SetField(paymentorder.FieldCafeCouponCode, field.TypeString, value)
+	}
+	if _u.mutation.CafeCouponCodeCleared() {
+		_spec.ClearField(paymentorder.FieldCafeCouponCode, field.TypeString)
+	}
+	if value, ok := _u.mutation.CafeCouponDiscount(); ok {
+		_spec.SetField(paymentorder.FieldCafeCouponDiscount, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedCafeCouponDiscount(); ok {
+		_spec.AddField(paymentorder.FieldCafeCouponDiscount, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.OutTradeNo(); ok {
 		_spec.SetField(paymentorder.FieldOutTradeNo, field.TypeString, value)
@@ -1228,6 +1286,47 @@ func (_u *PaymentOrderUpdateOne) SetNillableRechargeCode(v *string) *PaymentOrde
 	if v != nil {
 		_u.SetRechargeCode(*v)
 	}
+	return _u
+}
+
+// SetCafeCouponCode sets the "cafe_coupon_code" field.
+func (_u *PaymentOrderUpdateOne) SetCafeCouponCode(v string) *PaymentOrderUpdateOne {
+	_u.mutation.SetCafeCouponCode(v)
+	return _u
+}
+
+// SetNillableCafeCouponCode sets the "cafe_coupon_code" field if the given value is not nil.
+func (_u *PaymentOrderUpdateOne) SetNillableCafeCouponCode(v *string) *PaymentOrderUpdateOne {
+	if v != nil {
+		_u.SetCafeCouponCode(*v)
+	}
+	return _u
+}
+
+// ClearCafeCouponCode clears the value of the "cafe_coupon_code" field.
+func (_u *PaymentOrderUpdateOne) ClearCafeCouponCode() *PaymentOrderUpdateOne {
+	_u.mutation.ClearCafeCouponCode()
+	return _u
+}
+
+// SetCafeCouponDiscount sets the "cafe_coupon_discount" field.
+func (_u *PaymentOrderUpdateOne) SetCafeCouponDiscount(v float64) *PaymentOrderUpdateOne {
+	_u.mutation.ResetCafeCouponDiscount()
+	_u.mutation.SetCafeCouponDiscount(v)
+	return _u
+}
+
+// SetNillableCafeCouponDiscount sets the "cafe_coupon_discount" field if the given value is not nil.
+func (_u *PaymentOrderUpdateOne) SetNillableCafeCouponDiscount(v *float64) *PaymentOrderUpdateOne {
+	if v != nil {
+		_u.SetCafeCouponDiscount(*v)
+	}
+	return _u
+}
+
+// AddCafeCouponDiscount adds value to the "cafe_coupon_discount" field.
+func (_u *PaymentOrderUpdateOne) AddCafeCouponDiscount(v float64) *PaymentOrderUpdateOne {
+	_u.mutation.AddCafeCouponDiscount(v)
 	return _u
 }
 
@@ -1859,6 +1958,11 @@ func (_u *PaymentOrderUpdateOne) check() error {
 			return &ValidationError{Name: "recharge_code", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.recharge_code": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.CafeCouponCode(); ok {
+		if err := paymentorder.CafeCouponCodeValidator(v); err != nil {
+			return &ValidationError{Name: "cafe_coupon_code", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.cafe_coupon_code": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.OutTradeNo(); ok {
 		if err := paymentorder.OutTradeNoValidator(v); err != nil {
 			return &ValidationError{Name: "out_trade_no", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.out_trade_no": %w`, err)}
@@ -1976,6 +2080,18 @@ func (_u *PaymentOrderUpdateOne) sqlSave(ctx context.Context) (_node *PaymentOrd
 	}
 	if value, ok := _u.mutation.RechargeCode(); ok {
 		_spec.SetField(paymentorder.FieldRechargeCode, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.CafeCouponCode(); ok {
+		_spec.SetField(paymentorder.FieldCafeCouponCode, field.TypeString, value)
+	}
+	if _u.mutation.CafeCouponCodeCleared() {
+		_spec.ClearField(paymentorder.FieldCafeCouponCode, field.TypeString)
+	}
+	if value, ok := _u.mutation.CafeCouponDiscount(); ok {
+		_spec.SetField(paymentorder.FieldCafeCouponDiscount, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedCafeCouponDiscount(); ok {
+		_spec.AddField(paymentorder.FieldCafeCouponDiscount, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.OutTradeNo(); ok {
 		_spec.SetField(paymentorder.FieldOutTradeNo, field.TypeString, value)

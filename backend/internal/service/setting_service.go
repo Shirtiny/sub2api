@@ -774,6 +774,7 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		SettingKeyAffiliateInviteLimitLevel1,
 		SettingKeyAffiliateInviteLimitLevel2,
 		SettingKeyAffiliateInviteLimitLevel3,
+		SettingKeyCafeCouponConfig,
 		SettingKeyRiskControlEnabled,
 		SettingKeyAllowUserViewErrorRequests,
 	}
@@ -870,7 +871,7 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		WeChatOAuthMPEnabled:             weChatMPEnabled,
 		WeChatOAuthMobileEnabled:         weChatMobileEnabled,
 		BackendModeEnabled:               settings[SettingKeyBackendModeEnabled] == "true",
-		PaymentEnabled:                   settings[SettingPaymentEnabled] == "true",
+		PaymentEnabled:                   settings[SettingPaymentEnabled] == "true" || paymentDevAutoSuccessEnabled(),
 		OIDCOAuthEnabled:                 oidcEnabled,
 		OIDCOAuthProviderName:            oidcProviderName,
 		GitHubOAuthEnabled:               gitHubEnabled,
@@ -1946,6 +1947,11 @@ func (s *SettingService) buildSystemSettingsUpdates(ctx context.Context, setting
 	updates[SettingKeyAffiliateInviteLimitLevel1] = strconv.Itoa(settings.AffiliateInviteLimitLevel1)
 	updates[SettingKeyAffiliateInviteLimitLevel2] = strconv.Itoa(settings.AffiliateInviteLimitLevel2)
 	updates[SettingKeyAffiliateInviteLimitLevel3] = strconv.Itoa(settings.AffiliateInviteLimitLevel3)
+	cafeCouponConfigJSON, err := json.Marshal(normalizeCafeCouponConfig(settings.CafeCouponConfig))
+	if err != nil {
+		return nil, fmt.Errorf("marshal cafe coupon config: %w", err)
+	}
+	updates[SettingKeyCafeCouponConfig] = string(cafeCouponConfigJSON)
 	updates[SettingKeyDefaultUserRPMLimit] = strconv.Itoa(settings.DefaultUserRPMLimit)
 	defaultSubsJSON, err := json.Marshal(settings.DefaultSubscriptions)
 	if err != nil {
@@ -2953,6 +2959,7 @@ func (s *SettingService) InitializeDefaultSettings(ctx context.Context) error {
 		SettingKeyAffiliateInviteLimitLevel1:                strconv.Itoa(AffiliateInviteLimitLevel1Default),
 		SettingKeyAffiliateInviteLimitLevel2:                strconv.Itoa(AffiliateInviteLimitLevel2Default),
 		SettingKeyAffiliateInviteLimitLevel3:                strconv.Itoa(AffiliateInviteLimitLevel3Default),
+		SettingKeyCafeCouponConfig:                          mustMarshalCafeCouponConfig(defaultCafeCouponConfig()),
 		SettingKeyDefaultUserRPMLimit:                       "0",
 		SettingKeyDefaultSubscriptions:                      "[]",
 		SettingKeyAuthSourceDefaultEmailBalance:             "0",
@@ -3042,6 +3049,14 @@ func (s *SettingService) InitializeDefaultSettings(ctx context.Context) error {
 	}
 
 	return s.settingRepo.SetMultiple(ctx, defaults)
+}
+
+func mustMarshalCafeCouponConfig(cfg CafeCouponConfig) string {
+	b, err := json.Marshal(normalizeCafeCouponConfig(cfg))
+	if err != nil {
+		return `{"levels":{}}`
+	}
+	return string(b)
 }
 
 func getAffiliateRebatePerInviteeCapSetting(settings map[string]string, key, legacyKey string, fallback float64) float64 {
@@ -3183,6 +3198,13 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 	result.AffiliateInviteLimitLevel2 = getAffiliateInviteLimitSetting(settings, SettingKeyAffiliateInviteLimitLevel2, "", AffiliateInviteLimitLevel2Default)
 	result.AffiliateInviteLimitLevel3 = getAffiliateInviteLimitSetting(settings, SettingKeyAffiliateInviteLimitLevel3, "", AffiliateInviteLimitLevel3Default)
 	result.AffiliateInviteLimit = result.AffiliateInviteLimitLevel0
+	result.CafeCouponConfig = defaultCafeCouponConfig()
+	if raw := strings.TrimSpace(settings[SettingKeyCafeCouponConfig]); raw != "" {
+		var cfg CafeCouponConfig
+		if err := json.Unmarshal([]byte(raw), &cfg); err == nil {
+			result.CafeCouponConfig = normalizeCafeCouponConfig(cfg)
+		}
+	}
 	result.DefaultSubscriptions = parseDefaultSubscriptions(settings[SettingKeyDefaultSubscriptions])
 
 	// 敏感信息直接返回，方便测试连接时使用

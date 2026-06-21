@@ -16,6 +16,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/announcementread"
 	"github.com/Wei-Shaw/sub2api/ent/apikey"
 	"github.com/Wei-Shaw/sub2api/ent/authidentity"
+	"github.com/Wei-Shaw/sub2api/ent/cafecoupon"
 	"github.com/Wei-Shaw/sub2api/ent/group"
 	"github.com/Wei-Shaw/sub2api/ent/paymentorder"
 	"github.com/Wei-Shaw/sub2api/ent/pendingauthsession"
@@ -47,6 +48,7 @@ type UserQuery struct {
 	withAttributeValues       *UserAttributeValueQuery
 	withPromoCodeUsages       *PromoCodeUsageQuery
 	withPaymentOrders         *PaymentOrderQuery
+	withCafeCoupons           *CafeCouponQuery
 	withAuthIdentities        *AuthIdentityQuery
 	withPendingAuthSessions   *PendingAuthSessionQuery
 	withPlatformQuotas        *UserPlatformQuotaQuery
@@ -301,6 +303,28 @@ func (_q *UserQuery) QueryPaymentOrders() *PaymentOrderQuery {
 			sqlgraph.From(user.Table, user.FieldID, selector),
 			sqlgraph.To(paymentorder.Table, paymentorder.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, user.PaymentOrdersTable, user.PaymentOrdersColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryCafeCoupons chains the current query on the "cafe_coupons" edge.
+func (_q *UserQuery) QueryCafeCoupons() *CafeCouponQuery {
+	query := (&CafeCouponClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, selector),
+			sqlgraph.To(cafecoupon.Table, cafecoupon.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.CafeCouponsTable, user.CafeCouponsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -598,6 +622,7 @@ func (_q *UserQuery) Clone() *UserQuery {
 		withAttributeValues:       _q.withAttributeValues.Clone(),
 		withPromoCodeUsages:       _q.withPromoCodeUsages.Clone(),
 		withPaymentOrders:         _q.withPaymentOrders.Clone(),
+		withCafeCoupons:           _q.withCafeCoupons.Clone(),
 		withAuthIdentities:        _q.withAuthIdentities.Clone(),
 		withPendingAuthSessions:   _q.withPendingAuthSessions.Clone(),
 		withPlatformQuotas:        _q.withPlatformQuotas.Clone(),
@@ -715,6 +740,17 @@ func (_q *UserQuery) WithPaymentOrders(opts ...func(*PaymentOrderQuery)) *UserQu
 		opt(query)
 	}
 	_q.withPaymentOrders = query
+	return _q
+}
+
+// WithCafeCoupons tells the query-builder to eager-load the nodes that are connected to
+// the "cafe_coupons" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *UserQuery) WithCafeCoupons(opts ...func(*CafeCouponQuery)) *UserQuery {
+	query := (&CafeCouponClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withCafeCoupons = query
 	return _q
 }
 
@@ -840,7 +876,7 @@ func (_q *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 	var (
 		nodes       = []*User{}
 		_spec       = _q.querySpec()
-		loadedTypes = [14]bool{
+		loadedTypes = [15]bool{
 			_q.withAPIKeys != nil,
 			_q.withRedeemCodes != nil,
 			_q.withSubscriptions != nil,
@@ -851,6 +887,7 @@ func (_q *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 			_q.withAttributeValues != nil,
 			_q.withPromoCodeUsages != nil,
 			_q.withPaymentOrders != nil,
+			_q.withCafeCoupons != nil,
 			_q.withAuthIdentities != nil,
 			_q.withPendingAuthSessions != nil,
 			_q.withPlatformQuotas != nil,
@@ -947,6 +984,13 @@ func (_q *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 		if err := _q.loadPaymentOrders(ctx, query, nodes,
 			func(n *User) { n.Edges.PaymentOrders = []*PaymentOrder{} },
 			func(n *User, e *PaymentOrder) { n.Edges.PaymentOrders = append(n.Edges.PaymentOrders, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withCafeCoupons; query != nil {
+		if err := _q.loadCafeCoupons(ctx, query, nodes,
+			func(n *User) { n.Edges.CafeCoupons = []*CafeCoupon{} },
+			func(n *User, e *CafeCoupon) { n.Edges.CafeCoupons = append(n.Edges.CafeCoupons, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -1305,6 +1349,36 @@ func (_q *UserQuery) loadPaymentOrders(ctx context.Context, query *PaymentOrderQ
 	}
 	query.Where(predicate.PaymentOrder(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(user.PaymentOrdersColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.UserID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "user_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *UserQuery) loadCafeCoupons(ctx context.Context, query *CafeCouponQuery, nodes []*User, init func(*User), assign func(*User, *CafeCoupon)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*User)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(cafecoupon.FieldUserID)
+	}
+	query.Where(predicate.CafeCoupon(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(user.CafeCouponsColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

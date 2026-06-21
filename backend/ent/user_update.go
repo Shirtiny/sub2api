@@ -14,6 +14,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/announcementread"
 	"github.com/Wei-Shaw/sub2api/ent/apikey"
 	"github.com/Wei-Shaw/sub2api/ent/authidentity"
+	"github.com/Wei-Shaw/sub2api/ent/cafecoupon"
 	"github.com/Wei-Shaw/sub2api/ent/group"
 	"github.com/Wei-Shaw/sub2api/ent/paymentorder"
 	"github.com/Wei-Shaw/sub2api/ent/pendingauthsession"
@@ -561,6 +562,21 @@ func (_u *UserUpdate) AddPaymentOrders(v ...*PaymentOrder) *UserUpdate {
 	return _u.AddPaymentOrderIDs(ids...)
 }
 
+// AddCafeCouponIDs adds the "cafe_coupons" edge to the CafeCoupon entity by IDs.
+func (_u *UserUpdate) AddCafeCouponIDs(ids ...int64) *UserUpdate {
+	_u.mutation.AddCafeCouponIDs(ids...)
+	return _u
+}
+
+// AddCafeCoupons adds the "cafe_coupons" edges to the CafeCoupon entity.
+func (_u *UserUpdate) AddCafeCoupons(v ...*CafeCoupon) *UserUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddCafeCouponIDs(ids...)
+}
+
 // AddAuthIdentityIDs adds the "auth_identities" edge to the AuthIdentity entity by IDs.
 func (_u *UserUpdate) AddAuthIdentityIDs(ids ...int64) *UserUpdate {
 	_u.mutation.AddAuthIdentityIDs(ids...)
@@ -819,6 +835,27 @@ func (_u *UserUpdate) RemovePaymentOrders(v ...*PaymentOrder) *UserUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemovePaymentOrderIDs(ids...)
+}
+
+// ClearCafeCoupons clears all "cafe_coupons" edges to the CafeCoupon entity.
+func (_u *UserUpdate) ClearCafeCoupons() *UserUpdate {
+	_u.mutation.ClearCafeCoupons()
+	return _u
+}
+
+// RemoveCafeCouponIDs removes the "cafe_coupons" edge to CafeCoupon entities by IDs.
+func (_u *UserUpdate) RemoveCafeCouponIDs(ids ...int64) *UserUpdate {
+	_u.mutation.RemoveCafeCouponIDs(ids...)
+	return _u
+}
+
+// RemoveCafeCoupons removes "cafe_coupons" edges to CafeCoupon entities.
+func (_u *UserUpdate) RemoveCafeCoupons(v ...*CafeCoupon) *UserUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveCafeCouponIDs(ids...)
 }
 
 // ClearAuthIdentities clears all "auth_identities" edges to the AuthIdentity entity.
@@ -1534,6 +1571,51 @@ func (_u *UserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.CafeCouponsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.CafeCouponsTable,
+			Columns: []string{user.CafeCouponsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(cafecoupon.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedCafeCouponsIDs(); len(nodes) > 0 && !_u.mutation.CafeCouponsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.CafeCouponsTable,
+			Columns: []string{user.CafeCouponsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(cafecoupon.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.CafeCouponsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.CafeCouponsTable,
+			Columns: []string{user.CafeCouponsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(cafecoupon.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _u.mutation.AuthIdentitiesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -2210,6 +2292,21 @@ func (_u *UserUpdateOne) AddPaymentOrders(v ...*PaymentOrder) *UserUpdateOne {
 	return _u.AddPaymentOrderIDs(ids...)
 }
 
+// AddCafeCouponIDs adds the "cafe_coupons" edge to the CafeCoupon entity by IDs.
+func (_u *UserUpdateOne) AddCafeCouponIDs(ids ...int64) *UserUpdateOne {
+	_u.mutation.AddCafeCouponIDs(ids...)
+	return _u
+}
+
+// AddCafeCoupons adds the "cafe_coupons" edges to the CafeCoupon entity.
+func (_u *UserUpdateOne) AddCafeCoupons(v ...*CafeCoupon) *UserUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddCafeCouponIDs(ids...)
+}
+
 // AddAuthIdentityIDs adds the "auth_identities" edge to the AuthIdentity entity by IDs.
 func (_u *UserUpdateOne) AddAuthIdentityIDs(ids ...int64) *UserUpdateOne {
 	_u.mutation.AddAuthIdentityIDs(ids...)
@@ -2468,6 +2565,27 @@ func (_u *UserUpdateOne) RemovePaymentOrders(v ...*PaymentOrder) *UserUpdateOne 
 		ids[i] = v[i].ID
 	}
 	return _u.RemovePaymentOrderIDs(ids...)
+}
+
+// ClearCafeCoupons clears all "cafe_coupons" edges to the CafeCoupon entity.
+func (_u *UserUpdateOne) ClearCafeCoupons() *UserUpdateOne {
+	_u.mutation.ClearCafeCoupons()
+	return _u
+}
+
+// RemoveCafeCouponIDs removes the "cafe_coupons" edge to CafeCoupon entities by IDs.
+func (_u *UserUpdateOne) RemoveCafeCouponIDs(ids ...int64) *UserUpdateOne {
+	_u.mutation.RemoveCafeCouponIDs(ids...)
+	return _u
+}
+
+// RemoveCafeCoupons removes "cafe_coupons" edges to CafeCoupon entities.
+func (_u *UserUpdateOne) RemoveCafeCoupons(v ...*CafeCoupon) *UserUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveCafeCouponIDs(ids...)
 }
 
 // ClearAuthIdentities clears all "auth_identities" edges to the AuthIdentity entity.
@@ -3206,6 +3324,51 @@ func (_u *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(paymentorder.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.CafeCouponsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.CafeCouponsTable,
+			Columns: []string{user.CafeCouponsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(cafecoupon.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedCafeCouponsIDs(); len(nodes) > 0 && !_u.mutation.CafeCouponsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.CafeCouponsTable,
+			Columns: []string{user.CafeCouponsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(cafecoupon.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.CafeCouponsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.CafeCouponsTable,
+			Columns: []string{user.CafeCouponsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(cafecoupon.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

@@ -306,6 +306,22 @@ describe('buildCreateOrderPayload', () => {
     })
   })
 
+  it('preserves a café coupon code in create order payloads', () => {
+    expect(buildCreateOrderPayload({
+      amount: 128,
+      paymentType: 'wxpay_direct',
+      orderType: 'subscription',
+      planId: 7,
+      origin: 'https://app.example.com',
+      isMobile: true,
+      isWechatBrowser: true,
+      cafeCouponCode: 'CAFE-ABC123',
+    })).toMatchObject({
+      payment_type: 'wxpay',
+      cafe_coupon_code: 'CAFE-ABC123',
+    })
+  })
+
   it('passes is_mobile: false when forceQRCode is enabled for alipay', () => {
     expect(buildCreateOrderPayload({
       amount: 50,

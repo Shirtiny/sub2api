@@ -255,6 +255,72 @@ func TestCompleteEmailOAuthRegistrationUsesAffiliateCodeFromPendingSession(t *te
 	require.Equal(t, user.ID, *storedInvitation.UsedBy)
 }
 
+func TestCompleteEmailOAuthRegistrationRequestAffCodeDoesNotOverridePendingSession(t *testing.T) {
+	affiliateRepo := newOAuthEmailAffiliateRepoStub(map[string]int64{"AFF456": 2002, "AFF999": 2999})
+	handler, client := newOAuthPendingFlowTestHandlerWithDependencies(t, oauthPendingFlowTestHandlerOptions{
+		invitationEnabled: true,
+		settingValues: map[string]string{
+			service.SettingKeyAffiliateEnabled: "true",
+		},
+		affiliateFactory: func(_ *dbent.Client, settingSvc *service.SettingService) *service.AffiliateService {
+			return service.NewAffiliateService(affiliateRepo, settingSvc, nil, nil, nil)
+		},
+	})
+	ctx := context.Background()
+	invitation, err := client.RedeemCode.Create().
+		SetCode("INVITE789").
+		SetType(service.RedeemTypeInvitation).
+		SetStatus(service.StatusUnused).
+		SetValue(0).
+		Save(ctx)
+	require.NoError(t, err)
+
+	session, err := client.PendingAuthSession.Create().
+		SetSessionToken("email-oauth-aff-override-session-token").
+		SetIntent(oauthIntentLogin).
+		SetProviderType("google").
+		SetProviderKey("google").
+		SetProviderSubject("google-aff-override-user").
+		SetResolvedEmail("pending-aff-override@example.com").
+		SetRedirectTo("/dashboard").
+		SetBrowserSessionKey("browser-aff-override-key").
+		SetUpstreamIdentityClaims(map[string]any{
+			"email":            "pending-aff-override@example.com",
+			"email_verified":   true,
+			"username":         "pending-aff-override",
+			"provider":         "google",
+			"provider_key":     "google",
+			"provider_subject": "google-aff-override-user",
+			"aff_code":         "AFF456",
+		}).
+		SetLocalFlowState(map[string]any{
+			"step":  oauthPendingChoiceStep,
+			"error": "invitation_required",
+		}).
+		SetExpiresAt(time.Now().UTC().Add(10 * time.Minute)).
+		Save(ctx)
+	require.NoError(t, err)
+
+	recorder := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(recorder)
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/oauth/google/complete-registration", strings.NewReader(`{"password":"secret-123","invitation_code":"INVITE789","aff_code":"AFF999"}`))
+	req.Header.Set("Content-Type", "application/json")
+	req.AddCookie(&http.Cookie{Name: oauthPendingSessionCookieName, Value: encodeCookieValue(session.SessionToken)})
+	req.AddCookie(&http.Cookie{Name: oauthPendingBrowserCookieName, Value: encodeCookieValue("browser-aff-override-key")})
+	c.Request = req
+
+	handler.completeEmailOAuthRegistration(c, "google")
+
+	require.Equal(t, http.StatusOK, recorder.Code)
+	user, err := client.User.Query().Where(dbuser.EmailEQ("pending-aff-override@example.com")).Only(ctx)
+	require.NoError(t, err)
+	require.Equal(t, []oauthEmailAffiliateBindCall{{userID: user.ID, inviterID: 2002}}, affiliateRepo.bindCalls)
+	storedInvitation, err := client.RedeemCode.Query().Where(redeemcode.IDEQ(invitation.ID)).Only(ctx)
+	require.NoError(t, err)
+	require.NotNil(t, storedInvitation.UsedBy)
+	require.Equal(t, user.ID, *storedInvitation.UsedBy)
+}
+
 func TestCompleteEmailOAuthRegistrationRequiresPassword(t *testing.T) {
 	handler, client := newOAuthPendingFlowTestHandler(t, false)
 	ctx := context.Background()

@@ -4,11 +4,14 @@
 
 import { apiClient } from '../client'
 import type {
+  AdminCafeCoupon,
+  BasePaginationResponse,
+  CafeCouponMembershipLevel,
+  CreatePromoCodeRequest,
   PromoCode,
   PromoCodeUsage,
-  CreatePromoCodeRequest,
-  UpdatePromoCodeRequest,
-  BasePaginationResponse
+  UpdateCafeCouponStatusRequest,
+  UpdatePromoCodeRequest
 } from '@/types'
 
 export async function list(
@@ -63,13 +66,63 @@ export async function getUsages(
   return data
 }
 
+export async function listCafeCoupons(
+  page: number = 1,
+  pageSize: number = 20,
+  filters?: {
+    search?: string
+    status?: string
+    type?: string
+    membership_level?: CafeCouponMembershipLevel
+    sort_by?: string
+    sort_order?: 'asc' | 'desc'
+  },
+  options?: {
+    signal?: AbortSignal
+  }
+): Promise<BasePaginationResponse<AdminCafeCoupon>> {
+  const { data } = await apiClient.get<BasePaginationResponse<AdminCafeCoupon>>(
+    '/admin/promo-codes/cafe-coupons',
+    {
+      params: { page, page_size: pageSize, ...filters },
+      signal: options?.signal
+    }
+  )
+  return data
+}
+
+export async function getCafeCoupon(id: number): Promise<AdminCafeCoupon> {
+  const { data } = await apiClient.get<AdminCafeCoupon>(`/admin/promo-codes/cafe-coupons/${id}`)
+  return data
+}
+
+export async function voidCafeCoupon(id: number): Promise<AdminCafeCoupon> {
+  const { data } = await apiClient.post<AdminCafeCoupon>(`/admin/promo-codes/cafe-coupons/${id}/void`)
+  return data
+}
+
+export async function updateCafeCouponStatus(id: number, request: UpdateCafeCouponStatusRequest): Promise<AdminCafeCoupon> {
+  const { data } = await apiClient.patch<AdminCafeCoupon>(`/admin/promo-codes/cafe-coupons/${id}/status`, request)
+  return data
+}
+
+export async function resetCafeCouponClaimPeriod(id: number): Promise<AdminCafeCoupon> {
+  const { data } = await apiClient.post<AdminCafeCoupon>(`/admin/promo-codes/cafe-coupons/${id}/reset-claim-period`)
+  return data
+}
+
 const promoAPI = {
   list,
   getById,
   create,
   update,
   delete: deleteCode,
-  getUsages
+  getUsages,
+  listCafeCoupons,
+  getCafeCoupon,
+  voidCafeCoupon,
+  updateCafeCouponStatus,
+  resetCafeCouponClaimPeriod
 }
 
 export default promoAPI

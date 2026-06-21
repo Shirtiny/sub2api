@@ -618,6 +618,25 @@ type PromoCode struct {
 	UpdatedAt   time.Time  `json:"updated_at"`
 }
 
+type AdminCafeCoupon struct {
+	ID              int64      `json:"id"`
+	Code            string     `json:"code"`
+	UserID          int64      `json:"user_id"`
+	MembershipLevel int        `json:"membership_level"`
+	Type            string     `json:"type"`
+	Value           float64    `json:"value"`
+	Period          string     `json:"period"`
+	PeriodStart     time.Time  `json:"period_start"`
+	PeriodEnd       time.Time  `json:"period_end"`
+	ExpiresAt       time.Time  `json:"expires_at"`
+	Status          string     `json:"status"`
+	OrderID         *int64     `json:"order_id,omitempty"`
+	AppliedAt       *time.Time `json:"applied_at,omitempty"`
+	CreatedAt       time.Time  `json:"created_at"`
+	UpdatedAt       time.Time  `json:"updated_at"`
+	User            *User      `json:"user,omitempty"`
+}
+
 // PromoCodeUsage 优惠码使用记录
 type PromoCodeUsage struct {
 	ID          int64     `json:"id"`
