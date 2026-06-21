@@ -78,23 +78,14 @@ func TestPromoHandlerCafeCouponPaidRestoreConflictAndReset(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPatch, fmt.Sprintf("/admin/promo-codes/cafe-coupons/%d/status", paidCoupon.ID), body)
 	req.Header.Set("Content-Type", "application/json")
 	router.ServeHTTP(rec, req)
-	require.Equal(t, http.StatusOK, rec.Code)
-	var statusOut struct {
-		Data struct {
-			Status    string     `json:"status"`
-			OrderID   *int64     `json:"order_id"`
-			AppliedAt *time.Time `json:"applied_at"`
-		} `json:"data"`
-	}
-	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &statusOut))
-	require.Equal(t, service.CafeCouponStatusIssued, statusOut.Data.Status)
-	require.Nil(t, statusOut.Data.OrderID)
-	require.Nil(t, statusOut.Data.AppliedAt)
+	require.Equal(t, http.StatusConflict, rec.Code)
+	require.Equal(t, "CAFE_COUPON_STATUS_NOT_ALLOWED", responseReason(t, rec.Body.Bytes()))
 	storedPaid, err := client.CafeCoupon.Get(ctx, paidCoupon.ID)
 	require.NoError(t, err)
-	require.Equal(t, service.CafeCouponStatusIssued, storedPaid.Status)
-	require.Nil(t, storedPaid.OrderID)
-	require.Nil(t, storedPaid.AppliedAt)
+	require.Equal(t, service.CafeCouponStatusApplied, storedPaid.Status)
+	require.NotNil(t, storedPaid.OrderID)
+	require.Equal(t, order.ID, *storedPaid.OrderID)
+	require.NotNil(t, storedPaid.AppliedAt)
 
 	rec = httptest.NewRecorder()
 	req = httptest.NewRequest(http.MethodPost, fmt.Sprintf("/admin/promo-codes/cafe-coupons/%d/reset-claim-period", resetCoupon.ID), nil)
@@ -115,7 +106,7 @@ func TestPromoHandlerCafeCouponPaidRestoreConflictAndReset(t *testing.T) {
 		mutatedID = paidCoupon.ID
 	}
 	require.Equal(t, mutatedID, resetOut.Data.ID)
-	require.Equal(t, service.CafeCouponStatusIssued, storedPaid.Status)
+	require.Equal(t, service.CafeCouponStatusApplied, storedPaid.Status)
 	if mutatedID == resetCoupon.ID {
 		require.Equal(t, service.CafeCouponStatusVoid, storedReset.Status)
 	}

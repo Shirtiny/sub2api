@@ -177,10 +177,11 @@ func TestCafeCouponStatusBlocksAppliedCurrentPeriodCoupon(t *testing.T) {
 	user, err := client.User.Create().SetEmail("status-used@example.com").SetPasswordHash("hash").SetUsername("status-used").Save(ctx)
 	require.NoError(t, err)
 	now := time.Now().UTC()
+	claimedAt := now.Add(-time.Hour)
 	start, end := cafeCouponRollingPeriodWindow(now, CafeCouponPeriodMonth)
 	coupon, err := client.CafeCoupon.Create().
 		SetCode("CAFE-STATUS-USED").SetUserID(user.ID).SetMembershipLevel(1).SetCouponType(CafeCouponTypeCash).SetValue(10).
-		SetPeriod(CafeCouponPeriodMonth).SetPeriodStart(start).SetPeriodEnd(end).SetStatus(CafeCouponStatusApplied).
+		SetPeriod(CafeCouponPeriodMonth).SetPeriodStart(start).SetPeriodEnd(end).SetStatus(CafeCouponStatusApplied).SetCreatedAt(claimedAt).
 		Save(ctx)
 	require.NoError(t, err)
 	svc := &PaymentService{
@@ -764,19 +765,19 @@ func TestCafeCouponAdminUpdateStatusAndResetClaimPeriod(t *testing.T) {
 	require.True(t, status.CanClaim)
 }
 
-func TestCafeCouponAdminRestoresAppliedCoupon(t *testing.T) {
+func TestCafeCouponAdminRestoresAppliedCouponForPendingOrder(t *testing.T) {
 	ctx := context.Background()
 	client := newCafeCouponTestClient(t)
-	user, err := client.User.Create().SetEmail("admin-cafe-paid@example.com").SetPasswordHash("hash").SetUsername("admin-cafe-paid").Save(ctx)
+	user, err := client.User.Create().SetEmail("admin-cafe-pending@example.com").SetPasswordHash("hash").SetUsername("admin-cafe-pending").Save(ctx)
 	require.NoError(t, err)
 	order, err := client.PaymentOrder.Create().
-		SetUserID(user.ID).SetUserEmail(user.Email).SetUserName(user.Username).SetAmount(100).SetPayAmount(90).SetFeeRate(0).SetRechargeCode("PAY-ADMIN-CAFE").SetOutTradeNo("PAY-ADMIN-CAFE").
-		SetPaymentType(payment.TypeAlipay).SetPaymentTradeNo("TRADE-ADMIN-CAFE").SetOrderType(payment.OrderTypeBalance).SetStatus(OrderStatusCompleted).SetExpiresAt(time.Now().Add(time.Hour)).SetClientIP("127.0.0.1").SetSrcHost("app.example.com").
+		SetUserID(user.ID).SetUserEmail(user.Email).SetUserName(user.Username).SetAmount(100).SetPayAmount(90).SetFeeRate(0).SetRechargeCode("PAY-ADMIN-CAFE-PENDING").SetOutTradeNo("PAY-ADMIN-CAFE-PENDING").
+		SetPaymentType(payment.TypeAlipay).SetPaymentTradeNo("").SetOrderType(payment.OrderTypeBalance).SetStatus(OrderStatusPending).SetExpiresAt(time.Now().Add(time.Hour)).SetClientIP("127.0.0.1").SetSrcHost("app.example.com").
 		Save(ctx)
 	require.NoError(t, err)
 	now := time.Now().UTC()
 	coupon, err := client.CafeCoupon.Create().
-		SetCode("CAFE-ADMIN-PAID").SetUserID(user.ID).SetMembershipLevel(1).SetCouponType(CafeCouponTypeCash).SetValue(10).
+		SetCode("CAFE-ADMIN-PENDING").SetUserID(user.ID).SetMembershipLevel(1).SetCouponType(CafeCouponTypeCash).SetValue(10).
 		SetPeriod(CafeCouponPeriodMonth).SetPeriodStart(now).SetPeriodEnd(now.AddDate(0, 1, 0)).SetStatus(CafeCouponStatusApplied).SetOrderID(order.ID).SetAppliedAt(now).
 		Save(ctx)
 	require.NoError(t, err)
@@ -792,6 +793,35 @@ func TestCafeCouponAdminRestoresAppliedCoupon(t *testing.T) {
 	require.Equal(t, CafeCouponStatusIssued, stored.Status)
 	require.Nil(t, stored.OrderID)
 	require.Nil(t, stored.AppliedAt)
+}
+
+func TestCafeCouponAdminRejectsRestoreForCompletedOrder(t *testing.T) {
+	ctx := context.Background()
+	client := newCafeCouponTestClient(t)
+	user, err := client.User.Create().SetEmail("admin-cafe-paid@example.com").SetPasswordHash("hash").SetUsername("admin-cafe-paid").Save(ctx)
+	require.NoError(t, err)
+	order, err := client.PaymentOrder.Create().
+		SetUserID(user.ID).SetUserEmail(user.Email).SetUserName(user.Username).SetAmount(100).SetPayAmount(90).SetFeeRate(0).SetRechargeCode("PAY-ADMIN-CAFE-PAID").SetOutTradeNo("PAY-ADMIN-CAFE-PAID").
+		SetPaymentType(payment.TypeAlipay).SetPaymentTradeNo("TRADE-ADMIN-CAFE").SetOrderType(payment.OrderTypeBalance).SetStatus(OrderStatusCompleted).SetExpiresAt(time.Now().Add(time.Hour)).SetClientIP("127.0.0.1").SetSrcHost("app.example.com").
+		Save(ctx)
+	require.NoError(t, err)
+	now := time.Now().UTC()
+	coupon, err := client.CafeCoupon.Create().
+		SetCode("CAFE-ADMIN-PAID").SetUserID(user.ID).SetMembershipLevel(1).SetCouponType(CafeCouponTypeCash).SetValue(10).
+		SetPeriod(CafeCouponPeriodMonth).SetPeriodStart(now).SetPeriodEnd(now.AddDate(0, 1, 0)).SetStatus(CafeCouponStatusApplied).SetOrderID(order.ID).SetAppliedAt(now).
+		Save(ctx)
+	require.NoError(t, err)
+	svc := &PaymentService{entClient: client}
+
+	_, err = svc.AdminUpdateCafeCouponStatus(ctx, coupon.ID, CafeCouponStatusIssued)
+	require.Error(t, err)
+	require.Equal(t, "CAFE_COUPON_STATUS_NOT_ALLOWED", infraerrors.Reason(err))
+	stored, err := client.CafeCoupon.Get(ctx, coupon.ID)
+	require.NoError(t, err)
+	require.Equal(t, CafeCouponStatusApplied, stored.Status)
+	require.NotNil(t, stored.OrderID)
+	require.Equal(t, order.ID, *stored.OrderID)
+	require.NotNil(t, stored.AppliedAt)
 }
 
 func newCafeCouponTestClient(t *testing.T) *dbent.Client {

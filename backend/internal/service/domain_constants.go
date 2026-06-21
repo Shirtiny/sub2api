@@ -168,7 +168,7 @@ const (
 	SettingKeyAffiliateInviteLimitLevel1         = "affiliate_invite_limit_level1"           // 1级会员可邀请人数上限
 	SettingKeyAffiliateInviteLimitLevel2         = "affiliate_invite_limit_level2"           // 2级会员可邀请人数上限
 	SettingKeyAffiliateInviteLimitLevel3         = "affiliate_invite_limit_level3"           // 3级会员可邀请人数上限
-	SettingKeyCafeCouponConfig                   = "cafe_coupon_config"                     // 咖啡券会员权益配置（JSON）
+	SettingKeyCafeCouponConfig                   = "cafe_coupon_config"                      // 咖啡券会员权益配置（JSON）
 	SettingKeyRiskControlEnabled                 = "risk_control_enabled"                    // 是否启用风控中心入口与审计链路
 	SettingKeyContentModerationConfig            = "content_moderation_config"               // 内容审计配置（JSON）
 	SettingKeyLoginAgreementEnabled              = "login_agreement_enabled"                 // 登录前是否要求同意条款

@@ -70,16 +70,13 @@ func (s *PaymentService) CreateOrder(ctx context.Context, req CreateOrderRequest
 			return nil, err
 		}
 	}
-	payAmountStr, payAmount, err := calculateCreateOrderPayAmount(limitAmount, feeRate, methodCurrency)
-	if err != nil {
-		return nil, err
-	}
+	var payAmountStr string
+	var payAmount float64
 	if s.paymentDevAutoSuccessEnabled() {
 		_, limitAmount, payAmount, err = s.prepareCafeCouponForOrder(ctx, req, plan, cfg, limitAmount, methodCurrency, feeRate)
 		if err != nil {
 			return nil, err
 		}
-		payAmountStr = payment.FormatAmountForCurrency(payAmount, methodCurrency)
 		order, err := s.createOrderInTx(ctx, req, user, plan, cfg, orderAmount, limitAmount, feeRate, payAmount, nil)
 		if err != nil {
 			return nil, err

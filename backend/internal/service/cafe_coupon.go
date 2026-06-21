@@ -427,6 +427,15 @@ func (s *PaymentService) AdminUpdateCafeCouponStatus(ctx context.Context, id int
 	if coupon.Status == CafeCouponStatusApplied && status != CafeCouponStatusIssued {
 		return nil, infraerrors.Conflict("CAFE_COUPON_STATUS_NOT_ALLOWED", "applied cafe coupons can only be restored to issued")
 	}
+	if coupon.Status == CafeCouponStatusApplied && status == CafeCouponStatusIssued && coupon.OrderID != nil {
+		finalPaid, err := s.cafeCouponOrderIsFinalPaid(ctx, *coupon.OrderID)
+		if err != nil {
+			return nil, err
+		}
+		if finalPaid {
+			return nil, infraerrors.Conflict("CAFE_COUPON_STATUS_NOT_ALLOWED", "paid order cafe coupons cannot be restored to issued")
+		}
+	}
 	update := s.entClient.CafeCoupon.UpdateOneID(id).SetStatus(status)
 	if status == CafeCouponStatusIssued {
 		update.ClearOrderID().ClearAppliedAt()
@@ -642,17 +651,24 @@ func (s *PaymentService) ClaimCafeCoupon(ctx context.Context, userID int64) (*Ca
 		return nil, infraerrors.Forbidden("CAFE_COUPON_NOT_ELIGIBLE", "current membership level is not eligible for cafe coupons")
 	}
 	if s.entClient.Driver().Dialect() == dialect.SQLite {
-		unlock := lockCafeCouponUserClaim(userID)
+		unlock, err := lockCafeCouponUserClaim(userID)
+		if err != nil {
+			return nil, err
+		}
 		defer unlock()
 	}
 	return s.claimCafeCouponTx(ctx, userID, level, levelCfg)
 }
 
-func lockCafeCouponUserClaim(userID int64) func() {
+func lockCafeCouponUserClaim(userID int64) (func(), error) {
 	value, _ := cafeCouponUserClaimLocks.LoadOrStore(userID, &sync.Mutex{})
-	mu := value.(*sync.Mutex)
+	mu, ok := value.(*sync.Mutex)
+	if !ok {
+		cafeCouponUserClaimLocks.Delete(userID)
+		return nil, fmt.Errorf("invalid cafe coupon claim lock for user %d", userID)
+	}
 	mu.Lock()
-	return mu.Unlock
+	return mu.Unlock, nil
 }
 
 func (s *PaymentService) claimCafeCouponTx(ctx context.Context, userID int64, level int, levelCfg CafeCouponLevelConfig) (*CafeCouponClaimResult, error) {
@@ -1109,16 +1125,6 @@ func cafeCouponOrderOriginalAmount(req CreateOrderRequest, plan *dbent.Subscript
 	return req.Amount
 }
 
-func cafeCouponCreditedAmount(req CreateOrderRequest, plan *dbent.SubscriptionPlan, cfg *PaymentConfig) float64 {
-	if plan != nil {
-		return plan.Price
-	}
-	if req.OrderType == payment.OrderTypeBalance {
-		return calculateCreditedBalance(req.Amount, cfg.BalanceRechargeMultiplier)
-	}
-	return req.Amount
-}
-
 func (s *PaymentService) prepareCafeCouponForOrder(ctx context.Context, req CreateOrderRequest, plan *dbent.SubscriptionPlan, cfg *PaymentConfig, limitAmount float64, currency string, feeRate float64) (float64, float64, float64, error) {
 	if strings.TrimSpace(req.CafeCouponCode) == "" {
 		_, payAmount, err := calculateCreateOrderPayAmount(limitAmount, feeRate, currency)
@@ -1176,30 +1182,4 @@ func cafeCouponOrderSnapshot(order *dbent.PaymentOrder) map[string]any {
 		"code":     psStringValue(order.CafeCouponCode),
 		"discount": order.CafeCouponDiscount,
 	}
-}
-
-func cafeCouponAuditOrderID(orderID int64) string {
-	if orderID <= 0 {
-		return "cafe_coupon"
-	}
-	return strconv.FormatInt(orderID, 10)
-}
-
-func (s *PaymentService) hasAppliedCafeCoupon(ctx context.Context, orderID int64) bool {
-	if s == nil || s.entClient == nil || orderID <= 0 {
-		return false
-	}
-	exists, _ := s.entClient.CafeCoupon.Query().Where(cafecoupon.OrderIDEQ(orderID), cafecoupon.StatusEQ(CafeCouponStatusApplied)).Exist(ctx)
-	return exists
-}
-
-func (s *PaymentService) orderCouponDiscount(ctx context.Context, orderID int64) float64 {
-	if s == nil || s.entClient == nil || orderID <= 0 {
-		return 0
-	}
-	order, err := s.entClient.PaymentOrder.Query().Where(paymentorder.IDEQ(orderID)).Only(ctx)
-	if err != nil || order == nil {
-		return 0
-	}
-	return order.CafeCouponDiscount
 }
