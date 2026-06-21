@@ -33,6 +33,7 @@ func RegisterPaymentRoutes(
 
 		cafeCoupons := authenticated.Group("/cafe-coupons")
 		{
+			cafeCoupons.GET("/status", paymentHandler.CafeCouponStatus)
 			cafeCoupons.POST("/claim", paymentHandler.ClaimCafeCoupon)
 			cafeCoupons.POST("/apply", paymentHandler.ApplyCafeCoupon)
 		}

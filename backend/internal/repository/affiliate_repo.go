@@ -92,7 +92,7 @@ func (r *affiliateRepository) BindInviter(ctx context.Context, userID, inviterID
 		}
 
 		res, err := txClient.ExecContext(txCtx,
-			"UPDATE user_affiliates SET inviter_id = $1, updated_at = NOW() WHERE user_id = $2 AND inviter_id IS NULL",
+			"UPDATE user_affiliates SET inviter_id = $1, inviter_bound_at = NOW(), updated_at = NOW() WHERE user_id = $2 AND inviter_id IS NULL",
 			inviterID, userID,
 		)
 		if err != nil {
@@ -185,7 +185,7 @@ LIMIT 1`, inviterID, inviteeUserID, *sourceOrderID)
 		if existing >= perInviteeCap {
 			return nil
 		}
-		appliedAmount = roundAffiliateAmount(math.Min(amount, perInviteeCap-existing))
+		appliedAmount = floorAffiliateAccrualAmount(math.Min(amount, perInviteeCap-existing))
 		if appliedAmount <= 0 {
 			return nil
 		}
@@ -1570,6 +1570,7 @@ SELECT ua.user_id,
        ua.aff_rebate_rate_percent,
        ua.aff_invite_limit,
        ua.inviter_id,
+       ua.inviter_bound_at,
        ua.aff_count,
        ua.aff_quota::double precision,
        ua.aff_frozen_quota::double precision,
@@ -1593,6 +1594,7 @@ WHERE ua.user_id = $1`, userID)
 
 	var out service.AffiliateSummary
 	var inviterID sql.NullInt64
+	var inviterBoundAt sql.NullTime
 	var rebateRate sql.NullFloat64
 	var inviteLimit sql.NullInt64
 	if err := rows.Scan(
@@ -1602,6 +1604,7 @@ WHERE ua.user_id = $1`, userID)
 		&rebateRate,
 		&inviteLimit,
 		&inviterID,
+		&inviterBoundAt,
 		&out.AffCount,
 		&out.AffQuota,
 		&out.AffFrozenQuota,
@@ -1614,6 +1617,10 @@ WHERE ua.user_id = $1`, userID)
 	}
 	if inviterID.Valid {
 		out.InviterID = &inviterID.Int64
+	}
+	if inviterBoundAt.Valid {
+		v := inviterBoundAt.Time
+		out.InviterBoundAt = &v
 	}
 	if rebateRate.Valid {
 		v := rebateRate.Float64
@@ -1634,6 +1641,7 @@ SELECT ua.user_id,
        ua.aff_rebate_rate_percent,
        ua.aff_invite_limit,
        ua.inviter_id,
+       ua.inviter_bound_at,
        ua.aff_count,
        ua.aff_quota::double precision,
        ua.aff_frozen_quota::double precision,
@@ -1659,6 +1667,7 @@ LIMIT 1`, strings.ToUpper(strings.TrimSpace(code)))
 
 	var out service.AffiliateSummary
 	var inviterID sql.NullInt64
+	var inviterBoundAt sql.NullTime
 	var rebateRate sql.NullFloat64
 	var inviteLimit sql.NullInt64
 	if err := rows.Scan(
@@ -1668,6 +1677,7 @@ LIMIT 1`, strings.ToUpper(strings.TrimSpace(code)))
 		&rebateRate,
 		&inviteLimit,
 		&inviterID,
+		&inviterBoundAt,
 		&out.AffCount,
 		&out.AffQuota,
 		&out.AffFrozenQuota,
@@ -1680,6 +1690,10 @@ LIMIT 1`, strings.ToUpper(strings.TrimSpace(code)))
 	}
 	if inviterID.Valid {
 		out.InviterID = &inviterID.Int64
+	}
+	if inviterBoundAt.Valid {
+		v := inviterBoundAt.Time
+		out.InviterBoundAt = &v
 	}
 	if rebateRate.Valid {
 		v := rebateRate.Float64
@@ -1760,6 +1774,13 @@ func normalizeAffiliateBalanceMultiplier(multiplier float64) float64 {
 		return 1
 	}
 	return multiplier
+}
+
+func floorAffiliateAccrualAmount(v float64) float64 {
+	if v <= 0 || math.IsNaN(v) || math.IsInf(v, 0) {
+		return 0
+	}
+	return math.Floor((v+1e-9)*10) / 10
 }
 
 func roundAffiliateAmount(v float64) float64 {

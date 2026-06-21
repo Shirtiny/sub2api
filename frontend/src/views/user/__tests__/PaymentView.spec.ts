@@ -12,11 +12,13 @@ const routerReplace = vi.hoisted(() => vi.fn())
 const routerPush = vi.hoisted(() => vi.fn())
 const routerResolve = vi.hoisted(() => vi.fn(() => ({ href: '/payment/stripe?mock=1' })))
 const createOrder = vi.hoisted(() => vi.fn())
+const applyCafeCoupon = vi.hoisted(() => vi.fn())
 const refreshUser = vi.hoisted(() => vi.fn())
 const fetchActiveSubscriptions = vi.hoisted(() => vi.fn().mockResolvedValue(undefined))
 const showError = vi.hoisted(() => vi.fn())
 const showInfo = vi.hoisted(() => vi.fn())
 const showWarning = vi.hoisted(() => vi.fn())
+const showSuccess = vi.hoisted(() => vi.fn())
 const getCheckoutInfo = vi.hoisted(() => vi.fn())
 const bridgeInvoke = vi.hoisted(() => vi.fn())
 
@@ -35,10 +37,17 @@ vi.mock('vue-router', async () => {
 
 vi.mock('vue-i18n', async () => {
   const actual = await vi.importActual<typeof import('vue-i18n')>('vue-i18n')
+  const messages: Record<string, string> = {
+    'payment.cafeCoupon.errors.CAFE_COUPON_NOT_FOUND': '券码无效',
+    'payment.cafeCoupon.invalid': '券码无效',
+    'payment.cafeCoupon.applied': 'Café券已应用',
+    'payment.cafeCoupon.appliedDiscount': '券成功应用，折扣 {value}%',
+    'payment.cafeCoupon.appliedCash': '券成功应用，抵扣 {amount}',
+  }
   return {
     ...actual,
     useI18n: () => ({
-      t: (key: string) => key,
+      t: (key: string) => messages[key] ?? key,
     }),
   }
 })
@@ -56,6 +65,7 @@ vi.mock('@/stores/auth', () => ({
 vi.mock('@/stores/payment', () => ({
   usePaymentStore: () => ({
     createOrder,
+    applyCafeCoupon,
   }),
 }))
 
@@ -71,6 +81,7 @@ vi.mock('@/stores', () => ({
     showError,
     showInfo,
     showWarning,
+    showSuccess,
   }),
 }))
 
@@ -191,11 +202,13 @@ describe('PaymentView WeChat JSAPI flow', () => {
     routerPush.mockReset().mockResolvedValue(undefined)
     routerResolve.mockClear()
     createOrder.mockReset()
+    applyCafeCoupon.mockReset()
     refreshUser.mockReset()
     fetchActiveSubscriptions.mockReset().mockResolvedValue(undefined)
     showError.mockReset()
     showInfo.mockReset()
     showWarning.mockReset()
+    showSuccess.mockReset()
     getCheckoutInfo.mockReset().mockResolvedValue(checkoutInfoFixture())
     bridgeInvoke.mockReset()
     window.localStorage.clear()
@@ -369,6 +382,83 @@ describe('PaymentView WeChat JSAPI flow', () => {
       configurable: true,
       value: originalLocation,
     })
+  })
+
+  it('preserves café coupon code through token-only WeChat resume payloads', async () => {
+    routeState.query = {
+      wechat_resume: '1',
+      wechat_resume_token: 'resume-coupon-7',
+      payment_type: 'wxpay_direct',
+      order_type: 'subscription',
+      plan_id: '7',
+      cafe_coupon_code: 'CAFE-KEEP123',
+    }
+    getCheckoutInfo.mockResolvedValue(checkoutInfoWithPlansFixture())
+    createOrder.mockResolvedValue({
+      order_id: 779,
+      amount: 128,
+      pay_amount: 128,
+      fee_rate: 0,
+      expires_at: '2099-01-01T00:10:00.000Z',
+      payment_type: 'wxpay',
+      qr_code: 'weixin://wxpay/bizpayurl?pr=coupon-resume',
+      out_trade_no: 'sub2_coupon_779',
+    })
+
+    shallowMount(PaymentView, {
+      global: {
+        stubs: {
+          Teleport: true,
+          Transition: false,
+        },
+      },
+    })
+    await flushPromises()
+    await flushPromises()
+
+    expect(createOrder).toHaveBeenCalledWith(expect.objectContaining({
+      payment_type: 'wxpay',
+      order_type: 'subscription',
+      plan_id: 7,
+      wechat_resume_token: 'resume-coupon-7',
+      cafe_coupon_code: 'CAFE-KEEP123',
+    }))
+    expect(applyCafeCoupon).not.toHaveBeenCalled()
+  })
+
+  it('does not create an order when typed café coupon is invalid', async () => {
+    routeState.query = {}
+    applyCafeCoupon.mockRejectedValueOnce({ reason: 'CAFE_COUPON_NOT_FOUND', message: 'cafe coupon not found' })
+
+    const wrapper = shallowMount(PaymentView, {
+      global: {
+        stubs: {
+          Teleport: true,
+          Transition: false,
+        },
+      },
+    })
+    await flushPromises()
+
+    const vm = wrapper.vm as unknown as {
+      amount: number
+      cafeCouponCode: string
+      handleSubmitRecharge: () => Promise<void>
+      cafeCouponError: string
+    }
+    vm.amount = 100
+    vm.cafeCouponCode = 'CAFE-NOTFOUND'
+
+    await vm.handleSubmitRecharge()
+    await flushPromises()
+
+    expect(applyCafeCoupon).toHaveBeenCalledWith(expect.objectContaining({
+      code: 'CAFE-NOTFOUND',
+      amount: 100,
+      order_type: 'balance',
+    }))
+    expect(createOrder).not.toHaveBeenCalled()
+    expect(vm.cafeCouponError).toBe('券码无效')
   })
 
   it('falls back to QR flow when mobile WeChat payment is unavailable', async () => {

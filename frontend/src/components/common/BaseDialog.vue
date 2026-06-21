@@ -14,7 +14,7 @@
         <div ref="dialogRef" :class="['modal-content', widthClasses]" @click.stop>
           <!-- Header -->
           <div class="modal-header">
-            <h3 :id="dialogId" class="modal-title">
+            <h3 :id="dialogId" :class="['modal-title', titleClass]">
               {{ title }}
             </h3>
             <button
@@ -62,6 +62,7 @@ interface Props {
   closeOnEscape?: boolean
   closeOnClickOutside?: boolean
   zIndex?: number
+  titleClass?: string
 }
 
 interface Emits {
@@ -72,7 +73,8 @@ const props = withDefaults(defineProps<Props>(), {
   width: 'normal',
   closeOnEscape: true,
   closeOnClickOutside: false,
-  zIndex: 50
+  zIndex: 50,
+  titleClass: ''
 })
 
 const emit = defineEmits<Emits>()

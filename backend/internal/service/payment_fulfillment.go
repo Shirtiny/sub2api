@@ -140,6 +140,9 @@ func expectedNotificationProviderKey(registry *payment.Registry, orderPaymentTyp
 }
 
 func (s *PaymentService) toPaid(ctx context.Context, o *dbent.PaymentOrder, tradeNo string, paid float64, pk string) error {
+	if err := s.ensureCafeCouponAppliedForPaidOrder(ctx, o); err != nil {
+		return err
+	}
 	previousStatus := o.Status
 	now := time.Now()
 	grace := now.Add(-paymentGraceMinutes * time.Minute)

@@ -61,6 +61,7 @@ func (s *PaymentService) CreateOrder(ctx context.Context, req CreateOrderRequest
 	} else if req.OrderType == payment.OrderTypeBalance {
 		orderAmount = calculateCreditedBalance(req.Amount, cfg.BalanceRechargeMultiplier)
 	}
+	baseLimitAmount := limitAmount
 	feeRate := cfg.RechargeFeeRate
 	methodCurrency := payment.DefaultPaymentCurrency
 	if s.configService != nil {
@@ -85,6 +86,11 @@ func (s *PaymentService) CreateOrder(ctx context.Context, req CreateOrderRequest
 		}
 		return s.completeDevAutoSuccessOrder(ctx, order, req, payAmount)
 	}
+	_, limitAmount, payAmount, err = s.prepareCafeCouponForOrder(ctx, req, plan, cfg, limitAmount, methodCurrency, feeRate)
+	if err != nil {
+		return nil, err
+	}
+	payAmountStr = payment.FormatAmountForCurrency(payAmount, methodCurrency)
 	sel, err := s.selectCreateOrderInstance(ctx, req, cfg, payAmount)
 	if err != nil {
 		return nil, err
@@ -97,16 +103,12 @@ func (s *PaymentService) CreateOrder(ctx context.Context, req CreateOrderRequest
 		selectedCurrency = paymentProviderConfigCurrency(sel.ProviderKey, sel.Config)
 	}
 	if selectedCurrency != methodCurrency {
-		payAmountStr, payAmount, err = calculateCreateOrderPayAmount(limitAmount, feeRate, selectedCurrency)
+		_, limitAmount, payAmount, err = s.prepareCafeCouponForOrder(ctx, req, plan, cfg, baseLimitAmount, selectedCurrency, feeRate)
 		if err != nil {
 			return nil, err
 		}
+		payAmountStr = payment.FormatAmountForCurrency(payAmount, selectedCurrency)
 	}
-	_, limitAmount, payAmount, err = s.prepareCafeCouponForOrder(ctx, req, plan, cfg, limitAmount, selectedCurrency, feeRate)
-	if err != nil {
-		return nil, err
-	}
-	payAmountStr = payment.FormatAmountForCurrency(payAmount, selectedCurrency)
 	if err := validateSelectedCreateOrderAmountCurrency(payAmountStr, sel); err != nil {
 		return nil, err
 	}
@@ -137,6 +139,10 @@ func (s *PaymentService) IsDevAutoSuccessEnabled() bool {
 }
 
 func (s *PaymentService) paymentDevAutoSuccessEnabled() bool {
+	return paymentDevAutoSuccessEnabled()
+}
+
+func paymentDevAutoSuccessEnabled() bool {
 	if strings.TrimSpace(os.Getenv(paymentDevAutoSuccessEnv)) != paymentDevAutoSuccessToken {
 		return false
 	}
@@ -299,7 +305,7 @@ func (s *PaymentService) createOrderInTx(ctx context.Context, req CreateOrderReq
 			}
 			return nil, fmt.Errorf("lock cafe coupon: %w", couponErr)
 		} else {
-			if err := s.validateCafeCouponEntity(ctx, req.UserID, coupon); err != nil {
+			if _, err := s.validateCafeCouponEntity(ctx, req.UserID, coupon); err != nil {
 				return nil, err
 			}
 			couponDiscount, err = cafeCouponDiscountAmount(cafeCouponOrderOriginalAmount(req, plan, cfg), coupon.CouponType, coupon.Value)

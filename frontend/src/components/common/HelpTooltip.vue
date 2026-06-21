@@ -14,24 +14,79 @@ const show = ref(false)
 const triggerRef = useTemplateRef<HTMLElement>('trigger')
 const tooltipRef = useTemplateRef<HTMLElement>('tooltip')
 const tooltipStyle = ref({ top: '0px', left: '0px' })
+const openDelay = 80
+const closeDelay = 180
+let openTimer: number | null = null
+let closeTimer: number | null = null
+
+function clearOpenTimer() {
+  if (!openTimer) return
+  window.clearTimeout(openTimer)
+  openTimer = null
+}
+
+function clearCloseTimer() {
+  if (!closeTimer) return
+  window.clearTimeout(closeTimer)
+  closeTimer = null
+}
+
+function clearHoverTimers() {
+  clearOpenTimer()
+  clearCloseTimer()
+}
 
 function openTooltip() {
+  clearHoverTimers()
   show.value = true
   nextTick(updatePosition)
 }
 
 function closeTooltip() {
+  clearHoverTimers()
   show.value = false
+}
+
+function scheduleOpen() {
+  clearCloseTimer()
+  if (show.value) {
+    nextTick(updatePosition)
+    return
+  }
+  clearOpenTimer()
+  openTimer = window.setTimeout(() => {
+    openTimer = null
+    openTooltip()
+  }, openDelay)
+}
+
+function scheduleClose() {
+  clearOpenTimer()
+  clearCloseTimer()
+  closeTimer = window.setTimeout(() => {
+    show.value = false
+    closeTimer = null
+  }, closeDelay)
 }
 
 function onEnter() {
   if (props.trigger !== 'hover') return
-  openTooltip()
+  scheduleOpen()
 }
 
 function onLeave() {
   if (props.trigger !== 'hover') return
-  closeTooltip()
+  scheduleClose()
+}
+
+function onTooltipEnter() {
+  if (props.trigger !== 'hover') return
+  clearCloseTimer()
+}
+
+function onTooltipLeave() {
+  if (props.trigger !== 'hover') return
+  scheduleClose()
 }
 
 function onClick(event: MouseEvent) {
@@ -82,6 +137,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  clearHoverTimers()
   document.removeEventListener('click', onDocumentClick, true)
   document.removeEventListener('keydown', onDocumentKeydown)
   window.removeEventListener('resize', onViewportChange)
@@ -125,6 +181,9 @@ onBeforeUnmount(() => {
           props.widthClass,
         ]"
         :style="{ top: `calc(${tooltipStyle.top} - 8px)`, left: tooltipStyle.left }"
+        @mouseenter="onTooltipEnter"
+        @mouseleave="onTooltipLeave"
+        @click.stop
       >
         <button
           v-if="props.trigger === 'click'"

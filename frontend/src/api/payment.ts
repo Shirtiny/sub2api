@@ -15,7 +15,8 @@ import type {
   PaymentOrder,
   CafeCouponApplyRequest,
   CafeCouponApplyResponse,
-  CafeCouponClaimResponse
+  CafeCouponClaimResponse,
+  CafeCouponStatusResponse
 } from '@/types/payment'
 import type { BasePaginationResponse } from '@/types'
 
@@ -53,6 +54,11 @@ export const paymentAPI = {
   /** Claim a café coupon for the current user */
   claimCafeCoupon() {
     return apiClient.post<CafeCouponClaimResponse>('/payment/cafe-coupons/claim', { source: 'membership' })
+  },
+
+  /** Get current café coupon claim status for the current user */
+  getCafeCouponStatus() {
+    return apiClient.get<CafeCouponStatusResponse>('/payment/cafe-coupons/status')
   },
 
   /** Preview/apply a café coupon before creating an order */

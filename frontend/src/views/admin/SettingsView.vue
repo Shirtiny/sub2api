@@ -5619,6 +5619,85 @@
           </div>
         </div>
 
+        <div class="card">
+          <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
+            <h2 class="text-lg font-semibold text-content-primary">
+              {{ t('admin.settings.features.cafeCoupon.title') }}
+            </h2>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              {{ t('admin.settings.features.cafeCoupon.description') }}
+            </p>
+          </div>
+          <div class="space-y-5 p-6">
+            <div class="rounded-lg border border-primary-100 bg-primary-50 px-4 py-3 text-sm text-primary-700 dark:border-primary-800/50 dark:bg-primary-900/20 dark:text-primary-300">
+              <p class="font-medium">{{ t('admin.settings.features.cafeCoupon.monthEndValidityTitle') }}</p>
+              <p class="mt-1 text-xs">{{ t('admin.settings.features.cafeCoupon.monthEndValidityHint') }}</p>
+            </div>
+
+            <div class="grid gap-4 xl:grid-cols-2">
+              <div
+                v-for="level in cafeCouponLevels"
+                :key="level"
+                class="rounded-xl border border-stroke-default p-4"
+              >
+                <div class="mb-4 flex items-start justify-between gap-4">
+                  <div>
+                    <h3 class="text-sm font-semibold text-content-primary">
+                      {{ t(`admin.settings.features.cafeCoupon.level${level}`) }}
+                    </h3>
+                    <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                      {{ t('admin.settings.features.cafeCoupon.levelHint') }}
+                    </p>
+                  </div>
+                  <Toggle v-model="form.cafe_coupon_config.levels[level].enabled" />
+                </div>
+
+                <div class="grid gap-3 md:grid-cols-2">
+                  <label class="space-y-1">
+                    <span class="text-xs text-gray-500 dark:text-gray-400">{{ t('admin.settings.features.cafeCoupon.type') }}</span>
+                    <Select
+                      v-model="form.cafe_coupon_config.levels[level].type"
+                      :options="cafeCouponTypeOptions"
+                      :searchable="false"
+                    />
+                  </label>
+                  <label class="space-y-1">
+                    <span class="text-xs text-gray-500 dark:text-gray-400">{{ t('admin.settings.features.cafeCoupon.value') }}</span>
+                    <input
+                      v-model.number="form.cafe_coupon_config.levels[level].value"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      :max="form.cafe_coupon_config.levels[level].type === 'discount' ? 100 : 1000000"
+                      class="input"
+                    />
+                  </label>
+                  <label class="space-y-1">
+                    <span class="text-xs text-gray-500 dark:text-gray-400">{{ t('admin.settings.features.cafeCoupon.period') }}</span>
+                    <Select
+                      v-model="form.cafe_coupon_config.levels[level].period"
+                      :options="cafeCouponPeriodOptions"
+                      :searchable="false"
+                    />
+                  </label>
+                  <div class="flex items-center justify-between rounded-lg border border-stroke-default px-3 py-2">
+                    <div>
+                      <span class="text-xs font-medium text-content-secondary">{{ t('admin.settings.features.cafeCoupon.allowTransfer') }}</span>
+                      <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                        {{ t('admin.settings.features.cafeCoupon.allowTransferHint') }}
+                      </p>
+                    </div>
+                    <Toggle v-model="form.cafe_coupon_config.levels[level].transferable" />
+                  </div>
+                </div>
+                <p class="mt-3 text-xs text-gray-400">
+                  {{ t('admin.settings.features.cafeCoupon.valueHint') }}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Affiliate add/edit modal -->
         <div
           v-if="affiliateModal.open"
@@ -6812,6 +6891,10 @@ import {
 import type {
   AuthSourceDefaultsState,
   AuthSourceType,
+  CafeCouponConfig,
+  CafeCouponLevelConfig,
+  CafeCouponPeriod,
+  CafeCouponType,
   SystemSettings,
   UpdateSettingsRequest,
   DefaultSubscriptionSetting,
@@ -7088,6 +7171,35 @@ interface DefaultSubscriptionGroupOption {
   [key: string]: unknown;
 }
 
+const cafeCouponLevels = [0, 1, 2, 3] as const;
+
+function normalizeCafeCouponLevelConfig(input?: Partial<CafeCouponLevelConfig>): CafeCouponLevelConfig {
+  const type: CafeCouponType = input?.type === "discount" ? "discount" : "cash";
+  const period: CafeCouponPeriod = ["day", "week", "month"].includes(String(input?.period))
+    ? (input?.period as CafeCouponPeriod)
+    : "month";
+  const maxValue = type === "discount" ? 100 : 1000000;
+  const value = Math.min(maxValue, Math.max(0, Number(input?.value) || 0));
+
+  return {
+    enabled: Boolean(input?.enabled) && value > 0,
+    type,
+    value,
+    period,
+    transferable: Boolean(input?.transferable),
+    validity: "month_end",
+    valid_until_month_end: true,
+  };
+}
+
+function normalizeCafeCouponConfig(input?: Partial<CafeCouponConfig> | null): CafeCouponConfig {
+  const levels = {} as Record<number, CafeCouponLevelConfig>;
+  for (const level of cafeCouponLevels) {
+    levels[level] = normalizeCafeCouponLevelConfig(input?.levels?.[level]);
+  }
+  return { levels };
+}
+
 type SettingsForm = Omit<
   SystemSettings,
   | "wechat_connect_open_enabled"
@@ -7141,6 +7253,7 @@ const form = reactive<SettingsForm>({
   affiliate_rebate_per_invitee_cap_level1: 100,
   affiliate_rebate_per_invitee_cap_level2: 300,
   affiliate_rebate_per_invitee_cap_level3: 1000,
+  cafe_coupon_config: normalizeCafeCouponConfig(),
   affiliate_invite_limit: 0,
   affiliate_invite_limit_level0: 0,
   affiliate_invite_limit_level1: 1,
@@ -7342,6 +7455,17 @@ const form = reactive<SettingsForm>({
 const authSourceDefaults = reactive<AuthSourceDefaultsState>(
   buildAuthSourceDefaultsState({}),
 );
+
+const cafeCouponTypeOptions = computed(() => [
+  { value: "cash", label: t("admin.settings.features.cafeCoupon.typeCash") },
+  { value: "discount", label: t("admin.settings.features.cafeCoupon.typeDiscount") },
+]);
+
+const cafeCouponPeriodOptions = computed(() => [
+  { value: "day", label: t("admin.settings.features.cafeCoupon.periodDay") },
+  { value: "week", label: t("admin.settings.features.cafeCoupon.periodWeek") },
+  { value: "month", label: t("admin.settings.features.cafeCoupon.periodMonth") },
+]);
 
 const authSourceDefaultsMeta = computed(() => [
   {
@@ -7963,6 +8087,7 @@ async function loadSettings() {
           }))
         : defaultLoginAgreementDocuments();
     Object.assign(authSourceDefaults, buildAuthSourceDefaultsState(settings));
+    form.cafe_coupon_config = normalizeCafeCouponConfig(settings.cafe_coupon_config);
     form.default_platform_quotas = normalizePlatformQuotasMap(settings.default_platform_quotas);
     form.backend_mode_enabled = settings.backend_mode_enabled;
     form.default_subscriptions = normalizeDefaultSubscriptionSettings(
@@ -8279,6 +8404,9 @@ async function saveSettings() {
       form.wechat_connect_mode,
     );
 
+    const cafeCouponConfig = normalizeCafeCouponConfig(form.cafe_coupon_config);
+    form.cafe_coupon_config = cafeCouponConfig;
+
     const payload: UpdateSettingsRequest = {
       registration_enabled: form.registration_enabled,
       email_verify_enabled: form.email_verify_enabled,
@@ -8498,6 +8626,7 @@ async function saveSettings() {
       available_channels_enabled: form.available_channels_enabled,
       // Affiliate (邀请返利) feature switch
       affiliate_enabled: form.affiliate_enabled,
+      cafe_coupon_config: cafeCouponConfig,
       allow_user_view_error_requests: form.allow_user_view_error_requests,
     };
 
@@ -8540,6 +8669,7 @@ async function saveSettings() {
       }
     }
     Object.assign(authSourceDefaults, buildAuthSourceDefaultsState(updated));
+    form.cafe_coupon_config = normalizeCafeCouponConfig(updated.cafe_coupon_config);
     form.default_platform_quotas = normalizePlatformQuotasMap(updated.default_platform_quotas);
     registrationEmailSuffixWhitelistTags.value =
       normalizeRegistrationEmailSuffixDomains(

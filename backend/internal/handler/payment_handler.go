@@ -222,14 +222,22 @@ func (h *PaymentHandler) GetLimits(c *gin.Context) {
 }
 
 type CafeCouponSummary struct {
-	Code        string    `json:"code"`
-	CouponType  string    `json:"type"`
-	Value       float64   `json:"value"`
-	Period      string    `json:"period"`
-	ExpiresAt   time.Time `json:"expires_at"`
-	ClaimedAt   time.Time `json:"claimed_at"`
-	DisplayName string    `json:"display_name"`
-	CopyText    string    `json:"copy_text,omitempty"`
+	Code               string    `json:"code"`
+	CouponType         string    `json:"type"`
+	Value              float64   `json:"value"`
+	Period             string    `json:"period"`
+	ExpiresAt          time.Time `json:"expires_at"`
+	ClaimedAt          time.Time `json:"claimed_at"`
+	DisplayName        string    `json:"display_name"`
+	CopyText           string    `json:"copy_text,omitempty"`
+	AlreadyClaimed     bool      `json:"already_claimed"`
+	CanClaim           bool      `json:"can_claim"`
+	NextClaimAt        time.Time `json:"next_claim_at,omitempty"`
+	RemainingDays      int       `json:"remaining_days"`
+	Status             string    `json:"status,omitempty"`
+	Transferable       bool      `json:"transferable"`
+	Validity           string    `json:"validity"`
+	ValidUntilMonthEnd bool      `json:"valid_until_month_end"`
 }
 
 type CafeCouponApplyRequest struct {
@@ -245,6 +253,21 @@ type CafeCouponApplyResponse struct {
 	PayAmount      float64            `json:"pay_amount"`
 	Coupon         *CafeCouponSummary `json:"coupon,omitempty"`
 	Message        string             `json:"message,omitempty"`
+}
+
+// CafeCouponStatus returns the current user's café coupon claim state.
+// GET /api/v1/payment/cafe-coupons/status
+func (h *PaymentHandler) CafeCouponStatus(c *gin.Context) {
+	subject, ok := requireAuth(c)
+	if !ok {
+		return
+	}
+	status, err := h.paymentService.CafeCouponStatus(c.Request.Context(), subject.UserID)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, status)
 }
 
 // ClaimCafeCoupon claims the current user's café coupon for the active benefit period.
@@ -299,14 +322,22 @@ func cafeCouponSummaryFromClaim(claimed *service.CafeCouponClaimResult) *CafeCou
 		return nil
 	}
 	return &CafeCouponSummary{
-		Code:        claimed.Code,
-		CouponType:  claimed.CouponType,
-		Value:       claimed.Value,
-		Period:      claimed.Period,
-		ExpiresAt:   claimed.PeriodEnd,
-		ClaimedAt:   claimed.ClaimedAt,
-		DisplayName: cafeCouponDisplayName(claimed.CouponType, claimed.Value),
-		CopyText:    claimed.Code,
+		Code:               claimed.Code,
+		CouponType:         claimed.CouponType,
+		Value:              claimed.Value,
+		Period:             claimed.Period,
+		ExpiresAt:          claimed.ExpiresAt,
+		ClaimedAt:          claimed.ClaimedAt,
+		DisplayName:        cafeCouponDisplayName(claimed.CouponType, claimed.Value),
+		CopyText:           claimed.Code,
+		AlreadyClaimed:     claimed.AlreadyClaimed,
+		CanClaim:           claimed.CanClaim,
+		NextClaimAt:        claimed.NextClaimAt,
+		RemainingDays:      claimed.RemainingDays,
+		Status:             claimed.Status,
+		Transferable:       claimed.Transferable,
+		Validity:           claimed.Validity,
+		ValidUntilMonthEnd: claimed.ValidUntilMonthEnd,
 	}
 }
 
@@ -315,14 +346,17 @@ func cafeCouponSummaryFromPreview(preview *service.CafeCouponPreview) *CafeCoupo
 		return nil
 	}
 	return &CafeCouponSummary{
-		Code:        preview.Code,
-		CouponType:  preview.CouponType,
-		Value:       preview.Value,
-		Period:      preview.Period,
-		ExpiresAt:   preview.ExpiresAt,
-		ClaimedAt:   preview.ClaimedAt,
-		DisplayName: cafeCouponDisplayName(preview.CouponType, preview.Value),
-		CopyText:    preview.Code,
+		Code:               preview.Code,
+		CouponType:         preview.CouponType,
+		Value:              preview.Value,
+		Period:             preview.Period,
+		ExpiresAt:          preview.ExpiresAt,
+		ClaimedAt:          preview.ClaimedAt,
+		DisplayName:        cafeCouponDisplayName(preview.CouponType, preview.Value),
+		CopyText:           preview.Code,
+		Transferable:       preview.Transferable,
+		Validity:           preview.Validity,
+		ValidUntilMonthEnd: preview.ValidUntilMonthEnd,
 	}
 }
 

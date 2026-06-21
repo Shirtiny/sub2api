@@ -16,6 +16,23 @@ export interface DefaultSubscriptionSetting {
   validity_days: number;
 }
 
+export type CafeCouponType = "cash" | "discount";
+export type CafeCouponPeriod = "day" | "week" | "month";
+
+export interface CafeCouponLevelConfig {
+  enabled: boolean;
+  type: CafeCouponType;
+  value: number;
+  period: CafeCouponPeriod;
+  transferable: boolean;
+  validity: "month_end";
+  valid_until_month_end: boolean;
+}
+
+export interface CafeCouponConfig {
+  levels: Record<number, CafeCouponLevelConfig>;
+}
+
 // ── 平台限额类型 ──────────────────────────────────────────────────
 export type PlatformType = "anthropic" | "openai" | "gemini" | "antigravity"
 export type QuotaWindowType = "daily" | "weekly" | "monthly"
@@ -384,6 +401,7 @@ export interface SystemSettings {
   affiliate_rebate_per_invitee_cap_level1: number;
   affiliate_rebate_per_invitee_cap_level2: number;
   affiliate_rebate_per_invitee_cap_level3: number;
+  cafe_coupon_config: CafeCouponConfig;
   affiliate_invite_limit: number;
   affiliate_invite_limit_level0: number;
   affiliate_invite_limit_level1: number;
@@ -656,6 +674,7 @@ export interface UpdateSettingsRequest {
   affiliate_rebate_per_invitee_cap_level1?: number;
   affiliate_rebate_per_invitee_cap_level2?: number;
   affiliate_rebate_per_invitee_cap_level3?: number;
+  cafe_coupon_config?: CafeCouponConfig;
   affiliate_invite_limit?: number;
   affiliate_invite_limit_level0?: number;
   affiliate_invite_limit_level1?: number;

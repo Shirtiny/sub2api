@@ -15,13 +15,15 @@ import (
 
 // PromoHandler handles admin promo code management
 type PromoHandler struct {
-	promoService *service.PromoService
+	promoService   *service.PromoService
+	paymentService *service.PaymentService
 }
 
 // NewPromoHandler creates a new admin promo handler
-func NewPromoHandler(promoService *service.PromoService) *PromoHandler {
+func NewPromoHandler(promoService *service.PromoService, paymentService *service.PaymentService) *PromoHandler {
 	return &PromoHandler{
-		promoService: promoService,
+		promoService:   promoService,
+		paymentService: paymentService,
 	}
 }
 
@@ -44,15 +46,128 @@ type UpdatePromoCodeRequest struct {
 	Notes       *string  `json:"notes"`
 }
 
+// ListCafeCoupons handles listing café coupons under promo code management.
+// GET /api/v1/admin/promo-codes/cafe-coupons
+func (h *PromoHandler) ListCafeCoupons(c *gin.Context) {
+	page, pageSize := response.ParsePagination(c)
+	filters := service.CafeCouponAdminListFilters{
+		Search:     trimPromoSearch(c.Query("search")),
+		Status:     c.Query("status"),
+		CouponType: c.Query("type"),
+	}
+	if raw := strings.TrimSpace(c.Query("membership_level")); raw != "" {
+		level, err := strconv.Atoi(raw)
+		if err != nil || level < 0 || level > 3 {
+			response.BadRequest(c, "Invalid membership level")
+			return
+		}
+		filters.MembershipLevel = &level
+	}
+
+	params := pagination.PaginationParams{
+		Page:      page,
+		PageSize:  pageSize,
+		SortBy:    c.DefaultQuery("sort_by", "created_at"),
+		SortOrder: c.DefaultQuery("sort_order", "desc"),
+	}
+	coupons, paginationResult, err := h.paymentService.AdminListCafeCoupons(c.Request.Context(), params, filters)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	out := make([]dto.AdminCafeCoupon, 0, len(coupons))
+	for i := range coupons {
+		out = append(out, *dto.AdminCafeCouponFromService(&coupons[i]))
+	}
+	response.Paginated(c, out, paginationResult.Total, page, pageSize)
+}
+
+// GetCafeCoupon handles getting a café coupon by ID.
+// GET /api/v1/admin/promo-codes/cafe-coupons/:id
+func (h *PromoHandler) GetCafeCoupon(c *gin.Context) {
+	couponID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		response.BadRequest(c, "Invalid cafe coupon ID")
+		return
+	}
+	coupon, err := h.paymentService.AdminGetCafeCoupon(c.Request.Context(), couponID)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, dto.AdminCafeCouponFromService(coupon))
+}
+
+// VoidCafeCoupon handles voiding an unused issued café coupon.
+// POST /api/v1/admin/promo-codes/cafe-coupons/:id/void
+func (h *PromoHandler) VoidCafeCoupon(c *gin.Context) {
+	couponID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		response.BadRequest(c, "Invalid cafe coupon ID")
+		return
+	}
+	coupon, err := h.paymentService.AdminVoidCafeCoupon(c.Request.Context(), couponID)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, dto.AdminCafeCouponFromService(coupon))
+}
+
+type UpdateCafeCouponStatusRequest struct {
+	Status string `json:"status" binding:"required"`
+}
+
+// UpdateCafeCouponStatus handles changing a café coupon status.
+// PATCH /api/v1/admin/promo-codes/cafe-coupons/:id/status
+func (h *PromoHandler) UpdateCafeCouponStatus(c *gin.Context) {
+	couponID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		response.BadRequest(c, "Invalid cafe coupon ID")
+		return
+	}
+	var req UpdateCafeCouponStatusRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+	coupon, err := h.paymentService.AdminUpdateCafeCouponStatus(c.Request.Context(), couponID, req.Status)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, dto.AdminCafeCouponFromService(coupon))
+}
+
+// ResetCafeCouponClaimPeriod resets the owner's café coupon claim cooldown.
+// POST /api/v1/admin/promo-codes/cafe-coupons/:id/reset-claim-period
+func (h *PromoHandler) ResetCafeCouponClaimPeriod(c *gin.Context) {
+	couponID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		response.BadRequest(c, "Invalid cafe coupon ID")
+		return
+	}
+	coupon, err := h.paymentService.AdminResetCafeCouponClaimPeriod(c.Request.Context(), couponID)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, dto.AdminCafeCouponFromService(coupon))
+}
+func trimPromoSearch(search string) string {
+	search = strings.TrimSpace(search)
+	if len(search) > 100 {
+		return search[:100]
+	}
+	return search
+}
+
 // List handles listing all promo codes with pagination
 // GET /api/v1/admin/promo-codes
 func (h *PromoHandler) List(c *gin.Context) {
 	page, pageSize := response.ParsePagination(c)
 	status := c.Query("status")
-	search := strings.TrimSpace(c.Query("search"))
-	if len(search) > 100 {
-		search = search[:100]
-	}
+	search := trimPromoSearch(c.Query("search"))
 
 	params := pagination.PaginationParams{
 		Page:      page,

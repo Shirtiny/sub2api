@@ -802,6 +802,30 @@ func PromoCodeFromService(pc *service.PromoCode) *PromoCode {
 	}
 }
 
+func AdminCafeCouponFromService(c *service.CafeCouponAdminRecord) *AdminCafeCoupon {
+	if c == nil {
+		return nil
+	}
+	return &AdminCafeCoupon{
+		ID:              c.ID,
+		Code:            c.Code,
+		UserID:          c.UserID,
+		MembershipLevel: c.MembershipLevel,
+		Type:            c.CouponType,
+		Value:           c.Value,
+		Period:          c.Period,
+		PeriodStart:     c.PeriodStart,
+		PeriodEnd:       c.PeriodEnd,
+		ExpiresAt:       c.ExpiresAt,
+		Status:          c.Status,
+		OrderID:         c.OrderID,
+		AppliedAt:       c.AppliedAt,
+		CreatedAt:       c.CreatedAt,
+		UpdatedAt:       c.UpdatedAt,
+		User:            UserFromServiceShallow(c.User),
+	}
+}
+
 func PromoCodeUsageFromService(u *service.PromoCodeUsage) *PromoCodeUsage {
 	if u == nil {
 		return nil

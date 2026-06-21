@@ -871,7 +871,7 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		WeChatOAuthMPEnabled:             weChatMPEnabled,
 		WeChatOAuthMobileEnabled:         weChatMobileEnabled,
 		BackendModeEnabled:               settings[SettingKeyBackendModeEnabled] == "true",
-		PaymentEnabled:                   settings[SettingPaymentEnabled] == "true",
+		PaymentEnabled:                   settings[SettingPaymentEnabled] == "true" || paymentDevAutoSuccessEnabled(),
 		OIDCOAuthEnabled:                 oidcEnabled,
 		OIDCOAuthProviderName:            oidcProviderName,
 		GitHubOAuthEnabled:               gitHubEnabled,

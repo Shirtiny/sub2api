@@ -129,6 +129,19 @@ func TestSettingService_GetPublicSettings_ExposesAffiliateRebateRates(t *testing
 	require.Equal(t, 300.0, settings.AffiliateRebatePerInviteeCapLevel2)
 }
 
+func TestSettingService_GetPublicSettings_EnablesPaymentInDevAutoSuccessMode(t *testing.T) {
+	t.Setenv(paymentDevAutoSuccessEnv, paymentDevAutoSuccessToken)
+	t.Setenv(paymentDevEnvironmentEnv, "development")
+
+	svc := NewSettingService(&settingPublicRepoStub{values: map[string]string{
+		SettingPaymentEnabled: "false",
+	}}, &config.Config{})
+
+	settings, err := svc.GetPublicSettings(context.Background())
+	require.NoError(t, err)
+	require.True(t, settings.PaymentEnabled)
+}
+
 func TestSettingService_GetPublicSettings_ExposesWeChatOAuthModeCapabilities(t *testing.T) {
 	svc := NewSettingService(&settingPublicRepoStub{
 		values: map[string]string{

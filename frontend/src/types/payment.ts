@@ -175,9 +175,36 @@ export interface CafeCouponSummary {
   claimed_at: string
   display_name: string
   copy_text?: string
+  already_claimed?: boolean
+  can_claim?: boolean
+  remaining_days?: number
+  next_claim_at?: string
+  status?: 'issued' | 'applied' | 'void'
+  transferable?: boolean
+  validity?: string
+  valid_until_month_end?: boolean
 }
 
 export type CafeCouponClaimResponse = CafeCouponSummary
+
+export interface CafeCouponStatusResponse {
+  eligible: boolean
+  can_claim: boolean
+  already_claimed: boolean
+  next_claim_at?: string
+  remaining_days: number
+  membership_level: number
+  type?: 'cash' | 'discount'
+  value?: number
+  period: 'day' | 'week' | 'month'
+  period_start?: string
+  period_end?: string
+  expires_at?: string
+  transferable: boolean
+  validity: string
+  valid_until_month_end: boolean
+  coupon?: CafeCouponSummary
+}
 
 export interface CafeCouponApplyRequest {
   code: string

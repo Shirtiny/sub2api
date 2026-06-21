@@ -64,19 +64,20 @@ func isValidAffiliateCodeFormat(code string) bool {
 }
 
 type AffiliateSummary struct {
-	UserID               int64     `json:"user_id"`
-	AffCode              string    `json:"aff_code"`
-	AffCodeCustom        bool      `json:"aff_code_custom"`
-	AffRebateRatePercent *float64  `json:"aff_rebate_rate_percent,omitempty"`
-	AffInviteLimit       *int      `json:"aff_invite_limit,omitempty"`
-	InviterID            *int64    `json:"inviter_id,omitempty"`
-	AffCount             int       `json:"aff_count"`
-	AffQuota             float64   `json:"aff_quota"`
-	AffFrozenQuota       float64   `json:"aff_frozen_quota"`
-	AffHistoryQuota      float64   `json:"aff_history_quota"`
-	TotalRecharged       float64   `json:"total_recharged"`
-	CreatedAt            time.Time `json:"created_at"`
-	UpdatedAt            time.Time `json:"updated_at"`
+	UserID               int64      `json:"user_id"`
+	AffCode              string     `json:"aff_code"`
+	AffCodeCustom        bool       `json:"aff_code_custom"`
+	AffRebateRatePercent *float64   `json:"aff_rebate_rate_percent,omitempty"`
+	AffInviteLimit       *int       `json:"aff_invite_limit,omitempty"`
+	InviterID            *int64     `json:"inviter_id,omitempty"`
+	InviterBoundAt       *time.Time `json:"inviter_bound_at,omitempty"`
+	AffCount             int        `json:"aff_count"`
+	AffQuota             float64    `json:"aff_quota"`
+	AffFrozenQuota       float64    `json:"aff_frozen_quota"`
+	AffHistoryQuota      float64    `json:"aff_history_quota"`
+	TotalRecharged       float64    `json:"total_recharged"`
+	CreatedAt            time.Time  `json:"created_at"`
+	UpdatedAt            time.Time  `json:"updated_at"`
 }
 
 type AffiliateInvitee struct {
@@ -522,11 +523,9 @@ func (s *AffiliateService) ResolveSubscriptionInviteRebate(ctx context.Context, 
 		return result, nil
 	}
 	if s.settingService != nil {
-		if durationDays := s.settingService.GetAffiliateRebateDurationDays(ctx); durationDays > 0 {
-			if time.Now().After(inviteeSummary.CreatedAt.AddDate(0, 0, durationDays)) {
-				result.Reason = "affiliate rebate duration expired"
-				return result, nil
-			}
+		if s.affiliateRebateExpired(ctx, inviteeSummary) {
+			result.Reason = "affiliate rebate duration expired"
+			return result, nil
 		}
 	}
 
@@ -572,6 +571,21 @@ func calculateSubscriptionRebateDaysByMembership(level int) int {
 		return AffiliateSubscriptionRebateDaysL2
 	}
 	return AffiliateSubscriptionRebateDaysBase
+}
+
+func (s *AffiliateService) affiliateRebateExpired(ctx context.Context, invitee *AffiliateSummary) bool {
+	if s == nil || s.settingService == nil || invitee == nil {
+		return false
+	}
+	durationDays := s.settingService.GetAffiliateRebateDurationDays(ctx)
+	if durationDays <= 0 {
+		return false
+	}
+	boundAt := invitee.CreatedAt
+	if invitee.InviterBoundAt != nil {
+		boundAt = *invitee.InviterBoundAt
+	}
+	return time.Now().After(boundAt.AddDate(0, 0, durationDays))
 }
 
 func (s *AffiliateService) AccrueSubscriptionRebateForOrder(ctx context.Context, inviteeUserID, groupID int64, subscriptionDays int, sourceOrderID *int64) (*AffiliateSubscriptionRebate, error) {
@@ -628,12 +642,8 @@ func (s *AffiliateService) AccrueInviteRebateForOrder(ctx context.Context, invit
 		return 0, nil
 	}
 	// 有效期检查：超过返利有效期后不再产生返利
-	if s.settingService != nil {
-		if durationDays := s.settingService.GetAffiliateRebateDurationDays(ctx); durationDays > 0 {
-			if time.Now().After(inviteeSummary.CreatedAt.AddDate(0, 0, durationDays)) {
-				return 0, nil
-			}
-		}
+	if s.affiliateRebateExpired(ctx, inviteeSummary) {
+		return 0, nil
 	}
 
 	rebateRatePercent := s.resolveRebateRatePercent(ctx, inviterSummary)
