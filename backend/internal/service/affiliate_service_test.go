@@ -371,6 +371,8 @@ func TestCanUseCodeForSignup_ZeroInviteLimitBlocksInvite(t *testing.T) {
 type affiliateRepoThresholdStub struct {
 	ensureCalls int
 	accrueCalls int
+	bindCalls   int
+	bindErr     error
 	summaries   map[int64]*AffiliateSummary
 }
 
@@ -392,6 +394,10 @@ func (r *affiliateRepoThresholdStub) GetAffiliateByCode(ctx context.Context, cod
 }
 
 func (r *affiliateRepoThresholdStub) BindInviter(ctx context.Context, userID, inviterID int64, inviteLimit int) (bool, error) {
+	r.bindCalls++
+	if r.bindErr != nil {
+		return false, r.bindErr
+	}
 	if inviteLimit <= 0 {
 		return false, ErrAffiliateInviteLimitReached
 	}

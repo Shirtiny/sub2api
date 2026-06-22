@@ -86,3 +86,39 @@ func TestEmailOAuthAuto_SnapshotsPlatformQuotaDefaults(t *testing.T) {
 	require.NotNil(t, geminiRecord.MonthlyLimitUSD)
 	require.InDelta(t, 100.0, *geminiRecord.MonthlyLimitUSD, 0.0001)
 }
+
+func TestEmailOAuthAuto_AffiliateAdmissionRequiresBinding(t *testing.T) {
+	userRepo := &userRepoStub{nextID: 89}
+	quotaRepo := &userPlatformQuotaRepoStub{}
+	settings := map[string]string{
+		SettingKeyRegistrationEnabled:   "true",
+		SettingKeyInvitationCodeEnabled: "true",
+		SettingKeyAffiliateEnabled:      "true",
+		SettingKeyDefaultPlatformQuotas: `{"gemini": {"monthly": 100.0}}`,
+	}
+	affiliateRepo := &affiliateRepoThresholdStub{
+		bindErr: ErrAffiliateInviteLimitReached,
+		summaries: map[int64]*AffiliateSummary{
+			88: {UserID: 88, AffCode: "NHRPKQKESRWT", TotalRecharged: MembershipLevel1Threshold + 1},
+		},
+	}
+	settingService := NewSettingService(&settingRepoStub{values: settings}, &config.Config{})
+	affiliateService := NewAffiliateService(affiliateRepo, settingService, nil, nil, nil)
+	svc := newEmailOAuthAutoAuthService(userRepo, settings, quotaRepo)
+	svc.affiliateService = affiliateService
+
+	user, err := svc.createEmailOAuthUser(
+		context.Background(),
+		"newoauth-aff-limit@example.com",
+		"newoauth",
+		"github",
+		"NHRPKQKESRWT",
+		"", // affiliateCode
+	)
+
+	require.ErrorIs(t, err, ErrAffiliateInviteLimitReached)
+	require.Nil(t, user)
+	require.Equal(t, []int64{89}, userRepo.deletedIDs)
+	require.Equal(t, 1, affiliateRepo.bindCalls)
+	require.Empty(t, quotaRepo.bulkInsertCalls)
+}

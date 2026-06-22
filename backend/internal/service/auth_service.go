@@ -148,38 +148,21 @@ func (s *AuthService) RegisterWithVerification(ctx context.Context, email, passw
 		return "", nil, err
 	}
 
-	// 检查是否需要邀请码：自然注册沿用注册邀请码要求；通过邀请返利链接注册时，aff_code 可作为进入资格，
-	// 但仅在邀请返利总开关开启时生效；关闭后 aff_code 不能绕过邀请码，也不会绑定邀请关系。
-	var invitationRedeemCode *RedeemCode
-	affiliateCode = strings.TrimSpace(affiliateCode)
-	if affiliateCode != "" && (s.affiliateService == nil || !s.affiliateService.IsEnabled(ctx)) {
-		affiliateCode = ""
-	}
-	if s.settingService != nil && s.settingService.IsInvitationCodeEnabled(ctx) {
-		if affiliateCode != "" {
-			if s.affiliateService == nil {
-				return "", nil, ErrInvitationCodeRequired
-			}
-			if err := s.affiliateService.CanUseCodeForSignup(ctx, affiliateCode); err != nil {
-				return "", nil, err
-			}
-		} else {
-			if invitationCode == "" {
-				return "", nil, ErrInvitationCodeRequired
-			}
-			// 验证邀请码
-			redeemCode, err := s.redeemRepo.GetByCode(ctx, invitationCode)
-			if err != nil {
-				logger.LegacyPrintf("service.auth", "[Auth] Invalid invitation code: %s, error: %v", invitationCode, err)
-				return "", nil, ErrInvitationCodeInvalid
-			}
-			// 检查类型和状态
-			if redeemCode.Type != RedeemTypeInvitation || !redeemCode.CanUse() {
-				logger.LegacyPrintf("service.auth", "[Auth] Invitation code invalid: type=%s, status=%s", redeemCode.Type, redeemCode.Status)
-				return "", nil, ErrInvitationCodeInvalid
-			}
-			invitationRedeemCode = redeemCode
+	// 检查注册准入凭证：一次性注册邀请码优先；如果同一输入不是可用注册邀请码，
+	// 则按邀请返利码尝试。通过 aff 参数传入的返利码仍只在返利开关开启时生效。
+	admission, err := s.resolveSignupInvitationAdmission(ctx, invitationCode, affiliateCode)
+	if err != nil {
+		if errors.Is(err, ErrInvitationCodeInvalid) {
+			logger.LegacyPrintf("service.auth", "[Auth] Invalid invitation code or affiliate code: invitation=%s affiliate=%s", invitationCode, affiliateCode)
 		}
+		return "", nil, err
+	}
+	var invitationRedeemCode *RedeemCode
+	affiliateAdmission := false
+	if admission != nil {
+		invitationRedeemCode = admission.invitationRedeemCode
+		affiliateCode = admission.affiliateCode
+		affiliateAdmission = admission.affiliateAdmission
 	}
 
 	// 检查是否需要邮件验证
@@ -265,17 +248,10 @@ func (s *AuthService) RegisterWithVerification(ctx context.Context, email, passw
 		return "", nil, reason
 	}
 
-	if s.affiliateService != nil {
-		if _, err := s.affiliateService.EnsureUserAffiliate(registrationCtx, user.ID); err != nil {
-			if affiliateCode != "" {
-				return rollbackCreatedUser(err)
-			}
-			logger.LegacyPrintf("service.auth", "[Auth] Failed to initialize affiliate profile for user %d: %v", user.ID, err)
-		}
-		if code := affiliateCode; code != "" {
-			if err := s.affiliateService.BindInviterByCode(registrationCtx, user.ID, code); err != nil {
-				return rollbackCreatedUser(err)
-			}
+	affiliateRequired := affiliateCode != "" && (affiliateAdmission || invitationRedeemCode == nil)
+	if affiliateRequired {
+		if err := s.applyOAuthAffiliate(registrationCtx, user.ID, affiliateCode, true); err != nil {
+			return rollbackCreatedUser(err)
 		}
 	}
 
@@ -286,6 +262,11 @@ func (s *AuthService) RegisterWithVerification(ctx context.Context, email, passw
 		}
 		if err := s.redeemRepo.Use(registrationCtx, invitationRedeemCode.ID, user.ID); err != nil {
 			return rollbackCreatedUser(ErrInvitationCodeInvalid)
+		}
+	}
+	if !affiliateRequired {
+		if err := s.applyOAuthAffiliate(registrationCtx, user.ID, affiliateCode, false); err != nil {
+			return rollbackCreatedUser(err)
 		}
 	}
 	if registrationTx != nil {
@@ -661,20 +642,19 @@ func (s *AuthService) LoginOrRegisterOAuthWithTokenPair(ctx context.Context, ema
 				return nil, nil, ErrRegDisabled
 			}
 
-			// 检查是否需要邀请码
-			var invitationRedeemCode *RedeemCode
-			if s.settingService != nil && s.settingService.IsInvitationCodeEnabled(ctx) {
-				if invitationCode == "" {
+			admission, err := s.resolveSignupInvitationAdmission(ctx, invitationCode, affiliateCode)
+			if err != nil {
+				if errors.Is(err, ErrInvitationCodeRequired) {
 					return nil, nil, ErrOAuthInvitationRequired
 				}
-				redeemCode, err := s.redeemRepo.GetByCode(ctx, invitationCode)
-				if err != nil {
-					return nil, nil, ErrInvitationCodeInvalid
-				}
-				if redeemCode.Type != RedeemTypeInvitation || !redeemCode.CanUse() {
-					return nil, nil, ErrInvitationCodeInvalid
-				}
-				invitationRedeemCode = redeemCode
+				return nil, nil, err
+			}
+			var invitationRedeemCode *RedeemCode
+			affiliateAdmission := false
+			if admission != nil {
+				invitationRedeemCode = admission.invitationRedeemCode
+				affiliateCode = admission.affiliateCode
+				affiliateAdmission = admission.affiliateAdmission
 			}
 
 			randomPassword, err := randomHexString(32)
@@ -710,7 +690,8 @@ func (s *AuthService) LoginOrRegisterOAuthWithTokenPair(ctx context.Context, ema
 				SignupSource: signupSource,
 			}
 
-			if s.entClient != nil && invitationRedeemCode != nil {
+			useAdmissionTx := s.entClient != nil && (invitationRedeemCode != nil || (affiliateAdmission && affiliateCode != ""))
+			if useAdmissionTx {
 				tx, err := s.entClient.Tx(ctx)
 				if err != nil {
 					logger.LegacyPrintf("service.auth", "[Auth] Failed to begin transaction for oauth registration: %v", err)
@@ -731,19 +712,30 @@ func (s *AuthService) LoginOrRegisterOAuthWithTokenPair(ctx context.Context, ema
 						return nil, nil, ErrServiceUnavailable
 					}
 				} else {
-					if err := s.redeemRepo.Use(txCtx, invitationRedeemCode.ID, newUser.ID); err != nil {
-						return nil, nil, ErrInvitationCodeInvalid
+					user = newUser
+					if affiliateAdmission {
+						if err := s.applyOAuthAffiliate(txCtx, user.ID, affiliateCode, true); err != nil {
+							return nil, nil, err
+						}
 					}
+					if invitationRedeemCode != nil {
+						if err := s.useOAuthRegistrationInvitation(txCtx, invitationRedeemCode.ID, newUser.ID); err != nil {
+							return nil, nil, ErrInvitationCodeInvalid
+						}
+					}
+					if !affiliateAdmission {
+						if err := s.applyOAuthAffiliate(txCtx, user.ID, affiliateCode, false); err != nil {
+							return nil, nil, err
+						}
+					}
+					s.postAuthUserBootstrap(txCtx, user, signupSource, false)
+					s.assignSubscriptions(txCtx, user.ID, grantPlan.Subscriptions, "auto assigned by signup defaults")
+					// snapshot user × platform quota（fail-open）
+					_ = s.snapshotPlatformQuotaDefaults(txCtx, user.ID, &grantPlan)
 					if err := tx.Commit(); err != nil {
 						logger.LegacyPrintf("service.auth", "[Auth] Failed to commit oauth registration transaction: %v", err)
 						return nil, nil, ErrServiceUnavailable
 					}
-					user = newUser
-					s.postAuthUserBootstrap(ctx, user, signupSource, false)
-					s.assignSubscriptions(ctx, user.ID, grantPlan.Subscriptions, "auto assigned by signup defaults")
-					// snapshot user × platform quota（fail-open）
-					_ = s.snapshotPlatformQuotaDefaults(ctx, user.ID, &grantPlan)
-					s.bindOAuthAffiliate(ctx, user.ID, affiliateCode)
 				}
 			} else {
 				if err := s.userRepo.Create(ctx, newUser); err != nil {
@@ -759,16 +751,27 @@ func (s *AuthService) LoginOrRegisterOAuthWithTokenPair(ctx context.Context, ema
 					}
 				} else {
 					user = newUser
+					if affiliateAdmission {
+						if err := s.applyOAuthAffiliate(ctx, user.ID, affiliateCode, true); err != nil {
+							_ = s.RollbackOAuthEmailAccountCreation(ctx, user.ID, "")
+							return nil, nil, err
+						}
+					}
+					if invitationRedeemCode != nil {
+						if err := s.useOAuthRegistrationInvitation(ctx, invitationRedeemCode.ID, user.ID); err != nil {
+							_ = s.RollbackOAuthEmailAccountCreation(ctx, user.ID, invitationRedeemCode.Code)
+							return nil, nil, ErrInvitationCodeInvalid
+						}
+					}
+					if !affiliateAdmission {
+						if err := s.applyOAuthAffiliate(ctx, user.ID, affiliateCode, false); err != nil {
+							return nil, nil, err
+						}
+					}
 					s.postAuthUserBootstrap(ctx, user, signupSource, false)
 					s.assignSubscriptions(ctx, user.ID, grantPlan.Subscriptions, "auto assigned by signup defaults")
 					// snapshot user × platform quota（fail-open）
 					_ = s.snapshotPlatformQuotaDefaults(ctx, user.ID, &grantPlan)
-					s.bindOAuthAffiliate(ctx, user.ID, affiliateCode)
-					if invitationRedeemCode != nil {
-						if err := s.redeemRepo.Use(ctx, invitationRedeemCode.ID, user.ID); err != nil {
-							return nil, nil, ErrInvitationCodeInvalid
-						}
-					}
 				}
 			}
 		} else {
@@ -899,6 +902,24 @@ func (s *AuthService) bindOAuthAffiliate(ctx context.Context, userID int64, affi
 			logger.LegacyPrintf("service.auth", "[Auth] Failed to bind affiliate inviter for user %d: %v", userID, err)
 		}
 	}
+}
+
+func (s *AuthService) applyOAuthAffiliate(ctx context.Context, userID int64, affiliateCode string, required bool) error {
+	if !required {
+		s.bindOAuthAffiliate(ctx, userID, affiliateCode)
+		return nil
+	}
+	if s == nil || s.affiliateService == nil || userID <= 0 {
+		return ErrServiceUnavailable
+	}
+	if _, err := s.affiliateService.EnsureUserAffiliate(ctx, userID); err != nil {
+		return err
+	}
+	code := strings.TrimSpace(affiliateCode)
+	if code == "" {
+		return ErrAffiliateCodeInvalid
+	}
+	return s.affiliateService.BindInviterByCode(ctx, userID, code)
 }
 
 func (s *AuthService) postAuthUserBootstrap(ctx context.Context, user *User, signupSource string, touchLogin bool) {

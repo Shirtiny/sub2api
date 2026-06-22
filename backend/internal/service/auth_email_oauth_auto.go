@@ -145,12 +145,19 @@ func (s *AuthService) createEmailOAuthUser(ctx context.Context, email, username,
 	if s.settingService == nil || !s.settingService.IsRegistrationEnabled(ctx) {
 		return nil, ErrRegDisabled
 	}
-	invitationRedeemCode, err := s.validateOAuthRegistrationInvitation(ctx, invitationCode)
+	admission, err := s.resolveSignupInvitationAdmission(ctx, invitationCode, affiliateCode)
 	if err != nil {
 		if errors.Is(err, ErrInvitationCodeRequired) {
 			return nil, ErrOAuthInvitationRequired
 		}
 		return nil, err
+	}
+	var invitationRedeemCode *RedeemCode
+	affiliateAdmission := false
+	if admission != nil {
+		invitationRedeemCode = admission.invitationRedeemCode
+		affiliateCode = admission.affiliateCode
+		affiliateAdmission = admission.affiliateAdmission
 	}
 
 	randomPassword, err := randomHexString(32)
@@ -187,17 +194,32 @@ func (s *AuthService) createEmailOAuthUser(ctx context.Context, email, username,
 		}
 		return nil, ErrServiceUnavailable
 	}
+	rollbackInvitationCode := ""
+	if invitationRedeemCode != nil {
+		rollbackInvitationCode = invitationRedeemCode.Code
+	}
+	if affiliateAdmission {
+		if err := s.applyOAuthAffiliate(ctx, user.ID, affiliateCode, true); err != nil {
+			_ = s.RollbackOAuthEmailAccountCreation(ctx, user.ID, rollbackInvitationCode)
+			return nil, err
+		}
+	}
+	if invitationRedeemCode != nil {
+		if err := s.useOAuthRegistrationInvitation(ctx, invitationRedeemCode.ID, user.ID); err != nil {
+			_ = s.RollbackOAuthEmailAccountCreation(ctx, user.ID, rollbackInvitationCode)
+			return nil, ErrInvitationCodeInvalid
+		}
+	}
+	if !affiliateAdmission {
+		if err := s.applyOAuthAffiliate(ctx, user.ID, affiliateCode, false); err != nil {
+			_ = s.RollbackOAuthEmailAccountCreation(ctx, user.ID, rollbackInvitationCode)
+			return nil, err
+		}
+	}
 	s.postAuthUserBootstrap(ctx, user, providerType, false)
 	s.assignSubscriptions(ctx, user.ID, grantPlan.Subscriptions, "auto assigned by signup defaults")
 	// snapshot user × platform quota（fail-open）
 	_ = s.snapshotPlatformQuotaDefaults(ctx, user.ID, &grantPlan)
-	s.bindOAuthAffiliate(ctx, user.ID, affiliateCode)
-	if invitationRedeemCode != nil {
-		if err := s.useOAuthRegistrationInvitation(ctx, invitationRedeemCode.ID, user.ID); err != nil {
-			_ = s.RollbackOAuthEmailAccountCreation(ctx, user.ID, invitationCode)
-			return nil, ErrInvitationCodeInvalid
-		}
-	}
 	return user, nil
 }
 

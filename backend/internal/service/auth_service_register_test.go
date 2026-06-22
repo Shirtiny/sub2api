@@ -350,6 +350,97 @@ func TestAuthService_Register_AffiliateCodeBypassesInvitationRequirement(t *test
 	require.Equal(t, int64(12), user.ID)
 }
 
+func TestAuthService_Register_AffiliateCodeInInvitationFieldRegistersAndBinds(t *testing.T) {
+	repo := &userRepoStub{nextID: 12}
+	settings := map[string]string{
+		SettingKeyRegistrationEnabled:   "true",
+		SettingKeyInvitationCodeEnabled: "true",
+		SettingKeyAffiliateEnabled:      "true",
+	}
+	affiliateRepo := &affiliateRepoThresholdStub{summaries: map[int64]*AffiliateSummary{
+		88: {UserID: 88, AffCode: "NHRPKQKESRWT", TotalRecharged: MembershipLevel1Threshold + 1},
+	}}
+	settingService := NewSettingService(&settingRepoStub{values: settings}, &config.Config{})
+	affiliateService := NewAffiliateService(affiliateRepo, settingService, nil, nil, nil)
+	service := newAuthServiceWithAffiliate(repo, settings, nil, nil, affiliateService)
+
+	_, user, err := service.RegisterWithVerification(context.Background(), "user@test.com", "password", "", "", "NHRPKQKESRWT", "")
+	require.NoError(t, err)
+	require.NotNil(t, user)
+	require.Equal(t, int64(12), user.ID)
+	require.Equal(t, 1, affiliateRepo.summaries[88].AffCount)
+}
+
+func TestAuthService_Register_InvitationCodeWinsOverHiddenAffiliateCode(t *testing.T) {
+	repo := &userRepoStub{nextID: 12}
+	redeemRepo := &redeemCodeRepoStub{
+		codesByCode: map[string]*RedeemCode{
+			"INVITE123": {
+				ID:     7,
+				Code:   "INVITE123",
+				Type:   RedeemTypeInvitation,
+				Status: StatusUnused,
+			},
+		},
+	}
+	settings := map[string]string{
+		SettingKeyRegistrationEnabled:   "true",
+		SettingKeyInvitationCodeEnabled: "true",
+		SettingKeyAffiliateEnabled:      "true",
+	}
+	affiliateRepo := &affiliateRepoThresholdStub{summaries: map[int64]*AffiliateSummary{
+		88: {UserID: 88, AffCode: "VALIDAFF", TotalRecharged: MembershipLevel1Threshold + 1},
+	}}
+	settingService := NewSettingService(&settingRepoStub{values: settings}, &config.Config{})
+	affiliateService := NewAffiliateService(affiliateRepo, settingService, nil, nil, nil)
+	service := newAuthServiceWithAffiliate(repo, settings, nil, nil, affiliateService)
+	service.redeemRepo = redeemRepo
+
+	_, user, err := service.RegisterWithVerification(context.Background(), "user@test.com", "password", "", "", "INVITE123", "BADAFF")
+
+	require.NoError(t, err)
+	require.NotNil(t, user)
+	require.Equal(t, int64(12), user.ID)
+	require.Len(t, redeemRepo.useCalls, 1)
+	require.Equal(t, int64(7), redeemRepo.useCalls[0].id)
+	require.Equal(t, int64(12), redeemRepo.useCalls[0].userID)
+	require.Zero(t, affiliateRepo.bindCalls)
+}
+
+func TestAuthService_LoginOrRegisterOAuthWithTokenPair_AffiliateAdmissionRequiresBinding(t *testing.T) {
+	repo := &userRepoStub{nextID: 61}
+	settings := map[string]string{
+		SettingKeyRegistrationEnabled:   "true",
+		SettingKeyInvitationCodeEnabled: "true",
+		SettingKeyAffiliateEnabled:      "true",
+	}
+	affiliateRepo := &affiliateRepoThresholdStub{
+		bindErr: ErrAffiliateInviteLimitReached,
+		summaries: map[int64]*AffiliateSummary{
+			88: {UserID: 88, AffCode: "NHRPKQKESRWT", TotalRecharged: MembershipLevel1Threshold + 1},
+		},
+	}
+	settingService := NewSettingService(&settingRepoStub{values: settings}, &config.Config{})
+	affiliateService := NewAffiliateService(affiliateRepo, settingService, nil, nil, nil)
+	service := newAuthServiceWithAffiliate(repo, settings, nil, nil, affiliateService)
+	service.refreshTokenCache = &refreshTokenCacheStub{}
+
+	tokenPair, user, err := service.LoginOrRegisterOAuthWithTokenPair(
+		context.Background(),
+		"oauth-aff-limit@example.com",
+		"oauth_user",
+		"NHRPKQKESRWT",
+		"",
+		"oidc",
+	)
+
+	require.ErrorIs(t, err, ErrAffiliateInviteLimitReached)
+	require.Nil(t, tokenPair)
+	require.Nil(t, user)
+	require.Equal(t, []int64{61}, repo.deletedIDs)
+	require.Equal(t, 1, affiliateRepo.bindCalls)
+}
+
 func TestAuthService_Register_AffiliateCodeDoesNotBypassInvitationWhenAffiliateDisabled(t *testing.T) {
 	repo := &userRepoStub{}
 	settings := map[string]string{

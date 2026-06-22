@@ -368,6 +368,7 @@ func (h *AuthHandler) completeEmailOAuthRegistration(c *gin.Context, provider st
 		req.Password,
 		strings.TrimSpace(req.InvitationCode),
 		strings.TrimSpace(session.ProviderType),
+		affiliateCode,
 	)
 	if err != nil {
 		response.ErrorFrom(c, err)
@@ -386,6 +387,11 @@ func (h *AuthHandler) completeEmailOAuthRegistration(c *gin.Context, provider st
 	}
 	defer func() { _ = tx.Rollback() }()
 	txCtx := dbent.NewTxContext(c.Request.Context(), tx)
+	rollbackInvitationCode := h.authService.RollbackInvitationCodeForSignupAdmission(
+		c.Request.Context(),
+		strings.TrimSpace(req.InvitationCode),
+		affiliateCode,
+	)
 	sessionForBinding := *session
 	sessionForBinding.UpstreamIdentityClaims = clonePendingMap(session.UpstreamIdentityClaims)
 	if strings.TrimSpace(req.InvitationCode) != "" {
@@ -394,13 +400,13 @@ func (h *AuthHandler) completeEmailOAuthRegistration(c *gin.Context, provider st
 	decision, err := h.ensurePendingOAuthAdoptionDecision(c, session.ID, oauthAdoptionDecisionRequest{})
 	if err != nil {
 		_ = tx.Rollback()
-		_ = h.authService.RollbackOAuthEmailAccountCreation(c.Request.Context(), user.ID, strings.TrimSpace(req.InvitationCode))
+		_ = h.authService.RollbackOAuthEmailAccountCreation(c.Request.Context(), user.ID, rollbackInvitationCode)
 		response.ErrorFrom(c, err)
 		return
 	}
 	if err := applyPendingOAuthBinding(txCtx, client, h.authService, h.userService, &sessionForBinding, decision, &user.ID, true, false); err != nil {
 		_ = tx.Rollback()
-		_ = h.authService.RollbackOAuthEmailAccountCreation(c.Request.Context(), user.ID, strings.TrimSpace(req.InvitationCode))
+		_ = h.authService.RollbackOAuthEmailAccountCreation(c.Request.Context(), user.ID, rollbackInvitationCode)
 		respondPendingOAuthBindingApplyError(c, err)
 		return
 	}
@@ -412,19 +418,19 @@ func (h *AuthHandler) completeEmailOAuthRegistration(c *gin.Context, provider st
 		affiliateCode,
 	); err != nil {
 		_ = tx.Rollback()
-		_ = h.authService.RollbackOAuthEmailAccountCreation(c.Request.Context(), user.ID, strings.TrimSpace(req.InvitationCode))
+		_ = h.authService.RollbackOAuthEmailAccountCreation(c.Request.Context(), user.ID, rollbackInvitationCode)
 		response.ErrorFrom(c, err)
 		return
 	}
 	if err := consumePendingOAuthBrowserSessionTx(c.Request.Context(), tx, session); err != nil {
 		_ = tx.Rollback()
-		_ = h.authService.RollbackOAuthEmailAccountCreation(c.Request.Context(), user.ID, strings.TrimSpace(req.InvitationCode))
+		_ = h.authService.RollbackOAuthEmailAccountCreation(c.Request.Context(), user.ID, rollbackInvitationCode)
 		clearCookies()
 		response.ErrorFrom(c, err)
 		return
 	}
 	if err := tx.Commit(); err != nil {
-		_ = h.authService.RollbackOAuthEmailAccountCreation(c.Request.Context(), user.ID, strings.TrimSpace(req.InvitationCode))
+		_ = h.authService.RollbackOAuthEmailAccountCreation(c.Request.Context(), user.ID, rollbackInvitationCode)
 		response.ErrorFrom(c, infraerrors.InternalServer("PENDING_AUTH_BIND_APPLY_FAILED", "failed to consume pending oauth session").WithCause(err))
 		return
 	}

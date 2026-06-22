@@ -187,6 +187,7 @@ func TestRegisterOAuthEmailAccountRollsBackCreatedUserWhenTokenPairGenerationFai
 		"246810",
 		"INVITE123",
 		"oidc",
+		"",
 	)
 
 	require.Nil(t, tokenPair)
@@ -228,6 +229,7 @@ func TestRegisterOAuthEmailAccountSetsNormalizedSignupSourceOnCreatedUser(t *tes
 		"246810",
 		"",
 		" OIDC ",
+		"",
 	)
 
 	require.NoError(t, err)
@@ -288,6 +290,7 @@ func TestRegisterOAuthEmailAccountKeepsGitHubAndGoogleSignupSource(t *testing.T)
 				"246810",
 				"",
 				tt.signupSource,
+				"",
 			)
 
 			require.NoError(t, err)
@@ -328,6 +331,7 @@ func TestRegisterOAuthEmailAccountFallsBackUnknownSignupSourceToEmail(t *testing
 		"246810",
 		"",
 		"unknown-provider",
+		"",
 	)
 
 	require.NoError(t, err)
@@ -335,6 +339,148 @@ func TestRegisterOAuthEmailAccountFallsBackUnknownSignupSourceToEmail(t *testing
 	require.NotNil(t, user)
 	require.Len(t, userRepo.created, 1)
 	require.Equal(t, "email", userRepo.created[0].SignupSource)
+}
+
+func TestRegisterOAuthEmailAccountAcceptsAffiliateCodeInInvitationField(t *testing.T) {
+	userRepo := &userRepoStub{nextID: 44}
+	emailCache := &emailCacheStub{
+		data: &VerificationCodeData{
+			Code:      "246810",
+			Attempts:  0,
+			CreatedAt: time.Now().UTC(),
+			ExpiresAt: time.Now().UTC().Add(15 * time.Minute),
+		},
+	}
+	settings := map[string]string{
+		SettingKeyRegistrationEnabled:   "true",
+		SettingKeyEmailVerifyEnabled:    "true",
+		SettingKeyInvitationCodeEnabled: "true",
+		SettingKeyAffiliateEnabled:      "true",
+	}
+	affiliateRepo := &affiliateRepoThresholdStub{summaries: map[int64]*AffiliateSummary{
+		88: {UserID: 88, AffCode: "NHRPKQKESRWT", TotalRecharged: MembershipLevel1Threshold + 1},
+	}}
+	settingService := NewSettingService(&settingRepoStub{values: settings}, &config.Config{})
+	affiliateService := NewAffiliateService(affiliateRepo, settingService, nil, nil, nil)
+	authService := newOAuthEmailFlowAuthService(
+		userRepo,
+		&redeemCodeRepoStub{},
+		&refreshTokenCacheStub{},
+		settings,
+		emailCache,
+		nil,
+	)
+	authService.affiliateService = affiliateService
+
+	tokenPair, user, err := authService.RegisterOAuthEmailAccount(
+		context.Background(),
+		"oauth-aff@example.com",
+		"secret-123",
+		"246810",
+		"NHRPKQKESRWT",
+		"oidc",
+		"",
+	)
+
+	require.NoError(t, err)
+	require.NotNil(t, tokenPair)
+	require.NotNil(t, user)
+	require.Equal(t, int64(44), user.ID)
+	require.Equal(t, 0, affiliateRepo.summaries[88].AffCount)
+
+	err = authService.FinalizeOAuthEmailAccount(
+		context.Background(),
+		user,
+		"NHRPKQKESRWT",
+		"oidc",
+		"",
+	)
+	require.NoError(t, err)
+	require.Equal(t, 1, affiliateRepo.summaries[88].AffCount)
+}
+
+func TestFinalizeOAuthEmailAccountInvitationCodeWinsOverHiddenAffiliateCode(t *testing.T) {
+	userRepo := &userRepoStub{}
+	redeemRepo := &redeemCodeRepoStub{
+		codesByCode: map[string]*RedeemCode{
+			"INVITE123": {
+				ID:     7,
+				Code:   "INVITE123",
+				Type:   RedeemTypeInvitation,
+				Status: StatusUnused,
+			},
+		},
+	}
+	settings := map[string]string{
+		SettingKeyRegistrationEnabled:   "true",
+		SettingKeyInvitationCodeEnabled: "true",
+		SettingKeyAffiliateEnabled:      "true",
+	}
+	affiliateRepo := &affiliateRepoThresholdStub{summaries: map[int64]*AffiliateSummary{
+		88: {UserID: 88, AffCode: "VALIDAFF", TotalRecharged: MembershipLevel1Threshold + 1},
+	}}
+	settingService := NewSettingService(&settingRepoStub{values: settings}, &config.Config{})
+	affiliateService := NewAffiliateService(affiliateRepo, settingService, nil, nil, nil)
+	authService := newOAuthEmailFlowAuthService(
+		userRepo,
+		redeemRepo,
+		&refreshTokenCacheStub{},
+		settings,
+		&emailCacheStub{},
+		nil,
+	)
+	authService.affiliateService = affiliateService
+
+	err := authService.FinalizeOAuthEmailAccount(
+		context.Background(),
+		&User{ID: 44, Email: "oauth-invite@example.com", Role: RoleUser, Status: StatusActive},
+		"INVITE123",
+		"oidc",
+		"BADAFF",
+	)
+
+	require.NoError(t, err)
+	require.Len(t, redeemRepo.useCalls, 1)
+	require.Equal(t, int64(7), redeemRepo.useCalls[0].id)
+	require.Equal(t, int64(44), redeemRepo.useCalls[0].userID)
+	require.Zero(t, affiliateRepo.bindCalls)
+}
+
+func TestFinalizeOAuthEmailAccountAffiliateAdmissionRequiresBinding(t *testing.T) {
+	userRepo := &userRepoStub{}
+	settings := map[string]string{
+		SettingKeyRegistrationEnabled:   "true",
+		SettingKeyInvitationCodeEnabled: "true",
+		SettingKeyAffiliateEnabled:      "true",
+	}
+	affiliateRepo := &affiliateRepoThresholdStub{
+		bindErr: ErrAffiliateInviteLimitReached,
+		summaries: map[int64]*AffiliateSummary{
+			88: {UserID: 88, AffCode: "NHRPKQKESRWT", TotalRecharged: MembershipLevel1Threshold + 1},
+		},
+	}
+	settingService := NewSettingService(&settingRepoStub{values: settings}, &config.Config{})
+	affiliateService := NewAffiliateService(affiliateRepo, settingService, nil, nil, nil)
+	authService := newOAuthEmailFlowAuthService(
+		userRepo,
+		&redeemCodeRepoStub{},
+		&refreshTokenCacheStub{},
+		settings,
+		&emailCacheStub{},
+		nil,
+	)
+	authService.affiliateService = affiliateService
+
+	err := authService.FinalizeOAuthEmailAccount(
+		context.Background(),
+		&User{ID: 44, Email: "oauth-aff-limit@example.com", Role: RoleUser, Status: StatusActive},
+		"NHRPKQKESRWT",
+		"oidc",
+		"",
+	)
+
+	require.ErrorIs(t, err, ErrAffiliateInviteLimitReached)
+	require.Equal(t, 1, affiliateRepo.bindCalls)
 }
 
 func TestRollbackOAuthEmailAccountCreationRestoresInvitationUsage(t *testing.T) {

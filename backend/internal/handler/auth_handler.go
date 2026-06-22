@@ -540,15 +540,11 @@ func (h *AuthHandler) ValidateInvitationCode(c *gin.Context) {
 		return
 	}
 
-	// 验证邀请码
-	redeemCode, err := h.redeemService.GetByCode(c.Request.Context(), req.Code)
-	if err != nil {
+	if h.authService == nil {
 		genericInvalid()
 		return
 	}
-
-	// 检查类型和状态
-	if redeemCode.Type != service.RedeemTypeInvitation || redeemCode.Status != service.StatusUnused {
+	if err := h.authService.ValidateSignupInvitationCode(c.Request.Context(), req.Code); err != nil {
 		genericInvalid()
 		return
 	}
