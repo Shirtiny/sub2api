@@ -217,6 +217,27 @@ describe('PaymentView WeChat JSAPI flow', () => {
     }
   })
 
+  it('defaults to subscription tab and lists it before top up', async () => {
+    routeState.query = {}
+
+    const wrapper = shallowMount(PaymentView, {
+      global: {
+        stubs: {
+          Teleport: true,
+          Transition: false,
+        },
+      },
+    })
+    await flushPromises()
+
+    const vm = wrapper.vm as unknown as {
+      activeTab: string
+      tabs: Array<{ key: string; label: string }>
+    }
+    expect(vm.tabs.map((tab) => tab.key)).toEqual(['subscription', 'recharge'])
+    expect(vm.activeTab).toBe('subscription')
+  })
+
   it('resets payment state and redirects to /payment/result after JSAPI reports success', async () => {
     createOrder.mockResolvedValue(jsapiOrderFixture('resume-token-123'))
     bridgeInvoke.mockImplementation((_action, _payload, callback) => {
