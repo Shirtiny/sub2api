@@ -298,23 +298,68 @@ func assignNullInt(dst **int, n sql.NullInt64) {
 // ComputeAvailability 计算指定窗口内每个模型的可用率与平均延迟。
 // "可用" = status IN (operational, degraded)。
 //
-// 数据来源：明细表只保留 1 天；窗口前其余天数走聚合表。
-// 明细保留 30 天（monitorHistoryRetentionDays），窗口 <= 30 天时直接扫 histories，
-// 精度到秒，避免与聚合表 UNION 带来的 UTC 日切精度损失。
+// 数据来源：
+//   - channel_monitor_daily_rollups 覆盖窗口起点后的完整已聚合日期；
+//   - channel_monitor_histories 补充窗口内尚未聚合的日期；
+//   - 窗口起点后的完整日期如果已有 rollup，则同日明细不再计入，避免重复统计。
 func (r *channelMonitorRepository) ComputeAvailability(ctx context.Context, monitorID int64, windowDays int) ([]*service.ChannelMonitorAvailability, error) {
 	if windowDays <= 0 {
 		windowDays = 7
 	}
 	const q = `
+		WITH params AS (
+		    SELECT
+		        NOW() - ($2::int || ' days')::interval AS start_ts,
+		        (NOW() - ($2::int || ' days')::interval)::date AS start_date
+		),
+		rollup AS (
+		    SELECT
+		        r.monitor_id,
+		        r.model,
+		        SUM(r.total_checks)::bigint AS total,
+		        SUM(r.ok_count)::bigint AS ok,
+		        COALESCE(SUM(r.sum_latency_ms), 0)::bigint AS sum_latency_ms,
+		        COALESCE(SUM(r.count_latency), 0)::bigint AS count_latency
+		    FROM channel_monitor_daily_rollups r
+		    CROSS JOIN params p
+		    WHERE r.monitor_id = $1
+		      AND r.bucket_date > p.start_date
+		    GROUP BY r.monitor_id, r.model
+		),
+		history AS (
+		    SELECT
+		        h.monitor_id,
+		        h.model,
+		        COUNT(*)::bigint AS total,
+		        (COUNT(*) FILTER (WHERE h.status IN ('operational','degraded')))::bigint AS ok,
+		        COALESCE(SUM(h.latency_ms) FILTER (WHERE h.latency_ms IS NOT NULL), 0)::bigint AS sum_latency_ms,
+		        COUNT(h.latency_ms)::bigint AS count_latency
+		    FROM channel_monitor_histories h
+		    CROSS JOIN params p
+		    WHERE h.monitor_id = $1
+		      AND h.checked_at >= p.start_ts
+		      AND NOT EXISTS (
+		          SELECT 1
+		          FROM channel_monitor_daily_rollups r
+		          WHERE r.monitor_id = h.monitor_id
+		            AND r.model = h.model
+		            AND r.bucket_date = h.checked_at::date
+		            AND r.bucket_date > p.start_date
+		      )
+		    GROUP BY h.monitor_id, h.model
+		),
+		combined AS (
+		    SELECT * FROM rollup
+		    UNION ALL
+		    SELECT * FROM history
+		)
 		SELECT model,
-		       COUNT(*)                                                             AS total,
-		       COUNT(*) FILTER (WHERE status IN ('operational','degraded'))         AS ok,
-		       CASE WHEN COUNT(latency_ms) > 0
-		            THEN SUM(latency_ms) FILTER (WHERE latency_ms IS NOT NULL)::float8 / COUNT(latency_ms)
-		            ELSE NULL END                                                   AS avg_latency_ms
-		FROM channel_monitor_histories
-		WHERE monitor_id = $1
-		  AND checked_at >= NOW() - ($2::int || ' days')::interval
+		       SUM(total)::bigint AS total,
+		       SUM(ok)::bigint AS ok,
+		       CASE WHEN SUM(count_latency) > 0
+		            THEN SUM(sum_latency_ms)::float8 / SUM(count_latency)
+		            ELSE NULL END AS avg_latency_ms
+		FROM combined
 		GROUP BY model
 	`
 	rows, err := r.db.QueryContext(ctx, q, monitorID, windowDays)
@@ -339,9 +384,12 @@ func (r *channelMonitorRepository) ComputeAvailability(ctx context.Context, moni
 func scanAvailabilityRow(rows interface{ Scan(...any) error }, windowDays int) (*service.ChannelMonitorAvailability, error) {
 	row := &service.ChannelMonitorAvailability{WindowDays: windowDays}
 	var avgLatency sql.NullFloat64
-	if err := rows.Scan(&row.Model, &row.TotalChecks, &row.OperationalChecks, &avgLatency); err != nil {
+	var totalChecks, operationalChecks int64
+	if err := rows.Scan(&row.Model, &totalChecks, &operationalChecks, &avgLatency); err != nil {
 		return nil, fmt.Errorf("scan availability row: %w", err)
 	}
+	row.TotalChecks = int(totalChecks)
+	row.OperationalChecks = int(operationalChecks)
 	finalizeAvailabilityRow(row, avgLatency)
 	return row, nil
 }
@@ -497,7 +545,7 @@ func clampTimelineLimit(n int) int {
 }
 
 // ComputeAvailabilityForMonitors 一次性计算多个监控在某个窗口内的每模型可用率与平均延迟。
-// 明细保留 30 天，直接扫 histories（窗口 <= 30 天时无需聚合）。
+// 与 ComputeAvailability 使用相同口径：已聚合日期走 rollup，未聚合日期走明细。
 func (r *channelMonitorRepository) ComputeAvailabilityForMonitors(ctx context.Context, ids []int64, windowDays int) (map[int64][]*service.ChannelMonitorAvailability, error) {
 	out := make(map[int64][]*service.ChannelMonitorAvailability, len(ids))
 	if len(ids) == 0 {
@@ -507,16 +555,60 @@ func (r *channelMonitorRepository) ComputeAvailabilityForMonitors(ctx context.Co
 		windowDays = 7
 	}
 	const q = `
+		WITH params AS (
+		    SELECT
+		        NOW() - ($2::int || ' days')::interval AS start_ts,
+		        (NOW() - ($2::int || ' days')::interval)::date AS start_date
+		),
+		rollup AS (
+		    SELECT
+		        r.monitor_id,
+		        r.model,
+		        SUM(r.total_checks)::bigint AS total,
+		        SUM(r.ok_count)::bigint AS ok,
+		        COALESCE(SUM(r.sum_latency_ms), 0)::bigint AS sum_latency_ms,
+		        COALESCE(SUM(r.count_latency), 0)::bigint AS count_latency
+		    FROM channel_monitor_daily_rollups r
+		    CROSS JOIN params p
+		    WHERE r.monitor_id = ANY($1)
+		      AND r.bucket_date > p.start_date
+		    GROUP BY r.monitor_id, r.model
+		),
+		history AS (
+		    SELECT
+		        h.monitor_id,
+		        h.model,
+		        COUNT(*)::bigint AS total,
+		        (COUNT(*) FILTER (WHERE h.status IN ('operational','degraded')))::bigint AS ok,
+		        COALESCE(SUM(h.latency_ms) FILTER (WHERE h.latency_ms IS NOT NULL), 0)::bigint AS sum_latency_ms,
+		        COUNT(h.latency_ms)::bigint AS count_latency
+		    FROM channel_monitor_histories h
+		    CROSS JOIN params p
+		    WHERE h.monitor_id = ANY($1)
+		      AND h.checked_at >= p.start_ts
+		      AND NOT EXISTS (
+		          SELECT 1
+		          FROM channel_monitor_daily_rollups r
+		          WHERE r.monitor_id = h.monitor_id
+		            AND r.model = h.model
+		            AND r.bucket_date = h.checked_at::date
+		            AND r.bucket_date > p.start_date
+		      )
+		    GROUP BY h.monitor_id, h.model
+		),
+		combined AS (
+		    SELECT * FROM rollup
+		    UNION ALL
+		    SELECT * FROM history
+		)
 		SELECT monitor_id,
 		       model,
-		       COUNT(*)                                                             AS total,
-		       COUNT(*) FILTER (WHERE status IN ('operational','degraded'))         AS ok,
-		       CASE WHEN COUNT(latency_ms) > 0
-		            THEN SUM(latency_ms) FILTER (WHERE latency_ms IS NOT NULL)::float8 / COUNT(latency_ms)
-		            ELSE NULL END                                                   AS avg_latency_ms
-		FROM channel_monitor_histories
-		WHERE monitor_id = ANY($1)
-		  AND checked_at >= NOW() - ($2::int || ' days')::interval
+		       SUM(total)::bigint AS total,
+		       SUM(ok)::bigint AS ok,
+		       CASE WHEN SUM(count_latency) > 0
+		            THEN SUM(sum_latency_ms)::float8 / SUM(count_latency)
+		            ELSE NULL END AS avg_latency_ms
+		FROM combined
 		GROUP BY monitor_id, model
 	`
 	rows, err := r.db.QueryContext(ctx, q, pq.Array(ids), windowDays)
@@ -529,9 +621,12 @@ func (r *channelMonitorRepository) ComputeAvailabilityForMonitors(ctx context.Co
 		var monitorID int64
 		row := &service.ChannelMonitorAvailability{WindowDays: windowDays}
 		var avgLatency sql.NullFloat64
-		if err := rows.Scan(&monitorID, &row.Model, &row.TotalChecks, &row.OperationalChecks, &avgLatency); err != nil {
+		var totalChecks, operationalChecks int64
+		if err := rows.Scan(&monitorID, &row.Model, &totalChecks, &operationalChecks, &avgLatency); err != nil {
 			return nil, fmt.Errorf("scan availability batch row: %w", err)
 		}
+		row.TotalChecks = int(totalChecks)
+		row.OperationalChecks = int(operationalChecks)
 		// 批量查询多了首列 monitor_id；其余字段的可用率/平均延迟换算与单 monitor 版本一致，
 		// 抽出 finalizeAvailabilityRow 复用，避免两处分别维护除法与 NullFloat 解包。
 		finalizeAvailabilityRow(row, avgLatency)
