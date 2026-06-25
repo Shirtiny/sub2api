@@ -765,6 +765,9 @@ func OpsErrorLoggerMiddleware(ops *service.OpsService) gin.HandlerFunc {
 			if apiKey != nil {
 				entry.APIKeyID = &apiKey.ID
 				entry.APIKeyPrefix = keyPrefix(apiKey.Key, 8)
+				if entry.APIKeyPrefix == "" {
+					entry.APIKeyPrefix = keyPrefix(apiKey.KeyPrefix, 8)
+				}
 				if apiKey.User != nil {
 					entry.UserID = &apiKey.User.ID
 				}
@@ -957,6 +960,9 @@ func OpsErrorLoggerMiddleware(ops *service.OpsService) gin.HandlerFunc {
 			entry.APIKeyID = &apiKey.ID
 			// 有效(未删除)key 报错时快照前缀,key 之后被删也保留;与 INVALID_API_KEY 的 attempted_key_prefix 互斥。
 			entry.APIKeyPrefix = keyPrefix(apiKey.Key, 8)
+			if entry.APIKeyPrefix == "" {
+				entry.APIKeyPrefix = keyPrefix(apiKey.KeyPrefix, 8)
+			}
 			if apiKey.User != nil {
 				entry.UserID = &apiKey.User.ID
 			}

@@ -174,13 +174,30 @@ func (h *APIKeyHandler) Create(c *gin.Context) {
 		svcReq.RateLimit7d = *req.RateLimit7d
 	}
 
-	executeUserIdempotentJSON(c, "user.api_keys.create", req, service.DefaultWriteIdempotencyTTL(), func(ctx context.Context) (any, error) {
-		key, err := h.apiKeyService.Create(ctx, subject.UserID, svcReq)
-		if err != nil {
-			return nil, err
-		}
-		return dto.APIKeyFromService(key), nil
-	})
+	executeUserIdempotentJSONWithStoredResponse(
+		c,
+		"user.api_keys.create",
+		req,
+		service.DefaultWriteIdempotencyTTL(),
+		sanitizeAPIKeyCreateIdempotencyResponse,
+		func(ctx context.Context) (any, error) {
+			key, err := h.apiKeyService.Create(ctx, subject.UserID, svcReq)
+			if err != nil {
+				return nil, err
+			}
+			return dto.APIKeyFromServiceWithSecret(key), nil
+		},
+	)
+}
+
+func sanitizeAPIKeyCreateIdempotencyResponse(data any) any {
+	key, ok := data.(*dto.APIKey)
+	if !ok || key == nil {
+		return data
+	}
+	sanitized := *key
+	sanitized.Key = ""
+	return &sanitized
 }
 
 // Update handles updating an API key

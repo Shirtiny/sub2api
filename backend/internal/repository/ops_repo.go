@@ -602,17 +602,49 @@ LIMIT 1`
 	return &out, nil
 }
 
-// LookupDeletedKeyAudit 按明文 key 反查最近一条已删除 key 审计。
+// LookupDeletedKeyAudit 按 hash lookup token 反查最近一条已删除 key 审计。
 // 同一 key 可能有多条历史(反复创建/删除),取 deleted_at 最近一条(id 作同毫秒 tiebreaker)。
 // 未命中返回 (nil, nil)。
 func (r *opsRepository) LookupDeletedKeyAudit(ctx context.Context, key string) (*service.DeletedKeyAuditResult, error) {
-	var res service.DeletedKeyAuditResult
-	err := r.db.QueryRowContext(ctx, `
+	query := `
 		SELECT user_id, key_name
 		FROM deleted_api_key_audits
 		WHERE key = $1
 		ORDER BY deleted_at DESC, id DESC
-		LIMIT 1`, key).Scan(&res.UserID, &res.KeyName)
+		LIMIT 1`
+	args := []any{key}
+	if hashes, ok := service.DecodeAPIKeyLookupToken(key); ok {
+		if len(hashes) == 0 {
+			return nil, nil
+		}
+		parts := make([]string, 0, len(hashes))
+		args = args[:0]
+		for _, h := range hashes {
+			if strings.TrimSpace(h.Alg) == "" || strings.TrimSpace(h.Hash) == "" {
+				continue
+			}
+			if h.Alg == service.APIKeyHashAlgLookupSHA256 {
+				args = append(args, h.Hash)
+				parts = append(parts, fmt.Sprintf("key_lookup_hash = $%d", len(args)))
+				continue
+			}
+			args = append(args, h.Hash, h.Alg)
+			n := len(args)
+			parts = append(parts, fmt.Sprintf("(key_hash = $%d AND key_hash_alg = $%d)", n-1, n))
+		}
+		if len(parts) == 0 {
+			return nil, nil
+		}
+		query = `
+		SELECT user_id, key_name
+		FROM deleted_api_key_audits
+		WHERE ` + strings.Join(parts, " OR ") + `
+		ORDER BY deleted_at DESC, id DESC
+		LIMIT 1`
+	}
+
+	var res service.DeletedKeyAuditResult
+	err := r.db.QueryRowContext(ctx, query, args...).Scan(&res.UserID, &res.KeyName)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil

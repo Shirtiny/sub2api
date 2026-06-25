@@ -4,10 +4,10 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"html"
 	"strconv"
-	"strings"
 	"sync"
 	"time"
 
@@ -119,10 +119,13 @@ func (d *APIKeyRateLimitData) EffectiveUsage7d() float64 {
 // APIKeyQuotaUsageState captures the latest quota fields after an atomic quota update.
 // It is intentionally small so repositories can return it from a single SQL statement.
 type APIKeyQuotaUsageState struct {
-	QuotaUsed float64
-	Quota     float64
-	Key       string
-	Status    string
+	QuotaUsed     float64
+	Quota         float64
+	Key           string // Legacy fallback only; hash-backed rows leave this empty.
+	KeyHash       string
+	KeyHashAlg    string
+	KeyLookupHash string
+	Status        string
 }
 
 // APIKeyCache defines cache operations for API key service
@@ -377,8 +380,8 @@ func (s *APIKeyService) Create(ctx context.Context, userID int64, req CreateAPIK
 			return nil, err
 		}
 
-		// 检查Key是否已存在
-		exists, err := s.apiKeyRepo.ExistsByKey(ctx, *req.CustomKey)
+		// 检查Key是否已存在。只按 hash 查重，避免依赖明文列。
+		exists, err := s.apiKeyRepo.ExistsByKey(ctx, EncodeAPIKeyLookupToken(APIKeyLookupHashes(*req.CustomKey, s.cfg)))
 		if err != nil {
 			return nil, fmt.Errorf("check key exists: %w", err)
 		}
@@ -398,20 +401,26 @@ func (s *APIKeyService) Create(ctx context.Context, userID int64, req CreateAPIK
 		}
 	}
 
+	storageHash := APIKeyStorageHash(key, s.cfg)
+
 	// 创建API Key记录
 	apiKey := &APIKey{
-		UserID:      userID,
-		Key:         key,
-		Name:        html.EscapeString(req.Name),
-		GroupID:     req.GroupID,
-		Status:      StatusActive,
-		IPWhitelist: req.IPWhitelist,
-		IPBlacklist: req.IPBlacklist,
-		Quota:       req.Quota,
-		QuotaUsed:   0,
-		RateLimit5h: req.RateLimit5h,
-		RateLimit1d: req.RateLimit1d,
-		RateLimit7d: req.RateLimit7d,
+		UserID:        userID,
+		Key:           key,
+		KeyHash:       storageHash.Hash,
+		KeyHashAlg:    storageHash.Alg,
+		KeyLookupHash: APIKeyLookupHashValue(key),
+		KeyPrefix:     APIKeyPrefix(key),
+		Name:          html.EscapeString(req.Name),
+		GroupID:       req.GroupID,
+		Status:        StatusActive,
+		IPWhitelist:   req.IPWhitelist,
+		IPBlacklist:   req.IPBlacklist,
+		Quota:         req.Quota,
+		QuotaUsed:     0,
+		RateLimit5h:   req.RateLimit5h,
+		RateLimit1d:   req.RateLimit1d,
+		RateLimit7d:   req.RateLimit7d,
 	}
 
 	// Set expiration time if specified
@@ -424,7 +433,7 @@ func (s *APIKeyService) Create(ctx context.Context, userID int64, req CreateAPIK
 		return nil, fmt.Errorf("create api key: %w", err)
 	}
 
-	s.InvalidateAuthCacheByKey(ctx, apiKey.Key)
+	s.invalidateAuthCacheByAPIKey(ctx, apiKey)
 	s.compileAPIKeyIPRules(apiKey)
 
 	return apiKey, nil
@@ -463,11 +472,25 @@ func (s *APIKeyService) GetByID(ctx context.Context, id int64) (*APIKey, error) 
 
 // GetByKey 根据Key字符串获取API Key（用于认证）
 func (s *APIKeyService) GetByKey(ctx context.Context, key string) (*APIKey, error) {
-	cacheKey := s.authCacheKey(key)
+	lookups := APIKeyLookupHashes(key, s.cfg)
+	if len(lookups) == 0 {
+		return nil, fmt.Errorf("get api key: %w", ErrAPIKeyNotFound)
+	}
 
-	if entry, ok := s.getAuthCacheEntry(ctx, cacheKey); ok {
-		if apiKey, used, err := s.applyAuthCacheEntry(key, entry); used {
+	for _, lookup := range lookups {
+		cacheKey := APIKeyAuthCacheKeyFromHash(lookup)
+		if cacheKey == "" {
+			continue
+		}
+		if entry, ok := s.getAuthCacheEntry(ctx, cacheKey); ok {
+			apiKey, used, err := s.applyAuthCacheEntry(key, entry)
+			if !used {
+				continue
+			}
 			if err != nil {
+				if errors.Is(err, ErrAPIKeyNotFound) {
+					continue
+				}
 				return nil, fmt.Errorf("get api key: %w", err)
 			}
 			s.compileAPIKeyIPRules(apiKey)
@@ -475,42 +498,43 @@ func (s *APIKeyService) GetByKey(ctx context.Context, key string) (*APIKey, erro
 		}
 	}
 
-	if s.authCfg.singleflight {
-		value, err, _ := s.authGroup.Do(cacheKey, func() (any, error) {
-			return s.loadAuthCacheEntry(ctx, key, cacheKey)
-		})
+	for _, lookup := range lookups {
+		cacheKey := APIKeyAuthCacheKeyFromHash(lookup)
+		if cacheKey == "" {
+			continue
+		}
+		load := func() (*APIKeyAuthCacheEntry, error) {
+			return s.loadAuthCacheEntry(ctx, key, lookup)
+		}
+		var entry *APIKeyAuthCacheEntry
+		var err error
+		if s.authCfg.singleflight {
+			value, loadErr, _ := s.authGroup.Do(cacheKey, func() (any, error) {
+				return load()
+			})
+			err = loadErr
+			entry, _ = value.(*APIKeyAuthCacheEntry)
+		} else {
+			entry, err = load()
+		}
 		if err != nil {
 			return nil, err
 		}
-		entry, _ := value.(*APIKeyAuthCacheEntry)
-		if apiKey, used, err := s.applyAuthCacheEntry(key, entry); used {
-			if err != nil {
-				return nil, fmt.Errorf("get api key: %w", err)
+		apiKey, used, applyErr := s.applyAuthCacheEntry(key, entry)
+		if !used {
+			continue
+		}
+		if applyErr != nil {
+			if errors.Is(applyErr, ErrAPIKeyNotFound) {
+				continue
 			}
-			s.compileAPIKeyIPRules(apiKey)
-			return apiKey, nil
+			return nil, fmt.Errorf("get api key: %w", applyErr)
 		}
-	} else {
-		entry, err := s.loadAuthCacheEntry(ctx, key, cacheKey)
-		if err != nil {
-			return nil, err
-		}
-		if apiKey, used, err := s.applyAuthCacheEntry(key, entry); used {
-			if err != nil {
-				return nil, fmt.Errorf("get api key: %w", err)
-			}
-			s.compileAPIKeyIPRules(apiKey)
-			return apiKey, nil
-		}
+		s.compileAPIKeyIPRules(apiKey)
+		return apiKey, nil
 	}
 
-	apiKey, err := s.apiKeyRepo.GetByKeyForAuth(ctx, key)
-	if err != nil {
-		return nil, fmt.Errorf("get api key: %w", err)
-	}
-	apiKey.Key = key
-	s.compileAPIKeyIPRules(apiKey)
-	return apiKey, nil
+	return nil, fmt.Errorf("get api key: %w", ErrAPIKeyNotFound)
 }
 
 // Update 更新API Key
@@ -628,7 +652,7 @@ func (s *APIKeyService) Update(ctx context.Context, id int64, userID int64, req 
 		return nil, fmt.Errorf("update api key: %w", err)
 	}
 
-	s.InvalidateAuthCacheByKey(ctx, apiKey.Key)
+	s.invalidateAuthCacheByAPIKey(ctx, apiKey)
 	s.compileAPIKeyIPRules(apiKey)
 
 	// Invalidate Redis rate limit cache so reset takes effect immediately
@@ -842,9 +866,7 @@ func (s *APIKeyService) UpdateQuotaUsed(ctx context.Context, apiKeyID int64, cos
 		if err != nil {
 			return fmt.Errorf("increment quota used: %w", err)
 		}
-		if state != nil && state.Status == StatusAPIKeyQuotaExhausted && strings.TrimSpace(state.Key) != "" {
-			s.InvalidateAuthCacheByKey(ctx, state.Key)
-		}
+		s.invalidateAuthCacheByQuotaState(ctx, state)
 		return nil
 	}
 
@@ -867,7 +889,7 @@ func (s *APIKeyService) UpdateQuotaUsed(ctx context.Context, apiKeyID int64, cos
 			return nil // Don't fail the request
 		}
 		// Invalidate cache so next request sees the new status
-		s.InvalidateAuthCacheByKey(ctx, apiKey.Key)
+		s.invalidateAuthCacheByAPIKey(ctx, apiKey)
 	}
 
 	return nil

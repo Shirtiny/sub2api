@@ -424,12 +424,16 @@ func (s *OpsService) GetUserErrorRequestDetail(ctx context.Context, userID, id i
 	return ToUserErrorRequestDetail(detail), nil
 }
 
-// LookupDeletedKeyAudit 按明文 key 反查已删除 key 的原所有者;未命中或未启用返回 (nil, nil)。
+// LookupDeletedKeyAudit 按提交的 key 计算 hash 候选并反查已删除 key 的原所有者;未命中返回 (nil, nil)。
 func (s *OpsService) LookupDeletedKeyAudit(ctx context.Context, key string) (*DeletedKeyAuditResult, error) {
 	if s.opsRepo == nil {
 		return nil, nil
 	}
-	return s.opsRepo.LookupDeletedKeyAudit(ctx, key)
+	lookup := EncodeAPIKeyLookupToken(APIKeyLookupHashes(key, s.cfg))
+	if lookup == "" {
+		return nil, nil
+	}
+	return s.opsRepo.LookupDeletedKeyAudit(ctx, lookup)
 }
 
 func (s *OpsService) UpdateErrorResolution(ctx context.Context, errorID int64, resolved bool, resolvedByUserID *int64) error {

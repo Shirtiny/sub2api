@@ -863,7 +863,7 @@ func (s *adminServiceImpl) DeleteUser(ctx context.Context, id int64) error {
 
 	if s.authCacheInvalidator != nil {
 		for _, key := range apiKeys {
-			if keyValue := strings.TrimSpace(key.Key); keyValue != "" {
+			if keyValue := apiKeyCacheInvalidationKey(key); keyValue != "" {
 				s.authCacheInvalidator.InvalidateAuthCacheByKey(ctx, keyValue)
 			}
 		}
@@ -2423,7 +2423,9 @@ func (s *adminServiceImpl) AdminUpdateAPIKeyGroupID(ctx context.Context, keyID i
 
 			// 失效认证缓存（在事务提交后执行）
 			if s.authCacheInvalidator != nil {
-				s.authCacheInvalidator.InvalidateAuthCacheByKey(ctx, apiKey.Key)
+				if keyValue := apiKeyCacheInvalidationKey(*apiKey); keyValue != "" {
+					s.authCacheInvalidator.InvalidateAuthCacheByKey(ctx, keyValue)
+				}
 			}
 
 			result.APIKey = apiKey
@@ -2438,7 +2440,9 @@ func (s *adminServiceImpl) AdminUpdateAPIKeyGroupID(ctx context.Context, keyID i
 
 	// 失效认证缓存
 	if s.authCacheInvalidator != nil {
-		s.authCacheInvalidator.InvalidateAuthCacheByKey(ctx, apiKey.Key)
+		if keyValue := apiKeyCacheInvalidationKey(*apiKey); keyValue != "" {
+			s.authCacheInvalidator.InvalidateAuthCacheByKey(ctx, keyValue)
+		}
 	}
 
 	result.APIKey = apiKey
@@ -2461,7 +2465,9 @@ func (s *adminServiceImpl) AdminResetAPIKeyRateLimitUsage(ctx context.Context, k
 		return nil, fmt.Errorf("reset api key rate limit usage: %w", err)
 	}
 	if s.authCacheInvalidator != nil {
-		s.authCacheInvalidator.InvalidateAuthCacheByKey(ctx, apiKey.Key)
+		if keyValue := apiKeyCacheInvalidationKey(*apiKey); keyValue != "" {
+			s.authCacheInvalidator.InvalidateAuthCacheByKey(ctx, keyValue)
+		}
 	}
 	if s.billingCacheService != nil {
 		_ = s.billingCacheService.InvalidateAPIKeyRateLimit(ctx, apiKey.ID)
@@ -3933,4 +3939,12 @@ func (s *adminServiceImpl) ForceAntigravityPrivacy(ctx context.Context, account 
 	}
 	applyAntigravityPrivacyMode(account, mode)
 	return mode
+}
+
+func apiKeyCacheInvalidationKey(key APIKey) string {
+	hashes := apiKeyAuthCacheHashes(key.KeyLookupHash, key.KeyHashAlg, key.KeyHash)
+	if len(hashes) > 0 {
+		return EncodeAPIKeyLookupToken(hashes)
+	}
+	return strings.TrimSpace(key.Key)
 }

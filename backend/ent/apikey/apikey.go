@@ -25,6 +25,14 @@ const (
 	FieldUserID = "user_id"
 	// FieldKey holds the string denoting the key field in the database.
 	FieldKey = "key"
+	// FieldKeyHash holds the string denoting the key_hash field in the database.
+	FieldKeyHash = "key_hash"
+	// FieldKeyHashAlg holds the string denoting the key_hash_alg field in the database.
+	FieldKeyHashAlg = "key_hash_alg"
+	// FieldKeyLookupHash holds the string denoting the key_lookup_hash field in the database.
+	FieldKeyLookupHash = "key_lookup_hash"
+	// FieldKeyPrefix holds the string denoting the key_prefix field in the database.
+	FieldKeyPrefix = "key_prefix"
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
 	// FieldGroupID holds the string denoting the group_id field in the database.
@@ -100,6 +108,10 @@ var Columns = []string{
 	FieldDeletedAt,
 	FieldUserID,
 	FieldKey,
+	FieldKeyHash,
+	FieldKeyHashAlg,
+	FieldKeyLookupHash,
+	FieldKeyPrefix,
 	FieldName,
 	FieldGroupID,
 	FieldStatus,
@@ -146,6 +158,18 @@ var (
 	UpdateDefaultUpdatedAt func() time.Time
 	// KeyValidator is a validator for the "key" field. It is called by the builders before save.
 	KeyValidator func(string) error
+	// KeyHashValidator is a validator for the "key_hash" field. It is called by the builders before save.
+	KeyHashValidator func(string) error
+	// DefaultKeyHashAlg holds the default value on creation for the "key_hash_alg" field.
+	DefaultKeyHashAlg string
+	// KeyHashAlgValidator is a validator for the "key_hash_alg" field. It is called by the builders before save.
+	KeyHashAlgValidator func(string) error
+	// KeyLookupHashValidator is a validator for the "key_lookup_hash" field. It is called by the builders before save.
+	KeyLookupHashValidator func(string) error
+	// DefaultKeyPrefix holds the default value on creation for the "key_prefix" field.
+	DefaultKeyPrefix string
+	// KeyPrefixValidator is a validator for the "key_prefix" field. It is called by the builders before save.
+	KeyPrefixValidator func(string) error
 	// NameValidator is a validator for the "name" field. It is called by the builders before save.
 	NameValidator func(string) error
 	// DefaultStatus holds the default value on creation for the "status" field.
@@ -201,6 +225,26 @@ func ByUserID(opts ...sql.OrderTermOption) OrderOption {
 // ByKey orders the results by the key field.
 func ByKey(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldKey, opts...).ToFunc()
+}
+
+// ByKeyHash orders the results by the key_hash field.
+func ByKeyHash(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldKeyHash, opts...).ToFunc()
+}
+
+// ByKeyHashAlg orders the results by the key_hash_alg field.
+func ByKeyHashAlg(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldKeyHashAlg, opts...).ToFunc()
+}
+
+// ByKeyLookupHash orders the results by the key_lookup_hash field.
+func ByKeyLookupHash(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldKeyLookupHash, opts...).ToFunc()
+}
+
+// ByKeyPrefix orders the results by the key_prefix field.
+func ByKeyPrefix(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldKeyPrefix, opts...).ToFunc()
 }
 
 // ByName orders the results by the name field.

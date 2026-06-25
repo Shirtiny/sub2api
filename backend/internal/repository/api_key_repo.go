@@ -11,9 +11,11 @@ import (
 	dbent "github.com/Wei-Shaw/sub2api/ent"
 	"github.com/Wei-Shaw/sub2api/ent/apikey"
 	"github.com/Wei-Shaw/sub2api/ent/group"
+	"github.com/Wei-Shaw/sub2api/ent/predicate"
 	"github.com/Wei-Shaw/sub2api/ent/schema/mixins"
 	"github.com/Wei-Shaw/sub2api/ent/user"
 	"github.com/Wei-Shaw/sub2api/internal/service"
+	"github.com/google/uuid"
 
 	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
 
@@ -39,9 +41,13 @@ func (r *apiKeyRepository) activeQuery() *dbent.APIKeyQuery {
 }
 
 func (r *apiKeyRepository) Create(ctx context.Context, key *service.APIKey) error {
+	storedKey := key.Key
+	if key.KeyHash != "" {
+		storedKey = apiKeyStoredKeyTombstone()
+	}
 	builder := r.client.APIKey.Create().
 		SetUserID(key.UserID).
-		SetKey(key.Key).
+		SetKey(storedKey).
 		SetName(key.Name).
 		SetStatus(key.Status).
 		SetNillableGroupID(key.GroupID).
@@ -53,6 +59,28 @@ func (r *apiKeyRepository) Create(ctx context.Context, key *service.APIKey) erro
 		SetRateLimit1d(key.RateLimit1d).
 		SetRateLimit7d(key.RateLimit7d)
 
+	if key.KeyHash != "" {
+		hashAlg := key.KeyHashAlg
+		if hashAlg == "" {
+			hashAlg = service.APIKeyHashAlgSHA256
+		}
+		keyLookupHash := key.KeyLookupHash
+		if keyLookupHash == "" {
+			keyLookupHash = service.APIKeyLookupHashValue(key.Key)
+		}
+		keyPrefix := key.KeyPrefix
+		if keyPrefix == "" {
+			keyPrefix = service.APIKeyPrefix(key.Key)
+		}
+		builder.
+			SetKeyHash(key.KeyHash).
+			SetKeyHashAlg(hashAlg).
+			SetKeyLookupHash(keyLookupHash).
+			SetKeyPrefix(keyPrefix)
+		key.KeyHashAlg = hashAlg
+		key.KeyLookupHash = keyLookupHash
+		key.KeyPrefix = keyPrefix
+	}
 	if len(key.IPWhitelist) > 0 {
 		builder.SetIPWhitelist(key.IPWhitelist)
 	}
@@ -93,7 +121,7 @@ func (r *apiKeyRepository) GetByID(ctx context.Context, id int64) (*service.APIK
 func (r *apiKeyRepository) GetKeyAndOwnerID(ctx context.Context, id int64) (string, int64, error) {
 	m, err := r.activeQuery().
 		Where(apikey.IDEQ(id)).
-		Select(apikey.FieldKey, apikey.FieldUserID).
+		Select(apikey.FieldKey, apikey.FieldKeyHash, apikey.FieldKeyHashAlg, apikey.FieldKeyLookupHash, apikey.FieldUserID).
 		Only(ctx)
 	if err != nil {
 		if dbent.IsNotFound(err) {
@@ -101,12 +129,12 @@ func (r *apiKeyRepository) GetKeyAndOwnerID(ctx context.Context, id int64) (stri
 		}
 		return "", 0, err
 	}
-	return m.Key, m.UserID, nil
+	return apiKeyLookupKeyFromEntity(m), m.UserID, nil
 }
 
 func (r *apiKeyRepository) GetByKey(ctx context.Context, key string) (*service.APIKey, error) {
 	m, err := r.activeQuery().
-		Where(apikey.KeyEQ(key)).
+		Where(apiKeyLookupPredicate(key)).
 		WithUser().
 		WithGroup().
 		Only(ctx)
@@ -121,10 +149,15 @@ func (r *apiKeyRepository) GetByKey(ctx context.Context, key string) (*service.A
 
 func (r *apiKeyRepository) GetByKeyForAuth(ctx context.Context, key string) (*service.APIKey, error) {
 	m, err := r.activeQuery().
-		Where(apikey.KeyEQ(key)).
+		Where(apiKeyLookupPredicate(key)).
 		Select(
 			apikey.FieldID,
 			apikey.FieldUserID,
+			apikey.FieldKey,
+			apikey.FieldKeyHash,
+			apikey.FieldKeyHashAlg,
+			apikey.FieldKeyLookupHash,
+			apikey.FieldKeyPrefix,
 			apikey.FieldGroupID,
 			apikey.FieldName,
 			apikey.FieldStatus,
@@ -306,7 +339,7 @@ func (r *apiKeyRepository) Delete(ctx context.Context, id int64) error {
 }
 
 // DeleteWithAudit 在同一事务内:
-//  1. 把(明文 key、所有者、key 名称)写入 deleted_api_key_audits;
+//  1. 把(hash/prefix、所有者、key 名称)写入 deleted_api_key_audits;
 //  2. 软删除该 key(tombstone 覆盖 key 列以释放唯一约束)。
 //
 // 保证"被删除的 key 一定能反查到所有者"。事务模式与 group_repo.DeleteCascade 一致。
@@ -340,8 +373,32 @@ func (r *apiKeyRepository) DeleteWithAudit(ctx context.Context, id int64) error 
 func (r *apiKeyRepository) deleteWithAudit(ctx context.Context, exec *dbent.Client, id int64, tombstoneKey string) error {
 	// 1. 审计:数据源即 api_keys 当前行;WHERE deleted_at IS NULL 保证只对未删除行写一次。
 	if _, err := exec.ExecContext(ctx, `
-		INSERT INTO deleted_api_key_audits (key, api_key_id, user_id, key_name, deleted_at)
-		SELECT key, id, user_id, name, NOW()
+		INSERT INTO deleted_api_key_audits (
+			key, key_hash, key_hash_alg, key_lookup_hash, key_prefix, api_key_id, user_id, key_name, deleted_at
+		)
+		SELECT
+			CASE
+				WHEN COALESCE(key_lookup_hash, '') <> '' THEN CONCAT('__redacted__', id, '__', LEFT(key_lookup_hash, 12))
+				WHEN COALESCE(key_hash, '') <> '' THEN CONCAT('__redacted__', id, '__', LEFT(key_hash, 12))
+				ELSE CONCAT('__redacted__', id, '__', LEFT(encode(sha256(key::bytea), 'hex'), 12))
+			END,
+			CASE
+				WHEN COALESCE(key_hash, '') <> '' THEN key_hash
+				ELSE encode(sha256(key::bytea), 'hex')
+			END,
+			CASE
+				WHEN COALESCE(key_hash, '') <> '' AND COALESCE(key_hash_alg, '') <> '' THEN key_hash_alg
+				ELSE 'sha256'
+			END,
+			CASE
+				WHEN COALESCE(key_lookup_hash, '') <> '' THEN key_lookup_hash
+				ELSE encode(sha256(key::bytea), 'hex')
+			END,
+			CASE
+				WHEN COALESCE(key_prefix, '') <> '' THEN key_prefix
+				ELSE LEFT(key, 16)
+			END,
+			id, user_id, name, NOW()
 		FROM api_keys
 		WHERE id = $1 AND deleted_at IS NULL`, id); err != nil {
 		return err
@@ -382,7 +439,7 @@ func (r *apiKeyRepository) ListByUserID(ctx context.Context, userID int64, param
 	if filters.Search != "" {
 		q = q.Where(apikey.Or(
 			apikey.NameContainsFold(filters.Search),
-			apikey.KeyContainsFold(filters.Search),
+			apikey.KeyPrefixContainsFold(filters.Search),
 		))
 	}
 	if filters.Status != "" {
@@ -442,7 +499,7 @@ func (r *apiKeyRepository) CountByUserID(ctx context.Context, userID int64) (int
 }
 
 func (r *apiKeyRepository) ExistsByKey(ctx context.Context, key string) (bool, error) {
-	count, err := r.activeQuery().Where(apikey.KeyEQ(key)).Count(ctx)
+	count, err := r.activeQuery().Where(apiKeyLookupPredicate(key)).Count(ctx)
 	return count > 0, err
 }
 
@@ -550,10 +607,7 @@ func (r *apiKeyRepository) CountByGroupID(ctx context.Context, groupID int64) (i
 }
 
 func (r *apiKeyRepository) ListKeysByUserID(ctx context.Context, userID int64) ([]string, error) {
-	keys, err := r.activeQuery().
-		Where(apikey.UserIDEQ(userID)).
-		Select(apikey.FieldKey).
-		Strings(ctx)
+	keys, err := r.listLookupKeys(ctx, "user_id = $1", userID)
 	if err != nil {
 		return nil, err
 	}
@@ -561,10 +615,7 @@ func (r *apiKeyRepository) ListKeysByUserID(ctx context.Context, userID int64) (
 }
 
 func (r *apiKeyRepository) ListKeysByGroupID(ctx context.Context, groupID int64) ([]string, error) {
-	keys, err := r.activeQuery().
-		Where(apikey.GroupIDEQ(groupID)).
-		Select(apikey.FieldKey).
-		Strings(ctx)
+	keys, err := r.listLookupKeys(ctx, "group_id = $1", groupID)
 	if err != nil {
 		return nil, err
 	}
@@ -599,11 +650,18 @@ func (r *apiKeyRepository) IncrementQuotaUsedAndGetState(ctx context.Context, id
 			END,
 			updated_at = NOW()
 		WHERE id = $3 AND deleted_at IS NULL
-		RETURNING quota_used, quota, key, status
+		RETURNING
+			quota_used,
+			quota,
+			CASE WHEN COALESCE(key_hash, '') = '' THEN key ELSE '' END,
+			COALESCE(key_hash, ''),
+			COALESCE(key_hash_alg, ''),
+			COALESCE(key_lookup_hash, ''),
+			status
 	`
 
 	state := &service.APIKeyQuotaUsageState{}
-	if err := scanSingleRow(ctx, r.sql, query, []any{amount, service.StatusAPIKeyQuotaExhausted, id}, &state.QuotaUsed, &state.Quota, &state.Key, &state.Status); err != nil {
+	if err := scanSingleRow(ctx, r.sql, query, []any{amount, service.StatusAPIKeyQuotaExhausted, id}, &state.QuotaUsed, &state.Quota, &state.Key, &state.KeyHash, &state.KeyHashAlg, &state.KeyLookupHash, &state.Status); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, service.ErrAPIKeyNotFound
 		}
@@ -685,6 +743,96 @@ func (r *apiKeyRepository) GetRateLimitData(ctx context.Context, id int64) (resu
 	return data, rows.Err()
 }
 
+func apiKeyStoredKeyTombstone() string {
+	return "__hashed__" + strings.ReplaceAll(uuid.NewString(), "-", "")
+}
+
+func apiKeyLookupPredicate(key string) predicate.APIKey {
+	if hashes, ok := service.DecodeAPIKeyLookupToken(key); ok {
+		preds := make([]predicate.APIKey, 0, len(hashes))
+		for _, h := range hashes {
+			if strings.TrimSpace(h.Alg) == "" || strings.TrimSpace(h.Hash) == "" {
+				continue
+			}
+			if h.Alg == service.APIKeyHashAlgLookupSHA256 {
+				preds = append(preds, apikey.KeyLookupHashEQ(h.Hash))
+				continue
+			}
+			preds = append(preds, apikey.And(
+				apikey.KeyHashEQ(h.Hash),
+				apikey.KeyHashAlgEQ(h.Alg),
+			))
+		}
+		if len(preds) == 0 {
+			return apikey.KeyEQ("")
+		}
+		return apikey.Or(preds...)
+	}
+	return apikey.KeyEQ(key)
+}
+
+func apiKeyLookupKeyFromEntity(m *dbent.APIKey) string {
+	if m == nil {
+		return ""
+	}
+	keyHash := ""
+	if m.KeyHash != nil {
+		keyHash = *m.KeyHash
+	}
+	keyLookupHash := ""
+	if m.KeyLookupHash != nil {
+		keyLookupHash = *m.KeyLookupHash
+	}
+	return apiKeyLookupKeyFromColumns(m.Key, keyHash, m.KeyHashAlg, keyLookupHash)
+}
+
+func apiKeyLookupKeyFromColumns(key, keyHash, keyHashAlg, keyLookupHash string) string {
+	hashes := make([]service.APIKeyLookupHash, 0, 2)
+	keyLookupHash = strings.TrimSpace(keyLookupHash)
+	if keyLookupHash != "" {
+		hashes = append(hashes, service.APIKeyLookupHash{
+			Alg:  service.APIKeyHashAlgLookupSHA256,
+			Hash: keyLookupHash,
+		})
+	}
+	keyHash = strings.TrimSpace(keyHash)
+	keyHashAlg = strings.TrimSpace(keyHashAlg)
+	if keyHashAlg == "" {
+		keyHashAlg = service.APIKeyHashAlgSHA256
+	}
+	if keyHash != "" {
+		hashes = append(hashes, service.APIKeyLookupHash{
+			Alg:  keyHashAlg,
+			Hash: keyHash,
+		})
+	}
+	if len(hashes) > 0 {
+		return service.EncodeAPIKeyLookupToken(hashes)
+	}
+	return key
+}
+
+func (r *apiKeyRepository) listLookupKeys(ctx context.Context, where string, arg any) ([]string, error) {
+	rows, err := r.sql.QueryContext(ctx, `
+		SELECT key, COALESCE(key_hash, ''), COALESCE(key_hash_alg, ''), COALESCE(key_lookup_hash, '')
+		FROM api_keys
+		WHERE deleted_at IS NULL AND `+where, arg)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	keys := make([]string, 0)
+	for rows.Next() {
+		var key, keyHash, keyHashAlg, keyLookupHash string
+		if err := rows.Scan(&key, &keyHash, &keyHashAlg, &keyLookupHash); err != nil {
+			return nil, err
+		}
+		keys = append(keys, apiKeyLookupKeyFromColumns(key, keyHash, keyHashAlg, keyLookupHash))
+	}
+	return keys, rows.Err()
+}
+
 func apiKeyEntityToService(m *dbent.APIKey) *service.APIKey {
 	if m == nil {
 		return nil
@@ -692,7 +840,6 @@ func apiKeyEntityToService(m *dbent.APIKey) *service.APIKey {
 	out := &service.APIKey{
 		ID:            m.ID,
 		UserID:        m.UserID,
-		Key:           m.Key,
 		Name:          m.Name,
 		Status:        m.Status,
 		IPWhitelist:   m.IPWhitelist,
@@ -713,6 +860,20 @@ func apiKeyEntityToService(m *dbent.APIKey) *service.APIKey {
 		Window5hStart: m.Window5hStart,
 		Window1dStart: m.Window1dStart,
 		Window7dStart: m.Window7dStart,
+	}
+	hasHashMaterial := (m.KeyHash != nil && *m.KeyHash != "") || (m.KeyLookupHash != nil && *m.KeyLookupHash != "")
+	if hasHashMaterial {
+		if m.KeyHash != nil {
+			out.KeyHash = *m.KeyHash
+		}
+		out.KeyHashAlg = m.KeyHashAlg
+		if m.KeyLookupHash != nil {
+			out.KeyLookupHash = *m.KeyLookupHash
+		}
+		out.KeyPrefix = m.KeyPrefix
+	} else {
+		out.Key = m.Key
+		out.KeyPrefix = service.APIKeyPrefix(m.Key)
 	}
 	if m.Edges.User != nil {
 		out.User = userEntityToService(m.Edges.User)

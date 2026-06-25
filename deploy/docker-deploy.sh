@@ -4,7 +4,7 @@
 # =============================================================================
 # This script prepares deployment files for Sub2API:
 #   - Downloads docker-compose.local.yml and .env.example
-#   - Generates secure secrets (JWT_SECRET, TOTP_ENCRYPTION_KEY, POSTGRES_PASSWORD)
+#   - Generates secure secrets (JWT_SECRET, SECURITY_API_KEY_HASH_SECRET, TOTP_ENCRYPTION_KEY, POSTGRES_PASSWORD)
 #   - Creates necessary data directories
 #
 # After running this script, you can start services with:
@@ -102,6 +102,7 @@ main() {
 
     # Generate secrets
     JWT_SECRET=$(generate_secret)
+    SECURITY_API_KEY_HASH_SECRET=$(generate_secret)
     TOTP_ENCRYPTION_KEY=$(generate_secret)
     POSTGRES_PASSWORD=$(generate_secret)
 
@@ -112,11 +113,13 @@ main() {
     if sed --version >/dev/null 2>&1; then
         # GNU sed (Linux)
         sed -i "s/^JWT_SECRET=.*/JWT_SECRET=${JWT_SECRET}/" .env
+        sed -i "s/^SECURITY_API_KEY_HASH_SECRET=.*/SECURITY_API_KEY_HASH_SECRET=${SECURITY_API_KEY_HASH_SECRET}/" .env
         sed -i "s/^TOTP_ENCRYPTION_KEY=.*/TOTP_ENCRYPTION_KEY=${TOTP_ENCRYPTION_KEY}/" .env
         sed -i "s/^POSTGRES_PASSWORD=.*/POSTGRES_PASSWORD=${POSTGRES_PASSWORD}/" .env
     else
         # BSD sed (macOS)
         sed -i '' "s/^JWT_SECRET=.*/JWT_SECRET=${JWT_SECRET}/" .env
+        sed -i '' "s/^SECURITY_API_KEY_HASH_SECRET=.*/SECURITY_API_KEY_HASH_SECRET=${SECURITY_API_KEY_HASH_SECRET}/" .env
         sed -i '' "s/^TOTP_ENCRYPTION_KEY=.*/TOTP_ENCRYPTION_KEY=${TOTP_ENCRYPTION_KEY}/" .env
         sed -i '' "s/^POSTGRES_PASSWORD=.*/POSTGRES_PASSWORD=${POSTGRES_PASSWORD}/" .env
     fi
@@ -138,6 +141,7 @@ main() {
     echo "Generated secure credentials:"
     echo "  POSTGRES_PASSWORD:     ${POSTGRES_PASSWORD}"
     echo "  JWT_SECRET:            ${JWT_SECRET}"
+    echo "  API_KEY_HASH_SECRET:   ${SECURITY_API_KEY_HASH_SECRET}"
     echo "  TOTP_ENCRYPTION_KEY:   ${TOTP_ENCRYPTION_KEY}"
     echo ""
     print_warning "These credentials have been saved to .env file."

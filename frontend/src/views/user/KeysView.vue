@@ -58,29 +58,11 @@
           default-sort-order="desc"
           @sort="handleSort"
         >
-          <template #cell-key="{ value, row }">
+          <template #cell-key_prefix="{ value }">
             <div class="flex items-center gap-2">
               <code class="code text-xs">
-                {{ maskApiKey(value) }}
+                {{ value || '-' }}
               </code>
-              <button
-                @click="copyToClipboard(value, row.id)"
-                class="rounded-lg p-1 transition-colors hover:bg-surface-hover"
-                :class="
-                  copiedKeyId === row.id
-                    ? 'text-green-500'
-                    : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
-                "
-                :title="copiedKeyId === row.id ? t('keys.copied') : t('keys.copyToClipboard')"
-              >
-                <Icon
-                  v-if="copiedKeyId === row.id"
-                  name="check"
-                  size="sm"
-                  :stroke-width="2"
-                />
-                <Icon v-else name="clipboard" size="sm" />
-              </button>
             </div>
           </template>
 
@@ -314,7 +296,10 @@
               <!-- Use Key Button -->
               <button
                 @click="openUseKeyModal(row)"
+                :disabled="!row.key"
+                :title="!row.key ? t('keys.keyOnlyShownOnceShort') : t('keys.useKey')"
                 class="flex flex-col items-center gap-0.5 rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-green-50 hover:text-green-600 dark:hover:bg-green-900/20 dark:hover:text-green-400"
+                :class="!row.key ? 'cursor-not-allowed opacity-45 hover:bg-transparent hover:text-gray-500 dark:hover:bg-transparent dark:hover:text-gray-500' : ''"
               >
                 <Icon name="terminal" size="sm" />
                 <span class="text-xs">{{ t('keys.useKey') }}</span>
@@ -323,7 +308,10 @@
               <button
                 v-if="!publicSettings?.hide_ccs_import_button"
                 @click="importToCcswitch(row)"
+                :disabled="!row.key"
+                :title="!row.key ? t('keys.keyOnlyShownOnceShort') : t('keys.importToCcSwitch')"
                 class="flex flex-col items-center gap-0.5 rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/20 dark:hover:text-blue-400"
+                :class="!row.key ? 'cursor-not-allowed opacity-45 hover:bg-transparent hover:text-gray-500 dark:hover:bg-transparent dark:hover:text-gray-500' : ''"
               >
                 <Icon name="upload" size="sm" />
                 <span class="text-xs">{{ t('keys.importToCcSwitch') }}</span>
@@ -884,6 +872,69 @@
       </template>
     </BaseDialog>
 
+    <!-- One-time API key reveal -->
+    <BaseDialog
+      :show="!!createdKey?.key"
+      :title="t('keys.oneTimeKey.title')"
+      width="normal"
+      @close="closeCreatedKeyDialog"
+    >
+      <div class="space-y-4">
+        <p class="text-sm text-content-secondary">
+          {{ t('keys.oneTimeKey.description') }}
+        </p>
+        <div class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-800/50 dark:bg-amber-900/20 dark:text-amber-200">
+          {{ t('keys.oneTimeKey.warning') }}
+        </div>
+        <div>
+          <label class="input-label">{{ t('keys.apiKey') }}</label>
+          <div class="flex items-stretch gap-2">
+            <input
+              :value="createdKey?.key || ''"
+              readonly
+              class="input min-w-0 flex-1 font-mono text-xs"
+            />
+            <button
+              type="button"
+              class="btn btn-primary shrink-0"
+              @click="copyCreatedKey"
+            >
+              <Icon :name="createdKeyCopied ? 'check' : 'clipboard'" size="sm" class="mr-2" />
+              {{ createdKeyCopied ? t('keys.copied') : t('keys.oneTimeKey.copy') }}
+            </button>
+          </div>
+        </div>
+        <div v-if="createdKey?.key_prefix" class="text-xs text-content-tertiary">
+          {{ t('keys.keyPrefix') }}: <code class="code">{{ createdKey.key_prefix }}</code>
+        </div>
+      </div>
+      <template #footer>
+        <div class="flex flex-wrap justify-end gap-2">
+          <button
+            v-if="createdKey?.key"
+            type="button"
+            class="btn btn-secondary"
+            @click="openUseCreatedKey"
+          >
+            <Icon name="terminal" size="sm" class="mr-2" />
+            {{ t('keys.useKey') }}
+          </button>
+          <button
+            v-if="createdKey?.key && !publicSettings?.hide_ccs_import_button"
+            type="button"
+            class="btn btn-secondary"
+            @click="importCreatedKeyToCcswitch"
+          >
+            <Icon name="upload" size="sm" class="mr-2" />
+            {{ t('keys.importToCcSwitch') }}
+          </button>
+          <button type="button" class="btn btn-secondary" @click="closeCreatedKeyDialog">
+            {{ t('common.close') }}
+          </button>
+        </div>
+      </template>
+    </BaseDialog>
+
     <!-- Delete Confirmation Dialog -->
     <ConfirmDialog
       :show="showDeleteDialog"
@@ -1072,7 +1123,6 @@ import TablePageLayout from '@/components/layout/TablePageLayout.vue'
 import type { Column } from '@/components/common/types'
 import type { BatchApiKeyUsageStats } from '@/api/usage'
 import { formatDateTime } from '@/utils/format'
-import { maskApiKey } from '@/utils/maskApiKey'
 import {
   buildCcSwitchImportDeeplink,
   type CcSwitchClientType
@@ -1101,7 +1151,7 @@ const { copyToClipboard: clipboardCopy } = useClipboard()
 
 const columns = computed<Column[]>(() => [
   { key: 'name', label: t('common.name'), sortable: true },
-  { key: 'key', label: t('keys.apiKey'), sortable: false },
+  { key: 'key_prefix', label: t('keys.keyPrefix'), sortable: false },
   { key: 'group', label: t('keys.group'), sortable: false },
   { key: 'usage', label: t('keys.usage'), sortable: false },
   { key: 'rate_limit', label: t('keys.rateLimitColumn'), sortable: false },
@@ -1146,7 +1196,8 @@ const showUseKeyModal = ref(false)
 const showCcsClientSelect = ref(false)
 const pendingCcsRow = ref<ApiKey | null>(null)
 const selectedKey = ref<ApiKey | null>(null)
-const copiedKeyId = ref<number | null>(null)
+const createdKey = ref<ApiKey | null>(null)
+const createdKeyCopied = ref(false)
 const groupSelectorKeyId = ref<number | null>(null)
 const publicSettings = ref<PublicSettings | null>(null)
 const dropdownRef = ref<HTMLElement | null>(null)
@@ -1265,14 +1316,35 @@ const filteredGroupOptions = computed(() => {
   })
 })
 
-const copyToClipboard = async (text: string, keyId: number) => {
-  const success = await clipboardCopy(text, t('keys.copied'))
+const copyCreatedKey = async () => {
+  const key = createdKey.value?.key
+  if (!key) return
+  const success = await clipboardCopy(key, t('keys.copied'))
   if (success) {
-    copiedKeyId.value = keyId
+    createdKeyCopied.value = true
     setTimeout(() => {
-      copiedKeyId.value = null
+      createdKeyCopied.value = false
     }, 800)
   }
+}
+
+const closeCreatedKeyDialog = () => {
+  createdKey.value = null
+  createdKeyCopied.value = false
+}
+
+const openUseCreatedKey = () => {
+  const key = createdKey.value
+  if (!key?.key) return
+  selectedKey.value = key
+  showUseKeyModal.value = true
+  closeCreatedKeyDialog()
+}
+
+const importCreatedKeyToCcswitch = () => {
+  const key = createdKey.value
+  if (!key?.key) return
+  importToCcswitch(key)
 }
 
 const isAbortError = (error: unknown) => {
@@ -1360,6 +1432,10 @@ const loadPublicSettings = async () => {
 }
 
 const openUseKeyModal = (key: ApiKey) => {
+  if (!key.key) {
+    appStore.showError(t('keys.keyOnlyShownOnceShort'))
+    return
+  }
   selectedKey.value = key
   showUseKeyModal.value = true
 }
@@ -1557,7 +1633,7 @@ const handleSubmit = async () => {
       appStore.showSuccess(t('keys.keyUpdatedSuccess'))
     } else {
       const customKey = formData.value.use_custom_key ? formData.value.custom_key : undefined
-      await keysAPI.create(
+      const created = await keysAPI.create(
         formData.value.name,
         formData.value.group_id,
         customKey,
@@ -1567,6 +1643,10 @@ const handleSubmit = async () => {
         expiresInDays,
         rateLimitData
       )
+      if (created.key) {
+        createdKey.value = created
+        createdKeyCopied.value = false
+      }
       appStore.showSuccess(t('keys.keyCreatedSuccess'))
       // Only advance tour if active, on submit step, and creation succeeded
       if (onboardingStore.isCurrentStep('[data-tour="key-form-submit"]')) {
@@ -1691,6 +1771,10 @@ const resetRateLimitUsage = async () => {
 }
 
 const importToCcswitch = (row: ApiKey) => {
+  if (!row.key) {
+    appStore.showError(t('keys.keyOnlyShownOnceShort'))
+    return
+  }
   const platform = row.group?.platform || 'anthropic'
 
   // For antigravity platform, show client selection dialog
@@ -1705,6 +1789,10 @@ const importToCcswitch = (row: ApiKey) => {
 }
 
 const executeCcsImport = (row: ApiKey, clientType: CcSwitchClientType) => {
+  if (!row.key) {
+    appStore.showError(t('keys.keyOnlyShownOnceShort'))
+    return
+  }
   const baseUrl = publicSettings.value?.api_base_url || window.location.origin
   const platform = row.group?.platform || 'anthropic'
 

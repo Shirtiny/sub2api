@@ -86,6 +86,31 @@ func TestWriteConfigFileKeepsDefaultUserConcurrency(t *testing.T) {
 	if !strings.Contains(string(data), "user_concurrency: 5") {
 		t.Fatalf("config missing default user concurrency, got:\n%s", string(data))
 	}
+	if !strings.Contains(string(data), "api_key_hash_secret:") {
+		t.Fatalf("config missing api key hash secret, got:\n%s", string(data))
+	}
+	if strings.Contains(string(data), "api_key_hash_secret: \"\"") || strings.Contains(string(data), "api_key_hash_secret: ''") {
+		t.Fatalf("config should not write an empty api key hash secret, got:\n%s", string(data))
+	}
+}
+
+func TestWriteConfigFileReplacesAPIKeyHashSecretPlaceholder(t *testing.T) {
+	t.Setenv("DATA_DIR", t.TempDir())
+
+	if err := writeConfigFile(&SetupConfig{
+		Security: SecurityConfig{APIKeyHashSecret: "change-me-generate-with-openssl-rand-hex-32"},
+	}); err != nil {
+		t.Fatalf("writeConfigFile() error = %v", err)
+	}
+
+	data, err := os.ReadFile(GetConfigFilePath())
+	if err != nil {
+		t.Fatalf("ReadFile() error = %v", err)
+	}
+
+	if strings.Contains(string(data), "change-me-generate-with-openssl-rand-hex-32") {
+		t.Fatalf("config should replace api key hash secret placeholder, got:\n%s", string(data))
+	}
 }
 
 func TestBuildDatabaseConnectionDSNsUsesPostgresForBootstrap(t *testing.T) {

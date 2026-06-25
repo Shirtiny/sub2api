@@ -15,11 +15,13 @@ func resetViperWithJWTSecret(t *testing.T) {
 	t.Helper()
 	viper.Reset()
 	t.Setenv("JWT_SECRET", strings.Repeat("x", 32))
+	t.Setenv("SECURITY_API_KEY_HASH_SECRET", strings.Repeat("k", 32))
 }
 
-func TestLoadForBootstrapAllowsMissingJWTSecret(t *testing.T) {
+func TestLoadForBootstrapAllowsMissingRuntimeSecrets(t *testing.T) {
 	viper.Reset()
 	t.Setenv("JWT_SECRET", "")
+	t.Setenv("SECURITY_API_KEY_HASH_SECRET", "")
 
 	cfg, err := LoadForBootstrap()
 	if err != nil {
@@ -28,6 +30,20 @@ func TestLoadForBootstrapAllowsMissingJWTSecret(t *testing.T) {
 	if cfg.JWT.Secret != "" {
 		t.Fatalf("LoadForBootstrap() should keep empty jwt.secret during bootstrap")
 	}
+	if cfg.Security.APIKeyHashSecret != "" {
+		t.Fatalf("LoadForBootstrap() should keep empty security.api_key_hash_secret during bootstrap")
+	}
+}
+
+func TestLoadForBootstrapAllowsAPIKeyHashSecretPlaceholder(t *testing.T) {
+	viper.Reset()
+	placeholder := "change-me-generate-with-openssl-rand-hex-32"
+	t.Setenv("JWT_SECRET", strings.Repeat("x", 32))
+	t.Setenv("SECURITY_API_KEY_HASH_SECRET", placeholder)
+
+	cfg, err := LoadForBootstrap()
+	require.NoError(t, err)
+	require.Equal(t, placeholder, cfg.Security.APIKeyHashSecret)
 }
 
 func TestNormalizeRunMode(t *testing.T) {
@@ -1086,6 +1102,21 @@ func TestValidateConfigErrors(t *testing.T) {
 			name:    "jwt secret min bytes",
 			mutate:  func(c *Config) { c.JWT.Secret = strings.Repeat("a", 31) },
 			wantErr: "jwt.secret must be at least 32 bytes",
+		},
+		{
+			name:    "api key hash secret required",
+			mutate:  func(c *Config) { c.Security.APIKeyHashSecret = "" },
+			wantErr: "security.api_key_hash_secret is required",
+		},
+		{
+			name:    "api key hash secret min bytes",
+			mutate:  func(c *Config) { c.Security.APIKeyHashSecret = strings.Repeat("a", 31) },
+			wantErr: "security.api_key_hash_secret must be at least 32 bytes",
+		},
+		{
+			name:    "api key hash secret placeholder",
+			mutate:  func(c *Config) { c.Security.APIKeyHashSecret = "change-me-generate-with-openssl-rand-hex-32" },
+			wantErr: "security.api_key_hash_secret must be generated",
 		},
 		{
 			name:    "subscription maintenance worker_count non-negative",

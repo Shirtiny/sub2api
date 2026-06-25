@@ -77,6 +77,7 @@ type SetupConfig struct {
 	Redis    RedisConfig    `json:"redis" yaml:"redis"`
 	Admin    AdminConfig    `json:"admin" yaml:"-"` // Not stored in config file
 	Server   ServerConfig   `json:"server" yaml:"server"`
+	Security SecurityConfig `json:"security" yaml:"security"`
 	JWT      JWTConfig      `json:"jwt" yaml:"jwt"`
 	Timezone string         `json:"timezone" yaml:"timezone"` // e.g. "Asia/Shanghai", "UTC"
 }
@@ -112,6 +113,10 @@ type ServerConfig struct {
 type JWTConfig struct {
 	Secret     string `json:"secret" yaml:"secret"`
 	ExpireHour int    `json:"expire_hour" yaml:"expire_hour"`
+}
+
+type SecurityConfig struct {
+	APIKeyHashSecret string `json:"api_key_hash_secret" yaml:"api_key_hash_secret"`
 }
 
 const (
@@ -284,14 +289,8 @@ func Install(cfg *SetupConfig) error {
 		return fmt.Errorf("system is already installed, re-installation is not allowed")
 	}
 
-	// Generate JWT secret if not provided
-	if cfg.JWT.Secret == "" {
-		secret, err := generateSecret(32)
-		if err != nil {
-			return fmt.Errorf("failed to generate jwt secret: %w", err)
-		}
-		cfg.JWT.Secret = secret
-		logger.LegacyPrintf("setup", "%s", "Warning: JWT secret auto-generated. Consider setting a fixed secret for production.")
+	if err := ensureSetupRuntimeSecrets(cfg); err != nil {
+		return err
 	}
 
 	// Test connections
@@ -434,6 +433,13 @@ func createAdminUser(cfg *SetupConfig) (bool, string, error) {
 }
 
 func writeConfigFile(cfg *SetupConfig) error {
+	if cfg == nil {
+		return fmt.Errorf("nil setup config")
+	}
+	if err := ensureSetupRuntimeSecrets(cfg); err != nil {
+		return err
+	}
+
 	// Ensure timezone has a default value
 	tz := cfg.Timezone
 	if tz == "" {
@@ -445,7 +451,10 @@ func writeConfigFile(cfg *SetupConfig) error {
 		Server   ServerConfig   `yaml:"server"`
 		Database DatabaseConfig `yaml:"database"`
 		Redis    RedisConfig    `yaml:"redis"`
-		JWT      struct {
+		Security struct {
+			APIKeyHashSecret string `yaml:"api_key_hash_secret"`
+		} `yaml:"security"`
+		JWT struct {
 			Secret     string `yaml:"secret"`
 			ExpireHour int    `yaml:"expire_hour"`
 		} `yaml:"jwt"`
@@ -464,6 +473,11 @@ func writeConfigFile(cfg *SetupConfig) error {
 		Server:   cfg.Server,
 		Database: cfg.Database,
 		Redis:    cfg.Redis,
+		Security: struct {
+			APIKeyHashSecret string `yaml:"api_key_hash_secret"`
+		}{
+			APIKeyHashSecret: cfg.Security.APIKeyHashSecret,
+		},
 		JWT: struct {
 			Secret     string `yaml:"secret"`
 			ExpireHour int    `yaml:"expire_hour"`
@@ -498,6 +512,34 @@ func writeConfigFile(cfg *SetupConfig) error {
 	}
 
 	return os.WriteFile(GetConfigFilePath(), data, 0600)
+}
+
+func ensureSetupRuntimeSecrets(cfg *SetupConfig) error {
+	if cfg == nil {
+		return fmt.Errorf("nil setup config")
+	}
+	if strings.TrimSpace(cfg.JWT.Secret) == "" {
+		secret, err := generateSecret(32)
+		if err != nil {
+			return fmt.Errorf("failed to generate jwt secret: %w", err)
+		}
+		cfg.JWT.Secret = secret
+		logger.LegacyPrintf("setup", "%s", "Warning: JWT secret auto-generated. Consider setting a fixed secret for production.")
+	} else {
+		cfg.JWT.Secret = strings.TrimSpace(cfg.JWT.Secret)
+	}
+	apiKeyHashSecret := strings.TrimSpace(cfg.Security.APIKeyHashSecret)
+	if apiKeyHashSecret == "" || config.IsPlaceholderAPIKeyHashSecret(apiKeyHashSecret) {
+		secret, err := generateSecret(32)
+		if err != nil {
+			return fmt.Errorf("failed to generate api key hash secret: %w", err)
+		}
+		cfg.Security.APIKeyHashSecret = secret
+		logger.LegacyPrintf("setup", "%s", "Warning: API key hash secret auto-generated. Consider setting a fixed secret for production.")
+	} else {
+		cfg.Security.APIKeyHashSecret = apiKeyHashSecret
+	}
+	return nil
 }
 
 func generateSecret(length int) (string, error) {
@@ -574,6 +616,9 @@ func AutoSetupFromEnv() error {
 			Port: getEnvIntOrDefault("SERVER_PORT", 8080),
 			Mode: getEnvOrDefault("SERVER_MODE", "release"),
 		},
+		Security: SecurityConfig{
+			APIKeyHashSecret: getEnvOrDefault("SECURITY_API_KEY_HASH_SECRET", ""),
+		},
 		JWT: JWTConfig{
 			Secret:     getEnvOrDefault("JWT_SECRET", ""),
 			ExpireHour: getEnvIntOrDefault("JWT_EXPIRE_HOUR", 24),
@@ -581,14 +626,8 @@ func AutoSetupFromEnv() error {
 		Timezone: tz,
 	}
 
-	// Generate JWT secret if not provided
-	if cfg.JWT.Secret == "" {
-		secret, err := generateSecret(32)
-		if err != nil {
-			return fmt.Errorf("failed to generate jwt secret: %w", err)
-		}
-		cfg.JWT.Secret = secret
-		logger.LegacyPrintf("setup", "%s", "Warning: JWT secret auto-generated. Consider setting a fixed secret for production.")
+	if err := ensureSetupRuntimeSecrets(cfg); err != nil {
+		return err
 	}
 
 	// Test database connection

@@ -10,7 +10,7 @@ type OpsRepository interface {
 	BatchInsertErrorLogs(ctx context.Context, inputs []*OpsInsertErrorLogInput) (int64, error)
 	ListErrorLogs(ctx context.Context, filter *OpsErrorLogFilter) (*OpsErrorLogList, error)
 	GetErrorLogByID(ctx context.Context, id int64) (*OpsErrorLogDetail, error)
-	// LookupDeletedKeyAudit 按明文 key 反查最近一条已删除 key 审计;未命中返回 (nil, nil)。
+	// LookupDeletedKeyAudit 按 hash lookup token 反查最近一条已删除 key 审计;未命中返回 (nil, nil)。
 	LookupDeletedKeyAudit(ctx context.Context, key string) (*DeletedKeyAuditResult, error)
 	ListRequestDetails(ctx context.Context, filter *OpsRequestDetailFilter) ([]*OpsRequestDetail, int64, error)
 	BatchInsertSystemLogs(ctx context.Context, inputs []*OpsInsertSystemLogInput) (int64, error)
@@ -63,7 +63,7 @@ type OpsRepository interface {
 	GetLatestDailyBucketDate(ctx context.Context) (time.Time, bool, error)
 }
 
-// DeletedKeyAuditResult 是按明文 key 反查 deleted_api_key_audits 的结果。
+// DeletedKeyAuditResult 是按 key hash 反查 deleted_api_key_audits 的结果。
 type DeletedKeyAuditResult struct {
 	UserID  int64
 	KeyName string

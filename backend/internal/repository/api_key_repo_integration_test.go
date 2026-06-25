@@ -4,6 +4,7 @@ package repository
 
 import (
 	"context"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -572,14 +573,20 @@ func (s *APIKeyRepoSuite) TestDeleteWithAudit_WritesAuditAndSoftDeletes() {
 	s.Require().Error(err)
 
 	rows, qErr := s.client.QueryContext(s.ctx,
-		`SELECT key, key_name, user_id, api_key_id FROM deleted_api_key_audits WHERE api_key_id = $1`, key.ID)
+		`SELECT key, key_hash, key_hash_alg, key_lookup_hash, key_prefix, key_name, user_id, api_key_id
+		 FROM deleted_api_key_audits WHERE api_key_id = $1`, key.ID)
 	s.Require().NoError(qErr)
 	defer rows.Close()
 	s.Require().True(rows.Next(), "expected one audit row")
-	var auditKey, auditName string
+	var auditKey, keyHash, keyHashAlg, keyLookupHash, keyPrefix, auditName string
 	var auditUserID, auditAPIKeyID int64
-	s.Require().NoError(rows.Scan(&auditKey, &auditName, &auditUserID, &auditAPIKeyID))
-	s.Require().Equal("sk-del-audit-1", auditKey)
+	s.Require().NoError(rows.Scan(&auditKey, &keyHash, &keyHashAlg, &keyLookupHash, &keyPrefix, &auditName, &auditUserID, &auditAPIKeyID))
+	s.Require().True(strings.HasPrefix(auditKey, "__redacted__"), "audit key should be redacted, got %q", auditKey)
+	s.Require().NotContains(auditKey, "sk-del-audit-1")
+	s.Require().Len(keyHash, 64)
+	s.Require().Equal("sha256", keyHashAlg)
+	s.Require().Equal(keyHash, keyLookupHash)
+	s.Require().Equal("sk-del-audit-1", keyPrefix)
 	s.Require().Equal("Audit Me", auditName)
 	s.Require().Equal(user.ID, auditUserID)
 	s.Require().Equal(key.ID, auditAPIKeyID)

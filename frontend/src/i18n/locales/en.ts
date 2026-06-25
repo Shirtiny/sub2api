@@ -731,7 +731,7 @@ export default {
   keys: {
     title: 'API Keys',
     description: 'Manage your API keys and access tokens',
-    searchPlaceholder: 'Search name or key...',
+    searchPlaceholder: 'Search name or key prefix...',
     endpoints: {
       title: 'API Endpoints',
       default: 'Default',
@@ -747,6 +747,7 @@ export default {
     deleteKey: 'Delete API Key',
     deleteConfirmMessage: "Are you sure you want to delete '{name}'? This action cannot be undone.",
     apiKey: 'API Key',
+    keyPrefix: 'Key prefix',
     group: 'Group',
     noGroup: 'No group',
     searchGroup: 'Search groups...',
@@ -769,6 +770,13 @@ export default {
     keyCreatedSuccess: 'API key created successfully',
     keyUpdatedSuccess: 'API key updated successfully',
     keyDeletedSuccess: 'API key deleted successfully',
+    keyOnlyShownOnceShort: 'The full key is only shown when it is created',
+    oneTimeKey: {
+      title: 'Copy new API key',
+      description: 'Copy and store this API key now. After this window is closed, the server cannot show the full key again.',
+      warning: 'This key appears only once at creation time. Later you will only see its prefix.',
+      copy: 'Copy key'
+    },
     keyEnabledSuccess: 'API key enabled successfully',
     keyDisabledSuccess: 'API key disabled successfully',
     failedToLoad: 'Failed to load API keys',
@@ -2935,10 +2943,6 @@ export default {
         apiKey: 'API Key',
         apiKeyPlaceholder: 'Enter API Key',
         apiKeyEditPlaceholder: 'Leave blank to keep current key',
-        useMyKey: 'Use my key',
-        selectKeyTitle: 'Select my API Key',
-        selectKeyHint: 'Only your active, non-expired keys are listed.',
-        noActiveKey: 'No active API keys available',
         primaryModel: 'Primary Model',
         primaryModelPlaceholder: 'gpt-4o-mini',
         extraModels: 'Extra Models',

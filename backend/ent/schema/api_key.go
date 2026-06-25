@@ -38,6 +38,24 @@ func (APIKey) Fields() []ent.Field {
 			MaxLen(128).
 			NotEmpty().
 			Unique(),
+		field.String("key_hash").
+			MaxLen(64).
+			Optional().
+			Nillable().
+			Comment("Hashed API key material used for authentication"),
+		field.String("key_hash_alg").
+			MaxLen(20).
+			Default("sha256").
+			Comment("Hash algorithm for key_hash"),
+		field.String("key_lookup_hash").
+			MaxLen(64).
+			Optional().
+			Nillable().
+			Comment("Secret-independent SHA-256 lookup hash for API key authentication"),
+		field.String("key_prefix").
+			MaxLen(32).
+			Default("").
+			Comment("Non-secret prefix shown in UI and logs"),
 		field.String("name").
 			MaxLen(100).
 			NotEmpty(),
@@ -136,6 +154,9 @@ func (APIKey) Edges() []ent.Edge {
 func (APIKey) Indexes() []ent.Index {
 	return []ent.Index{
 		// key 字段已在 Fields() 中声明 Unique()，无需重复索引
+		index.Fields("key_hash"),
+		index.Fields("key_lookup_hash"),
+		index.Fields("key_prefix"),
 		index.Fields("user_id"),
 		index.Fields("group_id"),
 		index.Fields("status"),

@@ -82,7 +82,7 @@ func APIKeyFromService(k *service.APIKey) *APIKey {
 	out := &APIKey{
 		ID:            k.ID,
 		UserID:        k.UserID,
-		Key:           k.Key,
+		KeyPrefix:     k.KeyPrefix,
 		Name:          k.Name,
 		GroupID:       k.GroupID,
 		Status:        k.Status,
@@ -117,6 +117,21 @@ func APIKeyFromService(k *service.APIKey) *APIKey {
 	if k.Window7dStart != nil && !service.IsWindowExpired(k.Window7dStart, service.RateLimitWindow7d) {
 		t := k.Window7dStart.Add(service.RateLimitWindow7d)
 		out.Reset7dAt = &t
+	}
+	if out.KeyPrefix == "" {
+		out.KeyPrefix = service.APIKeyPrefix(k.Key)
+	}
+	return out
+}
+
+func APIKeyFromServiceWithSecret(k *service.APIKey) *APIKey {
+	out := APIKeyFromService(k)
+	if out == nil {
+		return nil
+	}
+	out.Key = k.Key
+	if out.KeyPrefix == "" {
+		out.KeyPrefix = service.APIKeyPrefix(k.Key)
 	}
 	return out
 }

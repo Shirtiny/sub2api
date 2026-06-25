@@ -579,6 +579,7 @@ type SecurityConfig struct {
 	CSP                              CSPConfig            `mapstructure:"csp"`
 	ProxyFallback                    ProxyFallbackConfig  `mapstructure:"proxy_fallback"`
 	ProxyProbe                       ProxyProbeConfig     `mapstructure:"proxy_probe"`
+	APIKeyHashSecret                 string               `mapstructure:"api_key_hash_secret"`
 	TrustForwardedIPForAPIKeyACL     bool                 `mapstructure:"trust_forwarded_ip_for_api_key_acl"`
 	trustForwardedIPForAPIKeyACLLive *atomic.Bool         `mapstructure:"-"`
 }
@@ -1349,19 +1350,19 @@ func NormalizeRunMode(value string) string {
 	}
 }
 
-// Load 读取并校验完整配置（要求 jwt.secret 已显式提供）。
+// Load 读取并校验完整配置（要求运行时密钥已显式提供）。
 func Load() (*Config, error) {
 	return load(false)
 }
 
 // LoadForBootstrap 读取启动阶段配置。
 //
-// 启动阶段允许 jwt.secret 先留空，后续由数据库初始化流程补齐并再次完整校验。
+// 启动阶段允许运行时密钥先留空，后续由初始化流程补齐并再次完整校验。
 func LoadForBootstrap() (*Config, error) {
 	return load(true)
 }
 
-func load(allowMissingJWTSecret bool) (*Config, error) {
+func load(allowMissingRuntimeSecrets bool) (*Config, error) {
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
 
@@ -1452,6 +1453,7 @@ func load(allowMissingJWTSecret bool) (*Config, error) {
 	cfg.Security.ResponseHeaders.AdditionalAllowed = normalizeStringSlice(cfg.Security.ResponseHeaders.AdditionalAllowed)
 	cfg.Security.ResponseHeaders.ForceRemove = normalizeStringSlice(cfg.Security.ResponseHeaders.ForceRemove)
 	cfg.Security.CSP.Policy = strings.TrimSpace(cfg.Security.CSP.Policy)
+	cfg.Security.APIKeyHashSecret = strings.TrimSpace(cfg.Security.APIKeyHashSecret)
 	cfg.SetTrustForwardedIPForAPIKeyACL(cfg.Security.TrustForwardedIPForAPIKeyACL)
 	cfg.Log.Level = strings.ToLower(strings.TrimSpace(cfg.Log.Level))
 	cfg.Log.Format = strings.ToLower(strings.TrimSpace(cfg.Log.Format))
@@ -1497,17 +1499,27 @@ func load(allowMissingJWTSecret bool) (*Config, error) {
 	}
 
 	originalJWTSecret := cfg.JWT.Secret
-	if allowMissingJWTSecret && originalJWTSecret == "" {
+	if allowMissingRuntimeSecrets && originalJWTSecret == "" {
 		// 启动阶段允许先无 JWT 密钥，后续在数据库初始化后补齐。
 		cfg.JWT.Secret = strings.Repeat("0", 32)
+	}
+	originalAPIKeyHashSecret := cfg.Security.APIKeyHashSecret
+	allowGeneratedAPIKeyHashSecret := allowMissingRuntimeSecrets &&
+		(originalAPIKeyHashSecret == "" || IsPlaceholderAPIKeyHashSecret(originalAPIKeyHashSecret))
+	if allowGeneratedAPIKeyHashSecret {
+		// 启动阶段允许先无 API key 哈希密钥，后续在初始化后补齐。
+		cfg.Security.APIKeyHashSecret = strings.Repeat("0", 32)
 	}
 
 	if err := cfg.Validate(); err != nil {
 		return nil, fmt.Errorf("validate config error: %w", err)
 	}
 
-	if allowMissingJWTSecret && originalJWTSecret == "" {
+	if allowMissingRuntimeSecrets && originalJWTSecret == "" {
 		cfg.JWT.Secret = ""
+	}
+	if allowGeneratedAPIKeyHashSecret {
+		cfg.Security.APIKeyHashSecret = originalAPIKeyHashSecret
 	}
 
 	if !cfg.Security.URLAllowlist.Enabled {
@@ -1597,6 +1609,7 @@ func setDefaults() {
 	viper.SetDefault("security.csp.enabled", true)
 	viper.SetDefault("security.csp.policy", DefaultCSPPolicy)
 	viper.SetDefault("security.proxy_probe.insecure_skip_verify", false)
+	viper.SetDefault("security.api_key_hash_secret", "")
 	viper.SetDefault("security.trust_forwarded_ip_for_api_key_acl", false)
 
 	// Security - disable direct fallback on proxy error
@@ -1978,6 +1991,16 @@ func (c *Config) Validate() error {
 	// 选择 bytes 而不是 rune 计数，确保二进制/随机串的长度语义更接近“熵”而非“字符数”。
 	if len([]byte(jwtSecret)) < 32 {
 		return fmt.Errorf("jwt.secret must be at least 32 bytes")
+	}
+	apiKeyHashSecret := strings.TrimSpace(c.Security.APIKeyHashSecret)
+	if apiKeyHashSecret == "" {
+		return fmt.Errorf("security.api_key_hash_secret is required")
+	}
+	if len([]byte(apiKeyHashSecret)) < 32 {
+		return fmt.Errorf("security.api_key_hash_secret must be at least 32 bytes")
+	}
+	if IsPlaceholderAPIKeyHashSecret(apiKeyHashSecret) {
+		return fmt.Errorf("security.api_key_hash_secret must be generated with a random value")
 	}
 	switch c.Log.Level {
 	case "debug", "info", "warn", "error":
@@ -2840,6 +2863,16 @@ func isWeakJWTSecret(secret string) bool {
 		"jwt-secret":              {},
 	}
 	_, exists := weak[lower]
+	return exists
+}
+
+func IsPlaceholderAPIKeyHashSecret(secret string) bool {
+	lower := strings.ToLower(strings.TrimSpace(secret))
+	placeholders := map[string]struct{}{
+		"change-me-generate-with-openssl-rand-hex-32": {},
+		"change-me-in-production":                     {},
+	}
+	_, exists := placeholders[lower]
 	return exists
 }
 

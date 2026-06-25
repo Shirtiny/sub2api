@@ -83,6 +83,9 @@ cors:
 # 安全配置
 # =============================================================================
 security:
+  # Independent secret for hashing stored user API keys.
+  # Keep stable across deployments. Generate: openssl rand -hex 32
+  api_key_hash_secret: "change-me-generate-with-openssl-rand-hex-32"
   url_allowlist:
     # Enable URL allowlist validation (disable to skip all URL checks)
     # 启用 URL 白名单验证（禁用则跳过所有 URL 检查）

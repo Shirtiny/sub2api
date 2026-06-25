@@ -18,6 +18,7 @@ import (
 
 const (
 	securitySecretKeyJWT        = "jwt_secret"
+	securitySecretKeyAPIKeyHash = "api_key_hash_secret"
 	securitySecretReadRetryMax  = 5
 	securitySecretReadRetryWait = 10 * time.Millisecond
 )
@@ -32,29 +33,72 @@ func ensureBootstrapSecrets(ctx context.Context, client *ent.Client, cfg *config
 		return fmt.Errorf("nil config")
 	}
 
-	cfg.JWT.Secret = strings.TrimSpace(cfg.JWT.Secret)
-	if cfg.JWT.Secret != "" {
-		storedSecret, err := createSecuritySecretIfAbsent(ctx, client, securitySecretKeyJWT, cfg.JWT.Secret)
-		if err != nil {
-			return fmt.Errorf("persist jwt secret: %w", err)
-		}
-		if storedSecret != cfg.JWT.Secret {
-			log.Println("Warning: configured JWT secret mismatches persisted value; using persisted secret for cross-instance consistency.")
-		}
-		cfg.JWT.Secret = storedSecret
-		return nil
-	}
-
-	secret, created, err := getOrCreateGeneratedSecuritySecret(ctx, client, securitySecretKeyJWT, 32)
+	jwtCreated, err := ensureRuntimeSecret(ctx, client, securitySecretKeyJWT, &cfg.JWT.Secret, "JWT secret", nil)
 	if err != nil {
-		return fmt.Errorf("ensure jwt secret: %w", err)
+		return err
 	}
-	cfg.JWT.Secret = secret
-
-	if created {
+	if jwtCreated {
 		log.Println("Warning: JWT secret auto-generated and persisted to database. Consider rotating to a managed secret for production.")
 	}
+
+	apiKeyHashCreated, err := ensureRuntimeSecret(ctx, client, securitySecretKeyAPIKeyHash, &cfg.Security.APIKeyHashSecret, "API key hash secret", config.IsPlaceholderAPIKeyHashSecret)
+	if err != nil {
+		return err
+	}
+	if apiKeyHashCreated {
+		log.Println("Warning: API key hash secret auto-generated and persisted to database. Consider rotating to a managed secret for production.")
+	}
 	return nil
+}
+
+func ensureRuntimeSecret(ctx context.Context, client *ent.Client, key string, target *string, label string, invalid func(string) bool) (bool, error) {
+	if target == nil {
+		return false, fmt.Errorf("nil %s target", label)
+	}
+
+	configured := strings.TrimSpace(*target)
+	if configured != "" && isInvalidRuntimeSecret(invalid, configured) {
+		configured = ""
+	}
+	if configured != "" {
+		storedSecret, err := createSecuritySecretIfAbsent(ctx, client, key, configured)
+		if err != nil {
+			return false, fmt.Errorf("persist %s: %w", label, err)
+		}
+		if isInvalidRuntimeSecret(invalid, storedSecret) {
+			storedSecret, err = replaceSecuritySecretValue(ctx, client, key, storedSecret, configured)
+			if err != nil {
+				return false, fmt.Errorf("replace invalid %s: %w", label, err)
+			}
+		}
+		if storedSecret != configured {
+			log.Printf("Warning: configured %s mismatches persisted value; using persisted secret for cross-instance consistency.", label)
+		}
+		*target = storedSecret
+		return false, nil
+	}
+
+	secret, created, err := getOrCreateGeneratedSecuritySecret(ctx, client, key, 32)
+	if err != nil {
+		return false, fmt.Errorf("ensure %s: %w", label, err)
+	}
+	if isInvalidRuntimeSecret(invalid, secret) {
+		generated, genErr := generateHexSecret(32)
+		if genErr != nil {
+			return false, fmt.Errorf("generate replacement %s: %w", label, genErr)
+		}
+		secret, err = replaceSecuritySecretValue(ctx, client, key, secret, generated)
+		if err != nil {
+			return false, fmt.Errorf("replace invalid %s: %w", label, err)
+		}
+		created = true
+	}
+	*target = secret
+	return created, nil
+}
+
+func isInvalidRuntimeSecret(invalid func(string) bool, value string) bool {
+	return invalid != nil && invalid(value)
 }
 
 func getOrCreateGeneratedSecuritySecret(ctx context.Context, client *ent.Client, key string, byteLength int) (string, bool, error) {
@@ -121,6 +165,37 @@ func createSecuritySecretIfAbsent(ctx context.Context, client *ent.Client, key, 
 	storedValue := strings.TrimSpace(stored.Value)
 	if len([]byte(storedValue)) < 32 {
 		return "", fmt.Errorf("stored secret %q must be at least 32 bytes", key)
+	}
+	return storedValue, nil
+}
+
+func replaceSecuritySecretValue(ctx context.Context, client *ent.Client, key, oldValue, newValue string) (string, error) {
+	newValue = strings.TrimSpace(newValue)
+	if len([]byte(newValue)) < 32 {
+		return "", fmt.Errorf("secret %q must be at least 32 bytes", key)
+	}
+
+	affected, err := client.SecuritySecret.Update().
+		Where(securitysecret.KeyEQ(key), securitysecret.ValueEQ(oldValue)).
+		SetValue(newValue).
+		Save(ctx)
+	if err != nil {
+		return "", err
+	}
+	if affected > 0 {
+		return newValue, nil
+	}
+
+	stored, err := querySecuritySecretWithRetry(ctx, client, key)
+	if err != nil {
+		return "", err
+	}
+	storedValue := strings.TrimSpace(stored.Value)
+	if len([]byte(storedValue)) < 32 {
+		return "", fmt.Errorf("stored secret %q must be at least 32 bytes", key)
+	}
+	if storedValue == strings.TrimSpace(oldValue) {
+		return "", fmt.Errorf("stored secret %q still has invalid value", key)
 	}
 	return storedValue, nil
 }

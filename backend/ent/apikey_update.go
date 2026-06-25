@@ -86,6 +86,74 @@ func (_u *APIKeyUpdate) SetNillableKey(v *string) *APIKeyUpdate {
 	return _u
 }
 
+// SetKeyHash sets the "key_hash" field.
+func (_u *APIKeyUpdate) SetKeyHash(v string) *APIKeyUpdate {
+	_u.mutation.SetKeyHash(v)
+	return _u
+}
+
+// SetNillableKeyHash sets the "key_hash" field if the given value is not nil.
+func (_u *APIKeyUpdate) SetNillableKeyHash(v *string) *APIKeyUpdate {
+	if v != nil {
+		_u.SetKeyHash(*v)
+	}
+	return _u
+}
+
+// ClearKeyHash clears the value of the "key_hash" field.
+func (_u *APIKeyUpdate) ClearKeyHash() *APIKeyUpdate {
+	_u.mutation.ClearKeyHash()
+	return _u
+}
+
+// SetKeyHashAlg sets the "key_hash_alg" field.
+func (_u *APIKeyUpdate) SetKeyHashAlg(v string) *APIKeyUpdate {
+	_u.mutation.SetKeyHashAlg(v)
+	return _u
+}
+
+// SetNillableKeyHashAlg sets the "key_hash_alg" field if the given value is not nil.
+func (_u *APIKeyUpdate) SetNillableKeyHashAlg(v *string) *APIKeyUpdate {
+	if v != nil {
+		_u.SetKeyHashAlg(*v)
+	}
+	return _u
+}
+
+// SetKeyLookupHash sets the "key_lookup_hash" field.
+func (_u *APIKeyUpdate) SetKeyLookupHash(v string) *APIKeyUpdate {
+	_u.mutation.SetKeyLookupHash(v)
+	return _u
+}
+
+// SetNillableKeyLookupHash sets the "key_lookup_hash" field if the given value is not nil.
+func (_u *APIKeyUpdate) SetNillableKeyLookupHash(v *string) *APIKeyUpdate {
+	if v != nil {
+		_u.SetKeyLookupHash(*v)
+	}
+	return _u
+}
+
+// ClearKeyLookupHash clears the value of the "key_lookup_hash" field.
+func (_u *APIKeyUpdate) ClearKeyLookupHash() *APIKeyUpdate {
+	_u.mutation.ClearKeyLookupHash()
+	return _u
+}
+
+// SetKeyPrefix sets the "key_prefix" field.
+func (_u *APIKeyUpdate) SetKeyPrefix(v string) *APIKeyUpdate {
+	_u.mutation.SetKeyPrefix(v)
+	return _u
+}
+
+// SetNillableKeyPrefix sets the "key_prefix" field if the given value is not nil.
+func (_u *APIKeyUpdate) SetNillableKeyPrefix(v *string) *APIKeyUpdate {
+	if v != nil {
+		_u.SetKeyPrefix(*v)
+	}
+	return _u
+}
+
 // SetName sets the "name" field.
 func (_u *APIKeyUpdate) SetName(v string) *APIKeyUpdate {
 	_u.mutation.SetName(v)
@@ -550,6 +618,26 @@ func (_u *APIKeyUpdate) check() error {
 			return &ValidationError{Name: "key", err: fmt.Errorf(`ent: validator failed for field "APIKey.key": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.KeyHash(); ok {
+		if err := apikey.KeyHashValidator(v); err != nil {
+			return &ValidationError{Name: "key_hash", err: fmt.Errorf(`ent: validator failed for field "APIKey.key_hash": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.KeyHashAlg(); ok {
+		if err := apikey.KeyHashAlgValidator(v); err != nil {
+			return &ValidationError{Name: "key_hash_alg", err: fmt.Errorf(`ent: validator failed for field "APIKey.key_hash_alg": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.KeyLookupHash(); ok {
+		if err := apikey.KeyLookupHashValidator(v); err != nil {
+			return &ValidationError{Name: "key_lookup_hash", err: fmt.Errorf(`ent: validator failed for field "APIKey.key_lookup_hash": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.KeyPrefix(); ok {
+		if err := apikey.KeyPrefixValidator(v); err != nil {
+			return &ValidationError{Name: "key_prefix", err: fmt.Errorf(`ent: validator failed for field "APIKey.key_prefix": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Name(); ok {
 		if err := apikey.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "APIKey.name": %w`, err)}
@@ -589,6 +677,24 @@ func (_u *APIKeyUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.Key(); ok {
 		_spec.SetField(apikey.FieldKey, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.KeyHash(); ok {
+		_spec.SetField(apikey.FieldKeyHash, field.TypeString, value)
+	}
+	if _u.mutation.KeyHashCleared() {
+		_spec.ClearField(apikey.FieldKeyHash, field.TypeString)
+	}
+	if value, ok := _u.mutation.KeyHashAlg(); ok {
+		_spec.SetField(apikey.FieldKeyHashAlg, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.KeyLookupHash(); ok {
+		_spec.SetField(apikey.FieldKeyLookupHash, field.TypeString, value)
+	}
+	if _u.mutation.KeyLookupHashCleared() {
+		_spec.ClearField(apikey.FieldKeyLookupHash, field.TypeString)
+	}
+	if value, ok := _u.mutation.KeyPrefix(); ok {
+		_spec.SetField(apikey.FieldKeyPrefix, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(apikey.FieldName, field.TypeString, value)
@@ -869,6 +975,74 @@ func (_u *APIKeyUpdateOne) SetKey(v string) *APIKeyUpdateOne {
 func (_u *APIKeyUpdateOne) SetNillableKey(v *string) *APIKeyUpdateOne {
 	if v != nil {
 		_u.SetKey(*v)
+	}
+	return _u
+}
+
+// SetKeyHash sets the "key_hash" field.
+func (_u *APIKeyUpdateOne) SetKeyHash(v string) *APIKeyUpdateOne {
+	_u.mutation.SetKeyHash(v)
+	return _u
+}
+
+// SetNillableKeyHash sets the "key_hash" field if the given value is not nil.
+func (_u *APIKeyUpdateOne) SetNillableKeyHash(v *string) *APIKeyUpdateOne {
+	if v != nil {
+		_u.SetKeyHash(*v)
+	}
+	return _u
+}
+
+// ClearKeyHash clears the value of the "key_hash" field.
+func (_u *APIKeyUpdateOne) ClearKeyHash() *APIKeyUpdateOne {
+	_u.mutation.ClearKeyHash()
+	return _u
+}
+
+// SetKeyHashAlg sets the "key_hash_alg" field.
+func (_u *APIKeyUpdateOne) SetKeyHashAlg(v string) *APIKeyUpdateOne {
+	_u.mutation.SetKeyHashAlg(v)
+	return _u
+}
+
+// SetNillableKeyHashAlg sets the "key_hash_alg" field if the given value is not nil.
+func (_u *APIKeyUpdateOne) SetNillableKeyHashAlg(v *string) *APIKeyUpdateOne {
+	if v != nil {
+		_u.SetKeyHashAlg(*v)
+	}
+	return _u
+}
+
+// SetKeyLookupHash sets the "key_lookup_hash" field.
+func (_u *APIKeyUpdateOne) SetKeyLookupHash(v string) *APIKeyUpdateOne {
+	_u.mutation.SetKeyLookupHash(v)
+	return _u
+}
+
+// SetNillableKeyLookupHash sets the "key_lookup_hash" field if the given value is not nil.
+func (_u *APIKeyUpdateOne) SetNillableKeyLookupHash(v *string) *APIKeyUpdateOne {
+	if v != nil {
+		_u.SetKeyLookupHash(*v)
+	}
+	return _u
+}
+
+// ClearKeyLookupHash clears the value of the "key_lookup_hash" field.
+func (_u *APIKeyUpdateOne) ClearKeyLookupHash() *APIKeyUpdateOne {
+	_u.mutation.ClearKeyLookupHash()
+	return _u
+}
+
+// SetKeyPrefix sets the "key_prefix" field.
+func (_u *APIKeyUpdateOne) SetKeyPrefix(v string) *APIKeyUpdateOne {
+	_u.mutation.SetKeyPrefix(v)
+	return _u
+}
+
+// SetNillableKeyPrefix sets the "key_prefix" field if the given value is not nil.
+func (_u *APIKeyUpdateOne) SetNillableKeyPrefix(v *string) *APIKeyUpdateOne {
+	if v != nil {
+		_u.SetKeyPrefix(*v)
 	}
 	return _u
 }
@@ -1350,6 +1524,26 @@ func (_u *APIKeyUpdateOne) check() error {
 			return &ValidationError{Name: "key", err: fmt.Errorf(`ent: validator failed for field "APIKey.key": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.KeyHash(); ok {
+		if err := apikey.KeyHashValidator(v); err != nil {
+			return &ValidationError{Name: "key_hash", err: fmt.Errorf(`ent: validator failed for field "APIKey.key_hash": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.KeyHashAlg(); ok {
+		if err := apikey.KeyHashAlgValidator(v); err != nil {
+			return &ValidationError{Name: "key_hash_alg", err: fmt.Errorf(`ent: validator failed for field "APIKey.key_hash_alg": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.KeyLookupHash(); ok {
+		if err := apikey.KeyLookupHashValidator(v); err != nil {
+			return &ValidationError{Name: "key_lookup_hash", err: fmt.Errorf(`ent: validator failed for field "APIKey.key_lookup_hash": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.KeyPrefix(); ok {
+		if err := apikey.KeyPrefixValidator(v); err != nil {
+			return &ValidationError{Name: "key_prefix", err: fmt.Errorf(`ent: validator failed for field "APIKey.key_prefix": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Name(); ok {
 		if err := apikey.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "APIKey.name": %w`, err)}
@@ -1406,6 +1600,24 @@ func (_u *APIKeyUpdateOne) sqlSave(ctx context.Context) (_node *APIKey, err erro
 	}
 	if value, ok := _u.mutation.Key(); ok {
 		_spec.SetField(apikey.FieldKey, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.KeyHash(); ok {
+		_spec.SetField(apikey.FieldKeyHash, field.TypeString, value)
+	}
+	if _u.mutation.KeyHashCleared() {
+		_spec.ClearField(apikey.FieldKeyHash, field.TypeString)
+	}
+	if value, ok := _u.mutation.KeyHashAlg(); ok {
+		_spec.SetField(apikey.FieldKeyHashAlg, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.KeyLookupHash(); ok {
+		_spec.SetField(apikey.FieldKeyLookupHash, field.TypeString, value)
+	}
+	if _u.mutation.KeyLookupHashCleared() {
+		_spec.ClearField(apikey.FieldKeyLookupHash, field.TypeString)
+	}
+	if value, ok := _u.mutation.KeyPrefix(); ok {
+		_spec.SetField(apikey.FieldKeyPrefix, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(apikey.FieldName, field.TypeString, value)

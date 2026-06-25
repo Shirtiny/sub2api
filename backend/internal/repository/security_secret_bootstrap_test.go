@@ -58,21 +58,50 @@ func TestEnsureBootstrapSecretsGenerateAndPersistJWTSecret(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, cfg.JWT.Secret)
 	require.GreaterOrEqual(t, len([]byte(cfg.JWT.Secret)), 32)
+	require.NotEmpty(t, cfg.Security.APIKeyHashSecret)
+	require.GreaterOrEqual(t, len([]byte(cfg.Security.APIKeyHashSecret)), 32)
 
 	stored, err := client.SecuritySecret.Query().Where(securitysecret.KeyEQ(securitySecretKeyJWT)).Only(context.Background())
 	require.NoError(t, err)
 	require.Equal(t, cfg.JWT.Secret, stored.Value)
+
+	stored, err = client.SecuritySecret.Query().Where(securitysecret.KeyEQ(securitySecretKeyAPIKeyHash)).Only(context.Background())
+	require.NoError(t, err)
+	require.Equal(t, cfg.Security.APIKeyHashSecret, stored.Value)
 }
 
 func TestEnsureBootstrapSecretsLoadExistingJWTSecret(t *testing.T) {
 	client := newSecuritySecretTestClient(t)
 	_, err := client.SecuritySecret.Create().SetKey(securitySecretKeyJWT).SetValue("existing-jwt-secret-32bytes-long!!!!").Save(context.Background())
 	require.NoError(t, err)
+	_, err = client.SecuritySecret.Create().SetKey(securitySecretKeyAPIKeyHash).SetValue("existing-api-hash-secret-32bytes!!").Save(context.Background())
+	require.NoError(t, err)
 
 	cfg := &config.Config{}
 	err = ensureBootstrapSecrets(context.Background(), client, cfg)
 	require.NoError(t, err)
 	require.Equal(t, "existing-jwt-secret-32bytes-long!!!!", cfg.JWT.Secret)
+	require.Equal(t, "existing-api-hash-secret-32bytes!!", cfg.Security.APIKeyHashSecret)
+}
+
+func TestEnsureBootstrapSecretsReplacesStoredAPIKeyHashPlaceholder(t *testing.T) {
+	client := newSecuritySecretTestClient(t)
+	_, err := client.SecuritySecret.Create().SetKey(securitySecretKeyJWT).SetValue("existing-jwt-secret-32bytes-long!!!!").Save(context.Background())
+	require.NoError(t, err)
+	_, err = client.SecuritySecret.Create().SetKey(securitySecretKeyAPIKeyHash).SetValue("change-me-generate-with-openssl-rand-hex-32").Save(context.Background())
+	require.NoError(t, err)
+
+	cfg := &config.Config{}
+	err = ensureBootstrapSecrets(context.Background(), client, cfg)
+	require.NoError(t, err)
+	require.Equal(t, "existing-jwt-secret-32bytes-long!!!!", cfg.JWT.Secret)
+	require.NotEmpty(t, cfg.Security.APIKeyHashSecret)
+	require.False(t, config.IsPlaceholderAPIKeyHashSecret(cfg.Security.APIKeyHashSecret))
+
+	stored, err := client.SecuritySecret.Query().Where(securitysecret.KeyEQ(securitySecretKeyAPIKeyHash)).Only(context.Background())
+	require.NoError(t, err)
+	require.Equal(t, cfg.Security.APIKeyHashSecret, strings.TrimSpace(stored.Value))
+	require.False(t, config.IsPlaceholderAPIKeyHashSecret(stored.Value))
 }
 
 func TestEnsureBootstrapSecretsRejectInvalidStoredSecret(t *testing.T) {

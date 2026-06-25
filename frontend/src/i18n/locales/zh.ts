@@ -730,7 +730,7 @@ export default {
   keys: {
     title: 'API 密钥',
     description: '管理您的 API 密钥和访问令牌',
-    searchPlaceholder: '搜索名称或Key...',
+    searchPlaceholder: '搜索名称或 Key 前缀...',
     endpoints: {
       title: 'API 端点',
       default: '默认',
@@ -746,6 +746,7 @@ export default {
     deleteKey: '删除密钥',
     deleteConfirmMessage: "确定要删除 '{name}' 吗？此操作无法撤销。",
     apiKey: 'API 密钥',
+    keyPrefix: '密钥前缀',
     group: '分组',
     noGroup: '无分组',
     searchGroup: '搜索分组...',
@@ -768,6 +769,13 @@ export default {
     keyCreatedSuccess: 'API 密钥创建成功',
     keyUpdatedSuccess: 'API 密钥更新成功',
     keyDeletedSuccess: 'API 密钥删除成功',
+    keyOnlyShownOnceShort: '完整密钥只会在创建时显示一次',
+    oneTimeKey: {
+      title: '复制新的 API 密钥',
+      description: '请现在复制并保存此 API 密钥。关闭此窗口后，后台将无法再次显示完整密钥。',
+      warning: '此密钥只会在创建时出现一次，之后只能看到密钥前缀。',
+      copy: '复制密钥'
+    },
     keyEnabledSuccess: 'API 密钥已启用',
     keyDisabledSuccess: 'API 密钥已禁用',
     failedToLoad: '加载 API 密钥失败',
@@ -3012,10 +3020,6 @@ export default {
         apiKey: 'API Key',
         apiKeyPlaceholder: '请输入 API Key',
         apiKeyEditPlaceholder: '留空表示不修改',
-        useMyKey: '使用我的 Key',
-        selectKeyTitle: '选择我的 API Key',
-        selectKeyHint: '仅显示当前账号下处于「启用」状态且未过期的 Key。',
-        noActiveKey: '没有可用的启用状态 Key',
         primaryModel: '主模型',
         primaryModelPlaceholder: 'gpt-4o-mini',
         extraModels: '附加模型',
