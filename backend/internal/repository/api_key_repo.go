@@ -868,7 +868,7 @@ func apiKeyLookupKeyFromColumns(key, keyHash, keyHashAlg, keyLookupHash string) 
 	return key
 }
 
-func (r *apiKeyRepository) listLookupKeys(ctx context.Context, where string, arg any) ([]string, error) {
+func (r *apiKeyRepository) listLookupKeys(ctx context.Context, where string, arg any) (keys []string, err error) {
 	rows, err := r.sql.QueryContext(ctx, `
 		SELECT key, COALESCE(key_hash, ''), COALESCE(key_hash_alg, ''), COALESCE(key_lookup_hash, '')
 		FROM api_keys
@@ -876,9 +876,13 @@ func (r *apiKeyRepository) listLookupKeys(ctx context.Context, where string, arg
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		if closeErr := rows.Close(); closeErr != nil && err == nil {
+			err = closeErr
+		}
+	}()
 
-	keys := make([]string, 0)
+	keys = make([]string, 0)
 	for rows.Next() {
 		var key, keyHash, keyHashAlg, keyLookupHash string
 		if err := rows.Scan(&key, &keyHash, &keyHashAlg, &keyLookupHash); err != nil {

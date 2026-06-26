@@ -103,20 +103,6 @@ func (s *APIKeyService) StartAuthCacheInvalidationSubscriber(ctx context.Context
 	}
 }
 
-func (s *APIKeyService) authCacheKey(key string) string {
-	if hashes, ok := DecodeAPIKeyLookupToken(key); ok {
-		if len(hashes) == 0 {
-			return ""
-		}
-		return APIKeyAuthCacheKeyFromHash(hashes[0])
-	}
-	hashes := APIKeyLookupHashes(key, s.cfg)
-	if len(hashes) == 0 {
-		return ""
-	}
-	return APIKeyAuthCacheKeyFromHash(hashes[0])
-}
-
 func (s *APIKeyService) getAuthCacheEntry(ctx context.Context, cacheKey string) (*APIKeyAuthCacheEntry, bool) {
 	if s.authCacheL1 != nil {
 		if val, ok := s.authCacheL1.Get(cacheKey); ok {
