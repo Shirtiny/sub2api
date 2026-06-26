@@ -24,6 +24,7 @@ var (
 	ErrAPIKeyNotFound     = infraerrors.NotFound("API_KEY_NOT_FOUND", "api key not found")
 	ErrGroupNotAllowed    = infraerrors.Forbidden("GROUP_NOT_ALLOWED", "user is not allowed to bind this group")
 	ErrAPIKeyExists       = infraerrors.Conflict("API_KEY_EXISTS", "api key already exists")
+	ErrAPIKeyRotated      = infraerrors.Conflict("API_KEY_ROTATED", "api key was changed, please refresh and retry")
 	ErrAPIKeyTooShort     = infraerrors.BadRequest("API_KEY_TOO_SHORT", "api key must be at least 16 characters")
 	ErrAPIKeyInvalidChars = infraerrors.BadRequest("API_KEY_INVALID_CHARS", "api key can only contain letters, numbers, underscores, and hyphens")
 	ErrAPIKeyRateLimited  = infraerrors.TooManyRequests("API_KEY_RATE_LIMITED", "too many failed attempts, please try again later")
@@ -55,6 +56,7 @@ type APIKeyRepository interface {
 	// GetByKeyForAuth 认证专用查询，返回最小字段集
 	GetByKeyForAuth(ctx context.Context, key string) (*APIKey, error)
 	Update(ctx context.Context, key *APIKey) error
+	RotateKey(ctx context.Context, key *APIKey, guard APIKeyRotationGuard) error
 	Delete(ctx context.Context, id int64) error
 	// DeleteWithAudit 在同一事务内先写 deleted_api_key_audits 审计、再软删除该 key。
 	DeleteWithAudit(ctx context.Context, id int64) error
@@ -80,6 +82,16 @@ type APIKeyRepository interface {
 	IncrementRateLimitUsage(ctx context.Context, id int64, cost float64) error
 	ResetRateLimitWindows(ctx context.Context, id int64) error
 	GetRateLimitData(ctx context.Context, id int64) (*APIKeyRateLimitData, error)
+}
+
+// APIKeyRotationGuard captures the key material that must still be present for
+// a rotate update to proceed. It prevents concurrent rotates from returning a
+// one-time plaintext key that has already been overwritten by another request.
+type APIKeyRotationGuard struct {
+	Key           string
+	KeyHash       string
+	KeyHashAlg    string
+	KeyLookupHash string
 }
 
 // APIKeyRateLimitData holds rate limit usage and window state for an API key.
@@ -262,7 +274,7 @@ func (s *APIKeyService) GenerateKey() (string, error) {
 	// 转换为十六进制字符串并添加前缀
 	prefix := s.cfg.Default.APIKeyPrefix
 	if prefix == "" {
-		prefix = "sk-"
+		prefix = "cafepass-"
 	}
 
 	key := prefix + hex.EncodeToString(bytes)
@@ -380,8 +392,7 @@ func (s *APIKeyService) Create(ctx context.Context, userID int64, req CreateAPIK
 			return nil, err
 		}
 
-		// 检查Key是否已存在。只按 hash 查重，避免依赖明文列。
-		exists, err := s.apiKeyRepo.ExistsByKey(ctx, EncodeAPIKeyLookupToken(APIKeyLookupHashes(*req.CustomKey, s.cfg)))
+		exists, err := s.apiKeyExists(ctx, *req.CustomKey)
 		if err != nil {
 			return nil, fmt.Errorf("check key exists: %w", err)
 		}
@@ -439,6 +450,15 @@ func (s *APIKeyService) Create(ctx context.Context, userID int64, req CreateAPIK
 	return apiKey, nil
 }
 
+func (s *APIKeyService) apiKeyExists(ctx context.Context, key string) (bool, error) {
+	exists, err := s.apiKeyRepo.ExistsByKey(ctx, EncodeAPIKeyLookupToken(APIKeyLookupHashes(key, s.cfg)))
+	if err != nil || exists {
+		return exists, err
+	}
+	// Compatibility for databases that still contain pre-hash plaintext rows.
+	return s.apiKeyRepo.ExistsByKey(ctx, key)
+}
+
 // List 获取用户的API Key列表
 func (s *APIKeyService) List(ctx context.Context, userID int64, params pagination.PaginationParams, filters APIKeyListFilters) ([]APIKey, *pagination.PaginationResult, error) {
 	keys, pagination, err := s.apiKeyRepo.ListByUserID(ctx, userID, params, filters)
@@ -477,6 +497,8 @@ func (s *APIKeyService) GetByKey(ctx context.Context, key string) (*APIKey, erro
 		return nil, fmt.Errorf("get api key: %w", ErrAPIKeyNotFound)
 	}
 
+	negativeCacheKeys := make(map[string]struct{})
+
 	for _, lookup := range lookups {
 		cacheKey := APIKeyAuthCacheKeyFromHash(lookup)
 		if cacheKey == "" {
@@ -489,6 +511,7 @@ func (s *APIKeyService) GetByKey(ctx context.Context, key string) (*APIKey, erro
 			}
 			if err != nil {
 				if errors.Is(err, ErrAPIKeyNotFound) {
+					negativeCacheKeys[cacheKey] = struct{}{}
 					continue
 				}
 				return nil, fmt.Errorf("get api key: %w", err)
@@ -501,6 +524,9 @@ func (s *APIKeyService) GetByKey(ctx context.Context, key string) (*APIKey, erro
 	for _, lookup := range lookups {
 		cacheKey := APIKeyAuthCacheKeyFromHash(lookup)
 		if cacheKey == "" {
+			continue
+		}
+		if _, skip := negativeCacheKeys[cacheKey]; skip {
 			continue
 		}
 		load := func() (*APIKeyAuthCacheEntry, error) {
@@ -534,7 +560,101 @@ func (s *APIKeyService) GetByKey(ctx context.Context, key string) (*APIKey, erro
 		return apiKey, nil
 	}
 
+	cacheKey := apiKeyLegacyAuthCacheKey(key)
+	if cacheKey != "" {
+		if entry, ok := s.getAuthCacheEntry(ctx, cacheKey); ok {
+			apiKey, used, err := s.applyAuthCacheEntry(key, entry)
+			if used {
+				if err != nil {
+					return nil, fmt.Errorf("get api key: %w", err)
+				}
+				s.compileAPIKeyIPRules(apiKey)
+				return apiKey, nil
+			}
+		}
+
+		load := func() (*APIKeyAuthCacheEntry, error) {
+			return s.loadLegacyAuthCacheEntry(ctx, key, cacheKey)
+		}
+		var entry *APIKeyAuthCacheEntry
+		var err error
+		if s.authCfg.singleflight {
+			value, loadErr, _ := s.authGroup.Do(cacheKey, func() (any, error) {
+				return load()
+			})
+			err = loadErr
+			entry, _ = value.(*APIKeyAuthCacheEntry)
+		} else {
+			entry, err = load()
+		}
+		if err != nil {
+			return nil, err
+		}
+		if apiKey, used, applyErr := s.applyAuthCacheEntry(key, entry); used {
+			if applyErr != nil {
+				return nil, fmt.Errorf("get api key: %w", applyErr)
+			}
+			s.compileAPIKeyIPRules(apiKey)
+			return apiKey, nil
+		}
+	}
+
 	return nil, fmt.Errorf("get api key: %w", ErrAPIKeyNotFound)
+}
+
+// Rotate replaces an existing API key's secret material and returns the new
+// plaintext key once. Metadata, usage counters, quotas, and group binding stay unchanged.
+func (s *APIKeyService) Rotate(ctx context.Context, id int64, userID int64) (*APIKey, error) {
+	apiKey, err := s.apiKeyRepo.GetByID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("get api key: %w", err)
+	}
+	if apiKey.UserID != userID {
+		return nil, ErrInsufficientPerms
+	}
+
+	oldLookup := apiKeyLookupKeyForInvalidation(apiKey)
+	rotationGuard := APIKeyRotationGuard{
+		Key:           apiKey.Key,
+		KeyHash:       apiKey.KeyHash,
+		KeyHashAlg:    apiKey.KeyHashAlg,
+		KeyLookupHash: apiKey.KeyLookupHash,
+	}
+	var newKey string
+	for i := 0; i < 3; i++ {
+		newKey, err = s.GenerateKey()
+		if err != nil {
+			return nil, fmt.Errorf("generate key: %w", err)
+		}
+		exists, existsErr := s.apiKeyExists(ctx, newKey)
+		if existsErr != nil {
+			return nil, fmt.Errorf("check key exists: %w", existsErr)
+		}
+		if !exists {
+			break
+		}
+		newKey = ""
+	}
+	if newKey == "" {
+		return nil, fmt.Errorf("rotate api key: %w", ErrAPIKeyExists)
+	}
+
+	storageHash := APIKeyStorageHash(newKey, s.cfg)
+	apiKey.Key = newKey
+	apiKey.KeyHash = storageHash.Hash
+	apiKey.KeyHashAlg = storageHash.Alg
+	apiKey.KeyLookupHash = APIKeyLookupHashValue(newKey)
+	apiKey.KeyPrefix = APIKeyPrefix(newKey)
+
+	if err := s.apiKeyRepo.RotateKey(ctx, apiKey, rotationGuard); err != nil {
+		return nil, fmt.Errorf("rotate api key: %w", err)
+	}
+
+	s.InvalidateAuthCacheByKey(ctx, oldLookup)
+	s.invalidateAuthCacheByAPIKey(ctx, apiKey)
+	s.InvalidateAuthCacheByKey(ctx, newKey)
+	s.compileAPIKeyIPRules(apiKey)
+	return apiKey, nil
 }
 
 // Update 更新API Key

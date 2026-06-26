@@ -98,6 +98,9 @@ func (s *quotaBaseAPIKeyRepoStub) GetByKeyForAuth(context.Context, string) (*API
 func (s *quotaBaseAPIKeyRepoStub) Update(context.Context, *APIKey) error {
 	panic("unexpected Update call")
 }
+func (s *quotaBaseAPIKeyRepoStub) RotateKey(context.Context, *APIKey, APIKeyRotationGuard) error {
+	panic("unexpected RotateKey call")
+}
 func (s *quotaBaseAPIKeyRepoStub) Delete(context.Context, int64) error {
 	panic("unexpected Delete call")
 }
@@ -172,5 +175,5 @@ func TestAPIKeyService_UpdateQuotaUsed_UsesAtomicStatePath(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 1, repo.stateCalls)
 	require.Equal(t, 0, repo.getByIDCalls, "fast path should not re-read API key by id")
-	require.Equal(t, []string{svc.authCacheKey("sk-test-quota")}, cache.deleteAuthKeys)
+	require.Equal(t, expectedPlaintextAuthCacheKeys("sk-test-quota", nil), cache.deleteAuthKeys)
 }

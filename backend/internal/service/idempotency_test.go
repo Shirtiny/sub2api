@@ -255,7 +255,7 @@ func TestIdempotencyCoordinator_ReclaimExpiredSucceededRecord(t *testing.T) {
 
 	keyHash := HashIdempotencyKey(opts.IdempotencyKey)
 	repo.mu.Lock()
-	existing := repo.data[repo.key(opts.Scope, keyHash)]
+	existing := repo.data[repo.key(idempotencyStorageScope(opts.Scope, opts.ActorScope), keyHash)]
 	require.NotNil(t, existing)
 	existing.ExpiresAt = time.Now().Add(-time.Second)
 	repo.mu.Unlock()
@@ -314,6 +314,41 @@ func TestIdempotencyCoordinator_SameKeyDifferentPayloadConflict(t *testing.T) {
 
 	metrics := GetIdempotencyMetricsSnapshot()
 	require.Equal(t, uint64(1), metrics.ConflictTotal)
+}
+
+func TestIdempotencyCoordinator_SameKeyDifferentActorsDoNotConflict(t *testing.T) {
+	resetIdempotencyMetricsForTest()
+	repo := newInMemoryIdempotencyRepo()
+	coordinator := NewIdempotencyCoordinator(repo, DefaultIdempotencyConfig())
+
+	base := IdempotencyExecuteOptions{
+		Scope:          "test.scope.actor",
+		Method:         "POST",
+		Route:          "/test/actor",
+		RequireKey:     true,
+		IdempotencyKey: "shared-client-key",
+		Payload:        map[string]any{"a": 1},
+	}
+
+	execCount := 0
+	firstOpts := base
+	firstOpts.ActorScope = "user:1"
+	first, err := coordinator.Execute(context.Background(), firstOpts, func(ctx context.Context) (any, error) {
+		execCount++
+		return map[string]any{"user": 1}, nil
+	})
+	require.NoError(t, err)
+	require.False(t, first.Replayed)
+
+	secondOpts := base
+	secondOpts.ActorScope = "user:2"
+	second, err := coordinator.Execute(context.Background(), secondOpts, func(ctx context.Context) (any, error) {
+		execCount++
+		return map[string]any{"user": 2}, nil
+	})
+	require.NoError(t, err)
+	require.False(t, second.Replayed)
+	require.Equal(t, 2, execCount)
 }
 
 func TestIdempotencyCoordinator_BackoffAfterRetryableFailure(t *testing.T) {
@@ -731,7 +766,7 @@ func TestIdempotencyCoordinator_MarkAndMarshalBranches(t *testing.T) {
 	coordinator := NewIdempotencyCoordinator(repo, DefaultIdempotencyConfig())
 
 	repo.failMarkSucceeded = true
-	_, err := coordinator.Execute(context.Background(), IdempotencyExecuteOptions{
+	result, err := coordinator.Execute(context.Background(), IdempotencyExecuteOptions{
 		Scope:          "scope-success",
 		IdempotencyKey: "k1",
 		Method:         "POST",
@@ -741,8 +776,10 @@ func TestIdempotencyCoordinator_MarkAndMarshalBranches(t *testing.T) {
 	}, func(ctx context.Context) (any, error) {
 		return map[string]any{"ok": true}, nil
 	})
-	require.Error(t, err)
-	require.Equal(t, infraerrors.Code(ErrIdempotencyStoreUnavail), infraerrors.Code(err))
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	require.Equal(t, map[string]any{"ok": true}, result.Data)
+	require.GreaterOrEqual(t, GetIdempotencyMetricsSnapshot().StoreUnavailableTotal, uint64(1))
 
 	repo.failMarkSucceeded = false
 	_, err = coordinator.Execute(context.Background(), IdempotencyExecuteOptions{
@@ -755,8 +792,7 @@ func TestIdempotencyCoordinator_MarkAndMarshalBranches(t *testing.T) {
 	}, func(ctx context.Context) (any, error) {
 		return map[string]any{"bad": make(chan int)}, nil
 	})
-	require.Error(t, err)
-	require.Equal(t, infraerrors.Code(ErrIdempotencyStoreUnavail), infraerrors.Code(err))
+	require.NoError(t, err)
 
 	repo.failMarkFailed = true
 	_, err = coordinator.Execute(context.Background(), IdempotencyExecuteOptions{

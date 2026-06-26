@@ -6,6 +6,13 @@
 import { apiClient } from './client'
 import type { ApiKey, CreateApiKeyRequest, UpdateApiKeyRequest, PaginatedResponse } from '@/types'
 
+function createIdempotencyKey(prefix: string): string {
+  const random = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2)}`
+  return `${prefix}-${random}`
+}
+
 /**
  * List all API keys for current user
  * @param page - Page number (default: 1)
@@ -96,7 +103,21 @@ export async function create(
     payload.rate_limit_7d = rateLimitData.rate_limit_7d
   }
 
-  const { data } = await apiClient.post<ApiKey>('/keys', payload)
+  const { data } = await apiClient.post<ApiKey>('/keys', payload, {
+    headers: { 'Idempotency-Key': createIdempotencyKey('api-key-create') }
+  })
+  return data
+}
+
+/**
+ * Rotate an API key secret. The full new key is returned only once.
+ * @param id - API key ID
+ * @returns Rotated API key with one-time plaintext key
+ */
+export async function rotate(id: number): Promise<ApiKey> {
+  const { data } = await apiClient.post<ApiKey>(`/keys/${id}/rotate`, {}, {
+    headers: { 'Idempotency-Key': createIdempotencyKey('api-key-rotate') }
+  })
   return data
 }
 
@@ -135,6 +156,7 @@ export const keysAPI = {
   list,
   getById,
   create,
+  rotate,
   update,
   delete: deleteKey,
   toggleStatus

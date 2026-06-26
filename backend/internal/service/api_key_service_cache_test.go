@@ -5,6 +5,7 @@ package service
 import (
 	"context"
 	"errors"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -47,6 +48,10 @@ func (s *authRepoStub) GetByKeyForAuth(ctx context.Context, key string) (*APIKey
 
 func (s *authRepoStub) Update(ctx context.Context, key *APIKey) error {
 	panic("unexpected Update call")
+}
+
+func (s *authRepoStub) RotateKey(ctx context.Context, key *APIKey, guard APIKeyRotationGuard) error {
+	panic("unexpected RotateKey call")
 }
 
 func (s *authRepoStub) Delete(ctx context.Context, id int64) error {
@@ -172,6 +177,20 @@ func (s *authCacheStub) PublishAuthCacheInvalidation(ctx context.Context, cacheK
 
 func (s *authCacheStub) SubscribeAuthCacheInvalidation(ctx context.Context, handler func(cacheKey string)) error {
 	return nil
+}
+
+func expectedPlaintextAuthCacheKeys(key string, cfg *config.Config) []string {
+	hashes := APIKeyLookupHashes(key, cfg)
+	out := make([]string, 0, len(hashes)+1)
+	for _, hash := range hashes {
+		if cacheKey := APIKeyAuthCacheKeyFromHash(hash); cacheKey != "" {
+			out = append(out, cacheKey)
+		}
+	}
+	if legacyCacheKey := apiKeyLegacyAuthCacheKey(key); legacyCacheKey != "" {
+		out = append(out, legacyCacheKey)
+	}
+	return out
 }
 
 func TestAPIKeyService_GetByKey_UsesL2Cache(t *testing.T) {
@@ -469,7 +488,8 @@ func TestAPIKeyService_InvalidateAuthCacheByUserID(t *testing.T) {
 	svc := NewAPIKeyService(repo, nil, nil, nil, nil, cache, cfg)
 
 	svc.InvalidateAuthCacheByUserID(context.Background(), 7)
-	require.Len(t, cache.deleteAuthKeys, 2)
+	expected := append(expectedPlaintextAuthCacheKeys("k1", cfg), expectedPlaintextAuthCacheKeys("k2", cfg)...)
+	require.Equal(t, expected, cache.deleteAuthKeys)
 }
 
 func TestAPIKeyService_InvalidateAuthCacheByGroupID(t *testing.T) {
@@ -487,7 +507,8 @@ func TestAPIKeyService_InvalidateAuthCacheByGroupID(t *testing.T) {
 	svc := NewAPIKeyService(repo, nil, nil, nil, nil, cache, cfg)
 
 	svc.InvalidateAuthCacheByGroupID(context.Background(), 9)
-	require.Len(t, cache.deleteAuthKeys, 2)
+	expected := append(expectedPlaintextAuthCacheKeys("k1", cfg), expectedPlaintextAuthCacheKeys("k2", cfg)...)
+	require.Equal(t, expected, cache.deleteAuthKeys)
 }
 
 func TestAPIKeyService_InvalidateAuthCacheByKey(t *testing.T) {
@@ -505,7 +526,7 @@ func TestAPIKeyService_InvalidateAuthCacheByKey(t *testing.T) {
 	svc := NewAPIKeyService(repo, nil, nil, nil, nil, cache, cfg)
 
 	svc.InvalidateAuthCacheByKey(context.Background(), "k1")
-	require.Len(t, cache.deleteAuthKeys, 1)
+	require.Equal(t, expectedPlaintextAuthCacheKeys("k1", cfg), cache.deleteAuthKeys)
 }
 
 func TestAPIKeyService_GetByKey_CachesNegativeOnRepoMiss(t *testing.T) {
@@ -528,7 +549,7 @@ func TestAPIKeyService_GetByKey_CachesNegativeOnRepoMiss(t *testing.T) {
 
 	_, err := svc.GetByKey(context.Background(), "missing")
 	require.ErrorIs(t, err, ErrAPIKeyNotFound)
-	require.Len(t, cache.setAuthKeys, 1)
+	require.Equal(t, expectedPlaintextAuthCacheKeys("missing", cfg), cache.setAuthKeys)
 }
 
 func TestAPIKeyService_GetByKey_SingleflightCollapses(t *testing.T) {
@@ -578,4 +599,196 @@ func TestAPIKeyService_GetByKey_SingleflightCollapses(t *testing.T) {
 		require.NoError(t, err)
 	}
 	require.Equal(t, int32(1), atomic.LoadInt32(&calls))
+}
+
+func TestAPIKeyService_GetByKey_RejectsHashBackedTombstoneInLegacyFallback(t *testing.T) {
+	cache := &authCacheStub{}
+	repo := &authRepoStub{
+		getByKeyForAuth: func(ctx context.Context, key string) (*APIKey, error) {
+			if key != "__hashed__stored_tombstone" {
+				return nil, ErrAPIKeyNotFound
+			}
+			return &APIKey{
+				ID:            88,
+				UserID:        9,
+				KeyHash:       strings.Repeat("a", 64),
+				KeyHashAlg:    APIKeyHashAlgSHA256,
+				KeyLookupHash: strings.Repeat("b", 64),
+				Status:        StatusActive,
+				User: &User{
+					ID:          9,
+					Status:      StatusActive,
+					Role:        RoleUser,
+					Balance:     8,
+					Concurrency: 2,
+				},
+			}, nil
+		},
+	}
+	cfg := &config.Config{
+		APIKeyAuth: config.APIKeyAuthCacheConfig{
+			L2TTLSeconds:       60,
+			NegativeTTLSeconds: 30,
+		},
+	}
+	svc := NewAPIKeyService(repo, nil, nil, nil, nil, cache, cfg)
+	cache.getAuthCache = func(ctx context.Context, key string) (*APIKeyAuthCacheEntry, error) {
+		return nil, redis.Nil
+	}
+
+	_, err := svc.GetByKey(context.Background(), "__hashed__stored_tombstone")
+	require.ErrorIs(t, err, ErrAPIKeyNotFound)
+	require.Equal(t, expectedPlaintextAuthCacheKeys("__hashed__stored_tombstone", cfg), cache.setAuthKeys)
+}
+
+func TestAPIKeyService_GetByKey_AuthenticatesGeneratedCafePassHashRow(t *testing.T) {
+	cache := &authCacheStub{}
+	cfg := &config.Config{
+		APIKeyAuth: config.APIKeyAuthCacheConfig{
+			L2TTLSeconds:       60,
+			NegativeTTLSeconds: 30,
+		},
+	}
+	svc := NewAPIKeyService(nil, nil, nil, nil, nil, cache, cfg)
+	key, err := svc.GenerateKey()
+	require.NoError(t, err)
+	require.True(t, strings.HasPrefix(key, "cafepass-"))
+
+	storageHash := APIKeyStorageHash(key, cfg)
+	lookupHash := APIKeyLookupHashValue(key)
+	var calls []string
+	repo := &authRepoStub{
+		getByKeyForAuth: func(ctx context.Context, lookupToken string) (*APIKey, error) {
+			calls = append(calls, lookupToken)
+			hashes, ok := DecodeAPIKeyLookupToken(lookupToken)
+			require.True(t, ok)
+			require.Len(t, hashes, 1)
+			if hashes[0].Alg != APIKeyHashAlgLookupSHA256 || hashes[0].Hash != lookupHash {
+				return nil, ErrAPIKeyNotFound
+			}
+			return &APIKey{
+				ID:            78,
+				UserID:        9,
+				KeyHash:       storageHash.Hash,
+				KeyHashAlg:    storageHash.Alg,
+				KeyLookupHash: lookupHash,
+				KeyPrefix:     APIKeyPrefix(key),
+				Status:        StatusActive,
+				User: &User{
+					ID:          9,
+					Status:      StatusActive,
+					Role:        RoleUser,
+					Balance:     8,
+					Concurrency: 2,
+				},
+			}, nil
+		},
+	}
+	svc.apiKeyRepo = repo
+	cache.getAuthCache = func(ctx context.Context, key string) (*APIKeyAuthCacheEntry, error) {
+		return nil, redis.Nil
+	}
+
+	apiKey, err := svc.GetByKey(context.Background(), key)
+	require.NoError(t, err)
+	require.Equal(t, int64(78), apiKey.ID)
+	require.Equal(t, key, apiKey.Key)
+	require.Len(t, calls, 1)
+	require.NotContains(t, calls[0], key)
+	require.Contains(t, cache.setAuthKeys, APIKeyAuthCacheKeyFromHash(APIKeyLookupHash{Alg: APIKeyHashAlgLookupSHA256, Hash: lookupHash}))
+}
+
+func TestAPIKeyService_GetByKey_AuthenticatesLegacySKHashRow(t *testing.T) {
+	cache := &authCacheStub{}
+	cfg := &config.Config{
+		APIKeyAuth: config.APIKeyAuthCacheConfig{
+			L2TTLSeconds:       60,
+			NegativeTTLSeconds: 30,
+		},
+	}
+	key := "sk-legacy-hash-key-123456"
+	storageHash := APIKeyStorageHash(key, cfg)
+	lookupHash := APIKeyLookupHashValue(key)
+	var calls []string
+	repo := &authRepoStub{
+		getByKeyForAuth: func(ctx context.Context, lookupToken string) (*APIKey, error) {
+			calls = append(calls, lookupToken)
+			hashes, ok := DecodeAPIKeyLookupToken(lookupToken)
+			require.True(t, ok)
+			require.Len(t, hashes, 1)
+			if hashes[0].Alg != APIKeyHashAlgLookupSHA256 || hashes[0].Hash != lookupHash {
+				return nil, ErrAPIKeyNotFound
+			}
+			return &APIKey{
+				ID:            79,
+				UserID:        9,
+				KeyHash:       storageHash.Hash,
+				KeyHashAlg:    storageHash.Alg,
+				KeyLookupHash: lookupHash,
+				KeyPrefix:     APIKeyPrefix(key),
+				Status:        StatusActive,
+				User: &User{
+					ID:          9,
+					Status:      StatusActive,
+					Role:        RoleUser,
+					Balance:     8,
+					Concurrency: 2,
+				},
+			}, nil
+		},
+	}
+	svc := NewAPIKeyService(repo, nil, nil, nil, nil, cache, cfg)
+	cache.getAuthCache = func(ctx context.Context, key string) (*APIKeyAuthCacheEntry, error) {
+		return nil, redis.Nil
+	}
+
+	apiKey, err := svc.GetByKey(context.Background(), key)
+	require.NoError(t, err)
+	require.Equal(t, int64(79), apiKey.ID)
+	require.Equal(t, key, apiKey.Key)
+	require.Len(t, calls, 1)
+	require.NotContains(t, calls[0], key)
+	require.Contains(t, cache.setAuthKeys, APIKeyAuthCacheKeyFromHash(APIKeyLookupHash{Alg: APIKeyHashAlgLookupSHA256, Hash: lookupHash}))
+}
+func TestAPIKeyService_GetByKey_FallsBackToLegacyPlaintextRow(t *testing.T) {
+	cache := &authCacheStub{}
+	var calls []string
+	repo := &authRepoStub{
+		getByKeyForAuth: func(ctx context.Context, key string) (*APIKey, error) {
+			calls = append(calls, key)
+			if key != "sk-legacy-plaintext-key" {
+				return nil, ErrAPIKeyNotFound
+			}
+			return &APIKey{
+				ID:     77,
+				UserID: 9,
+				Key:    key,
+				Status: StatusActive,
+				User: &User{
+					ID:          9,
+					Status:      StatusActive,
+					Role:        RoleUser,
+					Balance:     8,
+					Concurrency: 2,
+				},
+			}, nil
+		},
+	}
+	cfg := &config.Config{
+		APIKeyAuth: config.APIKeyAuthCacheConfig{
+			L2TTLSeconds:       60,
+			NegativeTTLSeconds: 30,
+		},
+	}
+	svc := NewAPIKeyService(repo, nil, nil, nil, nil, cache, cfg)
+	cache.getAuthCache = func(ctx context.Context, key string) (*APIKeyAuthCacheEntry, error) {
+		return nil, redis.Nil
+	}
+
+	apiKey, err := svc.GetByKey(context.Background(), "sk-legacy-plaintext-key")
+	require.NoError(t, err)
+	require.Equal(t, int64(77), apiKey.ID)
+	require.Greater(t, len(calls), 1)
+	require.Equal(t, "sk-legacy-plaintext-key", calls[len(calls)-1])
+	require.NotEmpty(t, cache.setAuthKeys)
 }

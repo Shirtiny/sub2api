@@ -14,8 +14,9 @@ const (
 	APIKeyHashAlgSHA256       = "sha256"
 	APIKeyHashAlgLookupSHA256 = "lookup-sha256"
 
-	apiKeyDisplayPrefixLen  = 16
-	apiKeyLookupTokenPrefix = "__api_key_hash__:"
+	apiKeyDisplayPrefixLen         = 16
+	apiKeyLookupTokenPrefix        = "__api_key_hash__:"
+	apiKeyLegacyAuthCacheKeyPrefix = "legacy-plaintext-sha256:"
 )
 
 type APIKeyLookupHash struct {
@@ -102,6 +103,14 @@ func DecodeAPIKeyLookupToken(token string) ([]APIKeyLookupHash, bool) {
 		hashes = append(hashes, APIKeyLookupHash{Alg: alg, Hash: hash})
 	}
 	return hashes, true
+}
+
+func apiKeyLegacyAuthCacheKey(key string) string {
+	key = strings.TrimSpace(key)
+	if key == "" {
+		return ""
+	}
+	return apiKeyLegacyAuthCacheKeyPrefix + APIKeyLookupHashValue(key)
 }
 
 func APIKeyAuthCacheKeyFromHash(hash APIKeyLookupHash) string {

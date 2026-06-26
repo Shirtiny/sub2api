@@ -160,6 +160,25 @@ func HashIdempotencyKey(key string) string {
 	return hex.EncodeToString(sum[:])
 }
 
+func idempotencyStorageScope(scope, actorScope string) string {
+	scope = strings.TrimSpace(scope)
+	actorScope = strings.TrimSpace(actorScope)
+	if actorScope == "" {
+		actorScope = "anonymous"
+	}
+	actorHash := HashIdempotencyKey(actorScope)[:16]
+	suffix := "|a:" + actorHash
+	if len(scope)+len(suffix) <= 128 {
+		return scope + suffix
+	}
+	scopeHash := HashIdempotencyKey(scope)[:16]
+	maxScopeLen := 128 - len(suffix) - len("|s:") - len(scopeHash)
+	if maxScopeLen < 0 {
+		maxScopeLen = 0
+	}
+	return scope[:maxScopeLen] + "|s:" + scopeHash + suffix
+}
+
 func BuildIdempotencyFingerprint(method, route, actorScope string, payload any) (string, error) {
 	if method == "" {
 		method = "POST"
@@ -242,9 +261,10 @@ func (c *IdempotencyCoordinator) Execute(
 	expiresAt := now.Add(ttl)
 	lockedUntil := now.Add(c.cfg.ProcessingTimeout)
 	keyHash := HashIdempotencyKey(key)
+	storageScope := idempotencyStorageScope(opts.Scope, opts.ActorScope)
 
 	record := &IdempotencyRecord{
-		Scope:              opts.Scope,
+		Scope:              storageScope,
 		IdempotencyKeyHash: keyHash,
 		RequestFingerprint: fingerprint,
 		Status:             IdempotencyStatusProcessing,
@@ -267,7 +287,7 @@ func (c *IdempotencyCoordinator) Execute(
 		})
 	}
 	if !owner {
-		existing, getErr := c.repo.GetByScopeAndKeyHash(ctx, opts.Scope, keyHash)
+		existing, getErr := c.repo.GetByScopeAndKeyHash(ctx, storageScope, keyHash)
 		if getErr != nil {
 			RecordIdempotencyStoreUnavailable(opts.Route, opts.Scope, "get_existing_error")
 			logIdempotencyAudit(opts.Route, opts.Scope, keyHash, "unknown->store_unavailable", false, map[string]string{
@@ -305,7 +325,7 @@ func (c *IdempotencyCoordinator) Execute(
 				})
 				record.ID = existing.ID
 			} else {
-				latest, latestErr := c.repo.GetByScopeAndKeyHash(ctx, opts.Scope, keyHash)
+				latest, latestErr := c.repo.GetByScopeAndKeyHash(ctx, storageScope, keyHash)
 				if latestErr != nil {
 					RecordIdempotencyStoreUnavailable(opts.Route, opts.Scope, "get_existing_after_expired_reclaim_error")
 					logIdempotencyAudit(opts.Route, opts.Scope, keyHash, "unknown->store_unavailable", false, map[string]string{
@@ -427,14 +447,14 @@ func (c *IdempotencyCoordinator) Execute(
 		logIdempotencyAudit(opts.Route, opts.Scope, keyHash, "processing->store_unavailable", false, map[string]string{
 			"operation": "marshal_response",
 		})
-		return nil, ErrIdempotencyStoreUnavail.WithCause(marshalErr)
+		return &IdempotencyExecuteResult{Data: data}, nil
 	}
 	if markErr := c.repo.MarkSucceeded(ctx, record.ID, 200, storedBody, expiresAt); markErr != nil {
 		RecordIdempotencyStoreUnavailable(opts.Route, opts.Scope, "mark_succeeded_error")
 		logIdempotencyAudit(opts.Route, opts.Scope, keyHash, "processing->store_unavailable", false, map[string]string{
 			"operation": "mark_succeeded",
 		})
-		return nil, ErrIdempotencyStoreUnavail.WithCause(markErr)
+		return &IdempotencyExecuteResult{Data: data}, nil
 	}
 	logIdempotencyAudit(opts.Route, opts.Scope, keyHash, "processing->succeeded", false, nil)
 

@@ -77,6 +77,10 @@ func (s *apiKeyRepoStub) Update(ctx context.Context, key *APIKey) error {
 	panic("unexpected Update call")
 }
 
+func (s *apiKeyRepoStub) RotateKey(ctx context.Context, key *APIKey, guard APIKeyRotationGuard) error {
+	panic("unexpected RotateKey call")
+}
+
 // Delete 记录被删除的 API Key ID 并返回预设的错误。
 // 通过 deletedIDs 可以验证删除操作是否被正确调用。
 func (s *apiKeyRepoStub) Delete(ctx context.Context, id int64) error {
@@ -272,7 +276,7 @@ func TestApiKeyService_Delete_Success(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, []int64{42}, repo.deletedIDs)  // 验证正确的 API Key 被删除
 	require.Equal(t, []int64{7}, cache.invalidated) // 验证所有者的缓存被清除
-	require.Equal(t, []string{svc.authCacheKey("k")}, cache.deleteAuthKeys)
+	require.Equal(t, expectedPlaintextAuthCacheKeys("k", nil), cache.deleteAuthKeys)
 	_, exists := svc.lastUsedTouchL1.Load(int64(42))
 	require.False(t, exists, "delete should clear touch debounce cache")
 }

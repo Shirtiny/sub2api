@@ -87,12 +87,9 @@ func looksLikeSystemKey(key string) bool {
 	return true
 }
 
-// keyPrefix 返回脱敏前缀(前 n 个字符);不足 n 则原样返回。
-func keyPrefix(key string, n int) string {
-	if len(key) <= n {
-		return key
-	}
-	return key[:n]
+// opsAPIKeyPrefix returns the same non-secret prefix used by API key DTOs.
+func opsAPIKeyPrefix(key string) string {
+	return service.APIKeyPrefix(key)
 }
 
 // extractAttemptedKey 按认证中间件同样的顺序从请求头提取提交的 key 明文。
@@ -764,9 +761,9 @@ func OpsErrorLoggerMiddleware(ops *service.OpsService) gin.HandlerFunc {
 
 			if apiKey != nil {
 				entry.APIKeyID = &apiKey.ID
-				entry.APIKeyPrefix = keyPrefix(apiKey.Key, 8)
+				entry.APIKeyPrefix = opsAPIKeyPrefix(apiKey.Key)
 				if entry.APIKeyPrefix == "" {
-					entry.APIKeyPrefix = keyPrefix(apiKey.KeyPrefix, 8)
+					entry.APIKeyPrefix = opsAPIKeyPrefix(apiKey.KeyPrefix)
 				}
 				if apiKey.User != nil {
 					entry.UserID = &apiKey.User.ID
@@ -959,9 +956,9 @@ func OpsErrorLoggerMiddleware(ops *service.OpsService) gin.HandlerFunc {
 		if apiKey != nil {
 			entry.APIKeyID = &apiKey.ID
 			// 有效(未删除)key 报错时快照前缀,key 之后被删也保留;与 INVALID_API_KEY 的 attempted_key_prefix 互斥。
-			entry.APIKeyPrefix = keyPrefix(apiKey.Key, 8)
+			entry.APIKeyPrefix = opsAPIKeyPrefix(apiKey.Key)
 			if entry.APIKeyPrefix == "" {
-				entry.APIKeyPrefix = keyPrefix(apiKey.KeyPrefix, 8)
+				entry.APIKeyPrefix = opsAPIKeyPrefix(apiKey.KeyPrefix)
 			}
 			if apiKey.User != nil {
 				entry.UserID = &apiKey.User.ID
@@ -984,7 +981,7 @@ func OpsErrorLoggerMiddleware(ops *service.OpsService) gin.HandlerFunc {
 		// 已删除 key 归因:仅 INVALID_API_KEY 才尝试。响应已写出,此处不阻塞客户端。
 		if parsed.Code == opsCodeInvalidAPIKey {
 			if attemptedKey := extractAttemptedKey(c); attemptedKey != "" {
-				entry.AttemptedKeyPrefix = keyPrefix(attemptedKey, 8)
+				entry.AttemptedKeyPrefix = opsAPIKeyPrefix(attemptedKey)
 				if looksLikeSystemKey(attemptedKey) {
 					if res, lookupErr := ops.LookupDeletedKeyAudit(c.Request.Context(), attemptedKey); lookupErr != nil {
 						log.Printf("[OpsErrorLogger] LookupDeletedKeyAudit failed: %v", lookupErr)

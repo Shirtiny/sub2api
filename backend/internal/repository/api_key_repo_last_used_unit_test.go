@@ -154,3 +154,84 @@ func TestAPIKeyRepository_CreateDuplicateKey(t *testing.T) {
 	err := repo.Create(ctx, second)
 	require.ErrorIs(t, err, service.ErrAPIKeyExists)
 }
+
+func TestAPIKeyRepository_RotateKeyUsesGuardForHashBackedRows(t *testing.T) {
+	repo, client := newAPIKeyRepoSQLite(t)
+	ctx := context.Background()
+	user := mustCreateAPIKeyRepoUser(t, ctx, client, "rotate-hash@test.com")
+
+	oldKey := "cafepass-rotate-old-hash"
+	oldStorage := service.APIKeyStorageHash(oldKey, nil)
+	oldLookup := service.APIKeyLookupHashValue(oldKey)
+	key := &service.APIKey{
+		UserID:        user.ID,
+		Key:           oldKey,
+		KeyHash:       oldStorage.Hash,
+		KeyHashAlg:    oldStorage.Alg,
+		KeyLookupHash: oldLookup,
+		KeyPrefix:     service.APIKeyPrefix(oldKey),
+		Name:          "RotateHash",
+		Status:        service.StatusActive,
+	}
+	require.NoError(t, repo.Create(ctx, key))
+
+	newKey := "cafepass-rotate-new-hash"
+	newStorage := service.APIKeyStorageHash(newKey, nil)
+	rotated := *key
+	rotated.Key = newKey
+	rotated.KeyHash = newStorage.Hash
+	rotated.KeyHashAlg = newStorage.Alg
+	rotated.KeyLookupHash = service.APIKeyLookupHashValue(newKey)
+	rotated.KeyPrefix = service.APIKeyPrefix(newKey)
+	guard := service.APIKeyRotationGuard{
+		KeyHash:       oldStorage.Hash,
+		KeyHashAlg:    oldStorage.Alg,
+		KeyLookupHash: oldLookup,
+	}
+	require.NoError(t, repo.RotateKey(ctx, &rotated, guard))
+
+	stale := rotated
+	stale.Key = "cafepass-rotate-stale"
+	staleStorage := service.APIKeyStorageHash(stale.Key, nil)
+	stale.KeyHash = staleStorage.Hash
+	stale.KeyHashAlg = staleStorage.Alg
+	stale.KeyLookupHash = service.APIKeyLookupHashValue(stale.Key)
+	stale.KeyPrefix = service.APIKeyPrefix(stale.Key)
+	err := repo.RotateKey(ctx, &stale, guard)
+	require.ErrorIs(t, err, service.ErrAPIKeyRotated)
+}
+
+func TestAPIKeyRepository_RotateKeyUsesGuardForLegacyPlaintextRows(t *testing.T) {
+	repo, client := newAPIKeyRepoSQLite(t)
+	ctx := context.Background()
+	user := mustCreateAPIKeyRepoUser(t, ctx, client, "rotate-legacy@test.com")
+
+	legacyKey := &service.APIKey{
+		UserID: user.ID,
+		Key:    "sk-legacy-rotate-old",
+		Name:   "RotateLegacy",
+		Status: service.StatusActive,
+	}
+	require.NoError(t, repo.Create(ctx, legacyKey))
+
+	newKey := "cafepass-legacy-rotate-new"
+	newStorage := service.APIKeyStorageHash(newKey, nil)
+	rotated := *legacyKey
+	rotated.Key = newKey
+	rotated.KeyHash = newStorage.Hash
+	rotated.KeyHashAlg = newStorage.Alg
+	rotated.KeyLookupHash = service.APIKeyLookupHashValue(newKey)
+	rotated.KeyPrefix = service.APIKeyPrefix(newKey)
+	guard := service.APIKeyRotationGuard{Key: legacyKey.Key}
+	require.NoError(t, repo.RotateKey(ctx, &rotated, guard))
+
+	stale := rotated
+	stale.Key = "cafepass-legacy-rotate-stale"
+	staleStorage := service.APIKeyStorageHash(stale.Key, nil)
+	stale.KeyHash = staleStorage.Hash
+	stale.KeyHashAlg = staleStorage.Alg
+	stale.KeyLookupHash = service.APIKeyLookupHashValue(stale.Key)
+	stale.KeyPrefix = service.APIKeyPrefix(stale.Key)
+	err := repo.RotateKey(ctx, &stale, guard)
+	require.ErrorIs(t, err, service.ErrAPIKeyRotated)
+}

@@ -231,6 +231,58 @@ func (r *apiKeyRepository) GetByKeyForAuth(ctx context.Context, key string) (*se
 	return apiKeyEntityToService(m), nil
 }
 
+func (r *apiKeyRepository) RotateKey(ctx context.Context, key *service.APIKey, guard service.APIKeyRotationGuard) error {
+	if key == nil {
+		return service.ErrAPIKeyNotFound
+	}
+	storedKey := key.Key
+	if key.KeyHash != "" {
+		storedKey = apiKeyStoredKeyTombstone()
+	}
+	predicates := []predicate.APIKey{apikey.IDEQ(key.ID), apikey.DeletedAtIsNil()}
+	predicates = append(predicates, apiKeyRotationGuardPredicates(guard)...)
+	affected, err := clientFromContext(ctx, r.client).APIKey.Update().
+		Where(predicates...).
+		SetKey(storedKey).
+		SetKeyHash(key.KeyHash).
+		SetKeyHashAlg(key.KeyHashAlg).
+		SetKeyLookupHash(key.KeyLookupHash).
+		SetKeyPrefix(key.KeyPrefix).
+		SetUpdatedAt(time.Now()).
+		Save(ctx)
+	if err != nil {
+		return translatePersistenceError(err, service.ErrAPIKeyNotFound, service.ErrAPIKeyExists)
+	}
+	if affected == 0 {
+		return service.ErrAPIKeyRotated
+	}
+	return nil
+}
+
+func apiKeyRotationGuardPredicates(guard service.APIKeyRotationGuard) []predicate.APIKey {
+	predicates := make([]predicate.APIKey, 0, 4)
+	keyLookupHash := strings.TrimSpace(guard.KeyLookupHash)
+	keyHash := strings.TrimSpace(guard.KeyHash)
+	if keyLookupHash != "" {
+		predicates = append(predicates, apikey.KeyLookupHashEQ(keyLookupHash))
+	}
+	if keyHash != "" {
+		predicates = append(predicates, apikey.KeyHashEQ(keyHash))
+		keyHashAlg := strings.TrimSpace(guard.KeyHashAlg)
+		if keyHashAlg == "" {
+			keyHashAlg = service.APIKeyHashAlgSHA256
+		}
+		predicates = append(predicates, apikey.KeyHashAlgEQ(keyHashAlg))
+	}
+	if keyLookupHash != "" || keyHash != "" {
+		return predicates
+	}
+	predicates = append(predicates, apikey.Or(apikey.KeyLookupHashIsNil(), apikey.KeyLookupHashEQ("")))
+	predicates = append(predicates, apikey.Or(apikey.KeyHashIsNil(), apikey.KeyHashEQ("")))
+	predicates = append(predicates, apikey.KeyEQ(guard.Key))
+	return predicates
+}
+
 func (r *apiKeyRepository) Update(ctx context.Context, key *service.APIKey) error {
 	// 使用原子操作：将软删除检查与更新合并到同一语句，避免竞态条件。
 	// 之前的实现先检查 Exist 再 UpdateOneID，若在两步之间发生软删除，
@@ -440,6 +492,10 @@ func (r *apiKeyRepository) ListByUserID(ctx context.Context, userID int64, param
 		q = q.Where(apikey.Or(
 			apikey.NameContainsFold(filters.Search),
 			apikey.KeyPrefixContainsFold(filters.Search),
+			apikey.And(
+				apikey.KeyHashIsNil(),
+				apikey.KeyContainsFold(filters.Search),
+			),
 		))
 	}
 	if filters.Status != "" {

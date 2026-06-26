@@ -101,8 +101,13 @@ func TestCORS_AllowedOrigin_HasAllowHeaders(t *testing.T) {
 			middleware(c)
 
 			// 应设置 Allow-Headers、Allow-Methods 和 Max-Age
-			assert.NotEmpty(t, w.Header().Get("Access-Control-Allow-Headers"),
+			allowHeaders := w.Header().Get("Access-Control-Allow-Headers")
+			assert.NotEmpty(t, allowHeaders,
 				"允许的 origin 应收到 Allow-Headers")
+			assert.Contains(t, allowHeaders, "Idempotency-Key",
+				"允许的 origin 应放行 Idempotency-Key")
+			assert.Contains(t, allowHeaders, "X-Idempotency-Key",
+				"允许的 origin 应放行 X-Idempotency-Key")
 			assert.NotEmpty(t, w.Header().Get("Access-Control-Allow-Methods"),
 				"允许的 origin 应收到 Allow-Methods")
 			assert.Equal(t, "86400", w.Header().Get("Access-Control-Max-Age"),

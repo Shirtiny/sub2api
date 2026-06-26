@@ -6,13 +6,14 @@ import (
 	"fmt"
 	"log/slog"
 	"math/rand/v2"
+	"strings"
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
 	"github.com/dgraph-io/ristretto"
 )
 
-const apiKeyAuthSnapshotVersion = 11 // v11: reload snapshots for custom models_list_config
+const apiKeyAuthSnapshotVersion = 12 // v12: reject legacy fallback cache entries created for hash-backed tombstones
 
 type apiKeyAuthCacheConfig struct {
 	l1Size        int
@@ -183,6 +184,39 @@ func (s *APIKeyService) loadAuthCacheEntry(ctx context.Context, key string, look
 		}
 		return nil, fmt.Errorf("get api key: %w", err)
 	}
+	return s.cacheEntryFromAPIKey(ctx, key, cacheKey, apiKey)
+}
+
+func (s *APIKeyService) loadLegacyAuthCacheEntry(ctx context.Context, key string, cacheKey string) (*APIKeyAuthCacheEntry, error) {
+	apiKey, err := s.apiKeyRepo.GetByKeyForAuth(ctx, key)
+	if err != nil {
+		if errors.Is(err, ErrAPIKeyNotFound) {
+			return s.negativeAuthCacheEntry(ctx, cacheKey), nil
+		}
+		return nil, fmt.Errorf("get api key: %w", err)
+	}
+	if apiKeyHasHashMaterial(apiKey) {
+		return s.negativeAuthCacheEntry(ctx, cacheKey), nil
+	}
+	return s.cacheEntryFromAPIKey(ctx, key, cacheKey, apiKey)
+}
+
+func (s *APIKeyService) negativeAuthCacheEntry(ctx context.Context, cacheKey string) *APIKeyAuthCacheEntry {
+	entry := &APIKeyAuthCacheEntry{NotFound: true}
+	if s.authCfg.negativeEnabled() {
+		s.setAuthCacheEntry(ctx, cacheKey, entry, s.authCfg.negativeTTL)
+	}
+	return entry
+}
+
+func apiKeyHasHashMaterial(apiKey *APIKey) bool {
+	if apiKey == nil {
+		return false
+	}
+	return strings.TrimSpace(apiKey.KeyHash) != "" || strings.TrimSpace(apiKey.KeyLookupHash) != ""
+}
+
+func (s *APIKeyService) cacheEntryFromAPIKey(ctx context.Context, key string, cacheKey string, apiKey *APIKey) (*APIKeyAuthCacheEntry, error) {
 	apiKey.Key = key
 	snapshot := s.snapshotFromAPIKey(ctx, apiKey)
 	if snapshot == nil {

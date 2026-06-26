@@ -53,6 +53,9 @@ func (f fakeAPIKeyRepo) GetByKeyForAuth(ctx context.Context, key string) (*servi
 func (f fakeAPIKeyRepo) Update(ctx context.Context, key *service.APIKey) error {
 	return errors.New("not implemented")
 }
+func (f fakeAPIKeyRepo) RotateKey(ctx context.Context, key *service.APIKey, guard service.APIKeyRotationGuard) error {
+	return errors.New("not implemented")
+}
 func (f fakeAPIKeyRepo) Delete(ctx context.Context, id int64) error {
 	return errors.New("not implemented")
 }

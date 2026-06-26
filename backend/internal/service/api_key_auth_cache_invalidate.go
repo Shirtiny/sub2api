@@ -15,6 +15,9 @@ func (s *APIKeyService) InvalidateAuthCacheByKey(ctx context.Context, key string
 		return
 	}
 	s.invalidateAuthCacheByHashes(ctx, APIKeyLookupHashes(key, s.cfg))
+	if legacyCacheKey := apiKeyLegacyAuthCacheKey(key); legacyCacheKey != "" {
+		s.deleteAuthCache(ctx, legacyCacheKey)
+	}
 }
 
 // InvalidateAuthCacheByUserID 清除用户相关的 API Key 认证缓存
@@ -67,6 +70,17 @@ func (s *APIKeyService) invalidateAuthCacheByQuotaState(ctx context.Context, sta
 		return
 	}
 	s.InvalidateAuthCacheByKey(ctx, state.Key)
+}
+
+func apiKeyLookupKeyForInvalidation(apiKey *APIKey) string {
+	if apiKey == nil {
+		return ""
+	}
+	hashes := apiKeyAuthCacheHashes(apiKey.KeyLookupHash, apiKey.KeyHashAlg, apiKey.KeyHash)
+	if len(hashes) > 0 {
+		return EncodeAPIKeyLookupToken(hashes)
+	}
+	return apiKey.Key
 }
 
 func apiKeyAuthCacheHashes(keyLookupHash, keyHashAlg, keyHash string) []APIKeyLookupHash {
