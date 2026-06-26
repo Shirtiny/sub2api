@@ -228,6 +228,7 @@ func TestAPIContracts(t *testing.T) {
 					"id": 100,
 					"user_id": 1,
 					"key": "sk_custom_1234567890",
+					"key_prefix": "sk_custom_123456",
 					"name": "Key One",
 					"group_id": null,
 					"status": "active",
@@ -276,7 +277,7 @@ func TestAPIContracts(t *testing.T) {
 						{
 							"id": 100,
 							"user_id": 1,
-							"key": "sk_custom_1234567890",
+							"key_prefix": "sk_custom_123456",
 							"name": "Key One",
 							"group_id": null,
 							"status": "active",
@@ -2123,6 +2124,24 @@ func (r *stubApiKeyRepo) Update(ctx context.Context, key *service.APIKey) error 
 		key.UpdatedAt = r.now
 	}
 	clone := *key
+	r.byID[clone.ID] = &clone
+	r.byKey[clone.Key] = &clone
+	return nil
+}
+
+func (r *stubApiKeyRepo) RotateKey(ctx context.Context, key *service.APIKey, guard service.APIKeyRotationGuard) error {
+	if key == nil {
+		return errors.New("nil key")
+	}
+	current, ok := r.byID[key.ID]
+	if !ok {
+		return service.ErrAPIKeyNotFound
+	}
+	if key.UpdatedAt.IsZero() {
+		key.UpdatedAt = r.now
+	}
+	clone := *key
+	delete(r.byKey, current.Key)
 	r.byID[clone.ID] = &clone
 	r.byKey[clone.Key] = &clone
 	return nil
