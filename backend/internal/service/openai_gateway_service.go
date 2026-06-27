@@ -951,15 +951,38 @@ func applyCafecodeIdentityHeaders(req *http.Request, c *gin.Context, account *Ac
 		return
 	}
 	req.Header.Set("cafecode-uid", strconv.FormatInt(apiKey.User.ID, 10))
-	uname := strings.TrimSpace(apiKey.User.Username)
-	if uname == "" {
-		uname = strings.TrimSpace(apiKey.User.Email)
-	}
+	uname := cafecodeIdentityHeaderUname(apiKey.User)
 	if uname != "" {
 		req.Header.Set("cafecode-uname", uname)
 	} else {
 		req.Header.Del("cafecode-uname")
 	}
+}
+
+func cafecodeIdentityHeaderUname(user *User) string {
+	if user == nil {
+		return ""
+	}
+	for _, candidate := range []string{user.Username, user.Email} {
+		candidate = strings.TrimSpace(candidate)
+		if isAetherReadableHeaderValue(candidate) {
+			return candidate
+		}
+	}
+	return ""
+}
+
+func isAetherReadableHeaderValue(value string) bool {
+	if value == "" {
+		return false
+	}
+	for i := 0; i < len(value); i++ {
+		b := value[i]
+		if b < 0x20 || b >= 0x7f {
+			return false
+		}
+	}
+	return true
 }
 
 // isolateOpenAISessionID 将 apiKeyID 混入 session 标识符，
