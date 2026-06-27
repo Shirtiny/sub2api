@@ -35,8 +35,9 @@ func TestLooksLikeSystemKey(t *testing.T) {
 }
 
 func TestOpsAPIKeyPrefix(t *testing.T) {
-	if got := opsAPIKeyPrefix("cafepass-3f2a9c7e"); got != "cafepass-3f2a9c7" {
-		t.Errorf("opsAPIKeyPrefix=%q want %q", got, "cafepass-3f2a9c7")
+	key := "cafepass-42-1234567890abcdef1234567890abcdef"
+	if got := opsAPIKeyPrefix(key); got != key[:32] {
+		t.Errorf("opsAPIKeyPrefix=%q want %q", got, key[:32])
 	}
 	if got := opsAPIKeyPrefix("sk-3f2a9c7e"); got != "sk-3f2a9c7e" {
 		t.Errorf("short sk key should be returned as-is, got %q", got)

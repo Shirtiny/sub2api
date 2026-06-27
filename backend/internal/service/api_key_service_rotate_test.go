@@ -129,7 +129,7 @@ func TestAPIKeyService_Rotate_ReplacesKeyMaterialAndInvalidatesCaches(t *testing
 	rotated, err := svc.Rotate(context.Background(), 10, 20)
 	require.NoError(t, err)
 	require.NotEmpty(t, rotated.Key)
-	require.True(t, strings.HasPrefix(rotated.Key, "sk-test-"))
+	require.True(t, strings.HasPrefix(rotated.Key, "sk-test-20-"))
 	require.Equal(t, APIKeyPrefix(rotated.Key), rotated.KeyPrefix)
 	require.Equal(t, rotated.Key, repo.rotated.Key)
 	require.Equal(t, APIKeyHashAlgHMACSHA256, repo.rotated.KeyHashAlg)
@@ -159,6 +159,25 @@ func TestAPIKeyService_GenerateKey_UsesCafePassDefaultPrefix(t *testing.T) {
 	key, err := svc.GenerateKey()
 	require.NoError(t, err)
 	require.True(t, strings.HasPrefix(key, "cafepass-"))
+}
+
+func TestAPIKeyService_GenerateKeyForUser_IncludesUserID(t *testing.T) {
+	svc := NewAPIKeyService(nil, nil, nil, nil, nil, nil, &config.Config{})
+
+	key, err := svc.GenerateKeyForUser(42)
+	require.NoError(t, err)
+	require.True(t, strings.HasPrefix(key, "cafepass-42-"))
+	require.Len(t, strings.TrimPrefix(key, "cafepass-42-"), 64)
+}
+
+func TestAPIKeyService_GenerateKeyForUser_NormalizesConfiguredPrefix(t *testing.T) {
+	cfg := &config.Config{}
+	cfg.Default.APIKeyPrefix = "cafepass"
+	svc := NewAPIKeyService(nil, nil, nil, nil, nil, nil, cfg)
+
+	key, err := svc.GenerateKeyForUser(42)
+	require.NoError(t, err)
+	require.True(t, strings.HasPrefix(key, "cafepass-42-"))
 }
 
 func TestAPIKeyService_Rotate_PropagatesConcurrentRotationConflict(t *testing.T) {

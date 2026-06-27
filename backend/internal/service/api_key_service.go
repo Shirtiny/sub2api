@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"html"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -265,20 +266,48 @@ func (s *APIKeyService) compileAPIKeyIPRules(apiKey *APIKey) {
 
 // GenerateKey 生成随机API Key
 func (s *APIKeyService) GenerateKey() (string, error) {
-	// 生成32字节随机数据
+	return s.generateKeyWithPrefix(s.apiKeyPrefix())
+}
+
+// GenerateKeyForUser generates an API key with the user ID embedded in the non-secret prefix.
+func (s *APIKeyService) GenerateKeyForUser(userID int64) (string, error) {
+	return s.generateKeyWithPrefix(s.apiKeyUserPrefix(userID))
+}
+
+func (s *APIKeyService) apiKeyPrefix() string {
+	if s.cfg != nil && s.cfg.Default.APIKeyPrefix != "" {
+		return s.cfg.Default.APIKeyPrefix
+	}
+	return "cafepass-"
+}
+
+func (s *APIKeyService) apiKeyUserPrefix(userID int64) string {
+	return fmt.Sprintf("%s-%d-", strings.TrimRight(s.apiKeyPrefix(), "-"), userID)
+}
+
+func (s *APIKeyService) generateKeyWithPrefix(prefix string) (string, error) {
 	bytes := make([]byte, 32)
 	if _, err := rand.Read(bytes); err != nil {
 		return "", fmt.Errorf("generate random bytes: %w", err)
 	}
+	return prefix + hex.EncodeToString(bytes), nil
+}
 
-	// 转换为十六进制字符串并添加前缀
-	prefix := s.cfg.Default.APIKeyPrefix
-	if prefix == "" {
-		prefix = "cafepass-"
+func (s *APIKeyService) generateUniqueKeyForUser(ctx context.Context, userID int64) (string, error) {
+	for i := 0; i < 3; i++ {
+		key, err := s.GenerateKeyForUser(userID)
+		if err != nil {
+			return "", fmt.Errorf("generate key: %w", err)
+		}
+		exists, existsErr := s.apiKeyExists(ctx, key)
+		if existsErr != nil {
+			return "", fmt.Errorf("check key exists: %w", existsErr)
+		}
+		if !exists {
+			return key, nil
+		}
 	}
-
-	key := prefix + hex.EncodeToString(bytes)
-	return key, nil
+	return "", ErrAPIKeyExists
 }
 
 // ValidateCustomKey 验证自定义API Key格式
@@ -406,9 +435,9 @@ func (s *APIKeyService) Create(ctx context.Context, userID int64, req CreateAPIK
 	} else {
 		// 生成随机API Key
 		var err error
-		key, err = s.GenerateKey()
+		key, err = s.generateUniqueKeyForUser(ctx, userID)
 		if err != nil {
-			return nil, fmt.Errorf("generate key: %w", err)
+			return nil, err
 		}
 	}
 
@@ -622,7 +651,7 @@ func (s *APIKeyService) Rotate(ctx context.Context, id int64, userID int64) (*AP
 	}
 	var newKey string
 	for i := 0; i < 3; i++ {
-		newKey, err = s.GenerateKey()
+		newKey, err = s.GenerateKeyForUser(userID)
 		if err != nil {
 			return nil, fmt.Errorf("generate key: %w", err)
 		}

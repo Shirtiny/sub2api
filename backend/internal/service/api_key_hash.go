@@ -14,7 +14,7 @@ const (
 	APIKeyHashAlgSHA256       = "sha256"
 	APIKeyHashAlgLookupSHA256 = "lookup-sha256"
 
-	apiKeyDisplayPrefixLen         = 16
+	apiKeyDisplayPrefixLen         = 32
 	apiKeyLookupTokenPrefix        = "__api_key_hash__:"
 	apiKeyLegacyAuthCacheKeyPrefix = "legacy-plaintext-sha256:"
 )

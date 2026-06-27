@@ -46,7 +46,7 @@ SET
         ELSE k.key_lookup_hash
     END,
     key_prefix = CASE
-        WHEN COALESCE(k.key_prefix, '') = '' AND NOT rows_to_hash.generated_tombstone THEN LEFT(k.key, 16)
+        WHEN COALESCE(k.key_prefix, '') = '' AND NOT rows_to_hash.generated_tombstone THEN LEFT(k.key, 32)
         ELSE k.key_prefix
     END
 FROM rows_to_hash
@@ -110,7 +110,7 @@ SET
         ELSE a.key_lookup_hash
     END,
     key_prefix = CASE
-        WHEN COALESCE(a.key_prefix, '') = '' AND NOT audit_rows_to_hash.generated_redaction THEN LEFT(a.key, 16)
+        WHEN COALESCE(a.key_prefix, '') = '' AND NOT audit_rows_to_hash.generated_redaction THEN LEFT(a.key, 32)
         ELSE a.key_prefix
     END
 FROM audit_rows_to_hash

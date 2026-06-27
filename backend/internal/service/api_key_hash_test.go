@@ -41,3 +41,18 @@ func TestAPIKeyLookupTokenRoundTrip(t *testing.T) {
 	require.Equal(t, hashes, decoded)
 	require.NotContains(t, token, "sk-")
 }
+
+func TestAPIKeyPrefixUsesThirtyTwoCharacters(t *testing.T) {
+	key := "cafepass-42-1234567890abcdef1234567890abcdef"
+
+	prefix := APIKeyPrefix(key)
+
+	require.Len(t, prefix, 32)
+	require.Equal(t, key[:32], prefix)
+}
+
+func TestAPIKeyPrefixKeepsShortLegacyKey(t *testing.T) {
+	key := "sk-legacy-key-123456"
+
+	require.Equal(t, key, APIKeyPrefix(key))
+}
