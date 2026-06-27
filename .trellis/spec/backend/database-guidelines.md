@@ -41,9 +41,12 @@ Key conventions observed in the codebase:
 
 - Migration files live in `backend/migrations/` and are executed in lexical order by `backend/internal/repository/migrations_runner.go`.
 - Treat applied migrations as immutable. The runner checksum-checks files and fails startup when an applied migration changes.
+- Treat migrations as immutable once merged into a deployable branch, included in a published image, or applied in any shared environment. Review fixes after that point must be new migrations, not edits to the old file.
 - Use numbered snake_case SQL files such as `001_init.sql` and suffix `_notx.sql` only for migrations that must run outside a transaction, such as concurrent index operations.
 - Keep schema source in Ent definitions, but operational schema changes still land as SQL migrations. Ent generation is configured in `backend/ent/generate.go`.
 - Repeated numeric prefixes already exist in this repo; keep new file names unique and lexically ordered rather than assuming a strict one-file-per-number rule.
+- Checksum compatibility rules in `migrationChecksumCompatibilityRules` are incident recovery tools, not a way to bypass validation. They must be filename-specific, current-checksum-specific, limited to known historical DB checksums, and covered by tests.
+- Do not manually edit `schema_migrations` except as a production incident response with explicit approval, a narrowly scoped statement, and a follow-up code fix.
 
 ---
 
@@ -59,6 +62,8 @@ Key conventions observed in the codebase:
 ## Common Mistakes
 
 - Do not modify an already-applied migration file; add a new migration instead.
+- Do not amend migration files that have already shipped in a Docker image or deployable branch; even if production has not updated yet, another environment may already have recorded the checksum.
+- Do not add broad migration checksum bypasses. If an incident requires compatibility, enumerate exact known checksums and test both accepted and rejected cases.
 - Do not put direct repository imports into handlers or most services; the layering rules in `backend/.golangci.yml` enforce this.
 - Do not write ad-hoc SQL in handlers.
 - Do not skip error translation or contextual wrapping around DB failures.

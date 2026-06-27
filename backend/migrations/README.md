@@ -52,11 +52,28 @@ ALTER TABLE usage_logs ADD COLUMN IF NOT EXISTS example_column VARCHAR(100);
 
 **Once a migration is applied to ANY environment (dev, staging, production), it MUST NOT be modified.**
 
+Treat a migration as applied once it has been merged into a branch that can be deployed, included in a published image, or run in any shared environment. Do not amend that migration in a follow-up commit. If the desired behavior changes, create a new migration with the next lexical filename.
+
 Why?
 - Each migration has a SHA256 checksum stored in the `schema_migrations` table
 - Modifying an applied migration causes checksum mismatch errors
 - Different environments would have inconsistent database states
 - Breaks audit trail and reproducibility
+- Can prevent the application from starting because migrations run during service startup
+
+### Checksum Compatibility Is Emergency-Only
+
+The migration runner keeps checksum validation enabled. `migrationChecksumCompatibilityRules` is not a global bypass.
+
+Use a compatibility rule only after an incident where an already-applied migration was accidentally changed and real environments now have known, conflicting `schema_migrations.checksum` values. A compatibility rule must:
+
+- Match one exact migration filename.
+- Match the exact current file checksum.
+- Accept only exact, known historical database checksums.
+- Include unit tests for accepted and rejected checksum combinations.
+- Be paired with a new migration for any actual schema/data behavior change.
+
+Do not add a compatibility rule for normal feature work, review feedback, or convenience. The normal fix for changing database behavior is always a new migration.
 
 ### ✅ Correct Workflow
 
@@ -91,6 +108,8 @@ Why?
 - ❌ Delete migration files
 - ❌ Change migration file names
 - ❌ Reorder migration numbers
+- ❌ "Fix" a deployed migration by editing `schema_migrations` during normal development
+- ❌ Add broad checksum bypasses or wildcard compatibility rules
 
 ### 🔧 If You Accidentally Modified an Applied Migration
 
@@ -110,6 +129,8 @@ git checkout <commit-hash> -- migrations/017_add_gemini_tier_id.sql
 # 3. Create a NEW migration for your changes
 touch migrations/018_your_new_change.sql
 ```
+
+If production is already down, restore service first with the narrowest possible incident-response action, then add a filename/checksum-specific compatibility rule with tests. Do not leave the system relying on manual `schema_migrations` edits as the long-term fix.
 
 ## Migration System Details
 
@@ -177,6 +198,8 @@ psql -d sub2api -c "SELECT * FROM schema_migrations ORDER BY applied_at DESC;"
 INSERT INTO schema_migrations (filename, checksum, applied_at)
 VALUES ('NNN_migration.sql', 'calculated_checksum', NOW());
 ```
+
+Manual changes to `schema_migrations` in production require explicit incident approval, a precise `WHERE` clause when updating, and a follow-up code fix. They are not an acceptable substitute for immutable migrations.
 
 ## References
 
