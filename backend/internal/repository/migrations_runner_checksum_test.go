@@ -153,6 +153,20 @@ func TestIsMigrationChecksumCompatible(t *testing.T) {
 		}
 	})
 
+	t.Run("155多个历史checksum都可兼容当前版本", func(t *testing.T) {
+		for _, dbChecksum := range []string{
+			"33d7246686c64a786bbfd18ff141645098bcde953d81bf17e8dcbe40b994129d",
+			"a490c4f55170254c174d3a1a96ea65b88747cd9cc99bed48e18c6c5d0681eec1",
+		} {
+			ok := isMigrationChecksumCompatible(
+				"155_hash_api_keys.sql",
+				dbChecksum,
+				"1d7e3f980ad52f821ef84b5a644bb9a53c4dfe57d061f502ac73743a2cf18341",
+			)
+			require.True(t, ok)
+		}
+	})
+
 	t.Run("119未知checksum不兼容", func(t *testing.T) {
 		ok := isMigrationChecksumCompatible(
 			"119_enforce_payment_orders_out_trade_no_unique.sql",
