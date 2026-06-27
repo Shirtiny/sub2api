@@ -89,6 +89,37 @@ describe('UseKeyModal', () => {
     expect(configToml).toContain('[features]\nresponses_websockets_v2 = true\ngoals = true')
   })
 
+  it('renders custom title and placeholder key in OpenAI auth config', () => {
+    const wrapper = mount(UseKeyModal, {
+      props: {
+        show: true,
+        title: '密钥配置',
+        apiKey: '在这里替换为您的密钥',
+        baseUrl: 'https://example.com/v1',
+        platform: 'openai'
+      },
+      global: {
+        stubs: {
+          BaseDialog: {
+            props: ['title'],
+            template: '<div><h2>{{ title }}</h2><slot /><slot name="footer" /></div>'
+          },
+          Icon: {
+            template: '<span />'
+          }
+        }
+      }
+    })
+
+    expect(wrapper.find('h2').text()).toBe('密钥配置')
+    const codeBlocks = wrapper.findAll('pre code').map((code) => code.text())
+    const authJson = codeBlocks.find((content) => content.includes('OPENAI_API_KEY'))
+
+    expect(authJson).toBeDefined()
+    expect(wrapper.text()).toContain('~/.codex/auth.json')
+    expect(authJson).toContain('"OPENAI_API_KEY": "在这里替换为您的密钥"')
+  })
+
   it('renders GPT-5.4 mini entry in OpenCode config', async () => {
     const wrapper = mount(UseKeyModal, {
       props: {

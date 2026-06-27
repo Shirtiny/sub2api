@@ -1,7 +1,7 @@
 <template>
   <BaseDialog
     :show="show"
-    :title="t('keys.useKeyModal.title')"
+    :title="title || t('keys.useKeyModal.title')"
     width="wide"
     @close="emit('close')"
   >
@@ -147,6 +147,7 @@ interface Props {
   baseUrl: string
   platform: GroupPlatform | null
   allowMessagesDispatch?: boolean
+  title?: string
 }
 
 interface Emits {

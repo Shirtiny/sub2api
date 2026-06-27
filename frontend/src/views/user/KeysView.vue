@@ -41,6 +41,10 @@
         >
           <Icon name="refresh" size="md" :class="loading ? 'animate-spin' : ''" />
         </button>
+        <button @click="openKeyConfigGuide" class="btn btn-secondary">
+          <Icon name="terminal" size="md" class="mr-2" />
+          {{ t('keys.keyConfig') }}
+        </button>
         <button @click="showCreateModal = true" class="btn btn-primary" data-tour="keys-create-btn">
           <Icon name="plus" size="md" class="mr-2" />
           {{ t('keys.createKey') }}
@@ -984,10 +988,11 @@
     <!-- Use Key Modal -->
     <UseKeyModal
       :show="showUseKeyModal"
-      :api-key="selectedKey?.key || ''"
+      :title="showKeyConfigGuide ? t('keys.keyConfig') : t('keys.useKeyModal.title')"
+      :api-key="useKeyModalApiKey"
       :base-url="publicSettings?.api_base_url || ''"
-      :platform="selectedKey?.group?.platform || null"
-      :allow-messages-dispatch="selectedKey?.group?.allow_messages_dispatch || false"
+      :platform="useKeyModalPlatform"
+      :allow-messages-dispatch="useKeyModalAllowMessagesDispatch"
       @close="closeUseKeyModal"
     />
 
@@ -1205,6 +1210,7 @@ const showCreatedKeyCloseConfirm = ref(false)
 const showResetQuotaDialog = ref(false)
 const showResetRateLimitDialog = ref(false)
 const showUseKeyModal = ref(false)
+const showKeyConfigGuide = ref(false)
 const showCcsClientSelect = ref(false)
 const pendingCcsRow = ref<ApiKey | null>(null)
 const selectedKey = ref<ApiKey | null>(null)
@@ -1217,6 +1223,16 @@ const dropdownRef = ref<HTMLElement | null>(null)
 const dropdownPosition = ref<{ top?: number; bottom?: number; left: number } | null>(null)
 const groupButtonRefs = ref<Map<number, HTMLElement>>(new Map())
 let abortController: AbortController | null = null
+
+const useKeyModalApiKey = computed(() =>
+  showKeyConfigGuide.value ? t('keys.keyConfigPlaceholder') : selectedKey.value?.key || ''
+)
+const useKeyModalPlatform = computed<GroupPlatform | null>(() =>
+  showKeyConfigGuide.value ? 'openai' : selectedKey.value?.group?.platform || null
+)
+const useKeyModalAllowMessagesDispatch = computed(() =>
+  showKeyConfigGuide.value ? false : selectedKey.value?.group?.allow_messages_dispatch || false
+)
 
 // Get the currently selected key for group change
 const selectedKeyForGroup = computed(() => {
@@ -1374,6 +1390,7 @@ const openUseCreatedKey = () => {
   const resolvedKey = apiKeyWithResolvedGroup(key)
   createdKey.value = resolvedKey
   selectedKey.value = resolvedKey
+  showKeyConfigGuide.value = false
   showUseKeyModal.value = true
 }
 
@@ -1470,8 +1487,15 @@ const loadPublicSettings = async () => {
 }
 
 
+const openKeyConfigGuide = () => {
+  selectedKey.value = null
+  showKeyConfigGuide.value = true
+  showUseKeyModal.value = true
+}
+
 const closeUseKeyModal = () => {
   showUseKeyModal.value = false
+  showKeyConfigGuide.value = false
   selectedKey.value = null
 }
 

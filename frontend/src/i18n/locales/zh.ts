@@ -799,6 +799,8 @@ export default {
     total: '近30天',
     quota: '额度',
     lastUsedAt: '上次使用时间',
+    keyConfig: '密钥配置',
+    keyConfigPlaceholder: '在这里替换为您的密钥',
     useKey: '使用密钥',
     useKeyModal: {
       title: '使用 API 密钥',

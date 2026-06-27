@@ -800,6 +800,8 @@ export default {
     total: 'Last 30d',
     quota: 'Quota',
     lastUsedAt: 'Last Used',
+    keyConfig: 'Key Config',
+    keyConfigPlaceholder: 'replace-with-your-api-key',
     useKey: 'Use Key',
     useKeyModal: {
       title: 'Use API Key',
