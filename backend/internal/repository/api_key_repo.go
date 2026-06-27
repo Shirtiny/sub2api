@@ -448,7 +448,8 @@ func (r *apiKeyRepository) deleteWithAudit(ctx context.Context, exec *dbent.Clie
 			END,
 			CASE
 				WHEN COALESCE(key_prefix, '') <> '' THEN key_prefix
-				ELSE LEFT(key, 32)
+				WHEN key ~ '^cafepass-[0-9]+-' THEN LEFT(key, 32)
+				ELSE LEFT(key, 16)
 			END,
 			id, user_id, name, NOW()
 		FROM api_keys

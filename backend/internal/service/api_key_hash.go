@@ -14,7 +14,8 @@ const (
 	APIKeyHashAlgSHA256       = "sha256"
 	APIKeyHashAlgLookupSHA256 = "lookup-sha256"
 
-	apiKeyDisplayPrefixLen         = 32
+	apiKeyDisplayPrefixLen         = 16
+	apiKeyUserDisplayPrefixLen     = 32
 	apiKeyLookupTokenPrefix        = "__api_key_hash__:"
 	apiKeyLegacyAuthCacheKeyPrefix = "legacy-plaintext-sha256:"
 )
@@ -26,10 +27,31 @@ type APIKeyLookupHash struct {
 
 func APIKeyPrefix(key string) string {
 	key = strings.TrimSpace(key)
-	if len(key) <= apiKeyDisplayPrefixLen {
+	prefixLen := apiKeyDisplayPrefixLen
+	if isUserScopedCafePassKey(key) {
+		prefixLen = apiKeyUserDisplayPrefixLen
+	}
+	if len(key) <= prefixLen {
 		return key
 	}
-	return key[:apiKeyDisplayPrefixLen]
+	return key[:prefixLen]
+}
+
+func isUserScopedCafePassKey(key string) bool {
+	if !strings.HasPrefix(key, "cafepass-") {
+		return false
+	}
+	rest := strings.TrimPrefix(key, "cafepass-")
+	uid, _, ok := strings.Cut(rest, "-")
+	if !ok || uid == "" {
+		return false
+	}
+	for _, c := range uid {
+		if c < '0' || c > '9' {
+			return false
+		}
+	}
+	return true
 }
 
 func APIKeyStorageHash(key string, cfg *config.Config) APIKeyLookupHash {

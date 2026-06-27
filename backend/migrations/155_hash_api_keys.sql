@@ -46,7 +46,10 @@ SET
         ELSE k.key_lookup_hash
     END,
     key_prefix = CASE
-        WHEN COALESCE(k.key_prefix, '') = '' AND NOT rows_to_hash.generated_tombstone THEN LEFT(k.key, 32)
+        WHEN COALESCE(k.key_prefix, '') = '' AND NOT rows_to_hash.generated_tombstone THEN CASE
+            WHEN k.key ~ '^cafepass-[0-9]+-' THEN LEFT(k.key, 32)
+            ELSE LEFT(k.key, 16)
+        END
         ELSE k.key_prefix
     END
 FROM rows_to_hash
@@ -110,7 +113,10 @@ SET
         ELSE a.key_lookup_hash
     END,
     key_prefix = CASE
-        WHEN COALESCE(a.key_prefix, '') = '' AND NOT audit_rows_to_hash.generated_redaction THEN LEFT(a.key, 32)
+        WHEN COALESCE(a.key_prefix, '') = '' AND NOT audit_rows_to_hash.generated_redaction THEN CASE
+            WHEN a.key ~ '^cafepass-[0-9]+-' THEN LEFT(a.key, 32)
+            ELSE LEFT(a.key, 16)
+        END
         ELSE a.key_prefix
     END
 FROM audit_rows_to_hash
