@@ -898,6 +898,28 @@
           {{ t('keys.keyPrefix') }}: <code class="code">{{ createdKey.key_prefix }}</code>
         </div>
       </div>
+      <template #footer>
+        <div class="flex flex-wrap justify-end gap-2">
+          <button
+            v-if="createdKey?.key"
+            type="button"
+            class="btn btn-secondary"
+            @click="openUseCreatedKey"
+          >
+            <Icon name="terminal" size="sm" class="mr-2" />
+            {{ t('keys.useKey') }}
+          </button>
+          <button
+            v-if="createdKey?.key && !publicSettings?.hide_ccs_import_button"
+            type="button"
+            class="btn btn-secondary"
+            @click="importCreatedKeyToCcswitch"
+          >
+            <Icon name="upload" size="sm" class="mr-2" />
+            {{ t('keys.importToCcSwitch') }}
+          </button>
+        </div>
+      </template>
     </BaseDialog>
 
     <ConfirmDialog
@@ -958,6 +980,63 @@
       @confirm="resetRateLimitUsage"
       @cancel="showResetRateLimitDialog = false"
     />
+
+    <!-- Use Key Modal -->
+    <UseKeyModal
+      :show="showUseKeyModal"
+      :api-key="selectedKey?.key || ''"
+      :base-url="publicSettings?.api_base_url || ''"
+      :platform="selectedKey?.group?.platform || null"
+      :allow-messages-dispatch="selectedKey?.group?.allow_messages_dispatch || false"
+      @close="closeUseKeyModal"
+    />
+
+    <!-- CCS Client Selection Dialog for Antigravity -->
+    <BaseDialog
+      :show="showCcsClientSelect"
+      :title="t('keys.ccsClientSelect.title')"
+      width="narrow"
+      @close="closeCcsClientSelect"
+    >
+      <div class="space-y-4">
+        <p class="text-sm text-content-secondary">
+          {{ t('keys.ccsClientSelect.description') }}
+        </p>
+        <div class="grid grid-cols-2 gap-3">
+          <button
+            @click="handleCcsClientSelect('claude')"
+            class="flex flex-col items-center gap-2 rounded-xl border-2 border-gray-200 p-4 transition-all hover:border-primary-500 hover:bg-primary-50 dark:border-dark-600 dark:hover:border-primary-500 dark:hover:bg-primary-900/20"
+          >
+            <Icon name="terminal" size="xl" class="text-content-secondary" />
+            <span class="font-medium text-content-primary">{{
+              t('keys.ccsClientSelect.claudeCode')
+            }}</span>
+            <span class="text-xs text-gray-500 dark:text-gray-400">{{
+              t('keys.ccsClientSelect.claudeCodeDesc')
+            }}</span>
+          </button>
+          <button
+            @click="handleCcsClientSelect('gemini')"
+            class="flex flex-col items-center gap-2 rounded-xl border-2 border-gray-200 p-4 transition-all hover:border-primary-500 hover:bg-primary-50 dark:border-dark-600 dark:hover:border-primary-500 dark:hover:bg-primary-900/20"
+          >
+            <Icon name="sparkles" size="xl" class="text-content-secondary" />
+            <span class="font-medium text-content-primary">{{
+              t('keys.ccsClientSelect.geminiCli')
+            }}</span>
+            <span class="text-xs text-gray-500 dark:text-gray-400">{{
+              t('keys.ccsClientSelect.geminiCliDesc')
+            }}</span>
+          </button>
+        </div>
+      </div>
+      <template #footer>
+        <div class="flex justify-end">
+          <button @click="closeCcsClientSelect" class="btn btn-secondary">
+            {{ t('common.cancel') }}
+          </button>
+        </div>
+      </template>
+    </BaseDialog>
 
     <!-- Group Selector Dropdown (Teleported to body to avoid overflow clipping) -->
     <Teleport to="body">
@@ -1046,6 +1125,7 @@ import TablePageLayout from '@/components/layout/TablePageLayout.vue'
 	import Select from '@/components/common/Select.vue'
 	import SearchInput from '@/components/common/SearchInput.vue'
 	import Icon from '@/components/icons/Icon.vue'
+	import UseKeyModal from '@/components/keys/UseKeyModal.vue'
 	import EndpointPopover from '@/components/keys/EndpointPopover.vue'
 	import GroupBadge from '@/components/common/GroupBadge.vue'
 	import GroupOptionItem from '@/components/common/GroupOptionItem.vue'
@@ -1053,6 +1133,10 @@ import TablePageLayout from '@/components/layout/TablePageLayout.vue'
 import type { Column } from '@/components/common/types'
 import type { BatchApiKeyUsageStats } from '@/api/usage'
 import { formatDateTime } from '@/utils/format'
+import {
+  buildCcSwitchImportDeeplink,
+  type CcSwitchClientType
+} from '@/utils/ccswitchImport'
 
 // Helper to format date for datetime-local input
 const formatDateTimeLocal = (isoDate: string): string => {
@@ -1120,6 +1204,9 @@ const showRotateDialog = ref(false)
 const showCreatedKeyCloseConfirm = ref(false)
 const showResetQuotaDialog = ref(false)
 const showResetRateLimitDialog = ref(false)
+const showUseKeyModal = ref(false)
+const showCcsClientSelect = ref(false)
+const pendingCcsRow = ref<ApiKey | null>(null)
 const selectedKey = ref<ApiKey | null>(null)
 const createdKey = ref<ApiKey | null>(null)
 const createdKeyCopied = ref(false)
@@ -1243,6 +1330,17 @@ const filteredGroupOptions = computed(() => {
   })
 })
 
+const apiKeyWithResolvedGroup = (key: ApiKey, fallback?: ApiKey | null): ApiKey => {
+  const group = key.group || fallback?.group || groups.value.find((g) => g.id === key.group_id)
+  if (!group) return key
+  return key.group === group ? key : { ...key, group }
+}
+
+const setCreatedKey = (key: ApiKey, fallback?: ApiKey | null) => {
+  createdKey.value = apiKeyWithResolvedGroup(key, fallback)
+  createdKeyCopied.value = false
+}
+
 const copyCreatedKey = async () => {
   const key = createdKey.value?.key
   if (!key) return
@@ -1270,6 +1368,22 @@ const confirmCloseCreatedKeyDialog = () => {
   closeCreatedKeyDialog()
 }
 
+const openUseCreatedKey = () => {
+  const key = createdKey.value
+  if (!key?.key) return
+  const resolvedKey = apiKeyWithResolvedGroup(key)
+  createdKey.value = resolvedKey
+  selectedKey.value = resolvedKey
+  showUseKeyModal.value = true
+}
+
+const importCreatedKeyToCcswitch = () => {
+  const key = createdKey.value
+  if (!key?.key) return
+  const resolvedKey = apiKeyWithResolvedGroup(key)
+  createdKey.value = resolvedKey
+  importToCcswitch(resolvedKey)
+}
 
 const isAbortError = (error: unknown) => {
   if (!error || typeof error !== 'object') return false
@@ -1355,6 +1469,11 @@ const loadPublicSettings = async () => {
   }
 }
 
+
+const closeUseKeyModal = () => {
+  showUseKeyModal.value = false
+  selectedKey.value = null
+}
 
 const handlePageChange = (page: number) => {
   pagination.value.page = page
@@ -1494,8 +1613,7 @@ const rotateSelectedKey = async () => {
   setKeyRotating(key.id, true)
   try {
     const rotated = await keysAPI.rotate(key.id)
-    createdKey.value = rotated
-    createdKeyCopied.value = false
+    setCreatedKey(rotated, key)
     appStore.showSuccess(t('keys.keyRotatedSuccess'))
     loadApiKeys()
   } catch (error: any) {
@@ -1589,8 +1707,7 @@ const handleSubmit = async () => {
         rateLimitData
       )
       if (created.key) {
-        createdKey.value = created
-        createdKeyCopied.value = false
+        setCreatedKey(created)
       }
       appStore.showSuccess(t('keys.keyCreatedSuccess'))
       // Only advance tour if active, on submit step, and creation succeeded
@@ -1713,6 +1830,82 @@ const resetRateLimitUsage = async () => {
     const errorMsg = error.response?.data?.detail || t('keys.failedToResetRateLimit')
     appStore.showError(errorMsg)
   }
+}
+
+const importToCcswitch = (row: ApiKey) => {
+  if (!row.key) {
+    appStore.showError(t('keys.keyOnlyShownOnceShort'))
+    return
+  }
+  const platform = row.group?.platform || 'anthropic'
+
+  if (platform === 'antigravity') {
+    pendingCcsRow.value = row
+    showCcsClientSelect.value = true
+    return
+  }
+
+  executeCcsImport(row, platform === 'gemini' ? 'gemini' : 'claude')
+}
+
+const executeCcsImport = (row: ApiKey, clientType: CcSwitchClientType) => {
+  if (!row.key) {
+    appStore.showError(t('keys.keyOnlyShownOnceShort'))
+    return
+  }
+  const baseUrl = publicSettings.value?.api_base_url || window.location.origin
+  const platform = row.group?.platform || 'anthropic'
+
+  const usageScript = `({
+    request: {
+      url: "{{baseUrl}}/v1/usage",
+      method: "GET",
+      headers: { "Authorization": "Bearer {{apiKey}}" }
+    },
+    extractor: function(response) {
+      const remaining = response?.remaining ?? response?.quota?.remaining ?? response?.balance;
+      const unit = response?.unit ?? response?.quota?.unit ?? "USD";
+      return {
+        isValid: response?.is_active ?? response?.isValid ?? true,
+        remaining,
+        unit
+      };
+    }
+  })`
+  const providerName = (publicSettings.value?.site_name || 'sub2api').trim() || 'sub2api'
+  const deeplink = buildCcSwitchImportDeeplink({
+    baseUrl,
+    platform,
+    clientType,
+    providerName,
+    apiKey: row.key,
+    usageScript
+  })
+
+  try {
+    window.open(deeplink, '_self')
+
+    setTimeout(() => {
+      if (document.hasFocus()) {
+        appStore.showError(t('keys.ccSwitchNotInstalled'))
+      }
+    }, 100)
+  } catch (error) {
+    appStore.showError(t('keys.ccSwitchNotInstalled'))
+  }
+}
+
+const handleCcsClientSelect = (clientType: CcSwitchClientType) => {
+  if (pendingCcsRow.value) {
+    executeCcsImport(pendingCcsRow.value, clientType)
+  }
+  showCcsClientSelect.value = false
+  pendingCcsRow.value = null
+}
+
+const closeCcsClientSelect = () => {
+  showCcsClientSelect.value = false
+  pendingCcsRow.value = null
 }
 
 function formatResetTime(resetAt: string | null): string {
