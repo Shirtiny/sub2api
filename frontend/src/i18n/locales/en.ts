@@ -7133,6 +7133,7 @@ export default {
     amountTooLow: 'Minimum amount is {min}',
     amountTooHigh: 'Maximum amount is {max}',
     amountNoMethod: 'No payment method available for this amount',
+    actualPayTooLow: 'Final payable amount cannot be below {min}',
     rechargeRatePreview: 'Current rate: 1 CNY = {usd} USD',
     cafeCoupon: {
       label: 'Café Coupon Code',
@@ -7180,6 +7181,7 @@ export default {
       USER_INACTIVE: 'Your account is disabled.',
       BALANCE_PAYMENT_DISABLED: 'Balance recharge has been disabled.',
       INVALID_AMOUNT: 'Invalid amount.',
+      PAYMENT_AMOUNT_BELOW_MINIMUM: 'Final payable amount cannot be below {min}.',
       INVALID_INPUT: 'Invalid request.',
       PLAN_NOT_AVAILABLE: 'Plan not found or no longer available.',
       GROUP_NOT_FOUND: 'Subscription group is no longer available.',

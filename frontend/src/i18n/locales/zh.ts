@@ -7313,6 +7313,7 @@ export default {
     amountTooLow: '最低金额为 {min}',
     amountTooHigh: '最高金额为 {max}',
     amountNoMethod: '该金额没有可用的支付方式',
+    actualPayTooLow: '优惠后实付金额不能低于 {min}',
     rechargeRatePreview: '当前倍率：1 CNY = {usd} USD',
     cafeCoupon: {
       label: 'Café券码',
@@ -7360,6 +7361,7 @@ export default {
       USER_INACTIVE: '账号已被禁用',
       BALANCE_PAYMENT_DISABLED: '余额充值功能已关闭',
       INVALID_AMOUNT: '金额无效',
+      PAYMENT_AMOUNT_BELOW_MINIMUM: '优惠后实付金额不能低于 {min}',
       INVALID_INPUT: '参数有误',
       PLAN_NOT_AVAILABLE: '套餐不存在或已下架',
       GROUP_NOT_FOUND: '订阅分组不可用',

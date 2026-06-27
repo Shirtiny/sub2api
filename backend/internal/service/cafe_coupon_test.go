@@ -619,6 +619,45 @@ func TestCafeCouponCreateOrderAppliesServerSideDiscountAndMarksCoupon(t *testing
 	require.Equal(t, 1, auditCount)
 }
 
+func TestCafeCouponCreateOrderRejectsFinalPayAmountBelowMinimum(t *testing.T) {
+	ctx := context.Background()
+	client := newCafeCouponTestClient(t)
+	user, err := client.User.Create().SetEmail("buyer-min-pay@example.com").SetPasswordHash("hash").SetUsername("buyer-min-pay").Save(ctx)
+	require.NoError(t, err)
+
+	start, end := cafeCouponRollingPeriodWindow(time.Now(), CafeCouponPeriodMonth)
+	coupon, err := client.CafeCoupon.Create().
+		SetCode("CAFE-MIN-PAY").SetUserID(user.ID).SetMembershipLevel(1).SetCouponType(CafeCouponTypeCash).SetValue(10).
+		SetPeriod(CafeCouponPeriodMonth).SetPeriodStart(start).SetPeriodEnd(end).SetStatus(CafeCouponStatusIssued).
+		Save(ctx)
+	require.NoError(t, err)
+
+	userRepo := &mockUserRepo{getByIDUser: &User{ID: user.ID, Email: user.Email, Username: user.Username, Status: payment.EntityStatusActive, TotalRecharged: MembershipLevel1Threshold + 1}}
+	svc := &PaymentService{
+		entClient: client,
+		configService: &PaymentConfigService{entClient: client, settingRepo: cafeCouponSettingsRepo(map[string]string{
+			SettingPaymentEnabled:      "true",
+			SettingRechargeFeeRate:     "1",
+			SettingKeyCafeCouponConfig: `{"levels":{"1":{"enabled":true,"type":"cash","value":10,"period":"month"}}}`,
+		})},
+		userRepo:      userRepo,
+		redeemService: NewRedeemService(&paymentOrderLifecycleRedeemRepo{codesByCode: map[string]*RedeemCode{}}, userRepo, nil, nil, nil, client, nil, nil),
+	}
+	t.Setenv(paymentDevAutoSuccessEnv, paymentDevAutoSuccessToken)
+	t.Setenv(paymentDevEnvironmentEnv, "development")
+
+	_, err = svc.CreateOrder(ctx, CreateOrderRequest{UserID: user.ID, Amount: 10, PaymentType: payment.TypeAlipay, OrderType: payment.OrderTypeBalance, CafeCouponCode: coupon.Code, ClientIP: "127.0.0.1", SrcHost: "app.example.com"})
+	require.Error(t, err)
+	require.Equal(t, "PAYMENT_AMOUNT_BELOW_MINIMUM", infraerrors.Reason(err))
+
+	count, err := client.PaymentOrder.Query().Count(ctx)
+	require.NoError(t, err)
+	require.Equal(t, 0, count)
+	storedCoupon, err := client.CafeCoupon.Get(ctx, coupon.ID)
+	require.NoError(t, err)
+	require.Equal(t, CafeCouponStatusIssued, storedCoupon.Status)
+}
+
 func TestCafeCouponCreateOrderSelectsProviderWithCouponAdjustedAmount(t *testing.T) {
 	ctx := context.Background()
 	client := newCafeCouponTestClient(t)

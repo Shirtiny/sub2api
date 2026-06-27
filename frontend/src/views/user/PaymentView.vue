@@ -100,6 +100,9 @@
                 </span>
               </div>
               <p v-if="cafeCouponError" class="mt-2 text-xs text-red-600 dark:text-red-400">{{ cafeCouponError }}</p>
+              <p v-else-if="currentOrderPayAmountBelowMinimum" class="mt-2 text-xs text-red-600 dark:text-red-400">
+                {{ minimumPayAmountMessage }}
+              </p>
               <p v-else-if="cafeCouponApplied" class="mt-2 text-xs text-emerald-600 dark:text-emerald-400">
                 {{ cafeCouponAppliedText }}
               </p>
@@ -207,6 +210,9 @@
                   </span>
                 </div>
                 <p v-if="cafeCouponError" class="mt-2 text-xs text-red-600 dark:text-red-400">{{ cafeCouponError }}</p>
+                <p v-else-if="currentOrderPayAmountBelowMinimum" class="mt-2 text-xs text-red-600 dark:text-red-400">
+                  {{ minimumPayAmountMessage }}
+                </p>
                 <p v-else-if="cafeCouponApplied" class="mt-2 text-xs text-emerald-600 dark:text-emerald-400">
                   {{ cafeCouponAppliedText }}
                 </p>
@@ -331,6 +337,7 @@ import { buildPaymentErrorToastMessage, describePaymentScenarioError } from './p
 import { hasWechatResumeQuery, parseWechatResumeRoute, stripWechatResumeQuery } from './paymentWechatResume'
 
 const RECHARGE_QUICK_AMOUNTS = [20, 50, 100, 200, 500]
+const MIN_ACTUAL_PAYMENT_AMOUNT = 1
 
 const i18n = useI18n()
 const { t } = i18n
@@ -614,6 +621,14 @@ function formatSelectedPaymentAmount(value: number): string {
   return formatPaymentAmount(value, selectedCurrency.value, localeCode.value)
 }
 
+const minimumPayAmountMessage = computed(() =>
+  t('payment.actualPayTooLow', { min: formatSelectedPaymentAmount(MIN_ACTUAL_PAYMENT_AMOUNT) })
+)
+
+function isPayAmountBelowMinimum(value: number): boolean {
+  return value > 0 && value < MIN_ACTUAL_PAYMENT_AMOUNT
+}
+
 function currencyFractionDigits(currency: string): number {
   try {
     return new Intl.NumberFormat(undefined, { style: 'currency', currency }).resolvedOptions().maximumFractionDigits ?? 2
@@ -643,7 +658,7 @@ const methodOptions = computed<PaymentMethodOption[]>(() =>
     return {
       type,
       fee_rate: ml?.fee_rate ?? 0,
-      available: ml?.available !== false && amountFitsMethod(payableAmount, type),
+      available: ml?.available !== false && !isPayAmountBelowMinimum(payableAmount) && amountFitsMethod(payableAmount, type),
     }
   })
 )
@@ -667,9 +682,14 @@ function effectiveRechargeMethodAmount(): number {
     : totalAmount.value
 }
 
+const rechargePayAmountBelowMinimum = computed(() =>
+  validAmount.value > 0 && isPayAmountBelowMinimum(effectiveRechargeMethodAmount())
+)
+
 const amountError = computed(() => {
   if (validAmount.value <= 0) return ''
   const methodAmount = effectiveRechargeMethodAmount()
+  if (rechargePayAmountBelowMinimum.value) return minimumPayAmountMessage.value
   if (!enabledMethods.value.some((m) => amountFitsMethod(methodAmount, m))) {
     return t('payment.amountNoMethod')
   }
@@ -683,6 +703,7 @@ const amountError = computed(() => {
 
 const canSubmit = computed(() =>
   validAmount.value > 0
+    && !rechargePayAmountBelowMinimum.value
     && amountFitsMethod(effectiveRechargeMethodAmount(), selectedMethod.value)
     && selectedLimit.value?.available !== false
 )
@@ -699,7 +720,7 @@ const subMethodOptions = computed<PaymentMethodOption[]>(() => {
     return {
       type,
       fee_rate: ml?.fee_rate ?? 0,
-      available: ml?.available !== false && amountFitsMethod(payableAmount, type),
+      available: ml?.available !== false && !isPayAmountBelowMinimum(payableAmount) && amountFitsMethod(payableAmount, type),
     }
   })
 })
@@ -741,8 +762,13 @@ function effectiveSubscriptionMethodAmount(): number {
     : calculateFeeAdjustedPayAmount(planPrice, feeRate.value)
 }
 
+const subscriptionPayAmountBelowMinimum = computed(() =>
+  selectedPlan.value !== null && isPayAmountBelowMinimum(effectiveSubscriptionMethodAmount())
+)
+
 const canSubmitSubscription = computed(() =>
   selectedPlan.value !== null
+    && !subscriptionPayAmountBelowMinimum.value
     && amountFitsMethod(effectiveSubscriptionMethodAmount(), selectedMethod.value)
     && selectedLimit.value?.available !== false
 )
@@ -751,6 +777,9 @@ const normalizedCafeCouponCode = computed(() => cafeCouponCode.value.trim().toUp
 const currentOrderType = computed<OrderType>(() => activeTab.value === 'subscription' && selectedPlan.value ? 'subscription' : 'balance')
 const currentOrderAmount = computed(() => currentOrderType.value === 'subscription' ? selectedPlan.value?.price ?? 0 : validAmount.value)
 const currentPlanId = computed(() => currentOrderType.value === 'subscription' ? selectedPlan.value?.id : undefined)
+const currentOrderPayAmountBelowMinimum = computed(() =>
+  currentOrderType.value === 'subscription' ? subscriptionPayAmountBelowMinimum.value : rechargePayAmountBelowMinimum.value
+)
 
 function resetCafeCouponState(keepError = false) {
   cafeCouponAppliedCode.value = ''
@@ -922,9 +951,11 @@ async function handleSubmitRecharge() {
 }
 
 async function confirmSubscribe() {
-  if (!selectedPlan.value || submitting.value) return
+  if (!canSubmitSubscription.value || submitting.value) return
+  const plan = selectedPlan.value
+  if (!plan) return
   if (!await ensureCafeCouponReady()) return
-  await createOrder(selectedPlan.value.price, 'subscription', selectedPlan.value.id)
+  await createOrder(plan.price, 'subscription', plan.id)
 }
 
 async function createOrder(orderAmount: number, orderType: OrderType, planId?: number, options: CreateOrderOptions = {}) {

@@ -20,6 +20,8 @@ import (
 	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 )
 
+const minCreateOrderPayAmount = 1.0
+
 // --- Order Creation ---
 
 func (s *PaymentService) CreateOrder(ctx context.Context, req CreateOrderRequest) (*CreateOrderResponse, error) {
@@ -717,6 +719,11 @@ func calculateCreateOrderPayAmount(limitAmount, feeRate float64, currency string
 	if err != nil {
 		return "", 0, infraerrors.BadRequest("INVALID_AMOUNT", "invalid payment amount").
 			WithMetadata(map[string]string{"currency": currency})
+	}
+	if payAmount < minCreateOrderPayAmount {
+		minAmount := payment.FormatAmountForCurrency(minCreateOrderPayAmount, currency)
+		return "", 0, infraerrors.BadRequest("PAYMENT_AMOUNT_BELOW_MINIMUM", "payment amount must be at least "+minAmount).
+			WithMetadata(map[string]string{"min": minAmount, "currency": currency})
 	}
 	return payAmountStr, payAmount, nil
 }
