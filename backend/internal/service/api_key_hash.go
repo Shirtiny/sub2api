@@ -14,10 +14,10 @@ const (
 	APIKeyHashAlgSHA256       = "sha256"
 	APIKeyHashAlgLookupSHA256 = "lookup-sha256"
 
-	apiKeyDisplayPrefixLen         = 16
-	apiKeyUserDisplayPrefixLen     = 32
-	apiKeyLookupTokenPrefix        = "__api_key_hash__:"
-	apiKeyLegacyAuthCacheKeyPrefix = "legacy-plaintext-sha256:"
+	apiKeyDisplayPrefixLen           = 16
+	apiKeyUserDisplayRandomPrefixLen = 8
+	apiKeyLookupTokenPrefix          = "__api_key_hash__:"
+	apiKeyLegacyAuthCacheKeyPrefix   = "legacy-plaintext-sha256:"
 )
 
 type APIKeyLookupHash struct {
@@ -27,31 +27,35 @@ type APIKeyLookupHash struct {
 
 func APIKeyPrefix(key string) string {
 	key = strings.TrimSpace(key)
-	prefixLen := apiKeyDisplayPrefixLen
-	if isUserScopedCafePassKey(key) {
-		prefixLen = apiKeyUserDisplayPrefixLen
+
+	if base, random, ok := splitUserScopedCafePassKey(key); ok {
+		if len(random) <= apiKeyUserDisplayRandomPrefixLen {
+			return key
+		}
+		return base + random[:apiKeyUserDisplayRandomPrefixLen]
 	}
-	if len(key) <= prefixLen {
+
+	if len(key) <= apiKeyDisplayPrefixLen {
 		return key
 	}
-	return key[:prefixLen]
+	return key[:apiKeyDisplayPrefixLen]
 }
 
-func isUserScopedCafePassKey(key string) bool {
+func splitUserScopedCafePassKey(key string) (base string, random string, ok bool) {
 	if !strings.HasPrefix(key, "cafepass-") {
-		return false
+		return "", "", false
 	}
 	rest := strings.TrimPrefix(key, "cafepass-")
-	uid, _, ok := strings.Cut(rest, "-")
-	if !ok || uid == "" {
-		return false
+	uid, suffix, found := strings.Cut(rest, "-")
+	if !found || uid == "" {
+		return "", "", false
 	}
 	for _, c := range uid {
 		if c < '0' || c > '9' {
-			return false
+			return "", "", false
 		}
 	}
-	return true
+	return "cafepass-" + uid + "-", suffix, true
 }
 
 func APIKeyStorageHash(key string, cfg *config.Config) APIKeyLookupHash {

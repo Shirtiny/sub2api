@@ -42,13 +42,20 @@ func TestAPIKeyLookupTokenRoundTrip(t *testing.T) {
 	require.NotContains(t, token, "sk-")
 }
 
-func TestAPIKeyPrefixUsesThirtyTwoCharactersForUserScopedCafePassKey(t *testing.T) {
+func TestAPIKeyPrefixUsesUserAndEightRandomCharactersForUserScopedCafePassKey(t *testing.T) {
 	key := "cafepass-42-1234567890abcdef1234567890abcdef"
 
 	prefix := APIKeyPrefix(key)
 
-	require.Len(t, prefix, 32)
-	require.Equal(t, key[:32], prefix)
+	require.Equal(t, "cafepass-42-12345678", prefix)
+}
+
+func TestAPIKeyPrefixKeepsShortUserScopedCafePassKey(t *testing.T) {
+	key := "cafepass-42-12345678"
+
+	prefix := APIKeyPrefix(key)
+
+	require.Equal(t, key, prefix)
 }
 
 func TestAPIKeyPrefixUsesSixteenCharactersForLegacyCafePassKey(t *testing.T) {
