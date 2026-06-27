@@ -37,7 +37,7 @@ type AdminService interface {
 	CreateUser(ctx context.Context, input *CreateUserInput) (*User, error)
 	UpdateUser(ctx context.Context, id int64, input *UpdateUserInput) (*User, error)
 	DeleteUser(ctx context.Context, id int64) error
-	UpdateUserBalance(ctx context.Context, userID int64, balance float64, operation string, notes string) (*User, error)
+	UpdateUserBalance(ctx context.Context, input UpdateUserBalanceInput) (*User, error)
 	UpdateUserMembershipPoints(ctx context.Context, userID int64, points float64, operation string, notes string) (*User, error)
 	BatchUpdateConcurrency(ctx context.Context, userIDs []int64, value int, mode string) (int, error)
 	GetUserAPIKeys(ctx context.Context, userID int64, page, pageSize int, sortBy, sortOrder string) ([]APIKey, int64, error)
@@ -122,6 +122,15 @@ type AdminService interface {
 	BatchDeleteRedeemCodes(ctx context.Context, ids []int64) (int64, error)
 	ExpireRedeemCode(ctx context.Context, id int64) (*RedeemCode, error)
 	ResetAccountQuota(ctx context.Context, id int64) error
+}
+
+type UpdateUserBalanceInput struct {
+	UserID            int64
+	Balance           float64
+	Operation         string
+	Notes             string
+	RecordUserHistory bool
+	OperatorID        int64
 }
 
 // CreateUserInput represents input for creating a new user via admin operations.
@@ -950,21 +959,29 @@ func (s *adminServiceImpl) BatchUpdateConcurrency(ctx context.Context, userIDs [
 	return affected, nil
 }
 
-func (s *adminServiceImpl) UpdateUserBalance(ctx context.Context, userID int64, balance float64, operation string, notes string) (*User, error) {
-	user, err := s.userRepo.GetByID(ctx, userID)
+func (s *adminServiceImpl) UpdateUserBalance(ctx context.Context, input UpdateUserBalanceInput) (*User, error) {
+	user, err := s.userRepo.GetByID(ctx, input.UserID)
 	if err != nil {
 		return nil, err
 	}
 
 	oldBalance := user.Balance
 
-	switch operation {
+	switch input.Operation {
 	case "set":
-		user.Balance = balance
+		user.Balance = input.Balance
 	case "add":
-		user.Balance += balance
+		if input.Balance <= 0 {
+			return nil, errors.New("balance adjustment amount must be positive")
+		}
+		user.Balance += input.Balance
 	case "subtract":
-		user.Balance -= balance
+		if input.Balance <= 0 {
+			return nil, errors.New("balance adjustment amount must be positive")
+		}
+		user.Balance -= input.Balance
+	default:
+		return nil, fmt.Errorf("invalid balance operation: %s", input.Operation)
 	}
 
 	if user.Balance < 0 {
@@ -976,20 +993,36 @@ func (s *adminServiceImpl) UpdateUserBalance(ctx context.Context, userID int64, 
 	}
 	balanceDiff := user.Balance - oldBalance
 	if s.authCacheInvalidator != nil && balanceDiff != 0 {
-		s.authCacheInvalidator.InvalidateAuthCacheByUserID(ctx, userID)
+		s.authCacheInvalidator.InvalidateAuthCacheByUserID(ctx, input.UserID)
 	}
 
 	if s.billingCacheService != nil {
 		go func() {
 			cacheCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
-			if err := s.billingCacheService.InvalidateUserBalance(cacheCtx, userID); err != nil {
-				logger.LegacyPrintf("service.admin", "invalidate user balance cache failed: user_id=%d err=%v", userID, err)
+			if err := s.billingCacheService.InvalidateUserBalance(cacheCtx, input.UserID); err != nil {
+				logger.LegacyPrintf("service.admin", "invalidate user balance cache failed: user_id=%d err=%v", input.UserID, err)
 			}
 		}()
 	}
 
 	if balanceDiff != 0 {
+		slog.Info("admin.user_balance_adjusted",
+			"component", "admin.audit",
+			"operator_user_id", input.OperatorID,
+			"user_id", input.UserID,
+			"target_user_id", input.UserID,
+			"operation", input.Operation,
+			"requested_balance", input.Balance,
+			"balance_before", oldBalance,
+			"balance_after", user.Balance,
+			"balance_delta", balanceDiff,
+			"record_user_history", input.RecordUserHistory,
+			"notes", input.Notes,
+		)
+	}
+
+	if balanceDiff != 0 && input.RecordUserHistory {
 		code, err := GenerateRedeemCode()
 		if err != nil {
 			logger.LegacyPrintf("service.admin", "failed to generate adjustment redeem code: %v", err)
@@ -1002,7 +1035,7 @@ func (s *adminServiceImpl) UpdateUserBalance(ctx context.Context, userID int64, 
 			Value:  balanceDiff,
 			Status: StatusUsed,
 			UsedBy: &user.ID,
-			Notes:  notes,
+			Notes:  input.Notes,
 		}
 		now := time.Now()
 		adjustmentRecord.UsedAt = &now

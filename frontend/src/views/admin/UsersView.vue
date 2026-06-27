@@ -704,6 +704,15 @@
                 {{ t('admin.users.withdraw') }}
               </button>
 
+              <!-- Set Balance -->
+              <button
+                @click="handleSetBalance(user); closeActionMenu()"
+                class="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-dark-700"
+              >
+                <Icon name="edit" size="sm" class="text-blue-500" :stroke-width="2" />
+                {{ t('admin.users.setBalance') }}
+              </button>
+
               <!-- Platform Quotas -->
               <button
                 @click="handlePlatformQuota(user); closeActionMenu()"
@@ -1460,10 +1469,10 @@ const showGroupReplaceModal = ref(false)
 const groupReplaceUser = ref<AdminUser | null>(null)
 const groupReplaceOldGroup = ref<{ id: number; name: string } | null>(null)
 
-// Balance (Deposit/Withdraw) modal state
+// Balance adjustment modal state
 const showBalanceModal = ref(false)
 const balanceUser = ref<AdminUser | null>(null)
-const balanceOperation = ref<'add' | 'subtract'>('add')
+const balanceOperation = ref<'set' | 'add' | 'subtract'>('add')
 
 // Membership points modal state
 const showMembershipPointsModal = ref(false)
@@ -1722,6 +1731,12 @@ const handleDeposit = (user: AdminUser) => {
 const handleWithdraw = (user: AdminUser) => {
   balanceUser.value = user
   balanceOperation.value = 'subtract'
+  showBalanceModal.value = true
+}
+
+const handleSetBalance = (user: AdminUser) => {
+  balanceUser.value = user
+  balanceOperation.value = 'set'
   showBalanceModal.value = true
 }
 

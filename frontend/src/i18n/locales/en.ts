@@ -2046,14 +2046,18 @@ export default {
       noOtherGroups: 'No other exclusive groups available',
       deposit: 'Deposit',
       withdraw: 'Withdraw',
+      setBalance: 'Set Balance',
       depositAmount: 'Deposit Amount',
       withdrawAmount: 'Withdraw Amount',
+      targetBalance: 'Target Balance',
       withdrawAll: 'All',
       currentBalance: 'Current Balance',
       depositNotesPlaceholder:
         'e.g., New user registration bonus, promotional credit, compensation, etc.',
       withdrawNotesPlaceholder:
         'e.g., Service issue refund, incorrect charge reversal, account closure refund, etc.',
+      recordUserBalanceHistory: 'Show in User Recharge History',
+      auditOnlyAdjustment: 'Off: backend audit log only',
       notesOptional: 'Notes are optional but helpful for record keeping',
       amountHint: 'Please enter a positive amount',
       newBalance: 'New Balance',

@@ -73,7 +73,12 @@ func TestAdminService_UpdateUserBalance_InvalidatesAuthCache(t *testing.T) {
 		authCacheInvalidator: invalidator,
 	}
 
-	_, err := svc.UpdateUserBalance(context.Background(), 7, 5, "add", "")
+	_, err := svc.UpdateUserBalance(context.Background(), UpdateUserBalanceInput{
+		UserID:            7,
+		Balance:           5,
+		Operation:         "add",
+		RecordUserHistory: true,
+	})
 	require.NoError(t, err)
 	require.Equal(t, []int64{7}, invalidator.userIDs)
 	require.Len(t, redeemRepo.created, 1)
@@ -90,9 +95,40 @@ func TestAdminService_UpdateUserBalance_NoChangeNoInvalidate(t *testing.T) {
 		authCacheInvalidator: invalidator,
 	}
 
-	_, err := svc.UpdateUserBalance(context.Background(), 7, 10, "set", "")
+	_, err := svc.UpdateUserBalance(context.Background(), UpdateUserBalanceInput{
+		UserID:            7,
+		Balance:           10,
+		Operation:         "set",
+		RecordUserHistory: true,
+	})
 	require.NoError(t, err)
 	require.Empty(t, invalidator.userIDs)
+	require.Empty(t, redeemRepo.created)
+}
+
+func TestAdminService_UpdateUserBalance_AuditOnlySkipsRedeemCode(t *testing.T) {
+	baseRepo := &userRepoStub{user: &User{ID: 7, Balance: 10}}
+	repo := &balanceUserRepoStub{userRepoStub: baseRepo}
+	redeemRepo := &balanceRedeemRepoStub{redeemRepoStub: &redeemRepoStub{}}
+	invalidator := &authCacheInvalidatorStub{}
+	svc := &adminServiceImpl{
+		userRepo:             repo,
+		redeemCodeRepo:       redeemRepo,
+		authCacheInvalidator: invalidator,
+	}
+
+	got, err := svc.UpdateUserBalance(context.Background(), UpdateUserBalanceInput{
+		UserID:            7,
+		Balance:           5,
+		Operation:         "add",
+		Notes:             "service outage compensation",
+		RecordUserHistory: false,
+		OperatorID:        99,
+	})
+	require.NoError(t, err)
+	require.Equal(t, 15.0, got.Balance)
+	require.Equal(t, []int64{7}, invalidator.userIDs)
+	require.Len(t, repo.updated, 1)
 	require.Empty(t, redeemRepo.created)
 }
 

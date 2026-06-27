@@ -44,6 +44,10 @@ export interface AdminBoundAuthIdentity {
   channel?: AdminBoundAuthIdentityChannel | null
 }
 
+export interface UpdateBalanceOptions {
+  recordUserHistory?: boolean
+}
+
 /**
  * List all users with pagination
  * @param page - Page number (default: 1)
@@ -161,13 +165,23 @@ export async function updateBalance(
   id: number,
   balance: number,
   operation: 'set' | 'add' | 'subtract' = 'set',
-  notes?: string
+  notes?: string,
+  options: UpdateBalanceOptions = {}
 ): Promise<AdminUser> {
-  const { data } = await apiClient.post<AdminUser>(`/admin/users/${id}/balance`, {
+  const payload: {
+    balance: number
+    operation: 'set' | 'add' | 'subtract'
+    notes: string
+    record_user_history?: boolean
+  } = {
     balance,
     operation,
     notes: notes || ''
-  })
+  }
+  if (options.recordUserHistory !== undefined) {
+    payload.record_user_history = options.recordUserHistory
+  }
+  const { data } = await apiClient.post<AdminUser>(`/admin/users/${id}/balance`, payload)
   return data
 }
 
