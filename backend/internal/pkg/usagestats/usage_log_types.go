@@ -278,20 +278,32 @@ type UsageLogFilters struct {
 
 // UsageStats represents usage statistics
 type UsageStats struct {
-	TotalRequests            int64          `json:"total_requests"`
-	TotalInputTokens         int64          `json:"total_input_tokens"`
-	TotalOutputTokens        int64          `json:"total_output_tokens"`
-	TotalCacheTokens         int64          `json:"total_cache_tokens"`
-	TotalCacheCreationTokens int64          `json:"total_cache_creation_tokens"`
-	TotalCacheReadTokens     int64          `json:"total_cache_read_tokens"`
-	TotalTokens              int64          `json:"total_tokens"`
-	TotalCost                float64        `json:"total_cost"`
-	TotalActualCost          float64        `json:"total_actual_cost"`
-	TotalAccountCost         *float64       `json:"total_account_cost,omitempty"`
-	AverageDurationMs        float64        `json:"average_duration_ms"`
-	Endpoints                []EndpointStat `json:"endpoints,omitempty"`
-	UpstreamEndpoints        []EndpointStat `json:"upstream_endpoints,omitempty"`
-	EndpointPaths            []EndpointStat `json:"endpoint_paths,omitempty"`
+	TotalRequests            int64                `json:"total_requests"`
+	TotalInputTokens         int64                `json:"total_input_tokens"`
+	TotalOutputTokens        int64                `json:"total_output_tokens"`
+	TotalCacheTokens         int64                `json:"total_cache_tokens"`
+	TotalCacheCreationTokens int64                `json:"total_cache_creation_tokens"`
+	TotalCacheReadTokens     int64                `json:"total_cache_read_tokens"`
+	TotalTokens              int64                `json:"total_tokens"`
+	TotalCost                float64              `json:"total_cost"`
+	TotalActualCost          float64              `json:"total_actual_cost"`
+	TotalAccountCost         *float64             `json:"total_account_cost,omitempty"`
+	AverageDurationMs        float64              `json:"average_duration_ms"`
+	CacheByGroupType         []CacheGroupTypeStat `json:"cache_by_group_type,omitempty"`
+	Endpoints                []EndpointStat       `json:"endpoints,omitempty"`
+	UpstreamEndpoints        []EndpointStat       `json:"upstream_endpoints,omitempty"`
+	EndpointPaths            []EndpointStat       `json:"endpoint_paths,omitempty"`
+}
+
+// CacheGroupTypeStat represents cache hit/read statistics grouped by usage billing source.
+type CacheGroupTypeStat struct {
+	GroupType           string  `json:"group_type"`
+	Requests            int64   `json:"requests"`
+	InputTokens         int64   `json:"input_tokens"`
+	CacheCreationTokens int64   `json:"cache_creation_tokens"`
+	CacheReadTokens     int64   `json:"cache_read_tokens"`
+	TotalInputTokens    int64   `json:"total_input_tokens"`
+	HitRate             float64 `json:"hit_rate"`
 }
 
 // PlatformUsage 表示某用户/某 API key 在单个"有效平台"维度的用量明细。

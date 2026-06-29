@@ -42,16 +42,17 @@ type CreateUsageLogRequest struct {
 
 // UsageStats 使用统计
 type UsageStats struct {
-	TotalRequests            int64   `json:"total_requests"`
-	TotalInputTokens         int64   `json:"total_input_tokens"`
-	TotalOutputTokens        int64   `json:"total_output_tokens"`
-	TotalCacheTokens         int64   `json:"total_cache_tokens"`
-	TotalCacheCreationTokens int64   `json:"total_cache_creation_tokens"`
-	TotalCacheReadTokens     int64   `json:"total_cache_read_tokens"`
-	TotalTokens              int64   `json:"total_tokens"`
-	TotalCost                float64 `json:"total_cost"`
-	TotalActualCost          float64 `json:"total_actual_cost"`
-	AverageDurationMs        float64 `json:"average_duration_ms"`
+	TotalRequests            int64                           `json:"total_requests"`
+	TotalInputTokens         int64                           `json:"total_input_tokens"`
+	TotalOutputTokens        int64                           `json:"total_output_tokens"`
+	TotalCacheTokens         int64                           `json:"total_cache_tokens"`
+	TotalCacheCreationTokens int64                           `json:"total_cache_creation_tokens"`
+	TotalCacheReadTokens     int64                           `json:"total_cache_read_tokens"`
+	TotalTokens              int64                           `json:"total_tokens"`
+	TotalCost                float64                         `json:"total_cost"`
+	TotalActualCost          float64                         `json:"total_actual_cost"`
+	AverageDurationMs        float64                         `json:"average_duration_ms"`
+	CacheByGroupType         []usagestats.CacheGroupTypeStat `json:"cache_by_group_type,omitempty"`
 }
 
 // UsageService 使用统计服务
@@ -202,6 +203,7 @@ func (s *UsageService) GetStatsByUser(ctx context.Context, userID int64, startTi
 		TotalCost:                stats.TotalCost,
 		TotalActualCost:          stats.TotalActualCost,
 		AverageDurationMs:        stats.AverageDurationMs,
+		CacheByGroupType:         stats.CacheByGroupType,
 	}, nil
 }
 
@@ -223,6 +225,7 @@ func (s *UsageService) GetStatsByAPIKey(ctx context.Context, apiKeyID int64, sta
 		TotalCost:                stats.TotalCost,
 		TotalActualCost:          stats.TotalActualCost,
 		AverageDurationMs:        stats.AverageDurationMs,
+		CacheByGroupType:         stats.CacheByGroupType,
 	}, nil
 }
 

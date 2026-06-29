@@ -16,6 +16,10 @@ const { query, getStatsByDateRange, list, showError, showWarning, showSuccess, s
 
 const messages: Record<string, string> = {
   'usage.costDetails': 'Cost Breakdown',
+  'usage.cacheHitRate': 'Cache Hit Rate',
+  'usage.balanceGroup': 'Balance',
+  'usage.subscriptionGroup': 'Subscription',
+  'usage.noCacheHitRecords': 'No records',
   'admin.usage.inputCost': 'Input Cost',
   'admin.usage.outputCost': 'Output Cost',
   'admin.usage.cacheCreationCost': 'Cache Creation Cost',
@@ -214,6 +218,131 @@ describe('user UsageView tooltip', () => {
     expect(text).toContain('$0.092883')
     expect(text).toContain('$5.0000 / 1M tokens')
     expect(text).toContain('$30.0000 / 1M tokens')
+  })
+
+  it('renders cache hit rates by subscription and balance groups', async () => {
+    query.mockResolvedValue({
+      items: [],
+      total: 0,
+      pages: 0,
+    })
+    getStatsByDateRange.mockResolvedValue({
+      total_requests: 2,
+      total_input_tokens: 15,
+      total_output_tokens: 0,
+      total_cache_tokens: 85,
+      total_cache_creation_tokens: 0,
+      total_cache_read_tokens: 85,
+      total_tokens: 100,
+      total_cost: 0,
+      total_actual_cost: 0,
+      average_duration_ms: 0,
+      cache_by_group_type: [
+        {
+          group_type: 'standard',
+          requests: 1,
+          input_tokens: 20,
+          cache_creation_tokens: 0,
+          cache_read_tokens: 80,
+          total_input_tokens: 100,
+          hit_rate: 80,
+        },
+        {
+          group_type: 'subscription',
+          requests: 1,
+          input_tokens: 5,
+          cache_creation_tokens: 0,
+          cache_read_tokens: 45,
+          total_input_tokens: 50,
+          hit_rate: 90,
+        },
+      ],
+    })
+    list.mockResolvedValue({ items: [] })
+
+    const wrapper = mount(UsageView, {
+      global: {
+        stubs: {
+          AppLayout: AppLayoutStub,
+          TablePageLayout: TablePageLayoutStub,
+          Pagination: true,
+          EmptyState: true,
+          Select: true,
+          DateRangePicker: true,
+          DataTable: DataTableStub,
+          Icon: true,
+          Teleport: true,
+        },
+      },
+    })
+
+    await flushPromises()
+    await nextTick()
+
+    const text = wrapper.text()
+    expect(text).toContain('Cache Hit Rate')
+    expect(text).toContain('Subscription:')
+    expect(text).toContain('90.0%')
+    expect(text).toContain('Balance:')
+    expect(text).toContain('80.0%')
+    expect(text).not.toContain('No records')
+  })
+
+  it('renders no cache hit records when every cache group has no total input', async () => {
+    query.mockResolvedValue({
+      items: [],
+      total: 0,
+      pages: 0,
+    })
+    getStatsByDateRange.mockResolvedValue({
+      total_requests: 0,
+      total_input_tokens: 0,
+      total_output_tokens: 0,
+      total_cache_tokens: 0,
+      total_cache_creation_tokens: 0,
+      total_cache_read_tokens: 0,
+      total_tokens: 0,
+      total_cost: 0,
+      total_actual_cost: 0,
+      average_duration_ms: 0,
+      cache_by_group_type: [
+        {
+          group_type: 'standard',
+          requests: 1,
+          input_tokens: 0,
+          cache_creation_tokens: 0,
+          cache_read_tokens: 0,
+          total_input_tokens: 0,
+          hit_rate: 0,
+        },
+      ],
+    })
+    list.mockResolvedValue({ items: [] })
+
+    const wrapper = mount(UsageView, {
+      global: {
+        stubs: {
+          AppLayout: AppLayoutStub,
+          TablePageLayout: TablePageLayoutStub,
+          Pagination: true,
+          EmptyState: true,
+          Select: true,
+          DateRangePicker: true,
+          DataTable: DataTableStub,
+          Icon: true,
+          Teleport: true,
+        },
+      },
+    })
+
+    await flushPromises()
+    await nextTick()
+
+    const text = wrapper.text()
+    expect(text).toContain('Cache Hit Rate')
+    expect(text).toContain('No records')
+    expect(text).not.toContain('Balance:')
+    expect(text).not.toContain('Subscription:')
   })
 
   it('exports csv with input and output unit price columns', async () => {

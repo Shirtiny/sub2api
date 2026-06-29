@@ -47,13 +47,22 @@
               </p>
               <p class="text-xs text-gray-400 dark:text-gray-500">
                 {{ t('usage.cacheHitRate') }}:
-                <template v-if="cacheStats.totalInput > 0">
-                  <span class="text-sky-600 dark:text-sky-400">{{ formatTokens(cacheStats.cacheRead) }}</span>
-                  <span class="text-gray-400">/</span>
-                  <span class="text-gray-600 dark:text-gray-300">{{ formatTokens(cacheStats.totalInput) }}</span>
-                  <span class="ml-1">{{ cacheStats.ratePercent }}</span>
-                </template>
-                <template v-else>-</template>
+              </p>
+              <div
+                v-if="cacheGroupTypeStats.length > 0"
+                class="mt-1 space-y-0.5 text-xs text-gray-400 dark:text-gray-500"
+              >
+                <div
+                  v-for="item in cacheGroupTypeStats"
+                  :key="item.group_type"
+                  class="flex items-center gap-1"
+                >
+                  <span>{{ cacheGroupTypeLabel(item.group_type) }}:</span>
+                  <span class="text-sky-600 dark:text-sky-400">{{ item.hit_rate.toFixed(1) }}%</span>
+                </div>
+              </div>
+              <p v-else class="mt-1 text-xs text-gray-400 dark:text-gray-500">
+                {{ usageStats ? t('usage.noCacheHitRecords') : '-' }}
               </p>
             </div>
           </div>
@@ -513,7 +522,7 @@
               <span class="font-medium text-pink-300">${{ tooltipData.image_output_cost.toFixed(6) }}</span>
             </div>
             <!-- Token billing: show unit prices per 1M tokens -->
-            <template v-if="!tooltipData?.billing_mode || tooltipData.billing_mode === BILLING_MODE_TOKEN">
+            <template v-if="(!tooltipData?.billing_mode || tooltipData.billing_mode === BILLING_MODE_TOKEN) && !isImageUsage(tooltipData)">
               <div v-if="tooltipData && tooltipData.input_tokens > 0" class="flex items-center justify-between gap-4">
                 <span class="text-gray-400">{{ t('usage.inputTokenPrice') }}</span>
                 <span class="font-medium text-sky-300">{{ formatTokenPricePerMillion(tooltipData.input_cost, tooltipData.input_tokens) }} {{ t('usage.perMillionTokens') }}</span>
@@ -665,18 +674,24 @@ const tokenTooltipData = ref<UsageLog | null>(null)
 // Usage stats from API
 const usageStats = ref<UsageStatsResponse | null>(null)
 
-// 缓存命中率 = cache_read / (input + cache_read)
-// 分母为 0（无任何输入）时显示 '-'
-const cacheStats = computed(() => {
-  // 总输入 token = 普通输入 + 缓存写入 + 缓存读取（命中）
-  // 缓存命中率 = 缓存读取 / 总输入；总输入为 0 时返回零值，模板按 '-' 渲染。
-  const cacheRead = usageStats.value?.total_cache_read_tokens || 0
-  const cacheCreate = usageStats.value?.total_cache_creation_tokens || 0
-  const input = usageStats.value?.total_input_tokens || 0
-  const totalInput = input + cacheCreate + cacheRead
-  const ratePercent = totalInput > 0 ? `${((cacheRead / totalInput) * 100).toFixed(1)}%` : '-'
-  return { cacheRead, totalInput, ratePercent }
+const cacheGroupTypeStats = computed(() => {
+  return (usageStats.value?.cache_by_group_type || [])
+    .filter((item) => item.total_input_tokens > 0)
+    .map((item) => ({ ...item, hit_rate: item.hit_rate || 0 }))
+    .sort((a, b) => cacheGroupTypeSortRank(a.group_type) - cacheGroupTypeSortRank(b.group_type))
 })
+
+const cacheGroupTypeSortRank = (groupType: string): number => {
+  if (groupType === 'subscription') return 0
+  if (groupType === 'standard') return 1
+  return 2
+}
+
+const cacheGroupTypeLabel = (groupType: string): string => {
+  if (groupType === 'subscription') return t('usage.subscriptionGroup')
+  if (groupType === 'standard') return t('usage.balanceGroup')
+  return groupType || t('usage.unknownGroup')
+}
 
 const columns = computed<Column[]>(() => [
   { key: 'api_key', label: t('usage.apiKeyFilter'), sortable: false },

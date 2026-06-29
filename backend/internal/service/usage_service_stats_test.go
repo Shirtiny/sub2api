@@ -39,6 +39,9 @@ func TestUsageServiceGetStatsByUserPreservesCacheBreakdown(t *testing.T) {
 			TotalCost:                0.12,
 			TotalActualCost:          0.08,
 			AverageDurationMs:        123,
+			CacheByGroupType: []usagestats.CacheGroupTypeStat{
+				{GroupType: SubscriptionTypeStandard, CacheReadTokens: 7, TotalInputTokens: 17, HitRate: 41.1764705882353},
+			},
 		},
 	}
 	svc := &UsageService{usageRepo: repo}
@@ -53,4 +56,7 @@ func TestUsageServiceGetStatsByUserPreservesCacheBreakdown(t *testing.T) {
 	require.Equal(t, int64(7), got.TotalCacheReadTokens)
 	require.Equal(t, int64(12), got.TotalCacheTokens)
 	require.Equal(t, int64(42), got.TotalTokens)
+	require.Len(t, got.CacheByGroupType, 1)
+	require.Equal(t, SubscriptionTypeStandard, got.CacheByGroupType[0].GroupType)
+	require.Equal(t, int64(7), got.CacheByGroupType[0].CacheReadTokens)
 }

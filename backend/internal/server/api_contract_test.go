@@ -508,10 +508,23 @@ func TestAPIContracts(t *testing.T) {
 					"total_input_tokens": 15,
 					"total_output_tokens": 35,
 					"total_cache_tokens": 3,
+					"total_cache_creation_tokens": 1,
+					"total_cache_read_tokens": 2,
 					"total_tokens": 53,
 					"total_cost": 0.75,
 					"total_actual_cost": 0.75,
-					"average_duration_ms": 200
+					"average_duration_ms": 200,
+					"cache_by_group_type": [
+						{
+							"group_type": "standard",
+							"requests": 2,
+							"input_tokens": 15,
+							"cache_creation_tokens": 1,
+							"cache_read_tokens": 2,
+							"total_input_tokens": 18,
+							"hit_rate": 11.11111111111111
+						}
+					]
 				}
 			}`,
 		},
@@ -2414,19 +2427,39 @@ func (r *stubUsageLogRepo) GetUserStatsAggregated(ctx context.Context, userID in
 	var totalRequests int64
 	var totalInputTokens int64
 	var totalOutputTokens int64
+	var totalCacheCreationTokens int64
+	var totalCacheReadTokens int64
 	var totalCacheTokens int64
 	var totalCost float64
 	var totalActualCost float64
 	var totalDuration int64
 	var durationCount int64
+	cacheByGroupType := make(map[string]*usagestats.CacheGroupTypeStat)
 
 	for _, log := range logs {
 		totalRequests++
 		totalInputTokens += int64(log.InputTokens)
 		totalOutputTokens += int64(log.OutputTokens)
-		totalCacheTokens += int64(log.CacheCreationTokens + log.CacheReadTokens)
+		cacheCreationTokens := int64(log.CacheCreationTokens)
+		cacheReadTokens := int64(log.CacheReadTokens)
+		totalCacheCreationTokens += cacheCreationTokens
+		totalCacheReadTokens += cacheReadTokens
+		totalCacheTokens += cacheCreationTokens + cacheReadTokens
 		totalCost += log.TotalCost
 		totalActualCost += log.ActualCost
+		groupType := service.SubscriptionTypeStandard
+		if log.BillingType == service.BillingTypeSubscription || log.SubscriptionID != nil {
+			groupType = service.SubscriptionTypeSubscription
+		}
+		stat := cacheByGroupType[groupType]
+		if stat == nil {
+			stat = &usagestats.CacheGroupTypeStat{GroupType: groupType}
+			cacheByGroupType[groupType] = stat
+		}
+		stat.Requests++
+		stat.InputTokens += int64(log.InputTokens)
+		stat.CacheCreationTokens += cacheCreationTokens
+		stat.CacheReadTokens += cacheReadTokens
 		if log.DurationMs != nil {
 			totalDuration += int64(*log.DurationMs)
 			durationCount++
@@ -2437,16 +2470,32 @@ func (r *stubUsageLogRepo) GetUserStatsAggregated(ctx context.Context, userID in
 	if durationCount > 0 {
 		avgDuration = float64(totalDuration) / float64(durationCount)
 	}
+	cacheGroups := make([]usagestats.CacheGroupTypeStat, 0, len(cacheByGroupType))
+	for _, groupType := range []string{service.SubscriptionTypeSubscription, service.SubscriptionTypeStandard} {
+		stat := cacheByGroupType[groupType]
+		if stat == nil {
+			continue
+		}
+		stat.TotalInputTokens = stat.InputTokens + stat.CacheCreationTokens + stat.CacheReadTokens
+		if stat.TotalInputTokens <= 0 {
+			continue
+		}
+		stat.HitRate = float64(stat.CacheReadTokens) / float64(stat.TotalInputTokens) * 100
+		cacheGroups = append(cacheGroups, *stat)
+	}
 
 	return &usagestats.UsageStats{
-		TotalRequests:     totalRequests,
-		TotalInputTokens:  totalInputTokens,
-		TotalOutputTokens: totalOutputTokens,
-		TotalCacheTokens:  totalCacheTokens,
-		TotalTokens:       totalInputTokens + totalOutputTokens + totalCacheTokens,
-		TotalCost:         totalCost,
-		TotalActualCost:   totalActualCost,
-		AverageDurationMs: avgDuration,
+		TotalRequests:            totalRequests,
+		TotalInputTokens:         totalInputTokens,
+		TotalOutputTokens:        totalOutputTokens,
+		TotalCacheTokens:         totalCacheTokens,
+		TotalCacheCreationTokens: totalCacheCreationTokens,
+		TotalCacheReadTokens:     totalCacheReadTokens,
+		TotalTokens:              totalInputTokens + totalOutputTokens + totalCacheTokens,
+		TotalCost:                totalCost,
+		TotalActualCost:          totalActualCost,
+		AverageDurationMs:        avgDuration,
+		CacheByGroupType:         cacheGroups,
 	}, nil
 }
 

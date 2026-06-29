@@ -390,7 +390,7 @@ func TestUsageLogRepositoryGetStatsWithFiltersRequestTypePriority(t *testing.T) 
 		Stream:      &stream,
 	}
 
-	mock.ExpectQuery("FROM usage_logs\\s+WHERE \\(request_type = \\$1 OR \\(request_type = 0 AND stream = FALSE AND openai_ws_mode = FALSE\\)\\)").
+	mock.ExpectQuery("FROM usage_logs ul\\s+WHERE \\(ul.request_type = \\$1 OR \\(ul.request_type = 0 AND ul.stream = FALSE AND ul.openai_ws_mode = FALSE\\)\\)").
 		WithArgs(requestType).
 		WillReturnRows(sqlmock.NewRows([]string{
 			"total_requests",
@@ -404,6 +404,9 @@ func TestUsageLogRepositoryGetStatsWithFiltersRequestTypePriority(t *testing.T) 
 			"total_account_cost",
 			"avg_duration_ms",
 		}).AddRow(int64(1), int64(2), int64(3), int64(4), int64(1), int64(3), 1.2, 1.0, 1.2, 20.0))
+	mock.ExpectQuery("FROM usage_logs ul\\s+WHERE \\(ul.request_type = \\$1 OR \\(ul.request_type = 0 AND ul.stream = FALSE AND ul.openai_ws_mode = FALSE\\)\\)").
+		WithArgs(requestType).
+		WillReturnRows(sqlmock.NewRows([]string{"group_type", "requests", "input_tokens", "cache_creation_tokens", "cache_read_tokens"}))
 	mock.ExpectQuery("SELECT COALESCE\\(NULLIF\\(TRIM\\(inbound_endpoint\\), ''\\), 'unknown'\\) AS endpoint").
 		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), requestType).
 		WillReturnRows(sqlmock.NewRows([]string{"endpoint", "requests", "total_tokens", "cost", "actual_cost"}))
@@ -420,6 +423,130 @@ func TestUsageLogRepositoryGetStatsWithFiltersRequestTypePriority(t *testing.T) 
 	require.Equal(t, int64(9), stats.TotalTokens)
 	require.NotNil(t, stats.TotalAccountCost, "TotalAccountCost should always be returned")
 	require.Equal(t, 1.2, *stats.TotalAccountCost)
+	require.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestUsageLogRepositoryGetUserStatsAggregatedCacheByGroupType(t *testing.T) {
+	db, mock := newSQLMock(t)
+	repo := &usageLogRepository{sql: db}
+
+	start := time.Date(2026, 6, 1, 0, 0, 0, 0, time.UTC)
+	end := start.Add(24 * time.Hour)
+
+	mock.ExpectQuery("FROM usage_logs\\s+WHERE user_id = \\$1 AND created_at >= \\$2 AND created_at < \\$3").
+		WithArgs(int64(127), start, end).
+		WillReturnRows(sqlmock.NewRows([]string{
+			"total_requests",
+			"total_input_tokens",
+			"total_output_tokens",
+			"total_cache_tokens",
+			"total_cache_creation_tokens",
+			"total_cache_read_tokens",
+			"total_cost",
+			"total_actual_cost",
+			"avg_duration_ms",
+		}).AddRow(int64(3), int64(10), int64(5), int64(90), int64(20), int64(70), 1.2, 1.0, 50.0))
+	mock.ExpectQuery("FROM usage_logs ul\\s+WHERE ul.user_id = \\$1 AND ul.created_at >= \\$2 AND ul.created_at < \\$3").
+		WithArgs(int64(127), start, end).
+		WillReturnRows(sqlmock.NewRows([]string{
+			"group_type",
+			"requests",
+			"input_tokens",
+			"cache_creation_tokens",
+			"cache_read_tokens",
+		}).
+			AddRow(service.SubscriptionTypeSubscription, int64(1), int64(4), int64(0), int64(16)).
+			AddRow(service.SubscriptionTypeStandard, int64(2), int64(10), int64(20), int64(70)))
+
+	stats, err := repo.GetUserStatsAggregated(context.Background(), 127, start, end)
+	require.NoError(t, err)
+	require.Equal(t, int64(70), stats.TotalCacheReadTokens)
+	require.Len(t, stats.CacheByGroupType, 2)
+	require.Equal(t, service.SubscriptionTypeSubscription, stats.CacheByGroupType[0].GroupType)
+	require.InDelta(t, 80.0, stats.CacheByGroupType[0].HitRate, 1e-9)
+	require.Equal(t, service.SubscriptionTypeStandard, stats.CacheByGroupType[1].GroupType)
+	require.Equal(t, int64(100), stats.CacheByGroupType[1].TotalInputTokens)
+	require.InDelta(t, 70.0, stats.CacheByGroupType[1].HitRate, 1e-9)
+	require.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestUsageLogRepositoryGetUserStatsAggregatedCacheByGroupTypeUsesBillingType(t *testing.T) {
+	db, mock := newSQLMock(t)
+	repo := &usageLogRepository{sql: db}
+
+	start := time.Date(2026, 6, 1, 0, 0, 0, 0, time.UTC)
+	end := start.Add(24 * time.Hour)
+
+	mock.ExpectQuery("FROM usage_logs\\s+WHERE user_id = \\$1 AND created_at >= \\$2 AND created_at < \\$3").
+		WithArgs(int64(127), start, end).
+		WillReturnRows(sqlmock.NewRows([]string{
+			"total_requests",
+			"total_input_tokens",
+			"total_output_tokens",
+			"total_cache_tokens",
+			"total_cache_creation_tokens",
+			"total_cache_read_tokens",
+			"total_cost",
+			"total_actual_cost",
+			"avg_duration_ms",
+		}).AddRow(int64(1), int64(4), int64(5), int64(16), int64(0), int64(16), 1.2, 1.0, 50.0))
+	mock.ExpectQuery("(?s)CASE\\s+WHEN ul\\.billing_type = 1 OR ul\\.subscription_id IS NOT NULL THEN 'subscription'\\s+ELSE 'standard'").
+		WithArgs(int64(127), start, end).
+		WillReturnRows(sqlmock.NewRows([]string{
+			"group_type",
+			"requests",
+			"input_tokens",
+			"cache_creation_tokens",
+			"cache_read_tokens",
+		}).
+			AddRow(service.SubscriptionTypeSubscription, int64(1), int64(4), int64(0), int64(16)))
+
+	stats, err := repo.GetUserStatsAggregated(context.Background(), 127, start, end)
+	require.NoError(t, err)
+	require.Len(t, stats.CacheByGroupType, 1)
+	require.Equal(t, service.SubscriptionTypeSubscription, stats.CacheByGroupType[0].GroupType)
+	require.InDelta(t, 80.0, stats.CacheByGroupType[0].HitRate, 1e-9)
+	require.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestUsageLogRepositoryGetUserStatsAggregatedCacheByGroupTypeSkipsZeroInput(t *testing.T) {
+	db, mock := newSQLMock(t)
+	repo := &usageLogRepository{sql: db}
+
+	start := time.Date(2026, 6, 1, 0, 0, 0, 0, time.UTC)
+	end := start.Add(24 * time.Hour)
+
+	mock.ExpectQuery("FROM usage_logs\\s+WHERE user_id = \\$1 AND created_at >= \\$2 AND created_at < \\$3").
+		WithArgs(int64(127), start, end).
+		WillReturnRows(sqlmock.NewRows([]string{
+			"total_requests",
+			"total_input_tokens",
+			"total_output_tokens",
+			"total_cache_tokens",
+			"total_cache_creation_tokens",
+			"total_cache_read_tokens",
+			"total_cost",
+			"total_actual_cost",
+			"avg_duration_ms",
+		}).AddRow(int64(2), int64(4), int64(5), int64(16), int64(0), int64(16), 1.2, 1.0, 50.0))
+	mock.ExpectQuery("(?s)FROM usage_logs ul\\s+WHERE ul.user_id = \\$1 AND ul.created_at >= \\$2 AND ul.created_at < \\$3.*HAVING.*SUM\\(ul\\.cache_read_tokens\\).* > 0").
+		WithArgs(int64(127), start, end).
+		WillReturnRows(sqlmock.NewRows([]string{
+			"group_type",
+			"requests",
+			"input_tokens",
+			"cache_creation_tokens",
+			"cache_read_tokens",
+		}).
+			AddRow(service.SubscriptionTypeSubscription, int64(1), int64(4), int64(0), int64(16)).
+			AddRow(service.SubscriptionTypeStandard, int64(1), int64(0), int64(0), int64(0)))
+
+	stats, err := repo.GetUserStatsAggregated(context.Background(), 127, start, end)
+	require.NoError(t, err)
+	require.Len(t, stats.CacheByGroupType, 1)
+	require.Equal(t, service.SubscriptionTypeSubscription, stats.CacheByGroupType[0].GroupType)
+	require.Equal(t, int64(20), stats.CacheByGroupType[0].TotalInputTokens)
+	require.InDelta(t, 80.0, stats.CacheByGroupType[0].HitRate, 1e-9)
 	require.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -495,6 +622,8 @@ func TestUsageLogRepositoryGetStatsWithFiltersAlwaysReturnsAccountCost(t *testin
 			"total_cost", "total_actual_cost",
 			"total_account_cost", "avg_duration_ms",
 		}).AddRow(int64(50), int64(1000), int64(2000), int64(100), int64(40), int64(60), 15.0, 12.5, 11.0, 100.0))
+	mock.ExpectQuery("FROM usage_logs ul").
+		WillReturnRows(sqlmock.NewRows([]string{"group_type", "requests", "input_tokens", "cache_creation_tokens", "cache_read_tokens"}))
 	mock.ExpectQuery("SELECT COALESCE\\(NULLIF\\(TRIM\\(inbound_endpoint\\)").
 		WillReturnRows(sqlmock.NewRows([]string{"endpoint", "requests", "total_tokens", "cost", "actual_cost"}))
 	mock.ExpectQuery("SELECT COALESCE\\(NULLIF\\(TRIM\\(upstream_endpoint\\)").
