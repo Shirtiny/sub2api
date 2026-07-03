@@ -342,6 +342,15 @@ func isPlatformPricingMatch(groupPlatform, pricingPlatform string) bool {
 func matchingPlatforms(groupPlatform string) []string {
 	return []string{groupPlatform}
 }
+
+// InvalidateCache clears and eagerly rebuilds the channel cache.
+func (s *ChannelService) InvalidateCache() {
+	if s == nil {
+		return
+	}
+	s.invalidateCache()
+}
+
 func (s *ChannelService) invalidateCache() {
 	s.cache.Store((*channelCache)(nil))
 	s.cacheSF.Forget("channel_cache")

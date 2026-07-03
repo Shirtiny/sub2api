@@ -210,6 +210,31 @@ func RpmLimit(v int) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldRpmLimit, v))
 }
 
+// IsCustomSubscriptionGroup applies equality check predicate on the "is_custom_subscription_group" field. It's identical to IsCustomSubscriptionGroupEQ.
+func IsCustomSubscriptionGroup(v bool) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldIsCustomSubscriptionGroup, v))
+}
+
+// CustomOwnerUserID applies equality check predicate on the "custom_owner_user_id" field. It's identical to CustomOwnerUserIDEQ.
+func CustomOwnerUserID(v int64) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldCustomOwnerUserID, v))
+}
+
+// CustomSourcePlanID applies equality check predicate on the "custom_source_plan_id" field. It's identical to CustomSourcePlanIDEQ.
+func CustomSourcePlanID(v int64) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldCustomSourcePlanID, v))
+}
+
+// CustomSourceGroupID applies equality check predicate on the "custom_source_group_id" field. It's identical to CustomSourceGroupIDEQ.
+func CustomSourceGroupID(v int64) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldCustomSourceGroupID, v))
+}
+
+// CustomMultiplier applies equality check predicate on the "custom_multiplier" field. It's identical to CustomMultiplierEQ.
+func CustomMultiplier(v int) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldCustomMultiplier, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldCreatedAt, v))
@@ -1438,6 +1463,216 @@ func RpmLimitLT(v int) predicate.Group {
 // RpmLimitLTE applies the LTE predicate on the "rpm_limit" field.
 func RpmLimitLTE(v int) predicate.Group {
 	return predicate.Group(sql.FieldLTE(FieldRpmLimit, v))
+}
+
+// IsCustomSubscriptionGroupEQ applies the EQ predicate on the "is_custom_subscription_group" field.
+func IsCustomSubscriptionGroupEQ(v bool) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldIsCustomSubscriptionGroup, v))
+}
+
+// IsCustomSubscriptionGroupNEQ applies the NEQ predicate on the "is_custom_subscription_group" field.
+func IsCustomSubscriptionGroupNEQ(v bool) predicate.Group {
+	return predicate.Group(sql.FieldNEQ(FieldIsCustomSubscriptionGroup, v))
+}
+
+// CustomOwnerUserIDEQ applies the EQ predicate on the "custom_owner_user_id" field.
+func CustomOwnerUserIDEQ(v int64) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldCustomOwnerUserID, v))
+}
+
+// CustomOwnerUserIDNEQ applies the NEQ predicate on the "custom_owner_user_id" field.
+func CustomOwnerUserIDNEQ(v int64) predicate.Group {
+	return predicate.Group(sql.FieldNEQ(FieldCustomOwnerUserID, v))
+}
+
+// CustomOwnerUserIDIn applies the In predicate on the "custom_owner_user_id" field.
+func CustomOwnerUserIDIn(vs ...int64) predicate.Group {
+	return predicate.Group(sql.FieldIn(FieldCustomOwnerUserID, vs...))
+}
+
+// CustomOwnerUserIDNotIn applies the NotIn predicate on the "custom_owner_user_id" field.
+func CustomOwnerUserIDNotIn(vs ...int64) predicate.Group {
+	return predicate.Group(sql.FieldNotIn(FieldCustomOwnerUserID, vs...))
+}
+
+// CustomOwnerUserIDGT applies the GT predicate on the "custom_owner_user_id" field.
+func CustomOwnerUserIDGT(v int64) predicate.Group {
+	return predicate.Group(sql.FieldGT(FieldCustomOwnerUserID, v))
+}
+
+// CustomOwnerUserIDGTE applies the GTE predicate on the "custom_owner_user_id" field.
+func CustomOwnerUserIDGTE(v int64) predicate.Group {
+	return predicate.Group(sql.FieldGTE(FieldCustomOwnerUserID, v))
+}
+
+// CustomOwnerUserIDLT applies the LT predicate on the "custom_owner_user_id" field.
+func CustomOwnerUserIDLT(v int64) predicate.Group {
+	return predicate.Group(sql.FieldLT(FieldCustomOwnerUserID, v))
+}
+
+// CustomOwnerUserIDLTE applies the LTE predicate on the "custom_owner_user_id" field.
+func CustomOwnerUserIDLTE(v int64) predicate.Group {
+	return predicate.Group(sql.FieldLTE(FieldCustomOwnerUserID, v))
+}
+
+// CustomOwnerUserIDIsNil applies the IsNil predicate on the "custom_owner_user_id" field.
+func CustomOwnerUserIDIsNil() predicate.Group {
+	return predicate.Group(sql.FieldIsNull(FieldCustomOwnerUserID))
+}
+
+// CustomOwnerUserIDNotNil applies the NotNil predicate on the "custom_owner_user_id" field.
+func CustomOwnerUserIDNotNil() predicate.Group {
+	return predicate.Group(sql.FieldNotNull(FieldCustomOwnerUserID))
+}
+
+// CustomSourcePlanIDEQ applies the EQ predicate on the "custom_source_plan_id" field.
+func CustomSourcePlanIDEQ(v int64) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldCustomSourcePlanID, v))
+}
+
+// CustomSourcePlanIDNEQ applies the NEQ predicate on the "custom_source_plan_id" field.
+func CustomSourcePlanIDNEQ(v int64) predicate.Group {
+	return predicate.Group(sql.FieldNEQ(FieldCustomSourcePlanID, v))
+}
+
+// CustomSourcePlanIDIn applies the In predicate on the "custom_source_plan_id" field.
+func CustomSourcePlanIDIn(vs ...int64) predicate.Group {
+	return predicate.Group(sql.FieldIn(FieldCustomSourcePlanID, vs...))
+}
+
+// CustomSourcePlanIDNotIn applies the NotIn predicate on the "custom_source_plan_id" field.
+func CustomSourcePlanIDNotIn(vs ...int64) predicate.Group {
+	return predicate.Group(sql.FieldNotIn(FieldCustomSourcePlanID, vs...))
+}
+
+// CustomSourcePlanIDGT applies the GT predicate on the "custom_source_plan_id" field.
+func CustomSourcePlanIDGT(v int64) predicate.Group {
+	return predicate.Group(sql.FieldGT(FieldCustomSourcePlanID, v))
+}
+
+// CustomSourcePlanIDGTE applies the GTE predicate on the "custom_source_plan_id" field.
+func CustomSourcePlanIDGTE(v int64) predicate.Group {
+	return predicate.Group(sql.FieldGTE(FieldCustomSourcePlanID, v))
+}
+
+// CustomSourcePlanIDLT applies the LT predicate on the "custom_source_plan_id" field.
+func CustomSourcePlanIDLT(v int64) predicate.Group {
+	return predicate.Group(sql.FieldLT(FieldCustomSourcePlanID, v))
+}
+
+// CustomSourcePlanIDLTE applies the LTE predicate on the "custom_source_plan_id" field.
+func CustomSourcePlanIDLTE(v int64) predicate.Group {
+	return predicate.Group(sql.FieldLTE(FieldCustomSourcePlanID, v))
+}
+
+// CustomSourcePlanIDIsNil applies the IsNil predicate on the "custom_source_plan_id" field.
+func CustomSourcePlanIDIsNil() predicate.Group {
+	return predicate.Group(sql.FieldIsNull(FieldCustomSourcePlanID))
+}
+
+// CustomSourcePlanIDNotNil applies the NotNil predicate on the "custom_source_plan_id" field.
+func CustomSourcePlanIDNotNil() predicate.Group {
+	return predicate.Group(sql.FieldNotNull(FieldCustomSourcePlanID))
+}
+
+// CustomSourceGroupIDEQ applies the EQ predicate on the "custom_source_group_id" field.
+func CustomSourceGroupIDEQ(v int64) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldCustomSourceGroupID, v))
+}
+
+// CustomSourceGroupIDNEQ applies the NEQ predicate on the "custom_source_group_id" field.
+func CustomSourceGroupIDNEQ(v int64) predicate.Group {
+	return predicate.Group(sql.FieldNEQ(FieldCustomSourceGroupID, v))
+}
+
+// CustomSourceGroupIDIn applies the In predicate on the "custom_source_group_id" field.
+func CustomSourceGroupIDIn(vs ...int64) predicate.Group {
+	return predicate.Group(sql.FieldIn(FieldCustomSourceGroupID, vs...))
+}
+
+// CustomSourceGroupIDNotIn applies the NotIn predicate on the "custom_source_group_id" field.
+func CustomSourceGroupIDNotIn(vs ...int64) predicate.Group {
+	return predicate.Group(sql.FieldNotIn(FieldCustomSourceGroupID, vs...))
+}
+
+// CustomSourceGroupIDGT applies the GT predicate on the "custom_source_group_id" field.
+func CustomSourceGroupIDGT(v int64) predicate.Group {
+	return predicate.Group(sql.FieldGT(FieldCustomSourceGroupID, v))
+}
+
+// CustomSourceGroupIDGTE applies the GTE predicate on the "custom_source_group_id" field.
+func CustomSourceGroupIDGTE(v int64) predicate.Group {
+	return predicate.Group(sql.FieldGTE(FieldCustomSourceGroupID, v))
+}
+
+// CustomSourceGroupIDLT applies the LT predicate on the "custom_source_group_id" field.
+func CustomSourceGroupIDLT(v int64) predicate.Group {
+	return predicate.Group(sql.FieldLT(FieldCustomSourceGroupID, v))
+}
+
+// CustomSourceGroupIDLTE applies the LTE predicate on the "custom_source_group_id" field.
+func CustomSourceGroupIDLTE(v int64) predicate.Group {
+	return predicate.Group(sql.FieldLTE(FieldCustomSourceGroupID, v))
+}
+
+// CustomSourceGroupIDIsNil applies the IsNil predicate on the "custom_source_group_id" field.
+func CustomSourceGroupIDIsNil() predicate.Group {
+	return predicate.Group(sql.FieldIsNull(FieldCustomSourceGroupID))
+}
+
+// CustomSourceGroupIDNotNil applies the NotNil predicate on the "custom_source_group_id" field.
+func CustomSourceGroupIDNotNil() predicate.Group {
+	return predicate.Group(sql.FieldNotNull(FieldCustomSourceGroupID))
+}
+
+// CustomMultiplierEQ applies the EQ predicate on the "custom_multiplier" field.
+func CustomMultiplierEQ(v int) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldCustomMultiplier, v))
+}
+
+// CustomMultiplierNEQ applies the NEQ predicate on the "custom_multiplier" field.
+func CustomMultiplierNEQ(v int) predicate.Group {
+	return predicate.Group(sql.FieldNEQ(FieldCustomMultiplier, v))
+}
+
+// CustomMultiplierIn applies the In predicate on the "custom_multiplier" field.
+func CustomMultiplierIn(vs ...int) predicate.Group {
+	return predicate.Group(sql.FieldIn(FieldCustomMultiplier, vs...))
+}
+
+// CustomMultiplierNotIn applies the NotIn predicate on the "custom_multiplier" field.
+func CustomMultiplierNotIn(vs ...int) predicate.Group {
+	return predicate.Group(sql.FieldNotIn(FieldCustomMultiplier, vs...))
+}
+
+// CustomMultiplierGT applies the GT predicate on the "custom_multiplier" field.
+func CustomMultiplierGT(v int) predicate.Group {
+	return predicate.Group(sql.FieldGT(FieldCustomMultiplier, v))
+}
+
+// CustomMultiplierGTE applies the GTE predicate on the "custom_multiplier" field.
+func CustomMultiplierGTE(v int) predicate.Group {
+	return predicate.Group(sql.FieldGTE(FieldCustomMultiplier, v))
+}
+
+// CustomMultiplierLT applies the LT predicate on the "custom_multiplier" field.
+func CustomMultiplierLT(v int) predicate.Group {
+	return predicate.Group(sql.FieldLT(FieldCustomMultiplier, v))
+}
+
+// CustomMultiplierLTE applies the LTE predicate on the "custom_multiplier" field.
+func CustomMultiplierLTE(v int) predicate.Group {
+	return predicate.Group(sql.FieldLTE(FieldCustomMultiplier, v))
+}
+
+// CustomMultiplierIsNil applies the IsNil predicate on the "custom_multiplier" field.
+func CustomMultiplierIsNil() predicate.Group {
+	return predicate.Group(sql.FieldIsNull(FieldCustomMultiplier))
+}
+
+// CustomMultiplierNotNil applies the NotNil predicate on the "custom_multiplier" field.
+func CustomMultiplierNotNil() predicate.Group {
+	return predicate.Group(sql.FieldNotNull(FieldCustomMultiplier))
 }
 
 // HasAPIKeys applies the HasEdge predicate on the "api_keys" edge.

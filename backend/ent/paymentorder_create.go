@@ -239,6 +239,62 @@ func (_c *PaymentOrderCreate) SetNillableSubscriptionDays(v *int) *PaymentOrderC
 	return _c
 }
 
+// SetSubscriptionMultiplier sets the "subscription_multiplier" field.
+func (_c *PaymentOrderCreate) SetSubscriptionMultiplier(v int) *PaymentOrderCreate {
+	_c.mutation.SetSubscriptionMultiplier(v)
+	return _c
+}
+
+// SetNillableSubscriptionMultiplier sets the "subscription_multiplier" field if the given value is not nil.
+func (_c *PaymentOrderCreate) SetNillableSubscriptionMultiplier(v *int) *PaymentOrderCreate {
+	if v != nil {
+		_c.SetSubscriptionMultiplier(*v)
+	}
+	return _c
+}
+
+// SetSubscriptionSourceGroupID sets the "subscription_source_group_id" field.
+func (_c *PaymentOrderCreate) SetSubscriptionSourceGroupID(v int64) *PaymentOrderCreate {
+	_c.mutation.SetSubscriptionSourceGroupID(v)
+	return _c
+}
+
+// SetNillableSubscriptionSourceGroupID sets the "subscription_source_group_id" field if the given value is not nil.
+func (_c *PaymentOrderCreate) SetNillableSubscriptionSourceGroupID(v *int64) *PaymentOrderCreate {
+	if v != nil {
+		_c.SetSubscriptionSourceGroupID(*v)
+	}
+	return _c
+}
+
+// SetSubscriptionSourcePrice sets the "subscription_source_price" field.
+func (_c *PaymentOrderCreate) SetSubscriptionSourcePrice(v float64) *PaymentOrderCreate {
+	_c.mutation.SetSubscriptionSourcePrice(v)
+	return _c
+}
+
+// SetNillableSubscriptionSourcePrice sets the "subscription_source_price" field if the given value is not nil.
+func (_c *PaymentOrderCreate) SetNillableSubscriptionSourcePrice(v *float64) *PaymentOrderCreate {
+	if v != nil {
+		_c.SetSubscriptionSourcePrice(*v)
+	}
+	return _c
+}
+
+// SetSubscriptionSourceOriginalPrice sets the "subscription_source_original_price" field.
+func (_c *PaymentOrderCreate) SetSubscriptionSourceOriginalPrice(v float64) *PaymentOrderCreate {
+	_c.mutation.SetSubscriptionSourceOriginalPrice(v)
+	return _c
+}
+
+// SetNillableSubscriptionSourceOriginalPrice sets the "subscription_source_original_price" field if the given value is not nil.
+func (_c *PaymentOrderCreate) SetNillableSubscriptionSourceOriginalPrice(v *float64) *PaymentOrderCreate {
+	if v != nil {
+		_c.SetSubscriptionSourceOriginalPrice(*v)
+	}
+	return _c
+}
+
 // SetProviderInstanceID sets the "provider_instance_id" field.
 func (_c *PaymentOrderCreate) SetProviderInstanceID(v string) *PaymentOrderCreate {
 	_c.mutation.SetProviderInstanceID(v)
@@ -817,6 +873,22 @@ func (_c *PaymentOrderCreate) createSpec() (*PaymentOrder, *sqlgraph.CreateSpec)
 		_spec.SetField(paymentorder.FieldSubscriptionDays, field.TypeInt, value)
 		_node.SubscriptionDays = &value
 	}
+	if value, ok := _c.mutation.SubscriptionMultiplier(); ok {
+		_spec.SetField(paymentorder.FieldSubscriptionMultiplier, field.TypeInt, value)
+		_node.SubscriptionMultiplier = &value
+	}
+	if value, ok := _c.mutation.SubscriptionSourceGroupID(); ok {
+		_spec.SetField(paymentorder.FieldSubscriptionSourceGroupID, field.TypeInt64, value)
+		_node.SubscriptionSourceGroupID = &value
+	}
+	if value, ok := _c.mutation.SubscriptionSourcePrice(); ok {
+		_spec.SetField(paymentorder.FieldSubscriptionSourcePrice, field.TypeFloat64, value)
+		_node.SubscriptionSourcePrice = &value
+	}
+	if value, ok := _c.mutation.SubscriptionSourceOriginalPrice(); ok {
+		_spec.SetField(paymentorder.FieldSubscriptionSourceOriginalPrice, field.TypeFloat64, value)
+		_node.SubscriptionSourceOriginalPrice = &value
+	}
 	if value, ok := _c.mutation.ProviderInstanceID(); ok {
 		_spec.SetField(paymentorder.FieldProviderInstanceID, field.TypeString, value)
 		_node.ProviderInstanceID = &value
@@ -1297,6 +1369,102 @@ func (u *PaymentOrderUpsert) AddSubscriptionDays(v int) *PaymentOrderUpsert {
 // ClearSubscriptionDays clears the value of the "subscription_days" field.
 func (u *PaymentOrderUpsert) ClearSubscriptionDays() *PaymentOrderUpsert {
 	u.SetNull(paymentorder.FieldSubscriptionDays)
+	return u
+}
+
+// SetSubscriptionMultiplier sets the "subscription_multiplier" field.
+func (u *PaymentOrderUpsert) SetSubscriptionMultiplier(v int) *PaymentOrderUpsert {
+	u.Set(paymentorder.FieldSubscriptionMultiplier, v)
+	return u
+}
+
+// UpdateSubscriptionMultiplier sets the "subscription_multiplier" field to the value that was provided on create.
+func (u *PaymentOrderUpsert) UpdateSubscriptionMultiplier() *PaymentOrderUpsert {
+	u.SetExcluded(paymentorder.FieldSubscriptionMultiplier)
+	return u
+}
+
+// AddSubscriptionMultiplier adds v to the "subscription_multiplier" field.
+func (u *PaymentOrderUpsert) AddSubscriptionMultiplier(v int) *PaymentOrderUpsert {
+	u.Add(paymentorder.FieldSubscriptionMultiplier, v)
+	return u
+}
+
+// ClearSubscriptionMultiplier clears the value of the "subscription_multiplier" field.
+func (u *PaymentOrderUpsert) ClearSubscriptionMultiplier() *PaymentOrderUpsert {
+	u.SetNull(paymentorder.FieldSubscriptionMultiplier)
+	return u
+}
+
+// SetSubscriptionSourceGroupID sets the "subscription_source_group_id" field.
+func (u *PaymentOrderUpsert) SetSubscriptionSourceGroupID(v int64) *PaymentOrderUpsert {
+	u.Set(paymentorder.FieldSubscriptionSourceGroupID, v)
+	return u
+}
+
+// UpdateSubscriptionSourceGroupID sets the "subscription_source_group_id" field to the value that was provided on create.
+func (u *PaymentOrderUpsert) UpdateSubscriptionSourceGroupID() *PaymentOrderUpsert {
+	u.SetExcluded(paymentorder.FieldSubscriptionSourceGroupID)
+	return u
+}
+
+// AddSubscriptionSourceGroupID adds v to the "subscription_source_group_id" field.
+func (u *PaymentOrderUpsert) AddSubscriptionSourceGroupID(v int64) *PaymentOrderUpsert {
+	u.Add(paymentorder.FieldSubscriptionSourceGroupID, v)
+	return u
+}
+
+// ClearSubscriptionSourceGroupID clears the value of the "subscription_source_group_id" field.
+func (u *PaymentOrderUpsert) ClearSubscriptionSourceGroupID() *PaymentOrderUpsert {
+	u.SetNull(paymentorder.FieldSubscriptionSourceGroupID)
+	return u
+}
+
+// SetSubscriptionSourcePrice sets the "subscription_source_price" field.
+func (u *PaymentOrderUpsert) SetSubscriptionSourcePrice(v float64) *PaymentOrderUpsert {
+	u.Set(paymentorder.FieldSubscriptionSourcePrice, v)
+	return u
+}
+
+// UpdateSubscriptionSourcePrice sets the "subscription_source_price" field to the value that was provided on create.
+func (u *PaymentOrderUpsert) UpdateSubscriptionSourcePrice() *PaymentOrderUpsert {
+	u.SetExcluded(paymentorder.FieldSubscriptionSourcePrice)
+	return u
+}
+
+// AddSubscriptionSourcePrice adds v to the "subscription_source_price" field.
+func (u *PaymentOrderUpsert) AddSubscriptionSourcePrice(v float64) *PaymentOrderUpsert {
+	u.Add(paymentorder.FieldSubscriptionSourcePrice, v)
+	return u
+}
+
+// ClearSubscriptionSourcePrice clears the value of the "subscription_source_price" field.
+func (u *PaymentOrderUpsert) ClearSubscriptionSourcePrice() *PaymentOrderUpsert {
+	u.SetNull(paymentorder.FieldSubscriptionSourcePrice)
+	return u
+}
+
+// SetSubscriptionSourceOriginalPrice sets the "subscription_source_original_price" field.
+func (u *PaymentOrderUpsert) SetSubscriptionSourceOriginalPrice(v float64) *PaymentOrderUpsert {
+	u.Set(paymentorder.FieldSubscriptionSourceOriginalPrice, v)
+	return u
+}
+
+// UpdateSubscriptionSourceOriginalPrice sets the "subscription_source_original_price" field to the value that was provided on create.
+func (u *PaymentOrderUpsert) UpdateSubscriptionSourceOriginalPrice() *PaymentOrderUpsert {
+	u.SetExcluded(paymentorder.FieldSubscriptionSourceOriginalPrice)
+	return u
+}
+
+// AddSubscriptionSourceOriginalPrice adds v to the "subscription_source_original_price" field.
+func (u *PaymentOrderUpsert) AddSubscriptionSourceOriginalPrice(v float64) *PaymentOrderUpsert {
+	u.Add(paymentorder.FieldSubscriptionSourceOriginalPrice, v)
+	return u
+}
+
+// ClearSubscriptionSourceOriginalPrice clears the value of the "subscription_source_original_price" field.
+func (u *PaymentOrderUpsert) ClearSubscriptionSourceOriginalPrice() *PaymentOrderUpsert {
+	u.SetNull(paymentorder.FieldSubscriptionSourceOriginalPrice)
 	return u
 }
 
@@ -2051,6 +2219,118 @@ func (u *PaymentOrderUpsertOne) UpdateSubscriptionDays() *PaymentOrderUpsertOne 
 func (u *PaymentOrderUpsertOne) ClearSubscriptionDays() *PaymentOrderUpsertOne {
 	return u.Update(func(s *PaymentOrderUpsert) {
 		s.ClearSubscriptionDays()
+	})
+}
+
+// SetSubscriptionMultiplier sets the "subscription_multiplier" field.
+func (u *PaymentOrderUpsertOne) SetSubscriptionMultiplier(v int) *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.SetSubscriptionMultiplier(v)
+	})
+}
+
+// AddSubscriptionMultiplier adds v to the "subscription_multiplier" field.
+func (u *PaymentOrderUpsertOne) AddSubscriptionMultiplier(v int) *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.AddSubscriptionMultiplier(v)
+	})
+}
+
+// UpdateSubscriptionMultiplier sets the "subscription_multiplier" field to the value that was provided on create.
+func (u *PaymentOrderUpsertOne) UpdateSubscriptionMultiplier() *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.UpdateSubscriptionMultiplier()
+	})
+}
+
+// ClearSubscriptionMultiplier clears the value of the "subscription_multiplier" field.
+func (u *PaymentOrderUpsertOne) ClearSubscriptionMultiplier() *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.ClearSubscriptionMultiplier()
+	})
+}
+
+// SetSubscriptionSourceGroupID sets the "subscription_source_group_id" field.
+func (u *PaymentOrderUpsertOne) SetSubscriptionSourceGroupID(v int64) *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.SetSubscriptionSourceGroupID(v)
+	})
+}
+
+// AddSubscriptionSourceGroupID adds v to the "subscription_source_group_id" field.
+func (u *PaymentOrderUpsertOne) AddSubscriptionSourceGroupID(v int64) *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.AddSubscriptionSourceGroupID(v)
+	})
+}
+
+// UpdateSubscriptionSourceGroupID sets the "subscription_source_group_id" field to the value that was provided on create.
+func (u *PaymentOrderUpsertOne) UpdateSubscriptionSourceGroupID() *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.UpdateSubscriptionSourceGroupID()
+	})
+}
+
+// ClearSubscriptionSourceGroupID clears the value of the "subscription_source_group_id" field.
+func (u *PaymentOrderUpsertOne) ClearSubscriptionSourceGroupID() *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.ClearSubscriptionSourceGroupID()
+	})
+}
+
+// SetSubscriptionSourcePrice sets the "subscription_source_price" field.
+func (u *PaymentOrderUpsertOne) SetSubscriptionSourcePrice(v float64) *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.SetSubscriptionSourcePrice(v)
+	})
+}
+
+// AddSubscriptionSourcePrice adds v to the "subscription_source_price" field.
+func (u *PaymentOrderUpsertOne) AddSubscriptionSourcePrice(v float64) *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.AddSubscriptionSourcePrice(v)
+	})
+}
+
+// UpdateSubscriptionSourcePrice sets the "subscription_source_price" field to the value that was provided on create.
+func (u *PaymentOrderUpsertOne) UpdateSubscriptionSourcePrice() *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.UpdateSubscriptionSourcePrice()
+	})
+}
+
+// ClearSubscriptionSourcePrice clears the value of the "subscription_source_price" field.
+func (u *PaymentOrderUpsertOne) ClearSubscriptionSourcePrice() *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.ClearSubscriptionSourcePrice()
+	})
+}
+
+// SetSubscriptionSourceOriginalPrice sets the "subscription_source_original_price" field.
+func (u *PaymentOrderUpsertOne) SetSubscriptionSourceOriginalPrice(v float64) *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.SetSubscriptionSourceOriginalPrice(v)
+	})
+}
+
+// AddSubscriptionSourceOriginalPrice adds v to the "subscription_source_original_price" field.
+func (u *PaymentOrderUpsertOne) AddSubscriptionSourceOriginalPrice(v float64) *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.AddSubscriptionSourceOriginalPrice(v)
+	})
+}
+
+// UpdateSubscriptionSourceOriginalPrice sets the "subscription_source_original_price" field to the value that was provided on create.
+func (u *PaymentOrderUpsertOne) UpdateSubscriptionSourceOriginalPrice() *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.UpdateSubscriptionSourceOriginalPrice()
+	})
+}
+
+// ClearSubscriptionSourceOriginalPrice clears the value of the "subscription_source_original_price" field.
+func (u *PaymentOrderUpsertOne) ClearSubscriptionSourceOriginalPrice() *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.ClearSubscriptionSourceOriginalPrice()
 	})
 }
 
@@ -3025,6 +3305,118 @@ func (u *PaymentOrderUpsertBulk) UpdateSubscriptionDays() *PaymentOrderUpsertBul
 func (u *PaymentOrderUpsertBulk) ClearSubscriptionDays() *PaymentOrderUpsertBulk {
 	return u.Update(func(s *PaymentOrderUpsert) {
 		s.ClearSubscriptionDays()
+	})
+}
+
+// SetSubscriptionMultiplier sets the "subscription_multiplier" field.
+func (u *PaymentOrderUpsertBulk) SetSubscriptionMultiplier(v int) *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.SetSubscriptionMultiplier(v)
+	})
+}
+
+// AddSubscriptionMultiplier adds v to the "subscription_multiplier" field.
+func (u *PaymentOrderUpsertBulk) AddSubscriptionMultiplier(v int) *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.AddSubscriptionMultiplier(v)
+	})
+}
+
+// UpdateSubscriptionMultiplier sets the "subscription_multiplier" field to the value that was provided on create.
+func (u *PaymentOrderUpsertBulk) UpdateSubscriptionMultiplier() *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.UpdateSubscriptionMultiplier()
+	})
+}
+
+// ClearSubscriptionMultiplier clears the value of the "subscription_multiplier" field.
+func (u *PaymentOrderUpsertBulk) ClearSubscriptionMultiplier() *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.ClearSubscriptionMultiplier()
+	})
+}
+
+// SetSubscriptionSourceGroupID sets the "subscription_source_group_id" field.
+func (u *PaymentOrderUpsertBulk) SetSubscriptionSourceGroupID(v int64) *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.SetSubscriptionSourceGroupID(v)
+	})
+}
+
+// AddSubscriptionSourceGroupID adds v to the "subscription_source_group_id" field.
+func (u *PaymentOrderUpsertBulk) AddSubscriptionSourceGroupID(v int64) *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.AddSubscriptionSourceGroupID(v)
+	})
+}
+
+// UpdateSubscriptionSourceGroupID sets the "subscription_source_group_id" field to the value that was provided on create.
+func (u *PaymentOrderUpsertBulk) UpdateSubscriptionSourceGroupID() *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.UpdateSubscriptionSourceGroupID()
+	})
+}
+
+// ClearSubscriptionSourceGroupID clears the value of the "subscription_source_group_id" field.
+func (u *PaymentOrderUpsertBulk) ClearSubscriptionSourceGroupID() *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.ClearSubscriptionSourceGroupID()
+	})
+}
+
+// SetSubscriptionSourcePrice sets the "subscription_source_price" field.
+func (u *PaymentOrderUpsertBulk) SetSubscriptionSourcePrice(v float64) *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.SetSubscriptionSourcePrice(v)
+	})
+}
+
+// AddSubscriptionSourcePrice adds v to the "subscription_source_price" field.
+func (u *PaymentOrderUpsertBulk) AddSubscriptionSourcePrice(v float64) *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.AddSubscriptionSourcePrice(v)
+	})
+}
+
+// UpdateSubscriptionSourcePrice sets the "subscription_source_price" field to the value that was provided on create.
+func (u *PaymentOrderUpsertBulk) UpdateSubscriptionSourcePrice() *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.UpdateSubscriptionSourcePrice()
+	})
+}
+
+// ClearSubscriptionSourcePrice clears the value of the "subscription_source_price" field.
+func (u *PaymentOrderUpsertBulk) ClearSubscriptionSourcePrice() *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.ClearSubscriptionSourcePrice()
+	})
+}
+
+// SetSubscriptionSourceOriginalPrice sets the "subscription_source_original_price" field.
+func (u *PaymentOrderUpsertBulk) SetSubscriptionSourceOriginalPrice(v float64) *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.SetSubscriptionSourceOriginalPrice(v)
+	})
+}
+
+// AddSubscriptionSourceOriginalPrice adds v to the "subscription_source_original_price" field.
+func (u *PaymentOrderUpsertBulk) AddSubscriptionSourceOriginalPrice(v float64) *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.AddSubscriptionSourceOriginalPrice(v)
+	})
+}
+
+// UpdateSubscriptionSourceOriginalPrice sets the "subscription_source_original_price" field to the value that was provided on create.
+func (u *PaymentOrderUpsertBulk) UpdateSubscriptionSourceOriginalPrice() *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.UpdateSubscriptionSourceOriginalPrice()
+	})
+}
+
+// ClearSubscriptionSourceOriginalPrice clears the value of the "subscription_source_original_price" field.
+func (u *PaymentOrderUpsertBulk) ClearSubscriptionSourceOriginalPrice() *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.ClearSubscriptionSourceOriginalPrice()
 	})
 }
 

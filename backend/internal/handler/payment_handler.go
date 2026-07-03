@@ -54,19 +54,22 @@ func (h *PaymentHandler) GetPlans(c *gin.Context) {
 	}
 	// Enrich plans with group platform for frontend color coding
 	type planWithPlatform struct {
-		ID            int64    `json:"id"`
-		GroupID       int64    `json:"group_id"`
-		GroupPlatform string   `json:"group_platform"`
-		Name          string   `json:"name"`
-		Description   string   `json:"description"`
-		Price         float64  `json:"price"`
-		OriginalPrice *float64 `json:"original_price,omitempty"`
-		ValidityDays  int      `json:"validity_days"`
-		ValidityUnit  string   `json:"validity_unit"`
-		Features      string   `json:"features"`
-		ProductName   string   `json:"product_name"`
-		ForSale       bool     `json:"for_sale"`
-		SortOrder     int      `json:"sort_order"`
+		ID                      int64    `json:"id"`
+		GroupID                 int64    `json:"group_id"`
+		GroupPlatform           string   `json:"group_platform"`
+		Name                    string   `json:"name"`
+		Description             string   `json:"description"`
+		Price                   float64  `json:"price"`
+		OriginalPrice           *float64 `json:"original_price,omitempty"`
+		ValidityDays            int      `json:"validity_days"`
+		ValidityUnit            string   `json:"validity_unit"`
+		Features                string   `json:"features"`
+		ProductName             string   `json:"product_name"`
+		ForSale                 bool     `json:"for_sale"`
+		SortOrder               int      `json:"sort_order"`
+		CustomMultiplierEnabled bool     `json:"custom_multiplier_enabled"`
+		CustomMultiplierMin     int      `json:"custom_multiplier_min"`
+		CustomMultiplierMax     int      `json:"custom_multiplier_max"`
 	}
 	platformMap := h.configService.GetGroupPlatformMap(c.Request.Context(), plans)
 	result := make([]planWithPlatform, 0, len(plans))
@@ -76,6 +79,9 @@ func (h *PaymentHandler) GetPlans(c *gin.Context) {
 			Name: p.Name, Description: p.Description, Price: p.Price, OriginalPrice: p.OriginalPrice,
 			ValidityDays: p.ValidityDays, ValidityUnit: p.ValidityUnit, Features: p.Features,
 			ProductName: p.ProductName, ForSale: p.ForSale, SortOrder: p.SortOrder,
+			CustomMultiplierEnabled: p.CustomMultiplierEnabled,
+			CustomMultiplierMin:     p.CustomMultiplierMin,
+			CustomMultiplierMax:     p.CustomMultiplierMax,
 		})
 	}
 	response.Success(c, result)
@@ -126,7 +132,10 @@ func (h *PaymentHandler) GetCheckoutInfo(c *gin.Context) {
 			ModelScopes: gi.ModelScopes,
 			Name:        p.Name, Description: p.Description, Price: p.Price, OriginalPrice: p.OriginalPrice,
 			ValidityDays: p.ValidityDays, ValidityUnit: p.ValidityUnit, Features: parseFeatures(p.Features),
-			ProductName: p.ProductName,
+			ProductName:             p.ProductName,
+			CustomMultiplierEnabled: p.CustomMultiplierEnabled,
+			CustomMultiplierMin:     p.CustomMultiplierMin,
+			CustomMultiplierMax:     p.CustomMultiplierMax,
 		})
 	}
 
@@ -174,23 +183,26 @@ type checkoutInfoResponse struct {
 }
 
 type checkoutPlan struct {
-	ID              int64    `json:"id"`
-	GroupID         int64    `json:"group_id"`
-	GroupPlatform   string   `json:"group_platform"`
-	GroupName       string   `json:"group_name"`
-	RateMultiplier  float64  `json:"rate_multiplier"`
-	DailyLimitUSD   *float64 `json:"daily_limit_usd"`
-	WeeklyLimitUSD  *float64 `json:"weekly_limit_usd"`
-	MonthlyLimitUSD *float64 `json:"monthly_limit_usd"`
-	ModelScopes     []string `json:"supported_model_scopes"`
-	Name            string   `json:"name"`
-	Description     string   `json:"description"`
-	Price           float64  `json:"price"`
-	OriginalPrice   *float64 `json:"original_price,omitempty"`
-	ValidityDays    int      `json:"validity_days"`
-	ValidityUnit    string   `json:"validity_unit"`
-	Features        []string `json:"features"`
-	ProductName     string   `json:"product_name"`
+	ID                      int64    `json:"id"`
+	GroupID                 int64    `json:"group_id"`
+	GroupPlatform           string   `json:"group_platform"`
+	GroupName               string   `json:"group_name"`
+	RateMultiplier          float64  `json:"rate_multiplier"`
+	DailyLimitUSD           *float64 `json:"daily_limit_usd"`
+	WeeklyLimitUSD          *float64 `json:"weekly_limit_usd"`
+	MonthlyLimitUSD         *float64 `json:"monthly_limit_usd"`
+	ModelScopes             []string `json:"supported_model_scopes"`
+	Name                    string   `json:"name"`
+	Description             string   `json:"description"`
+	Price                   float64  `json:"price"`
+	OriginalPrice           *float64 `json:"original_price,omitempty"`
+	ValidityDays            int      `json:"validity_days"`
+	ValidityUnit            string   `json:"validity_unit"`
+	Features                []string `json:"features"`
+	ProductName             string   `json:"product_name"`
+	CustomMultiplierEnabled bool     `json:"custom_multiplier_enabled"`
+	CustomMultiplierMin     int      `json:"custom_multiplier_min"`
+	CustomMultiplierMax     int      `json:"custom_multiplier_max"`
 }
 
 // parseFeatures splits a newline-separated features string into a string slice.
@@ -240,14 +252,15 @@ type CafeCouponSummary struct {
 	ValidUntilMonthEnd bool      `json:"valid_until_month_end"`
 }
 
-type CafeCouponApplyRequest struct {
-	Code      string  `json:"code" binding:"required"`
-	Amount    float64 `json:"amount"`
-	OrderType string  `json:"order_type"`
-	PlanID    int64   `json:"plan_id"`
+type CafeCouponPreviewRequest struct {
+	Code       string  `json:"code" binding:"required"`
+	Amount     float64 `json:"amount"`
+	OrderType  string  `json:"order_type"`
+	PlanID     int64   `json:"plan_id"`
+	Multiplier int     `json:"multiplier"`
 }
 
-type CafeCouponApplyResponse struct {
+type CafeCouponPreviewResponse struct {
 	Valid          bool               `json:"valid"`
 	DiscountAmount float64            `json:"discount_amount"`
 	PayAmount      float64            `json:"pay_amount"`
@@ -285,14 +298,25 @@ func (h *PaymentHandler) ClaimCafeCoupon(c *gin.Context) {
 	response.Success(c, cafeCouponSummaryFromClaim(claimed))
 }
 
-// ApplyCafeCoupon previews the server-side discount for a café coupon.
-// POST /api/v1/payment/cafe-coupons/apply
+// PreviewCafeCoupon previews the server-side discount for a cafe coupon.
+// POST /api/v1/payment/cafe-coupons/preview
+// This is intentionally read-only: the coupon is only consumed during order creation/payment fulfillment.
+func (h *PaymentHandler) PreviewCafeCoupon(c *gin.Context) {
+	h.previewCafeCoupon(c)
+}
+
+// ApplyCafeCoupon is a backward-compatible alias for PreviewCafeCoupon.
+// Historical name only; it does not mark the coupon as used.
 func (h *PaymentHandler) ApplyCafeCoupon(c *gin.Context) {
+	h.previewCafeCoupon(c)
+}
+
+func (h *PaymentHandler) previewCafeCoupon(c *gin.Context) {
 	subject, ok := requireAuth(c)
 	if !ok {
 		return
 	}
-	var req CafeCouponApplyRequest
+	var req CafeCouponPreviewRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "Invalid request: "+err.Error())
 		return
@@ -302,18 +326,19 @@ func (h *PaymentHandler) ApplyCafeCoupon(c *gin.Context) {
 		Amount:         req.Amount,
 		OrderType:      req.OrderType,
 		PlanID:         req.PlanID,
+		Multiplier:     req.Multiplier,
 		CafeCouponCode: req.Code,
 	})
 	if err != nil {
 		response.ErrorFrom(c, err)
 		return
 	}
-	response.Success(c, CafeCouponApplyResponse{
+	response.Success(c, CafeCouponPreviewResponse{
 		Valid:          true,
 		DiscountAmount: preview.DiscountAmount,
 		PayAmount:      preview.PayableAmount,
 		Coupon:         cafeCouponSummaryFromPreview(preview),
-		Message:        "cafe coupon applied",
+		Message:        "cafe coupon previewed",
 	})
 }
 
@@ -377,6 +402,7 @@ type CreateOrderRequest struct {
 	PaymentSource     string  `json:"payment_source"`
 	OrderType         string  `json:"order_type"`
 	PlanID            int64   `json:"plan_id"`
+	Multiplier        int     `json:"multiplier"`
 	CafeCouponCode    string  `json:"cafe_coupon_code"`
 	// IsMobile lets the frontend declare its mobile status directly. When
 	// nil we fall back to User-Agent heuristics (which miss iPadOS / some
@@ -403,7 +429,7 @@ func (h *PaymentHandler) CreateOrder(c *gin.Context) {
 			response.ErrorFrom(c, err)
 			return
 		}
-		if err := applyWeChatPaymentResumeClaims(&req, claims); err != nil {
+		if err := applyWeChatPaymentResumeClaims(&req, claims, subject.UserID); err != nil {
 			response.ErrorFrom(c, err)
 			return
 		}
@@ -427,6 +453,7 @@ func (h *PaymentHandler) CreateOrder(c *gin.Context) {
 		PaymentSource:   req.PaymentSource,
 		OrderType:       req.OrderType,
 		PlanID:          req.PlanID,
+		Multiplier:      req.Multiplier,
 		CafeCouponCode:  req.CafeCouponCode,
 		Locale:          c.GetHeader("Accept-Language"),
 	})
@@ -437,13 +464,16 @@ func (h *PaymentHandler) CreateOrder(c *gin.Context) {
 	response.Success(c, result)
 }
 
-func applyWeChatPaymentResumeClaims(req *CreateOrderRequest, claims *service.WeChatPaymentResumeClaims) error {
+func applyWeChatPaymentResumeClaims(req *CreateOrderRequest, claims *service.WeChatPaymentResumeClaims, currentUserID int64) error {
 	if req == nil || claims == nil {
 		return infraerrors.BadRequest("INVALID_WECHAT_PAYMENT_RESUME_TOKEN", "wechat payment resume context is missing")
 	}
 	openid := strings.TrimSpace(claims.OpenID)
 	if openid == "" {
 		return infraerrors.BadRequest("INVALID_WECHAT_PAYMENT_RESUME_TOKEN", "wechat payment resume token missing openid")
+	}
+	if claims.UserID > 0 && currentUserID > 0 && claims.UserID != currentUserID {
+		return infraerrors.BadRequest("INVALID_WECHAT_PAYMENT_RESUME_TOKEN", "wechat payment resume token user mismatch")
 	}
 
 	paymentType := service.NormalizeVisibleMethod(claims.PaymentType)
@@ -459,6 +489,7 @@ func applyWeChatPaymentResumeClaims(req *CreateOrderRequest, claims *service.WeC
 	req.PaymentType = paymentType
 	req.OpenID = openid
 
+	req.Amount = 0
 	if strings.TrimSpace(claims.Amount) != "" {
 		amount, err := strconv.ParseFloat(strings.TrimSpace(claims.Amount), 64)
 		if err != nil || amount <= 0 {
@@ -466,15 +497,19 @@ func applyWeChatPaymentResumeClaims(req *CreateOrderRequest, claims *service.WeC
 		}
 		req.Amount = amount
 	}
-	if claims.OrderType != "" {
-		req.OrderType = claims.OrderType
+	req.OrderType = claims.OrderType
+	if req.OrderType == "" {
+		req.OrderType = payment.OrderTypeBalance
 	}
+	req.PlanID = 0
 	if claims.PlanID > 0 {
 		req.PlanID = claims.PlanID
 	}
-	if strings.TrimSpace(claims.CafeCouponCode) != "" {
-		req.CafeCouponCode = claims.CafeCouponCode
+	req.Multiplier = 0
+	if claims.Multiplier > 0 {
+		req.Multiplier = claims.Multiplier
 	}
+	req.CafeCouponCode = strings.TrimSpace(claims.CafeCouponCode)
 	return nil
 }
 
@@ -725,27 +760,32 @@ func isMobile(c *gin.Context) bool {
 }
 
 type PaymentOrderResult struct {
-	ID                  int64      `json:"id"`
-	UserID              int64      `json:"user_id"`
-	Amount              float64    `json:"amount"`
-	PayAmount           float64    `json:"pay_amount"`
-	FeeRate             float64    `json:"fee_rate"`
-	Currency            string     `json:"currency"`
-	PaymentType         string     `json:"payment_type"`
-	OutTradeNo          string     `json:"out_trade_no"`
-	Status              string     `json:"status"`
-	OrderType           string     `json:"order_type"`
-	CreatedAt           time.Time  `json:"created_at"`
-	ExpiresAt           time.Time  `json:"expires_at"`
-	PaidAt              *time.Time `json:"paid_at,omitempty"`
-	CompletedAt         *time.Time `json:"completed_at,omitempty"`
-	RefundAmount        float64    `json:"refund_amount"`
-	RefundReason        *string    `json:"refund_reason,omitempty"`
-	RefundRequestedAt   *time.Time `json:"refund_requested_at,omitempty"`
-	RefundRequestedBy   *string    `json:"refund_requested_by,omitempty"`
-	RefundRequestReason *string    `json:"refund_request_reason,omitempty"`
-	PlanID              *int64     `json:"plan_id,omitempty"`
-	ProviderInstanceID  *string    `json:"provider_instance_id,omitempty"`
+	ID                              int64      `json:"id"`
+	UserID                          int64      `json:"user_id"`
+	Amount                          float64    `json:"amount"`
+	PayAmount                       float64    `json:"pay_amount"`
+	FeeRate                         float64    `json:"fee_rate"`
+	Currency                        string     `json:"currency"`
+	PaymentType                     string     `json:"payment_type"`
+	OutTradeNo                      string     `json:"out_trade_no"`
+	Status                          string     `json:"status"`
+	OrderType                       string     `json:"order_type"`
+	CreatedAt                       time.Time  `json:"created_at"`
+	ExpiresAt                       time.Time  `json:"expires_at"`
+	PaidAt                          *time.Time `json:"paid_at,omitempty"`
+	CompletedAt                     *time.Time `json:"completed_at,omitempty"`
+	RefundAmount                    float64    `json:"refund_amount"`
+	RefundReason                    *string    `json:"refund_reason,omitempty"`
+	RefundRequestedAt               *time.Time `json:"refund_requested_at,omitempty"`
+	RefundRequestedBy               *string    `json:"refund_requested_by,omitempty"`
+	RefundRequestReason             *string    `json:"refund_request_reason,omitempty"`
+	PlanID                          *int64     `json:"plan_id,omitempty"`
+	ProviderInstanceID              *string    `json:"provider_instance_id,omitempty"`
+	SubscriptionGroupID             *int64     `json:"subscription_group_id,omitempty"`
+	SubscriptionMultiplier          *int       `json:"subscription_multiplier,omitempty"`
+	SubscriptionSourceGroupID       *int64     `json:"subscription_source_group_id,omitempty"`
+	SubscriptionSourcePrice         *float64   `json:"subscription_source_price,omitempty"`
+	SubscriptionSourceOriginalPrice *float64   `json:"subscription_source_original_price,omitempty"`
 }
 
 func sanitizePaymentOrdersForResponse(orders []*dbent.PaymentOrder) []PaymentOrderResult {
@@ -763,27 +803,32 @@ func sanitizePaymentOrderForResponse(order *dbent.PaymentOrder) *PaymentOrderRes
 		return nil
 	}
 	return &PaymentOrderResult{
-		ID:                  order.ID,
-		UserID:              order.UserID,
-		Amount:              order.Amount,
-		PayAmount:           order.PayAmount,
-		FeeRate:             order.FeeRate,
-		Currency:            service.PaymentOrderCurrency(order),
-		PaymentType:         order.PaymentType,
-		OutTradeNo:          order.OutTradeNo,
-		Status:              order.Status,
-		OrderType:           order.OrderType,
-		CreatedAt:           order.CreatedAt,
-		ExpiresAt:           order.ExpiresAt,
-		PaidAt:              order.PaidAt,
-		CompletedAt:         order.CompletedAt,
-		RefundAmount:        order.RefundAmount,
-		RefundReason:        order.RefundReason,
-		RefundRequestedAt:   order.RefundRequestedAt,
-		RefundRequestedBy:   order.RefundRequestedBy,
-		RefundRequestReason: order.RefundRequestReason,
-		PlanID:              order.PlanID,
-		ProviderInstanceID:  order.ProviderInstanceID,
+		ID:                              order.ID,
+		UserID:                          order.UserID,
+		Amount:                          order.Amount,
+		PayAmount:                       order.PayAmount,
+		FeeRate:                         order.FeeRate,
+		Currency:                        service.PaymentOrderCurrency(order),
+		PaymentType:                     order.PaymentType,
+		OutTradeNo:                      order.OutTradeNo,
+		Status:                          order.Status,
+		OrderType:                       order.OrderType,
+		CreatedAt:                       order.CreatedAt,
+		ExpiresAt:                       order.ExpiresAt,
+		PaidAt:                          order.PaidAt,
+		CompletedAt:                     order.CompletedAt,
+		RefundAmount:                    order.RefundAmount,
+		RefundReason:                    order.RefundReason,
+		RefundRequestedAt:               order.RefundRequestedAt,
+		RefundRequestedBy:               order.RefundRequestedBy,
+		RefundRequestReason:             order.RefundRequestReason,
+		PlanID:                          order.PlanID,
+		ProviderInstanceID:              order.ProviderInstanceID,
+		SubscriptionGroupID:             order.SubscriptionGroupID,
+		SubscriptionMultiplier:          order.SubscriptionMultiplier,
+		SubscriptionSourceGroupID:       order.SubscriptionSourceGroupID,
+		SubscriptionSourcePrice:         order.SubscriptionSourcePrice,
+		SubscriptionSourceOriginalPrice: order.SubscriptionSourceOriginalPrice,
 	}
 }
 

@@ -199,15 +199,20 @@ type AdminBoundAuthIdentityChannel struct {
 }
 
 type CreateGroupInput struct {
-	Name             string
-	Description      string
-	Platform         string
-	RateMultiplier   float64
-	IsExclusive      bool
-	SubscriptionType string   // standard/subscription
-	DailyLimitUSD    *float64 // 日限额 (USD)
-	WeeklyLimitUSD   *float64 // 周限额 (USD)
-	MonthlyLimitUSD  *float64 // 月限额 (USD)
+	Name                      string
+	Description               string
+	Platform                  string
+	RateMultiplier            float64
+	IsExclusive               bool
+	SubscriptionType          string   // standard/subscription
+	DailyLimitUSD             *float64 // 日限额 (USD)
+	WeeklyLimitUSD            *float64 // 周限额 (USD)
+	MonthlyLimitUSD           *float64 // 月限额 (USD)
+	IsCustomSubscriptionGroup bool
+	CustomOwnerUserID         *int64
+	CustomSourcePlanID        *int64
+	CustomSourceGroupID       *int64
+	CustomMultiplier          *int
 	// 图片生成计费配置（仅 antigravity 平台使用）
 	AllowImageGeneration bool
 	ImageRateIndependent bool
@@ -239,16 +244,21 @@ type CreateGroupInput struct {
 }
 
 type UpdateGroupInput struct {
-	Name             string
-	Description      *string
-	Platform         string
-	RateMultiplier   *float64 // 使用指针以支持设置为0
-	IsExclusive      *bool
-	Status           string
-	SubscriptionType string   // standard/subscription
-	DailyLimitUSD    *float64 // 日限额 (USD)
-	WeeklyLimitUSD   *float64 // 周限额 (USD)
-	MonthlyLimitUSD  *float64 // 月限额 (USD)
+	Name                      string
+	Description               *string
+	Platform                  string
+	RateMultiplier            *float64 // 使用指针以支持设置为0
+	IsExclusive               *bool
+	Status                    string
+	SubscriptionType          string   // standard/subscription
+	DailyLimitUSD             *float64 // 日限额 (USD)
+	WeeklyLimitUSD            *float64 // 周限额 (USD)
+	MonthlyLimitUSD           *float64 // 月限额 (USD)
+	IsCustomSubscriptionGroup *bool
+	CustomOwnerUserID         *int64
+	CustomSourcePlanID        *int64
+	CustomSourceGroupID       *int64
+	CustomMultiplier          *int
 	// 图片生成计费配置（仅 antigravity 平台使用）
 	AllowImageGeneration *bool
 	ImageRateIndependent *bool
@@ -557,6 +567,26 @@ type adminServiceImpl struct {
 
 type userGroupRateBatchReader interface {
 	GetByUserIDs(ctx context.Context, userIDs []int64) (map[int64]map[int64]float64, error)
+}
+
+type customSubscriptionGroupIDLister interface {
+	ListCustomSubscriptionGroupIDsBySourceGroupID(ctx context.Context, sourceGroupID int64) ([]int64, error)
+}
+
+func appendUniqueInt64(base []int64, ids ...int64) []int64 {
+	seen := make(map[int64]struct{}, len(base)+len(ids))
+	out := make([]int64, 0, len(base)+len(ids))
+	for _, id := range append(base, ids...) {
+		if id <= 0 {
+			continue
+		}
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		out = append(out, id)
+	}
+	return out
 }
 
 // NewAdminService creates a new AdminService
@@ -1818,6 +1848,9 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 	if input.RateMultiplier <= 0 {
 		return nil, errors.New("rate_multiplier must be > 0")
 	}
+	if hasCustomGroupCreateMetadata(input) {
+		return nil, errors.New("custom subscription groups are system-managed; create a custom group through subscription payment")
+	}
 
 	platform := input.Platform
 	if platform == "" {
@@ -1912,6 +1945,11 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 		DailyLimitUSD:                   dailyLimit,
 		WeeklyLimitUSD:                  weeklyLimit,
 		MonthlyLimitUSD:                 monthlyLimit,
+		IsCustomSubscriptionGroup:       input.IsCustomSubscriptionGroup,
+		CustomOwnerUserID:               input.CustomOwnerUserID,
+		CustomSourcePlanID:              input.CustomSourcePlanID,
+		CustomSourceGroupID:             input.CustomSourceGroupID,
+		CustomMultiplier:                input.CustomMultiplier,
 		AllowImageGeneration:            input.AllowImageGeneration,
 		ImageRateIndependent:            input.ImageRateIndependent,
 		ImageRateMultiplier:             imageRateMultiplier,
@@ -2091,6 +2129,24 @@ func (s *adminServiceImpl) UpdateGroup(ctx context.Context, id int64, input *Upd
 	group.DailyLimitUSD = normalizeLimit(input.DailyLimitUSD)
 	group.WeeklyLimitUSD = normalizeLimit(input.WeeklyLimitUSD)
 	group.MonthlyLimitUSD = normalizeLimit(input.MonthlyLimitUSD)
+	if err := validateCustomGroupMetadataUpdate(group, input); err != nil {
+		return nil, err
+	}
+	if input.CustomMultiplier != nil {
+		if *input.CustomMultiplier < minCustomSubscriptionMultiplier {
+			return nil, fmt.Errorf("custom_multiplier must be >= %d", minCustomSubscriptionMultiplier)
+		}
+		if *input.CustomMultiplier > maxCustomSubscriptionMultiplier {
+			return nil, fmt.Errorf("custom_multiplier must be <= %d", maxCustomSubscriptionMultiplier)
+		}
+		if !group.IsCustomSubscriptionGroup {
+			return nil, errors.New("custom_multiplier can only be updated on custom subscription groups")
+		}
+		group.CustomMultiplier = input.CustomMultiplier
+		if err := s.applyCustomGroupMultiplierLimits(ctx, group); err != nil {
+			return nil, err
+		}
+	}
 	// 图片生成计费配置：负数表示清除（使用默认价格）
 	if input.AllowImageGeneration != nil {
 		group.AllowImageGeneration = *input.AllowImageGeneration
@@ -2189,11 +2245,19 @@ func (s *adminServiceImpl) UpdateGroup(ctx context.Context, id int64, input *Upd
 		return nil, err
 	}
 
-	if s.authCacheInvalidator != nil {
-		s.authCacheInvalidator.InvalidateAuthCacheByGroupID(ctx, id)
+	customGroupIDs, err := s.syncCustomSubscriptionGroupsAfterSourceGroupUpdate(ctx, group)
+	if err != nil {
+		return nil, err
 	}
 
-	// 如果指定了复制账号的源分组，同步绑定（替换当前分组的账号）
+	if s.authCacheInvalidator != nil {
+		s.authCacheInvalidator.InvalidateAuthCacheByGroupID(ctx, id)
+		for _, customGroupID := range customGroupIDs {
+			s.authCacheInvalidator.InvalidateAuthCacheByGroupID(ctx, customGroupID)
+		}
+	}
+
+	// If requested, replace account bindings by copying from source groups.
 	if len(input.CopyAccountsFromGroupIDs) > 0 {
 		// 去重源分组 IDs
 		seen := make(map[int64]struct{})
@@ -2265,11 +2329,22 @@ func (s *adminServiceImpl) UpdateGroup(ctx context.Context, id int64, input *Upd
 }
 
 func (s *adminServiceImpl) DeleteGroup(ctx context.Context, id int64) error {
+	groupIDsForCache := []int64{id}
+	if lister, ok := s.groupRepo.(customSubscriptionGroupIDLister); ok {
+		customGroupIDs, err := lister.ListCustomSubscriptionGroupIDsBySourceGroupID(ctx, id)
+		if err != nil {
+			return fmt.Errorf("list custom subscription groups for delete: %w", err)
+		}
+		groupIDsForCache = appendUniqueInt64(groupIDsForCache, customGroupIDs...)
+	}
+
 	var groupKeys []string
 	if s.authCacheInvalidator != nil {
-		keys, err := s.apiKeyRepo.ListKeysByGroupID(ctx, id)
-		if err == nil {
-			groupKeys = keys
+		for _, groupID := range groupIDsForCache {
+			keys, err := s.apiKeyRepo.ListKeysByGroupID(ctx, groupID)
+			if err == nil {
+				groupKeys = append(groupKeys, keys...)
+			}
 		}
 	}
 
@@ -2281,16 +2356,17 @@ func (s *adminServiceImpl) DeleteGroup(ctx context.Context, id int64) error {
 
 	// 事务成功后，异步失效受影响用户的订阅缓存
 	if len(affectedUserIDs) > 0 && s.billingCacheService != nil {
-		groupID := id
-		go func() {
+		go func(groupIDs []int64) {
 			cacheCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 			defer cancel()
 			for _, userID := range affectedUserIDs {
-				if err := s.billingCacheService.InvalidateSubscription(cacheCtx, userID, groupID); err != nil {
-					logger.LegacyPrintf("service.admin", "invalidate subscription cache failed: user_id=%d group_id=%d err=%v", userID, groupID, err)
+				for _, groupID := range groupIDs {
+					if err := s.billingCacheService.InvalidateSubscription(cacheCtx, userID, groupID); err != nil {
+						logger.LegacyPrintf("service.admin", "invalidate subscription cache failed: user_id=%d group_id=%d err=%v", userID, groupID, err)
+					}
 				}
 			}
-		}()
+		}(append([]int64(nil), groupIDsForCache...))
 	}
 	if s.authCacheInvalidator != nil {
 		for _, key := range groupKeys {
@@ -2321,9 +2397,9 @@ func (s *adminServiceImpl) ClearGroupRateMultipliers(ctx context.Context, groupI
 	if s.userGroupRateRepo == nil {
 		return nil
 	}
-	return s.userGroupRateRepo.DeleteByGroupID(ctx, groupID)
+	// Clear only rate_multiplier; RPM overrides are managed by ClearGroupRPMOverrides.
+	return s.userGroupRateRepo.SyncGroupRateMultipliers(ctx, groupID, nil)
 }
-
 func (s *adminServiceImpl) BatchSetGroupRateMultipliers(ctx context.Context, groupID int64, entries []GroupRateMultiplierInput) error {
 	if s.userGroupRateRepo == nil {
 		return nil
@@ -2340,13 +2416,15 @@ func (s *adminServiceImpl) ClearGroupRPMOverrides(ctx context.Context, groupID i
 	if s.userGroupRateRepo == nil {
 		return nil
 	}
+	customGroupIDs, err := s.customSubscriptionGroupIDsForSourceGroup(ctx, groupID)
+	if err != nil {
+		return err
+	}
 	if err := s.userGroupRateRepo.ClearGroupRPMOverrides(ctx, groupID); err != nil {
 		return err
 	}
-	// RPM override 已嵌入 auth cache snapshot (v7)，变更后必须失效相关缓存。
-	if s.authCacheInvalidator != nil {
-		s.authCacheInvalidator.InvalidateAuthCacheByGroupID(ctx, groupID)
-	}
+	// RPM overrides are embedded in auth cache snapshots; source changes also affect derived custom groups.
+	s.invalidateAuthCacheByGroupIDs(ctx, appendUniqueInt64([]int64{groupID}, customGroupIDs...))
 	return nil
 }
 
@@ -2359,14 +2437,139 @@ func (s *adminServiceImpl) BatchSetGroupRPMOverrides(ctx context.Context, groupI
 			return infraerrors.BadRequest("INVALID_RPM_OVERRIDE", fmt.Sprintf("rpm_override must be >= 0 (user_id=%d)", e.UserID))
 		}
 	}
+	customGroupIDs, err := s.customSubscriptionGroupIDsForSourceGroup(ctx, groupID)
+	if err != nil {
+		return err
+	}
 	if err := s.userGroupRateRepo.SyncGroupRPMOverrides(ctx, groupID, entries); err != nil {
 		return err
 	}
-	// RPM override 已嵌入 auth cache snapshot (v7)，变更后必须失效相关缓存。
-	if s.authCacheInvalidator != nil {
-		s.authCacheInvalidator.InvalidateAuthCacheByGroupID(ctx, groupID)
+	// RPM overrides are embedded in auth cache snapshots; source changes also affect derived custom groups.
+	s.invalidateAuthCacheByGroupIDs(ctx, appendUniqueInt64([]int64{groupID}, customGroupIDs...))
+	return nil
+}
+
+func hasCustomGroupCreateMetadata(input *CreateGroupInput) bool {
+	if input == nil {
+		return false
+	}
+	return input.IsCustomSubscriptionGroup ||
+		input.CustomOwnerUserID != nil ||
+		input.CustomSourcePlanID != nil ||
+		input.CustomSourceGroupID != nil ||
+		input.CustomMultiplier != nil
+}
+
+func validateCustomGroupMetadataUpdate(group *Group, input *UpdateGroupInput) error {
+	if group == nil || input == nil {
+		return nil
+	}
+	if input.IsCustomSubscriptionGroup != nil && *input.IsCustomSubscriptionGroup != group.IsCustomSubscriptionGroup {
+		return errors.New("custom subscription group flag is system-managed")
+	}
+	if input.CustomOwnerUserID != nil && !sameInt64PtrValue(input.CustomOwnerUserID, group.CustomOwnerUserID) {
+		return errors.New("custom subscription group owner is system-managed")
+	}
+	if input.CustomSourcePlanID != nil && !sameInt64PtrValue(input.CustomSourcePlanID, group.CustomSourcePlanID) {
+		return errors.New("custom subscription source plan is system-managed")
+	}
+	if input.CustomSourceGroupID != nil && !sameInt64PtrValue(input.CustomSourceGroupID, group.CustomSourceGroupID) {
+		return errors.New("custom subscription source group is system-managed")
 	}
 	return nil
+}
+
+func sameInt64PtrValue(a, b *int64) bool {
+	if a == nil || b == nil {
+		return a == nil && b == nil
+	}
+	return *a == *b
+}
+
+func (s *adminServiceImpl) applyCustomGroupMultiplierLimits(ctx context.Context, group *Group) error {
+	if group == nil || !group.IsCustomSubscriptionGroup || group.CustomMultiplier == nil {
+		return nil
+	}
+	if *group.CustomMultiplier < minCustomSubscriptionMultiplier {
+		return fmt.Errorf("custom_multiplier must be >= %d", minCustomSubscriptionMultiplier)
+	}
+	if *group.CustomMultiplier > maxCustomSubscriptionMultiplier {
+		return fmt.Errorf("custom_multiplier must be <= %d", maxCustomSubscriptionMultiplier)
+	}
+	if group.CustomSourceGroupID == nil || *group.CustomSourceGroupID <= 0 {
+		return errors.New("custom source group is required")
+	}
+	source, err := s.groupRepo.GetByIDLite(ctx, *group.CustomSourceGroupID)
+	if err != nil {
+		return fmt.Errorf("custom source group not found: %w", err)
+	}
+	if source.Status != StatusActive {
+		return errors.New("custom source group must be active")
+	}
+	if source.SubscriptionType != SubscriptionTypeSubscription {
+		return errors.New("custom source group must be subscription type")
+	}
+	multiplier := float64(*group.CustomMultiplier)
+	group.DailyLimitUSD = multiplyOptionalLimit(source.DailyLimitUSD, multiplier)
+	group.WeeklyLimitUSD = multiplyOptionalLimit(source.WeeklyLimitUSD, multiplier)
+	group.MonthlyLimitUSD = multiplyOptionalLimit(source.MonthlyLimitUSD, multiplier)
+	return nil
+}
+
+func multiplyOptionalLimit(value *float64, multiplier float64) *float64 {
+	if value == nil {
+		return nil
+	}
+	out := (*value) * multiplier
+	return &out
+}
+
+func (s *adminServiceImpl) syncCustomSubscriptionGroupsAfterSourceGroupUpdate(ctx context.Context, group *Group) ([]int64, error) {
+	if s == nil || s.entClient == nil || group == nil || group.IsCustomSubscriptionGroup {
+		return nil, nil
+	}
+	syncSvc := &PaymentService{
+		entClient:            s.entClient,
+		groupRepo:            s.groupRepo,
+		authCacheInvalidator: s.authCacheInvalidator,
+	}
+	customGroupIDs, err := syncSvc.syncCustomGroupsForSourceGroupUpdate(ctx, group)
+	if err != nil {
+		return customGroupIDs, fmt.Errorf("sync custom subscription groups after source group update: %w", err)
+	}
+	return customGroupIDs, nil
+}
+
+func (s *adminServiceImpl) customSubscriptionGroupIDsForSourceGroup(ctx context.Context, groupID int64) ([]int64, error) {
+	if s == nil || groupID <= 0 || s.groupRepo == nil {
+		return nil, nil
+	}
+	lister, ok := s.groupRepo.(customSubscriptionGroupIDLister)
+	if !ok {
+		return nil, nil
+	}
+	ids, err := lister.ListCustomSubscriptionGroupIDsBySourceGroupID(ctx, groupID)
+	if err != nil {
+		return nil, fmt.Errorf("list custom subscription groups for source group %d: %w", groupID, err)
+	}
+	return ids, nil
+}
+
+func (s *adminServiceImpl) invalidateAuthCacheByGroupIDs(ctx context.Context, groupIDs []int64) {
+	if s == nil || s.authCacheInvalidator == nil {
+		return
+	}
+	seen := make(map[int64]struct{}, len(groupIDs))
+	for _, groupID := range groupIDs {
+		if groupID <= 0 {
+			continue
+		}
+		if _, ok := seen[groupID]; ok {
+			continue
+		}
+		seen[groupID] = struct{}{}
+		s.authCacheInvalidator.InvalidateAuthCacheByGroupID(ctx, groupID)
+	}
 }
 
 func (s *adminServiceImpl) UpdateGroupSortOrders(ctx context.Context, updates []GroupSortOrderUpdate) error {

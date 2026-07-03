@@ -106,14 +106,59 @@ func (r *paymentFulfillmentSubscriptionRepo) GetByUserIDAndGroupID(ctx context.C
 	}, nil
 }
 
-func (r *paymentFulfillmentSubscriptionRepo) GetActiveByUserIDAndGroupID(context.Context, int64, int64) (*UserSubscription, error) {
-	panic("unexpected GetActiveByUserIDAndGroupID call")
+func (r *paymentFulfillmentSubscriptionRepo) GetActiveByUserIDAndGroupID(ctx context.Context, userID, groupID int64) (*UserSubscription, error) {
+	client := paymentFulfillmentSubscriptionClientFromContext(ctx, r.client)
+	m, err := client.UserSubscription.Query().
+		Where(
+			usersubscription.UserIDEQ(userID),
+			usersubscription.GroupIDEQ(groupID),
+			usersubscription.StatusEQ(SubscriptionStatusActive),
+			usersubscription.ExpiresAtGT(time.Now()),
+		).
+		Only(ctx)
+	if err != nil {
+		return nil, ErrSubscriptionNotFound
+	}
+	return &UserSubscription{
+		ID:                 m.ID,
+		UserID:             m.UserID,
+		GroupID:            m.GroupID,
+		StartsAt:           m.StartsAt,
+		ExpiresAt:          m.ExpiresAt,
+		Status:             m.Status,
+		AssignedAt:         m.AssignedAt,
+		AssignedBy:         m.AssignedBy,
+		Notes:              derefString(m.Notes),
+		DailyUsageUSD:      m.DailyUsageUsd,
+		WeeklyUsageUSD:     m.WeeklyUsageUsd,
+		MonthlyUsageUSD:    m.MonthlyUsageUsd,
+		DailyWindowStart:   m.DailyWindowStart,
+		WeeklyWindowStart:  m.WeeklyWindowStart,
+		MonthlyWindowStart: m.MonthlyWindowStart,
+	}, nil
 }
-func (r *paymentFulfillmentSubscriptionRepo) Update(context.Context, *UserSubscription) error {
-	panic("unexpected Update call")
+func (r *paymentFulfillmentSubscriptionRepo) Update(ctx context.Context, sub *UserSubscription) error {
+	if sub == nil {
+		return ErrSubscriptionNilInput
+	}
+	client := paymentFulfillmentSubscriptionClientFromContext(ctx, r.client)
+	_, err := client.UserSubscription.UpdateOneID(sub.ID).
+		SetUserID(sub.UserID).
+		SetGroupID(sub.GroupID).
+		SetStartsAt(sub.StartsAt).
+		SetExpiresAt(sub.ExpiresAt).
+		SetStatus(sub.Status).
+		SetDailyUsageUsd(sub.DailyUsageUSD).
+		SetWeeklyUsageUsd(sub.WeeklyUsageUSD).
+		SetMonthlyUsageUsd(sub.MonthlyUsageUSD).
+		SetNotes(sub.Notes).
+		Save(ctx)
+	return err
 }
-func (r *paymentFulfillmentSubscriptionRepo) Delete(context.Context, int64) error {
-	panic("unexpected Delete call")
+func (r *paymentFulfillmentSubscriptionRepo) Delete(ctx context.Context, id int64) error {
+	client := paymentFulfillmentSubscriptionClientFromContext(ctx, r.client)
+	_, err := client.UserSubscription.Delete().Where(usersubscription.IDEQ(id)).Exec(ctx)
+	return err
 }
 func (r *paymentFulfillmentSubscriptionRepo) ListByUserID(context.Context, int64) ([]UserSubscription, error) {
 	panic("unexpected ListByUserID call")
@@ -130,14 +175,20 @@ func (r *paymentFulfillmentSubscriptionRepo) List(context.Context, pagination.Pa
 func (r *paymentFulfillmentSubscriptionRepo) ExistsByUserIDAndGroupID(context.Context, int64, int64) (bool, error) {
 	panic("unexpected ExistsByUserIDAndGroupID call")
 }
-func (r *paymentFulfillmentSubscriptionRepo) ExtendExpiry(context.Context, int64, time.Time) error {
-	panic("unexpected ExtendExpiry call")
+func (r *paymentFulfillmentSubscriptionRepo) ExtendExpiry(ctx context.Context, id int64, expiresAt time.Time) error {
+	client := paymentFulfillmentSubscriptionClientFromContext(ctx, r.client)
+	_, err := client.UserSubscription.UpdateOneID(id).SetExpiresAt(expiresAt).Save(ctx)
+	return err
 }
-func (r *paymentFulfillmentSubscriptionRepo) UpdateStatus(context.Context, int64, string) error {
-	panic("unexpected UpdateStatus call")
+func (r *paymentFulfillmentSubscriptionRepo) UpdateStatus(ctx context.Context, id int64, status string) error {
+	client := paymentFulfillmentSubscriptionClientFromContext(ctx, r.client)
+	_, err := client.UserSubscription.UpdateOneID(id).SetStatus(status).Save(ctx)
+	return err
 }
-func (r *paymentFulfillmentSubscriptionRepo) UpdateNotes(context.Context, int64, string) error {
-	panic("unexpected UpdateNotes call")
+func (r *paymentFulfillmentSubscriptionRepo) UpdateNotes(ctx context.Context, id int64, notes string) error {
+	client := paymentFulfillmentSubscriptionClientFromContext(ctx, r.client)
+	_, err := client.UserSubscription.UpdateOneID(id).SetNotes(notes).Save(ctx)
+	return err
 }
 func (r *paymentFulfillmentSubscriptionRepo) ActivateWindows(context.Context, int64, time.Time) error {
 	panic("unexpected ActivateWindows call")

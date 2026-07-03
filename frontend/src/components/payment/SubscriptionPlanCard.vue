@@ -2,7 +2,7 @@
   <div
     :class="[
       'group relative flex flex-col overflow-hidden rounded-2xl border transition-all',
-      'hover:shadow-xl hover:-translate-y-0.5',
+      'hover:shadow-xl',
       borderClass,
       'bg-surface-card',
     ]"
@@ -19,19 +19,30 @@
             <span :class="['shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium', badgeLightClass]">
               {{ pLabel }}
             </span>
+            <span
+              v-if="isRenewal && effectiveMultiplier > 1"
+              class="inline-flex shrink-0 items-center rounded-full bg-[#F5C66B]/15 px-2 py-0.5 text-[11px] font-bold text-[#3D2E2A] dark:bg-[#F5C66B]/10 dark:text-[#F5C66B]"
+            >
+              {{ effectiveMultiplier }}x
+            </span>
           </div>
           <p v-if="plan.description" class="mt-0.5 text-xs leading-relaxed text-content-tertiary line-clamp-2">
             {{ plan.description }}
           </p>
         </div>
         <div class="shrink-0 text-right">
-          <div class="flex items-baseline gap-1">
-            <span class="text-xs text-content-tertiary">¥</span>
-            <span :class="['text-2xl font-extrabold tracking-tight', textClass]">{{ plan.price }}</span>
+          <div v-if="couponDisplayPrice != null" class="flex items-baseline justify-end gap-1.5">
+            <span class="text-xs text-gray-400 line-through dark:text-dark-500">&yen;{{ effectivePrice }}</span>
+            <span class="text-xs text-content-tertiary">&yen;</span>
+            <span class="text-2xl font-extrabold tracking-tight text-[#3D2E2A] dark:text-[#F5C66B]">{{ couponDisplayPrice }}</span>
+          </div>
+          <div v-else class="flex items-baseline justify-end gap-1">
+            <span class="text-xs text-content-tertiary">&yen;</span>
+            <span :class="['text-2xl font-extrabold tracking-tight', textClass]">{{ effectivePrice }}</span>
           </div>
           <span class="text-[11px] text-content-tertiary">/ {{ validitySuffix }}</span>
-          <div v-if="plan.original_price" class="mt-0.5 flex items-center justify-end gap-1.5">
-            <span class="text-xs text-gray-400 line-through dark:text-dark-500">¥{{ plan.original_price }}</span>
+          <div v-if="effectiveOriginalPrice" class="mt-0.5 flex items-center justify-end gap-1.5">
+            <span class="text-xs text-gray-400 line-through dark:text-dark-500">&yen;{{ effectiveOriginalPrice }}</span>
             <span :class="['rounded px-1 py-0.5 text-[10px] font-semibold', discountClass]">{{ discountText }}</span>
           </div>
         </div>
@@ -43,23 +54,23 @@
           <span class="text-content-tertiary">{{ t('payment.planCard.rate') }}</span>
           <span class="font-medium text-content-secondary">{{ rateDisplay }}</span>
         </div>
-        <div v-if="plan.daily_limit_usd != null" class="flex items-center justify-between">
+        <div v-if="effectiveDailyLimit != null" class="flex items-center justify-between">
           <span class="text-content-tertiary">{{ t('payment.planCard.dailyLimit') }}</span>
-          <span class="font-medium text-content-secondary">${{ plan.daily_limit_usd }}</span>
+          <span class="font-medium text-content-secondary">${{ effectiveDailyLimit }}</span>
         </div>
-        <div v-if="plan.weekly_limit_usd != null" class="flex items-center justify-between">
+        <div v-if="effectiveWeeklyLimit != null" class="flex items-center justify-between">
           <span class="text-content-tertiary">{{ t('payment.planCard.weeklyLimit') }}</span>
-          <span class="font-medium text-content-secondary">${{ plan.weekly_limit_usd }}</span>
+          <span class="font-medium text-content-secondary">${{ effectiveWeeklyLimit }}</span>
         </div>
-        <div v-if="plan.monthly_limit_usd != null" class="flex items-center justify-between">
+        <div v-if="effectiveMonthlyLimit != null" class="flex items-center justify-between">
           <span class="text-content-tertiary">{{ t('payment.planCard.monthlyLimit') }}</span>
-          <span class="font-medium text-content-secondary">${{ plan.monthly_limit_usd }}</span>
+          <span class="font-medium text-content-secondary">${{ effectiveMonthlyLimit }}</span>
         </div>
-        <div v-if="plan.daily_limit_usd == null && plan.weekly_limit_usd == null && plan.monthly_limit_usd == null" class="flex items-center justify-between">
+        <div v-if="effectiveDailyLimit == null && effectiveWeeklyLimit == null && effectiveMonthlyLimit == null" class="flex items-center justify-between">
           <span class="text-content-tertiary">{{ t('payment.planCard.quota') }}</span>
           <span class="font-medium text-content-secondary">{{ t('payment.planCard.unlimited') }}</span>
         </div>
-        <!-- <div v-if="modelScopeLabels.length > 0" class="col-span-2 flex items-center justify-between">
+        <div v-if="modelScopeLabels.length > 0" class="col-span-2 flex items-center justify-between">
           <span class="text-content-tertiary">{{ t('payment.planCard.models') }}</span>
           <div class="flex flex-wrap justify-end gap-1">
             <span v-for="scope in modelScopeLabels" :key="scope"
@@ -67,7 +78,7 @@
               {{ scope }}
             </span>
           </div>
-        </div> -->
+        </div>
       </div>
 
       <!-- Features list (compact) -->
@@ -82,21 +93,35 @@
 
       <div class="flex-1" />
 
-      <!-- Subscribe Button -->
-      <button
-        type="button"
-        :class="['w-full rounded-xl py-2.5 text-sm font-semibold transition-all active:scale-[0.98]', btnClass]"
-        @click="emit('select', plan)"
-      >
-        {{ isRenewal ? t('payment.renewNow') : t('payment.subscribeNow') }}
-      </button>
+      <div class="flex items-center gap-2">
+        <div v-if="showMultiplierSelector" class="min-w-[88px]">
+          <span class="sr-only">{{ t('payment.planCard.multiplier') }}</span>
+          <Select
+            :model-value="selectedMultiplier"
+            :options="multiplierSelectOptions"
+            :placeholder="t('payment.planCard.multiplier')"
+            :searchable="false"
+            :clearable="false"
+            @update:model-value="handleMultiplierUpdate"
+          />
+        </div>
+        <!-- Subscribe Button -->
+        <button
+          type="button"
+          :class="['flex-1 rounded-xl py-2.5 text-sm font-semibold transition-all active:scale-[0.98]', btnClass]"
+          @click="emit('select', plan, effectiveMultiplier)"
+        >
+          {{ isRenewal ? t('payment.renewNow') : t('payment.subscribeNow') }}
+        </button>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import Select, { type SelectOption } from '@/components/common/Select.vue'
 import type { SubscriptionPlan } from '@/types/payment'
 import type { UserSubscription } from '@/types'
 import {
@@ -110,14 +135,91 @@ import {
   platformLabel,
 } from '@/utils/platformColors'
 
-const props = defineProps<{ plan: SubscriptionPlan; activeSubscriptions?: UserSubscription[] }>()
-const emit = defineEmits<{ select: [plan: SubscriptionPlan] }>()
+const props = defineProps<{ plan: SubscriptionPlan; activeSubscriptions?: UserSubscription[]; couponPayAmount?: number | null }>()
+const emit = defineEmits<{
+  select: [plan: SubscriptionPlan, multiplier: number]
+  'multiplier-change': [plan: SubscriptionPlan, multiplier: number]
+}>()
 const { t } = useI18n()
 
 const platform = computed(() => props.plan.group_platform || '')
-const isRenewal = computed(() =>
-  props.activeSubscriptions?.some(s => s.group_id === props.plan.group_id && s.status === 'active') ?? false
+
+function multiplierMin(plan: SubscriptionPlan): number {
+  return Math.max(1, Number(plan.custom_multiplier_min ?? 1))
+}
+
+function multiplierMax(plan: SubscriptionPlan): number {
+  return Math.max(multiplierMin(plan), Number(plan.custom_multiplier_max || multiplierMin(plan)))
+}
+
+function roundAmount(value: number): number {
+  return Math.round(value * 100) / 100
+}
+
+function multiplyLimit(value: number | null | undefined, multiplier: number): number | null {
+  if (value == null) return null
+  return roundAmount(value * multiplier)
+}
+
+function isSubscriptionCurrentlyActive(subscription: UserSubscription): boolean {
+  if (subscription.status !== 'active') return false
+  if (!subscription.expires_at) return true
+  const expiresAt = Date.parse(subscription.expires_at)
+  return Number.isFinite(expiresAt) && expiresAt > Date.now()
+}
+
+const selectedMultiplier = ref(multiplierMin(props.plan))
+
+watch(() => props.plan.id, () => {
+  selectedMultiplier.value = multiplierMin(props.plan)
+})
+
+const customRenewalSubscription = computed(() =>
+  props.activeSubscriptions?.find(s =>
+    isSubscriptionCurrentlyActive(s)
+      && s.group?.is_custom_subscription_group === true
+      && s.group?.custom_source_plan_id === props.plan.id,
+  ) ?? null,
 )
+
+const normalRenewalSubscription = computed(() => {
+  if (props.plan.custom_multiplier_enabled === true) return null
+  return props.activeSubscriptions?.find(s =>
+    isSubscriptionCurrentlyActive(s)
+      && s.group_id === props.plan.group_id
+      && s.group?.is_custom_subscription_group !== true,
+  ) ?? null
+})
+
+const isRenewal = computed(() => !!customRenewalSubscription.value || !!normalRenewalSubscription.value)
+const showMultiplierSelector = computed(() => props.plan.custom_multiplier_enabled === true && !isRenewal.value)
+const multiplierOptions = computed(() => {
+  if (!showMultiplierSelector.value) return []
+  const min = multiplierMin(props.plan)
+  const max = multiplierMax(props.plan)
+  return Array.from({ length: max - min + 1 }, (_, index) => min + index)
+})
+const multiplierSelectOptions = computed<SelectOption[]>(() =>
+  multiplierOptions.value.map(value => ({ value, label: `${value}x` })),
+)
+
+function handleMultiplierUpdate(value: string | number | boolean | null): void {
+  const nextMultiplier = Number(value)
+  if (!Number.isFinite(nextMultiplier)) return
+  if (!multiplierOptions.value.includes(nextMultiplier)) return
+  selectedMultiplier.value = nextMultiplier
+}
+
+const effectiveMultiplier = computed(() => {
+  const customMultiplier = customRenewalSubscription.value?.group?.custom_multiplier
+  if (customMultiplier && customMultiplier >= 1) return customMultiplier
+  if (showMultiplierSelector.value) return selectedMultiplier.value
+  return 1
+})
+
+watch(effectiveMultiplier, multiplier => {
+  emit('multiplier-change', props.plan, multiplier)
+}, { immediate: true })
 
 // Derived color classes from central config
 const accentClass = computed(() => platformAccentBarClass(platform.value))
@@ -129,15 +231,27 @@ const btnClass = computed(() => platformButtonClass(platform.value))
 const discountClass = computed(() => platformDiscountClass(platform.value))
 const pLabel = computed(() => platformLabel(platform.value))
 
+const effectivePrice = computed(() => roundAmount(props.plan.price * effectiveMultiplier.value))
+const couponDisplayPrice = computed(() => {
+  const value = Number(props.couponPayAmount)
+  if (!Number.isFinite(value)) return null
+  const rounded = roundAmount(Math.max(0, value))
+  return rounded < effectivePrice.value ? rounded : null
+})
+const effectiveOriginalPrice = computed(() => props.plan.original_price ? roundAmount(props.plan.original_price * effectiveMultiplier.value) : null)
+const effectiveDailyLimit = computed(() => multiplyLimit(props.plan.daily_limit_usd, effectiveMultiplier.value))
+const effectiveWeeklyLimit = computed(() => multiplyLimit(props.plan.weekly_limit_usd, effectiveMultiplier.value))
+const effectiveMonthlyLimit = computed(() => multiplyLimit(props.plan.monthly_limit_usd, effectiveMultiplier.value))
+
 const discountText = computed(() => {
-  if (!props.plan.original_price || props.plan.original_price <= 0) return ''
-  const pct = Math.round((1 - props.plan.price / props.plan.original_price) * 100)
+  if (!effectiveOriginalPrice.value || effectiveOriginalPrice.value <= 0) return ''
+  const pct = Math.round((1 - effectivePrice.value / effectiveOriginalPrice.value) * 100)
   return pct > 0 ? `-${pct}%` : ''
 })
 
 const rateDisplay = computed(() => {
   const rate = props.plan.rate_multiplier ?? 1
-  return `×${Number(rate.toPrecision(10))}`
+  return `${Number(rate.toPrecision(10))}x`
 })
 
 const MODEL_SCOPE_LABELS: Record<string, string> = {

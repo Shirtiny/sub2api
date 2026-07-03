@@ -225,10 +225,7 @@ func (s *AnnouncementService) ListForUser(ctx context.Context, userID int64, unr
 	if err != nil {
 		return nil, fmt.Errorf("list active subscriptions: %w", err)
 	}
-	activeGroupIDs := make(map[int64]struct{}, len(activeSubs))
-	for i := range activeSubs {
-		activeGroupIDs[activeSubs[i].GroupID] = struct{}{}
-	}
+	activeGroupIDs := announcementActiveSubscriptionGroupIDs(activeSubs)
 
 	now := time.Now()
 	anns, err := s.announcementRepo.ListActive(ctx, now)
@@ -362,10 +359,7 @@ func (s *AnnouncementService) ListUserReadStatus(
 		if err != nil {
 			return nil, nil, fmt.Errorf("list active subscriptions: %w", err)
 		}
-		activeGroupIDs := make(map[int64]struct{}, len(subs))
-		for j := range subs {
-			activeGroupIDs[subs[j].GroupID] = struct{}{}
-		}
+		activeGroupIDs := announcementActiveSubscriptionGroupIDs(subs)
 
 		readAt, ok := readMap[u.ID]
 		var ptr *time.Time
@@ -385,6 +379,19 @@ func (s *AnnouncementService) ListUserReadStatus(
 	}
 
 	return out, page, nil
+}
+
+func announcementActiveSubscriptionGroupIDs(subs []UserSubscription) map[int64]struct{} {
+	activeGroupIDs := make(map[int64]struct{}, len(subs)*2)
+	for i := range subs {
+		if subs[i].GroupID > 0 {
+			activeGroupIDs[subs[i].GroupID] = struct{}{}
+		}
+		if subs[i].Group != nil && subs[i].Group.IsCustomSubscriptionGroup && subs[i].Group.CustomSourceGroupID != nil && *subs[i].Group.CustomSourceGroupID > 0 {
+			activeGroupIDs[*subs[i].Group.CustomSourceGroupID] = struct{}{}
+		}
+	}
+	return activeGroupIDs
 }
 
 func isValidAnnouncementStatus(status string) bool {

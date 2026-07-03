@@ -651,6 +651,128 @@ func (_u *GroupUpdate) AddRpmLimit(v int) *GroupUpdate {
 	return _u
 }
 
+// SetIsCustomSubscriptionGroup sets the "is_custom_subscription_group" field.
+func (_u *GroupUpdate) SetIsCustomSubscriptionGroup(v bool) *GroupUpdate {
+	_u.mutation.SetIsCustomSubscriptionGroup(v)
+	return _u
+}
+
+// SetNillableIsCustomSubscriptionGroup sets the "is_custom_subscription_group" field if the given value is not nil.
+func (_u *GroupUpdate) SetNillableIsCustomSubscriptionGroup(v *bool) *GroupUpdate {
+	if v != nil {
+		_u.SetIsCustomSubscriptionGroup(*v)
+	}
+	return _u
+}
+
+// SetCustomOwnerUserID sets the "custom_owner_user_id" field.
+func (_u *GroupUpdate) SetCustomOwnerUserID(v int64) *GroupUpdate {
+	_u.mutation.ResetCustomOwnerUserID()
+	_u.mutation.SetCustomOwnerUserID(v)
+	return _u
+}
+
+// SetNillableCustomOwnerUserID sets the "custom_owner_user_id" field if the given value is not nil.
+func (_u *GroupUpdate) SetNillableCustomOwnerUserID(v *int64) *GroupUpdate {
+	if v != nil {
+		_u.SetCustomOwnerUserID(*v)
+	}
+	return _u
+}
+
+// AddCustomOwnerUserID adds value to the "custom_owner_user_id" field.
+func (_u *GroupUpdate) AddCustomOwnerUserID(v int64) *GroupUpdate {
+	_u.mutation.AddCustomOwnerUserID(v)
+	return _u
+}
+
+// ClearCustomOwnerUserID clears the value of the "custom_owner_user_id" field.
+func (_u *GroupUpdate) ClearCustomOwnerUserID() *GroupUpdate {
+	_u.mutation.ClearCustomOwnerUserID()
+	return _u
+}
+
+// SetCustomSourcePlanID sets the "custom_source_plan_id" field.
+func (_u *GroupUpdate) SetCustomSourcePlanID(v int64) *GroupUpdate {
+	_u.mutation.ResetCustomSourcePlanID()
+	_u.mutation.SetCustomSourcePlanID(v)
+	return _u
+}
+
+// SetNillableCustomSourcePlanID sets the "custom_source_plan_id" field if the given value is not nil.
+func (_u *GroupUpdate) SetNillableCustomSourcePlanID(v *int64) *GroupUpdate {
+	if v != nil {
+		_u.SetCustomSourcePlanID(*v)
+	}
+	return _u
+}
+
+// AddCustomSourcePlanID adds value to the "custom_source_plan_id" field.
+func (_u *GroupUpdate) AddCustomSourcePlanID(v int64) *GroupUpdate {
+	_u.mutation.AddCustomSourcePlanID(v)
+	return _u
+}
+
+// ClearCustomSourcePlanID clears the value of the "custom_source_plan_id" field.
+func (_u *GroupUpdate) ClearCustomSourcePlanID() *GroupUpdate {
+	_u.mutation.ClearCustomSourcePlanID()
+	return _u
+}
+
+// SetCustomSourceGroupID sets the "custom_source_group_id" field.
+func (_u *GroupUpdate) SetCustomSourceGroupID(v int64) *GroupUpdate {
+	_u.mutation.ResetCustomSourceGroupID()
+	_u.mutation.SetCustomSourceGroupID(v)
+	return _u
+}
+
+// SetNillableCustomSourceGroupID sets the "custom_source_group_id" field if the given value is not nil.
+func (_u *GroupUpdate) SetNillableCustomSourceGroupID(v *int64) *GroupUpdate {
+	if v != nil {
+		_u.SetCustomSourceGroupID(*v)
+	}
+	return _u
+}
+
+// AddCustomSourceGroupID adds value to the "custom_source_group_id" field.
+func (_u *GroupUpdate) AddCustomSourceGroupID(v int64) *GroupUpdate {
+	_u.mutation.AddCustomSourceGroupID(v)
+	return _u
+}
+
+// ClearCustomSourceGroupID clears the value of the "custom_source_group_id" field.
+func (_u *GroupUpdate) ClearCustomSourceGroupID() *GroupUpdate {
+	_u.mutation.ClearCustomSourceGroupID()
+	return _u
+}
+
+// SetCustomMultiplier sets the "custom_multiplier" field.
+func (_u *GroupUpdate) SetCustomMultiplier(v int) *GroupUpdate {
+	_u.mutation.ResetCustomMultiplier()
+	_u.mutation.SetCustomMultiplier(v)
+	return _u
+}
+
+// SetNillableCustomMultiplier sets the "custom_multiplier" field if the given value is not nil.
+func (_u *GroupUpdate) SetNillableCustomMultiplier(v *int) *GroupUpdate {
+	if v != nil {
+		_u.SetCustomMultiplier(*v)
+	}
+	return _u
+}
+
+// AddCustomMultiplier adds value to the "custom_multiplier" field.
+func (_u *GroupUpdate) AddCustomMultiplier(v int) *GroupUpdate {
+	_u.mutation.AddCustomMultiplier(v)
+	return _u
+}
+
+// ClearCustomMultiplier clears the value of the "custom_multiplier" field.
+func (_u *GroupUpdate) ClearCustomMultiplier() *GroupUpdate {
+	_u.mutation.ClearCustomMultiplier()
+	return _u
+}
+
 // AddAPIKeyIDs adds the "api_keys" edge to the APIKey entity by IDs.
 func (_u *GroupUpdate) AddAPIKeyIDs(ids ...int64) *GroupUpdate {
 	_u.mutation.AddAPIKeyIDs(ids...)
@@ -1134,6 +1256,45 @@ func (_u *GroupUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.AddedRpmLimit(); ok {
 		_spec.AddField(group.FieldRpmLimit, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.IsCustomSubscriptionGroup(); ok {
+		_spec.SetField(group.FieldIsCustomSubscriptionGroup, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.CustomOwnerUserID(); ok {
+		_spec.SetField(group.FieldCustomOwnerUserID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedCustomOwnerUserID(); ok {
+		_spec.AddField(group.FieldCustomOwnerUserID, field.TypeInt64, value)
+	}
+	if _u.mutation.CustomOwnerUserIDCleared() {
+		_spec.ClearField(group.FieldCustomOwnerUserID, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.CustomSourcePlanID(); ok {
+		_spec.SetField(group.FieldCustomSourcePlanID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedCustomSourcePlanID(); ok {
+		_spec.AddField(group.FieldCustomSourcePlanID, field.TypeInt64, value)
+	}
+	if _u.mutation.CustomSourcePlanIDCleared() {
+		_spec.ClearField(group.FieldCustomSourcePlanID, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.CustomSourceGroupID(); ok {
+		_spec.SetField(group.FieldCustomSourceGroupID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedCustomSourceGroupID(); ok {
+		_spec.AddField(group.FieldCustomSourceGroupID, field.TypeInt64, value)
+	}
+	if _u.mutation.CustomSourceGroupIDCleared() {
+		_spec.ClearField(group.FieldCustomSourceGroupID, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.CustomMultiplier(); ok {
+		_spec.SetField(group.FieldCustomMultiplier, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedCustomMultiplier(); ok {
+		_spec.AddField(group.FieldCustomMultiplier, field.TypeInt, value)
+	}
+	if _u.mutation.CustomMultiplierCleared() {
+		_spec.ClearField(group.FieldCustomMultiplier, field.TypeInt)
 	}
 	if _u.mutation.APIKeysCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -2064,6 +2225,128 @@ func (_u *GroupUpdateOne) AddRpmLimit(v int) *GroupUpdateOne {
 	return _u
 }
 
+// SetIsCustomSubscriptionGroup sets the "is_custom_subscription_group" field.
+func (_u *GroupUpdateOne) SetIsCustomSubscriptionGroup(v bool) *GroupUpdateOne {
+	_u.mutation.SetIsCustomSubscriptionGroup(v)
+	return _u
+}
+
+// SetNillableIsCustomSubscriptionGroup sets the "is_custom_subscription_group" field if the given value is not nil.
+func (_u *GroupUpdateOne) SetNillableIsCustomSubscriptionGroup(v *bool) *GroupUpdateOne {
+	if v != nil {
+		_u.SetIsCustomSubscriptionGroup(*v)
+	}
+	return _u
+}
+
+// SetCustomOwnerUserID sets the "custom_owner_user_id" field.
+func (_u *GroupUpdateOne) SetCustomOwnerUserID(v int64) *GroupUpdateOne {
+	_u.mutation.ResetCustomOwnerUserID()
+	_u.mutation.SetCustomOwnerUserID(v)
+	return _u
+}
+
+// SetNillableCustomOwnerUserID sets the "custom_owner_user_id" field if the given value is not nil.
+func (_u *GroupUpdateOne) SetNillableCustomOwnerUserID(v *int64) *GroupUpdateOne {
+	if v != nil {
+		_u.SetCustomOwnerUserID(*v)
+	}
+	return _u
+}
+
+// AddCustomOwnerUserID adds value to the "custom_owner_user_id" field.
+func (_u *GroupUpdateOne) AddCustomOwnerUserID(v int64) *GroupUpdateOne {
+	_u.mutation.AddCustomOwnerUserID(v)
+	return _u
+}
+
+// ClearCustomOwnerUserID clears the value of the "custom_owner_user_id" field.
+func (_u *GroupUpdateOne) ClearCustomOwnerUserID() *GroupUpdateOne {
+	_u.mutation.ClearCustomOwnerUserID()
+	return _u
+}
+
+// SetCustomSourcePlanID sets the "custom_source_plan_id" field.
+func (_u *GroupUpdateOne) SetCustomSourcePlanID(v int64) *GroupUpdateOne {
+	_u.mutation.ResetCustomSourcePlanID()
+	_u.mutation.SetCustomSourcePlanID(v)
+	return _u
+}
+
+// SetNillableCustomSourcePlanID sets the "custom_source_plan_id" field if the given value is not nil.
+func (_u *GroupUpdateOne) SetNillableCustomSourcePlanID(v *int64) *GroupUpdateOne {
+	if v != nil {
+		_u.SetCustomSourcePlanID(*v)
+	}
+	return _u
+}
+
+// AddCustomSourcePlanID adds value to the "custom_source_plan_id" field.
+func (_u *GroupUpdateOne) AddCustomSourcePlanID(v int64) *GroupUpdateOne {
+	_u.mutation.AddCustomSourcePlanID(v)
+	return _u
+}
+
+// ClearCustomSourcePlanID clears the value of the "custom_source_plan_id" field.
+func (_u *GroupUpdateOne) ClearCustomSourcePlanID() *GroupUpdateOne {
+	_u.mutation.ClearCustomSourcePlanID()
+	return _u
+}
+
+// SetCustomSourceGroupID sets the "custom_source_group_id" field.
+func (_u *GroupUpdateOne) SetCustomSourceGroupID(v int64) *GroupUpdateOne {
+	_u.mutation.ResetCustomSourceGroupID()
+	_u.mutation.SetCustomSourceGroupID(v)
+	return _u
+}
+
+// SetNillableCustomSourceGroupID sets the "custom_source_group_id" field if the given value is not nil.
+func (_u *GroupUpdateOne) SetNillableCustomSourceGroupID(v *int64) *GroupUpdateOne {
+	if v != nil {
+		_u.SetCustomSourceGroupID(*v)
+	}
+	return _u
+}
+
+// AddCustomSourceGroupID adds value to the "custom_source_group_id" field.
+func (_u *GroupUpdateOne) AddCustomSourceGroupID(v int64) *GroupUpdateOne {
+	_u.mutation.AddCustomSourceGroupID(v)
+	return _u
+}
+
+// ClearCustomSourceGroupID clears the value of the "custom_source_group_id" field.
+func (_u *GroupUpdateOne) ClearCustomSourceGroupID() *GroupUpdateOne {
+	_u.mutation.ClearCustomSourceGroupID()
+	return _u
+}
+
+// SetCustomMultiplier sets the "custom_multiplier" field.
+func (_u *GroupUpdateOne) SetCustomMultiplier(v int) *GroupUpdateOne {
+	_u.mutation.ResetCustomMultiplier()
+	_u.mutation.SetCustomMultiplier(v)
+	return _u
+}
+
+// SetNillableCustomMultiplier sets the "custom_multiplier" field if the given value is not nil.
+func (_u *GroupUpdateOne) SetNillableCustomMultiplier(v *int) *GroupUpdateOne {
+	if v != nil {
+		_u.SetCustomMultiplier(*v)
+	}
+	return _u
+}
+
+// AddCustomMultiplier adds value to the "custom_multiplier" field.
+func (_u *GroupUpdateOne) AddCustomMultiplier(v int) *GroupUpdateOne {
+	_u.mutation.AddCustomMultiplier(v)
+	return _u
+}
+
+// ClearCustomMultiplier clears the value of the "custom_multiplier" field.
+func (_u *GroupUpdateOne) ClearCustomMultiplier() *GroupUpdateOne {
+	_u.mutation.ClearCustomMultiplier()
+	return _u
+}
+
 // AddAPIKeyIDs adds the "api_keys" edge to the APIKey entity by IDs.
 func (_u *GroupUpdateOne) AddAPIKeyIDs(ids ...int64) *GroupUpdateOne {
 	_u.mutation.AddAPIKeyIDs(ids...)
@@ -2577,6 +2860,45 @@ func (_u *GroupUpdateOne) sqlSave(ctx context.Context) (_node *Group, err error)
 	}
 	if value, ok := _u.mutation.AddedRpmLimit(); ok {
 		_spec.AddField(group.FieldRpmLimit, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.IsCustomSubscriptionGroup(); ok {
+		_spec.SetField(group.FieldIsCustomSubscriptionGroup, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.CustomOwnerUserID(); ok {
+		_spec.SetField(group.FieldCustomOwnerUserID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedCustomOwnerUserID(); ok {
+		_spec.AddField(group.FieldCustomOwnerUserID, field.TypeInt64, value)
+	}
+	if _u.mutation.CustomOwnerUserIDCleared() {
+		_spec.ClearField(group.FieldCustomOwnerUserID, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.CustomSourcePlanID(); ok {
+		_spec.SetField(group.FieldCustomSourcePlanID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedCustomSourcePlanID(); ok {
+		_spec.AddField(group.FieldCustomSourcePlanID, field.TypeInt64, value)
+	}
+	if _u.mutation.CustomSourcePlanIDCleared() {
+		_spec.ClearField(group.FieldCustomSourcePlanID, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.CustomSourceGroupID(); ok {
+		_spec.SetField(group.FieldCustomSourceGroupID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedCustomSourceGroupID(); ok {
+		_spec.AddField(group.FieldCustomSourceGroupID, field.TypeInt64, value)
+	}
+	if _u.mutation.CustomSourceGroupIDCleared() {
+		_spec.ClearField(group.FieldCustomSourceGroupID, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.CustomMultiplier(); ok {
+		_spec.SetField(group.FieldCustomMultiplier, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedCustomMultiplier(); ok {
+		_spec.AddField(group.FieldCustomMultiplier, field.TypeInt, value)
+	}
+	if _u.mutation.CustomMultiplierCleared() {
+		_spec.ClearField(group.FieldCustomMultiplier, field.TypeInt)
 	}
 	if _u.mutation.APIKeysCleared() {
 		edge := &sqlgraph.EdgeSpec{

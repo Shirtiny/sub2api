@@ -34,13 +34,15 @@ const (
 	VisibleMethodSourceOfficialWechat = "official_wxpay"
 	VisibleMethodSourceEasyPayWechat  = "easypay_wxpay"
 
-	wechatPaymentResumeTokenType = "wechat_payment_resume"
+	wechatPaymentResumeTokenType       = "wechat_payment_resume"
+	wechatPaymentOAuthContextTokenType = "wechat_payment_oauth_context"
 
 	paymentResumeNotConfiguredCode    = "PAYMENT_RESUME_NOT_CONFIGURED"
 	paymentResumeNotConfiguredMessage = "payment resume tokens require a configured signing key"
 
-	paymentResumeTokenTTL       = 24 * time.Hour
-	wechatPaymentResumeTokenTTL = 15 * time.Minute
+	paymentResumeTokenTTL             = 24 * time.Hour
+	wechatPaymentResumeTokenTTL       = 15 * time.Minute
+	wechatPaymentOAuthContextTokenTTL = 10 * time.Minute
 )
 
 type ResumeTokenClaims struct {
@@ -57,10 +59,27 @@ type ResumeTokenClaims struct {
 type WeChatPaymentResumeClaims struct {
 	TokenType      string `json:"tk,omitempty"`
 	OpenID         string `json:"openid"`
+	UserID         int64  `json:"uid,omitempty"`
 	PaymentType    string `json:"pt,omitempty"`
 	Amount         string `json:"amt,omitempty"`
 	OrderType      string `json:"ot,omitempty"`
 	PlanID         int64  `json:"pid,omitempty"`
+	Multiplier     int    `json:"mul,omitempty"`
+	CafeCouponCode string `json:"cc,omitempty"`
+	RedirectTo     string `json:"rd,omitempty"`
+	Scope          string `json:"scp,omitempty"`
+	IssuedAt       int64  `json:"iat"`
+	ExpiresAt      int64  `json:"exp,omitempty"`
+}
+
+type WeChatPaymentOAuthContextClaims struct {
+	TokenType      string `json:"tk,omitempty"`
+	UserID         int64  `json:"uid,omitempty"`
+	PaymentType    string `json:"pt,omitempty"`
+	Amount         string `json:"amt,omitempty"`
+	OrderType      string `json:"ot,omitempty"`
+	PlanID         int64  `json:"pid,omitempty"`
+	Multiplier     int    `json:"mul,omitempty"`
 	CafeCouponCode string `json:"cc,omitempty"`
 	RedirectTo     string `json:"rd,omitempty"`
 	Scope          string `json:"scp,omitempty"`
@@ -360,6 +379,63 @@ func (s *PaymentResumeService) ParseToken(token string) (*ResumeTokenClaims, err
 	if err := validatePaymentResumeExpiry(claims.ExpiresAt, "INVALID_RESUME_TOKEN", "resume token has expired"); err != nil {
 		return nil, err
 	}
+	return &claims, nil
+}
+
+func (s *PaymentResumeService) CreateWeChatPaymentOAuthContextToken(claims WeChatPaymentOAuthContextClaims) (string, error) {
+	if err := s.ensureSigningKey(); err != nil {
+		return "", err
+	}
+	if claims.IssuedAt == 0 {
+		claims.IssuedAt = time.Now().Unix()
+	}
+	if claims.ExpiresAt == 0 {
+		claims.ExpiresAt = time.Now().Add(wechatPaymentOAuthContextTokenTTL).Unix()
+	}
+	if normalized := NormalizeVisibleMethod(claims.PaymentType); normalized != "" {
+		claims.PaymentType = normalized
+	}
+	if claims.PaymentType == "" {
+		claims.PaymentType = payment.TypeWxpay
+	}
+	if claims.OrderType == "" {
+		claims.OrderType = payment.OrderTypeBalance
+	}
+	claims.Amount = strings.TrimSpace(claims.Amount)
+	claims.CafeCouponCode = strings.TrimSpace(claims.CafeCouponCode)
+	claims.RedirectTo = strings.TrimSpace(claims.RedirectTo)
+	claims.Scope = strings.TrimSpace(claims.Scope)
+	claims.TokenType = wechatPaymentOAuthContextTokenType
+	return s.createSignedToken(claims)
+}
+
+func (s *PaymentResumeService) ParseWeChatPaymentOAuthContextToken(token string) (*WeChatPaymentOAuthContextClaims, error) {
+	if err := s.ensureSigningKey(); err != nil {
+		return nil, err
+	}
+	var claims WeChatPaymentOAuthContextClaims
+	if err := s.parseSignedToken(token, &claims); err != nil {
+		return nil, infraerrors.BadRequest("INVALID_WECHAT_PAYMENT_OAUTH_CONTEXT", "wechat payment oauth context token payload is invalid")
+	}
+	if claims.TokenType != wechatPaymentOAuthContextTokenType {
+		return nil, infraerrors.BadRequest("INVALID_WECHAT_PAYMENT_OAUTH_CONTEXT", "wechat payment oauth context token type mismatch")
+	}
+	if err := validatePaymentResumeExpiry(claims.ExpiresAt, "INVALID_WECHAT_PAYMENT_OAUTH_CONTEXT", "wechat payment oauth context token has expired"); err != nil {
+		return nil, err
+	}
+	if normalized := NormalizeVisibleMethod(claims.PaymentType); normalized != "" {
+		claims.PaymentType = normalized
+	}
+	if claims.PaymentType == "" {
+		claims.PaymentType = payment.TypeWxpay
+	}
+	if claims.OrderType == "" {
+		claims.OrderType = payment.OrderTypeBalance
+	}
+	claims.Amount = strings.TrimSpace(claims.Amount)
+	claims.CafeCouponCode = strings.TrimSpace(claims.CafeCouponCode)
+	claims.RedirectTo = strings.TrimSpace(claims.RedirectTo)
+	claims.Scope = strings.TrimSpace(claims.Scope)
 	return &claims, nil
 }
 

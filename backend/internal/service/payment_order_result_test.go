@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -214,8 +215,63 @@ func TestMaybeBuildWeChatOAuthRequiredResponse(t *testing.T) {
 	if resp.OAuth.RedirectURL != "/auth/wechat/payment/callback" {
 		t.Fatalf("redirect_url = %q, want %q", resp.OAuth.RedirectURL, "/auth/wechat/payment/callback")
 	}
-	if resp.OAuth.AuthorizeURL != "/api/v1/auth/oauth/wechat/payment/start?amount=12.5&order_type=balance&payment_type=wxpay&redirect=%2Fpurchase%3Ffrom%3Dwechat&scope=snsapi_base" {
-		t.Fatalf("authorize_url = %q", resp.OAuth.AuthorizeURL)
+	parsedAuthorizeURL, err := url.Parse(resp.OAuth.AuthorizeURL)
+	if err != nil {
+		t.Fatalf("parse authorize_url: %v", err)
+	}
+	if parsedAuthorizeURL.Path != "/api/v1/auth/oauth/wechat/payment/start" {
+		t.Fatalf("authorize_url path = %q", parsedAuthorizeURL.Path)
+	}
+	if parsedAuthorizeURL.Query().Get("context_token") == "" {
+		t.Fatalf("authorize_url missing signed context token: %q", resp.OAuth.AuthorizeURL)
+	}
+	for _, unsafeParam := range []string{"amount", "order_type", "plan_id", "multiplier", "cafe_coupon_code"} {
+		if parsedAuthorizeURL.Query().Get(unsafeParam) != "" {
+			t.Fatalf("authorize_url must not expose unsigned %s: %q", unsafeParam, resp.OAuth.AuthorizeURL)
+		}
+	}
+}
+
+func TestMaybeBuildWeChatOAuthRequiredResponseSubscriptionContextOmitsZeroAmount(t *testing.T) {
+	t.Setenv("PAYMENT_RESUME_SIGNING_KEY", "0123456789abcdef0123456789abcdef")
+
+	svc := newWeChatPaymentOAuthTestService(map[string]string{
+		SettingKeyWeChatConnectEnabled:             "true",
+		SettingKeyWeChatConnectAppID:               "wx123456",
+		SettingKeyWeChatConnectAppSecret:           "wechat-secret",
+		SettingKeyWeChatConnectMode:                "mp",
+		SettingKeyWeChatConnectScopes:              "snsapi_base",
+		SettingKeyWeChatConnectRedirectURL:         "https://api.example.com/api/v1/auth/oauth/wechat/callback",
+		SettingKeyWeChatConnectFrontendRedirectURL: "/auth/wechat/callback",
+	})
+
+	resp, err := svc.maybeBuildWeChatOAuthRequiredResponse(context.Background(), CreateOrderRequest{
+		UserID:          99,
+		Amount:          0,
+		PaymentType:     payment.TypeWxpay,
+		IsWeChatBrowser: true,
+		SrcURL:          "https://merchant.example/purchase?plan=7",
+		OrderType:       payment.OrderTypeSubscription,
+		PlanID:          7,
+		Multiplier:      3,
+	}, 300, 300, 0)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if resp == nil || resp.OAuth == nil {
+		t.Fatalf("expected oauth response, got %+v", resp)
+	}
+
+	parsedAuthorizeURL, err := url.Parse(resp.OAuth.AuthorizeURL)
+	if err != nil {
+		t.Fatalf("parse authorize_url: %v", err)
+	}
+	claims, err := svc.paymentResume().ParseWeChatPaymentOAuthContextToken(parsedAuthorizeURL.Query().Get("context_token"))
+	if err != nil {
+		t.Fatalf("parse context token: %v", err)
+	}
+	if claims.UserID != 99 || claims.Amount != "" || claims.OrderType != payment.OrderTypeSubscription || claims.PlanID != 7 || claims.Multiplier != 3 {
+		t.Fatalf("unexpected context claims: %+v", claims)
 	}
 }
 

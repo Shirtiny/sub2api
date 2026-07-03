@@ -11,13 +11,27 @@ describe('parseWechatResumeRoute', () => {
       amount: '12.5',
       order_type: 'subscription',
       plan_id: '7',
+      multiplier: '3',
+      cafe_coupon_code: 'CAFE-ABC',
     }, [], 88)).toEqual({
       wechatResumeToken: 'resume-token-123',
       paymentType: 'wxpay',
       orderType: 'subscription',
       orderAmount: 0,
       planId: 7,
+      multiplier: 3,
+      cafeCouponCode: 'CAFE-ABC',
     })
+  })
+
+  it('keeps 1x custom subscription multiplier in resume query', () => {
+    expect(parseWechatResumeRoute({
+      wechat_resume: '1',
+      wechat_resume_token: 'resume-token-1x',
+      order_type: 'subscription',
+      plan_id: '7',
+      multiplier: '1',
+    }, [], 88)?.multiplier).toBe(1)
   })
 
   it('falls back to legacy openid-based resume when opaque token is absent', () => {
@@ -26,13 +40,17 @@ describe('parseWechatResumeRoute', () => {
       openid: 'openid-123',
       payment_type: 'wxpay',
       amount: '12.5',
-      order_type: 'balance',
-    }, [], 88)).toEqual({
+      order_type: 'subscription',
+      plan_id: '7',
+      multiplier: '4',
+    }, [{ id: 7, price: 99 } as any], 88)).toEqual({
       openid: 'openid-123',
       paymentType: 'wxpay',
-      orderType: 'balance',
+      orderType: 'subscription',
       orderAmount: 12.5,
-      planId: undefined,
+      planId: 7,
+      multiplier: 4,
+      cafeCouponCode: undefined,
     })
   })
 })
@@ -48,6 +66,7 @@ describe('stripWechatResumeQuery', () => {
       amount: '12.5',
       order_type: 'subscription',
       plan_id: '7',
+      multiplier: '3',
       state: 'state-123',
       scope: 'snsapi_base',
     })).toEqual({

@@ -109,6 +109,21 @@ func SortOrder(v int) predicate.SubscriptionPlan {
 	return predicate.SubscriptionPlan(sql.FieldEQ(FieldSortOrder, v))
 }
 
+// CustomMultiplierEnabled applies equality check predicate on the "custom_multiplier_enabled" field. It's identical to CustomMultiplierEnabledEQ.
+func CustomMultiplierEnabled(v bool) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldEQ(FieldCustomMultiplierEnabled, v))
+}
+
+// CustomMultiplierMin applies equality check predicate on the "custom_multiplier_min" field. It's identical to CustomMultiplierMinEQ.
+func CustomMultiplierMin(v int) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldEQ(FieldCustomMultiplierMin, v))
+}
+
+// CustomMultiplierMax applies equality check predicate on the "custom_multiplier_max" field. It's identical to CustomMultiplierMaxEQ.
+func CustomMultiplierMax(v int) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldEQ(FieldCustomMultiplierMax, v))
+}
+
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.SubscriptionPlan {
 	return predicate.SubscriptionPlan(sql.FieldEQ(FieldCreatedAt, v))
@@ -662,6 +677,96 @@ func SortOrderLT(v int) predicate.SubscriptionPlan {
 // SortOrderLTE applies the LTE predicate on the "sort_order" field.
 func SortOrderLTE(v int) predicate.SubscriptionPlan {
 	return predicate.SubscriptionPlan(sql.FieldLTE(FieldSortOrder, v))
+}
+
+// CustomMultiplierEnabledEQ applies the EQ predicate on the "custom_multiplier_enabled" field.
+func CustomMultiplierEnabledEQ(v bool) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldEQ(FieldCustomMultiplierEnabled, v))
+}
+
+// CustomMultiplierEnabledNEQ applies the NEQ predicate on the "custom_multiplier_enabled" field.
+func CustomMultiplierEnabledNEQ(v bool) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldNEQ(FieldCustomMultiplierEnabled, v))
+}
+
+// CustomMultiplierMinEQ applies the EQ predicate on the "custom_multiplier_min" field.
+func CustomMultiplierMinEQ(v int) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldEQ(FieldCustomMultiplierMin, v))
+}
+
+// CustomMultiplierMinNEQ applies the NEQ predicate on the "custom_multiplier_min" field.
+func CustomMultiplierMinNEQ(v int) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldNEQ(FieldCustomMultiplierMin, v))
+}
+
+// CustomMultiplierMinIn applies the In predicate on the "custom_multiplier_min" field.
+func CustomMultiplierMinIn(vs ...int) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldIn(FieldCustomMultiplierMin, vs...))
+}
+
+// CustomMultiplierMinNotIn applies the NotIn predicate on the "custom_multiplier_min" field.
+func CustomMultiplierMinNotIn(vs ...int) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldNotIn(FieldCustomMultiplierMin, vs...))
+}
+
+// CustomMultiplierMinGT applies the GT predicate on the "custom_multiplier_min" field.
+func CustomMultiplierMinGT(v int) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldGT(FieldCustomMultiplierMin, v))
+}
+
+// CustomMultiplierMinGTE applies the GTE predicate on the "custom_multiplier_min" field.
+func CustomMultiplierMinGTE(v int) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldGTE(FieldCustomMultiplierMin, v))
+}
+
+// CustomMultiplierMinLT applies the LT predicate on the "custom_multiplier_min" field.
+func CustomMultiplierMinLT(v int) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldLT(FieldCustomMultiplierMin, v))
+}
+
+// CustomMultiplierMinLTE applies the LTE predicate on the "custom_multiplier_min" field.
+func CustomMultiplierMinLTE(v int) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldLTE(FieldCustomMultiplierMin, v))
+}
+
+// CustomMultiplierMaxEQ applies the EQ predicate on the "custom_multiplier_max" field.
+func CustomMultiplierMaxEQ(v int) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldEQ(FieldCustomMultiplierMax, v))
+}
+
+// CustomMultiplierMaxNEQ applies the NEQ predicate on the "custom_multiplier_max" field.
+func CustomMultiplierMaxNEQ(v int) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldNEQ(FieldCustomMultiplierMax, v))
+}
+
+// CustomMultiplierMaxIn applies the In predicate on the "custom_multiplier_max" field.
+func CustomMultiplierMaxIn(vs ...int) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldIn(FieldCustomMultiplierMax, vs...))
+}
+
+// CustomMultiplierMaxNotIn applies the NotIn predicate on the "custom_multiplier_max" field.
+func CustomMultiplierMaxNotIn(vs ...int) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldNotIn(FieldCustomMultiplierMax, vs...))
+}
+
+// CustomMultiplierMaxGT applies the GT predicate on the "custom_multiplier_max" field.
+func CustomMultiplierMaxGT(v int) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldGT(FieldCustomMultiplierMax, v))
+}
+
+// CustomMultiplierMaxGTE applies the GTE predicate on the "custom_multiplier_max" field.
+func CustomMultiplierMaxGTE(v int) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldGTE(FieldCustomMultiplierMax, v))
+}
+
+// CustomMultiplierMaxLT applies the LT predicate on the "custom_multiplier_max" field.
+func CustomMultiplierMaxLT(v int) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldLT(FieldCustomMultiplierMax, v))
+}
+
+// CustomMultiplierMaxLTE applies the LTE predicate on the "custom_multiplier_max" field.
+func CustomMultiplierMaxLTE(v int) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldLTE(FieldCustomMultiplierMax, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.

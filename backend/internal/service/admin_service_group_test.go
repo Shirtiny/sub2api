@@ -121,6 +121,10 @@ func (s *groupRepoStubForAdmin) GetAccountIDsByGroupIDs(_ context.Context, _ []i
 	panic("unexpected GetAccountIDsByGroupIDs call")
 }
 
+func (s *groupRepoStubForAdmin) NotifyGroupChanged(_ context.Context, _ int64) error {
+	return nil
+}
+
 func (s *groupRepoStubForAdmin) UpdateSortOrders(_ context.Context, _ []GroupSortOrderUpdate) error {
 	return nil
 }

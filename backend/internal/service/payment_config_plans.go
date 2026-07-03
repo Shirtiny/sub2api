@@ -8,6 +8,7 @@ import (
 	dbent "github.com/Wei-Shaw/sub2api/ent"
 	"github.com/Wei-Shaw/sub2api/ent/group"
 	"github.com/Wei-Shaw/sub2api/ent/subscriptionplan"
+	"github.com/Wei-Shaw/sub2api/internal/payment"
 	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 )
 
@@ -32,6 +33,63 @@ func validatePlanRequired(name string, groupID int64, price float64, validityDay
 		return infraerrors.BadRequest("PLAN_ORIGINAL_PRICE_INVALID", "original price must be >= 0")
 	}
 	return nil
+}
+
+func (s *PaymentConfigService) validateSubscriptionPlanGroup(ctx context.Context, groupID int64) error {
+	if groupID <= 0 {
+		return infraerrors.BadRequest("PLAN_GROUP_REQUIRED", "group is required")
+	}
+	if s == nil || s.entClient == nil {
+		return infraerrors.ServiceUnavailable("SERVICE_UNAVAILABLE", "payment config service unavailable")
+	}
+	g, err := s.entClient.Group.Get(ctx, groupID)
+	if err != nil {
+		if dbent.IsNotFound(err) {
+			return infraerrors.NotFound("PLAN_GROUP_NOT_FOUND", "subscription plan group not found")
+		}
+		return fmt.Errorf("get subscription plan group: %w", err)
+	}
+	if g.Status != payment.EntityStatusActive {
+		return infraerrors.BadRequest("PLAN_GROUP_INACTIVE", "subscription plan group must be active")
+	}
+	if g.SubscriptionType != SubscriptionTypeSubscription {
+		return infraerrors.BadRequest("PLAN_GROUP_TYPE_MISMATCH", "subscription plan group must be subscription type")
+	}
+	if g.IsCustomSubscriptionGroup {
+		return infraerrors.BadRequest("PLAN_GROUP_CUSTOM_NOT_ALLOWED", "subscription plan group must be a source group, not a custom subscription group")
+	}
+	return nil
+}
+
+func normalizePlanCustomMultiplierConfig(enabled bool, minValue int, maxValue int) (int, int, error) {
+	if !enabled {
+		if minValue < minCustomSubscriptionMultiplier {
+			minValue = minCustomSubscriptionMultiplier
+		}
+		if minValue > maxCustomSubscriptionMultiplier {
+			minValue = maxCustomSubscriptionMultiplier
+		}
+		if maxValue < minValue {
+			maxValue = minValue
+		}
+		if maxValue > maxCustomSubscriptionMultiplier {
+			maxValue = maxCustomSubscriptionMultiplier
+		}
+		return minValue, maxValue, nil
+	}
+	if minValue < minCustomSubscriptionMultiplier {
+		return 0, 0, infraerrors.BadRequest("PLAN_CUSTOM_MULTIPLIER_MIN_INVALID", fmt.Sprintf("custom multiplier min must be >= %d", minCustomSubscriptionMultiplier))
+	}
+	if minValue > maxCustomSubscriptionMultiplier {
+		return 0, 0, infraerrors.BadRequest("PLAN_CUSTOM_MULTIPLIER_MIN_INVALID", fmt.Sprintf("custom multiplier min must be <= %d", maxCustomSubscriptionMultiplier))
+	}
+	if maxValue < minValue {
+		return 0, 0, infraerrors.BadRequest("PLAN_CUSTOM_MULTIPLIER_MAX_INVALID", "custom multiplier max must be >= min")
+	}
+	if maxValue > maxCustomSubscriptionMultiplier {
+		return 0, 0, infraerrors.BadRequest("PLAN_CUSTOM_MULTIPLIER_MAX_INVALID", fmt.Sprintf("custom multiplier max must be <= %d", maxCustomSubscriptionMultiplier))
+	}
+	return minValue, maxValue, nil
 }
 
 // validatePlanPatch validates only the non-nil fields in a patch update.
@@ -124,11 +182,21 @@ func (s *PaymentConfigService) CreatePlan(ctx context.Context, req CreatePlanReq
 	if err := validatePlanRequired(req.Name, req.GroupID, req.Price, req.ValidityDays, req.ValidityUnit, req.OriginalPrice); err != nil {
 		return nil, err
 	}
+	if err := s.validateSubscriptionPlanGroup(ctx, req.GroupID); err != nil {
+		return nil, err
+	}
+	minValue, maxValue, err := normalizePlanCustomMultiplierConfig(req.CustomMultiplierEnabled, req.CustomMultiplierMin, req.CustomMultiplierMax)
+	if err != nil {
+		return nil, err
+	}
 	b := s.entClient.SubscriptionPlan.Create().
 		SetGroupID(req.GroupID).SetName(req.Name).SetDescription(req.Description).
 		SetPrice(req.Price).SetValidityDays(req.ValidityDays).SetValidityUnit(req.ValidityUnit).
 		SetFeatures(req.Features).SetProductName(req.ProductName).
-		SetForSale(req.ForSale).SetSortOrder(req.SortOrder)
+		SetForSale(req.ForSale).SetSortOrder(req.SortOrder).
+		SetCustomMultiplierEnabled(req.CustomMultiplierEnabled).
+		SetCustomMultiplierMin(minValue).
+		SetCustomMultiplierMax(maxValue)
 	if req.OriginalPrice != nil {
 		b.SetOriginalPrice(*req.OriginalPrice)
 	}
@@ -140,6 +208,31 @@ func (s *PaymentConfigService) CreatePlan(ctx context.Context, req CreatePlanReq
 // plus a validation guard for non-nil fields.
 func (s *PaymentConfigService) UpdatePlan(ctx context.Context, id int64, req UpdatePlanRequest) (*dbent.SubscriptionPlan, error) {
 	if err := validatePlanPatch(req); err != nil {
+		return nil, err
+	}
+	if req.GroupID != nil {
+		if err := s.validateSubscriptionPlanGroup(ctx, *req.GroupID); err != nil {
+			return nil, err
+		}
+	}
+	current, err := s.entClient.SubscriptionPlan.Get(ctx, id)
+	if err != nil {
+		return nil, infraerrors.NotFound("PLAN_NOT_FOUND", "subscription plan not found")
+	}
+	enabled := current.CustomMultiplierEnabled
+	minValue := current.CustomMultiplierMin
+	maxValue := current.CustomMultiplierMax
+	if req.CustomMultiplierEnabled != nil {
+		enabled = *req.CustomMultiplierEnabled
+	}
+	if req.CustomMultiplierMin != nil {
+		minValue = *req.CustomMultiplierMin
+	}
+	if req.CustomMultiplierMax != nil {
+		maxValue = *req.CustomMultiplierMax
+	}
+	minValue, maxValue, err = normalizePlanCustomMultiplierConfig(enabled, minValue, maxValue)
+	if err != nil {
 		return nil, err
 	}
 	u := s.entClient.SubscriptionPlan.UpdateOneID(id)
@@ -175,6 +268,13 @@ func (s *PaymentConfigService) UpdatePlan(ctx context.Context, id int64, req Upd
 	}
 	if req.SortOrder != nil {
 		u.SetSortOrder(*req.SortOrder)
+	}
+	if req.CustomMultiplierEnabled != nil {
+		u.SetCustomMultiplierEnabled(enabled)
+	}
+	if req.CustomMultiplierMin != nil || req.CustomMultiplierMax != nil || req.CustomMultiplierEnabled != nil {
+		u.SetCustomMultiplierMin(minValue)
+		u.SetCustomMultiplierMax(maxValue)
 	}
 	return u.Save(ctx)
 }

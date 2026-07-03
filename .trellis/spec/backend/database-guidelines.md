@@ -46,6 +46,7 @@ Key conventions observed in the codebase:
 - Keep schema source in Ent definitions, but operational schema changes still land as SQL migrations. Ent generation is configured in `backend/ent/generate.go`.
 - Repeated numeric prefixes already exist in this repo; keep new file names unique and lexically ordered rather than assuming a strict one-file-per-number rule.
 - Checksum compatibility rules in `migrationChecksumCompatibilityRules` are incident recovery tools, not a way to bypass validation. They must be filename-specific, current-checksum-specific, limited to known historical DB checksums, and covered by tests.
+- When a checksum mismatch occurs, follow `docs/MIGRATION_CHECKSUM_PLAYBOOK.md`: restore the original migration when possible, move behavior changes into a new migration, and use compatibility rules only for real conflicting applied checksums.
 - Do not manually edit `schema_migrations` except as a production incident response with explicit approval, a narrowly scoped statement, and a follow-up code fix.
 
 ---
@@ -63,7 +64,7 @@ Key conventions observed in the codebase:
 
 - Do not modify an already-applied migration file; add a new migration instead.
 - Do not amend migration files that have already shipped in a Docker image or deployable branch; even if production has not updated yet, another environment may already have recorded the checksum.
-- Do not add broad migration checksum bypasses. If an incident requires compatibility, enumerate exact known checksums and test both accepted and rejected cases.
+- Do not add broad migration checksum bypasses. If an incident requires compatibility, enumerate exact known checksums, document the incident path in the playbook format, and test both accepted and rejected cases.
 - Do not put direct repository imports into handlers or most services; the layering rules in `backend/.golangci.yml` enforce this.
 - Do not write ad-hoc SQL in handlers.
 - Do not skip error translation or contextual wrapping around DB failures.
@@ -77,4 +78,5 @@ Key conventions observed in the codebase:
 - Repository with Ent plus raw SQL: `backend/internal/repository/account_repo.go`
 - SQL transaction helper pattern: `backend/internal/repository/channel_repo.go`
 - Migration runner and checksum enforcement: `backend/internal/repository/migrations_runner.go`
+- Checksum mismatch incident playbook: `docs/MIGRATION_CHECKSUM_PLAYBOOK.md`
 - Integration harness applying real migrations: `backend/internal/repository/integration_harness_test.go`

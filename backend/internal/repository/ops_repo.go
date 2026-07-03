@@ -970,7 +970,7 @@ func buildOpsErrorLogsWhere(filter *service.OpsErrorLogFilter) (string, []any) {
 	}
 	if filter.GroupID != nil && *filter.GroupID > 0 {
 		args = append(args, *filter.GroupID)
-		clauses = append(clauses, "e.group_id = $"+itoa(len(args)))
+		clauses = append(clauses, "(e.group_id = $"+itoa(len(args))+" OR e.group_id IN (SELECT id FROM groups WHERE deleted_at IS NULL AND is_custom_subscription_group = TRUE AND custom_source_group_id = $"+itoa(len(args))+"))")
 	}
 	if filter.AccountID != nil && *filter.AccountID > 0 {
 		args = append(args, *filter.AccountID)

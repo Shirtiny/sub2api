@@ -59,9 +59,13 @@
             </div>
             <div v-if="validAmount > 0" class="card p-6">
               <div class="space-y-2 text-sm">
-                <div class="flex justify-between">
+                <div class="flex justify-between gap-3">
                   <span class="text-gray-500 dark:text-gray-400">{{ t('payment.paymentAmount') }}</span>
-                  <span class="text-content-primary">{{ formatSelectedPaymentAmount(validAmount) }}</span>
+                  <span class="text-right text-content-primary">{{ formatSelectedPaymentAmount(validAmount) }}</span>
+                </div>
+                <div v-if="rechargeCouponDiscountAmount != null" class="flex justify-between gap-3">
+                  <span class="text-gray-500 dark:text-gray-400">{{ t('payment.cafeCoupon.discountLabel') }}</span>
+                  <span class="font-semibold text-[#3D2E2A] dark:text-[#F5C66B]">-{{ formatSelectedPaymentAmount(rechargeCouponDiscountAmount) }}</span>
                 </div>
                 <div v-if="feeRate > 0" class="flex justify-between">
                   <span class="text-gray-500 dark:text-gray-400">{{ t('payment.fee') }} ({{ feeRate }}%)</span>
@@ -69,7 +73,7 @@
                 </div>
                 <div v-if="feeRate > 0" class="flex justify-between border-t border-gray-200 pt-2 dark:border-dark-600">
                   <span class="font-medium text-content-secondary">{{ t('payment.actualPay') }}</span>
-                  <span class="text-lg font-bold text-primary-600 dark:text-primary-400">{{ formatSelectedPaymentAmount(totalAmount) }}</span>
+                  <span class="text-lg font-bold text-primary-600 dark:text-primary-400">{{ formatSelectedPaymentAmount(rechargeTotalAmount) }}</span>
                 </div>
                 <div v-if="balanceRechargeMultiplier !== 1" class="flex justify-between" :class="{ 'border-t border-gray-200 pt-2 dark:border-dark-600': feeRate <= 0 }">
                   <span class="text-gray-500 dark:text-gray-400">{{ t('payment.creditedBalance') }}</span>
@@ -92,10 +96,10 @@
                   :placeholder="t('payment.cafeCoupon.placeholder')"
                   :disabled="submitting"
                   class="input pr-10 font-mono uppercase tracking-wide"
-                  @input="scheduleCafeCouponAutoApply"
-                  @blur="applyCafeCoupon"
+                  @input="scheduleCafeCouponAutoPreview"
+                  @blur="previewCafeCoupon"
                 />
-                <span v-if="applyingCafeCoupon" class="absolute inset-y-0 right-3 flex items-center">
+                <span v-if="previewingCafeCoupon" class="absolute inset-y-0 right-3 flex items-center">
                   <span class="h-4 w-4 animate-spin rounded-full border-2 border-primary-500 border-t-transparent"></span>
                 </span>
               </div>
@@ -128,13 +132,29 @@
                     {{ platformLabel(selectedPlan.group_platform || '') }}
                   </span>
                   <h3 class="text-lg font-bold text-content-primary">{{ selectedPlan.name }}</h3>
+                  <span
+                    v-if="effectiveSelectedMultiplier > 1"
+                    class="inline-flex items-center rounded-full bg-[#F5C66B]/15 px-2.5 py-1 text-sm font-bold text-[#3D2E2A] dark:bg-[#F5C66B]/10 dark:text-[#F5C66B]"
+                  >
+                    {{ effectiveSelectedMultiplier }}x
+                  </span>
                 </div>
                 <!-- Price -->
-                <div class="flex items-baseline gap-2">
-                  <span v-if="selectedPlan.original_price" class="text-sm text-gray-400 line-through dark:text-gray-500">
-                    {{ formatSelectedPaymentAmount(selectedPlan.original_price) }}
-                  </span>
-                  <span :class="['text-3xl font-bold', planTextClass]">{{ formatSelectedPaymentAmount(selectedPlan.price) }}</span>
+                <div class="flex flex-wrap items-baseline gap-2">
+                  <template v-if="effectiveSelectedCouponPrice != null">
+                    <span :class="['text-xl font-semibold line-through decoration-2', planTextClass]">
+                      {{ formatSelectedPaymentAmount(effectiveSelectedPlanPrice) }}
+                    </span>
+                    <span class="text-3xl font-bold text-[#3D2E2A] dark:text-[#F5C66B]">
+                      {{ formatSelectedPaymentAmount(effectiveSelectedCouponPrice) }}
+                    </span>
+                  </template>
+                  <template v-else>
+                    <span v-if="effectiveSelectedOriginalPrice" class="text-sm text-gray-400 line-through dark:text-gray-500">
+                      {{ formatSelectedPaymentAmount(effectiveSelectedOriginalPrice) }}
+                    </span>
+                    <span :class="['text-3xl font-bold', planTextClass]">{{ formatSelectedPaymentAmount(effectiveSelectedPlanPrice) }}</span>
+                  </template>
                   <span class="text-sm text-gray-500 dark:text-gray-400">/ {{ planValiditySuffix }}</span>
                 </div>
                 <!-- Description -->
@@ -146,22 +166,22 @@
                   <div>
                     <span class="text-xs text-gray-400 dark:text-gray-500">{{ t('payment.planCard.rate') }}</span>
                     <div class="flex items-baseline">
-                      <span :class="['text-lg font-bold', planTextClass]">×{{ selectedPlan.rate_multiplier ?? 1 }}</span>
+                      <span :class="['text-lg font-bold', planTextClass]">{{ selectedPlan.rate_multiplier ?? 1 }}x</span>
                     </div>
                   </div>
-                  <div v-if="selectedPlan.daily_limit_usd != null">
+                  <div v-if="effectiveSelectedDailyLimit != null">
                     <span class="text-xs text-gray-400 dark:text-gray-500">{{ t('payment.planCard.dailyLimit') }}</span>
-                    <div class="text-lg font-semibold text-gray-800 dark:text-gray-200">${{ selectedPlan.daily_limit_usd }}</div>
+                    <div class="text-lg font-semibold text-gray-800 dark:text-gray-200">${{ effectiveSelectedDailyLimit }}</div>
                   </div>
-                  <div v-if="selectedPlan.weekly_limit_usd != null">
+                  <div v-if="effectiveSelectedWeeklyLimit != null">
                     <span class="text-xs text-gray-400 dark:text-gray-500">{{ t('payment.planCard.weeklyLimit') }}</span>
-                    <div class="text-lg font-semibold text-gray-800 dark:text-gray-200">${{ selectedPlan.weekly_limit_usd }}</div>
+                    <div class="text-lg font-semibold text-gray-800 dark:text-gray-200">${{ effectiveSelectedWeeklyLimit }}</div>
                   </div>
-                  <div v-if="selectedPlan.monthly_limit_usd != null">
+                  <div v-if="effectiveSelectedMonthlyLimit != null">
                     <span class="text-xs text-gray-400 dark:text-gray-500">{{ t('payment.planCard.monthlyLimit') }}</span>
-                    <div class="text-lg font-semibold text-gray-800 dark:text-gray-200">${{ selectedPlan.monthly_limit_usd }}</div>
+                    <div class="text-lg font-semibold text-gray-800 dark:text-gray-200">${{ effectiveSelectedMonthlyLimit }}</div>
                   </div>
-                  <div v-if="selectedPlan.daily_limit_usd == null && selectedPlan.weekly_limit_usd == null && selectedPlan.monthly_limit_usd == null">
+                  <div v-if="effectiveSelectedDailyLimit == null && effectiveSelectedWeeklyLimit == null && effectiveSelectedMonthlyLimit == null">
                     <span class="text-xs text-gray-400 dark:text-gray-500">{{ t('payment.planCard.quota') }}</span>
                     <div class="text-lg font-semibold text-gray-800 dark:text-gray-200">{{ t('payment.planCard.unlimited') }}</div>
                   </div>
@@ -174,13 +194,17 @@
                   @select="selectedMethod = $event"
                 />
               </div>
-              <div v-if="feeRate > 0 && selectedPlan.price > 0" class="card p-6">
+              <div v-if="effectiveSelectedPlanPrice > 0 && (feeRate > 0 || subscriptionCouponPayableAmount != null)" class="card p-6">
                 <div class="space-y-2 text-sm">
-                  <div class="flex justify-between">
+                  <div class="flex justify-between gap-3">
                     <span class="text-gray-500 dark:text-gray-400">{{ t('payment.amountLabel') }}</span>
-                    <span class="text-content-primary">{{ formatSelectedPaymentAmount(selectedPlan.price) }}</span>
+                    <span class="text-right text-content-primary">{{ formatSelectedPaymentAmount(effectiveSelectedPlanPrice) }}</span>
                   </div>
-                  <div class="flex justify-between">
+                  <div v-if="subscriptionCouponDiscountAmount != null" class="flex justify-between gap-3">
+                    <span class="text-gray-500 dark:text-gray-400">{{ t('payment.cafeCoupon.discountLabel') }}</span>
+                    <span class="font-semibold text-[#3D2E2A] dark:text-[#F5C66B]">-{{ formatSelectedPaymentAmount(subscriptionCouponDiscountAmount) }}</span>
+                  </div>
+                  <div v-if="feeRate > 0" class="flex justify-between">
                     <span class="text-gray-500 dark:text-gray-400">{{ t('payment.fee') }} ({{ feeRate }}%)</span>
                     <span class="text-content-primary">{{ formatSelectedPaymentAmount(subFeeAmount) }}</span>
                   </div>
@@ -202,10 +226,10 @@
                     :placeholder="t('payment.cafeCoupon.placeholder')"
                     :disabled="submitting"
                     class="input pr-10 font-mono uppercase tracking-wide"
-                    @input="scheduleCafeCouponAutoApply"
-                    @blur="applyCafeCoupon"
+                    @input="scheduleCafeCouponAutoPreview"
+                    @blur="previewCafeCoupon"
                   />
-                  <span v-if="applyingCafeCoupon" class="absolute inset-y-0 right-3 flex items-center">
+                  <span v-if="previewingCafeCoupon" class="absolute inset-y-0 right-3 flex items-center">
                     <span class="h-4 w-4 animate-spin rounded-full border-2 border-primary-500 border-t-transparent"></span>
                   </span>
                 </div>
@@ -234,7 +258,15 @@
                 <p class="text-gray-500 dark:text-gray-400">{{ t('payment.noPlans') }}</p>
               </div>
               <div v-else :class="planGridClass">
-                <SubscriptionPlanCard v-for="plan in checkout.plans" :key="plan.id" :plan="plan" :active-subscriptions="activeSubscriptions" @select="selectPlan" />
+                <SubscriptionPlanCard
+                  v-for="plan in checkout.plans"
+                  :key="plan.id"
+                  :plan="plan"
+                  :active-subscriptions="activeSubscriptions"
+                  :coupon-pay-amount="planCardCouponPayAmount(plan)"
+                  @select="selectPlan"
+                  @multiplier-change="onPlanCardMultiplierChange"
+                />
               </div>
               <!-- Active subscriptions (compact, below plan list) -->
               <div v-if="activeSubscriptions.length > 0">
@@ -249,7 +281,7 @@
                         <span :class="['shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-medium', platformBadgeLightClass(sub.group?.platform || '')]">{{ platformLabel(sub.group?.platform || '') }}</span>
                       </div>
                       <div class="flex flex-wrap gap-x-3 text-[11px] text-gray-400 dark:text-gray-500">
-                        <span>{{ t('payment.planCard.rate') }}: ×{{ sub.group?.rate_multiplier ?? 1 }}</span>
+                        <span>{{ t('payment.planCard.rate') }}: {{ sub.group?.rate_multiplier ?? 1 }}x</span>
                         <span v-if="sub.group?.daily_limit_usd == null && sub.group?.weekly_limit_usd == null && sub.group?.monthly_limit_usd == null">{{ t('payment.planCard.quota') }}: {{ t('payment.planCard.unlimited') }}</span>
                         <span v-if="sub.expires_at">{{ t('userSubscriptions.daysRemaining', { days: getDaysRemaining(sub.expires_at) }) }}</span>
                         <span v-else>{{ t('userSubscriptions.noExpiration') }}</span>
@@ -283,7 +315,15 @@
             </button>
             <h3 class="mb-4 text-lg font-semibold text-content-primary">{{ t('payment.selectPlan') }}</h3>
             <div class="space-y-4">
-              <SubscriptionPlanCard v-for="plan in renewalPlans" :key="plan.id" :plan="plan" :active-subscriptions="activeSubscriptions" @select="selectPlanFromModal" />
+              <SubscriptionPlanCard
+                v-for="plan in renewalPlans"
+                :key="plan.id"
+                :plan="plan"
+                :active-subscriptions="activeSubscriptions"
+                :coupon-pay-amount="planCardCouponPayAmount(plan)"
+                @select="selectPlanFromModal"
+                @multiplier-change="onPlanCardMultiplierChange"
+              />
             </div>
           </div>
         </div>
@@ -312,6 +352,7 @@ import { paymentAPI } from '@/api/payment'
 import { extractApiErrorMessage, extractI18nErrorMessage } from '@/utils/apiError'
 import { isMobileDevice } from '@/utils/device'
 import type { SubscriptionPlan, CheckoutInfoResponse, CreateOrderResult, OrderType, CafeCouponSummary } from '@/types/payment'
+import type { UserSubscription } from '@/types'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import AmountInput from '@/components/payment/AmountInput.vue'
 import PaymentMethodSelector from '@/components/payment/PaymentMethodSelector.vue'
@@ -364,18 +405,25 @@ const activeTab = ref<'recharge' | 'subscription'>('subscription')
 const amount = ref<number | null>(null)
 const selectedMethod = ref('')
 const selectedPlan = ref<SubscriptionPlan | null>(null)
+const selectedSubscriptionMultiplier = ref(1)
 const previewImage = ref('')
 const cafeCouponCode = ref('')
 const cafeCouponAppliedCode = ref('')
-const cafeCouponApplyingCode = ref('')
+const cafeCouponAppliedContextKey = ref('')
+const cafeCouponPreviewingCode = ref('')
+const cafeCouponPreviewingContextKey = ref('')
 const cafeCouponMessage = ref('')
 const cafeCouponError = ref('')
 const cafeCouponDiscountAmount = ref<number | null>(null)
 const cafeCouponPayableAmount = ref<number | null>(null)
 const cafeCouponAppliedCoupon = ref<CafeCouponSummary | null>(null)
-const applyingCafeCoupon = ref(false)
-let cafeCouponApplyTimer: ReturnType<typeof setTimeout> | null = null
-let cafeCouponApplyPromise: Promise<void> | null = null
+const previewingCafeCoupon = ref(false)
+const planCardMultipliers = ref<Record<number, number>>({})
+const planCouponPreviewByKey = ref<Record<string, PlanCardCouponPreview>>({})
+const planCouponPreviewPendingKeys = ref<Record<string, boolean>>({})
+let cafeCouponPreviewTimer: ReturnType<typeof setTimeout> | null = null
+let cafeCouponPreviewPromise: Promise<void> | null = null
+let cafeCouponPreviewSeq = 0
 
 const paymentPhase = ref<'select' | 'paying'>('select')
 
@@ -385,6 +433,10 @@ interface CreateOrderOptions {
   paymentType?: string
   isResume?: boolean
   mobileQrFallbackAttempted?: boolean
+}
+
+interface PlanCardCouponPreview {
+  payAmount: number
 }
 
 interface WeixinJSBridgeLike {
@@ -413,6 +465,7 @@ function emptyPaymentState(): PaymentRecoverySnapshot {
     orderType: '',
     paymentMode: '',
     resumeToken: '',
+    multiplier: undefined,
     createdAt: 0,
   }
 }
@@ -487,48 +540,10 @@ async function redirectToPaymentResult(state: PaymentRecoverySnapshot): Promise<
   })
 }
 
-function buildWechatOAuthAuthorizeUrl(
-  authorizeUrl: string,
-  context: { paymentType: string; orderType: OrderType; planId?: number; orderAmount: number },
-): string {
-  const normalizedUrl = authorizeUrl.trim()
-  if (!normalizedUrl || typeof window === 'undefined') {
-    return normalizedUrl
-  }
-
-  try {
-    const targetUrl = new URL(normalizedUrl, window.location.origin)
-    const redirectPath = targetUrl.searchParams.get('redirect') || '/purchase'
-    const redirectUrl = new URL(redirectPath, window.location.origin)
-    const paymentType = normalizeVisibleMethod(context.paymentType) || context.paymentType.trim() || 'wxpay'
-
-    redirectUrl.searchParams.set('payment_type', paymentType)
-    redirectUrl.searchParams.set('order_type', context.orderType)
-
-    if (context.planId) {
-      redirectUrl.searchParams.set('plan_id', String(context.planId))
-    } else {
-      redirectUrl.searchParams.delete('plan_id')
-    }
-
-    if (normalizedCafeCouponCode.value && cafeCouponApplied.value) {
-      redirectUrl.searchParams.set('cafe_coupon_code', normalizedCafeCouponCode.value)
-    } else {
-      redirectUrl.searchParams.delete('cafe_coupon_code')
-    }
-
-    if (context.orderAmount > 0) {
-      redirectUrl.searchParams.set('amount', String(context.orderAmount))
-    } else {
-      redirectUrl.searchParams.delete('amount')
-    }
-
-    targetUrl.searchParams.set('redirect', `${redirectUrl.pathname}${redirectUrl.search}`)
-    return targetUrl.toString()
-  } catch {
-    return normalizedUrl
-  }
+function buildWechatOAuthAuthorizeUrl(authorizeUrl: string): string {
+  return authorizeUrl.trim()
 }
+
 
 function onPaymentDone() {
   const wasSubscription = paymentState.value.orderType === 'subscription'
@@ -573,6 +588,67 @@ const balanceRechargeMultiplier = computed(() => {
   return multiplier > 0 ? multiplier : 1
 })
 const creditedAmount = computed(() => Math.round((validAmount.value * balanceRechargeMultiplier.value) * 100) / 100)
+
+function roundPaymentAmount(value: number): number {
+  return Math.round(value * 100) / 100
+}
+
+function multiplyPlanLimit(value: number | null | undefined, multiplier: number): number | null {
+  if (value == null) return null
+  return roundPaymentAmount(value * multiplier)
+}
+
+function isSubscriptionCurrentlyActive(subscription: UserSubscription): boolean {
+  if (subscription.status !== 'active') return false
+  if (!subscription.expires_at) return true
+  const expiresAt = Date.parse(subscription.expires_at)
+  return Number.isFinite(expiresAt) && expiresAt > Date.now()
+}
+
+function activeCustomSubscriptionForPlan(plan: SubscriptionPlan | null | undefined) {
+  if (!plan) return null
+  return activeSubscriptions.value.find(sub =>
+    isSubscriptionCurrentlyActive(sub)
+      && sub.group?.is_custom_subscription_group === true
+      && sub.group?.custom_source_plan_id === plan.id,
+  ) ?? null
+}
+
+function activeSubscriptionMultiplierForPlan(plan: SubscriptionPlan | null | undefined): number | null {
+  const customMultiplier = activeCustomSubscriptionForPlan(plan)?.group?.custom_multiplier
+  if (customMultiplier && customMultiplier >= 1) return customMultiplier
+  return null
+}
+
+function defaultCustomMultiplierForPlan(plan: SubscriptionPlan | null | undefined): number {
+  if (!plan?.custom_multiplier_enabled) return 1
+  return Math.max(1, plan.custom_multiplier_min ?? 1)
+}
+
+function effectivePlanMultiplier(plan: SubscriptionPlan | null | undefined): number {
+  if (!plan) return 1
+  const renewalMultiplier = activeSubscriptionMultiplierForPlan(plan)
+  if (renewalMultiplier != null) return renewalMultiplier
+  if (plan.custom_multiplier_enabled) {
+    return Math.max(defaultCustomMultiplierForPlan(plan), selectedSubscriptionMultiplier.value || 1)
+  }
+  return 1
+}
+
+const effectiveSelectedMultiplier = computed(() => effectivePlanMultiplier(selectedPlan.value))
+const effectiveSelectedPlanPrice = computed(() => roundPaymentAmount((selectedPlan.value?.price ?? 0) * effectiveSelectedMultiplier.value))
+const effectiveSelectedOriginalPrice = computed(() => {
+  if (!selectedPlan.value?.original_price) return null
+  return roundPaymentAmount(selectedPlan.value.original_price * effectiveSelectedMultiplier.value)
+})
+const effectiveSelectedCouponPrice = computed(() => {
+  if (currentOrderType.value !== 'subscription') return null
+  if (!cafeCouponApplied.value || cafeCouponPayableAmount.value == null) return null
+  return roundPaymentAmount(cafeCouponPayableAmount.value)
+})
+const effectiveSelectedDailyLimit = computed(() => multiplyPlanLimit(selectedPlan.value?.daily_limit_usd, effectiveSelectedMultiplier.value))
+const effectiveSelectedWeeklyLimit = computed(() => multiplyPlanLimit(selectedPlan.value?.weekly_limit_usd, effectiveSelectedMultiplier.value))
+const effectiveSelectedMonthlyLimit = computed(() => multiplyPlanLimit(selectedPlan.value?.monthly_limit_usd, effectiveSelectedMultiplier.value))
 
 // Adaptive grid: center single card, 2-col for 2 plans, 3-col for 3+
 const planGridClass = computed(() => {
@@ -664,22 +740,42 @@ const methodOptions = computed<PaymentMethodOption[]>(() =>
 )
 
 const feeRate = computed(() => checkout.value?.recharge_fee_rate ?? 0)
+function cafeCouponCurrentContextKey(code = normalizedCafeCouponCode.value): string {
+  const normalizedCode = code.trim().toUpperCase()
+  if (!normalizedCode) return ''
+  const orderType = currentOrderType.value
+  const planId = orderType === 'subscription' ? currentPlanId.value ?? 0 : 0
+  const multiplier = orderType === 'subscription' ? effectiveSelectedMultiplier.value : 0
+  return [normalizedCode, orderType, planId, multiplier, roundPaymentAmount(currentOrderAmount.value)].join(':')
+}
+const cafeCouponApplied = computed(() => {
+  const contextKey = cafeCouponCurrentContextKey()
+  return contextKey !== ''
+    && cafeCouponAppliedCode.value === normalizedCafeCouponCode.value
+    && cafeCouponAppliedContextKey.value === contextKey
+})
+const rechargeCouponPayableAmount = computed(() => {
+  if (!cafeCouponApplied.value || cafeCouponPayableAmount.value == null) return null
+  if (currentOrderType.value !== 'balance') return null
+  return roundPaymentAmount(cafeCouponPayableAmount.value)
+})
+const rechargeCouponDiscountAmount = computed(() => {
+  if (rechargeCouponPayableAmount.value == null) return null
+  if (cafeCouponDiscountAmount.value != null) return roundPaymentAmount(cafeCouponDiscountAmount.value)
+  return roundPaymentAmount(Math.max(0, validAmount.value - rechargeCouponPayableAmount.value))
+})
+const rechargeFeeBaseAmount = computed(() => rechargeCouponPayableAmount.value ?? validAmount.value)
 const feeAmount = computed(() =>
-  feeRate.value > 0 && validAmount.value > 0
-    ? roundUpToCurrency((validAmount.value * feeRate.value) / 100, selectedCurrency.value)
+  feeRate.value > 0 && rechargeFeeBaseAmount.value > 0
+    ? roundUpToCurrency((rechargeFeeBaseAmount.value * feeRate.value) / 100, selectedCurrency.value)
     : 0
 )
 const totalAmount = computed(() => calculateFeeAdjustedPayAmount(validAmount.value, feeRate.value))
-const cafeCouponApplied = computed(() => cafeCouponAppliedCode.value !== '' && cafeCouponAppliedCode.value === normalizedCafeCouponCode.value)
-const rechargeButtonAmount = computed(() => cafeCouponApplied.value && cafeCouponPayableAmount.value != null
-  ? calculateFeeAdjustedPayAmount(cafeCouponPayableAmount.value, feeRate.value)
-  : totalAmount.value
-)
+const rechargeTotalAmount = computed(() => calculateFeeAdjustedPayAmount(rechargeFeeBaseAmount.value, feeRate.value))
+const rechargeButtonAmount = computed(() => rechargeTotalAmount.value)
 
 function effectiveRechargeMethodAmount(): number {
-  return cafeCouponApplied.value && cafeCouponPayableAmount.value != null
-    ? calculateFeeAdjustedPayAmount(cafeCouponPayableAmount.value, feeRate.value)
-    : totalAmount.value
+  return rechargeTotalAmount.value
 }
 
 const rechargePayAmountBelowMinimum = computed(() =>
@@ -710,7 +806,7 @@ const canSubmit = computed(() =>
 
 // Subscription-specific: method options based on fee-adjusted payable amount.
 const subMethodOptions = computed<PaymentMethodOption[]>(() => {
-  const planPrice = selectedPlan.value?.price ?? 0
+  const planPrice = effectiveSelectedPlanPrice.value
   return enabledMethods.value.map((type) => {
     const ml = visibleMethods.value[type]
     const methodCurrency = normalizePaymentCurrency(ml?.currency)
@@ -725,17 +821,25 @@ const subMethodOptions = computed<PaymentMethodOption[]>(() => {
   })
 })
 
+const subscriptionCouponPayableAmount = computed(() => {
+  if (!cafeCouponApplied.value || cafeCouponPayableAmount.value == null) return null
+  if (currentOrderType.value !== 'subscription') return null
+  return roundPaymentAmount(cafeCouponPayableAmount.value)
+})
+const subscriptionCouponDiscountAmount = computed(() => {
+  if (subscriptionCouponPayableAmount.value == null) return null
+  if (cafeCouponDiscountAmount.value != null) return roundPaymentAmount(cafeCouponDiscountAmount.value)
+  return roundPaymentAmount(Math.max(0, effectiveSelectedPlanPrice.value - subscriptionCouponPayableAmount.value))
+})
+const subscriptionFeeBaseAmount = computed(() => subscriptionCouponPayableAmount.value ?? effectiveSelectedPlanPrice.value)
 const subFeeAmount = computed(() => {
-  const price = selectedPlan.value?.price ?? 0
+  const price = subscriptionFeeBaseAmount.value
   if (feeRate.value <= 0 || price <= 0) return 0
   return roundUpToCurrency((price * feeRate.value) / 100, selectedCurrency.value)
 })
 
-const subTotalAmount = computed(() => calculateFeeAdjustedPayAmount(selectedPlan.value?.price ?? 0, feeRate.value))
-const subscriptionButtonAmount = computed(() => cafeCouponApplied.value && cafeCouponPayableAmount.value != null
-  ? calculateFeeAdjustedPayAmount(cafeCouponPayableAmount.value, feeRate.value)
-  : subTotalAmount.value
-)
+const subTotalAmount = computed(() => calculateFeeAdjustedPayAmount(subscriptionFeeBaseAmount.value, feeRate.value))
+const subscriptionButtonAmount = computed(() => subTotalAmount.value)
 const cafeCouponDisplayPayableAmount = computed(() => {
   if (!cafeCouponApplied.value || cafeCouponPayableAmount.value == null) return null
   return currentOrderType.value === 'subscription' ? subscriptionButtonAmount.value : rechargeButtonAmount.value
@@ -756,10 +860,7 @@ const cafeCouponAppliedText = computed(() => {
 })
 
 function effectiveSubscriptionMethodAmount(): number {
-  const planPrice = selectedPlan.value?.price ?? 0
-  return cafeCouponApplied.value && cafeCouponPayableAmount.value != null
-    ? calculateFeeAdjustedPayAmount(cafeCouponPayableAmount.value, feeRate.value)
-    : calculateFeeAdjustedPayAmount(planPrice, feeRate.value)
+  return subTotalAmount.value
 }
 
 const subscriptionPayAmountBelowMinimum = computed(() =>
@@ -775,15 +876,26 @@ const canSubmitSubscription = computed(() =>
 
 const normalizedCafeCouponCode = computed(() => cafeCouponCode.value.trim().toUpperCase())
 const currentOrderType = computed<OrderType>(() => activeTab.value === 'subscription' && selectedPlan.value ? 'subscription' : 'balance')
-const currentOrderAmount = computed(() => currentOrderType.value === 'subscription' ? selectedPlan.value?.price ?? 0 : validAmount.value)
+const currentOrderAmount = computed(() => currentOrderType.value === 'subscription' ? effectiveSelectedPlanPrice.value : validAmount.value)
 const currentPlanId = computed(() => currentOrderType.value === 'subscription' ? selectedPlan.value?.id : undefined)
 const currentOrderPayAmountBelowMinimum = computed(() =>
   currentOrderType.value === 'subscription' ? subscriptionPayAmountBelowMinimum.value : rechargePayAmountBelowMinimum.value
 )
 
+watch(normalizedCafeCouponCode, () => {
+  clearPlanCardCouponPreviews()
+  refreshPlanCardCouponPreviews()
+})
+
+watch([activeTab, () => selectedPlan.value?.id, () => checkout.value.plans.length, () => activeSubscriptions.value.length], () => {
+  refreshPlanCardCouponPreviews()
+})
+
 function resetCafeCouponState(keepError = false) {
   cafeCouponAppliedCode.value = ''
-  cafeCouponApplyingCode.value = ''
+  cafeCouponAppliedContextKey.value = ''
+  cafeCouponPreviewingCode.value = ''
+  cafeCouponPreviewingContextKey.value = ''
   cafeCouponMessage.value = ''
   cafeCouponDiscountAmount.value = null
   cafeCouponPayableAmount.value = null
@@ -793,36 +905,140 @@ function resetCafeCouponState(keepError = false) {
   }
 }
 
-async function applyCafeCoupon() {
+function clearPlanCardCouponPreviews(): void {
+  planCouponPreviewByKey.value = {}
+  planCouponPreviewPendingKeys.value = {}
+}
+
+function planCouponPreviewKey(planId: number, multiplier: number, code: string): string {
+  return `${planId}:${multiplier}:${code}`
+}
+
+function planCardMultiplierForPlan(plan: SubscriptionPlan): number {
+  const renewalMultiplier = activeSubscriptionMultiplierForPlan(plan)
+  if (renewalMultiplier != null) return renewalMultiplier
+  const tracked = Number(planCardMultipliers.value[plan.id])
+  if (Number.isFinite(tracked) && tracked >= 1) return tracked
+  return defaultCustomMultiplierForPlan(plan)
+}
+
+function planCardCouponPayAmount(plan: SubscriptionPlan): number | null {
+  const code = normalizedCafeCouponCode.value
+  if (!code) return null
+  const multiplier = planCardMultiplierForPlan(plan)
+  const key = planCouponPreviewKey(plan.id, multiplier, code)
+  return planCouponPreviewByKey.value[key]?.payAmount ?? null
+}
+
+function setPlanCouponPreviewPending(key: string, pending: boolean): void {
+  if (pending) {
+    planCouponPreviewPendingKeys.value = { ...planCouponPreviewPendingKeys.value, [key]: true }
+    return
+  }
+  const next = { ...planCouponPreviewPendingKeys.value }
+  delete next[key]
+  planCouponPreviewPendingKeys.value = next
+}
+
+function removePlanCouponPreview(key: string): void {
+  const next = { ...planCouponPreviewByKey.value }
+  delete next[key]
+  planCouponPreviewByKey.value = next
+}
+
+async function previewCafeCouponForPlanCard(plan: SubscriptionPlan, multiplier: number): Promise<void> {
+  const code = normalizedCafeCouponCode.value
+  const safeMultiplier = Number(multiplier)
+  if (!code || activeTab.value !== 'subscription') return
+  if (!Number.isFinite(safeMultiplier) || safeMultiplier < 1) return
+  const amount = roundPaymentAmount(plan.price * safeMultiplier)
+  if (amount <= 0) return
+
+  const key = planCouponPreviewKey(plan.id, safeMultiplier, code)
+  if (planCouponPreviewByKey.value[key] || planCouponPreviewPendingKeys.value[key]) return
+
+  setPlanCouponPreviewPending(key, true)
+  try {
+    const response = await paymentStore.previewCafeCoupon({
+      code,
+      amount,
+      order_type: 'subscription',
+      plan_id: plan.id,
+      multiplier: safeMultiplier,
+    })
+    if (normalizedCafeCouponCode.value !== code) return
+    if (response.valid === false || !Number.isFinite(response.pay_amount)) {
+      removePlanCouponPreview(key)
+      return
+    }
+    planCouponPreviewByKey.value = {
+      ...planCouponPreviewByKey.value,
+      [key]: { payAmount: roundPaymentAmount(Math.max(0, response.pay_amount)) },
+    }
+  } catch {
+    if (normalizedCafeCouponCode.value === code) {
+      removePlanCouponPreview(key)
+    }
+  } finally {
+    setPlanCouponPreviewPending(key, false)
+  }
+}
+
+function onPlanCardMultiplierChange(plan: SubscriptionPlan, multiplier: number): void {
+  const safeMultiplier = Number(multiplier)
+  if (!Number.isFinite(safeMultiplier) || safeMultiplier < 1) return
+  planCardMultipliers.value = { ...planCardMultipliers.value, [plan.id]: safeMultiplier }
+  previewCafeCouponForPlanCard(plan, safeMultiplier).catch(() => {})
+}
+
+function refreshPlanCardCouponPreviews(): void {
+  if (!normalizedCafeCouponCode.value || activeTab.value !== 'subscription' || selectedPlan.value) return
+  for (const plan of checkout.value.plans) {
+    previewCafeCouponForPlanCard(plan, planCardMultiplierForPlan(plan)).catch(() => {})
+  }
+}
+
+async function previewCafeCoupon() {
   const code = normalizedCafeCouponCode.value
   if (!code) {
     resetCafeCouponState()
     return
   }
-  if (code === cafeCouponAppliedCode.value) return
-  if (code === cafeCouponApplyingCode.value && cafeCouponApplyPromise) {
-    await cafeCouponApplyPromise
-    return
-  }
   if (currentOrderAmount.value <= 0) return
 
-  if (cafeCouponApplyTimer) {
-    clearTimeout(cafeCouponApplyTimer)
-    cafeCouponApplyTimer = null
+  const requestOrderType = currentOrderType.value
+  const requestAmount = roundPaymentAmount(currentOrderAmount.value)
+  const requestPlanId = currentPlanId.value
+  const requestMultiplier = requestOrderType === 'subscription' ? effectiveSelectedMultiplier.value : undefined
+  const requestContextKey = cafeCouponCurrentContextKey(code)
+  if (requestContextKey && requestContextKey === cafeCouponAppliedContextKey.value) return
+  if (requestContextKey && requestContextKey === cafeCouponPreviewingContextKey.value && cafeCouponPreviewPromise) {
+    await cafeCouponPreviewPromise
+    return
   }
-  applyingCafeCoupon.value = true
-  cafeCouponApplyingCode.value = code
+
+  if (cafeCouponPreviewTimer) {
+    clearTimeout(cafeCouponPreviewTimer)
+    cafeCouponPreviewTimer = null
+  }
+  const seq = ++cafeCouponPreviewSeq
+  previewingCafeCoupon.value = true
+  cafeCouponPreviewingCode.value = code
+  cafeCouponPreviewingContextKey.value = requestContextKey
   cafeCouponError.value = ''
-  cafeCouponApplyPromise = (async () => {
+  cafeCouponPreviewPromise = (async () => {
     try {
-      const response = await paymentStore.applyCafeCoupon({
+      const response = await paymentStore.previewCafeCoupon({
         code,
-        amount: currentOrderAmount.value,
-        order_type: currentOrderType.value,
-        plan_id: currentPlanId.value,
+        amount: requestAmount,
+        order_type: requestOrderType,
+        plan_id: requestPlanId,
+        multiplier: requestMultiplier,
       })
+      if (seq !== cafeCouponPreviewSeq || cafeCouponCurrentContextKey(code) !== requestContextKey) return
       if (response.valid === false) {
         cafeCouponAppliedCode.value = ''
+        cafeCouponAppliedContextKey.value = ''
         cafeCouponMessage.value = ''
         cafeCouponDiscountAmount.value = null
         cafeCouponPayableAmount.value = null
@@ -831,37 +1047,42 @@ async function applyCafeCoupon() {
         return
       }
       cafeCouponAppliedCode.value = (response.coupon?.code || code).trim().toUpperCase()
+      cafeCouponAppliedContextKey.value = requestContextKey
       cafeCouponMessage.value = response.message || ''
       cafeCouponDiscountAmount.value = Number.isFinite(response.discount_amount) ? response.discount_amount : null
       cafeCouponPayableAmount.value = Number.isFinite(response.pay_amount) ? response.pay_amount : null
       cafeCouponAppliedCoupon.value = response.coupon ?? null
     } catch (error: unknown) {
-      console.error('Failed to apply café coupon:', error)
+      if (seq !== cafeCouponPreviewSeq || cafeCouponCurrentContextKey(code) !== requestContextKey) return
+      console.error('Failed to preview Cafe coupon:', error)
       resetCafeCouponState(true)
       cafeCouponError.value = extractI18nErrorMessage(error, t, 'payment.cafeCoupon.errors', extractApiErrorMessage(error, t('payment.cafeCoupon.invalid')))
     } finally {
-      applyingCafeCoupon.value = false
-      cafeCouponApplyingCode.value = ''
-      cafeCouponApplyPromise = null
+      if (seq === cafeCouponPreviewSeq) {
+        previewingCafeCoupon.value = false
+        cafeCouponPreviewingCode.value = ''
+        cafeCouponPreviewingContextKey.value = ''
+        cafeCouponPreviewPromise = null
+      }
     }
   })()
-  await cafeCouponApplyPromise
+  await cafeCouponPreviewPromise
 }
 
-function scheduleCafeCouponAutoApply() {
+function scheduleCafeCouponAutoPreview() {
   resetCafeCouponState()
   const code = normalizedCafeCouponCode.value
   if (!code) return
-  if (cafeCouponApplyTimer) clearTimeout(cafeCouponApplyTimer)
-  cafeCouponApplyTimer = setTimeout(() => {
-    applyCafeCoupon().catch(() => {})
+  if (cafeCouponPreviewTimer) clearTimeout(cafeCouponPreviewTimer)
+  cafeCouponPreviewTimer = setTimeout(() => {
+    previewCafeCoupon().catch(() => {})
   }, code.length >= 8 ? 450 : 900)
 }
 
-watch([currentOrderAmount, currentOrderType, currentPlanId, selectedMethod], () => {
+watch([currentOrderAmount, currentOrderType, currentPlanId, selectedMethod, effectiveSelectedMultiplier], () => {
   if (normalizedCafeCouponCode.value) {
     resetCafeCouponState()
-    scheduleCafeCouponAutoApply()
+    scheduleCafeCouponAutoPreview()
   }
 })
 
@@ -870,13 +1091,13 @@ watch(() => route.query.cafe_coupon_code, () => {
 })
 
 onBeforeUnmount(() => {
-  if (cafeCouponApplyTimer) {
-    clearTimeout(cafeCouponApplyTimer)
+  if (cafeCouponPreviewTimer) {
+    clearTimeout(cafeCouponPreviewTimer)
   }
 })
 
 // Auto-switch to first available method when current selection can't handle the payable amount
-watch(() => [validAmount.value, selectedMethod.value, selectedPlan.value?.id, cafeCouponApplied.value, cafeCouponPayableAmount.value] as const, () => {
+watch(() => [validAmount.value, selectedMethod.value, selectedPlan.value?.id, effectiveSelectedMultiplier.value, cafeCouponApplied.value, cafeCouponPayableAmount.value] as const, () => {
   const methodAmount = currentOrderType.value === 'subscription'
     ? effectiveSubscriptionMethodAmount()
     : effectiveRechargeMethodAmount()
@@ -916,15 +1137,54 @@ const planValiditySuffix = computed(() => {
   return `${selectedPlan.value.validity_days}${t('payment.days')}`
 })
 
-function selectPlan(plan: SubscriptionPlan) {
+
+function firstRouteQueryString(value: unknown): string {
+  if (Array.isArray(value)) return typeof value[0] === 'string' ? value[0] : ''
+  return typeof value === 'string' ? value : ''
+}
+
+function positiveRouteNumber(value: unknown): number | null {
+  const parsed = Number(firstRouteQueryString(value))
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null
+}
+
+function routeSubscriptionPlanForGroup(groupId: number): SubscriptionPlan | null {
+  const customSubscription = activeSubscriptions.value.find(sub =>
+    sub.group_id === groupId
+      && isSubscriptionCurrentlyActive(sub)
+      && sub.group?.is_custom_subscription_group === true
+      && !!sub.group.custom_source_plan_id,
+  )
+  if (customSubscription?.group?.custom_source_plan_id) {
+    return checkout.value.plans.find(plan => plan.id === customSubscription.group?.custom_source_plan_id) ?? null
+  }
+  const groupPlans = checkout.value.plans.filter(plan => plan.group_id === groupId)
+  if (groupPlans.length === 1) return groupPlans[0]
+  if (groupPlans.length > 1) {
+    renewGroupId.value = groupId
+    showRenewalModal.value = true
+  }
+  return null
+}
+
+function initialMultiplierForPlan(plan: SubscriptionPlan | null | undefined, multiplier = 1): number {
+  const renewalMultiplier = activeSubscriptionMultiplierForPlan(plan)
+  if (renewalMultiplier != null) return renewalMultiplier
+  if (plan?.custom_multiplier_enabled) return Math.max(defaultCustomMultiplierForPlan(plan), multiplier)
+  return 1
+}
+
+function selectPlan(plan: SubscriptionPlan, multiplier = 1) {
   selectedPlan.value = plan
+  selectedSubscriptionMultiplier.value = initialMultiplierForPlan(plan, multiplier)
   errorMessage.value = ''
 }
 
-function selectPlanFromModal(plan: SubscriptionPlan) {
+function selectPlanFromModal(plan: SubscriptionPlan, multiplier = 1) {
   showRenewalModal.value = false
   renewGroupId.value = null
   selectedPlan.value = plan
+  selectedSubscriptionMultiplier.value = initialMultiplierForPlan(plan, multiplier)
   errorMessage.value = ''
 }
 
@@ -935,7 +1195,7 @@ function closeRenewalModal() {
 
 async function ensureCafeCouponReady(): Promise<boolean> {
   if (!normalizedCafeCouponCode.value) return true
-  await applyCafeCoupon()
+  await previewCafeCoupon()
   return cafeCouponApplied.value && !cafeCouponError.value
 }
 
@@ -955,7 +1215,7 @@ async function confirmSubscribe() {
   const plan = selectedPlan.value
   if (!plan) return
   if (!await ensureCafeCouponReady()) return
-  await createOrder(plan.price, 'subscription', plan.id)
+  await createOrder(effectiveSelectedPlanPrice.value, 'subscription', plan.id)
 }
 
 async function createOrder(orderAmount: number, orderType: OrderType, planId?: number, options: CreateOrderOptions = {}) {
@@ -974,6 +1234,7 @@ async function createOrder(orderAmount: number, orderType: OrderType, planId?: n
       isWechatBrowser: typeof window !== 'undefined' && /MicroMessenger/i.test(window.navigator.userAgent),
       forceQRCode: !!(checkout.value.alipay_force_qrcode && normalizeVisibleMethod(requestType) === 'alipay'),
       cafeCouponCode: cafeCouponCodeForOrder(options.isResume === true),
+      multiplier: orderType === 'subscription' ? effectiveSelectedMultiplier.value : undefined,
     })
     if (options.openid) {
       payload.openid = options.openid
@@ -1022,18 +1283,14 @@ async function createOrder(orderAmount: number, orderType: OrderType, planId?: n
       isMobile: isMobileDevice(),
       isWechatBrowser: typeof window !== 'undefined' && /MicroMessenger/i.test(window.navigator.userAgent),
       forceQRCode: !!(checkout.value.alipay_force_qrcode && visibleMethod === 'alipay'),
+      multiplier: orderType === 'subscription' ? effectiveSelectedMultiplier.value : undefined,
       stripePopupUrl: stripeRouteUrl,
       stripeRouteUrl,
       airwallexRouteUrl,
     })
 
     if (decision.kind === 'wechat_oauth' && decision.oauth?.authorize_url) {
-      window.location.href = buildWechatOAuthAuthorizeUrl(decision.oauth.authorize_url, {
-        paymentType: visibleMethod,
-        orderType,
-        planId,
-        orderAmount,
-      })
+      window.location.href = buildWechatOAuthAuthorizeUrl(decision.oauth.authorize_url)
       return
     }
 
@@ -1205,6 +1462,7 @@ async function attemptMobileQrFallback(err: unknown, context: MobileQrFallbackCo
       isMobile: false,
       isWechatBrowser: false,
       cafeCouponCode: cafeCouponCodeForOrder(false),
+      multiplier: context.orderType === 'subscription' ? effectiveSelectedMultiplier.value : undefined,
     })
     const result = await paymentStore.createOrder(payload) as CreateOrderResult & { resume_token?: string }
     const stripeMethod = visibleMethod === 'wxpay' ? 'wechat_pay' : 'alipay'
@@ -1226,6 +1484,7 @@ async function attemptMobileQrFallback(err: unknown, context: MobileQrFallbackCo
       isWechatBrowser: false,
       stripePopupUrl: stripeRouteUrl,
       stripeRouteUrl,
+      multiplier: context.orderType === 'subscription' ? effectiveSelectedMultiplier.value : undefined,
     })
 
     if (decision.kind !== 'qr_waiting' || !decision.paymentState.qrCode) {
@@ -1269,10 +1528,16 @@ function routeCafeCouponCode(): string {
 
 function applyRouteCafeCouponCode() {
   const code = routeCafeCouponCode()
-  if (!code || code === normalizedCafeCouponCode.value) return
-  cafeCouponCode.value = code
-  resetCafeCouponState()
-  appStore.showSuccess(t('payment.cafeCoupon.applied'))
+  if (!code) return
+  const codeChanged = code !== normalizedCafeCouponCode.value
+  if (codeChanged) {
+    cafeCouponCode.value = code
+    resetCafeCouponState()
+    appStore.showSuccess(t('payment.cafeCoupon.applied'))
+  }
+  if (!cafeCouponApplied.value && !previewingCafeCoupon.value && currentOrderAmount.value > 0) {
+    previewCafeCoupon().catch(() => {})
+  }
 }
 
 async function resumeWechatPaymentFromQuery() {
@@ -1287,6 +1552,7 @@ async function resumeWechatPaymentFromQuery() {
   }
   if (resume.orderType === 'subscription' && resume.planId) {
     selectedPlan.value = checkout.value.plans.find(plan => plan.id === resume.planId) ?? null
+    selectedSubscriptionMultiplier.value = initialMultiplierForPlan(selectedPlan.value, resume.multiplier || 1)
   }
 
   if (resume.cafeCouponCode) {
@@ -1358,23 +1624,29 @@ onMounted(async () => {
     if (currentOrderType.value === 'balance' && amount.value == null && defaultRechargeAmount > 0) {
       amount.value = defaultRechargeAmount
     }
-    // Handle renewal navigation: ?tab=subscription&group=123
+    // Handle renewal navigation: ?tab=subscription&plan=7 or ?tab=subscription&group=123
+    let activeSubscriptionsFetchedForRoute = false
+    if (route.query.tab === 'subscription' && (route.query.plan || route.query.group)) {
+      await subscriptionStore.fetchActiveSubscriptions().catch(() => {})
+      activeSubscriptionsFetchedForRoute = true
+    }
     if (route.query.tab === 'subscription') {
       activeTab.value = 'subscription'
-      if (route.query.group) {
-        const groupId = Number(route.query.group)
-        const groupPlans = checkout.value.plans.filter(p => p.group_id === groupId)
-        if (groupPlans.length === 1) {
-          selectedPlan.value = groupPlans[0]
-        } else if (groupPlans.length > 1) {
-          renewGroupId.value = groupId
-          showRenewalModal.value = true
-        }
+      const multiplier = positiveRouteNumber(route.query.multiplier) ?? 1
+      const planId = positiveRouteNumber(route.query.plan)
+      const groupId = positiveRouteNumber(route.query.group)
+      const plan = planId
+        ? (checkout.value.plans.find(p => p.id === planId) ?? null)
+        : groupId != null ? routeSubscriptionPlanForGroup(groupId) : null
+      if (plan) {
+        selectedPlan.value = plan
+        selectedSubscriptionMultiplier.value = initialMultiplierForPlan(plan, multiplier)
       }
+    }
+    if (!activeSubscriptionsFetchedForRoute) {
+      subscriptionStore.fetchActiveSubscriptions().catch(() => {})
     }
   } catch (err: unknown) { appStore.showError(extractI18nErrorMessage(err, t, 'payment.errors', t('common.error'))) }
   finally { loading.value = false }
-  // Fetch active subscriptions (uses cache, non-blocking)
-  subscriptionStore.fetchActiveSubscriptions().catch(() => {})
 })
 </script>

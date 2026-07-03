@@ -4,6 +4,8 @@
 
 This directory contains SQL migration files for database schema changes. The migration system uses SHA256 checksums to ensure migration immutability and consistency across environments.
 
+For detailed checksum mismatch incident handling, see [`../../docs/MIGRATION_CHECKSUM_PLAYBOOK.md`](../../docs/MIGRATION_CHECKSUM_PLAYBOOK.md).
+
 ## Migration File Naming
 
 Format: `NNN_description.sql`
@@ -62,6 +64,8 @@ Why?
 - Can prevent the application from starting because migrations run during service startup
 
 ### Checksum Compatibility Is Emergency-Only
+
+For the full incident playbook and command examples, see [`../../docs/MIGRATION_CHECKSUM_PLAYBOOK.md`](../../docs/MIGRATION_CHECKSUM_PLAYBOOK.md).
 
 The migration runner keeps checksum validation enabled. `migrationChecksumCompatibilityRules` is not a global bypass.
 
@@ -130,11 +134,11 @@ git checkout <commit-hash> -- migrations/017_add_gemini_tier_id.sql
 touch migrations/018_your_new_change.sql
 ```
 
-If production is already down, restore service first with the narrowest possible incident-response action, then add a filename/checksum-specific compatibility rule with tests. Do not leave the system relying on manual `schema_migrations` edits as the long-term fix.
+If production is already down, restore service first with the narrowest possible incident-response action, then add a filename/checksum-specific compatibility rule with tests. Do not leave the system relying on manual `schema_migrations` edits as the long-term fix. Follow the detailed decision tree in [`../../docs/MIGRATION_CHECKSUM_PLAYBOOK.md`](../../docs/MIGRATION_CHECKSUM_PLAYBOOK.md).
 
 ## Migration System Details
 
-- **Checksum Algorithm**: SHA256 of trimmed file content
+- **Checksum Algorithm**: SHA256 of the exact migration file content read by the runner; line endings and BOM changes affect the checksum
 - **Tracking Table**: `schema_migrations` (filename, checksum, applied_at)
 - **Runner**: `internal/repository/migrations_runner.go`
 - **Auto-run**: Migrations run automatically on service startup
@@ -145,9 +149,9 @@ If production is already down, restore service first with the narrowest possible
    - One logical change per migration
    - Easier to review and rollback
 
-2. **Write reversible migrations**
-   - Always provide a working Down migration
-   - Test rollback before committing
+2. **Write forward-only migrations**
+   - Do not put executable Down SQL in the same file
+   - If rollback is needed, create a later corrective migration
 
 3. **Use transactions**
    - Wrap DDL statements in transactions when possible
@@ -181,7 +185,7 @@ WHERE platform = 'gemini'
 ## Troubleshooting
 
 ### Checksum Mismatch
-See "If You Accidentally Modified an Applied Migration" above.
+See "If You Accidentally Modified an Applied Migration" above and the full playbook in [`../../docs/MIGRATION_CHECKSUM_PLAYBOOK.md`](../../docs/MIGRATION_CHECKSUM_PLAYBOOK.md).
 
 ### Migration Failed
 ```bash

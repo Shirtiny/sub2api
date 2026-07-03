@@ -35,15 +35,22 @@
           <div
             class="flex items-center justify-between border-b border-gray-100 p-4 dark:border-dark-700"
           >
-            <div class="flex items-center gap-3">
+            <div class="flex min-w-0 flex-1 items-center gap-3">
               <div :class="['h-1.5 w-1.5 shrink-0 rounded-full', platformAccentDotClass(subscription.group?.platform || '')]" />
-              <div>
-                <div class="flex items-center gap-2">
-                  <h3 class="font-semibold text-content-primary">
+              <div class="min-w-0">
+                <div class="flex min-w-0 items-center gap-2">
+                  <h3 class="truncate font-semibold text-content-primary">
                     {{ subscription.group?.name || `Group #${subscription.group_id}` }}
                   </h3>
                   <span :class="['rounded-md border px-2 py-0.5 text-[11px] font-medium', platformBadgeClass(subscription.group?.platform || '')]">
                     {{ platformLabel(subscription.group?.platform || '') }}
+                  </span>
+                  <span
+                    v-if="shouldShowCustomMultiplierBadge(subscription)"
+                    data-testid="subscription-custom-multiplier"
+                    class="inline-flex shrink-0 items-center rounded-full bg-[#F5C66B]/15 px-2 py-0.5 text-[11px] font-bold text-[#3D2E2A] dark:bg-[#F5C66B]/10 dark:text-[#F5C66B]"
+                  >
+                    {{ customSubscriptionMultiplier(subscription) }}x
                   </span>
                 </div>
                 <p v-if="subscription.group?.description" class="mt-0.5 text-xs text-content-tertiary">
@@ -67,7 +74,7 @@
               <button
                 v-if="subscription.status === 'active'"
                 :class="['rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition-colors', platformButtonClass(subscription.group?.platform || '')]"
-                @click="router.push({ path: '/purchase', query: { tab: 'subscription', group: String(subscription.group_id) } })"
+                @click="router.push({ path: '/purchase', query: renewalQuery(subscription) })"
               >
                 {{ t('payment.renewNow') }}
               </button>
@@ -281,6 +288,43 @@ async function loadSubscriptions() {
   } finally {
     loading.value = false
   }
+}
+
+
+function customSubscriptionMultiplier(subscription: UserSubscription): number | null {
+  const group = subscription.group
+  const multiplier = group?.custom_multiplier
+
+  if (group?.is_custom_subscription_group === true && typeof multiplier === 'number' && multiplier >= 1) {
+    return multiplier
+  }
+
+  return null
+}
+
+function shouldShowCustomMultiplierBadge(subscription: UserSubscription): boolean {
+  const multiplier = customSubscriptionMultiplier(subscription)
+  if (!multiplier) return false
+
+  const groupName = subscription.group?.name?.trim() || ''
+  return !groupName.startsWith(`[${multiplier}x]`)
+}
+
+function renewalQuery(subscription: UserSubscription): Record<string, string> {
+  const query: Record<string, string> = { tab: 'subscription' }
+  const group = subscription.group
+  if (group?.is_custom_subscription_group && group.custom_source_plan_id) {
+    query.plan = String(group.custom_source_plan_id)
+    if (group.custom_source_group_id) {
+      query.group = String(group.custom_source_group_id)
+    }
+    if (group.custom_multiplier && group.custom_multiplier >= 1) {
+      query.multiplier = String(group.custom_multiplier)
+    }
+    return query
+  }
+  query.group = String(subscription.group_id)
+  return query
 }
 
 function getProgressWidth(used: number | undefined, limit: number | null | undefined): string {

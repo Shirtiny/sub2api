@@ -3,12 +3,15 @@
 package repository
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"testing"
 
+	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/lib/pq"
 	"github.com/stretchr/testify/require"
 )
@@ -234,4 +237,46 @@ func TestChannelListOrderBy_AllowsDescendingIDSort(t *testing.T) {
 	}
 
 	require.Equal(t, "c.id DESC, c.id DESC", channelListOrderBy(params))
+}
+
+func TestExpandGroupIDsWithCustomGroups(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	defer func() { _ = db.Close() }()
+
+	rows := sqlmock.NewRows([]string{"custom_source_group_id", "id"}).
+		AddRow(int64(10), int64(101)).
+		AddRow(int64(10), int64(102)).
+		AddRow(int64(20), int64(201))
+	mock.ExpectQuery("SELECT custom_source_group_id, id").
+		WithArgs(sqlmock.AnyArg(), service.StatusActive).
+		WillReturnRows(rows)
+
+	got, err := expandGroupIDsWithCustomGroups(context.Background(), db, []int64{10, 20, 10, 0})
+	require.NoError(t, err)
+	require.Equal(t, []int64{10, 101, 102, 20, 201}, got)
+	require.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestExpandAccountGroupBindingsWithCustomGroupsKeepsSourcePriority(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	defer func() { _ = db.Close() }()
+
+	rows := sqlmock.NewRows([]string{"custom_source_group_id", "id"}).
+		AddRow(int64(10), int64(101)).
+		AddRow(int64(20), int64(201))
+	mock.ExpectQuery("SELECT custom_source_group_id, id").
+		WithArgs(sqlmock.AnyArg(), service.StatusActive).
+		WillReturnRows(rows)
+
+	got, err := expandAccountGroupBindingsWithCustomGroups(context.Background(), db, []int64{10, 20})
+	require.NoError(t, err)
+	require.Equal(t, []accountGroupBindingTarget{
+		{GroupID: 10, Priority: 1},
+		{GroupID: 101, Priority: 1},
+		{GroupID: 20, Priority: 2},
+		{GroupID: 201, Priority: 2},
+	}, got)
+	require.NoError(t, mock.ExpectationsWereMet())
 }

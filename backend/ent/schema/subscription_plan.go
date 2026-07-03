@@ -58,6 +58,15 @@ func (SubscriptionPlan) Fields() []ent.Field {
 			Default(true),
 		field.Int("sort_order").
 			Default(0),
+		field.Bool("custom_multiplier_enabled").
+			Default(false).
+			Comment("whether this plan allows integer multiplier purchase"),
+		field.Int("custom_multiplier_min").
+			Default(1).
+			Comment("minimum custom multiplier; enabled plans require at least 1"),
+		field.Int("custom_multiplier_max").
+			Default(1).
+			Comment("maximum custom multiplier; must be >= min when enabled"),
 		field.Time("created_at").
 			Immutable().
 			Default(time.Now).

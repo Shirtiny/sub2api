@@ -93,3 +93,16 @@ func TestBuildOpsErrorLogsWhere_MatchDeletedKeyOwner(t *testing.T) {
 		t.Fatalf("default must NOT include deleted_key_owner_user_id, got: %s", whereOff)
 	}
 }
+
+func TestBuildOpsErrorLogsWhereGroupFilterIncludesCustomSubscriptionGroups(t *testing.T) {
+	gid := int64(42)
+	where, args := buildOpsErrorLogsWhere(&service.OpsErrorLogFilter{GroupID: &gid})
+	for _, want := range []string{"e.group_id = $", "custom_source_group_id = $", "is_custom_subscription_group = TRUE"} {
+		if !strings.Contains(where, want) {
+			t.Fatalf("where missing %q\nfull: %s", want, where)
+		}
+	}
+	if len(args) != 1 || args[0] != gid {
+		t.Fatalf("unexpected args: %#v", args)
+	}
+}

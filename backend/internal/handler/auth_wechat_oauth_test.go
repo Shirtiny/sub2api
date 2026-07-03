@@ -358,6 +358,85 @@ func TestWeChatOAuthCallbackRejectsDisabledExistingIdentityUser(t *testing.T) {
 	require.Zero(t, count)
 }
 
+func TestWeChatPaymentOAuthStartRequiresSignedContextToken(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	t.Setenv("PAYMENT_RESUME_SIGNING_KEY", "explicit-payment-resume-signing-key")
+	handler, client := newWeChatOAuthTestHandlerWithSettings(t, false, wechatOAuthTestSettings("mp", "wx-mp-app", "wx-mp-secret", "/auth/wechat/callback"))
+	defer client.Close()
+
+	unsignedReq := httptest.NewRequest(http.MethodGet, "/api/v1/auth/oauth/wechat/payment/start?payment_type=wxpay&amount=1&order_type=subscription&plan_id=999&multiplier=99", nil)
+	unsignedReq.Host = "api.example.com"
+	unsignedRecorder := httptest.NewRecorder()
+	unsignedCtx, _ := gin.CreateTestContext(unsignedRecorder)
+	unsignedCtx.Request = unsignedReq
+	handler.WeChatPaymentOAuthStart(unsignedCtx)
+	require.Equal(t, http.StatusBadRequest, unsignedRecorder.Code)
+
+	contextToken, err := service.NewPaymentResumeService([]byte("explicit-payment-resume-signing-key")).CreateWeChatPaymentOAuthContextToken(service.WeChatPaymentOAuthContextClaims{
+		UserID:         42,
+		PaymentType:    payment.TypeWxpay,
+		Amount:         "12.5",
+		OrderType:      payment.OrderTypeSubscription,
+		PlanID:         7,
+		Multiplier:     3,
+		CafeCouponCode: "SIGNED-COUPON",
+		RedirectTo:     "/purchase?from=wechat",
+		Scope:          "snsapi_base",
+	})
+	require.NoError(t, err)
+
+	signedReq := httptest.NewRequest(http.MethodGet, "/api/v1/auth/oauth/wechat/payment/start?context_token="+url.QueryEscape(contextToken)+"&amount=999&plan_id=999&multiplier=99", nil)
+	signedReq.Host = "api.example.com"
+	signedRecorder := httptest.NewRecorder()
+	signedCtx, _ := gin.CreateTestContext(signedRecorder)
+	signedCtx.Request = signedReq
+	handler.WeChatPaymentOAuthStart(signedCtx)
+	require.Equal(t, http.StatusFound, signedRecorder.Code)
+	require.Contains(t, signedRecorder.Header().Get("Location"), "open.weixin.qq.com")
+
+	var contextCookie *http.Cookie
+	for _, cookie := range signedRecorder.Result().Cookies() {
+		if cookie.Name == wechatPaymentOAuthContextName {
+			contextCookie = cookie
+			break
+		}
+	}
+	require.NotNil(t, contextCookie)
+	storedToken, err := decodeCookieValue(contextCookie.Value)
+	require.NoError(t, err)
+	stored, err := service.NewPaymentResumeService([]byte("explicit-payment-resume-signing-key")).ParseWeChatPaymentOAuthContextToken(storedToken)
+	require.NoError(t, err)
+	require.Equal(t, int64(42), stored.UserID)
+	require.Equal(t, payment.TypeWxpay, stored.PaymentType)
+	require.Equal(t, "12.5", stored.Amount)
+	require.Equal(t, int64(7), stored.PlanID)
+	require.Equal(t, 3, stored.Multiplier)
+	require.Equal(t, "SIGNED-COUPON", stored.CafeCouponCode)
+}
+
+func TestWeChatPaymentOAuthCallbackRejectsUnsignedContextCookie(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	handler, client := newWeChatOAuthTestHandlerWithSettings(t, false, wechatOAuthTestSettings("mp", "wx-mp-app", "wx-mp-secret", "/auth/wechat/callback"))
+	defer client.Close()
+	handler.cfg.Totp.EncryptionKey = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+	handler.cfg.Totp.EncryptionKeyConfigured = true
+
+	recorder := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(recorder)
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/auth/oauth/wechat/payment/callback?code=wechat-code&state=state-unsigned", nil)
+	req.Host = "api.example.com"
+	req.AddCookie(encodedCookie(wechatPaymentOAuthStateName, "state-unsigned"))
+	req.AddCookie(encodedCookie(wechatPaymentOAuthRedirect, "/purchase?from=attacker"))
+	req.AddCookie(encodedCookie(wechatPaymentOAuthContextName, `{"user_id":42,"payment_type":"wxpay","amount":"1","order_type":"subscription","plan_id":7,"multiplier":99}`))
+	req.AddCookie(encodedCookie(wechatPaymentOAuthScope, "snsapi_base"))
+	c.Request = req
+
+	handler.WeChatPaymentOAuthCallback(c)
+
+	require.Equal(t, http.StatusFound, recorder.Code)
+	assertOAuthRedirectError(t, recorder.Header().Get("Location"), "invalid_context", "invalid oauth context")
+}
+
 func TestWeChatPaymentOAuthCallbackRedirectsWithOpaqueResumeToken(t *testing.T) {
 	originalAccessTokenURL := wechatOAuthAccessTokenURL
 	t.Cleanup(func() {
@@ -380,14 +459,26 @@ func TestWeChatPaymentOAuthCallbackRedirectsWithOpaqueResumeToken(t *testing.T) 
 	handler.cfg.Totp.EncryptionKey = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
 	handler.cfg.Totp.EncryptionKeyConfigured = true
 
+	contextToken, err := handler.wechatPaymentResumeService().CreateWeChatPaymentOAuthContextToken(service.WeChatPaymentOAuthContextClaims{
+		UserID:      42,
+		PaymentType: payment.TypeWxpay,
+		Amount:      "12.5",
+		OrderType:   payment.OrderTypeSubscription,
+		PlanID:      7,
+		Multiplier:  3,
+		RedirectTo:  "/purchase?from=wechat",
+		Scope:       "snsapi_base",
+	})
+	require.NoError(t, err)
+
 	recorder := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(recorder)
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/auth/oauth/wechat/payment/callback?code=wechat-code&state=state-123", nil)
 	req.Host = "api.example.com"
 	req.AddCookie(encodedCookie(wechatPaymentOAuthStateName, "state-123"))
-	req.AddCookie(encodedCookie(wechatPaymentOAuthRedirect, "/purchase?from=wechat"))
-	req.AddCookie(encodedCookie(wechatPaymentOAuthContextName, `{"payment_type":"wxpay","amount":"12.5","order_type":"subscription","plan_id":7}`))
-	req.AddCookie(encodedCookie(wechatPaymentOAuthScope, "snsapi_base"))
+	req.AddCookie(encodedCookie(wechatPaymentOAuthRedirect, "/purchase?from=tampered"))
+	req.AddCookie(encodedCookie(wechatPaymentOAuthContextName, contextToken))
+	req.AddCookie(encodedCookie(wechatPaymentOAuthScope, "snsapi_userinfo"))
 	c.Request = req
 
 	handler.WeChatPaymentOAuthCallback(c)
@@ -413,6 +504,8 @@ func TestWeChatPaymentOAuthCallbackRedirectsWithOpaqueResumeToken(t *testing.T) 
 	require.Equal(t, "12.5", claims.Amount)
 	require.Equal(t, payment.OrderTypeSubscription, claims.OrderType)
 	require.EqualValues(t, 7, claims.PlanID)
+	require.Equal(t, 3, claims.Multiplier)
+	require.Equal(t, int64(42), claims.UserID)
 	require.Equal(t, "/purchase?from=wechat", claims.RedirectTo)
 }
 
@@ -442,14 +535,26 @@ func TestWeChatPaymentOAuthCallbackUsesExplicitPaymentResumeSigningKeyWhenMixedK
 	handler.cfg.Totp.EncryptionKey = legacyKeyHex
 	handler.cfg.Totp.EncryptionKeyConfigured = true
 
+	contextToken, err := handler.wechatPaymentResumeService().CreateWeChatPaymentOAuthContextToken(service.WeChatPaymentOAuthContextClaims{
+		UserID:      77,
+		PaymentType: payment.TypeWxpay,
+		Amount:      "18.8",
+		OrderType:   payment.OrderTypeSubscription,
+		PlanID:      9,
+		Multiplier:  4,
+		RedirectTo:  "/purchase?from=wechat",
+		Scope:       "snsapi_base",
+	})
+	require.NoError(t, err)
+
 	recorder := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(recorder)
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/auth/oauth/wechat/payment/callback?code=wechat-code&state=state-mixed", nil)
 	req.Host = "api.example.com"
 	req.AddCookie(encodedCookie(wechatPaymentOAuthStateName, "state-mixed"))
-	req.AddCookie(encodedCookie(wechatPaymentOAuthRedirect, "/purchase?from=wechat"))
-	req.AddCookie(encodedCookie(wechatPaymentOAuthContextName, `{"payment_type":"wxpay","amount":"18.8","order_type":"subscription","plan_id":9}`))
-	req.AddCookie(encodedCookie(wechatPaymentOAuthScope, "snsapi_base"))
+	req.AddCookie(encodedCookie(wechatPaymentOAuthRedirect, "/purchase?from=tampered"))
+	req.AddCookie(encodedCookie(wechatPaymentOAuthContextName, contextToken))
+	req.AddCookie(encodedCookie(wechatPaymentOAuthScope, "snsapi_userinfo"))
 	c.Request = req
 
 	handler.WeChatPaymentOAuthCallback(c)
@@ -471,6 +576,7 @@ func TestWeChatPaymentOAuthCallbackUsesExplicitPaymentResumeSigningKeyWhenMixedK
 	require.Equal(t, "18.8", claims.Amount)
 	require.Equal(t, payment.OrderTypeSubscription, claims.OrderType)
 	require.EqualValues(t, 9, claims.PlanID)
+	require.Equal(t, 4, claims.Multiplier)
 	require.Equal(t, "/purchase?from=wechat", claims.RedirectTo)
 
 	_, err = service.NewPaymentResumeService([]byte("0123456789abcdef0123456789abcdef")).ParseWeChatPaymentResumeToken(token)

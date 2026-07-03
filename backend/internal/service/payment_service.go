@@ -93,6 +93,7 @@ type CreateOrderRequest struct {
 	PaymentSource   string
 	OrderType       string
 	PlanID          int64
+	Multiplier      int
 	CafeCouponCode  string
 	Locale          string
 }
@@ -197,6 +198,8 @@ type PaymentService struct {
 	configService            *PaymentConfigService
 	userRepo                 UserRepository
 	groupRepo                GroupRepository
+	authCacheInvalidator     APIKeyAuthCacheInvalidator
+	channelCacheInvalidator  channelCacheInvalidator
 	resumeService            *PaymentResumeService
 	affiliateService         *AffiliateService
 	notificationEmailService *NotificationEmailService
@@ -210,6 +213,14 @@ func NewPaymentService(entClient *dbent.Client, registry *payment.Registry, load
 
 func (s *PaymentService) SetNotificationEmailService(notificationEmailService *NotificationEmailService) {
 	s.notificationEmailService = notificationEmailService
+}
+
+func (s *PaymentService) SetAuthCacheInvalidator(invalidator APIKeyAuthCacheInvalidator) {
+	s.authCacheInvalidator = invalidator
+}
+
+func (s *PaymentService) SetChannelCacheInvalidator(invalidator channelCacheInvalidator) {
+	s.channelCacheInvalidator = invalidator
 }
 
 // --- Provider Registry ---

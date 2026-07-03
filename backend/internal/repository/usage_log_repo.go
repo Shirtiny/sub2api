@@ -2908,7 +2908,7 @@ func (r *usageLogRepository) ListWithFilters(ctx context.Context, params paginat
 		args = append(args, filters.AccountID)
 	}
 	if filters.GroupID > 0 {
-		conditions = append(conditions, fmt.Sprintf("group_id = $%d", len(args)+1))
+		conditions = append(conditions, usageGroupIDMatchesCondition("group_id", len(args)+1))
 		args = append(args, filters.GroupID)
 	}
 	conditions, args = appendRawUsageLogModelWhereCondition(conditions, args, filters.Model)
@@ -3161,7 +3161,7 @@ func (r *usageLogRepository) GetUsageTrendWithFilters(ctx context.Context, start
 		args = append(args, accountID)
 	}
 	if groupID > 0 {
-		query += fmt.Sprintf(" AND group_id = $%d", len(args)+1)
+		query += " AND " + usageGroupIDMatchesCondition("group_id", len(args)+1)
 		args = append(args, groupID)
 	}
 	query, args = appendRawUsageLogModelQueryFilter(query, args, model)
@@ -3316,7 +3316,7 @@ func (r *usageLogRepository) getModelStatsWithFiltersBySource(ctx context.Contex
 		args = append(args, accountID)
 	}
 	if groupID > 0 {
-		query += fmt.Sprintf(" AND group_id = $%d", len(args)+1)
+		query += " AND " + usageGroupIDMatchesCondition("group_id", len(args)+1)
 		args = append(args, groupID)
 	}
 	query, args = appendRequestTypeOrStreamQueryFilter(query, args, requestType, stream)
@@ -3376,7 +3376,7 @@ func (r *usageLogRepository) GetGroupStatsWithFilters(ctx context.Context, start
 		args = append(args, accountID)
 	}
 	if groupID > 0 {
-		query += fmt.Sprintf(" AND ul.group_id = $%d", len(args)+1)
+		query += " AND " + usageGroupIDMatchesCondition("ul.group_id", len(args)+1)
 		args = append(args, groupID)
 	}
 	query, args = appendRequestTypeOrStreamQueryFilter(query, args, requestType, stream)
@@ -3437,7 +3437,7 @@ func (r *usageLogRepository) GetUserBreakdownStats(ctx context.Context, startTim
 	args := []any{startTime, endTime}
 
 	if dim.GroupID > 0 {
-		query += fmt.Sprintf(" AND ul.group_id = $%d", len(args)+1)
+		query += " AND " + usageGroupIDMatchesCondition("ul.group_id", len(args)+1)
 		args = append(args, dim.GroupID)
 	}
 	if dim.Model != "" {
@@ -3630,7 +3630,7 @@ func (r *usageLogRepository) GetStatsWithFilters(ctx context.Context, filters Us
 		args = append(args, filters.AccountID)
 	}
 	if filters.GroupID > 0 {
-		conditions = append(conditions, fmt.Sprintf("ul.group_id = $%d", len(args)+1))
+		conditions = append(conditions, usageGroupIDMatchesCondition("ul.group_id", len(args)+1))
 		args = append(args, filters.GroupID)
 	}
 	conditions, args = appendRawUsageLogModelWhereConditionWithQualifier(conditions, args, filters.Model, "ul")
@@ -3814,7 +3814,7 @@ func (r *usageLogRepository) getEndpointStatsByColumnWithFilters(ctx context.Con
 		args = append(args, accountID)
 	}
 	if groupID > 0 {
-		query += fmt.Sprintf(" AND group_id = $%d", len(args)+1)
+		query += " AND " + usageGroupIDMatchesCondition("group_id", len(args)+1)
 		args = append(args, groupID)
 	}
 	query, args = appendRawUsageLogModelQueryFilter(query, args, model)
@@ -3885,7 +3885,7 @@ func (r *usageLogRepository) getEndpointPathStatsWithFilters(ctx context.Context
 		args = append(args, accountID)
 	}
 	if groupID > 0 {
-		query += fmt.Sprintf(" AND group_id = $%d", len(args)+1)
+		query += " AND " + usageGroupIDMatchesCondition("group_id", len(args)+1)
 		args = append(args, groupID)
 	}
 	query, args = appendRawUsageLogModelQueryFilter(query, args, model)
@@ -4644,6 +4644,10 @@ func scanModelStatsRows(rows *sql.Rows) ([]ModelStat, error) {
 		return nil, err
 	}
 	return results, nil
+}
+
+func usageGroupIDMatchesCondition(column string, argPos int) string {
+	return fmt.Sprintf("(%s = $%d OR %s IN (SELECT id FROM groups WHERE deleted_at IS NULL AND is_custom_subscription_group = TRUE AND custom_source_group_id = $%d))", column, argPos, column, argPos)
 }
 
 func buildWhere(conditions []string) string {

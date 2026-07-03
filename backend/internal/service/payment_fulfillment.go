@@ -435,25 +435,73 @@ func (s *PaymentService) ExecuteSubscriptionFulfillment(ctx context.Context, oid
 func (s *PaymentService) doSub(ctx context.Context, o *dbent.PaymentOrder) error {
 	gid := *o.SubscriptionGroupID
 	days := *o.SubscriptionDays
-	g, err := s.groupRepo.GetByID(ctx, gid)
-	if err != nil || g.Status != payment.EntityStatusActive {
+	tx, err := s.entClient.Tx(ctx)
+	if err != nil {
+		return fmt.Errorf("begin transaction: %w", err)
+	}
+	txCtx := dbent.NewTxContext(ctx, tx)
+	txSvc := *s
+	txSvc.entClient = tx.Client()
+	notifyGroupID := int64(0)
+	notifySourceGroupID := int64(0)
+
+	if err := lockPaymentUserForUpdate(txCtx, tx, o.UserID); err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+
+	customOrder, err := txSvc.isCustomSubscriptionPaymentOrder(txCtx, o)
+	if err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+	if customOrder {
+		customTxSvc := txSvc
+		customTxSvc.groupRepo = nil               // defer scheduler notification until after commit
+		customTxSvc.channelCacheInvalidator = nil // defer channel cache invalidation until after commit
+		customTxSvc.authCacheInvalidator = nil    // defer auth cache invalidation until after commit
+		customGroupID, err := customTxSvc.ensureCustomSubscriptionGroupForOrder(txCtx, o)
+		if err != nil {
+			_ = tx.Rollback()
+			return err
+		}
+		gid = customGroupID
+		notifyGroupID = customGroupID
+		notifySourceGroupID = *o.SubscriptionSourceGroupID
+		if o.SubscriptionGroupID == nil || *o.SubscriptionGroupID != gid {
+			updated, err := tx.Client().PaymentOrder.UpdateOneID(o.ID).SetSubscriptionGroupID(gid).Save(txCtx)
+			if err != nil {
+				_ = tx.Rollback()
+				return fmt.Errorf("update order subscription group: %w", err)
+			}
+			o = applyPaymentOrderSubscriptionGroup(updated, gid)
+		}
+	}
+
+	g, err := s.groupRepo.GetByID(txCtx, gid)
+	if err != nil || g == nil || g.Status != payment.EntityStatusActive {
+		_ = tx.Rollback()
 		return fmt.Errorf("group %d no longer exists or inactive", gid)
 	}
 	// Idempotency: check audit log to see if subscription was already assigned.
 	// Prevents double-extension on retry after markCompleted fails.
-	if s.hasAuditLog(ctx, o.ID, "SUBSCRIPTION_SUCCESS") {
+	if txSvc.hasAuditLog(txCtx, o.ID, "SUBSCRIPTION_SUCCESS") {
 		slog.Info("subscription already assigned for order, skipping", "orderID", o.ID, "groupID", gid)
+		if err := tx.Commit(); err != nil {
+			return fmt.Errorf("commit transaction: %w", err)
+		}
+		if notifyGroupID > 0 {
+			if err := s.notifyCustomSubscriptionGroupChanged(ctx, notifyGroupID); err != nil {
+				slog.Warn("custom subscription group notification failed after commit", "groupID", notifyGroupID, "error", err)
+			}
+			s.migrateCustomSubscriptionAPIKeys(ctx, o.UserID, notifySourceGroupID, notifyGroupID)
+		}
 		if err := s.applyAffiliateRebateForOrder(ctx, o); err != nil {
 			return err
 		}
 		return s.markCompleted(ctx, o, "SUBSCRIPTION_SUCCESS")
 	}
 	orderNote := fmt.Sprintf("payment order %d", o.ID)
-	tx, err := s.entClient.Tx(ctx)
-	if err != nil {
-		return fmt.Errorf("begin transaction: %w", err)
-	}
-	txCtx := dbent.NewTxContext(ctx, tx)
 
 	if _, _, err = s.subscriptionSvc.AssignOrExtendSubscription(txCtx, &AssignSubscriptionInput{UserID: o.UserID, GroupID: gid, ValidityDays: days, AssignedBy: 0, Notes: orderNote}); err != nil {
 		_ = tx.Rollback()
@@ -474,12 +522,18 @@ func (s *PaymentService) doSub(ctx context.Context, o *dbent.PaymentOrder) error
 	if coupon := cafeCouponOrderSnapshot(o); coupon != nil {
 		auditDetail["cafeCoupon"] = coupon
 	}
-	if err := s.writeAuditLogStrict(txCtx, o.ID, "SUBSCRIPTION_SUCCESS", "system", auditDetail); err != nil {
+	if err := txSvc.writeAuditLogStrict(txCtx, o.ID, "SUBSCRIPTION_SUCCESS", "system", auditDetail); err != nil {
 		_ = tx.Rollback()
 		return fmt.Errorf("write audit log: %w", err)
 	}
 	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("commit transaction: %w", err)
+	}
+	if notifyGroupID > 0 {
+		if err := s.notifyCustomSubscriptionGroupChanged(ctx, notifyGroupID); err != nil {
+			slog.Warn("custom subscription group notification failed after commit", "groupID", notifyGroupID, "error", err)
+		}
+		s.migrateCustomSubscriptionAPIKeys(ctx, o.UserID, notifySourceGroupID, notifyGroupID)
 	}
 	if err := s.applyAffiliateRebateForOrder(ctx, o); err != nil {
 		return err

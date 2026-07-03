@@ -27,6 +27,9 @@ type userGroupRateRepoStubForGroupRate struct {
 	rpmSyncedGroupID int64
 	rpmSyncedEntries []GroupRPMOverrideInput
 	rpmSyncErr       error
+
+	rpmClearedGroupIDs []int64
+	rpmClearErr        error
 }
 
 func (s *userGroupRateRepoStubForGroupRate) GetByUserID(_ context.Context, _ int64) (map[int64]float64, error) {
@@ -64,8 +67,9 @@ func (s *userGroupRateRepoStubForGroupRate) SyncGroupRPMOverrides(_ context.Cont
 	return s.rpmSyncErr
 }
 
-func (s *userGroupRateRepoStubForGroupRate) ClearGroupRPMOverrides(_ context.Context, _ int64) error {
-	panic("unexpected ClearGroupRPMOverrides call")
+func (s *userGroupRateRepoStubForGroupRate) ClearGroupRPMOverrides(_ context.Context, groupID int64) error {
+	s.rpmClearedGroupIDs = append(s.rpmClearedGroupIDs, groupID)
+	return s.rpmClearErr
 }
 
 func (s *userGroupRateRepoStubForGroupRate) DeleteByGroupID(_ context.Context, groupID int64) error {
@@ -75,6 +79,16 @@ func (s *userGroupRateRepoStubForGroupRate) DeleteByGroupID(_ context.Context, g
 
 func (s *userGroupRateRepoStubForGroupRate) DeleteByUserID(_ context.Context, _ int64) error {
 	panic("unexpected DeleteByUserID call")
+}
+
+type groupRepoCustomIDListerStubForGroupRate struct {
+	GroupRepository
+	ids []int64
+	err error
+}
+
+func (s *groupRepoCustomIDListerStubForGroupRate) ListCustomSubscriptionGroupIDsBySourceGroupID(_ context.Context, _ int64) ([]int64, error) {
+	return append([]int64(nil), s.ids...), s.err
 }
 
 func TestAdminService_GetGroupRateMultipliers(t *testing.T) {
@@ -133,13 +147,15 @@ func TestAdminService_GetGroupRateMultipliers(t *testing.T) {
 }
 
 func TestAdminService_ClearGroupRateMultipliers(t *testing.T) {
-	t.Run("deletes by group ID", func(t *testing.T) {
+	t.Run("clears rate multipliers without deleting rpm overrides", func(t *testing.T) {
 		repo := &userGroupRateRepoStubForGroupRate{}
 		svc := &adminServiceImpl{userGroupRateRepo: repo}
 
 		err := svc.ClearGroupRateMultipliers(context.Background(), 42)
 		require.NoError(t, err)
-		require.Equal(t, []int64{42}, repo.deletedGroupIDs)
+		require.Equal(t, int64(42), repo.syncedGroupID)
+		require.Nil(t, repo.syncedEntries)
+		require.Empty(t, repo.deletedGroupIDs)
 	})
 
 	t.Run("returns nil when repo is nil", func(t *testing.T) {
@@ -151,13 +167,13 @@ func TestAdminService_ClearGroupRateMultipliers(t *testing.T) {
 
 	t.Run("propagates repo error", func(t *testing.T) {
 		repo := &userGroupRateRepoStubForGroupRate{
-			deleteByGroupErr: errors.New("delete failed"),
+			syncGroupErr: errors.New("sync failed"),
 		}
 		svc := &adminServiceImpl{userGroupRateRepo: repo}
 
 		err := svc.ClearGroupRateMultipliers(context.Background(), 42)
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "delete failed")
+		require.Contains(t, err.Error(), "sync failed")
 	})
 }
 
@@ -222,4 +238,36 @@ func TestAdminService_BatchSetGroupRPMOverrides(t *testing.T) {
 		require.Equal(t, http.StatusBadRequest, infraerrors.Code(err))
 		require.Zero(t, repo.rpmSyncedGroupID)
 	})
+}
+
+func TestAdminService_BatchSetGroupRPMOverridesInvalidatesCustomSubscriptionGroups(t *testing.T) {
+	repo := &userGroupRateRepoStubForGroupRate{}
+	invalidator := &authCacheInvalidatorStub{}
+	svc := &adminServiceImpl{
+		userGroupRateRepo:    repo,
+		groupRepo:            &groupRepoCustomIDListerStubForGroupRate{ids: []int64{101, 102}},
+		authCacheInvalidator: invalidator,
+	}
+	override := 60
+
+	err := svc.BatchSetGroupRPMOverrides(context.Background(), 10, []GroupRPMOverrideInput{{UserID: 2, RPMOverride: &override}})
+
+	require.NoError(t, err)
+	require.Equal(t, []int64{10, 101, 102}, invalidator.groupIDs)
+}
+
+func TestAdminService_ClearGroupRateMultipliersDoesNotInvalidateAuthCache(t *testing.T) {
+	repo := &userGroupRateRepoStubForGroupRate{}
+	invalidator := &authCacheInvalidatorStub{}
+	svc := &adminServiceImpl{
+		userGroupRateRepo:    repo,
+		groupRepo:            &groupRepoCustomIDListerStubForGroupRate{ids: []int64{201}},
+		authCacheInvalidator: invalidator,
+	}
+
+	err := svc.ClearGroupRateMultipliers(context.Background(), 20)
+
+	require.NoError(t, err)
+	require.Equal(t, int64(20), repo.syncedGroupID)
+	require.Empty(t, invalidator.groupIDs)
 }

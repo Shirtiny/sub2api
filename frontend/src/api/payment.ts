@@ -13,8 +13,8 @@ import type {
   CreateOrderRequest,
   CreateOrderResult,
   PaymentOrder,
-  CafeCouponApplyRequest,
-  CafeCouponApplyResponse,
+  CafeCouponPreviewRequest,
+  CafeCouponPreviewResponse,
   CafeCouponClaimResponse,
   CafeCouponStatusResponse
 } from '@/types/payment'
@@ -61,9 +61,9 @@ export const paymentAPI = {
     return apiClient.get<CafeCouponStatusResponse>('/payment/cafe-coupons/status')
   },
 
-  /** Preview/apply a café coupon before creating an order */
-  applyCafeCoupon(data: CafeCouponApplyRequest) {
-    return apiClient.post<CafeCouponApplyResponse>('/payment/cafe-coupons/apply', data)
+  /** Preview a Cafe coupon before creating an order. Read-only; does not consume the coupon. */
+  previewCafeCoupon(data: CafeCouponPreviewRequest) {
+    return apiClient.post<CafeCouponPreviewResponse>('/payment/cafe-coupons/preview', data)
   },
 
   /** Get current user's orders */

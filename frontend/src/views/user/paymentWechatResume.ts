@@ -7,6 +7,7 @@ export interface ParsedWechatResumeRoute {
   orderType: 'balance' | 'subscription'
   paymentType: string
   planId?: number
+  multiplier?: number
   cafeCouponCode?: string
   openid?: string
   wechatResumeToken?: string
@@ -46,6 +47,8 @@ export function parseWechatResumeRoute(
     : 'balance'
 
   const cafeCouponCode = readQueryString(query, 'cafe_coupon_code').trim()
+  const parsedMultiplier = Number.parseInt(readQueryString(query, 'multiplier'), 10)
+  const multiplier = Number.isFinite(parsedMultiplier) && parsedMultiplier >= 1 ? parsedMultiplier : undefined
 
   if (wechatResumeToken) {
     return {
@@ -54,6 +57,7 @@ export function parseWechatResumeRoute(
       orderType,
       orderAmount: 0,
       planId: hasPlanId ? planId : undefined,
+      multiplier,
       cafeCouponCode: cafeCouponCode || undefined,
     }
   }
@@ -76,6 +80,7 @@ export function parseWechatResumeRoute(
     orderType,
     orderAmount,
     planId: hasPlanId ? planId : undefined,
+    multiplier,
     cafeCouponCode: cafeCouponCode || undefined,
   }
 }
@@ -91,6 +96,7 @@ export function stripWechatResumeQuery(query: LocationQuery): LocationQueryRaw {
   delete nextQuery.amount
   delete nextQuery.order_type
   delete nextQuery.plan_id
+  delete nextQuery.multiplier
   delete nextQuery.cafe_coupon_code
   return nextQuery
 }

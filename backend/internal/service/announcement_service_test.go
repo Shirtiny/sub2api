@@ -79,3 +79,19 @@ func TestAnnouncementServiceUpdateRejectsEqualStartEndTimes(t *testing.T) {
 	})
 	require.ErrorIs(t, err, ErrAnnouncementInvalidSchedule)
 }
+
+func TestAnnouncementActiveSubscriptionGroupIDsIncludesCustomSourceGroup(t *testing.T) {
+	sourceID := int64(10)
+	ids := announcementActiveSubscriptionGroupIDs([]UserSubscription{{
+		GroupID: 99,
+		Group: &Group{
+			IsCustomSubscriptionGroup: true,
+			CustomSourceGroupID:       &sourceID,
+		},
+	}})
+
+	_, hasCustom := ids[int64(99)]
+	_, hasSource := ids[sourceID]
+	require.True(t, hasCustom)
+	require.True(t, hasSource)
+}

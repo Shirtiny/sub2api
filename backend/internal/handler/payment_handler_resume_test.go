@@ -15,6 +15,7 @@ import (
 	dbent "github.com/Wei-Shaw/sub2api/ent"
 	"github.com/Wei-Shaw/sub2api/ent/enttest"
 	"github.com/Wei-Shaw/sub2api/internal/payment"
+	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
@@ -39,7 +40,8 @@ func TestApplyWeChatPaymentResumeClaims(t *testing.T) {
 		Amount:      "12.50",
 		OrderType:   payment.OrderTypeSubscription,
 		PlanID:      7,
-	})
+		Multiplier:  3,
+	}, 0)
 	if err != nil {
 		t.Fatalf("applyWeChatPaymentResumeClaims returned error: %v", err)
 	}
@@ -55,6 +57,9 @@ func TestApplyWeChatPaymentResumeClaims(t *testing.T) {
 	if req.PlanID != 7 {
 		t.Fatalf("plan_id = %d, want 7", req.PlanID)
 	}
+	if req.Multiplier != 3 {
+		t.Fatalf("multiplier = %d, want 3", req.Multiplier)
+	}
 }
 
 func TestApplyWeChatPaymentResumeClaimsRejectsPaymentTypeMismatch(t *testing.T) {
@@ -69,10 +74,53 @@ func TestApplyWeChatPaymentResumeClaimsRejectsPaymentTypeMismatch(t *testing.T) 
 		PaymentType: payment.TypeWxpay,
 		Amount:      "12.50",
 		OrderType:   payment.OrderTypeBalance,
-	})
+	}, 0)
 	if err == nil {
 		t.Fatal("applyWeChatPaymentResumeClaims should reject mismatched payment types")
 	}
+}
+
+func TestApplyWeChatPaymentResumeClaimsRejectsUserMismatch(t *testing.T) {
+	t.Parallel()
+
+	req := CreateOrderRequest{PaymentType: payment.TypeWxpay}
+	err := applyWeChatPaymentResumeClaims(&req, &service.WeChatPaymentResumeClaims{
+		OpenID:      "openid-123",
+		UserID:      1001,
+		PaymentType: payment.TypeWxpay,
+		OrderType:   payment.OrderTypeBalance,
+	}, 2002)
+	require.Error(t, err)
+	require.Equal(t, "INVALID_WECHAT_PAYMENT_RESUME_TOKEN", infraerrors.Reason(err))
+}
+
+func TestApplyWeChatPaymentResumeClaimsTreatsTokenContextAsAuthoritative(t *testing.T) {
+	t.Parallel()
+
+	req := CreateOrderRequest{
+		Amount:         999,
+		PaymentType:    payment.TypeWxpay,
+		OrderType:      payment.OrderTypeBalance,
+		PlanID:         88,
+		Multiplier:     9,
+		CafeCouponCode: "ATTACKER-COUPON",
+	}
+	err := applyWeChatPaymentResumeClaims(&req, &service.WeChatPaymentResumeClaims{
+		OpenID:         "openid-123",
+		UserID:         42,
+		PaymentType:    payment.TypeWxpay,
+		Amount:         "12.50",
+		OrderType:      payment.OrderTypeSubscription,
+		PlanID:         7,
+		Multiplier:     3,
+		CafeCouponCode: "SIGNED-COUPON",
+	}, 42)
+	require.NoError(t, err)
+	require.Equal(t, 12.5, req.Amount)
+	require.Equal(t, payment.OrderTypeSubscription, req.OrderType)
+	require.Equal(t, int64(7), req.PlanID)
+	require.Equal(t, 3, req.Multiplier)
+	require.Equal(t, "SIGNED-COUPON", req.CafeCouponCode)
 }
 
 func TestVerifyOrderPublicReturnsLegacyOrderState(t *testing.T) {

@@ -35,6 +35,8 @@ func RegisterPaymentRoutes(
 		{
 			cafeCoupons.GET("/status", paymentHandler.CafeCouponStatus)
 			cafeCoupons.POST("/claim", paymentHandler.ClaimCafeCoupon)
+			cafeCoupons.POST("/preview", paymentHandler.PreviewCafeCoupon)
+			// Backward-compatible alias. Despite the historical name, this endpoint is read-only.
 			cafeCoupons.POST("/apply", paymentHandler.ApplyCafeCoupon)
 		}
 

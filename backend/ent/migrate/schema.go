@@ -748,6 +748,11 @@ var (
 		{Name: "messages_dispatch_model_config", Type: field.TypeJSON, SchemaType: map[string]string{"postgres": "jsonb"}},
 		{Name: "models_list_config", Type: field.TypeJSON, SchemaType: map[string]string{"postgres": "jsonb"}},
 		{Name: "rpm_limit", Type: field.TypeInt, Default: 0},
+		{Name: "is_custom_subscription_group", Type: field.TypeBool, Default: false},
+		{Name: "custom_owner_user_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "custom_source_plan_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "custom_source_group_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "custom_multiplier", Type: field.TypeInt, Nullable: true},
 	}
 	// GroupsTable holds the schema information for the "groups" table.
 	GroupsTable = &schema.Table{
@@ -784,6 +789,19 @@ var (
 				Name:    "group_sort_order",
 				Unique:  false,
 				Columns: []*schema.Column{GroupsColumns[28]},
+			},
+			{
+				Name:    "group_is_custom_subscription_group",
+				Unique:  false,
+				Columns: []*schema.Column{GroupsColumns[36]},
+			},
+			{
+				Name:    "group_custom_owner_user_id_custom_source_plan_id",
+				Unique:  false,
+				Columns: []*schema.Column{GroupsColumns[37], GroupsColumns[38]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "deleted_at IS NULL AND is_custom_subscription_group = TRUE AND custom_owner_user_id IS NOT NULL AND custom_source_plan_id IS NOT NULL",
+				},
 			},
 		},
 	}
@@ -912,6 +930,10 @@ var (
 		{Name: "plan_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "subscription_group_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "subscription_days", Type: field.TypeInt, Nullable: true},
+		{Name: "subscription_multiplier", Type: field.TypeInt, Nullable: true},
+		{Name: "subscription_source_group_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "subscription_source_price", Type: field.TypeFloat64, Nullable: true, SchemaType: map[string]string{"postgres": "decimal(20,2)"}},
+		{Name: "subscription_source_original_price", Type: field.TypeFloat64, Nullable: true, SchemaType: map[string]string{"postgres": "decimal(20,2)"}},
 		{Name: "provider_instance_id", Type: field.TypeString, Nullable: true, Size: 64},
 		{Name: "provider_key", Type: field.TypeString, Nullable: true, Size: 30},
 		{Name: "provider_snapshot", Type: field.TypeJSON, Nullable: true, SchemaType: map[string]string{"postgres": "jsonb"}},
@@ -943,7 +965,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "payment_orders_users_payment_orders",
-				Columns:    []*schema.Column{PaymentOrdersColumns[41]},
+				Columns:    []*schema.Column{PaymentOrdersColumns[45]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -960,37 +982,45 @@ var (
 			{
 				Name:    "paymentorder_user_id",
 				Unique:  false,
-				Columns: []*schema.Column{PaymentOrdersColumns[41]},
+				Columns: []*schema.Column{PaymentOrdersColumns[45]},
 			},
 			{
 				Name:    "paymentorder_status",
 				Unique:  false,
-				Columns: []*schema.Column{PaymentOrdersColumns[23]},
+				Columns: []*schema.Column{PaymentOrdersColumns[27]},
 			},
 			{
 				Name:    "paymentorder_expires_at",
 				Unique:  false,
-				Columns: []*schema.Column{PaymentOrdersColumns[31]},
+				Columns: []*schema.Column{PaymentOrdersColumns[35]},
 			},
 			{
 				Name:    "paymentorder_created_at",
 				Unique:  false,
-				Columns: []*schema.Column{PaymentOrdersColumns[39]},
+				Columns: []*schema.Column{PaymentOrdersColumns[43]},
 			},
 			{
 				Name:    "paymentorder_paid_at",
 				Unique:  false,
-				Columns: []*schema.Column{PaymentOrdersColumns[32]},
+				Columns: []*schema.Column{PaymentOrdersColumns[36]},
 			},
 			{
 				Name:    "paymentorder_payment_type_paid_at",
 				Unique:  false,
-				Columns: []*schema.Column{PaymentOrdersColumns[11], PaymentOrdersColumns[32]},
+				Columns: []*schema.Column{PaymentOrdersColumns[11], PaymentOrdersColumns[36]},
 			},
 			{
 				Name:    "paymentorder_order_type",
 				Unique:  false,
 				Columns: []*schema.Column{PaymentOrdersColumns[16]},
+			},
+			{
+				Name:    "paymentorder_user_id_plan_id_status_expires_at",
+				Unique:  false,
+				Columns: []*schema.Column{PaymentOrdersColumns[45], PaymentOrdersColumns[17], PaymentOrdersColumns[27], PaymentOrdersColumns[35]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "subscription_multiplier >= 1",
+				},
 			},
 		},
 	}
@@ -1300,6 +1330,9 @@ var (
 		{Name: "product_name", Type: field.TypeString, Size: 100, Default: ""},
 		{Name: "for_sale", Type: field.TypeBool, Default: true},
 		{Name: "sort_order", Type: field.TypeInt, Default: 0},
+		{Name: "custom_multiplier_enabled", Type: field.TypeBool, Default: false},
+		{Name: "custom_multiplier_min", Type: field.TypeInt, Default: 1},
+		{Name: "custom_multiplier_max", Type: field.TypeInt, Default: 1},
 		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
 		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
 	}

@@ -563,6 +563,11 @@ export interface Group {
   daily_limit_usd: number | null
   weekly_limit_usd: number | null
   monthly_limit_usd: number | null
+  is_custom_subscription_group?: boolean
+  custom_owner_user_id?: number | null
+  custom_source_plan_id?: number | null
+  custom_source_group_id?: number | null
+  custom_multiplier?: number | null
   // 图片生成计费配置
   allow_image_generation: boolean
   image_rate_independent: boolean
@@ -683,6 +688,11 @@ export interface CreateGroupRequest {
   daily_limit_usd?: number | null
   weekly_limit_usd?: number | null
   monthly_limit_usd?: number | null
+  is_custom_subscription_group?: boolean
+  custom_owner_user_id?: number | null
+  custom_source_plan_id?: number | null
+  custom_source_group_id?: number | null
+  custom_multiplier?: number | null
   allow_image_generation?: boolean
   image_rate_independent?: boolean
   image_rate_multiplier?: number
@@ -718,6 +728,11 @@ export interface UpdateGroupRequest {
   daily_limit_usd?: number | null
   weekly_limit_usd?: number | null
   monthly_limit_usd?: number | null
+  is_custom_subscription_group?: boolean
+  custom_owner_user_id?: number | null
+  custom_source_plan_id?: number | null
+  custom_source_group_id?: number | null
+  custom_multiplier?: number | null
   allow_image_generation?: boolean
   image_rate_independent?: boolean
   image_rate_multiplier?: number

@@ -86,6 +86,16 @@ const (
 	FieldModelsListConfig = "models_list_config"
 	// FieldRpmLimit holds the string denoting the rpm_limit field in the database.
 	FieldRpmLimit = "rpm_limit"
+	// FieldIsCustomSubscriptionGroup holds the string denoting the is_custom_subscription_group field in the database.
+	FieldIsCustomSubscriptionGroup = "is_custom_subscription_group"
+	// FieldCustomOwnerUserID holds the string denoting the custom_owner_user_id field in the database.
+	FieldCustomOwnerUserID = "custom_owner_user_id"
+	// FieldCustomSourcePlanID holds the string denoting the custom_source_plan_id field in the database.
+	FieldCustomSourcePlanID = "custom_source_plan_id"
+	// FieldCustomSourceGroupID holds the string denoting the custom_source_group_id field in the database.
+	FieldCustomSourceGroupID = "custom_source_group_id"
+	// FieldCustomMultiplier holds the string denoting the custom_multiplier field in the database.
+	FieldCustomMultiplier = "custom_multiplier"
 	// EdgeAPIKeys holds the string denoting the api_keys edge name in mutations.
 	EdgeAPIKeys = "api_keys"
 	// EdgeRedeemCodes holds the string denoting the redeem_codes edge name in mutations.
@@ -196,6 +206,11 @@ var Columns = []string{
 	FieldMessagesDispatchModelConfig,
 	FieldModelsListConfig,
 	FieldRpmLimit,
+	FieldIsCustomSubscriptionGroup,
+	FieldCustomOwnerUserID,
+	FieldCustomSourcePlanID,
+	FieldCustomSourceGroupID,
+	FieldCustomMultiplier,
 }
 
 var (
@@ -283,6 +298,8 @@ var (
 	DefaultModelsListConfig domain.GroupModelsListConfig
 	// DefaultRpmLimit holds the default value on creation for the "rpm_limit" field.
 	DefaultRpmLimit int
+	// DefaultIsCustomSubscriptionGroup holds the default value on creation for the "is_custom_subscription_group" field.
+	DefaultIsCustomSubscriptionGroup bool
 )
 
 // OrderOption defines the ordering options for the Group queries.
@@ -446,6 +463,31 @@ func ByDefaultMappedModel(opts ...sql.OrderTermOption) OrderOption {
 // ByRpmLimit orders the results by the rpm_limit field.
 func ByRpmLimit(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldRpmLimit, opts...).ToFunc()
+}
+
+// ByIsCustomSubscriptionGroup orders the results by the is_custom_subscription_group field.
+func ByIsCustomSubscriptionGroup(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldIsCustomSubscriptionGroup, opts...).ToFunc()
+}
+
+// ByCustomOwnerUserID orders the results by the custom_owner_user_id field.
+func ByCustomOwnerUserID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCustomOwnerUserID, opts...).ToFunc()
+}
+
+// ByCustomSourcePlanID orders the results by the custom_source_plan_id field.
+func ByCustomSourcePlanID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCustomSourcePlanID, opts...).ToFunc()
+}
+
+// ByCustomSourceGroupID orders the results by the custom_source_group_id field.
+func ByCustomSourceGroupID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCustomSourceGroupID, opts...).ToFunc()
+}
+
+// ByCustomMultiplier orders the results by the custom_multiplier field.
+func ByCustomMultiplier(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCustomMultiplier, opts...).ToFunc()
 }
 
 // ByAPIKeysCount orders the results by api_keys count.

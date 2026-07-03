@@ -140,6 +140,11 @@ func replaceAccountStatsPricingRulesTx(ctx context.Context, tx *sql.Tx, channelI
 
 	for i := range rules {
 		rules[i].ChannelID = channelID
+		expandedGroupIDs, err := expandGroupIDsWithCustomGroups(ctx, tx, rules[i].GroupIDs)
+		if err != nil {
+			return fmt.Errorf("expand account stats pricing rule groups: %w", err)
+		}
+		rules[i].GroupIDs = expandedGroupIDs
 		if err := createAccountStatsPricingRuleTx(ctx, tx, &rules[i]); err != nil {
 			return fmt.Errorf("insert account stats pricing rule: %w", err)
 		}

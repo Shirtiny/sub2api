@@ -20,7 +20,27 @@ func NewUserGroupRateRepository(sqlDB *sql.DB) service.UserGroupRateRepository {
 
 // GetByUserID 获取用户所有专属分组 rate_multiplier（仅返回非 NULL 的条目）
 func (r *userGroupRateRepository) GetByUserID(ctx context.Context, userID int64) (map[int64]float64, error) {
-	query := `SELECT group_id, rate_multiplier FROM user_group_rate_multipliers WHERE user_id = $1 AND rate_multiplier IS NOT NULL`
+	query := `
+		WITH direct_rates AS (
+			SELECT group_id, rate_multiplier
+			FROM user_group_rate_multipliers
+			WHERE user_id = $1 AND rate_multiplier IS NOT NULL
+		)
+		SELECT group_id, rate_multiplier
+		FROM direct_rates
+		UNION ALL
+		SELECT cg.id AS group_id, src.rate_multiplier
+		FROM groups cg
+		JOIN user_group_rate_multipliers src
+		  ON src.user_id = $1
+		 AND src.group_id = cg.custom_source_group_id
+		 AND src.rate_multiplier IS NOT NULL
+		LEFT JOIN direct_rates direct
+		  ON direct.group_id = cg.id
+		WHERE cg.deleted_at IS NULL
+		  AND cg.is_custom_subscription_group = TRUE
+		  AND cg.custom_owner_user_id = $1
+		  AND direct.group_id IS NULL`
 	rows, err := r.sql.QueryContext(ctx, query, userID)
 	if err != nil {
 		return nil, err
@@ -67,9 +87,27 @@ func (r *userGroupRateRepository) GetByUserIDs(ctx context.Context, userIDs []in
 	}
 
 	rows, err := r.sql.QueryContext(ctx, `
+		WITH direct_rates AS (
+			SELECT user_id, group_id, rate_multiplier
+			FROM user_group_rate_multipliers
+			WHERE user_id = ANY($1) AND rate_multiplier IS NOT NULL
+		)
 		SELECT user_id, group_id, rate_multiplier
-		FROM user_group_rate_multipliers
-		WHERE user_id = ANY($1) AND rate_multiplier IS NOT NULL
+		FROM direct_rates
+		UNION ALL
+		SELECT cg.custom_owner_user_id AS user_id, cg.id AS group_id, src.rate_multiplier
+		FROM groups cg
+		JOIN user_group_rate_multipliers src
+		  ON src.user_id = cg.custom_owner_user_id
+		 AND src.group_id = cg.custom_source_group_id
+		 AND src.rate_multiplier IS NOT NULL
+		LEFT JOIN direct_rates direct
+		  ON direct.user_id = cg.custom_owner_user_id
+		 AND direct.group_id = cg.id
+		WHERE cg.deleted_at IS NULL
+		  AND cg.is_custom_subscription_group = TRUE
+		  AND cg.custom_owner_user_id = ANY($1)
+		  AND direct.group_id IS NULL
 	`, pq.Array(uniqueIDs))
 	if err != nil {
 		return nil, err
@@ -135,7 +173,26 @@ func (r *userGroupRateRepository) GetByGroupID(ctx context.Context, groupID int6
 
 // GetByUserAndGroup 获取用户在特定分组的专属 rate_multiplier（NULL 返回 nil）
 func (r *userGroupRateRepository) GetByUserAndGroup(ctx context.Context, userID, groupID int64) (*float64, error) {
-	query := `SELECT rate_multiplier FROM user_group_rate_multipliers WHERE user_id = $1 AND group_id = $2`
+	query := `
+		SELECT rate_multiplier
+		FROM (
+			SELECT rate_multiplier, 0 AS priority
+			FROM user_group_rate_multipliers
+			WHERE user_id = $1 AND group_id = $2 AND rate_multiplier IS NOT NULL
+			UNION ALL
+			SELECT src.rate_multiplier, 1 AS priority
+			FROM groups cg
+			JOIN user_group_rate_multipliers src
+			  ON src.user_id = $1
+			 AND src.group_id = cg.custom_source_group_id
+			 AND src.rate_multiplier IS NOT NULL
+			WHERE cg.id = $2
+			  AND cg.deleted_at IS NULL
+			  AND cg.is_custom_subscription_group = TRUE
+			  AND cg.custom_owner_user_id = $1
+		) effective_rate
+		ORDER BY priority
+		LIMIT 1`
 	var rate sql.NullFloat64
 	err := scanSingleRow(ctx, r.sql, query, []any{userID, groupID}, &rate)
 	if err == sql.ErrNoRows {
@@ -153,7 +210,26 @@ func (r *userGroupRateRepository) GetByUserAndGroup(ctx context.Context, userID,
 
 // GetRPMOverrideByUserAndGroup 获取用户在特定分组的 rpm_override（NULL 返回 nil）
 func (r *userGroupRateRepository) GetRPMOverrideByUserAndGroup(ctx context.Context, userID, groupID int64) (*int, error) {
-	query := `SELECT rpm_override FROM user_group_rate_multipliers WHERE user_id = $1 AND group_id = $2`
+	query := `
+		SELECT rpm_override
+		FROM (
+			SELECT rpm_override, 0 AS priority
+			FROM user_group_rate_multipliers
+			WHERE user_id = $1 AND group_id = $2 AND rpm_override IS NOT NULL
+			UNION ALL
+			SELECT src.rpm_override, 1 AS priority
+			FROM groups cg
+			JOIN user_group_rate_multipliers src
+			  ON src.user_id = $1
+			 AND src.group_id = cg.custom_source_group_id
+			 AND src.rpm_override IS NOT NULL
+			WHERE cg.id = $2
+			  AND cg.deleted_at IS NULL
+			  AND cg.is_custom_subscription_group = TRUE
+			  AND cg.custom_owner_user_id = $1
+		) effective_rpm
+		ORDER BY priority
+		LIMIT 1`
 	var rpm sql.NullInt32
 	err := scanSingleRow(ctx, r.sql, query, []any{userID, groupID}, &rpm)
 	if err == sql.ErrNoRows {

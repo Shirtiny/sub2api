@@ -254,6 +254,10 @@ func (s *groupRepoStubForGroupUpdate) GetAccountIDsByGroupIDs(context.Context, [
 func (s *groupRepoStubForGroupUpdate) BindAccountsToGroup(context.Context, int64, []int64) error {
 	panic("unexpected")
 }
+func (s *groupRepoStubForGroupUpdate) NotifyGroupChanged(context.Context, int64) error {
+	return nil
+}
+
 func (s *groupRepoStubForGroupUpdate) UpdateSortOrders(context.Context, []GroupSortOrderUpdate) error {
 	panic("unexpected")
 }

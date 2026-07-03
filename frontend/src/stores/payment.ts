@@ -6,7 +6,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { paymentAPI } from '@/api/payment'
-import type { PaymentConfig, PaymentOrder, SubscriptionPlan, CreateOrderRequest, CafeCouponApplyRequest, CafeCouponStatusResponse } from '@/types/payment'
+import type { PaymentConfig, PaymentOrder, SubscriptionPlan, CreateOrderRequest, CafeCouponPreviewRequest, CafeCouponStatusResponse } from '@/types/payment'
 
 export const usePaymentStore = defineStore('payment', () => {
   // ==================== State ====================
@@ -78,9 +78,9 @@ export const usePaymentStore = defineStore('payment', () => {
     return response.data
   }
 
-  /** Preview/apply a café coupon before creating an order */
-  async function applyCafeCoupon(params: CafeCouponApplyRequest) {
-    const response = await paymentAPI.applyCafeCoupon(params)
+  /** Preview a Cafe coupon before creating an order. Read-only; does not consume the coupon. */
+  async function previewCafeCoupon(params: CafeCouponPreviewRequest) {
+    const response = await paymentAPI.previewCafeCoupon(params)
     return response.data
   }
 
@@ -115,7 +115,7 @@ export const usePaymentStore = defineStore('payment', () => {
     createOrder,
     claimCafeCoupon,
     getCafeCouponStatus,
-    applyCafeCoupon,
+    previewCafeCoupon,
     pollOrderStatus,
     clearCurrentOrder
   }

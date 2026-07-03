@@ -519,18 +519,19 @@ type ContentModerationModelFilter struct {
 }
 
 type ContentModerationCheckInput struct {
-	RequestID  string
-	UserID     int64
-	UserEmail  string
-	APIKeyID   int64
-	APIKeyName string
-	GroupID    *int64
-	GroupName  string
-	Endpoint   string
-	Provider   string
-	Model      string
-	Protocol   string
-	Body       []byte
+	RequestID         string
+	UserID            int64
+	UserEmail         string
+	APIKeyID          int64
+	APIKeyName        string
+	GroupID           *int64
+	EffectiveGroupIDs []int64
+	GroupName         string
+	Endpoint          string
+	Provider          string
+	Model             string
+	Protocol          string
+	Body              []byte
 }
 
 type ContentModerationInput struct {
@@ -1027,7 +1028,7 @@ func (s *ContentModerationService) Check(ctx context.Context, input ContentModer
 			"error", err)
 		return allow, nil
 	}
-	inGroupScope := cfg.includesGroup(input.GroupID)
+	inGroupScope := cfg.includesGroupScope(input)
 	inModelScope := cfg.includesModel(input.Model)
 	slog.Info("content_moderation.config_loaded",
 		"user_id", input.UserID,
@@ -1042,6 +1043,7 @@ func (s *ContentModerationService) Check(ctx context.Context, input ContentModer
 		"mode", cfg.Mode,
 		"all_groups", cfg.AllGroups,
 		"configured_group_ids", cfg.GroupIDs,
+		"effective_group_ids", input.EffectiveGroupIDs,
 		"in_group_scope", inGroupScope,
 		"model_filter_type", cfg.ModelFilter.Type,
 		"configured_models", cfg.ModelFilter.Models,
@@ -1451,7 +1453,7 @@ func (s *ContentModerationService) worker(id int) {
 			if !cfg.Enabled || cfg.Mode == ContentModerationModeOff || len(cfg.apiKeys()) == 0 {
 				return
 			}
-			if !cfg.includesGroup(task.input.GroupID) {
+			if !cfg.includesGroupScope(task.input) {
 				return
 			}
 			if !cfg.includesModel(task.input.Model) {
@@ -2198,6 +2200,19 @@ func (cfg *ContentModerationConfig) normalize() {
 	cfg.BuiltInFilterCategories = normalizeContentModerationBuiltinCategories(cfg.BuiltInFilterCategories)
 	cfg.BuiltInFilterLevels = normalizeContentModerationBuiltinLevels(cfg.BuiltInFilterLevels)
 	cfg.ModelFilter = normalizeContentModerationModelFilter(cfg.ModelFilter)
+}
+
+func (cfg *ContentModerationConfig) includesGroupScope(input ContentModerationCheckInput) bool {
+	if cfg.includesGroup(input.GroupID) {
+		return true
+	}
+	for _, id := range input.EffectiveGroupIDs {
+		gid := id
+		if cfg.includesGroup(&gid) {
+			return true
+		}
+	}
+	return false
 }
 
 func (cfg *ContentModerationConfig) includesGroup(groupID *int64) bool {

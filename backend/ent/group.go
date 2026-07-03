@@ -89,6 +89,16 @@ type Group struct {
 	ModelsListConfig domain.GroupModelsListConfig `json:"models_list_config,omitempty"`
 	// 分组 RPM 上限，0 表示不限制；设置后接管该分组用户的限流
 	RpmLimit int `json:"rpm_limit,omitempty"`
+	// whether this group is a per-user custom subscription group
+	IsCustomSubscriptionGroup bool `json:"is_custom_subscription_group,omitempty"`
+	// owner user id for custom subscription group
+	CustomOwnerUserID *int64 `json:"custom_owner_user_id,omitempty"`
+	// source subscription plan id for custom group
+	CustomSourcePlanID *int64 `json:"custom_source_plan_id,omitempty"`
+	// source base group id for custom group
+	CustomSourceGroupID *int64 `json:"custom_source_group_id,omitempty"`
+	// current custom subscription multiplier
+	CustomMultiplier *int `json:"custom_multiplier,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the GroupQuery when eager-loading is set.
 	Edges        GroupEdges `json:"edges"`
@@ -197,11 +207,11 @@ func (*Group) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case group.FieldModelRouting, group.FieldSupportedModelScopes, group.FieldMessagesDispatchModelConfig, group.FieldModelsListConfig:
 			values[i] = new([]byte)
-		case group.FieldIsExclusive, group.FieldAllowImageGeneration, group.FieldImageRateIndependent, group.FieldClaudeCodeOnly, group.FieldModelRoutingEnabled, group.FieldMcpXMLInject, group.FieldAllowMessagesDispatch, group.FieldRequireOauthOnly, group.FieldRequirePrivacySet:
+		case group.FieldIsExclusive, group.FieldAllowImageGeneration, group.FieldImageRateIndependent, group.FieldClaudeCodeOnly, group.FieldModelRoutingEnabled, group.FieldMcpXMLInject, group.FieldAllowMessagesDispatch, group.FieldRequireOauthOnly, group.FieldRequirePrivacySet, group.FieldIsCustomSubscriptionGroup:
 			values[i] = new(sql.NullBool)
 		case group.FieldRateMultiplier, group.FieldDailyLimitUsd, group.FieldWeeklyLimitUsd, group.FieldMonthlyLimitUsd, group.FieldImageRateMultiplier, group.FieldImagePrice1k, group.FieldImagePrice2k, group.FieldImagePrice4k:
 			values[i] = new(sql.NullFloat64)
-		case group.FieldID, group.FieldDefaultValidityDays, group.FieldFallbackGroupID, group.FieldFallbackGroupIDOnInvalidRequest, group.FieldSortOrder, group.FieldRpmLimit:
+		case group.FieldID, group.FieldDefaultValidityDays, group.FieldFallbackGroupID, group.FieldFallbackGroupIDOnInvalidRequest, group.FieldSortOrder, group.FieldRpmLimit, group.FieldCustomOwnerUserID, group.FieldCustomSourcePlanID, group.FieldCustomSourceGroupID, group.FieldCustomMultiplier:
 			values[i] = new(sql.NullInt64)
 		case group.FieldName, group.FieldDescription, group.FieldStatus, group.FieldPlatform, group.FieldSubscriptionType, group.FieldDefaultMappedModel:
 			values[i] = new(sql.NullString)
@@ -456,6 +466,40 @@ func (_m *Group) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.RpmLimit = int(value.Int64)
 			}
+		case group.FieldIsCustomSubscriptionGroup:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field is_custom_subscription_group", values[i])
+			} else if value.Valid {
+				_m.IsCustomSubscriptionGroup = value.Bool
+			}
+		case group.FieldCustomOwnerUserID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field custom_owner_user_id", values[i])
+			} else if value.Valid {
+				_m.CustomOwnerUserID = new(int64)
+				*_m.CustomOwnerUserID = value.Int64
+			}
+		case group.FieldCustomSourcePlanID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field custom_source_plan_id", values[i])
+			} else if value.Valid {
+				_m.CustomSourcePlanID = new(int64)
+				*_m.CustomSourcePlanID = value.Int64
+			}
+		case group.FieldCustomSourceGroupID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field custom_source_group_id", values[i])
+			} else if value.Valid {
+				_m.CustomSourceGroupID = new(int64)
+				*_m.CustomSourceGroupID = value.Int64
+			}
+		case group.FieldCustomMultiplier:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field custom_multiplier", values[i])
+			} else if value.Valid {
+				_m.CustomMultiplier = new(int)
+				*_m.CustomMultiplier = int(value.Int64)
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -656,6 +700,29 @@ func (_m *Group) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("rpm_limit=")
 	builder.WriteString(fmt.Sprintf("%v", _m.RpmLimit))
+	builder.WriteString(", ")
+	builder.WriteString("is_custom_subscription_group=")
+	builder.WriteString(fmt.Sprintf("%v", _m.IsCustomSubscriptionGroup))
+	builder.WriteString(", ")
+	if v := _m.CustomOwnerUserID; v != nil {
+		builder.WriteString("custom_owner_user_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.CustomSourcePlanID; v != nil {
+		builder.WriteString("custom_source_plan_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.CustomSourceGroupID; v != nil {
+		builder.WriteString("custom_source_group_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.CustomMultiplier; v != nil {
+		builder.WriteString("custom_multiplier=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteByte(')')
 	return builder.String()
 }

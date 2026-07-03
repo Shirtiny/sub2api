@@ -1,8 +1,12 @@
 package repository
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
+	"strings"
 	"testing"
 
+	"github.com/Wei-Shaw/sub2api/migrations"
 	"github.com/stretchr/testify/require"
 )
 
@@ -162,6 +166,52 @@ func TestIsMigrationChecksumCompatible(t *testing.T) {
 				"155_hash_api_keys.sql",
 				dbChecksum,
 				"1d7e3f980ad52f821ef84b5a644bb9a53c4dfe57d061f502ac73743a2cf18341",
+			)
+			require.True(t, ok)
+		}
+	})
+
+	t.Run("157 historical checksum is compatible with embedded custom subscription migration", func(t *testing.T) {
+		content, err := migrations.FS.ReadFile("157_custom_subscription_multiplier.sql")
+		require.NoError(t, err)
+		sum := sha256.Sum256(content)
+
+		ok := isMigrationChecksumCompatible(
+			"157_custom_subscription_multiplier.sql",
+			"ae7eadf2b5c908d46a89c7176c0e6204987ff2bf38ef7aee6fb2e75dfb334213",
+			hex.EncodeToString(sum[:]),
+		)
+		require.True(t, ok)
+	})
+
+	t.Run("157 historical checksum is compatible with LF checkout", func(t *testing.T) {
+		content, err := migrations.FS.ReadFile("157_custom_subscription_multiplier.sql")
+		require.NoError(t, err)
+		lfContent := strings.ReplaceAll(string(content), "\r\n", "\n")
+		sum := sha256.Sum256([]byte(lfContent))
+
+		ok := isMigrationChecksumCompatible(
+			"157_custom_subscription_multiplier.sql",
+			"ae7eadf2b5c908d46a89c7176c0e6204987ff2bf38ef7aee6fb2e75dfb334213",
+			hex.EncodeToString(sum[:]),
+		)
+		require.True(t, ok)
+	})
+
+	t.Run("157 previously applied checksum is compatible with embedded custom subscription migration", func(t *testing.T) {
+		content, err := migrations.FS.ReadFile("157_custom_subscription_multiplier.sql")
+		require.NoError(t, err)
+		sum := sha256.Sum256(content)
+		fileChecksum := hex.EncodeToString(sum[:])
+
+		for _, dbChecksum := range []string{
+			"d235b7e458372c21e4a27100d9089b2ce6e91af424ed8a8221b6e0f3d2f0a023",
+			"ab8d5a06dc3f638fa399bc5c22ab3a8a35b21ee21974366e2333b51128e63cef",
+		} {
+			ok := isMigrationChecksumCompatible(
+				"157_custom_subscription_multiplier.sql",
+				dbChecksum,
+				fileChecksum,
 			)
 			require.True(t, ok)
 		}

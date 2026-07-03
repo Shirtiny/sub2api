@@ -45,6 +45,38 @@
       <div class="grid grid-cols-2 gap-4">
         <div><label class="input-label">{{ t('payment.admin.sortOrder') }}</label><input v-model.number="planForm.sort_order" type="number" min="0" class="input" /></div>
       </div>
+      <div class="rounded-lg border border-gray-200 p-3 dark:border-dark-600">
+        <div class="flex items-center justify-between gap-3">
+          <div>
+            <label class="text-sm font-medium text-content-secondary">{{ t('payment.admin.customMultiplierEnabled') }}</label>
+            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ t('payment.admin.customMultiplierHint') }}</p>
+          </div>
+          <button
+            type="button"
+            :class="[
+              'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
+              planForm.custom_multiplier_enabled ? 'bg-primary-500' : 'bg-gray-300 dark:bg-dark-600'
+            ]"
+            @click="planForm.custom_multiplier_enabled = !planForm.custom_multiplier_enabled"
+          >
+            <span :class="[
+              'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
+              planForm.custom_multiplier_enabled ? 'translate-x-5' : 'translate-x-0'
+            ]" />
+          </button>
+        </div>
+        <div v-if="planForm.custom_multiplier_enabled" class="mt-3 grid grid-cols-2 gap-4">
+          <div>
+            <label class="input-label">{{ t('payment.admin.customMultiplierMin') }}</label>
+            <input v-model.number="planForm.custom_multiplier_min" type="number" min="1" step="1" class="input" />
+          </div>
+          <div>
+            <label class="input-label">{{ t('payment.admin.customMultiplierMax') }}</label>
+            <input v-model.number="planForm.custom_multiplier_max" type="number" min="1" step="1" class="input" />
+          </div>
+        </div>
+      </div>
+
       <div>
         <label class="input-label">{{ t('payment.admin.features') }}</label>
         <textarea v-model="planFeaturesText" rows="3" class="input" :placeholder="t('payment.admin.featuresPlaceholder')"></textarea>
@@ -105,7 +137,7 @@ const { t } = useI18n()
 const appStore = useAppStore()
 
 const saving = ref(false)
-const planForm = reactive({ name: '', group_id: null as number | null, description: '', price: 0, original_price: 0, validity_days: 30, validity_unit: 'days', sort_order: 0, for_sale: true })
+const planForm = reactive({ name: '', group_id: null as number | null, description: '', price: 0, original_price: 0, validity_days: 30, validity_unit: 'days', sort_order: 0, for_sale: true, custom_multiplier_enabled: false, custom_multiplier_min: 1, custom_multiplier_max: 1 })
 const planFeaturesText = ref('')
 
 const validityUnitOptions = computed(() => [
@@ -133,10 +165,10 @@ const selectedGroupInfo = computed(() => {
 watch(() => props.show, (visible) => {
   if (!visible) return
   if (props.plan) {
-    Object.assign(planForm, { name: props.plan.name, group_id: props.plan.group_id, description: props.plan.description, price: props.plan.price, original_price: props.plan.original_price || 0, validity_days: props.plan.validity_days, validity_unit: props.plan.validity_unit || 'days', sort_order: props.plan.sort_order || 0, for_sale: props.plan.for_sale })
+    Object.assign(planForm, { name: props.plan.name, group_id: props.plan.group_id, description: props.plan.description, price: props.plan.price, original_price: props.plan.original_price || 0, validity_days: props.plan.validity_days, validity_unit: props.plan.validity_unit || 'days', sort_order: props.plan.sort_order || 0, for_sale: props.plan.for_sale, custom_multiplier_enabled: props.plan.custom_multiplier_enabled === true, custom_multiplier_min: props.plan.custom_multiplier_min || 1, custom_multiplier_max: props.plan.custom_multiplier_max || props.plan.custom_multiplier_min || 1 })
     planFeaturesText.value = (props.plan.features || []).join('\n')
   } else {
-    Object.assign(planForm, { name: '', group_id: null, description: '', price: 0, original_price: 0, validity_days: 30, validity_unit: 'days', sort_order: 0, for_sale: true })
+    Object.assign(planForm, { name: '', group_id: null, description: '', price: 0, original_price: 0, validity_days: 30, validity_unit: 'days', sort_order: 0, for_sale: true, custom_multiplier_enabled: false, custom_multiplier_min: 1, custom_multiplier_max: 1 })
     planFeaturesText.value = ''
   }
 })
@@ -154,6 +186,9 @@ function buildPlanPayload() {
     validity_unit: planForm.validity_unit,
     sort_order: planForm.sort_order,
     for_sale: planForm.for_sale,
+    custom_multiplier_enabled: planForm.custom_multiplier_enabled,
+    custom_multiplier_min: planForm.custom_multiplier_min || 1,
+    custom_multiplier_max: planForm.custom_multiplier_max || planForm.custom_multiplier_min || 1,
     features,
   }
 }
@@ -169,6 +204,10 @@ async function handleSavePlan() {
   }
   if (!planForm.validity_days || planForm.validity_days < 1) {
     appStore.showError(t('payment.admin.validityDaysRequired'))
+    return
+  }
+  if (planForm.custom_multiplier_enabled && (planForm.custom_multiplier_min < 1 || planForm.custom_multiplier_max < planForm.custom_multiplier_min)) {
+    appStore.showError(t('payment.admin.customMultiplierInvalid'))
     return
   }
   saving.value = true

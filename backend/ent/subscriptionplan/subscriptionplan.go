@@ -35,6 +35,12 @@ const (
 	FieldForSale = "for_sale"
 	// FieldSortOrder holds the string denoting the sort_order field in the database.
 	FieldSortOrder = "sort_order"
+	// FieldCustomMultiplierEnabled holds the string denoting the custom_multiplier_enabled field in the database.
+	FieldCustomMultiplierEnabled = "custom_multiplier_enabled"
+	// FieldCustomMultiplierMin holds the string denoting the custom_multiplier_min field in the database.
+	FieldCustomMultiplierMin = "custom_multiplier_min"
+	// FieldCustomMultiplierMax holds the string denoting the custom_multiplier_max field in the database.
+	FieldCustomMultiplierMax = "custom_multiplier_max"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
@@ -57,6 +63,9 @@ var Columns = []string{
 	FieldProductName,
 	FieldForSale,
 	FieldSortOrder,
+	FieldCustomMultiplierEnabled,
+	FieldCustomMultiplierMin,
+	FieldCustomMultiplierMax,
 	FieldCreatedAt,
 	FieldUpdatedAt,
 }
@@ -92,6 +101,12 @@ var (
 	DefaultForSale bool
 	// DefaultSortOrder holds the default value on creation for the "sort_order" field.
 	DefaultSortOrder int
+	// DefaultCustomMultiplierEnabled holds the default value on creation for the "custom_multiplier_enabled" field.
+	DefaultCustomMultiplierEnabled bool
+	// DefaultCustomMultiplierMin holds the default value on creation for the "custom_multiplier_min" field.
+	DefaultCustomMultiplierMin int
+	// DefaultCustomMultiplierMax holds the default value on creation for the "custom_multiplier_max" field.
+	DefaultCustomMultiplierMax int
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.
@@ -161,6 +176,21 @@ func ByForSale(opts ...sql.OrderTermOption) OrderOption {
 // BySortOrder orders the results by the sort_order field.
 func BySortOrder(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSortOrder, opts...).ToFunc()
+}
+
+// ByCustomMultiplierEnabled orders the results by the custom_multiplier_enabled field.
+func ByCustomMultiplierEnabled(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCustomMultiplierEnabled, opts...).ToFunc()
+}
+
+// ByCustomMultiplierMin orders the results by the custom_multiplier_min field.
+func ByCustomMultiplierMin(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCustomMultiplierMin, opts...).ToFunc()
+}
+
+// ByCustomMultiplierMax orders the results by the custom_multiplier_max field.
+func ByCustomMultiplierMax(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCustomMultiplierMax, opts...).ToFunc()
 }
 
 // ByCreatedAt orders the results by the created_at field.

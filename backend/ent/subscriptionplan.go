@@ -39,6 +39,12 @@ type SubscriptionPlan struct {
 	ForSale bool `json:"for_sale,omitempty"`
 	// SortOrder holds the value of the "sort_order" field.
 	SortOrder int `json:"sort_order,omitempty"`
+	// whether this plan allows integer multiplier purchase
+	CustomMultiplierEnabled bool `json:"custom_multiplier_enabled,omitempty"`
+	// minimum custom multiplier; enabled plans require at least 2
+	CustomMultiplierMin int `json:"custom_multiplier_min,omitempty"`
+	// maximum custom multiplier; must be >= min when enabled
+	CustomMultiplierMax int `json:"custom_multiplier_max,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
@@ -51,11 +57,11 @@ func (*SubscriptionPlan) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case subscriptionplan.FieldForSale:
+		case subscriptionplan.FieldForSale, subscriptionplan.FieldCustomMultiplierEnabled:
 			values[i] = new(sql.NullBool)
 		case subscriptionplan.FieldPrice, subscriptionplan.FieldOriginalPrice:
 			values[i] = new(sql.NullFloat64)
-		case subscriptionplan.FieldID, subscriptionplan.FieldGroupID, subscriptionplan.FieldValidityDays, subscriptionplan.FieldSortOrder:
+		case subscriptionplan.FieldID, subscriptionplan.FieldGroupID, subscriptionplan.FieldValidityDays, subscriptionplan.FieldSortOrder, subscriptionplan.FieldCustomMultiplierMin, subscriptionplan.FieldCustomMultiplierMax:
 			values[i] = new(sql.NullInt64)
 		case subscriptionplan.FieldName, subscriptionplan.FieldDescription, subscriptionplan.FieldValidityUnit, subscriptionplan.FieldFeatures, subscriptionplan.FieldProductName:
 			values[i] = new(sql.NullString)
@@ -149,6 +155,24 @@ func (_m *SubscriptionPlan) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.SortOrder = int(value.Int64)
 			}
+		case subscriptionplan.FieldCustomMultiplierEnabled:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field custom_multiplier_enabled", values[i])
+			} else if value.Valid {
+				_m.CustomMultiplierEnabled = value.Bool
+			}
+		case subscriptionplan.FieldCustomMultiplierMin:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field custom_multiplier_min", values[i])
+			} else if value.Valid {
+				_m.CustomMultiplierMin = int(value.Int64)
+			}
+		case subscriptionplan.FieldCustomMultiplierMax:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field custom_multiplier_max", values[i])
+			} else if value.Valid {
+				_m.CustomMultiplierMax = int(value.Int64)
+			}
 		case subscriptionplan.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
@@ -231,6 +255,15 @@ func (_m *SubscriptionPlan) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("sort_order=")
 	builder.WriteString(fmt.Sprintf("%v", _m.SortOrder))
+	builder.WriteString(", ")
+	builder.WriteString("custom_multiplier_enabled=")
+	builder.WriteString(fmt.Sprintf("%v", _m.CustomMultiplierEnabled))
+	builder.WriteString(", ")
+	builder.WriteString("custom_multiplier_min=")
+	builder.WriteString(fmt.Sprintf("%v", _m.CustomMultiplierMin))
+	builder.WriteString(", ")
+	builder.WriteString("custom_multiplier_max=")
+	builder.WriteString(fmt.Sprintf("%v", _m.CustomMultiplierMax))
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")
 	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))

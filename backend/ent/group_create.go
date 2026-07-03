@@ -495,6 +495,76 @@ func (_c *GroupCreate) SetNillableRpmLimit(v *int) *GroupCreate {
 	return _c
 }
 
+// SetIsCustomSubscriptionGroup sets the "is_custom_subscription_group" field.
+func (_c *GroupCreate) SetIsCustomSubscriptionGroup(v bool) *GroupCreate {
+	_c.mutation.SetIsCustomSubscriptionGroup(v)
+	return _c
+}
+
+// SetNillableIsCustomSubscriptionGroup sets the "is_custom_subscription_group" field if the given value is not nil.
+func (_c *GroupCreate) SetNillableIsCustomSubscriptionGroup(v *bool) *GroupCreate {
+	if v != nil {
+		_c.SetIsCustomSubscriptionGroup(*v)
+	}
+	return _c
+}
+
+// SetCustomOwnerUserID sets the "custom_owner_user_id" field.
+func (_c *GroupCreate) SetCustomOwnerUserID(v int64) *GroupCreate {
+	_c.mutation.SetCustomOwnerUserID(v)
+	return _c
+}
+
+// SetNillableCustomOwnerUserID sets the "custom_owner_user_id" field if the given value is not nil.
+func (_c *GroupCreate) SetNillableCustomOwnerUserID(v *int64) *GroupCreate {
+	if v != nil {
+		_c.SetCustomOwnerUserID(*v)
+	}
+	return _c
+}
+
+// SetCustomSourcePlanID sets the "custom_source_plan_id" field.
+func (_c *GroupCreate) SetCustomSourcePlanID(v int64) *GroupCreate {
+	_c.mutation.SetCustomSourcePlanID(v)
+	return _c
+}
+
+// SetNillableCustomSourcePlanID sets the "custom_source_plan_id" field if the given value is not nil.
+func (_c *GroupCreate) SetNillableCustomSourcePlanID(v *int64) *GroupCreate {
+	if v != nil {
+		_c.SetCustomSourcePlanID(*v)
+	}
+	return _c
+}
+
+// SetCustomSourceGroupID sets the "custom_source_group_id" field.
+func (_c *GroupCreate) SetCustomSourceGroupID(v int64) *GroupCreate {
+	_c.mutation.SetCustomSourceGroupID(v)
+	return _c
+}
+
+// SetNillableCustomSourceGroupID sets the "custom_source_group_id" field if the given value is not nil.
+func (_c *GroupCreate) SetNillableCustomSourceGroupID(v *int64) *GroupCreate {
+	if v != nil {
+		_c.SetCustomSourceGroupID(*v)
+	}
+	return _c
+}
+
+// SetCustomMultiplier sets the "custom_multiplier" field.
+func (_c *GroupCreate) SetCustomMultiplier(v int) *GroupCreate {
+	_c.mutation.SetCustomMultiplier(v)
+	return _c
+}
+
+// SetNillableCustomMultiplier sets the "custom_multiplier" field if the given value is not nil.
+func (_c *GroupCreate) SetNillableCustomMultiplier(v *int) *GroupCreate {
+	if v != nil {
+		_c.SetCustomMultiplier(*v)
+	}
+	return _c
+}
+
 // AddAPIKeyIDs adds the "api_keys" edge to the APIKey entity by IDs.
 func (_c *GroupCreate) AddAPIKeyIDs(ids ...int64) *GroupCreate {
 	_c.mutation.AddAPIKeyIDs(ids...)
@@ -720,6 +790,10 @@ func (_c *GroupCreate) defaults() error {
 		v := group.DefaultRpmLimit
 		_c.mutation.SetRpmLimit(v)
 	}
+	if _, ok := _c.mutation.IsCustomSubscriptionGroup(); !ok {
+		v := group.DefaultIsCustomSubscriptionGroup
+		_c.mutation.SetIsCustomSubscriptionGroup(v)
+	}
 	return nil
 }
 
@@ -821,6 +895,9 @@ func (_c *GroupCreate) check() error {
 	}
 	if _, ok := _c.mutation.RpmLimit(); !ok {
 		return &ValidationError{Name: "rpm_limit", err: errors.New(`ent: missing required field "Group.rpm_limit"`)}
+	}
+	if _, ok := _c.mutation.IsCustomSubscriptionGroup(); !ok {
+		return &ValidationError{Name: "is_custom_subscription_group", err: errors.New(`ent: missing required field "Group.is_custom_subscription_group"`)}
 	}
 	return nil
 }
@@ -988,6 +1065,26 @@ func (_c *GroupCreate) createSpec() (*Group, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.RpmLimit(); ok {
 		_spec.SetField(group.FieldRpmLimit, field.TypeInt, value)
 		_node.RpmLimit = value
+	}
+	if value, ok := _c.mutation.IsCustomSubscriptionGroup(); ok {
+		_spec.SetField(group.FieldIsCustomSubscriptionGroup, field.TypeBool, value)
+		_node.IsCustomSubscriptionGroup = value
+	}
+	if value, ok := _c.mutation.CustomOwnerUserID(); ok {
+		_spec.SetField(group.FieldCustomOwnerUserID, field.TypeInt64, value)
+		_node.CustomOwnerUserID = &value
+	}
+	if value, ok := _c.mutation.CustomSourcePlanID(); ok {
+		_spec.SetField(group.FieldCustomSourcePlanID, field.TypeInt64, value)
+		_node.CustomSourcePlanID = &value
+	}
+	if value, ok := _c.mutation.CustomSourceGroupID(); ok {
+		_spec.SetField(group.FieldCustomSourceGroupID, field.TypeInt64, value)
+		_node.CustomSourceGroupID = &value
+	}
+	if value, ok := _c.mutation.CustomMultiplier(); ok {
+		_spec.SetField(group.FieldCustomMultiplier, field.TypeInt, value)
+		_node.CustomMultiplier = &value
 	}
 	if nodes := _c.mutation.APIKeysIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -1697,6 +1794,114 @@ func (u *GroupUpsert) AddRpmLimit(v int) *GroupUpsert {
 	return u
 }
 
+// SetIsCustomSubscriptionGroup sets the "is_custom_subscription_group" field.
+func (u *GroupUpsert) SetIsCustomSubscriptionGroup(v bool) *GroupUpsert {
+	u.Set(group.FieldIsCustomSubscriptionGroup, v)
+	return u
+}
+
+// UpdateIsCustomSubscriptionGroup sets the "is_custom_subscription_group" field to the value that was provided on create.
+func (u *GroupUpsert) UpdateIsCustomSubscriptionGroup() *GroupUpsert {
+	u.SetExcluded(group.FieldIsCustomSubscriptionGroup)
+	return u
+}
+
+// SetCustomOwnerUserID sets the "custom_owner_user_id" field.
+func (u *GroupUpsert) SetCustomOwnerUserID(v int64) *GroupUpsert {
+	u.Set(group.FieldCustomOwnerUserID, v)
+	return u
+}
+
+// UpdateCustomOwnerUserID sets the "custom_owner_user_id" field to the value that was provided on create.
+func (u *GroupUpsert) UpdateCustomOwnerUserID() *GroupUpsert {
+	u.SetExcluded(group.FieldCustomOwnerUserID)
+	return u
+}
+
+// AddCustomOwnerUserID adds v to the "custom_owner_user_id" field.
+func (u *GroupUpsert) AddCustomOwnerUserID(v int64) *GroupUpsert {
+	u.Add(group.FieldCustomOwnerUserID, v)
+	return u
+}
+
+// ClearCustomOwnerUserID clears the value of the "custom_owner_user_id" field.
+func (u *GroupUpsert) ClearCustomOwnerUserID() *GroupUpsert {
+	u.SetNull(group.FieldCustomOwnerUserID)
+	return u
+}
+
+// SetCustomSourcePlanID sets the "custom_source_plan_id" field.
+func (u *GroupUpsert) SetCustomSourcePlanID(v int64) *GroupUpsert {
+	u.Set(group.FieldCustomSourcePlanID, v)
+	return u
+}
+
+// UpdateCustomSourcePlanID sets the "custom_source_plan_id" field to the value that was provided on create.
+func (u *GroupUpsert) UpdateCustomSourcePlanID() *GroupUpsert {
+	u.SetExcluded(group.FieldCustomSourcePlanID)
+	return u
+}
+
+// AddCustomSourcePlanID adds v to the "custom_source_plan_id" field.
+func (u *GroupUpsert) AddCustomSourcePlanID(v int64) *GroupUpsert {
+	u.Add(group.FieldCustomSourcePlanID, v)
+	return u
+}
+
+// ClearCustomSourcePlanID clears the value of the "custom_source_plan_id" field.
+func (u *GroupUpsert) ClearCustomSourcePlanID() *GroupUpsert {
+	u.SetNull(group.FieldCustomSourcePlanID)
+	return u
+}
+
+// SetCustomSourceGroupID sets the "custom_source_group_id" field.
+func (u *GroupUpsert) SetCustomSourceGroupID(v int64) *GroupUpsert {
+	u.Set(group.FieldCustomSourceGroupID, v)
+	return u
+}
+
+// UpdateCustomSourceGroupID sets the "custom_source_group_id" field to the value that was provided on create.
+func (u *GroupUpsert) UpdateCustomSourceGroupID() *GroupUpsert {
+	u.SetExcluded(group.FieldCustomSourceGroupID)
+	return u
+}
+
+// AddCustomSourceGroupID adds v to the "custom_source_group_id" field.
+func (u *GroupUpsert) AddCustomSourceGroupID(v int64) *GroupUpsert {
+	u.Add(group.FieldCustomSourceGroupID, v)
+	return u
+}
+
+// ClearCustomSourceGroupID clears the value of the "custom_source_group_id" field.
+func (u *GroupUpsert) ClearCustomSourceGroupID() *GroupUpsert {
+	u.SetNull(group.FieldCustomSourceGroupID)
+	return u
+}
+
+// SetCustomMultiplier sets the "custom_multiplier" field.
+func (u *GroupUpsert) SetCustomMultiplier(v int) *GroupUpsert {
+	u.Set(group.FieldCustomMultiplier, v)
+	return u
+}
+
+// UpdateCustomMultiplier sets the "custom_multiplier" field to the value that was provided on create.
+func (u *GroupUpsert) UpdateCustomMultiplier() *GroupUpsert {
+	u.SetExcluded(group.FieldCustomMultiplier)
+	return u
+}
+
+// AddCustomMultiplier adds v to the "custom_multiplier" field.
+func (u *GroupUpsert) AddCustomMultiplier(v int) *GroupUpsert {
+	u.Add(group.FieldCustomMultiplier, v)
+	return u
+}
+
+// ClearCustomMultiplier clears the value of the "custom_multiplier" field.
+func (u *GroupUpsert) ClearCustomMultiplier() *GroupUpsert {
+	u.SetNull(group.FieldCustomMultiplier)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create.
 // Using this option is equivalent to using:
 //
@@ -2383,6 +2588,132 @@ func (u *GroupUpsertOne) AddRpmLimit(v int) *GroupUpsertOne {
 func (u *GroupUpsertOne) UpdateRpmLimit() *GroupUpsertOne {
 	return u.Update(func(s *GroupUpsert) {
 		s.UpdateRpmLimit()
+	})
+}
+
+// SetIsCustomSubscriptionGroup sets the "is_custom_subscription_group" field.
+func (u *GroupUpsertOne) SetIsCustomSubscriptionGroup(v bool) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetIsCustomSubscriptionGroup(v)
+	})
+}
+
+// UpdateIsCustomSubscriptionGroup sets the "is_custom_subscription_group" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdateIsCustomSubscriptionGroup() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateIsCustomSubscriptionGroup()
+	})
+}
+
+// SetCustomOwnerUserID sets the "custom_owner_user_id" field.
+func (u *GroupUpsertOne) SetCustomOwnerUserID(v int64) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetCustomOwnerUserID(v)
+	})
+}
+
+// AddCustomOwnerUserID adds v to the "custom_owner_user_id" field.
+func (u *GroupUpsertOne) AddCustomOwnerUserID(v int64) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.AddCustomOwnerUserID(v)
+	})
+}
+
+// UpdateCustomOwnerUserID sets the "custom_owner_user_id" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdateCustomOwnerUserID() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateCustomOwnerUserID()
+	})
+}
+
+// ClearCustomOwnerUserID clears the value of the "custom_owner_user_id" field.
+func (u *GroupUpsertOne) ClearCustomOwnerUserID() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.ClearCustomOwnerUserID()
+	})
+}
+
+// SetCustomSourcePlanID sets the "custom_source_plan_id" field.
+func (u *GroupUpsertOne) SetCustomSourcePlanID(v int64) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetCustomSourcePlanID(v)
+	})
+}
+
+// AddCustomSourcePlanID adds v to the "custom_source_plan_id" field.
+func (u *GroupUpsertOne) AddCustomSourcePlanID(v int64) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.AddCustomSourcePlanID(v)
+	})
+}
+
+// UpdateCustomSourcePlanID sets the "custom_source_plan_id" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdateCustomSourcePlanID() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateCustomSourcePlanID()
+	})
+}
+
+// ClearCustomSourcePlanID clears the value of the "custom_source_plan_id" field.
+func (u *GroupUpsertOne) ClearCustomSourcePlanID() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.ClearCustomSourcePlanID()
+	})
+}
+
+// SetCustomSourceGroupID sets the "custom_source_group_id" field.
+func (u *GroupUpsertOne) SetCustomSourceGroupID(v int64) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetCustomSourceGroupID(v)
+	})
+}
+
+// AddCustomSourceGroupID adds v to the "custom_source_group_id" field.
+func (u *GroupUpsertOne) AddCustomSourceGroupID(v int64) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.AddCustomSourceGroupID(v)
+	})
+}
+
+// UpdateCustomSourceGroupID sets the "custom_source_group_id" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdateCustomSourceGroupID() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateCustomSourceGroupID()
+	})
+}
+
+// ClearCustomSourceGroupID clears the value of the "custom_source_group_id" field.
+func (u *GroupUpsertOne) ClearCustomSourceGroupID() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.ClearCustomSourceGroupID()
+	})
+}
+
+// SetCustomMultiplier sets the "custom_multiplier" field.
+func (u *GroupUpsertOne) SetCustomMultiplier(v int) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetCustomMultiplier(v)
+	})
+}
+
+// AddCustomMultiplier adds v to the "custom_multiplier" field.
+func (u *GroupUpsertOne) AddCustomMultiplier(v int) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.AddCustomMultiplier(v)
+	})
+}
+
+// UpdateCustomMultiplier sets the "custom_multiplier" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdateCustomMultiplier() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateCustomMultiplier()
+	})
+}
+
+// ClearCustomMultiplier clears the value of the "custom_multiplier" field.
+func (u *GroupUpsertOne) ClearCustomMultiplier() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.ClearCustomMultiplier()
 	})
 }
 
@@ -3238,6 +3569,132 @@ func (u *GroupUpsertBulk) AddRpmLimit(v int) *GroupUpsertBulk {
 func (u *GroupUpsertBulk) UpdateRpmLimit() *GroupUpsertBulk {
 	return u.Update(func(s *GroupUpsert) {
 		s.UpdateRpmLimit()
+	})
+}
+
+// SetIsCustomSubscriptionGroup sets the "is_custom_subscription_group" field.
+func (u *GroupUpsertBulk) SetIsCustomSubscriptionGroup(v bool) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetIsCustomSubscriptionGroup(v)
+	})
+}
+
+// UpdateIsCustomSubscriptionGroup sets the "is_custom_subscription_group" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdateIsCustomSubscriptionGroup() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateIsCustomSubscriptionGroup()
+	})
+}
+
+// SetCustomOwnerUserID sets the "custom_owner_user_id" field.
+func (u *GroupUpsertBulk) SetCustomOwnerUserID(v int64) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetCustomOwnerUserID(v)
+	})
+}
+
+// AddCustomOwnerUserID adds v to the "custom_owner_user_id" field.
+func (u *GroupUpsertBulk) AddCustomOwnerUserID(v int64) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.AddCustomOwnerUserID(v)
+	})
+}
+
+// UpdateCustomOwnerUserID sets the "custom_owner_user_id" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdateCustomOwnerUserID() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateCustomOwnerUserID()
+	})
+}
+
+// ClearCustomOwnerUserID clears the value of the "custom_owner_user_id" field.
+func (u *GroupUpsertBulk) ClearCustomOwnerUserID() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.ClearCustomOwnerUserID()
+	})
+}
+
+// SetCustomSourcePlanID sets the "custom_source_plan_id" field.
+func (u *GroupUpsertBulk) SetCustomSourcePlanID(v int64) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetCustomSourcePlanID(v)
+	})
+}
+
+// AddCustomSourcePlanID adds v to the "custom_source_plan_id" field.
+func (u *GroupUpsertBulk) AddCustomSourcePlanID(v int64) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.AddCustomSourcePlanID(v)
+	})
+}
+
+// UpdateCustomSourcePlanID sets the "custom_source_plan_id" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdateCustomSourcePlanID() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateCustomSourcePlanID()
+	})
+}
+
+// ClearCustomSourcePlanID clears the value of the "custom_source_plan_id" field.
+func (u *GroupUpsertBulk) ClearCustomSourcePlanID() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.ClearCustomSourcePlanID()
+	})
+}
+
+// SetCustomSourceGroupID sets the "custom_source_group_id" field.
+func (u *GroupUpsertBulk) SetCustomSourceGroupID(v int64) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetCustomSourceGroupID(v)
+	})
+}
+
+// AddCustomSourceGroupID adds v to the "custom_source_group_id" field.
+func (u *GroupUpsertBulk) AddCustomSourceGroupID(v int64) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.AddCustomSourceGroupID(v)
+	})
+}
+
+// UpdateCustomSourceGroupID sets the "custom_source_group_id" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdateCustomSourceGroupID() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateCustomSourceGroupID()
+	})
+}
+
+// ClearCustomSourceGroupID clears the value of the "custom_source_group_id" field.
+func (u *GroupUpsertBulk) ClearCustomSourceGroupID() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.ClearCustomSourceGroupID()
+	})
+}
+
+// SetCustomMultiplier sets the "custom_multiplier" field.
+func (u *GroupUpsertBulk) SetCustomMultiplier(v int) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetCustomMultiplier(v)
+	})
+}
+
+// AddCustomMultiplier adds v to the "custom_multiplier" field.
+func (u *GroupUpsertBulk) AddCustomMultiplier(v int) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.AddCustomMultiplier(v)
+	})
+}
+
+// UpdateCustomMultiplier sets the "custom_multiplier" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdateCustomMultiplier() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateCustomMultiplier()
+	})
+}
+
+// ClearCustomMultiplier clears the value of the "custom_multiplier" field.
+func (u *GroupUpsertBulk) ClearCustomMultiplier() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.ClearCustomMultiplier()
 	})
 }
 

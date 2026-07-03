@@ -807,15 +807,27 @@ func (r *accountRepository) ClearError(ctx context.Context, id int64) error {
 }
 
 func (r *accountRepository) AddToGroup(ctx context.Context, accountID, groupID int64, priority int) error {
-	_, err := r.client.AccountGroup.Create().
-		SetAccountID(accountID).
-		SetGroupID(groupID).
-		SetPriority(priority).
-		Save(ctx)
+	bindings, err := expandAccountGroupBindingsWithCustomGroups(ctx, r.client, []int64{groupID})
 	if err != nil {
 		return err
 	}
-	payload := buildSchedulerGroupPayload([]int64{groupID})
+	if len(bindings) == 0 {
+		return nil
+	}
+	builders := make([]*dbent.AccountGroupCreate, 0, len(bindings))
+	for _, binding := range bindings {
+		builders = append(builders, r.client.AccountGroup.Create().
+			SetAccountID(accountID).
+			SetGroupID(binding.GroupID).
+			SetPriority(priority))
+	}
+	if err := r.client.AccountGroup.CreateBulk(builders...).
+		OnConflictColumns(dbaccountgroup.FieldAccountID, dbaccountgroup.FieldGroupID).
+		UpdateNewValues().
+		Exec(ctx); err != nil {
+		return err
+	}
+	payload := buildSchedulerGroupPayload(accountGroupBindingGroupIDs(bindings))
 	if err := enqueueSchedulerOutbox(ctx, r.sql, service.SchedulerOutboxEventAccountGroupsChanged, &accountID, nil, payload); err != nil {
 		logger.LegacyPrintf("repository.account", "[SchedulerOutbox] enqueue add to group failed: account=%d group=%d err=%v", accountID, groupID, err)
 	}
@@ -823,16 +835,23 @@ func (r *accountRepository) AddToGroup(ctx context.Context, accountID, groupID i
 }
 
 func (r *accountRepository) RemoveFromGroup(ctx context.Context, accountID, groupID int64) error {
+	groupIDs, expandErr := expandGroupIDsWithCustomGroups(ctx, r.client, []int64{groupID})
+	if expandErr != nil {
+		return expandErr
+	}
+	if len(groupIDs) == 0 {
+		return nil
+	}
 	_, err := r.client.AccountGroup.Delete().
 		Where(
 			dbaccountgroup.AccountIDEQ(accountID),
-			dbaccountgroup.GroupIDEQ(groupID),
+			dbaccountgroup.GroupIDIn(groupIDs...),
 		).
 		Exec(ctx)
 	if err != nil {
 		return err
 	}
-	payload := buildSchedulerGroupPayload([]int64{groupID})
+	payload := buildSchedulerGroupPayload(groupIDs)
 	if err := enqueueSchedulerOutbox(ctx, r.sql, service.SchedulerOutboxEventAccountGroupsChanged, &accountID, nil, payload); err != nil {
 		logger.LegacyPrintf("repository.account", "[SchedulerOutbox] enqueue remove from group failed: account=%d group=%d err=%v", accountID, groupID, err)
 	}
@@ -876,23 +895,29 @@ func (r *accountRepository) BindGroups(ctx context.Context, accountID int64, gro
 		txClient = r.client
 	}
 
+	bindings, err := expandAccountGroupBindingsWithCustomGroups(ctx, txClient, groupIDs)
+	if err != nil {
+		return err
+	}
+	expandedGroupIDs := accountGroupBindingGroupIDs(bindings)
+
 	if _, err := txClient.AccountGroup.Delete().Where(dbaccountgroup.AccountIDEQ(accountID)).Exec(ctx); err != nil {
 		return err
 	}
 
-	if len(groupIDs) == 0 {
+	if len(bindings) == 0 {
 		if tx != nil {
 			return tx.Commit()
 		}
 		return nil
 	}
 
-	builders := make([]*dbent.AccountGroupCreate, 0, len(groupIDs))
-	for i, groupID := range groupIDs {
+	builders := make([]*dbent.AccountGroupCreate, 0, len(bindings))
+	for _, binding := range bindings {
 		builders = append(builders, txClient.AccountGroup.Create().
 			SetAccountID(accountID).
-			SetGroupID(groupID).
-			SetPriority(i+1),
+			SetGroupID(binding.GroupID).
+			SetPriority(binding.Priority),
 		)
 	}
 
@@ -905,7 +930,7 @@ func (r *accountRepository) BindGroups(ctx context.Context, accountID int64, gro
 			return err
 		}
 	}
-	payload := buildSchedulerGroupPayload(mergeGroupIDs(existingGroupIDs, groupIDs))
+	payload := buildSchedulerGroupPayload(mergeGroupIDs(existingGroupIDs, expandedGroupIDs))
 	if err := enqueueSchedulerOutbox(ctx, r.sql, service.SchedulerOutboxEventAccountGroupsChanged, &accountID, nil, payload); err != nil {
 		logger.LegacyPrintf("repository.account", "[SchedulerOutbox] enqueue bind groups failed: account=%d err=%v", accountID, err)
 	}

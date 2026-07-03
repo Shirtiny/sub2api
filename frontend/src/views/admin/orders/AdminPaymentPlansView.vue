@@ -36,6 +36,12 @@
         <template #cell-validity_days="{ value, row }">
           <span class="text-sm">{{ value }} {{ t('payment.admin.' + (row.validity_unit || 'days')) }}</span>
         </template>
+        <template #cell-custom_multiplier_enabled="{ row }">
+          <span v-if="row.custom_multiplier_enabled" class="badge badge-primary text-xs">
+            {{ row.custom_multiplier_min || 1 }}x-{{ row.custom_multiplier_max || row.custom_multiplier_min || 1 }}x
+          </span>
+          <span v-else class="text-xs text-gray-400">—</span>
+        </template>
         <template #cell-for_sale="{ value, row }">
           <button
             type="button"
@@ -133,6 +139,7 @@ const planColumns = computed((): Column[] => [
   { key: 'group_id', label: t('payment.admin.group') },
   { key: 'price', label: t('payment.admin.price') },
   { key: 'validity_days', label: t('payment.admin.validityDays') },
+  { key: 'custom_multiplier_enabled', label: t('payment.admin.customMultiplier') },
   { key: 'for_sale', label: t('payment.admin.forSale') },
   { key: 'sort_order', label: t('payment.admin.sortOrder') },
   { key: 'actions', label: t('common.actions') },

@@ -406,6 +406,114 @@ func (_u *PaymentOrderUpdate) ClearSubscriptionDays() *PaymentOrderUpdate {
 	return _u
 }
 
+// SetSubscriptionMultiplier sets the "subscription_multiplier" field.
+func (_u *PaymentOrderUpdate) SetSubscriptionMultiplier(v int) *PaymentOrderUpdate {
+	_u.mutation.ResetSubscriptionMultiplier()
+	_u.mutation.SetSubscriptionMultiplier(v)
+	return _u
+}
+
+// SetNillableSubscriptionMultiplier sets the "subscription_multiplier" field if the given value is not nil.
+func (_u *PaymentOrderUpdate) SetNillableSubscriptionMultiplier(v *int) *PaymentOrderUpdate {
+	if v != nil {
+		_u.SetSubscriptionMultiplier(*v)
+	}
+	return _u
+}
+
+// AddSubscriptionMultiplier adds value to the "subscription_multiplier" field.
+func (_u *PaymentOrderUpdate) AddSubscriptionMultiplier(v int) *PaymentOrderUpdate {
+	_u.mutation.AddSubscriptionMultiplier(v)
+	return _u
+}
+
+// ClearSubscriptionMultiplier clears the value of the "subscription_multiplier" field.
+func (_u *PaymentOrderUpdate) ClearSubscriptionMultiplier() *PaymentOrderUpdate {
+	_u.mutation.ClearSubscriptionMultiplier()
+	return _u
+}
+
+// SetSubscriptionSourceGroupID sets the "subscription_source_group_id" field.
+func (_u *PaymentOrderUpdate) SetSubscriptionSourceGroupID(v int64) *PaymentOrderUpdate {
+	_u.mutation.ResetSubscriptionSourceGroupID()
+	_u.mutation.SetSubscriptionSourceGroupID(v)
+	return _u
+}
+
+// SetNillableSubscriptionSourceGroupID sets the "subscription_source_group_id" field if the given value is not nil.
+func (_u *PaymentOrderUpdate) SetNillableSubscriptionSourceGroupID(v *int64) *PaymentOrderUpdate {
+	if v != nil {
+		_u.SetSubscriptionSourceGroupID(*v)
+	}
+	return _u
+}
+
+// AddSubscriptionSourceGroupID adds value to the "subscription_source_group_id" field.
+func (_u *PaymentOrderUpdate) AddSubscriptionSourceGroupID(v int64) *PaymentOrderUpdate {
+	_u.mutation.AddSubscriptionSourceGroupID(v)
+	return _u
+}
+
+// ClearSubscriptionSourceGroupID clears the value of the "subscription_source_group_id" field.
+func (_u *PaymentOrderUpdate) ClearSubscriptionSourceGroupID() *PaymentOrderUpdate {
+	_u.mutation.ClearSubscriptionSourceGroupID()
+	return _u
+}
+
+// SetSubscriptionSourcePrice sets the "subscription_source_price" field.
+func (_u *PaymentOrderUpdate) SetSubscriptionSourcePrice(v float64) *PaymentOrderUpdate {
+	_u.mutation.ResetSubscriptionSourcePrice()
+	_u.mutation.SetSubscriptionSourcePrice(v)
+	return _u
+}
+
+// SetNillableSubscriptionSourcePrice sets the "subscription_source_price" field if the given value is not nil.
+func (_u *PaymentOrderUpdate) SetNillableSubscriptionSourcePrice(v *float64) *PaymentOrderUpdate {
+	if v != nil {
+		_u.SetSubscriptionSourcePrice(*v)
+	}
+	return _u
+}
+
+// AddSubscriptionSourcePrice adds value to the "subscription_source_price" field.
+func (_u *PaymentOrderUpdate) AddSubscriptionSourcePrice(v float64) *PaymentOrderUpdate {
+	_u.mutation.AddSubscriptionSourcePrice(v)
+	return _u
+}
+
+// ClearSubscriptionSourcePrice clears the value of the "subscription_source_price" field.
+func (_u *PaymentOrderUpdate) ClearSubscriptionSourcePrice() *PaymentOrderUpdate {
+	_u.mutation.ClearSubscriptionSourcePrice()
+	return _u
+}
+
+// SetSubscriptionSourceOriginalPrice sets the "subscription_source_original_price" field.
+func (_u *PaymentOrderUpdate) SetSubscriptionSourceOriginalPrice(v float64) *PaymentOrderUpdate {
+	_u.mutation.ResetSubscriptionSourceOriginalPrice()
+	_u.mutation.SetSubscriptionSourceOriginalPrice(v)
+	return _u
+}
+
+// SetNillableSubscriptionSourceOriginalPrice sets the "subscription_source_original_price" field if the given value is not nil.
+func (_u *PaymentOrderUpdate) SetNillableSubscriptionSourceOriginalPrice(v *float64) *PaymentOrderUpdate {
+	if v != nil {
+		_u.SetSubscriptionSourceOriginalPrice(*v)
+	}
+	return _u
+}
+
+// AddSubscriptionSourceOriginalPrice adds value to the "subscription_source_original_price" field.
+func (_u *PaymentOrderUpdate) AddSubscriptionSourceOriginalPrice(v float64) *PaymentOrderUpdate {
+	_u.mutation.AddSubscriptionSourceOriginalPrice(v)
+	return _u
+}
+
+// ClearSubscriptionSourceOriginalPrice clears the value of the "subscription_source_original_price" field.
+func (_u *PaymentOrderUpdate) ClearSubscriptionSourceOriginalPrice() *PaymentOrderUpdate {
+	_u.mutation.ClearSubscriptionSourceOriginalPrice()
+	return _u
+}
+
 // SetProviderInstanceID sets the "provider_instance_id" field.
 func (_u *PaymentOrderUpdate) SetProviderInstanceID(v string) *PaymentOrderUpdate {
 	_u.mutation.SetProviderInstanceID(v)
@@ -999,6 +1107,42 @@ func (_u *PaymentOrderUpdate) sqlSave(ctx context.Context) (_node int, err error
 	if _u.mutation.SubscriptionDaysCleared() {
 		_spec.ClearField(paymentorder.FieldSubscriptionDays, field.TypeInt)
 	}
+	if value, ok := _u.mutation.SubscriptionMultiplier(); ok {
+		_spec.SetField(paymentorder.FieldSubscriptionMultiplier, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedSubscriptionMultiplier(); ok {
+		_spec.AddField(paymentorder.FieldSubscriptionMultiplier, field.TypeInt, value)
+	}
+	if _u.mutation.SubscriptionMultiplierCleared() {
+		_spec.ClearField(paymentorder.FieldSubscriptionMultiplier, field.TypeInt)
+	}
+	if value, ok := _u.mutation.SubscriptionSourceGroupID(); ok {
+		_spec.SetField(paymentorder.FieldSubscriptionSourceGroupID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedSubscriptionSourceGroupID(); ok {
+		_spec.AddField(paymentorder.FieldSubscriptionSourceGroupID, field.TypeInt64, value)
+	}
+	if _u.mutation.SubscriptionSourceGroupIDCleared() {
+		_spec.ClearField(paymentorder.FieldSubscriptionSourceGroupID, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.SubscriptionSourcePrice(); ok {
+		_spec.SetField(paymentorder.FieldSubscriptionSourcePrice, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedSubscriptionSourcePrice(); ok {
+		_spec.AddField(paymentorder.FieldSubscriptionSourcePrice, field.TypeFloat64, value)
+	}
+	if _u.mutation.SubscriptionSourcePriceCleared() {
+		_spec.ClearField(paymentorder.FieldSubscriptionSourcePrice, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.SubscriptionSourceOriginalPrice(); ok {
+		_spec.SetField(paymentorder.FieldSubscriptionSourceOriginalPrice, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedSubscriptionSourceOriginalPrice(); ok {
+		_spec.AddField(paymentorder.FieldSubscriptionSourceOriginalPrice, field.TypeFloat64, value)
+	}
+	if _u.mutation.SubscriptionSourceOriginalPriceCleared() {
+		_spec.ClearField(paymentorder.FieldSubscriptionSourceOriginalPrice, field.TypeFloat64)
+	}
 	if value, ok := _u.mutation.ProviderInstanceID(); ok {
 		_spec.SetField(paymentorder.FieldProviderInstanceID, field.TypeString, value)
 	}
@@ -1524,6 +1668,114 @@ func (_u *PaymentOrderUpdateOne) AddSubscriptionDays(v int) *PaymentOrderUpdateO
 // ClearSubscriptionDays clears the value of the "subscription_days" field.
 func (_u *PaymentOrderUpdateOne) ClearSubscriptionDays() *PaymentOrderUpdateOne {
 	_u.mutation.ClearSubscriptionDays()
+	return _u
+}
+
+// SetSubscriptionMultiplier sets the "subscription_multiplier" field.
+func (_u *PaymentOrderUpdateOne) SetSubscriptionMultiplier(v int) *PaymentOrderUpdateOne {
+	_u.mutation.ResetSubscriptionMultiplier()
+	_u.mutation.SetSubscriptionMultiplier(v)
+	return _u
+}
+
+// SetNillableSubscriptionMultiplier sets the "subscription_multiplier" field if the given value is not nil.
+func (_u *PaymentOrderUpdateOne) SetNillableSubscriptionMultiplier(v *int) *PaymentOrderUpdateOne {
+	if v != nil {
+		_u.SetSubscriptionMultiplier(*v)
+	}
+	return _u
+}
+
+// AddSubscriptionMultiplier adds value to the "subscription_multiplier" field.
+func (_u *PaymentOrderUpdateOne) AddSubscriptionMultiplier(v int) *PaymentOrderUpdateOne {
+	_u.mutation.AddSubscriptionMultiplier(v)
+	return _u
+}
+
+// ClearSubscriptionMultiplier clears the value of the "subscription_multiplier" field.
+func (_u *PaymentOrderUpdateOne) ClearSubscriptionMultiplier() *PaymentOrderUpdateOne {
+	_u.mutation.ClearSubscriptionMultiplier()
+	return _u
+}
+
+// SetSubscriptionSourceGroupID sets the "subscription_source_group_id" field.
+func (_u *PaymentOrderUpdateOne) SetSubscriptionSourceGroupID(v int64) *PaymentOrderUpdateOne {
+	_u.mutation.ResetSubscriptionSourceGroupID()
+	_u.mutation.SetSubscriptionSourceGroupID(v)
+	return _u
+}
+
+// SetNillableSubscriptionSourceGroupID sets the "subscription_source_group_id" field if the given value is not nil.
+func (_u *PaymentOrderUpdateOne) SetNillableSubscriptionSourceGroupID(v *int64) *PaymentOrderUpdateOne {
+	if v != nil {
+		_u.SetSubscriptionSourceGroupID(*v)
+	}
+	return _u
+}
+
+// AddSubscriptionSourceGroupID adds value to the "subscription_source_group_id" field.
+func (_u *PaymentOrderUpdateOne) AddSubscriptionSourceGroupID(v int64) *PaymentOrderUpdateOne {
+	_u.mutation.AddSubscriptionSourceGroupID(v)
+	return _u
+}
+
+// ClearSubscriptionSourceGroupID clears the value of the "subscription_source_group_id" field.
+func (_u *PaymentOrderUpdateOne) ClearSubscriptionSourceGroupID() *PaymentOrderUpdateOne {
+	_u.mutation.ClearSubscriptionSourceGroupID()
+	return _u
+}
+
+// SetSubscriptionSourcePrice sets the "subscription_source_price" field.
+func (_u *PaymentOrderUpdateOne) SetSubscriptionSourcePrice(v float64) *PaymentOrderUpdateOne {
+	_u.mutation.ResetSubscriptionSourcePrice()
+	_u.mutation.SetSubscriptionSourcePrice(v)
+	return _u
+}
+
+// SetNillableSubscriptionSourcePrice sets the "subscription_source_price" field if the given value is not nil.
+func (_u *PaymentOrderUpdateOne) SetNillableSubscriptionSourcePrice(v *float64) *PaymentOrderUpdateOne {
+	if v != nil {
+		_u.SetSubscriptionSourcePrice(*v)
+	}
+	return _u
+}
+
+// AddSubscriptionSourcePrice adds value to the "subscription_source_price" field.
+func (_u *PaymentOrderUpdateOne) AddSubscriptionSourcePrice(v float64) *PaymentOrderUpdateOne {
+	_u.mutation.AddSubscriptionSourcePrice(v)
+	return _u
+}
+
+// ClearSubscriptionSourcePrice clears the value of the "subscription_source_price" field.
+func (_u *PaymentOrderUpdateOne) ClearSubscriptionSourcePrice() *PaymentOrderUpdateOne {
+	_u.mutation.ClearSubscriptionSourcePrice()
+	return _u
+}
+
+// SetSubscriptionSourceOriginalPrice sets the "subscription_source_original_price" field.
+func (_u *PaymentOrderUpdateOne) SetSubscriptionSourceOriginalPrice(v float64) *PaymentOrderUpdateOne {
+	_u.mutation.ResetSubscriptionSourceOriginalPrice()
+	_u.mutation.SetSubscriptionSourceOriginalPrice(v)
+	return _u
+}
+
+// SetNillableSubscriptionSourceOriginalPrice sets the "subscription_source_original_price" field if the given value is not nil.
+func (_u *PaymentOrderUpdateOne) SetNillableSubscriptionSourceOriginalPrice(v *float64) *PaymentOrderUpdateOne {
+	if v != nil {
+		_u.SetSubscriptionSourceOriginalPrice(*v)
+	}
+	return _u
+}
+
+// AddSubscriptionSourceOriginalPrice adds value to the "subscription_source_original_price" field.
+func (_u *PaymentOrderUpdateOne) AddSubscriptionSourceOriginalPrice(v float64) *PaymentOrderUpdateOne {
+	_u.mutation.AddSubscriptionSourceOriginalPrice(v)
+	return _u
+}
+
+// ClearSubscriptionSourceOriginalPrice clears the value of the "subscription_source_original_price" field.
+func (_u *PaymentOrderUpdateOne) ClearSubscriptionSourceOriginalPrice() *PaymentOrderUpdateOne {
+	_u.mutation.ClearSubscriptionSourceOriginalPrice()
 	return _u
 }
 
@@ -2149,6 +2401,42 @@ func (_u *PaymentOrderUpdateOne) sqlSave(ctx context.Context) (_node *PaymentOrd
 	}
 	if _u.mutation.SubscriptionDaysCleared() {
 		_spec.ClearField(paymentorder.FieldSubscriptionDays, field.TypeInt)
+	}
+	if value, ok := _u.mutation.SubscriptionMultiplier(); ok {
+		_spec.SetField(paymentorder.FieldSubscriptionMultiplier, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedSubscriptionMultiplier(); ok {
+		_spec.AddField(paymentorder.FieldSubscriptionMultiplier, field.TypeInt, value)
+	}
+	if _u.mutation.SubscriptionMultiplierCleared() {
+		_spec.ClearField(paymentorder.FieldSubscriptionMultiplier, field.TypeInt)
+	}
+	if value, ok := _u.mutation.SubscriptionSourceGroupID(); ok {
+		_spec.SetField(paymentorder.FieldSubscriptionSourceGroupID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedSubscriptionSourceGroupID(); ok {
+		_spec.AddField(paymentorder.FieldSubscriptionSourceGroupID, field.TypeInt64, value)
+	}
+	if _u.mutation.SubscriptionSourceGroupIDCleared() {
+		_spec.ClearField(paymentorder.FieldSubscriptionSourceGroupID, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.SubscriptionSourcePrice(); ok {
+		_spec.SetField(paymentorder.FieldSubscriptionSourcePrice, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedSubscriptionSourcePrice(); ok {
+		_spec.AddField(paymentorder.FieldSubscriptionSourcePrice, field.TypeFloat64, value)
+	}
+	if _u.mutation.SubscriptionSourcePriceCleared() {
+		_spec.ClearField(paymentorder.FieldSubscriptionSourcePrice, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.SubscriptionSourceOriginalPrice(); ok {
+		_spec.SetField(paymentorder.FieldSubscriptionSourceOriginalPrice, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedSubscriptionSourceOriginalPrice(); ok {
+		_spec.AddField(paymentorder.FieldSubscriptionSourceOriginalPrice, field.TypeFloat64, value)
+	}
+	if _u.mutation.SubscriptionSourceOriginalPriceCleared() {
+		_spec.ClearField(paymentorder.FieldSubscriptionSourceOriginalPrice, field.TypeFloat64)
 	}
 	if value, ok := _u.mutation.ProviderInstanceID(); ok {
 		_spec.SetField(paymentorder.FieldProviderInstanceID, field.TypeString, value)

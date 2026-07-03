@@ -82,15 +82,20 @@ func NewGroupHandler(adminService service.AdminService, dashboardService *servic
 
 // CreateGroupRequest represents create group request
 type CreateGroupRequest struct {
-	Name             string             `json:"name" binding:"required"`
-	Description      string             `json:"description"`
-	Platform         string             `json:"platform" binding:"omitempty,oneof=anthropic openai gemini antigravity"`
-	RateMultiplier   float64            `json:"rate_multiplier"`
-	IsExclusive      bool               `json:"is_exclusive"`
-	SubscriptionType string             `json:"subscription_type" binding:"omitempty,oneof=standard subscription"`
-	DailyLimitUSD    optionalLimitField `json:"daily_limit_usd"`
-	WeeklyLimitUSD   optionalLimitField `json:"weekly_limit_usd"`
-	MonthlyLimitUSD  optionalLimitField `json:"monthly_limit_usd"`
+	Name                      string             `json:"name" binding:"required"`
+	Description               string             `json:"description"`
+	Platform                  string             `json:"platform" binding:"omitempty,oneof=anthropic openai gemini antigravity"`
+	RateMultiplier            float64            `json:"rate_multiplier"`
+	IsExclusive               bool               `json:"is_exclusive"`
+	SubscriptionType          string             `json:"subscription_type" binding:"omitempty,oneof=standard subscription"`
+	DailyLimitUSD             optionalLimitField `json:"daily_limit_usd"`
+	WeeklyLimitUSD            optionalLimitField `json:"weekly_limit_usd"`
+	MonthlyLimitUSD           optionalLimitField `json:"monthly_limit_usd"`
+	IsCustomSubscriptionGroup bool               `json:"is_custom_subscription_group"`
+	CustomOwnerUserID         *int64             `json:"custom_owner_user_id"`
+	CustomSourcePlanID        *int64             `json:"custom_source_plan_id"`
+	CustomSourceGroupID       *int64             `json:"custom_source_group_id"`
+	CustomMultiplier          *int               `json:"custom_multiplier"`
 	// 图片生成计费配置（antigravity 和 gemini 平台使用，负数表示清除配置）
 	AllowImageGeneration            bool     `json:"allow_image_generation"`
 	ImageRateIndependent            bool     `json:"image_rate_independent"`
@@ -122,16 +127,21 @@ type CreateGroupRequest struct {
 
 // UpdateGroupRequest represents update group request
 type UpdateGroupRequest struct {
-	Name             string             `json:"name"`
-	Description      *string            `json:"description"`
-	Platform         string             `json:"platform" binding:"omitempty,oneof=anthropic openai gemini antigravity"`
-	RateMultiplier   *float64           `json:"rate_multiplier"`
-	IsExclusive      *bool              `json:"is_exclusive"`
-	Status           string             `json:"status" binding:"omitempty,oneof=active inactive"`
-	SubscriptionType string             `json:"subscription_type" binding:"omitempty,oneof=standard subscription"`
-	DailyLimitUSD    optionalLimitField `json:"daily_limit_usd"`
-	WeeklyLimitUSD   optionalLimitField `json:"weekly_limit_usd"`
-	MonthlyLimitUSD  optionalLimitField `json:"monthly_limit_usd"`
+	Name                      string             `json:"name"`
+	Description               *string            `json:"description"`
+	Platform                  string             `json:"platform" binding:"omitempty,oneof=anthropic openai gemini antigravity"`
+	RateMultiplier            *float64           `json:"rate_multiplier"`
+	IsExclusive               *bool              `json:"is_exclusive"`
+	Status                    string             `json:"status" binding:"omitempty,oneof=active inactive"`
+	SubscriptionType          string             `json:"subscription_type" binding:"omitempty,oneof=standard subscription"`
+	DailyLimitUSD             optionalLimitField `json:"daily_limit_usd"`
+	WeeklyLimitUSD            optionalLimitField `json:"weekly_limit_usd"`
+	MonthlyLimitUSD           optionalLimitField `json:"monthly_limit_usd"`
+	IsCustomSubscriptionGroup *bool              `json:"is_custom_subscription_group"`
+	CustomOwnerUserID         *int64             `json:"custom_owner_user_id"`
+	CustomSourcePlanID        *int64             `json:"custom_source_plan_id"`
+	CustomSourceGroupID       *int64             `json:"custom_source_group_id"`
+	CustomMultiplier          *int               `json:"custom_multiplier"`
 	// 图片生成计费配置（antigravity 和 gemini 平台使用，负数表示清除配置）
 	AllowImageGeneration            *bool    `json:"allow_image_generation"`
 	ImageRateIndependent            *bool    `json:"image_rate_independent"`
@@ -281,6 +291,11 @@ func (h *GroupHandler) Create(c *gin.Context) {
 		DailyLimitUSD:                   req.DailyLimitUSD.ToServiceInput(),
 		WeeklyLimitUSD:                  req.WeeklyLimitUSD.ToServiceInput(),
 		MonthlyLimitUSD:                 req.MonthlyLimitUSD.ToServiceInput(),
+		IsCustomSubscriptionGroup:       req.IsCustomSubscriptionGroup,
+		CustomOwnerUserID:               req.CustomOwnerUserID,
+		CustomSourcePlanID:              req.CustomSourcePlanID,
+		CustomSourceGroupID:             req.CustomSourceGroupID,
+		CustomMultiplier:                req.CustomMultiplier,
 		AllowImageGeneration:            req.AllowImageGeneration,
 		ImageRateIndependent:            req.ImageRateIndependent,
 		ImageRateMultiplier:             req.ImageRateMultiplier,
@@ -337,6 +352,11 @@ func (h *GroupHandler) Update(c *gin.Context) {
 		DailyLimitUSD:                   req.DailyLimitUSD.ToServiceInput(),
 		WeeklyLimitUSD:                  req.WeeklyLimitUSD.ToServiceInput(),
 		MonthlyLimitUSD:                 req.MonthlyLimitUSD.ToServiceInput(),
+		IsCustomSubscriptionGroup:       req.IsCustomSubscriptionGroup,
+		CustomOwnerUserID:               req.CustomOwnerUserID,
+		CustomSourcePlanID:              req.CustomSourcePlanID,
+		CustomSourceGroupID:             req.CustomSourceGroupID,
+		CustomMultiplier:                req.CustomMultiplier,
 		AllowImageGeneration:            req.AllowImageGeneration,
 		ImageRateIndependent:            req.ImageRateIndependent,
 		ImageRateMultiplier:             req.ImageRateMultiplier,

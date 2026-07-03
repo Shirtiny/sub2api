@@ -9,6 +9,7 @@ import (
 	"time"
 
 	dbent "github.com/Wei-Shaw/sub2api/ent"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/stretchr/testify/require"
 )
@@ -99,6 +100,88 @@ LIMIT 1`, u.ID)
 	require.InDelta(t, 0.0, quotaAfter, 1e-9)
 	require.InDelta(t, 0.0, frozenAfter, 1e-9)
 	require.InDelta(t, 12.34, historyAfter, 1e-9)
+}
+
+func TestAffiliateRepository_TransferQuotaToSubscription_ResolvesActiveCustomGroupFromSourcePlan(t *testing.T) {
+	ctx := context.Background()
+	tx := testEntTx(t)
+	txCtx := dbent.NewTxContext(ctx, tx)
+	client := tx.Client()
+
+	repo := NewAffiliateRepository(client, integrationDB)
+
+	u := mustCreateUser(t, client, &service.User{
+		Email:        fmt.Sprintf("affiliate-custom-sub-%d@example.com", time.Now().UnixNano()),
+		PasswordHash: "hash",
+		Role:         service.RoleUser,
+		Status:       service.StatusActive,
+	})
+	affCode := fmt.Sprintf("CUS%09d", time.Now().UnixNano()%1_000_000_000)
+	_, err := client.ExecContext(txCtx, `
+INSERT INTO user_affiliates (user_id, aff_code, aff_quota, aff_history_quota, created_at, updated_at)
+VALUES ($1, $2, 300, 300, NOW(), NOW())`, u.ID, affCode)
+	require.NoError(t, err)
+
+	sourceGroup, err := client.Group.Create().SetName(fmt.Sprintf("affiliate-custom-source-%d", time.Now().UnixNano())).SetStatus(service.StatusActive).SetPlatform(service.PlatformOpenAI).SetSubscriptionType(service.SubscriptionTypeSubscription).Save(txCtx)
+	require.NoError(t, err)
+	plan, err := client.SubscriptionPlan.Create().SetName("Affiliate Custom Plan").SetDescription("custom").SetGroupID(sourceGroup.ID).SetPrice(100).SetValidityDays(30).SetValidityUnit("days").SetForSale(true).SetCustomMultiplierEnabled(true).SetCustomMultiplierMin(1).SetCustomMultiplierMax(5).Save(txCtx)
+	require.NoError(t, err)
+	customGroup, err := client.Group.Create().SetName(fmt.Sprintf("[3x]Affiliate Custom Plan#%d", u.ID)).SetStatus(service.StatusActive).SetPlatform(service.PlatformOpenAI).SetSubscriptionType(service.SubscriptionTypeSubscription).SetIsCustomSubscriptionGroup(true).SetCustomOwnerUserID(u.ID).SetCustomSourcePlanID(plan.ID).SetCustomSourceGroupID(sourceGroup.ID).SetCustomMultiplier(3).Save(txCtx)
+	require.NoError(t, err)
+	_, err = client.UserSubscription.Create().SetUserID(u.ID).SetGroupID(customGroup.ID).SetStatus(service.SubscriptionStatusActive).SetStartsAt(time.Now().Add(-time.Hour)).SetExpiresAt(time.Now().Add(24 * time.Hour)).SetNotes("active custom").Save(txCtx)
+	require.NoError(t, err)
+
+	result, err := repo.TransferQuotaToSubscription(txCtx, u.ID, sourceGroup.ID, plan.ID, 0)
+	require.NoError(t, err)
+	require.Equal(t, customGroup.ID, result.GroupID)
+	require.InDelta(t, 300, result.RedeemedPoints, 1e-9)
+	require.InDelta(t, 30, result.TransferredDays, 1e-9)
+
+	sourceSubCount := querySingleInt(t, txCtx, client, "SELECT COUNT(*) FROM user_subscriptions WHERE user_id = $1 AND group_id = $2 AND deleted_at IS NULL", u.ID, sourceGroup.ID)
+	require.Equal(t, 0, sourceSubCount)
+	customSubCount := querySingleInt(t, txCtx, client, "SELECT COUNT(*) FROM user_subscriptions WHERE user_id = $1 AND group_id = $2 AND deleted_at IS NULL", u.ID, customGroup.ID)
+	require.Equal(t, 1, customSubCount)
+	quotaLeft := querySingleFloat(t, txCtx, client, "SELECT aff_quota::double precision FROM user_affiliates WHERE user_id = $1", u.ID)
+	require.InDelta(t, 0, quotaLeft, 1e-9)
+}
+
+func TestAffiliateRepository_TransferQuotaToSubscription_RejectsSourcePriceForActiveCustomGroup(t *testing.T) {
+	ctx := context.Background()
+	tx := testEntTx(t)
+	txCtx := dbent.NewTxContext(ctx, tx)
+	client := tx.Client()
+
+	repo := NewAffiliateRepository(client, integrationDB)
+
+	u := mustCreateUser(t, client, &service.User{
+		Email:        fmt.Sprintf("affiliate-custom-sub-mismatch-%d@example.com", time.Now().UnixNano()),
+		PasswordHash: "hash",
+		Role:         service.RoleUser,
+		Status:       service.StatusActive,
+	})
+	affCode := fmt.Sprintf("MIS%09d", time.Now().UnixNano()%1_000_000_000)
+	_, err := client.ExecContext(txCtx, `
+INSERT INTO user_affiliates (user_id, aff_code, aff_quota, aff_history_quota, created_at, updated_at)
+VALUES ($1, $2, 300, 300, NOW(), NOW())`, u.ID, affCode)
+	require.NoError(t, err)
+
+	sourceGroup, err := client.Group.Create().SetName(fmt.Sprintf("affiliate-custom-source-mismatch-%d", time.Now().UnixNano())).SetStatus(service.StatusActive).SetPlatform(service.PlatformOpenAI).SetSubscriptionType(service.SubscriptionTypeSubscription).Save(txCtx)
+	require.NoError(t, err)
+	plan, err := client.SubscriptionPlan.Create().SetName("Affiliate Custom Mismatch Plan").SetDescription("custom").SetGroupID(sourceGroup.ID).SetPrice(100).SetValidityDays(30).SetValidityUnit("days").SetForSale(true).SetCustomMultiplierEnabled(true).SetCustomMultiplierMin(1).SetCustomMultiplierMax(5).Save(txCtx)
+	require.NoError(t, err)
+	customGroup, err := client.Group.Create().SetName(fmt.Sprintf("[3x]Affiliate Custom Mismatch Plan#%d", u.ID)).SetStatus(service.StatusActive).SetPlatform(service.PlatformOpenAI).SetSubscriptionType(service.SubscriptionTypeSubscription).SetIsCustomSubscriptionGroup(true).SetCustomOwnerUserID(u.ID).SetCustomSourcePlanID(plan.ID).SetCustomSourceGroupID(sourceGroup.ID).SetCustomMultiplier(3).Save(txCtx)
+	require.NoError(t, err)
+	_, err = client.UserSubscription.Create().SetUserID(u.ID).SetGroupID(customGroup.ID).SetStatus(service.SubscriptionStatusActive).SetStartsAt(time.Now().Add(-time.Hour)).SetExpiresAt(time.Now().Add(24 * time.Hour)).SetNotes("active custom").Save(txCtx)
+	require.NoError(t, err)
+
+	_, err = repo.TransferQuotaToSubscription(txCtx, u.ID, sourceGroup.ID, plan.ID, 100)
+	require.Error(t, err)
+	require.Equal(t, "AFFILIATE_REDEEM_TARGET_INVALID", errors.Reason(err))
+
+	quotaLeft := querySingleFloat(t, txCtx, client, "SELECT aff_quota::double precision FROM user_affiliates WHERE user_id = $1", u.ID)
+	require.InDelta(t, 300, quotaLeft, 1e-9)
+	ledgerCount := querySingleInt(t, txCtx, client, "SELECT COUNT(*) FROM user_affiliate_ledger WHERE user_id = $1 AND action = 'transfer_subscription'", u.ID)
+	require.Equal(t, 0, ledgerCount)
 }
 
 func TestAffiliateRepository_ThawFrozenQuota_IgnoresLegacySubscriptionRows(t *testing.T) {

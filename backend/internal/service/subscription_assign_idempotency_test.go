@@ -52,6 +52,10 @@ func (groupRepoNoop) GetAccountIDsByGroupIDs(context.Context, []int64) ([]int64,
 func (groupRepoNoop) BindAccountsToGroup(context.Context, int64, []int64) error {
 	panic("unexpected BindAccountsToGroup call")
 }
+func (groupRepoNoop) NotifyGroupChanged(context.Context, int64) error {
+	return nil
+}
+
 func (groupRepoNoop) UpdateSortOrders(context.Context, []GroupSortOrderUpdate) error {
 	panic("unexpected UpdateSortOrders call")
 }

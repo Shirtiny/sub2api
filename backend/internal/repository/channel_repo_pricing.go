@@ -198,16 +198,20 @@ type dbExec interface {
 }
 
 func setGroupIDsTx(ctx context.Context, exec dbExec, channelID int64, groupIDs []int64) error {
+	expandedGroupIDs, err := expandGroupIDsWithCustomGroups(ctx, exec, groupIDs)
+	if err != nil {
+		return err
+	}
 	if _, err := exec.ExecContext(ctx, `DELETE FROM channel_groups WHERE channel_id = $1`, channelID); err != nil {
 		return fmt.Errorf("delete old group associations: %w", err)
 	}
-	if len(groupIDs) == 0 {
+	if len(expandedGroupIDs) == 0 {
 		return nil
 	}
-	_, err := exec.ExecContext(ctx,
+	_, err = exec.ExecContext(ctx,
 		`INSERT INTO channel_groups (channel_id, group_id)
 		 SELECT $1, unnest($2::bigint[])`,
-		channelID, pq.Array(groupIDs),
+		channelID, pq.Array(expandedGroupIDs),
 	)
 	if err != nil {
 		return fmt.Errorf("insert group associations: %w", err)

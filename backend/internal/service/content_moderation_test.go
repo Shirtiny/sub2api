@@ -20,6 +20,20 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestContentModerationConfigIncludesCustomSourceGroup(t *testing.T) {
+	cfg := &ContentModerationConfig{GroupIDs: []int64{10}}
+	customGroupID := int64(99)
+
+	require.True(t, cfg.includesGroupScope(ContentModerationCheckInput{
+		GroupID:           &customGroupID,
+		EffectiveGroupIDs: []int64{10},
+	}))
+	require.False(t, cfg.includesGroupScope(ContentModerationCheckInput{
+		GroupID:           &customGroupID,
+		EffectiveGroupIDs: []int64{11},
+	}))
+}
+
 type contentModerationTestSettingRepo struct {
 	values map[string]string
 }

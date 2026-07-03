@@ -949,6 +949,10 @@ func init() {
 	groupDescRpmLimit := groupFields[31].Descriptor()
 	// group.DefaultRpmLimit holds the default value on creation for the rpm_limit field.
 	group.DefaultRpmLimit = groupDescRpmLimit.Default.(int)
+	// groupDescIsCustomSubscriptionGroup is the schema descriptor for is_custom_subscription_group field.
+	groupDescIsCustomSubscriptionGroup := groupFields[32].Descriptor()
+	// group.DefaultIsCustomSubscriptionGroup holds the default value on creation for the is_custom_subscription_group field.
+	group.DefaultIsCustomSubscriptionGroup = groupDescIsCustomSubscriptionGroup.Default.(bool)
 	idempotencyrecordMixin := schema.IdempotencyRecord{}.Mixin()
 	idempotencyrecordMixinFields0 := idempotencyrecordMixin[0].Fields()
 	_ = idempotencyrecordMixinFields0
@@ -1082,45 +1086,45 @@ func init() {
 	// paymentorder.OrderTypeValidator is a validator for the "order_type" field. It is called by the builders before save.
 	paymentorder.OrderTypeValidator = paymentorderDescOrderType.Validators[0].(func(string) error)
 	// paymentorderDescProviderInstanceID is the schema descriptor for provider_instance_id field.
-	paymentorderDescProviderInstanceID := paymentorderFields[20].Descriptor()
+	paymentorderDescProviderInstanceID := paymentorderFields[24].Descriptor()
 	// paymentorder.ProviderInstanceIDValidator is a validator for the "provider_instance_id" field. It is called by the builders before save.
 	paymentorder.ProviderInstanceIDValidator = paymentorderDescProviderInstanceID.Validators[0].(func(string) error)
 	// paymentorderDescProviderKey is the schema descriptor for provider_key field.
-	paymentorderDescProviderKey := paymentorderFields[21].Descriptor()
+	paymentorderDescProviderKey := paymentorderFields[25].Descriptor()
 	// paymentorder.ProviderKeyValidator is a validator for the "provider_key" field. It is called by the builders before save.
 	paymentorder.ProviderKeyValidator = paymentorderDescProviderKey.Validators[0].(func(string) error)
 	// paymentorderDescStatus is the schema descriptor for status field.
-	paymentorderDescStatus := paymentorderFields[23].Descriptor()
+	paymentorderDescStatus := paymentorderFields[27].Descriptor()
 	// paymentorder.DefaultStatus holds the default value on creation for the status field.
 	paymentorder.DefaultStatus = paymentorderDescStatus.Default.(string)
 	// paymentorder.StatusValidator is a validator for the "status" field. It is called by the builders before save.
 	paymentorder.StatusValidator = paymentorderDescStatus.Validators[0].(func(string) error)
 	// paymentorderDescRefundAmount is the schema descriptor for refund_amount field.
-	paymentorderDescRefundAmount := paymentorderFields[24].Descriptor()
+	paymentorderDescRefundAmount := paymentorderFields[28].Descriptor()
 	// paymentorder.DefaultRefundAmount holds the default value on creation for the refund_amount field.
 	paymentorder.DefaultRefundAmount = paymentorderDescRefundAmount.Default.(float64)
 	// paymentorderDescForceRefund is the schema descriptor for force_refund field.
-	paymentorderDescForceRefund := paymentorderFields[27].Descriptor()
+	paymentorderDescForceRefund := paymentorderFields[31].Descriptor()
 	// paymentorder.DefaultForceRefund holds the default value on creation for the force_refund field.
 	paymentorder.DefaultForceRefund = paymentorderDescForceRefund.Default.(bool)
 	// paymentorderDescRefundRequestedBy is the schema descriptor for refund_requested_by field.
-	paymentorderDescRefundRequestedBy := paymentorderFields[30].Descriptor()
+	paymentorderDescRefundRequestedBy := paymentorderFields[34].Descriptor()
 	// paymentorder.RefundRequestedByValidator is a validator for the "refund_requested_by" field. It is called by the builders before save.
 	paymentorder.RefundRequestedByValidator = paymentorderDescRefundRequestedBy.Validators[0].(func(string) error)
 	// paymentorderDescClientIP is the schema descriptor for client_ip field.
-	paymentorderDescClientIP := paymentorderFields[36].Descriptor()
+	paymentorderDescClientIP := paymentorderFields[40].Descriptor()
 	// paymentorder.ClientIPValidator is a validator for the "client_ip" field. It is called by the builders before save.
 	paymentorder.ClientIPValidator = paymentorderDescClientIP.Validators[0].(func(string) error)
 	// paymentorderDescSrcHost is the schema descriptor for src_host field.
-	paymentorderDescSrcHost := paymentorderFields[37].Descriptor()
+	paymentorderDescSrcHost := paymentorderFields[41].Descriptor()
 	// paymentorder.SrcHostValidator is a validator for the "src_host" field. It is called by the builders before save.
 	paymentorder.SrcHostValidator = paymentorderDescSrcHost.Validators[0].(func(string) error)
 	// paymentorderDescCreatedAt is the schema descriptor for created_at field.
-	paymentorderDescCreatedAt := paymentorderFields[39].Descriptor()
+	paymentorderDescCreatedAt := paymentorderFields[43].Descriptor()
 	// paymentorder.DefaultCreatedAt holds the default value on creation for the created_at field.
 	paymentorder.DefaultCreatedAt = paymentorderDescCreatedAt.Default.(func() time.Time)
 	// paymentorderDescUpdatedAt is the schema descriptor for updated_at field.
-	paymentorderDescUpdatedAt := paymentorderFields[40].Descriptor()
+	paymentorderDescUpdatedAt := paymentorderFields[44].Descriptor()
 	// paymentorder.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	paymentorder.DefaultUpdatedAt = paymentorderDescUpdatedAt.Default.(func() time.Time)
 	// paymentorder.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
@@ -1600,12 +1604,24 @@ func init() {
 	subscriptionplanDescSortOrder := subscriptionplanFields[10].Descriptor()
 	// subscriptionplan.DefaultSortOrder holds the default value on creation for the sort_order field.
 	subscriptionplan.DefaultSortOrder = subscriptionplanDescSortOrder.Default.(int)
+	// subscriptionplanDescCustomMultiplierEnabled is the schema descriptor for custom_multiplier_enabled field.
+	subscriptionplanDescCustomMultiplierEnabled := subscriptionplanFields[11].Descriptor()
+	// subscriptionplan.DefaultCustomMultiplierEnabled holds the default value on creation for the custom_multiplier_enabled field.
+	subscriptionplan.DefaultCustomMultiplierEnabled = subscriptionplanDescCustomMultiplierEnabled.Default.(bool)
+	// subscriptionplanDescCustomMultiplierMin is the schema descriptor for custom_multiplier_min field.
+	subscriptionplanDescCustomMultiplierMin := subscriptionplanFields[12].Descriptor()
+	// subscriptionplan.DefaultCustomMultiplierMin holds the default value on creation for the custom_multiplier_min field.
+	subscriptionplan.DefaultCustomMultiplierMin = subscriptionplanDescCustomMultiplierMin.Default.(int)
+	// subscriptionplanDescCustomMultiplierMax is the schema descriptor for custom_multiplier_max field.
+	subscriptionplanDescCustomMultiplierMax := subscriptionplanFields[13].Descriptor()
+	// subscriptionplan.DefaultCustomMultiplierMax holds the default value on creation for the custom_multiplier_max field.
+	subscriptionplan.DefaultCustomMultiplierMax = subscriptionplanDescCustomMultiplierMax.Default.(int)
 	// subscriptionplanDescCreatedAt is the schema descriptor for created_at field.
-	subscriptionplanDescCreatedAt := subscriptionplanFields[11].Descriptor()
+	subscriptionplanDescCreatedAt := subscriptionplanFields[14].Descriptor()
 	// subscriptionplan.DefaultCreatedAt holds the default value on creation for the created_at field.
 	subscriptionplan.DefaultCreatedAt = subscriptionplanDescCreatedAt.Default.(func() time.Time)
 	// subscriptionplanDescUpdatedAt is the schema descriptor for updated_at field.
-	subscriptionplanDescUpdatedAt := subscriptionplanFields[12].Descriptor()
+	subscriptionplanDescUpdatedAt := subscriptionplanFields[15].Descriptor()
 	// subscriptionplan.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	subscriptionplan.DefaultUpdatedAt = subscriptionplanDescUpdatedAt.Default.(func() time.Time)
 	// subscriptionplan.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

@@ -1117,7 +1117,7 @@ func (s *PaymentService) writeCafeCouponAudit(ctx context.Context, action, op st
 
 func cafeCouponOrderOriginalAmount(req CreateOrderRequest, plan *dbent.SubscriptionPlan, cfg *PaymentConfig) float64 {
 	if plan != nil {
-		return plan.Price
+		return subscriptionOrderAmount(plan, req.Multiplier)
 	}
 	if req.OrderType == payment.OrderTypeBalance {
 		return req.Amount
@@ -1159,6 +1159,13 @@ func (s *PaymentService) PreviewCafeCouponForOrder(ctx context.Context, req Crea
 	plan, err := s.validateOrderInput(ctx, req, cfg)
 	if err != nil {
 		return nil, err
+	}
+	if plan != nil {
+		multiplier, err := s.resolveSubscriptionOrderMultiplier(ctx, req.UserID, plan, req.Multiplier)
+		if err != nil {
+			return nil, err
+		}
+		req.Multiplier = multiplier
 	}
 	return s.PreviewCafeCoupon(ctx, req.UserID, req.CafeCouponCode, cafeCouponOrderOriginalAmount(req, plan, cfg))
 }

@@ -395,7 +395,7 @@ func (r *opsRepository) listHourlyMetricsRows(ctx context.Context, filter *servi
 
 	switch {
 	case groupID != nil && *groupID > 0:
-		where += fmt.Sprintf(" AND group_id = $%d", idx)
+		where += fmt.Sprintf(" AND (group_id = $%d OR group_id IN (SELECT id FROM groups WHERE deleted_at IS NULL AND is_custom_subscription_group = TRUE AND custom_source_group_id = $%d))", idx, idx)
 		args = append(args, *groupID)
 		idx++
 		if platform != "" {
@@ -993,7 +993,7 @@ func buildUsageWhere(filter *service.OpsDashboardFilter, start, end time.Time, s
 
 	if groupID != nil && *groupID > 0 {
 		args = append(args, *groupID)
-		clauses = append(clauses, fmt.Sprintf("ul.group_id = $%d", idx))
+		clauses = append(clauses, fmt.Sprintf("(ul.group_id = $%d OR ul.group_id IN (SELECT id FROM groups WHERE deleted_at IS NULL AND is_custom_subscription_group = TRUE AND custom_source_group_id = $%d))", idx, idx))
 		idx++
 	}
 	if platform != "" {
@@ -1032,7 +1032,7 @@ func buildErrorWhere(filter *service.OpsDashboardFilter, start, end time.Time, s
 
 	if groupID != nil && *groupID > 0 {
 		args = append(args, *groupID)
-		clauses = append(clauses, fmt.Sprintf("group_id = $%d", idx))
+		clauses = append(clauses, fmt.Sprintf("(group_id = $%d OR group_id IN (SELECT id FROM groups WHERE deleted_at IS NULL AND is_custom_subscription_group = TRUE AND custom_source_group_id = $%d))", idx, idx))
 		idx++
 	}
 	if platform != "" {

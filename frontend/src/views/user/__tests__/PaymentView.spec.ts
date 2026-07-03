@@ -12,15 +12,26 @@ const routerReplace = vi.hoisted(() => vi.fn())
 const routerPush = vi.hoisted(() => vi.fn())
 const routerResolve = vi.hoisted(() => vi.fn(() => ({ href: '/payment/stripe?mock=1' })))
 const createOrder = vi.hoisted(() => vi.fn())
-const applyCafeCoupon = vi.hoisted(() => vi.fn())
+const previewCafeCoupon = vi.hoisted(() => vi.fn())
 const refreshUser = vi.hoisted(() => vi.fn())
 const fetchActiveSubscriptions = vi.hoisted(() => vi.fn().mockResolvedValue(undefined))
+const activeSubscriptionsState = vi.hoisted(() => [] as any[])
 const showError = vi.hoisted(() => vi.fn())
 const showInfo = vi.hoisted(() => vi.fn())
 const showWarning = vi.hoisted(() => vi.fn())
 const showSuccess = vi.hoisted(() => vi.fn())
 const getCheckoutInfo = vi.hoisted(() => vi.fn())
 const bridgeInvoke = vi.hoisted(() => vi.fn())
+
+function deferred<T>() {
+  let resolve!: (value: T) => void
+  let reject!: (reason?: unknown) => void
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res
+    reject = rej
+  })
+  return { promise, resolve, reject }
+}
 
 vi.mock('vue-router', async () => {
   const actual = await vi.importActual<typeof import('vue-router')>('vue-router')
@@ -65,13 +76,13 @@ vi.mock('@/stores/auth', () => ({
 vi.mock('@/stores/payment', () => ({
   usePaymentStore: () => ({
     createOrder,
-    applyCafeCoupon,
+    previewCafeCoupon,
   }),
 }))
 
 vi.mock('@/stores/subscriptions', () => ({
   useSubscriptionStore: () => ({
-    activeSubscriptions: [],
+    activeSubscriptions: activeSubscriptionsState,
     fetchActiveSubscriptions,
   }),
 }))
@@ -145,6 +156,9 @@ function checkoutInfoWithPlansFixture() {
           sort_order: 1,
           for_sale: true,
           group_name: 'OpenAI',
+          custom_multiplier_enabled: true,
+          custom_multiplier_min: 2,
+          custom_multiplier_max: 5,
         },
       ],
     },
@@ -183,12 +197,27 @@ function oauthOrderFixture() {
     payment_type: 'wxpay',
     result_type: 'oauth_required' as const,
     oauth: {
-      authorize_url: '/api/v1/auth/oauth/wechat/payment/start?payment_type=wxpay&redirect=%2Fpurchase%3Ffrom%3Dwechat',
+      authorize_url: '/api/v1/auth/oauth/wechat/payment/start?context_token=signed-context-token',
       appid: 'wx123',
       scope: 'snsapi_base',
       redirect_url: '/auth/wechat/payment/callback',
     },
   }
+}
+
+const SubscriptionPlanCardCouponPreviewStub = {
+  name: 'SubscriptionPlanCard',
+  props: ['plan', 'activeSubscriptions', 'couponPayAmount'],
+  emits: ['multiplier-change', 'select'],
+  mounted() {
+    this.$emit('multiplier-change', this.plan, 2)
+  },
+  template: `
+    <div
+      :data-testid="'plan-card-' + plan.id"
+      :data-coupon-pay-amount="couponPayAmount == null ? '' : String(couponPayAmount)"
+    />
+  `,
 }
 
 describe('PaymentView WeChat JSAPI flow', () => {
@@ -202,13 +231,14 @@ describe('PaymentView WeChat JSAPI flow', () => {
     routerPush.mockReset().mockResolvedValue(undefined)
     routerResolve.mockClear()
     createOrder.mockReset()
-    applyCafeCoupon.mockReset()
+    previewCafeCoupon.mockReset()
     refreshUser.mockReset()
     fetchActiveSubscriptions.mockReset().mockResolvedValue(undefined)
     showError.mockReset()
     showInfo.mockReset()
     showWarning.mockReset()
     showSuccess.mockReset()
+    activeSubscriptionsState.splice(0)
     getCheckoutInfo.mockReset().mockResolvedValue(checkoutInfoFixture())
     bridgeInvoke.mockReset()
     window.localStorage.clear()
@@ -236,6 +266,47 @@ describe('PaymentView WeChat JSAPI flow', () => {
     }
     expect(vm.tabs.map((tab) => tab.key)).toEqual(['subscription', 'recharge'])
     expect(vm.activeTab).toBe('subscription')
+  })
+
+
+
+  it('selects the source plan when renewal route points at an active custom subscription group', async () => {
+    routeState.query = { tab: 'subscription', group: '99' }
+    activeSubscriptionsState.push({
+      id: 44,
+      group_id: 99,
+      status: 'active',
+      expires_at: '2099-01-01T00:00:00Z',
+      group: {
+        id: 99,
+        name: 'Starter-custom-user',
+        is_custom_subscription_group: true,
+        custom_source_plan_id: 7,
+        custom_source_group_id: 3,
+        custom_multiplier: 3,
+      },
+    })
+    getCheckoutInfo.mockResolvedValue(checkoutInfoWithPlansFixture())
+
+    const wrapper = shallowMount(PaymentView, {
+      global: {
+        stubs: {
+          Teleport: true,
+          Transition: false,
+        },
+      },
+    })
+    await flushPromises()
+
+    const vm = wrapper.vm as unknown as {
+      activeTab: string
+      selectedPlan: { id: number } | null
+      selectedSubscriptionMultiplier: number
+    }
+    expect(fetchActiveSubscriptions).toHaveBeenCalled()
+    expect(vm.activeTab).toBe('subscription')
+    expect(vm.selectedPlan?.id).toBe(7)
+    expect(vm.selectedSubscriptionMultiplier).toBe(3)
   })
 
   it('resets payment state and redirects to /payment/result after JSAPI reports success', async () => {
@@ -355,7 +426,7 @@ describe('PaymentView WeChat JSAPI flow', () => {
     expect(window.localStorage.getItem(PAYMENT_RECOVERY_STORAGE_KEY)).toBeNull()
   })
 
-  it('keeps subscription resume context for token-only WeChat callbacks', async () => {
+  it('uses the signed OAuth context token for token-only WeChat callbacks', async () => {
     routeState.query = {
       wechat_resume: '1',
       wechat_resume_token: 'resume-subscription-7',
@@ -392,12 +463,19 @@ describe('PaymentView WeChat JSAPI flow', () => {
       payment_type: 'wxpay',
       order_type: 'subscription',
       plan_id: 7,
+      multiplier: 2,
       wechat_resume_token: 'resume-subscription-7',
     }))
     expect(locationState.href).toContain('/api/v1/auth/oauth/wechat/payment/start?')
-    expect(new URL(locationState.href, 'http://localhost').searchParams.get('redirect')).toBe(
-      '/purchase?from=wechat&payment_type=wxpay&order_type=subscription&plan_id=7',
-    )
+    const parsedAuthorizeUrl = new URL(locationState.href, 'http://localhost')
+    expect(parsedAuthorizeUrl.searchParams.get('context_token')).toBe('signed-context-token')
+    expect(parsedAuthorizeUrl.searchParams.get('redirect')).toBeNull()
+    expect(parsedAuthorizeUrl.searchParams.get('payment_type')).toBeNull()
+    expect(parsedAuthorizeUrl.searchParams.get('order_type')).toBeNull()
+    expect(parsedAuthorizeUrl.searchParams.get('plan_id')).toBeNull()
+    expect(parsedAuthorizeUrl.searchParams.get('multiplier')).toBeNull()
+    expect(parsedAuthorizeUrl.searchParams.get('amount')).toBeNull()
+    expect(parsedAuthorizeUrl.searchParams.get('cafe_coupon_code')).toBeNull()
 
     Object.defineProperty(window, 'location', {
       configurable: true,
@@ -444,12 +522,219 @@ describe('PaymentView WeChat JSAPI flow', () => {
       wechat_resume_token: 'resume-coupon-7',
       cafe_coupon_code: 'CAFE-KEEP123',
     }))
-    expect(applyCafeCoupon).not.toHaveBeenCalled()
+    expect(previewCafeCoupon).not.toHaveBeenCalled()
+  })
+
+  it('shows Cafe coupon discount in recharge amount summary', async () => {
+    getCheckoutInfo.mockResolvedValue({
+      data: {
+        ...checkoutInfoFixture().data,
+        recharge_fee_rate: 1,
+      },
+    })
+    previewCafeCoupon.mockResolvedValueOnce({
+      valid: true,
+      discount_amount: 50,
+      pay_amount: 808,
+      coupon: { code: 'CAFE50', type: 'cash', value: 50 },
+    })
+
+    const wrapper = shallowMount(PaymentView, {
+      global: {
+        stubs: {
+          Teleport: true,
+          Transition: false,
+        },
+      },
+    })
+    await flushPromises()
+
+    const vm = wrapper.vm as unknown as {
+      activeTab: string
+      amount: number
+      cafeCouponCode: string
+      previewCafeCoupon: () => Promise<void>
+      rechargeCouponPayableAmount: number | null
+      rechargeCouponDiscountAmount: number | null
+      feeAmount: number
+      rechargeTotalAmount: number
+      rechargeButtonAmount: number
+    }
+    vm.activeTab = 'recharge'
+    vm.amount = 858
+    vm.cafeCouponCode = 'CAFE50'
+    await vm.previewCafeCoupon()
+    await flushPromises()
+
+    expect(vm.rechargeCouponPayableAmount).toBe(808)
+    expect(vm.rechargeCouponDiscountAmount).toBe(50)
+    expect(vm.feeAmount).toBe(8.08)
+    expect(vm.rechargeTotalAmount).toBe(816.08)
+    expect(vm.rechargeButtonAmount).toBe(816.08)
+  })
+
+  it('shows Cafe coupon discount in subscription amount summary', async () => {
+    getCheckoutInfo.mockResolvedValue({
+      data: {
+        ...checkoutInfoWithPlansFixture().data,
+        recharge_fee_rate: 1,
+      },
+    })
+    previewCafeCoupon.mockResolvedValueOnce({
+      valid: true,
+      discount_amount: 56,
+      pay_amount: 200,
+      coupon: { code: 'CAFESUB', type: 'cash', value: 56 },
+    })
+
+    const wrapper = shallowMount(PaymentView, {
+      global: {
+        stubs: {
+          Teleport: true,
+          Transition: false,
+        },
+      },
+    })
+    await flushPromises()
+
+    const vm = wrapper.vm as unknown as {
+      checkout: { plans: Array<Record<string, unknown>> }
+      selectPlan: (plan: Record<string, unknown>) => void
+      cafeCouponCode: string
+      previewCafeCoupon: () => Promise<void>
+      subscriptionCouponPayableAmount: number | null
+      subscriptionCouponDiscountAmount: number | null
+      subFeeAmount: number
+      subTotalAmount: number
+      subscriptionButtonAmount: number
+    }
+    vm.selectPlan(vm.checkout.plans[0])
+    vm.cafeCouponCode = 'CAFESUB'
+    await vm.previewCafeCoupon()
+    await flushPromises()
+
+    expect(previewCafeCoupon).toHaveBeenCalledWith(expect.objectContaining({
+      code: 'CAFESUB',
+      amount: 256,
+      order_type: 'subscription',
+      plan_id: 7,
+      multiplier: 2,
+    }))
+    expect(vm.subscriptionCouponPayableAmount).toBe(200)
+    expect(vm.subscriptionCouponDiscountAmount).toBe(56)
+    expect(vm.subFeeAmount).toBe(2)
+    expect(vm.subTotalAmount).toBe(202)
+    expect(vm.subscriptionButtonAmount).toBe(202)
+  })
+
+  it('passes Cafe coupon preview pay amount to subscription plan cards', async () => {
+    routeState.query = { cafe_coupon_code: 'CAFEPREVIEW' }
+    getCheckoutInfo.mockResolvedValue({
+      data: {
+        ...checkoutInfoWithPlansFixture().data,
+        balance_disabled: true,
+      },
+    })
+    previewCafeCoupon.mockImplementation(async (request: { code: string; amount: number; order_type: string }) => ({
+      valid: true,
+      discount_amount: request.order_type === 'subscription' ? 56 : 0,
+      pay_amount: request.order_type === 'subscription' ? 200 : request.amount,
+      coupon: { code: request.code, type: 'cash', value: 56 },
+    }))
+
+    const wrapper = shallowMount(PaymentView, {
+      global: {
+        stubs: {
+          AppLayout: { template: '<div><slot /></div>' },
+          Teleport: true,
+          Transition: false,
+          SubscriptionPlanCard: SubscriptionPlanCardCouponPreviewStub,
+        },
+      },
+    })
+    await flushPromises()
+    await flushPromises()
+
+    expect(previewCafeCoupon).toHaveBeenCalledWith(expect.objectContaining({
+      code: 'CAFEPREVIEW',
+      amount: 256,
+      order_type: 'subscription',
+      plan_id: 7,
+      multiplier: 2,
+    }))
+    expect(wrapper.find('[data-testid="plan-card-7"]').attributes('data-coupon-pay-amount')).toBe('200')
+  })
+
+  it('ignores stale Cafe coupon responses after switching order context', async () => {
+    getCheckoutInfo.mockResolvedValue({
+      data: {
+        ...checkoutInfoWithPlansFixture().data,
+        recharge_fee_rate: 1,
+      },
+    })
+    const first = deferred<{ valid: boolean; discount_amount: number; pay_amount: number; coupon: { code: string; type: 'cash'; value: number } }>()
+    const second = deferred<{ valid: boolean; discount_amount: number; pay_amount: number; coupon: { code: string; type: 'cash'; value: number } }>()
+    previewCafeCoupon
+      .mockReturnValueOnce(first.promise)
+      .mockReturnValueOnce(second.promise)
+
+    const wrapper = shallowMount(PaymentView, {
+      global: {
+        stubs: {
+          Teleport: true,
+          Transition: false,
+        },
+      },
+    })
+    await flushPromises()
+
+    const vm = wrapper.vm as unknown as {
+      activeTab: string
+      amount: number
+      checkout: { plans: Array<Record<string, unknown>> }
+      selectPlan: (plan: Record<string, unknown>) => void
+      cafeCouponCode: string
+      previewCafeCoupon: () => Promise<void>
+      rechargeCouponPayableAmount: number | null
+      subscriptionCouponPayableAmount: number | null
+    }
+    vm.activeTab = 'recharge'
+    vm.amount = 100
+    vm.cafeCouponCode = 'CAFE-STALE'
+    const firstApply = vm.previewCafeCoupon()
+    await flushPromises()
+
+    vm.activeTab = 'subscription'
+    vm.selectPlan(vm.checkout.plans[0])
+    const secondApply = vm.previewCafeCoupon()
+    await flushPromises()
+    expect(previewCafeCoupon).toHaveBeenCalledTimes(2)
+
+    first.resolve({
+      valid: true,
+      discount_amount: 20,
+      pay_amount: 80,
+      coupon: { code: 'CAFE-STALE', type: 'cash', value: 20 },
+    })
+    await firstApply
+    await flushPromises()
+    expect(vm.rechargeCouponPayableAmount).toBeNull()
+    expect(vm.subscriptionCouponPayableAmount).toBeNull()
+
+    second.resolve({
+      valid: true,
+      discount_amount: 56,
+      pay_amount: 200,
+      coupon: { code: 'CAFE-STALE', type: 'cash', value: 56 },
+    })
+    await secondApply
+    await flushPromises()
+    expect(vm.subscriptionCouponPayableAmount).toBe(200)
   })
 
   it('does not create an order when typed café coupon is invalid', async () => {
     routeState.query = {}
-    applyCafeCoupon.mockRejectedValueOnce({ reason: 'CAFE_COUPON_NOT_FOUND', message: 'cafe coupon not found' })
+    previewCafeCoupon.mockRejectedValueOnce({ reason: 'CAFE_COUPON_NOT_FOUND', message: 'cafe coupon not found' })
 
     const wrapper = shallowMount(PaymentView, {
       global: {
@@ -473,7 +758,7 @@ describe('PaymentView WeChat JSAPI flow', () => {
     await vm.handleSubmitRecharge()
     await flushPromises()
 
-    expect(applyCafeCoupon).toHaveBeenCalledWith(expect.objectContaining({
+    expect(previewCafeCoupon).toHaveBeenCalledWith(expect.objectContaining({
       code: 'CAFE-NOTFOUND',
       amount: 100,
       order_type: 'balance',

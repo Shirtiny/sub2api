@@ -94,6 +94,24 @@ func (PaymentOrder) Fields() []ent.Field {
 		field.Int("subscription_days").
 			Optional().
 			Nillable(),
+		field.Int("subscription_multiplier").
+			Optional().
+			Nillable().
+			Comment("subscription multiplier snapshot; regular subscription is 1"),
+		field.Int64("subscription_source_group_id").
+			Optional().
+			Nillable().
+			Comment("source base group id snapshot for subscription order"),
+		field.Float("subscription_source_price").
+			Optional().
+			Nillable().
+			SchemaType(map[string]string{dialect.Postgres: "decimal(20,2)"}).
+			Comment("source base plan price snapshot"),
+		field.Float("subscription_source_original_price").
+			Optional().
+			Nillable().
+			SchemaType(map[string]string{dialect.Postgres: "decimal(20,2)"}).
+			Comment("source base original price snapshot"),
 		field.String("provider_instance_id").
 			Optional().
 			Nillable().
@@ -202,5 +220,7 @@ func (PaymentOrder) Indexes() []ent.Index {
 		index.Fields("paid_at"),
 		index.Fields("payment_type", "paid_at"),
 		index.Fields("order_type"),
+		index.Fields("user_id", "plan_id", "status", "expires_at").
+			Annotations(entsql.IndexWhere("subscription_multiplier >= 1")),
 	}
 }

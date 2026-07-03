@@ -651,25 +651,49 @@ func (r *affiliateRepository) TransferQuotaToSubscription(ctx context.Context, u
 
 		var planPrice float64
 		var validityDays int
+		var targetGroupID int64
 		planRows, err := txClient.QueryContext(txCtx, `
-	SELECT p.price::double precision,
+	SELECT CASE
+	           WHEN cg.id IS NOT NULL THEN p.price::double precision * COALESCE(cg.custom_multiplier, 1)
+	           ELSE p.price::double precision
+	       END AS plan_price,
 	       p.validity_days,
-	       COALESCE(g.name, '')
+	       COALESCE(cg.name, g.name, '') AS group_name,
+	       COALESCE(cg.id, g.id) AS target_group_id
 	FROM subscription_plans p
 	JOIN groups g ON g.id = p.group_id AND g.deleted_at IS NULL
+	LEFT JOIN LATERAL (
+		SELECT cg_inner.id, cg_inner.name, cg_inner.custom_multiplier
+		FROM groups cg_inner
+		JOIN user_subscriptions cus ON cus.user_id = $4
+		  AND cus.group_id = cg_inner.id
+		  AND cus.status = 'active'
+		  AND cus.expires_at > NOW()
+		  AND cus.deleted_at IS NULL
+		WHERE cg_inner.deleted_at IS NULL
+		  AND cg_inner.is_custom_subscription_group = TRUE
+		  AND cg_inner.custom_owner_user_id = $4
+		  AND cg_inner.custom_source_plan_id = p.id
+		  AND cg_inner.status = 'active'
+		  AND cg_inner.subscription_type = $3
+		  AND COALESCE(cg_inner.custom_multiplier, 0) BETWEEN 1 AND 100
+		  AND (cg_inner.id = $2 OR p.group_id = $2)
+		ORDER BY cg_inner.id DESC
+		LIMIT 1
+	) cg ON TRUE
 	WHERE p.id = $1
-	  AND p.group_id = $2
 	  AND p.for_sale = true
 	  AND p.price > 0
 	  AND p.validity_days > 0
 	  AND g.status = 'active'
 	  AND g.subscription_type = $3
-	LIMIT 1`, planID, groupID, service.SubscriptionTypeSubscription)
+	  AND (p.group_id = $2 OR cg.id IS NOT NULL)
+	LIMIT 1`, planID, groupID, service.SubscriptionTypeSubscription, userID)
 		if err != nil {
 			return fmt.Errorf("query affiliate subscription target: %w", err)
 		}
 		if planRows.Next() {
-			if err := planRows.Scan(&planPrice, &validityDays, &result.GroupName); err != nil {
+			if err := planRows.Scan(&planPrice, &validityDays, &result.GroupName, &targetGroupID); err != nil {
 				_ = planRows.Close()
 				return err
 			}
@@ -677,9 +701,10 @@ func (r *affiliateRepository) TransferQuotaToSubscription(ctx context.Context, u
 		if err := planRows.Close(); err != nil {
 			return err
 		}
-		if planPrice <= 0 || math.IsNaN(planPrice) || math.IsInf(planPrice, 0) || validityDays <= 0 {
+		if planPrice <= 0 || math.IsNaN(planPrice) || math.IsInf(planPrice, 0) || validityDays <= 0 || targetGroupID <= 0 {
 			return service.ErrSubscriptionNotFound
 		}
+		result.GroupID = targetGroupID
 
 		redeemedPoints := roundAffiliateAmount(planPrice)
 		if redeemedPoints <= 0 {
@@ -749,7 +774,7 @@ func (r *affiliateRepository) TransferQuotaToSubscription(ctx context.Context, u
 	SELECT expires_at FROM updated
 	UNION ALL
 	SELECT expires_at FROM inserted
-	LIMIT 1`, userID, groupID, days)
+	LIMIT 1`, userID, result.GroupID, days)
 		if err != nil {
 			return fmt.Errorf("extend subscription by rebate amount: %w", err)
 		}
@@ -787,7 +812,7 @@ func (r *affiliateRepository) TransferQuotaToSubscription(ctx context.Context, u
 	VALUES ($1, 'transfer_subscription', $2, NULL, $3, NOW(), $4, $5, $6, $7, NOW(), NOW())`,
 			userID,
 			redeemedPoints,
-			groupID,
+			result.GroupID,
 			snapshot.BalanceAfter,
 			snapshot.AvailableQuotaAfter,
 			snapshot.FrozenQuotaAfter,

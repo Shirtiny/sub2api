@@ -16332,6 +16332,15 @@ type GroupMutation struct {
 	models_list_config                      *domain.GroupModelsListConfig
 	rpm_limit                               *int
 	addrpm_limit                            *int
+	is_custom_subscription_group            *bool
+	custom_owner_user_id                    *int64
+	addcustom_owner_user_id                 *int64
+	custom_source_plan_id                   *int64
+	addcustom_source_plan_id                *int64
+	custom_source_group_id                  *int64
+	addcustom_source_group_id               *int64
+	custom_multiplier                       *int
+	addcustom_multiplier                    *int
 	clearedFields                           map[string]struct{}
 	api_keys                                map[int64]struct{}
 	removedapi_keys                         map[int64]struct{}
@@ -18140,6 +18149,322 @@ func (m *GroupMutation) ResetRpmLimit() {
 	m.addrpm_limit = nil
 }
 
+// SetIsCustomSubscriptionGroup sets the "is_custom_subscription_group" field.
+func (m *GroupMutation) SetIsCustomSubscriptionGroup(b bool) {
+	m.is_custom_subscription_group = &b
+}
+
+// IsCustomSubscriptionGroup returns the value of the "is_custom_subscription_group" field in the mutation.
+func (m *GroupMutation) IsCustomSubscriptionGroup() (r bool, exists bool) {
+	v := m.is_custom_subscription_group
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIsCustomSubscriptionGroup returns the old "is_custom_subscription_group" field's value of the Group entity.
+// If the Group object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GroupMutation) OldIsCustomSubscriptionGroup(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIsCustomSubscriptionGroup is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIsCustomSubscriptionGroup requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIsCustomSubscriptionGroup: %w", err)
+	}
+	return oldValue.IsCustomSubscriptionGroup, nil
+}
+
+// ResetIsCustomSubscriptionGroup resets all changes to the "is_custom_subscription_group" field.
+func (m *GroupMutation) ResetIsCustomSubscriptionGroup() {
+	m.is_custom_subscription_group = nil
+}
+
+// SetCustomOwnerUserID sets the "custom_owner_user_id" field.
+func (m *GroupMutation) SetCustomOwnerUserID(i int64) {
+	m.custom_owner_user_id = &i
+	m.addcustom_owner_user_id = nil
+}
+
+// CustomOwnerUserID returns the value of the "custom_owner_user_id" field in the mutation.
+func (m *GroupMutation) CustomOwnerUserID() (r int64, exists bool) {
+	v := m.custom_owner_user_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCustomOwnerUserID returns the old "custom_owner_user_id" field's value of the Group entity.
+// If the Group object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GroupMutation) OldCustomOwnerUserID(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCustomOwnerUserID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCustomOwnerUserID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCustomOwnerUserID: %w", err)
+	}
+	return oldValue.CustomOwnerUserID, nil
+}
+
+// AddCustomOwnerUserID adds i to the "custom_owner_user_id" field.
+func (m *GroupMutation) AddCustomOwnerUserID(i int64) {
+	if m.addcustom_owner_user_id != nil {
+		*m.addcustom_owner_user_id += i
+	} else {
+		m.addcustom_owner_user_id = &i
+	}
+}
+
+// AddedCustomOwnerUserID returns the value that was added to the "custom_owner_user_id" field in this mutation.
+func (m *GroupMutation) AddedCustomOwnerUserID() (r int64, exists bool) {
+	v := m.addcustom_owner_user_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearCustomOwnerUserID clears the value of the "custom_owner_user_id" field.
+func (m *GroupMutation) ClearCustomOwnerUserID() {
+	m.custom_owner_user_id = nil
+	m.addcustom_owner_user_id = nil
+	m.clearedFields[group.FieldCustomOwnerUserID] = struct{}{}
+}
+
+// CustomOwnerUserIDCleared returns if the "custom_owner_user_id" field was cleared in this mutation.
+func (m *GroupMutation) CustomOwnerUserIDCleared() bool {
+	_, ok := m.clearedFields[group.FieldCustomOwnerUserID]
+	return ok
+}
+
+// ResetCustomOwnerUserID resets all changes to the "custom_owner_user_id" field.
+func (m *GroupMutation) ResetCustomOwnerUserID() {
+	m.custom_owner_user_id = nil
+	m.addcustom_owner_user_id = nil
+	delete(m.clearedFields, group.FieldCustomOwnerUserID)
+}
+
+// SetCustomSourcePlanID sets the "custom_source_plan_id" field.
+func (m *GroupMutation) SetCustomSourcePlanID(i int64) {
+	m.custom_source_plan_id = &i
+	m.addcustom_source_plan_id = nil
+}
+
+// CustomSourcePlanID returns the value of the "custom_source_plan_id" field in the mutation.
+func (m *GroupMutation) CustomSourcePlanID() (r int64, exists bool) {
+	v := m.custom_source_plan_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCustomSourcePlanID returns the old "custom_source_plan_id" field's value of the Group entity.
+// If the Group object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GroupMutation) OldCustomSourcePlanID(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCustomSourcePlanID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCustomSourcePlanID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCustomSourcePlanID: %w", err)
+	}
+	return oldValue.CustomSourcePlanID, nil
+}
+
+// AddCustomSourcePlanID adds i to the "custom_source_plan_id" field.
+func (m *GroupMutation) AddCustomSourcePlanID(i int64) {
+	if m.addcustom_source_plan_id != nil {
+		*m.addcustom_source_plan_id += i
+	} else {
+		m.addcustom_source_plan_id = &i
+	}
+}
+
+// AddedCustomSourcePlanID returns the value that was added to the "custom_source_plan_id" field in this mutation.
+func (m *GroupMutation) AddedCustomSourcePlanID() (r int64, exists bool) {
+	v := m.addcustom_source_plan_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearCustomSourcePlanID clears the value of the "custom_source_plan_id" field.
+func (m *GroupMutation) ClearCustomSourcePlanID() {
+	m.custom_source_plan_id = nil
+	m.addcustom_source_plan_id = nil
+	m.clearedFields[group.FieldCustomSourcePlanID] = struct{}{}
+}
+
+// CustomSourcePlanIDCleared returns if the "custom_source_plan_id" field was cleared in this mutation.
+func (m *GroupMutation) CustomSourcePlanIDCleared() bool {
+	_, ok := m.clearedFields[group.FieldCustomSourcePlanID]
+	return ok
+}
+
+// ResetCustomSourcePlanID resets all changes to the "custom_source_plan_id" field.
+func (m *GroupMutation) ResetCustomSourcePlanID() {
+	m.custom_source_plan_id = nil
+	m.addcustom_source_plan_id = nil
+	delete(m.clearedFields, group.FieldCustomSourcePlanID)
+}
+
+// SetCustomSourceGroupID sets the "custom_source_group_id" field.
+func (m *GroupMutation) SetCustomSourceGroupID(i int64) {
+	m.custom_source_group_id = &i
+	m.addcustom_source_group_id = nil
+}
+
+// CustomSourceGroupID returns the value of the "custom_source_group_id" field in the mutation.
+func (m *GroupMutation) CustomSourceGroupID() (r int64, exists bool) {
+	v := m.custom_source_group_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCustomSourceGroupID returns the old "custom_source_group_id" field's value of the Group entity.
+// If the Group object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GroupMutation) OldCustomSourceGroupID(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCustomSourceGroupID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCustomSourceGroupID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCustomSourceGroupID: %w", err)
+	}
+	return oldValue.CustomSourceGroupID, nil
+}
+
+// AddCustomSourceGroupID adds i to the "custom_source_group_id" field.
+func (m *GroupMutation) AddCustomSourceGroupID(i int64) {
+	if m.addcustom_source_group_id != nil {
+		*m.addcustom_source_group_id += i
+	} else {
+		m.addcustom_source_group_id = &i
+	}
+}
+
+// AddedCustomSourceGroupID returns the value that was added to the "custom_source_group_id" field in this mutation.
+func (m *GroupMutation) AddedCustomSourceGroupID() (r int64, exists bool) {
+	v := m.addcustom_source_group_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearCustomSourceGroupID clears the value of the "custom_source_group_id" field.
+func (m *GroupMutation) ClearCustomSourceGroupID() {
+	m.custom_source_group_id = nil
+	m.addcustom_source_group_id = nil
+	m.clearedFields[group.FieldCustomSourceGroupID] = struct{}{}
+}
+
+// CustomSourceGroupIDCleared returns if the "custom_source_group_id" field was cleared in this mutation.
+func (m *GroupMutation) CustomSourceGroupIDCleared() bool {
+	_, ok := m.clearedFields[group.FieldCustomSourceGroupID]
+	return ok
+}
+
+// ResetCustomSourceGroupID resets all changes to the "custom_source_group_id" field.
+func (m *GroupMutation) ResetCustomSourceGroupID() {
+	m.custom_source_group_id = nil
+	m.addcustom_source_group_id = nil
+	delete(m.clearedFields, group.FieldCustomSourceGroupID)
+}
+
+// SetCustomMultiplier sets the "custom_multiplier" field.
+func (m *GroupMutation) SetCustomMultiplier(i int) {
+	m.custom_multiplier = &i
+	m.addcustom_multiplier = nil
+}
+
+// CustomMultiplier returns the value of the "custom_multiplier" field in the mutation.
+func (m *GroupMutation) CustomMultiplier() (r int, exists bool) {
+	v := m.custom_multiplier
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCustomMultiplier returns the old "custom_multiplier" field's value of the Group entity.
+// If the Group object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GroupMutation) OldCustomMultiplier(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCustomMultiplier is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCustomMultiplier requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCustomMultiplier: %w", err)
+	}
+	return oldValue.CustomMultiplier, nil
+}
+
+// AddCustomMultiplier adds i to the "custom_multiplier" field.
+func (m *GroupMutation) AddCustomMultiplier(i int) {
+	if m.addcustom_multiplier != nil {
+		*m.addcustom_multiplier += i
+	} else {
+		m.addcustom_multiplier = &i
+	}
+}
+
+// AddedCustomMultiplier returns the value that was added to the "custom_multiplier" field in this mutation.
+func (m *GroupMutation) AddedCustomMultiplier() (r int, exists bool) {
+	v := m.addcustom_multiplier
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearCustomMultiplier clears the value of the "custom_multiplier" field.
+func (m *GroupMutation) ClearCustomMultiplier() {
+	m.custom_multiplier = nil
+	m.addcustom_multiplier = nil
+	m.clearedFields[group.FieldCustomMultiplier] = struct{}{}
+}
+
+// CustomMultiplierCleared returns if the "custom_multiplier" field was cleared in this mutation.
+func (m *GroupMutation) CustomMultiplierCleared() bool {
+	_, ok := m.clearedFields[group.FieldCustomMultiplier]
+	return ok
+}
+
+// ResetCustomMultiplier resets all changes to the "custom_multiplier" field.
+func (m *GroupMutation) ResetCustomMultiplier() {
+	m.custom_multiplier = nil
+	m.addcustom_multiplier = nil
+	delete(m.clearedFields, group.FieldCustomMultiplier)
+}
+
 // AddAPIKeyIDs adds the "api_keys" edge to the APIKey entity by ids.
 func (m *GroupMutation) AddAPIKeyIDs(ids ...int64) {
 	if m.api_keys == nil {
@@ -18498,7 +18823,7 @@ func (m *GroupMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *GroupMutation) Fields() []string {
-	fields := make([]string, 0, 35)
+	fields := make([]string, 0, 40)
 	if m.created_at != nil {
 		fields = append(fields, group.FieldCreatedAt)
 	}
@@ -18604,6 +18929,21 @@ func (m *GroupMutation) Fields() []string {
 	if m.rpm_limit != nil {
 		fields = append(fields, group.FieldRpmLimit)
 	}
+	if m.is_custom_subscription_group != nil {
+		fields = append(fields, group.FieldIsCustomSubscriptionGroup)
+	}
+	if m.custom_owner_user_id != nil {
+		fields = append(fields, group.FieldCustomOwnerUserID)
+	}
+	if m.custom_source_plan_id != nil {
+		fields = append(fields, group.FieldCustomSourcePlanID)
+	}
+	if m.custom_source_group_id != nil {
+		fields = append(fields, group.FieldCustomSourceGroupID)
+	}
+	if m.custom_multiplier != nil {
+		fields = append(fields, group.FieldCustomMultiplier)
+	}
 	return fields
 }
 
@@ -18682,6 +19022,16 @@ func (m *GroupMutation) Field(name string) (ent.Value, bool) {
 		return m.ModelsListConfig()
 	case group.FieldRpmLimit:
 		return m.RpmLimit()
+	case group.FieldIsCustomSubscriptionGroup:
+		return m.IsCustomSubscriptionGroup()
+	case group.FieldCustomOwnerUserID:
+		return m.CustomOwnerUserID()
+	case group.FieldCustomSourcePlanID:
+		return m.CustomSourcePlanID()
+	case group.FieldCustomSourceGroupID:
+		return m.CustomSourceGroupID()
+	case group.FieldCustomMultiplier:
+		return m.CustomMultiplier()
 	}
 	return nil, false
 }
@@ -18761,6 +19111,16 @@ func (m *GroupMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldModelsListConfig(ctx)
 	case group.FieldRpmLimit:
 		return m.OldRpmLimit(ctx)
+	case group.FieldIsCustomSubscriptionGroup:
+		return m.OldIsCustomSubscriptionGroup(ctx)
+	case group.FieldCustomOwnerUserID:
+		return m.OldCustomOwnerUserID(ctx)
+	case group.FieldCustomSourcePlanID:
+		return m.OldCustomSourcePlanID(ctx)
+	case group.FieldCustomSourceGroupID:
+		return m.OldCustomSourceGroupID(ctx)
+	case group.FieldCustomMultiplier:
+		return m.OldCustomMultiplier(ctx)
 	}
 	return nil, fmt.Errorf("unknown Group field %s", name)
 }
@@ -19015,6 +19375,41 @@ func (m *GroupMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetRpmLimit(v)
 		return nil
+	case group.FieldIsCustomSubscriptionGroup:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIsCustomSubscriptionGroup(v)
+		return nil
+	case group.FieldCustomOwnerUserID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCustomOwnerUserID(v)
+		return nil
+	case group.FieldCustomSourcePlanID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCustomSourcePlanID(v)
+		return nil
+	case group.FieldCustomSourceGroupID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCustomSourceGroupID(v)
+		return nil
+	case group.FieldCustomMultiplier:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCustomMultiplier(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Group field %s", name)
 }
@@ -19062,6 +19457,18 @@ func (m *GroupMutation) AddedFields() []string {
 	if m.addrpm_limit != nil {
 		fields = append(fields, group.FieldRpmLimit)
 	}
+	if m.addcustom_owner_user_id != nil {
+		fields = append(fields, group.FieldCustomOwnerUserID)
+	}
+	if m.addcustom_source_plan_id != nil {
+		fields = append(fields, group.FieldCustomSourcePlanID)
+	}
+	if m.addcustom_source_group_id != nil {
+		fields = append(fields, group.FieldCustomSourceGroupID)
+	}
+	if m.addcustom_multiplier != nil {
+		fields = append(fields, group.FieldCustomMultiplier)
+	}
 	return fields
 }
 
@@ -19096,6 +19503,14 @@ func (m *GroupMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedSortOrder()
 	case group.FieldRpmLimit:
 		return m.AddedRpmLimit()
+	case group.FieldCustomOwnerUserID:
+		return m.AddedCustomOwnerUserID()
+	case group.FieldCustomSourcePlanID:
+		return m.AddedCustomSourcePlanID()
+	case group.FieldCustomSourceGroupID:
+		return m.AddedCustomSourceGroupID()
+	case group.FieldCustomMultiplier:
+		return m.AddedCustomMultiplier()
 	}
 	return nil, false
 }
@@ -19196,6 +19611,34 @@ func (m *GroupMutation) AddField(name string, value ent.Value) error {
 		}
 		m.AddRpmLimit(v)
 		return nil
+	case group.FieldCustomOwnerUserID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCustomOwnerUserID(v)
+		return nil
+	case group.FieldCustomSourcePlanID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCustomSourcePlanID(v)
+		return nil
+	case group.FieldCustomSourceGroupID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCustomSourceGroupID(v)
+		return nil
+	case group.FieldCustomMultiplier:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCustomMultiplier(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Group numeric field %s", name)
 }
@@ -19236,6 +19679,18 @@ func (m *GroupMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(group.FieldModelRouting) {
 		fields = append(fields, group.FieldModelRouting)
+	}
+	if m.FieldCleared(group.FieldCustomOwnerUserID) {
+		fields = append(fields, group.FieldCustomOwnerUserID)
+	}
+	if m.FieldCleared(group.FieldCustomSourcePlanID) {
+		fields = append(fields, group.FieldCustomSourcePlanID)
+	}
+	if m.FieldCleared(group.FieldCustomSourceGroupID) {
+		fields = append(fields, group.FieldCustomSourceGroupID)
+	}
+	if m.FieldCleared(group.FieldCustomMultiplier) {
+		fields = append(fields, group.FieldCustomMultiplier)
 	}
 	return fields
 }
@@ -19283,6 +19738,18 @@ func (m *GroupMutation) ClearField(name string) error {
 		return nil
 	case group.FieldModelRouting:
 		m.ClearModelRouting()
+		return nil
+	case group.FieldCustomOwnerUserID:
+		m.ClearCustomOwnerUserID()
+		return nil
+	case group.FieldCustomSourcePlanID:
+		m.ClearCustomSourcePlanID()
+		return nil
+	case group.FieldCustomSourceGroupID:
+		m.ClearCustomSourceGroupID()
+		return nil
+	case group.FieldCustomMultiplier:
+		m.ClearCustomMultiplier()
 		return nil
 	}
 	return fmt.Errorf("unknown Group nullable field %s", name)
@@ -19396,6 +19863,21 @@ func (m *GroupMutation) ResetField(name string) error {
 		return nil
 	case group.FieldRpmLimit:
 		m.ResetRpmLimit()
+		return nil
+	case group.FieldIsCustomSubscriptionGroup:
+		m.ResetIsCustomSubscriptionGroup()
+		return nil
+	case group.FieldCustomOwnerUserID:
+		m.ResetCustomOwnerUserID()
+		return nil
+	case group.FieldCustomSourcePlanID:
+		m.ResetCustomSourcePlanID()
+		return nil
+	case group.FieldCustomSourceGroupID:
+		m.ResetCustomSourceGroupID()
+		return nil
+	case group.FieldCustomMultiplier:
+		m.ResetCustomMultiplier()
 		return nil
 	}
 	return fmt.Errorf("unknown Group field %s", name)
@@ -21917,63 +22399,71 @@ func (m *PaymentAuditLogMutation) ResetEdge(name string) error {
 // PaymentOrderMutation represents an operation that mutates the PaymentOrder nodes in the graph.
 type PaymentOrderMutation struct {
 	config
-	op                       Op
-	typ                      string
-	id                       *int64
-	user_email               *string
-	user_name                *string
-	user_notes               *string
-	amount                   *float64
-	addamount                *float64
-	pay_amount               *float64
-	addpay_amount            *float64
-	fee_rate                 *float64
-	addfee_rate              *float64
-	recharge_code            *string
-	cafe_coupon_code         *string
-	cafe_coupon_discount     *float64
-	addcafe_coupon_discount  *float64
-	out_trade_no             *string
-	payment_type             *string
-	payment_trade_no         *string
-	pay_url                  *string
-	qr_code                  *string
-	qr_code_img              *string
-	order_type               *string
-	plan_id                  *int64
-	addplan_id               *int64
-	subscription_group_id    *int64
-	addsubscription_group_id *int64
-	subscription_days        *int
-	addsubscription_days     *int
-	provider_instance_id     *string
-	provider_key             *string
-	provider_snapshot        *map[string]interface{}
-	status                   *string
-	refund_amount            *float64
-	addrefund_amount         *float64
-	refund_reason            *string
-	refund_at                *time.Time
-	force_refund             *bool
-	refund_requested_at      *time.Time
-	refund_request_reason    *string
-	refund_requested_by      *string
-	expires_at               *time.Time
-	paid_at                  *time.Time
-	completed_at             *time.Time
-	failed_at                *time.Time
-	failed_reason            *string
-	client_ip                *string
-	src_host                 *string
-	src_url                  *string
-	created_at               *time.Time
-	updated_at               *time.Time
-	clearedFields            map[string]struct{}
-	user                     *int64
-	cleareduser              bool
-	done                     bool
-	oldValue                 func(context.Context) (*PaymentOrder, error)
-	predicates               []predicate.PaymentOrder
+	op                                    Op
+	typ                                   string
+	id                                    *int64
+	user_email                            *string
+	user_name                             *string
+	user_notes                            *string
+	amount                                *float64
+	addamount                             *float64
+	pay_amount                            *float64
+	addpay_amount                         *float64
+	fee_rate                              *float64
+	addfee_rate                           *float64
+	recharge_code                         *string
+	cafe_coupon_code                      *string
+	cafe_coupon_discount                  *float64
+	addcafe_coupon_discount               *float64
+	out_trade_no                          *string
+	payment_type                          *string
+	payment_trade_no                      *string
+	pay_url                               *string
+	qr_code                               *string
+	qr_code_img                           *string
+	order_type                            *string
+	plan_id                               *int64
+	addplan_id                            *int64
+	subscription_group_id                 *int64
+	addsubscription_group_id              *int64
+	subscription_days                     *int
+	addsubscription_days                  *int
+	subscription_multiplier               *int
+	addsubscription_multiplier            *int
+	subscription_source_group_id          *int64
+	addsubscription_source_group_id       *int64
+	subscription_source_price             *float64
+	addsubscription_source_price          *float64
+	subscription_source_original_price    *float64
+	addsubscription_source_original_price *float64
+	provider_instance_id                  *string
+	provider_key                          *string
+	provider_snapshot                     *map[string]interface{}
+	status                                *string
+	refund_amount                         *float64
+	addrefund_amount                      *float64
+	refund_reason                         *string
+	refund_at                             *time.Time
+	force_refund                          *bool
+	refund_requested_at                   *time.Time
+	refund_request_reason                 *string
+	refund_requested_by                   *string
+	expires_at                            *time.Time
+	paid_at                               *time.Time
+	completed_at                          *time.Time
+	failed_at                             *time.Time
+	failed_reason                         *string
+	client_ip                             *string
+	src_host                              *string
+	src_url                               *string
+	created_at                            *time.Time
+	updated_at                            *time.Time
+	clearedFields                         map[string]struct{}
+	user                                  *int64
+	cleareduser                           bool
+	done                                  bool
+	oldValue                              func(context.Context) (*PaymentOrder, error)
+	predicates                            []predicate.PaymentOrder
 }
 
 var _ ent.Mutation = (*PaymentOrderMutation)(nil)
@@ -23041,6 +23531,286 @@ func (m *PaymentOrderMutation) ResetSubscriptionDays() {
 	delete(m.clearedFields, paymentorder.FieldSubscriptionDays)
 }
 
+// SetSubscriptionMultiplier sets the "subscription_multiplier" field.
+func (m *PaymentOrderMutation) SetSubscriptionMultiplier(i int) {
+	m.subscription_multiplier = &i
+	m.addsubscription_multiplier = nil
+}
+
+// SubscriptionMultiplier returns the value of the "subscription_multiplier" field in the mutation.
+func (m *PaymentOrderMutation) SubscriptionMultiplier() (r int, exists bool) {
+	v := m.subscription_multiplier
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSubscriptionMultiplier returns the old "subscription_multiplier" field's value of the PaymentOrder entity.
+// If the PaymentOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PaymentOrderMutation) OldSubscriptionMultiplier(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSubscriptionMultiplier is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSubscriptionMultiplier requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSubscriptionMultiplier: %w", err)
+	}
+	return oldValue.SubscriptionMultiplier, nil
+}
+
+// AddSubscriptionMultiplier adds i to the "subscription_multiplier" field.
+func (m *PaymentOrderMutation) AddSubscriptionMultiplier(i int) {
+	if m.addsubscription_multiplier != nil {
+		*m.addsubscription_multiplier += i
+	} else {
+		m.addsubscription_multiplier = &i
+	}
+}
+
+// AddedSubscriptionMultiplier returns the value that was added to the "subscription_multiplier" field in this mutation.
+func (m *PaymentOrderMutation) AddedSubscriptionMultiplier() (r int, exists bool) {
+	v := m.addsubscription_multiplier
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearSubscriptionMultiplier clears the value of the "subscription_multiplier" field.
+func (m *PaymentOrderMutation) ClearSubscriptionMultiplier() {
+	m.subscription_multiplier = nil
+	m.addsubscription_multiplier = nil
+	m.clearedFields[paymentorder.FieldSubscriptionMultiplier] = struct{}{}
+}
+
+// SubscriptionMultiplierCleared returns if the "subscription_multiplier" field was cleared in this mutation.
+func (m *PaymentOrderMutation) SubscriptionMultiplierCleared() bool {
+	_, ok := m.clearedFields[paymentorder.FieldSubscriptionMultiplier]
+	return ok
+}
+
+// ResetSubscriptionMultiplier resets all changes to the "subscription_multiplier" field.
+func (m *PaymentOrderMutation) ResetSubscriptionMultiplier() {
+	m.subscription_multiplier = nil
+	m.addsubscription_multiplier = nil
+	delete(m.clearedFields, paymentorder.FieldSubscriptionMultiplier)
+}
+
+// SetSubscriptionSourceGroupID sets the "subscription_source_group_id" field.
+func (m *PaymentOrderMutation) SetSubscriptionSourceGroupID(i int64) {
+	m.subscription_source_group_id = &i
+	m.addsubscription_source_group_id = nil
+}
+
+// SubscriptionSourceGroupID returns the value of the "subscription_source_group_id" field in the mutation.
+func (m *PaymentOrderMutation) SubscriptionSourceGroupID() (r int64, exists bool) {
+	v := m.subscription_source_group_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSubscriptionSourceGroupID returns the old "subscription_source_group_id" field's value of the PaymentOrder entity.
+// If the PaymentOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PaymentOrderMutation) OldSubscriptionSourceGroupID(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSubscriptionSourceGroupID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSubscriptionSourceGroupID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSubscriptionSourceGroupID: %w", err)
+	}
+	return oldValue.SubscriptionSourceGroupID, nil
+}
+
+// AddSubscriptionSourceGroupID adds i to the "subscription_source_group_id" field.
+func (m *PaymentOrderMutation) AddSubscriptionSourceGroupID(i int64) {
+	if m.addsubscription_source_group_id != nil {
+		*m.addsubscription_source_group_id += i
+	} else {
+		m.addsubscription_source_group_id = &i
+	}
+}
+
+// AddedSubscriptionSourceGroupID returns the value that was added to the "subscription_source_group_id" field in this mutation.
+func (m *PaymentOrderMutation) AddedSubscriptionSourceGroupID() (r int64, exists bool) {
+	v := m.addsubscription_source_group_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearSubscriptionSourceGroupID clears the value of the "subscription_source_group_id" field.
+func (m *PaymentOrderMutation) ClearSubscriptionSourceGroupID() {
+	m.subscription_source_group_id = nil
+	m.addsubscription_source_group_id = nil
+	m.clearedFields[paymentorder.FieldSubscriptionSourceGroupID] = struct{}{}
+}
+
+// SubscriptionSourceGroupIDCleared returns if the "subscription_source_group_id" field was cleared in this mutation.
+func (m *PaymentOrderMutation) SubscriptionSourceGroupIDCleared() bool {
+	_, ok := m.clearedFields[paymentorder.FieldSubscriptionSourceGroupID]
+	return ok
+}
+
+// ResetSubscriptionSourceGroupID resets all changes to the "subscription_source_group_id" field.
+func (m *PaymentOrderMutation) ResetSubscriptionSourceGroupID() {
+	m.subscription_source_group_id = nil
+	m.addsubscription_source_group_id = nil
+	delete(m.clearedFields, paymentorder.FieldSubscriptionSourceGroupID)
+}
+
+// SetSubscriptionSourcePrice sets the "subscription_source_price" field.
+func (m *PaymentOrderMutation) SetSubscriptionSourcePrice(f float64) {
+	m.subscription_source_price = &f
+	m.addsubscription_source_price = nil
+}
+
+// SubscriptionSourcePrice returns the value of the "subscription_source_price" field in the mutation.
+func (m *PaymentOrderMutation) SubscriptionSourcePrice() (r float64, exists bool) {
+	v := m.subscription_source_price
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSubscriptionSourcePrice returns the old "subscription_source_price" field's value of the PaymentOrder entity.
+// If the PaymentOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PaymentOrderMutation) OldSubscriptionSourcePrice(ctx context.Context) (v *float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSubscriptionSourcePrice is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSubscriptionSourcePrice requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSubscriptionSourcePrice: %w", err)
+	}
+	return oldValue.SubscriptionSourcePrice, nil
+}
+
+// AddSubscriptionSourcePrice adds f to the "subscription_source_price" field.
+func (m *PaymentOrderMutation) AddSubscriptionSourcePrice(f float64) {
+	if m.addsubscription_source_price != nil {
+		*m.addsubscription_source_price += f
+	} else {
+		m.addsubscription_source_price = &f
+	}
+}
+
+// AddedSubscriptionSourcePrice returns the value that was added to the "subscription_source_price" field in this mutation.
+func (m *PaymentOrderMutation) AddedSubscriptionSourcePrice() (r float64, exists bool) {
+	v := m.addsubscription_source_price
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearSubscriptionSourcePrice clears the value of the "subscription_source_price" field.
+func (m *PaymentOrderMutation) ClearSubscriptionSourcePrice() {
+	m.subscription_source_price = nil
+	m.addsubscription_source_price = nil
+	m.clearedFields[paymentorder.FieldSubscriptionSourcePrice] = struct{}{}
+}
+
+// SubscriptionSourcePriceCleared returns if the "subscription_source_price" field was cleared in this mutation.
+func (m *PaymentOrderMutation) SubscriptionSourcePriceCleared() bool {
+	_, ok := m.clearedFields[paymentorder.FieldSubscriptionSourcePrice]
+	return ok
+}
+
+// ResetSubscriptionSourcePrice resets all changes to the "subscription_source_price" field.
+func (m *PaymentOrderMutation) ResetSubscriptionSourcePrice() {
+	m.subscription_source_price = nil
+	m.addsubscription_source_price = nil
+	delete(m.clearedFields, paymentorder.FieldSubscriptionSourcePrice)
+}
+
+// SetSubscriptionSourceOriginalPrice sets the "subscription_source_original_price" field.
+func (m *PaymentOrderMutation) SetSubscriptionSourceOriginalPrice(f float64) {
+	m.subscription_source_original_price = &f
+	m.addsubscription_source_original_price = nil
+}
+
+// SubscriptionSourceOriginalPrice returns the value of the "subscription_source_original_price" field in the mutation.
+func (m *PaymentOrderMutation) SubscriptionSourceOriginalPrice() (r float64, exists bool) {
+	v := m.subscription_source_original_price
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSubscriptionSourceOriginalPrice returns the old "subscription_source_original_price" field's value of the PaymentOrder entity.
+// If the PaymentOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PaymentOrderMutation) OldSubscriptionSourceOriginalPrice(ctx context.Context) (v *float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSubscriptionSourceOriginalPrice is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSubscriptionSourceOriginalPrice requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSubscriptionSourceOriginalPrice: %w", err)
+	}
+	return oldValue.SubscriptionSourceOriginalPrice, nil
+}
+
+// AddSubscriptionSourceOriginalPrice adds f to the "subscription_source_original_price" field.
+func (m *PaymentOrderMutation) AddSubscriptionSourceOriginalPrice(f float64) {
+	if m.addsubscription_source_original_price != nil {
+		*m.addsubscription_source_original_price += f
+	} else {
+		m.addsubscription_source_original_price = &f
+	}
+}
+
+// AddedSubscriptionSourceOriginalPrice returns the value that was added to the "subscription_source_original_price" field in this mutation.
+func (m *PaymentOrderMutation) AddedSubscriptionSourceOriginalPrice() (r float64, exists bool) {
+	v := m.addsubscription_source_original_price
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearSubscriptionSourceOriginalPrice clears the value of the "subscription_source_original_price" field.
+func (m *PaymentOrderMutation) ClearSubscriptionSourceOriginalPrice() {
+	m.subscription_source_original_price = nil
+	m.addsubscription_source_original_price = nil
+	m.clearedFields[paymentorder.FieldSubscriptionSourceOriginalPrice] = struct{}{}
+}
+
+// SubscriptionSourceOriginalPriceCleared returns if the "subscription_source_original_price" field was cleared in this mutation.
+func (m *PaymentOrderMutation) SubscriptionSourceOriginalPriceCleared() bool {
+	_, ok := m.clearedFields[paymentorder.FieldSubscriptionSourceOriginalPrice]
+	return ok
+}
+
+// ResetSubscriptionSourceOriginalPrice resets all changes to the "subscription_source_original_price" field.
+func (m *PaymentOrderMutation) ResetSubscriptionSourceOriginalPrice() {
+	m.subscription_source_original_price = nil
+	m.addsubscription_source_original_price = nil
+	delete(m.clearedFields, paymentorder.FieldSubscriptionSourceOriginalPrice)
+}
+
 // SetProviderInstanceID sets the "provider_instance_id" field.
 func (m *PaymentOrderMutation) SetProviderInstanceID(s string) {
 	m.provider_instance_id = &s
@@ -24047,7 +24817,7 @@ func (m *PaymentOrderMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PaymentOrderMutation) Fields() []string {
-	fields := make([]string, 0, 41)
+	fields := make([]string, 0, 45)
 	if m.user != nil {
 		fields = append(fields, paymentorder.FieldUserID)
 	}
@@ -24107,6 +24877,18 @@ func (m *PaymentOrderMutation) Fields() []string {
 	}
 	if m.subscription_days != nil {
 		fields = append(fields, paymentorder.FieldSubscriptionDays)
+	}
+	if m.subscription_multiplier != nil {
+		fields = append(fields, paymentorder.FieldSubscriptionMultiplier)
+	}
+	if m.subscription_source_group_id != nil {
+		fields = append(fields, paymentorder.FieldSubscriptionSourceGroupID)
+	}
+	if m.subscription_source_price != nil {
+		fields = append(fields, paymentorder.FieldSubscriptionSourcePrice)
+	}
+	if m.subscription_source_original_price != nil {
+		fields = append(fields, paymentorder.FieldSubscriptionSourceOriginalPrice)
 	}
 	if m.provider_instance_id != nil {
 		fields = append(fields, paymentorder.FieldProviderInstanceID)
@@ -24219,6 +25001,14 @@ func (m *PaymentOrderMutation) Field(name string) (ent.Value, bool) {
 		return m.SubscriptionGroupID()
 	case paymentorder.FieldSubscriptionDays:
 		return m.SubscriptionDays()
+	case paymentorder.FieldSubscriptionMultiplier:
+		return m.SubscriptionMultiplier()
+	case paymentorder.FieldSubscriptionSourceGroupID:
+		return m.SubscriptionSourceGroupID()
+	case paymentorder.FieldSubscriptionSourcePrice:
+		return m.SubscriptionSourcePrice()
+	case paymentorder.FieldSubscriptionSourceOriginalPrice:
+		return m.SubscriptionSourceOriginalPrice()
 	case paymentorder.FieldProviderInstanceID:
 		return m.ProviderInstanceID()
 	case paymentorder.FieldProviderKey:
@@ -24310,6 +25100,14 @@ func (m *PaymentOrderMutation) OldField(ctx context.Context, name string) (ent.V
 		return m.OldSubscriptionGroupID(ctx)
 	case paymentorder.FieldSubscriptionDays:
 		return m.OldSubscriptionDays(ctx)
+	case paymentorder.FieldSubscriptionMultiplier:
+		return m.OldSubscriptionMultiplier(ctx)
+	case paymentorder.FieldSubscriptionSourceGroupID:
+		return m.OldSubscriptionSourceGroupID(ctx)
+	case paymentorder.FieldSubscriptionSourcePrice:
+		return m.OldSubscriptionSourcePrice(ctx)
+	case paymentorder.FieldSubscriptionSourceOriginalPrice:
+		return m.OldSubscriptionSourceOriginalPrice(ctx)
 	case paymentorder.FieldProviderInstanceID:
 		return m.OldProviderInstanceID(ctx)
 	case paymentorder.FieldProviderKey:
@@ -24501,6 +25299,34 @@ func (m *PaymentOrderMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetSubscriptionDays(v)
 		return nil
+	case paymentorder.FieldSubscriptionMultiplier:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSubscriptionMultiplier(v)
+		return nil
+	case paymentorder.FieldSubscriptionSourceGroupID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSubscriptionSourceGroupID(v)
+		return nil
+	case paymentorder.FieldSubscriptionSourcePrice:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSubscriptionSourcePrice(v)
+		return nil
+	case paymentorder.FieldSubscriptionSourceOriginalPrice:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSubscriptionSourceOriginalPrice(v)
+		return nil
 	case paymentorder.FieldProviderInstanceID:
 		v, ok := value.(string)
 		if !ok {
@@ -24677,6 +25503,18 @@ func (m *PaymentOrderMutation) AddedFields() []string {
 	if m.addsubscription_days != nil {
 		fields = append(fields, paymentorder.FieldSubscriptionDays)
 	}
+	if m.addsubscription_multiplier != nil {
+		fields = append(fields, paymentorder.FieldSubscriptionMultiplier)
+	}
+	if m.addsubscription_source_group_id != nil {
+		fields = append(fields, paymentorder.FieldSubscriptionSourceGroupID)
+	}
+	if m.addsubscription_source_price != nil {
+		fields = append(fields, paymentorder.FieldSubscriptionSourcePrice)
+	}
+	if m.addsubscription_source_original_price != nil {
+		fields = append(fields, paymentorder.FieldSubscriptionSourceOriginalPrice)
+	}
 	if m.addrefund_amount != nil {
 		fields = append(fields, paymentorder.FieldRefundAmount)
 	}
@@ -24702,6 +25540,14 @@ func (m *PaymentOrderMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedSubscriptionGroupID()
 	case paymentorder.FieldSubscriptionDays:
 		return m.AddedSubscriptionDays()
+	case paymentorder.FieldSubscriptionMultiplier:
+		return m.AddedSubscriptionMultiplier()
+	case paymentorder.FieldSubscriptionSourceGroupID:
+		return m.AddedSubscriptionSourceGroupID()
+	case paymentorder.FieldSubscriptionSourcePrice:
+		return m.AddedSubscriptionSourcePrice()
+	case paymentorder.FieldSubscriptionSourceOriginalPrice:
+		return m.AddedSubscriptionSourceOriginalPrice()
 	case paymentorder.FieldRefundAmount:
 		return m.AddedRefundAmount()
 	}
@@ -24762,6 +25608,34 @@ func (m *PaymentOrderMutation) AddField(name string, value ent.Value) error {
 		}
 		m.AddSubscriptionDays(v)
 		return nil
+	case paymentorder.FieldSubscriptionMultiplier:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSubscriptionMultiplier(v)
+		return nil
+	case paymentorder.FieldSubscriptionSourceGroupID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSubscriptionSourceGroupID(v)
+		return nil
+	case paymentorder.FieldSubscriptionSourcePrice:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSubscriptionSourcePrice(v)
+		return nil
+	case paymentorder.FieldSubscriptionSourceOriginalPrice:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSubscriptionSourceOriginalPrice(v)
+		return nil
 	case paymentorder.FieldRefundAmount:
 		v, ok := value.(float64)
 		if !ok {
@@ -24800,6 +25674,18 @@ func (m *PaymentOrderMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(paymentorder.FieldSubscriptionDays) {
 		fields = append(fields, paymentorder.FieldSubscriptionDays)
+	}
+	if m.FieldCleared(paymentorder.FieldSubscriptionMultiplier) {
+		fields = append(fields, paymentorder.FieldSubscriptionMultiplier)
+	}
+	if m.FieldCleared(paymentorder.FieldSubscriptionSourceGroupID) {
+		fields = append(fields, paymentorder.FieldSubscriptionSourceGroupID)
+	}
+	if m.FieldCleared(paymentorder.FieldSubscriptionSourcePrice) {
+		fields = append(fields, paymentorder.FieldSubscriptionSourcePrice)
+	}
+	if m.FieldCleared(paymentorder.FieldSubscriptionSourceOriginalPrice) {
+		fields = append(fields, paymentorder.FieldSubscriptionSourceOriginalPrice)
 	}
 	if m.FieldCleared(paymentorder.FieldProviderInstanceID) {
 		fields = append(fields, paymentorder.FieldProviderInstanceID)
@@ -24877,6 +25763,18 @@ func (m *PaymentOrderMutation) ClearField(name string) error {
 		return nil
 	case paymentorder.FieldSubscriptionDays:
 		m.ClearSubscriptionDays()
+		return nil
+	case paymentorder.FieldSubscriptionMultiplier:
+		m.ClearSubscriptionMultiplier()
+		return nil
+	case paymentorder.FieldSubscriptionSourceGroupID:
+		m.ClearSubscriptionSourceGroupID()
+		return nil
+	case paymentorder.FieldSubscriptionSourcePrice:
+		m.ClearSubscriptionSourcePrice()
+		return nil
+	case paymentorder.FieldSubscriptionSourceOriginalPrice:
+		m.ClearSubscriptionSourceOriginalPrice()
 		return nil
 	case paymentorder.FieldProviderInstanceID:
 		m.ClearProviderInstanceID()
@@ -24984,6 +25882,18 @@ func (m *PaymentOrderMutation) ResetField(name string) error {
 		return nil
 	case paymentorder.FieldSubscriptionDays:
 		m.ResetSubscriptionDays()
+		return nil
+	case paymentorder.FieldSubscriptionMultiplier:
+		m.ResetSubscriptionMultiplier()
+		return nil
+	case paymentorder.FieldSubscriptionSourceGroupID:
+		m.ResetSubscriptionSourceGroupID()
+		return nil
+	case paymentorder.FieldSubscriptionSourcePrice:
+		m.ResetSubscriptionSourcePrice()
+		return nil
+	case paymentorder.FieldSubscriptionSourceOriginalPrice:
+		m.ResetSubscriptionSourceOriginalPrice()
 		return nil
 	case paymentorder.FieldProviderInstanceID:
 		m.ResetProviderInstanceID()
@@ -32411,31 +33321,36 @@ func (m *SettingMutation) ResetEdge(name string) error {
 // SubscriptionPlanMutation represents an operation that mutates the SubscriptionPlan nodes in the graph.
 type SubscriptionPlanMutation struct {
 	config
-	op                Op
-	typ               string
-	id                *int64
-	group_id          *int64
-	addgroup_id       *int64
-	name              *string
-	description       *string
-	price             *float64
-	addprice          *float64
-	original_price    *float64
-	addoriginal_price *float64
-	validity_days     *int
-	addvalidity_days  *int
-	validity_unit     *string
-	features          *string
-	product_name      *string
-	for_sale          *bool
-	sort_order        *int
-	addsort_order     *int
-	created_at        *time.Time
-	updated_at        *time.Time
-	clearedFields     map[string]struct{}
-	done              bool
-	oldValue          func(context.Context) (*SubscriptionPlan, error)
-	predicates        []predicate.SubscriptionPlan
+	op                        Op
+	typ                       string
+	id                        *int64
+	group_id                  *int64
+	addgroup_id               *int64
+	name                      *string
+	description               *string
+	price                     *float64
+	addprice                  *float64
+	original_price            *float64
+	addoriginal_price         *float64
+	validity_days             *int
+	addvalidity_days          *int
+	validity_unit             *string
+	features                  *string
+	product_name              *string
+	for_sale                  *bool
+	sort_order                *int
+	addsort_order             *int
+	custom_multiplier_enabled *bool
+	custom_multiplier_min     *int
+	addcustom_multiplier_min  *int
+	custom_multiplier_max     *int
+	addcustom_multiplier_max  *int
+	created_at                *time.Time
+	updated_at                *time.Time
+	clearedFields             map[string]struct{}
+	done                      bool
+	oldValue                  func(context.Context) (*SubscriptionPlan, error)
+	predicates                []predicate.SubscriptionPlan
 }
 
 var _ ent.Mutation = (*SubscriptionPlanMutation)(nil)
@@ -33046,6 +33961,154 @@ func (m *SubscriptionPlanMutation) ResetSortOrder() {
 	m.addsort_order = nil
 }
 
+// SetCustomMultiplierEnabled sets the "custom_multiplier_enabled" field.
+func (m *SubscriptionPlanMutation) SetCustomMultiplierEnabled(b bool) {
+	m.custom_multiplier_enabled = &b
+}
+
+// CustomMultiplierEnabled returns the value of the "custom_multiplier_enabled" field in the mutation.
+func (m *SubscriptionPlanMutation) CustomMultiplierEnabled() (r bool, exists bool) {
+	v := m.custom_multiplier_enabled
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCustomMultiplierEnabled returns the old "custom_multiplier_enabled" field's value of the SubscriptionPlan entity.
+// If the SubscriptionPlan object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SubscriptionPlanMutation) OldCustomMultiplierEnabled(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCustomMultiplierEnabled is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCustomMultiplierEnabled requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCustomMultiplierEnabled: %w", err)
+	}
+	return oldValue.CustomMultiplierEnabled, nil
+}
+
+// ResetCustomMultiplierEnabled resets all changes to the "custom_multiplier_enabled" field.
+func (m *SubscriptionPlanMutation) ResetCustomMultiplierEnabled() {
+	m.custom_multiplier_enabled = nil
+}
+
+// SetCustomMultiplierMin sets the "custom_multiplier_min" field.
+func (m *SubscriptionPlanMutation) SetCustomMultiplierMin(i int) {
+	m.custom_multiplier_min = &i
+	m.addcustom_multiplier_min = nil
+}
+
+// CustomMultiplierMin returns the value of the "custom_multiplier_min" field in the mutation.
+func (m *SubscriptionPlanMutation) CustomMultiplierMin() (r int, exists bool) {
+	v := m.custom_multiplier_min
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCustomMultiplierMin returns the old "custom_multiplier_min" field's value of the SubscriptionPlan entity.
+// If the SubscriptionPlan object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SubscriptionPlanMutation) OldCustomMultiplierMin(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCustomMultiplierMin is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCustomMultiplierMin requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCustomMultiplierMin: %w", err)
+	}
+	return oldValue.CustomMultiplierMin, nil
+}
+
+// AddCustomMultiplierMin adds i to the "custom_multiplier_min" field.
+func (m *SubscriptionPlanMutation) AddCustomMultiplierMin(i int) {
+	if m.addcustom_multiplier_min != nil {
+		*m.addcustom_multiplier_min += i
+	} else {
+		m.addcustom_multiplier_min = &i
+	}
+}
+
+// AddedCustomMultiplierMin returns the value that was added to the "custom_multiplier_min" field in this mutation.
+func (m *SubscriptionPlanMutation) AddedCustomMultiplierMin() (r int, exists bool) {
+	v := m.addcustom_multiplier_min
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetCustomMultiplierMin resets all changes to the "custom_multiplier_min" field.
+func (m *SubscriptionPlanMutation) ResetCustomMultiplierMin() {
+	m.custom_multiplier_min = nil
+	m.addcustom_multiplier_min = nil
+}
+
+// SetCustomMultiplierMax sets the "custom_multiplier_max" field.
+func (m *SubscriptionPlanMutation) SetCustomMultiplierMax(i int) {
+	m.custom_multiplier_max = &i
+	m.addcustom_multiplier_max = nil
+}
+
+// CustomMultiplierMax returns the value of the "custom_multiplier_max" field in the mutation.
+func (m *SubscriptionPlanMutation) CustomMultiplierMax() (r int, exists bool) {
+	v := m.custom_multiplier_max
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCustomMultiplierMax returns the old "custom_multiplier_max" field's value of the SubscriptionPlan entity.
+// If the SubscriptionPlan object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SubscriptionPlanMutation) OldCustomMultiplierMax(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCustomMultiplierMax is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCustomMultiplierMax requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCustomMultiplierMax: %w", err)
+	}
+	return oldValue.CustomMultiplierMax, nil
+}
+
+// AddCustomMultiplierMax adds i to the "custom_multiplier_max" field.
+func (m *SubscriptionPlanMutation) AddCustomMultiplierMax(i int) {
+	if m.addcustom_multiplier_max != nil {
+		*m.addcustom_multiplier_max += i
+	} else {
+		m.addcustom_multiplier_max = &i
+	}
+}
+
+// AddedCustomMultiplierMax returns the value that was added to the "custom_multiplier_max" field in this mutation.
+func (m *SubscriptionPlanMutation) AddedCustomMultiplierMax() (r int, exists bool) {
+	v := m.addcustom_multiplier_max
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetCustomMultiplierMax resets all changes to the "custom_multiplier_max" field.
+func (m *SubscriptionPlanMutation) ResetCustomMultiplierMax() {
+	m.custom_multiplier_max = nil
+	m.addcustom_multiplier_max = nil
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (m *SubscriptionPlanMutation) SetCreatedAt(t time.Time) {
 	m.created_at = &t
@@ -33152,7 +34215,7 @@ func (m *SubscriptionPlanMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *SubscriptionPlanMutation) Fields() []string {
-	fields := make([]string, 0, 13)
+	fields := make([]string, 0, 16)
 	if m.group_id != nil {
 		fields = append(fields, subscriptionplan.FieldGroupID)
 	}
@@ -33185,6 +34248,15 @@ func (m *SubscriptionPlanMutation) Fields() []string {
 	}
 	if m.sort_order != nil {
 		fields = append(fields, subscriptionplan.FieldSortOrder)
+	}
+	if m.custom_multiplier_enabled != nil {
+		fields = append(fields, subscriptionplan.FieldCustomMultiplierEnabled)
+	}
+	if m.custom_multiplier_min != nil {
+		fields = append(fields, subscriptionplan.FieldCustomMultiplierMin)
+	}
+	if m.custom_multiplier_max != nil {
+		fields = append(fields, subscriptionplan.FieldCustomMultiplierMax)
 	}
 	if m.created_at != nil {
 		fields = append(fields, subscriptionplan.FieldCreatedAt)
@@ -33222,6 +34294,12 @@ func (m *SubscriptionPlanMutation) Field(name string) (ent.Value, bool) {
 		return m.ForSale()
 	case subscriptionplan.FieldSortOrder:
 		return m.SortOrder()
+	case subscriptionplan.FieldCustomMultiplierEnabled:
+		return m.CustomMultiplierEnabled()
+	case subscriptionplan.FieldCustomMultiplierMin:
+		return m.CustomMultiplierMin()
+	case subscriptionplan.FieldCustomMultiplierMax:
+		return m.CustomMultiplierMax()
 	case subscriptionplan.FieldCreatedAt:
 		return m.CreatedAt()
 	case subscriptionplan.FieldUpdatedAt:
@@ -33257,6 +34335,12 @@ func (m *SubscriptionPlanMutation) OldField(ctx context.Context, name string) (e
 		return m.OldForSale(ctx)
 	case subscriptionplan.FieldSortOrder:
 		return m.OldSortOrder(ctx)
+	case subscriptionplan.FieldCustomMultiplierEnabled:
+		return m.OldCustomMultiplierEnabled(ctx)
+	case subscriptionplan.FieldCustomMultiplierMin:
+		return m.OldCustomMultiplierMin(ctx)
+	case subscriptionplan.FieldCustomMultiplierMax:
+		return m.OldCustomMultiplierMax(ctx)
 	case subscriptionplan.FieldCreatedAt:
 		return m.OldCreatedAt(ctx)
 	case subscriptionplan.FieldUpdatedAt:
@@ -33347,6 +34431,27 @@ func (m *SubscriptionPlanMutation) SetField(name string, value ent.Value) error 
 		}
 		m.SetSortOrder(v)
 		return nil
+	case subscriptionplan.FieldCustomMultiplierEnabled:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCustomMultiplierEnabled(v)
+		return nil
+	case subscriptionplan.FieldCustomMultiplierMin:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCustomMultiplierMin(v)
+		return nil
+	case subscriptionplan.FieldCustomMultiplierMax:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCustomMultiplierMax(v)
+		return nil
 	case subscriptionplan.FieldCreatedAt:
 		v, ok := value.(time.Time)
 		if !ok {
@@ -33384,6 +34489,12 @@ func (m *SubscriptionPlanMutation) AddedFields() []string {
 	if m.addsort_order != nil {
 		fields = append(fields, subscriptionplan.FieldSortOrder)
 	}
+	if m.addcustom_multiplier_min != nil {
+		fields = append(fields, subscriptionplan.FieldCustomMultiplierMin)
+	}
+	if m.addcustom_multiplier_max != nil {
+		fields = append(fields, subscriptionplan.FieldCustomMultiplierMax)
+	}
 	return fields
 }
 
@@ -33402,6 +34513,10 @@ func (m *SubscriptionPlanMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedValidityDays()
 	case subscriptionplan.FieldSortOrder:
 		return m.AddedSortOrder()
+	case subscriptionplan.FieldCustomMultiplierMin:
+		return m.AddedCustomMultiplierMin()
+	case subscriptionplan.FieldCustomMultiplierMax:
+		return m.AddedCustomMultiplierMax()
 	}
 	return nil, false
 }
@@ -33445,6 +34560,20 @@ func (m *SubscriptionPlanMutation) AddField(name string, value ent.Value) error 
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddSortOrder(v)
+		return nil
+	case subscriptionplan.FieldCustomMultiplierMin:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCustomMultiplierMin(v)
+		return nil
+	case subscriptionplan.FieldCustomMultiplierMax:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCustomMultiplierMax(v)
 		return nil
 	}
 	return fmt.Errorf("unknown SubscriptionPlan numeric field %s", name)
@@ -33514,6 +34643,15 @@ func (m *SubscriptionPlanMutation) ResetField(name string) error {
 		return nil
 	case subscriptionplan.FieldSortOrder:
 		m.ResetSortOrder()
+		return nil
+	case subscriptionplan.FieldCustomMultiplierEnabled:
+		m.ResetCustomMultiplierEnabled()
+		return nil
+	case subscriptionplan.FieldCustomMultiplierMin:
+		m.ResetCustomMultiplierMin()
+		return nil
+	case subscriptionplan.FieldCustomMultiplierMax:
+		m.ResetCustomMultiplierMax()
 		return nil
 	case subscriptionplan.FieldCreatedAt:
 		m.ResetCreatedAt()

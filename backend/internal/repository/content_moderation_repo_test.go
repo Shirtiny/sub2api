@@ -21,6 +21,16 @@ func TestBuildContentModerationLogWhere_BlockedIncludesAllBlockActions(t *testin
 	require.NotContains(t, sql, "l.action = 'block'")
 }
 
+func TestBuildContentModerationLogWhereGroupFilterIncludesCustomSubscriptionGroups(t *testing.T) {
+	groupID := int64(42)
+	where, args := buildContentModerationLogWhere(service.ContentModerationLogFilter{GroupID: &groupID})
+	sql := strings.Join(where, " AND ")
+	for _, want := range []string{"l.group_id = $1", "custom_source_group_id = $1", "is_custom_subscription_group = TRUE"} {
+		require.Contains(t, sql, want)
+	}
+	require.Equal(t, []any{groupID}, args)
+}
+
 func TestContentModerationRepositoryCountFlaggedByUserSince_ExcludesHashBlock(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	require.NoError(t, err)

@@ -223,6 +223,62 @@ func (_u *SubscriptionPlanUpdate) AddSortOrder(v int) *SubscriptionPlanUpdate {
 	return _u
 }
 
+// SetCustomMultiplierEnabled sets the "custom_multiplier_enabled" field.
+func (_u *SubscriptionPlanUpdate) SetCustomMultiplierEnabled(v bool) *SubscriptionPlanUpdate {
+	_u.mutation.SetCustomMultiplierEnabled(v)
+	return _u
+}
+
+// SetNillableCustomMultiplierEnabled sets the "custom_multiplier_enabled" field if the given value is not nil.
+func (_u *SubscriptionPlanUpdate) SetNillableCustomMultiplierEnabled(v *bool) *SubscriptionPlanUpdate {
+	if v != nil {
+		_u.SetCustomMultiplierEnabled(*v)
+	}
+	return _u
+}
+
+// SetCustomMultiplierMin sets the "custom_multiplier_min" field.
+func (_u *SubscriptionPlanUpdate) SetCustomMultiplierMin(v int) *SubscriptionPlanUpdate {
+	_u.mutation.ResetCustomMultiplierMin()
+	_u.mutation.SetCustomMultiplierMin(v)
+	return _u
+}
+
+// SetNillableCustomMultiplierMin sets the "custom_multiplier_min" field if the given value is not nil.
+func (_u *SubscriptionPlanUpdate) SetNillableCustomMultiplierMin(v *int) *SubscriptionPlanUpdate {
+	if v != nil {
+		_u.SetCustomMultiplierMin(*v)
+	}
+	return _u
+}
+
+// AddCustomMultiplierMin adds value to the "custom_multiplier_min" field.
+func (_u *SubscriptionPlanUpdate) AddCustomMultiplierMin(v int) *SubscriptionPlanUpdate {
+	_u.mutation.AddCustomMultiplierMin(v)
+	return _u
+}
+
+// SetCustomMultiplierMax sets the "custom_multiplier_max" field.
+func (_u *SubscriptionPlanUpdate) SetCustomMultiplierMax(v int) *SubscriptionPlanUpdate {
+	_u.mutation.ResetCustomMultiplierMax()
+	_u.mutation.SetCustomMultiplierMax(v)
+	return _u
+}
+
+// SetNillableCustomMultiplierMax sets the "custom_multiplier_max" field if the given value is not nil.
+func (_u *SubscriptionPlanUpdate) SetNillableCustomMultiplierMax(v *int) *SubscriptionPlanUpdate {
+	if v != nil {
+		_u.SetCustomMultiplierMax(*v)
+	}
+	return _u
+}
+
+// AddCustomMultiplierMax adds value to the "custom_multiplier_max" field.
+func (_u *SubscriptionPlanUpdate) AddCustomMultiplierMax(v int) *SubscriptionPlanUpdate {
+	_u.mutation.AddCustomMultiplierMax(v)
+	return _u
+}
+
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *SubscriptionPlanUpdate) SetUpdatedAt(v time.Time) *SubscriptionPlanUpdate {
 	_u.mutation.SetUpdatedAt(v)
@@ -352,6 +408,21 @@ func (_u *SubscriptionPlanUpdate) sqlSave(ctx context.Context) (_node int, err e
 	}
 	if value, ok := _u.mutation.AddedSortOrder(); ok {
 		_spec.AddField(subscriptionplan.FieldSortOrder, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.CustomMultiplierEnabled(); ok {
+		_spec.SetField(subscriptionplan.FieldCustomMultiplierEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.CustomMultiplierMin(); ok {
+		_spec.SetField(subscriptionplan.FieldCustomMultiplierMin, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedCustomMultiplierMin(); ok {
+		_spec.AddField(subscriptionplan.FieldCustomMultiplierMin, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.CustomMultiplierMax(); ok {
+		_spec.SetField(subscriptionplan.FieldCustomMultiplierMax, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedCustomMultiplierMax(); ok {
+		_spec.AddField(subscriptionplan.FieldCustomMultiplierMax, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(subscriptionplan.FieldUpdatedAt, field.TypeTime, value)
@@ -571,6 +642,62 @@ func (_u *SubscriptionPlanUpdateOne) AddSortOrder(v int) *SubscriptionPlanUpdate
 	return _u
 }
 
+// SetCustomMultiplierEnabled sets the "custom_multiplier_enabled" field.
+func (_u *SubscriptionPlanUpdateOne) SetCustomMultiplierEnabled(v bool) *SubscriptionPlanUpdateOne {
+	_u.mutation.SetCustomMultiplierEnabled(v)
+	return _u
+}
+
+// SetNillableCustomMultiplierEnabled sets the "custom_multiplier_enabled" field if the given value is not nil.
+func (_u *SubscriptionPlanUpdateOne) SetNillableCustomMultiplierEnabled(v *bool) *SubscriptionPlanUpdateOne {
+	if v != nil {
+		_u.SetCustomMultiplierEnabled(*v)
+	}
+	return _u
+}
+
+// SetCustomMultiplierMin sets the "custom_multiplier_min" field.
+func (_u *SubscriptionPlanUpdateOne) SetCustomMultiplierMin(v int) *SubscriptionPlanUpdateOne {
+	_u.mutation.ResetCustomMultiplierMin()
+	_u.mutation.SetCustomMultiplierMin(v)
+	return _u
+}
+
+// SetNillableCustomMultiplierMin sets the "custom_multiplier_min" field if the given value is not nil.
+func (_u *SubscriptionPlanUpdateOne) SetNillableCustomMultiplierMin(v *int) *SubscriptionPlanUpdateOne {
+	if v != nil {
+		_u.SetCustomMultiplierMin(*v)
+	}
+	return _u
+}
+
+// AddCustomMultiplierMin adds value to the "custom_multiplier_min" field.
+func (_u *SubscriptionPlanUpdateOne) AddCustomMultiplierMin(v int) *SubscriptionPlanUpdateOne {
+	_u.mutation.AddCustomMultiplierMin(v)
+	return _u
+}
+
+// SetCustomMultiplierMax sets the "custom_multiplier_max" field.
+func (_u *SubscriptionPlanUpdateOne) SetCustomMultiplierMax(v int) *SubscriptionPlanUpdateOne {
+	_u.mutation.ResetCustomMultiplierMax()
+	_u.mutation.SetCustomMultiplierMax(v)
+	return _u
+}
+
+// SetNillableCustomMultiplierMax sets the "custom_multiplier_max" field if the given value is not nil.
+func (_u *SubscriptionPlanUpdateOne) SetNillableCustomMultiplierMax(v *int) *SubscriptionPlanUpdateOne {
+	if v != nil {
+		_u.SetCustomMultiplierMax(*v)
+	}
+	return _u
+}
+
+// AddCustomMultiplierMax adds value to the "custom_multiplier_max" field.
+func (_u *SubscriptionPlanUpdateOne) AddCustomMultiplierMax(v int) *SubscriptionPlanUpdateOne {
+	_u.mutation.AddCustomMultiplierMax(v)
+	return _u
+}
+
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *SubscriptionPlanUpdateOne) SetUpdatedAt(v time.Time) *SubscriptionPlanUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
@@ -730,6 +857,21 @@ func (_u *SubscriptionPlanUpdateOne) sqlSave(ctx context.Context) (_node *Subscr
 	}
 	if value, ok := _u.mutation.AddedSortOrder(); ok {
 		_spec.AddField(subscriptionplan.FieldSortOrder, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.CustomMultiplierEnabled(); ok {
+		_spec.SetField(subscriptionplan.FieldCustomMultiplierEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.CustomMultiplierMin(); ok {
+		_spec.SetField(subscriptionplan.FieldCustomMultiplierMin, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedCustomMultiplierMin(); ok {
+		_spec.AddField(subscriptionplan.FieldCustomMultiplierMin, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.CustomMultiplierMax(); ok {
+		_spec.SetField(subscriptionplan.FieldCustomMultiplierMax, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedCustomMultiplierMax(); ok {
+		_spec.AddField(subscriptionplan.FieldCustomMultiplierMax, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(subscriptionplan.FieldUpdatedAt, field.TypeTime, value)

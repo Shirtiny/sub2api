@@ -97,6 +97,11 @@ export interface PaymentOrder {
   refund_request_reason?: string
   plan_id?: number
   provider_instance_id?: string
+  subscription_group_id?: number
+  subscription_multiplier?: number
+  subscription_source_group_id?: number
+  subscription_source_price?: number
+  subscription_source_original_price?: number
 }
 
 // ==================== Plans & Channels ====================
@@ -121,6 +126,9 @@ export interface SubscriptionPlan {
   features: string[]
   for_sale: boolean
   sort_order: number
+  custom_multiplier_enabled?: boolean
+  custom_multiplier_min?: number
+  custom_multiplier_max?: number
 }
 
 export interface PaymentChannel {
@@ -164,6 +172,7 @@ export interface CreateOrderRequest {
   openid?: string
   wechat_resume_token?: string
   is_mobile?: boolean
+  multiplier?: number
 }
 
 export interface CafeCouponSummary {
@@ -206,14 +215,15 @@ export interface CafeCouponStatusResponse {
   coupon?: CafeCouponSummary
 }
 
-export interface CafeCouponApplyRequest {
+export interface CafeCouponPreviewRequest {
   code: string
   amount: number
   order_type: OrderType
   plan_id?: number
+  multiplier?: number
 }
 
-export interface CafeCouponApplyResponse {
+export interface CafeCouponPreviewResponse {
   valid: boolean
   discount_amount: number
   pay_amount: number

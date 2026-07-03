@@ -54,6 +54,14 @@ const (
 	FieldSubscriptionGroupID = "subscription_group_id"
 	// FieldSubscriptionDays holds the string denoting the subscription_days field in the database.
 	FieldSubscriptionDays = "subscription_days"
+	// FieldSubscriptionMultiplier holds the string denoting the subscription_multiplier field in the database.
+	FieldSubscriptionMultiplier = "subscription_multiplier"
+	// FieldSubscriptionSourceGroupID holds the string denoting the subscription_source_group_id field in the database.
+	FieldSubscriptionSourceGroupID = "subscription_source_group_id"
+	// FieldSubscriptionSourcePrice holds the string denoting the subscription_source_price field in the database.
+	FieldSubscriptionSourcePrice = "subscription_source_price"
+	// FieldSubscriptionSourceOriginalPrice holds the string denoting the subscription_source_original_price field in the database.
+	FieldSubscriptionSourceOriginalPrice = "subscription_source_original_price"
 	// FieldProviderInstanceID holds the string denoting the provider_instance_id field in the database.
 	FieldProviderInstanceID = "provider_instance_id"
 	// FieldProviderKey holds the string denoting the provider_key field in the database.
@@ -132,6 +140,10 @@ var Columns = []string{
 	FieldPlanID,
 	FieldSubscriptionGroupID,
 	FieldSubscriptionDays,
+	FieldSubscriptionMultiplier,
+	FieldSubscriptionSourceGroupID,
+	FieldSubscriptionSourcePrice,
+	FieldSubscriptionSourceOriginalPrice,
 	FieldProviderInstanceID,
 	FieldProviderKey,
 	FieldProviderSnapshot,
@@ -322,6 +334,26 @@ func BySubscriptionGroupID(opts ...sql.OrderTermOption) OrderOption {
 // BySubscriptionDays orders the results by the subscription_days field.
 func BySubscriptionDays(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSubscriptionDays, opts...).ToFunc()
+}
+
+// BySubscriptionMultiplier orders the results by the subscription_multiplier field.
+func BySubscriptionMultiplier(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSubscriptionMultiplier, opts...).ToFunc()
+}
+
+// BySubscriptionSourceGroupID orders the results by the subscription_source_group_id field.
+func BySubscriptionSourceGroupID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSubscriptionSourceGroupID, opts...).ToFunc()
+}
+
+// BySubscriptionSourcePrice orders the results by the subscription_source_price field.
+func BySubscriptionSourcePrice(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSubscriptionSourcePrice, opts...).ToFunc()
+}
+
+// BySubscriptionSourceOriginalPrice orders the results by the subscription_source_original_price field.
+func BySubscriptionSourceOriginalPrice(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSubscriptionSourceOriginalPrice, opts...).ToFunc()
 }
 
 // ByProviderInstanceID orders the results by the provider_instance_id field.

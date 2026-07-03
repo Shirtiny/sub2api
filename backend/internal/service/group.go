@@ -26,6 +26,12 @@ type Group struct {
 	MonthlyLimitUSD     *float64
 	DefaultValidityDays int
 
+	IsCustomSubscriptionGroup bool
+	CustomOwnerUserID         *int64
+	CustomSourcePlanID        *int64
+	CustomSourceGroupID       *int64
+	CustomMultiplier          *int
+
 	// 图片生成计费配置（antigravity 和 gemini 平台使用）
 	AllowImageGeneration bool
 	ImageRateIndependent bool

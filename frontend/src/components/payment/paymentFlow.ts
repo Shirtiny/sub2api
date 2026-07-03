@@ -48,6 +48,7 @@ export interface PaymentRecoverySnapshot {
   orderType: OrderType | ''
   paymentMode: string
   resumeToken: string
+  multiplier?: number
   createdAt: number
 }
 
@@ -62,6 +63,7 @@ export interface PaymentLaunchContext {
   stripePopupUrl?: string
   stripeRouteUrl?: string
   airwallexRouteUrl?: string
+  multiplier?: number
 }
 
 export interface PaymentLaunchDecision {
@@ -80,6 +82,7 @@ export interface BuildCreateOrderPayloadInput {
   planId?: number
   origin?: string
   cafeCouponCode?: string
+  multiplier?: number
   isMobile: boolean
   isWechatBrowser: boolean
   /** When true, Alipay payments always use QR code (passes is_mobile: false to backend) */
@@ -138,6 +141,9 @@ export function buildCreateOrderPayload(input: BuildCreateOrderPayloadInput): Cr
   if (input.cafeCouponCode) {
     payload.cafe_coupon_code = input.cafeCouponCode
   }
+  if (input.multiplier && input.multiplier > 1) {
+    payload.multiplier = input.multiplier
+  }
   if (normalizedOrigin) {
     payload.return_url = `${normalizedOrigin}/payment/result`
   }
@@ -167,6 +173,7 @@ export function decidePaymentLaunch(
     orderType: context.orderType,
     paymentMode: (result.payment_mode || '').trim(),
     resumeToken: result.resume_token || '',
+    multiplier: context.multiplier,
   }, context.now)
 
   if (result.result_type === 'payment_completed') {
@@ -288,6 +295,7 @@ export function readPaymentRecoverySnapshot(
       || typeof parsed.payAmount !== 'number'
       || typeof parsed.paymentMode !== 'string'
       || typeof parsed.resumeToken !== 'string'
+      || (parsed.multiplier != null && typeof parsed.multiplier !== 'number')
       || typeof parsed.createdAt !== 'number'
     ) {
       return null
@@ -319,6 +327,7 @@ export function readPaymentRecoverySnapshot(
       orderType: parsed.orderType === 'subscription' ? 'subscription' : 'balance',
       paymentMode: parsed.paymentMode,
       resumeToken: parsed.resumeToken,
+      multiplier: parsed.multiplier,
       createdAt: parsed.createdAt,
     }
   } catch {

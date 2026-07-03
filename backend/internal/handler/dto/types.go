@@ -98,6 +98,12 @@ type Group struct {
 	WeeklyLimitUSD   *float64 `json:"weekly_limit_usd"`
 	MonthlyLimitUSD  *float64 `json:"monthly_limit_usd"`
 
+	IsCustomSubscriptionGroup bool   `json:"is_custom_subscription_group"`
+	CustomOwnerUserID         *int64 `json:"custom_owner_user_id,omitempty"`
+	CustomSourcePlanID        *int64 `json:"custom_source_plan_id,omitempty"`
+	CustomSourceGroupID       *int64 `json:"custom_source_group_id,omitempty"`
+	CustomMultiplier          *int   `json:"custom_multiplier,omitempty"`
+
 	// 图片生成计费配置（仅 antigravity 平台使用）
 	AllowImageGeneration bool     `json:"allow_image_generation"`
 	ImageRateIndependent bool     `json:"image_rate_independent"`

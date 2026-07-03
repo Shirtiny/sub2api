@@ -255,7 +255,8 @@ func buildContentModerationLogWhere(filter service.ContentModerationLogFilter) (
 		where = append(where, "l.error <> ''")
 	}
 	if filter.GroupID != nil {
-		add("l.group_id = $%d", *filter.GroupID)
+		args = append(args, *filter.GroupID)
+		where = append(where, usageGroupIDMatchesCondition("l.group_id", len(args)))
 	}
 	if endpoint := strings.TrimSpace(filter.Endpoint); endpoint != "" {
 		add("l.endpoint = $%d", endpoint)

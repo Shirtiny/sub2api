@@ -131,6 +131,12 @@
                     : t("admin.groups.subscription.standard")
                 }}
               </span>
+              <span
+                v-if="row.is_custom_subscription_group"
+                class="ml-1 inline-block rounded-full bg-primary-100 px-2 py-0.5 text-xs font-medium text-primary-700 dark:bg-primary-900/30 dark:text-primary-300"
+              >
+                {{ t("admin.groups.customSubscription.badge") }} {{ row.custom_multiplier || 1 }}x
+              </span>
               <!-- Subscription Limits - compact single line -->
               <div
                 v-if="row.subscription_type === 'subscription'"
@@ -2037,6 +2043,40 @@
           </div>
         </div>
 
+        <div
+          v-if="editingGroup?.is_custom_subscription_group"
+          class="rounded-lg border border-primary-100 bg-primary-50/60 p-3 dark:border-primary-900/40 dark:bg-primary-900/10"
+        >
+          <div class="mb-3 text-sm font-medium text-content-secondary">
+            {{ t("admin.groups.customSubscription.title") }}
+          </div>
+          <div class="grid grid-cols-1 gap-3 text-xs text-gray-500 dark:text-gray-400 sm:grid-cols-3">
+            <div>
+              <span>{{ t("admin.groups.customSubscription.ownerUser") }}</span>
+              <div class="mt-0.5 font-medium text-content-secondary">#{{ editingGroup?.custom_owner_user_id || '-' }}</div>
+            </div>
+            <div>
+              <span>{{ t("admin.groups.customSubscription.sourcePlan") }}</span>
+              <div class="mt-0.5 font-medium text-content-secondary">#{{ editingGroup?.custom_source_plan_id || '-' }}</div>
+            </div>
+            <div>
+              <span>{{ t("admin.groups.customSubscription.sourceGroup") }}</span>
+              <div class="mt-0.5 font-medium text-content-secondary">#{{ editingGroup?.custom_source_group_id || '-' }}</div>
+            </div>
+          </div>
+          <div class="mt-3">
+            <label class="input-label">{{ t("admin.groups.customSubscription.multiplier") }}</label>
+            <input
+              v-model.number="editForm.custom_multiplier"
+              type="number"
+              min="2"
+              step="1"
+              class="input"
+            />
+            <p class="input-hint">{{ t("admin.groups.customSubscription.multiplierHint") }}</p>
+          </div>
+        </div>
+
         <!-- 图片生成计费配置 -->
         <div
           v-if="
@@ -3664,6 +3704,7 @@ const editForm = reactive({
   daily_limit_usd: null as number | null,
   weekly_limit_usd: null as number | null,
   monthly_limit_usd: null as number | null,
+  custom_multiplier: null as number | null,
   // 图片生成计费配置
   allow_image_generation: false,
   image_rate_independent: false,
@@ -4042,6 +4083,7 @@ const handleEdit = async (group: AdminGroup) => {
   editForm.daily_limit_usd = group.daily_limit_usd;
   editForm.weekly_limit_usd = group.weekly_limit_usd;
   editForm.monthly_limit_usd = group.monthly_limit_usd;
+  editForm.custom_multiplier = group.custom_multiplier ?? null;
   editForm.allow_image_generation = group.allow_image_generation ?? false;
   editForm.image_rate_independent = group.image_rate_independent ?? false;
   editForm.image_rate_multiplier = group.image_rate_multiplier ?? 1;
@@ -4092,6 +4134,7 @@ const closeEditModal = () => {
   editingGroup.value = null;
   editModelRoutingRules.value = [];
   editForm.copy_accounts_from_group_ids = [];
+  editForm.custom_multiplier = null;
   resetMessagesDispatchFormState(editForm);
   resetModelsListState(editModelsListState);
 };
@@ -4103,6 +4146,10 @@ const handleUpdateGroup = async () => {
     return;
   }
 
+  if (editingGroup.value?.is_custom_subscription_group && (!editForm.custom_multiplier || editForm.custom_multiplier < 1)) {
+    appStore.showError(t("admin.groups.customSubscription.multiplierInvalid"));
+    return;
+  }
   submitting.value = true;
   try {
     // 转换 fallback_group_id: null -> 0 (后端使用 0 表示清除)
@@ -4150,6 +4197,9 @@ const handleUpdateGroup = async () => {
     payload.image_rate_multiplier = normalizeImageRateMultiplier(
       payload.image_rate_multiplier,
     );
+    if (!editingGroup.value.is_custom_subscription_group) {
+      delete (payload as Partial<typeof payload>).custom_multiplier;
+    }
     await adminAPI.groups.update(editingGroup.value.id, payload);
     appStore.showSuccess(t("admin.groups.groupUpdated"));
     closeEditModal();

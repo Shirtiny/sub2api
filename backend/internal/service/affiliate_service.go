@@ -853,7 +853,7 @@ func (s *AffiliateService) redeemAffiliateQuotaToSubscriptionWithPlan(ctx contex
 		return nil, err
 	}
 	if result != nil && result.TransferredDays > 0 {
-		s.invalidateAffiliateSubscriptionCaches(ctx, userID, groupID)
+		s.invalidateAffiliateSubscriptionCaches(ctx, userID, result.GroupID)
 	}
 	return result, nil
 }
@@ -878,7 +878,7 @@ func (s *AffiliateService) TransferAffiliateSubscriptionRebate(ctx context.Conte
 		return nil, err
 	}
 	if result != nil && result.TransferredDays > 0 {
-		s.invalidateAffiliateSubscriptionCaches(ctx, userID, groupID)
+		s.invalidateAffiliateSubscriptionCaches(ctx, userID, result.GroupID)
 	}
 	return result, nil
 }

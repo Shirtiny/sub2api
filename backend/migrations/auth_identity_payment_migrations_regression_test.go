@@ -143,6 +143,14 @@ func TestMigration134AddsAffiliateLedgerAuditFieldsWithoutJSONCast(t *testing.T)
 	require.NotContains(t, sql, "detail::jsonb")
 }
 
+func TestMigration157HasNoUTF8BOM(t *testing.T) {
+	content, err := FS.ReadFile("157_custom_subscription_multiplier.sql")
+	require.NoError(t, err)
+	require.NotEmpty(t, content)
+	require.False(t, len(content) >= 3 && content[0] == 0xEF && content[1] == 0xBB && content[2] == 0xBF, "migration must be UTF-8 without BOM so postgres can parse the first statement")
+	require.True(t, strings.HasPrefix(string(content), "ALTER TABLE"))
+}
+
 func TestMigration135AllowsGitHubAndGoogleAuthProviders(t *testing.T) {
 	content, err := FS.ReadFile("135_allow_email_oauth_provider_types.sql")
 	require.NoError(t, err)

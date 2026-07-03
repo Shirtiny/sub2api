@@ -164,6 +164,27 @@ func (Group) Fields() []ent.Field {
 		field.Int("rpm_limit").
 			Default(0).
 			Comment("分组 RPM 上限，0 表示不限制；设置后接管该分组用户的限流"),
+
+		// Custom multiplier subscription group metadata. Normal groups keep defaults/nulls.
+		field.Bool("is_custom_subscription_group").
+			Default(false).
+			Comment("whether this group is a per-user custom subscription group"),
+		field.Int64("custom_owner_user_id").
+			Optional().
+			Nillable().
+			Comment("owner user id for custom subscription group"),
+		field.Int64("custom_source_plan_id").
+			Optional().
+			Nillable().
+			Comment("source subscription plan id for custom group"),
+		field.Int64("custom_source_group_id").
+			Optional().
+			Nillable().
+			Comment("source base group id for custom group"),
+		field.Int("custom_multiplier").
+			Optional().
+			Nillable().
+			Comment("current custom subscription multiplier"),
 	}
 }
 
@@ -193,5 +214,8 @@ func (Group) Indexes() []ent.Index {
 		index.Fields("is_exclusive"),
 		index.Fields("deleted_at"),
 		index.Fields("sort_order"),
+		index.Fields("is_custom_subscription_group"),
+		index.Fields("custom_owner_user_id", "custom_source_plan_id").
+			Annotations(entsql.IndexWhere("deleted_at IS NULL AND is_custom_subscription_group = TRUE AND custom_owner_user_id IS NOT NULL AND custom_source_plan_id IS NOT NULL")),
 	}
 }

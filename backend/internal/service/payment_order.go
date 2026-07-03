@@ -14,13 +14,20 @@ import (
 
 	dbent "github.com/Wei-Shaw/sub2api/ent"
 	"github.com/Wei-Shaw/sub2api/ent/cafecoupon"
+	"github.com/Wei-Shaw/sub2api/ent/group"
 	"github.com/Wei-Shaw/sub2api/ent/paymentorder"
+	entuser "github.com/Wei-Shaw/sub2api/ent/user"
+	"github.com/Wei-Shaw/sub2api/ent/usersubscription"
 	"github.com/Wei-Shaw/sub2api/internal/payment"
 	"github.com/Wei-Shaw/sub2api/internal/payment/provider"
 	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 )
 
-const minCreateOrderPayAmount = 1.0
+const (
+	minCreateOrderPayAmount         = 1.0
+	minCustomSubscriptionMultiplier = 1
+	maxCustomSubscriptionMultiplier = 100
+)
 
 // --- Order Creation ---
 
@@ -42,6 +49,13 @@ func (s *PaymentService) CreateOrder(ctx context.Context, req CreateOrderRequest
 	if err != nil {
 		return nil, err
 	}
+	if plan != nil {
+		resolvedMultiplier, err := s.resolveSubscriptionOrderMultiplier(ctx, req.UserID, plan, req.Multiplier)
+		if err != nil {
+			return nil, err
+		}
+		req.Multiplier = resolvedMultiplier
+	}
 	if err := s.checkCancelRateLimit(ctx, req.UserID, cfg); err != nil {
 		return nil, err
 	}
@@ -58,8 +72,8 @@ func (s *PaymentService) CreateOrder(ctx context.Context, req CreateOrderRequest
 	orderAmount := req.Amount
 	limitAmount := req.Amount
 	if plan != nil {
-		orderAmount = plan.Price
-		limitAmount = plan.Price
+		orderAmount = subscriptionOrderAmount(plan, req.Multiplier)
+		limitAmount = orderAmount
 	} else if req.OrderType == payment.OrderTypeBalance {
 		orderAmount = calculateCreditedBalance(req.Amount, cfg.BalanceRechargeMultiplier)
 	}
@@ -193,6 +207,9 @@ func (s *PaymentService) completeDevAutoSuccessOrder(ctx context.Context, order 
 }
 
 func (s *PaymentService) validateOrderInput(ctx context.Context, req CreateOrderRequest, cfg *PaymentConfig) (*dbent.SubscriptionPlan, error) {
+	if req.OrderType != payment.OrderTypeBalance && req.OrderType != payment.OrderTypeSubscription {
+		return nil, infraerrors.BadRequest("INVALID_ORDER_TYPE", "unsupported order type")
+	}
 	if req.OrderType == payment.OrderTypeBalance && cfg.BalanceDisabled {
 		return nil, infraerrors.Forbidden("BALANCE_PAYMENT_DISABLED", "balance recharge has been disabled")
 	}
@@ -224,7 +241,111 @@ func (s *PaymentService) validateSubOrder(ctx context.Context, req CreateOrderRe
 	if !group.IsSubscriptionType() {
 		return nil, infraerrors.BadRequest("GROUP_TYPE_MISMATCH", "group is not a subscription type")
 	}
+	if _, err := s.resolveSubscriptionOrderMultiplier(ctx, req.UserID, plan, req.Multiplier); err != nil {
+		return nil, err
+	}
 	return plan, nil
+}
+
+func (s *PaymentService) resolveSubscriptionOrderMultiplier(ctx context.Context, userID int64, plan *dbent.SubscriptionPlan, requested int) (int, error) {
+	if plan == nil {
+		return 1, nil
+	}
+	if existing, err := s.findActiveCustomSubscriptionGroup(ctx, userID, plan.ID); err == nil && existing != nil {
+		if existing.Status != payment.EntityStatusActive {
+			return 0, infraerrors.Forbidden("CUSTOM_SUBSCRIPTION_GROUP_INACTIVE", "custom subscription group is disabled")
+		}
+		if existing.CustomMultiplier == nil || *existing.CustomMultiplier < minCustomSubscriptionMultiplier || *existing.CustomMultiplier > maxCustomSubscriptionMultiplier {
+			return 0, infraerrors.BadRequest("INVALID_SUBSCRIPTION_MULTIPLIER", "active custom subscription multiplier is invalid")
+		}
+		return *existing.CustomMultiplier, nil
+	} else if err != nil && !dbent.IsNotFound(err) {
+		return 0, fmt.Errorf("find active custom subscription group: %w", err)
+	}
+	if !plan.CustomMultiplierEnabled {
+		return 1, nil
+	}
+	minMultiplier := plan.CustomMultiplierMin
+	maxMultiplier := plan.CustomMultiplierMax
+	if minMultiplier < minCustomSubscriptionMultiplier {
+		minMultiplier = minCustomSubscriptionMultiplier
+	}
+	if maxMultiplier > maxCustomSubscriptionMultiplier {
+		maxMultiplier = maxCustomSubscriptionMultiplier
+	}
+	multiplier := requested
+	if multiplier == 0 {
+		multiplier = minMultiplier
+	}
+	if maxMultiplier < minMultiplier || multiplier < minMultiplier || multiplier > maxMultiplier || multiplier < minCustomSubscriptionMultiplier {
+		return 0, infraerrors.BadRequest("INVALID_SUBSCRIPTION_MULTIPLIER", "subscription multiplier is out of range").
+			WithMetadata(map[string]string{
+				"min": strconv.Itoa(minMultiplier),
+				"max": strconv.Itoa(maxMultiplier),
+			})
+	}
+	return multiplier, nil
+}
+
+func subscriptionOrderAmount(plan *dbent.SubscriptionPlan, multiplier int) float64 {
+	if plan == nil {
+		return 0
+	}
+	if multiplier < 1 {
+		multiplier = 1
+	}
+	return math.Round(plan.Price*float64(multiplier)*100) / 100
+}
+
+func subscriptionOrderOriginalPrice(plan *dbent.SubscriptionPlan) *float64 {
+	if plan == nil || plan.OriginalPrice == nil {
+		return nil
+	}
+	v := *plan.OriginalPrice
+	return &v
+}
+
+func (s *PaymentService) findActiveCustomSubscriptionGroup(ctx context.Context, userID, planID int64) (*dbent.Group, error) {
+	if s == nil || s.entClient == nil || userID <= 0 || planID <= 0 {
+		return nil, errors.New("custom subscription group not found")
+	}
+	return s.entClient.Group.Query().
+		Where(
+			group.IsCustomSubscriptionGroupEQ(true),
+			group.CustomOwnerUserIDEQ(userID),
+			group.CustomSourcePlanIDEQ(planID),
+			group.HasSubscriptionsWith(
+				usersubscription.UserIDEQ(userID),
+				usersubscription.StatusEQ(SubscriptionStatusActive),
+				usersubscription.ExpiresAtGT(time.Now()),
+			),
+		).
+		Order(dbent.Desc(group.FieldID)).
+		First(ctx)
+}
+
+func lockPaymentUserForUpdate(ctx context.Context, tx *dbent.Tx, userID int64) error {
+	if tx == nil {
+		return fmt.Errorf("lock payment user: nil transaction")
+	}
+	if userID <= 0 {
+		return infraerrors.BadRequest("INVALID_USER", "invalid user")
+	}
+	_, err := tx.User.Query().Where(entuser.IDEQ(userID)).ForUpdate().OnlyID(ctx)
+	if err != nil {
+		// SQLite unit-test driver does not support SELECT ... FOR UPDATE. Production
+		// PostgreSQL keeps the row lock; fallback only for the exact SQLite syntax
+		// error so real locking failures are not hidden.
+		if strings.Contains(err.Error(), `near "FOR": syntax error`) {
+			_, fallbackErr := tx.User.Query().Where(entuser.IDEQ(userID)).OnlyID(ctx)
+			if fallbackErr != nil {
+				return fmt.Errorf("lock payment user: %w", fallbackErr)
+			}
+			return nil
+		}
+		return fmt.Errorf("lock payment user: %w", err)
+	}
+	return nil
 }
 
 func (s *PaymentService) createOrderInTx(ctx context.Context, req CreateOrderRequest, user *User, plan *dbent.SubscriptionPlan, cfg *PaymentConfig, orderAmount, limitAmount, feeRate, payAmount float64, sel *payment.InstanceSelection) (*dbent.PaymentOrder, error) {
@@ -233,8 +354,28 @@ func (s *PaymentService) createOrderInTx(ctx context.Context, req CreateOrderReq
 		return nil, fmt.Errorf("begin transaction: %w", err)
 	}
 	defer func() { _ = tx.Rollback() }()
+	txCtx := dbent.NewTxContext(ctx, tx)
+	if err := lockPaymentUserForUpdate(txCtx, tx, req.UserID); err != nil {
+		return nil, err
+	}
+	if plan != nil {
+		txSvc := *s
+		txSvc.entClient = tx.Client()
+		resolvedMultiplier, err := txSvc.resolveSubscriptionOrderMultiplier(txCtx, req.UserID, plan, req.Multiplier)
+		if err != nil {
+			return nil, err
+		}
+		if resolvedMultiplier != req.Multiplier {
+			return nil, infraerrors.Conflict("SUBSCRIPTION_STATE_CHANGED", "subscription state changed, please retry")
+		}
+	}
 	if err := s.checkPendingLimit(ctx, tx, req.UserID, cfg.MaxPendingOrders); err != nil {
 		return nil, err
+	}
+	if plan != nil && plan.CustomMultiplierEnabled {
+		if err := s.checkPendingCustomSubscriptionOrder(ctx, tx, req.UserID, plan.ID); err != nil {
+			return nil, err
+		}
 	}
 	if err := s.checkDailyLimit(ctx, tx, req.UserID, limitAmount, cfg.DailyLimit); err != nil {
 		return nil, err
@@ -285,7 +426,15 @@ func (s *PaymentService) createOrderInTx(ctx context.Context, req CreateOrderReq
 		b.SetProviderSnapshot(providerSnapshot)
 	}
 	if plan != nil {
-		b.SetPlanID(plan.ID).SetSubscriptionGroupID(plan.GroupID).SetSubscriptionDays(psComputeValidityDays(plan.ValidityDays, plan.ValidityUnit))
+		multiplier := req.Multiplier
+		if multiplier < 1 {
+			multiplier = 1
+		}
+		b.SetPlanID(plan.ID).SetSubscriptionGroupID(plan.GroupID).SetSubscriptionDays(psComputeValidityDays(plan.ValidityDays, plan.ValidityUnit)).
+			SetSubscriptionMultiplier(multiplier).
+			SetSubscriptionSourceGroupID(plan.GroupID).
+			SetSubscriptionSourcePrice(plan.Price).
+			SetNillableSubscriptionSourceOriginalPrice(subscriptionOrderOriginalPrice(plan))
 	}
 	order, err := b.Save(ctx)
 	if err != nil {
@@ -359,6 +508,30 @@ func (s *PaymentService) checkPendingLimit(ctx context.Context, tx *dbent.Tx, us
 	if c >= max {
 		return infraerrors.TooManyRequests("TOO_MANY_PENDING", "too_many_pending").
 			WithMetadata(map[string]string{"max": strconv.Itoa(max)})
+	}
+	return nil
+}
+
+func (s *PaymentService) checkPendingCustomSubscriptionOrder(ctx context.Context, tx *dbent.Tx, userID, planID int64) error {
+	now := time.Now()
+	count, err := tx.PaymentOrder.Query().Where(
+		paymentorder.UserIDEQ(userID),
+		paymentorder.OrderTypeEQ(payment.OrderTypeSubscription),
+		paymentorder.PlanIDEQ(planID),
+		paymentorder.SubscriptionMultiplierGTE(minCustomSubscriptionMultiplier),
+		paymentorder.Or(
+			paymentorder.And(
+				paymentorder.StatusEQ(OrderStatusPending),
+				paymentorder.ExpiresAtGT(now),
+			),
+			paymentorder.StatusIn(OrderStatusPaid, OrderStatusRecharging),
+		),
+	).Count(ctx)
+	if err != nil {
+		return fmt.Errorf("count pending custom subscription orders: %w", err)
+	}
+	if count > 0 {
+		return infraerrors.Conflict("CUSTOM_SUBSCRIPTION_ORDER_PENDING", "custom subscription order already pending or processing")
 	}
 	return nil
 }
@@ -671,7 +844,25 @@ func (s *PaymentService) buildWeChatOAuthRequiredResponse(ctx context.Context, r
 		return nil, err
 	}
 
-	authorizeURL, err := buildWeChatPaymentOAuthStartURL(req, "snsapi_base")
+	resumeAmount := ""
+	if req.Amount > 0 {
+		resumeAmount = strconv.FormatFloat(req.Amount, 'f', -1, 64)
+	}
+	contextToken, err := s.paymentResume().CreateWeChatPaymentOAuthContextToken(WeChatPaymentOAuthContextClaims{
+		UserID:         req.UserID,
+		PaymentType:    req.PaymentType,
+		Amount:         resumeAmount,
+		OrderType:      req.OrderType,
+		PlanID:         req.PlanID,
+		Multiplier:     req.Multiplier,
+		CafeCouponCode: req.CafeCouponCode,
+		RedirectTo:     paymentRedirectPathFromURL(req.SrcURL),
+		Scope:          "snsapi_base",
+	})
+	if err != nil {
+		return nil, fmt.Errorf("create wechat payment oauth context token: %w", err)
+	}
+	authorizeURL, err := buildWeChatPaymentOAuthStartURL(contextToken)
 	if err != nil {
 		return nil, err
 	}
@@ -817,31 +1008,17 @@ func buildCreateOrderResponse(order *dbent.PaymentOrder, req CreateOrderRequest,
 	}
 }
 
-func buildWeChatPaymentOAuthStartURL(req CreateOrderRequest, scope string) (string, error) {
+func buildWeChatPaymentOAuthStartURL(contextToken string) (string, error) {
 	u, err := url.Parse("/api/v1/auth/oauth/wechat/payment/start")
 	if err != nil {
 		return "", fmt.Errorf("build wechat payment oauth start url: %w", err)
 	}
+	contextToken = strings.TrimSpace(contextToken)
+	if contextToken == "" {
+		return "", fmt.Errorf("build wechat payment oauth start url: missing context token")
+	}
 	q := u.Query()
-	q.Set("payment_type", strings.TrimSpace(req.PaymentType))
-	if req.Amount > 0 {
-		q.Set("amount", strconv.FormatFloat(req.Amount, 'f', -1, 64))
-	}
-	if orderType := strings.TrimSpace(req.OrderType); orderType != "" {
-		q.Set("order_type", orderType)
-	}
-	if req.PlanID > 0 {
-		q.Set("plan_id", strconv.FormatInt(req.PlanID, 10))
-	}
-	if couponCode := strings.TrimSpace(req.CafeCouponCode); couponCode != "" {
-		q.Set("cafe_coupon_code", couponCode)
-	}
-	if scope = strings.TrimSpace(scope); scope != "" {
-		q.Set("scope", scope)
-	}
-	if redirectTo := paymentRedirectPathFromURL(req.SrcURL); redirectTo != "" {
-		q.Set("redirect", redirectTo)
-	}
+	q.Set("context_token", contextToken)
 	u.RawQuery = q.Encode()
 	return u.String(), nil
 }

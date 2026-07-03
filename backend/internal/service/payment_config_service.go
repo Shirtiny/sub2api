@@ -161,6 +161,9 @@ type CreatePlanRequest struct {
 	ProductName   string   `json:"product_name"`
 	ForSale       bool     `json:"for_sale"`
 	SortOrder     int      `json:"sort_order"`
+	CustomMultiplierEnabled bool `json:"custom_multiplier_enabled"`
+	CustomMultiplierMin     int  `json:"custom_multiplier_min"`
+	CustomMultiplierMax     int  `json:"custom_multiplier_max"`
 }
 
 type UpdatePlanRequest struct {
@@ -175,6 +178,9 @@ type UpdatePlanRequest struct {
 	ProductName   *string  `json:"product_name"`
 	ForSale       *bool    `json:"for_sale"`
 	SortOrder     *int     `json:"sort_order"`
+	CustomMultiplierEnabled *bool `json:"custom_multiplier_enabled"`
+	CustomMultiplierMin     *int  `json:"custom_multiplier_min"`
+	CustomMultiplierMax     *int  `json:"custom_multiplier_max"`
 }
 
 // PaymentConfigService manages payment configuration and CRUD for

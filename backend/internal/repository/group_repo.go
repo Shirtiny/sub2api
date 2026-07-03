@@ -67,7 +67,12 @@ func (r *groupRepository) Create(ctx context.Context, groupIn *service.Group) er
 		SetDefaultMappedModel(groupIn.DefaultMappedModel).
 		SetMessagesDispatchModelConfig(groupIn.MessagesDispatchModelConfig).
 		SetModelsListConfig(groupIn.ModelsListConfig).
-		SetRpmLimit(groupIn.RPMLimit)
+		SetRpmLimit(groupIn.RPMLimit).
+		SetIsCustomSubscriptionGroup(groupIn.IsCustomSubscriptionGroup).
+		SetNillableCustomOwnerUserID(groupIn.CustomOwnerUserID).
+		SetNillableCustomSourcePlanID(groupIn.CustomSourcePlanID).
+		SetNillableCustomSourceGroupID(groupIn.CustomSourceGroupID).
+		SetNillableCustomMultiplier(groupIn.CustomMultiplier)
 
 	// 设置模型路由配置
 	if groupIn.ModelRouting != nil {
@@ -106,7 +111,8 @@ func (r *groupRepository) GetByID(ctx context.Context, id int64) (*service.Group
 
 func (r *groupRepository) GetByIDLite(ctx context.Context, id int64) (*service.Group, error) {
 	// AccountCount is intentionally not loaded here; use GetByID when needed.
-	m, err := r.client.Group.Query().
+	client := clientFromContext(ctx, r.client)
+	m, err := client.Group.Query().
 		Where(group.IDEQ(id)).
 		Only(ctx)
 	if err != nil {
@@ -143,9 +149,32 @@ func (r *groupRepository) Update(ctx context.Context, groupIn *service.Group) er
 		SetDefaultMappedModel(groupIn.DefaultMappedModel).
 		SetMessagesDispatchModelConfig(groupIn.MessagesDispatchModelConfig).
 		SetModelsListConfig(groupIn.ModelsListConfig).
-		SetRpmLimit(groupIn.RPMLimit)
+		SetRpmLimit(groupIn.RPMLimit).
+		SetIsCustomSubscriptionGroup(groupIn.IsCustomSubscriptionGroup)
 
 	// 显式处理可空字段：nil 需要 clear，非 nil 需要 set。
+
+	if groupIn.CustomOwnerUserID != nil {
+		builder = builder.SetCustomOwnerUserID(*groupIn.CustomOwnerUserID)
+	} else {
+		builder = builder.ClearCustomOwnerUserID()
+	}
+	if groupIn.CustomSourcePlanID != nil {
+		builder = builder.SetCustomSourcePlanID(*groupIn.CustomSourcePlanID)
+	} else {
+		builder = builder.ClearCustomSourcePlanID()
+	}
+	if groupIn.CustomSourceGroupID != nil {
+		builder = builder.SetCustomSourceGroupID(*groupIn.CustomSourceGroupID)
+	} else {
+		builder = builder.ClearCustomSourceGroupID()
+	}
+	if groupIn.CustomMultiplier != nil {
+		builder = builder.SetCustomMultiplier(*groupIn.CustomMultiplier)
+	} else {
+		builder = builder.ClearCustomMultiplier()
+	}
+
 	if groupIn.DailyLimitUSD != nil {
 		builder = builder.SetDailyLimitUsd(*groupIn.DailyLimitUSD)
 	} else {
@@ -565,6 +594,22 @@ func (r *groupRepository) DeleteAccountGroupsByGroupID(ctx context.Context, grou
 	return affected, nil
 }
 
+func (r *groupRepository) ListCustomSubscriptionGroupIDsBySourceGroupID(ctx context.Context, sourceGroupID int64) ([]int64, error) {
+	if sourceGroupID <= 0 {
+		return nil, nil
+	}
+	ids, err := r.client.Group.Query().
+		Where(
+			group.IsCustomSubscriptionGroupEQ(true),
+			group.CustomSourceGroupIDEQ(sourceGroupID),
+		).
+		IDs(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return ids, nil
+}
+
 func (r *groupRepository) DeleteCascade(ctx context.Context, id int64) ([]int64, error) {
 	g, err := r.client.Group.Query().Where(group.IDEQ(id)).Only(ctx)
 	if err != nil {
@@ -572,8 +617,14 @@ func (r *groupRepository) DeleteCascade(ctx context.Context, id int64) ([]int64,
 	}
 	groupSvc := groupEntityToService(g)
 
-	// 使用 ent 事务统一包裹：避免手工基于 *sql.Tx 构造 ent client 带来的驱动断言问题，
-	// 同时保证级联删除的原子性。
+	customGroupIDs, err := r.customSubscriptionGroupIDsForCascade(ctx, groupSvc)
+	if err != nil {
+		return nil, err
+	}
+	cascadeGroupIDs := append([]int64{id}, customGroupIDs...)
+
+	// Use one Ent transaction for the whole cascade.
+	// This keeps source and derived custom groups consistent.
 	tx, err := r.client.Tx(ctx)
 	if err != nil && !errors.Is(err, dbent.ErrTxStarted) {
 		return nil, err
@@ -585,45 +636,22 @@ func (r *groupRepository) DeleteCascade(ctx context.Context, id int64) ([]int64,
 		exec = tx.Client()
 		txClient = exec
 	}
-	// err 为 dbent.ErrTxStarted 时，复用当前 client 参与同一事务。
+	// If dbent.ErrTxStarted is returned, reuse the ambient transactional client.
 
-	// Lock the group row to avoid concurrent writes while we cascade.
-	// 这里使用 exec.QueryContext 手动扫描，确保同一事务内加锁并能区分"未找到"与其他错误。
-	rows, err := exec.QueryContext(ctx, "SELECT id FROM groups WHERE id = $1 AND deleted_at IS NULL FOR UPDATE", id)
-	if err != nil {
-		return nil, err
-	}
-	var lockedID int64
-	if rows.Next() {
-		if err := rows.Scan(&lockedID); err != nil {
-			_ = rows.Close()
-			return nil, err
-		}
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	if lockedID == 0 {
-		return nil, service.ErrGroupNotFound
-	}
-
-	var affectedUserIDs []int64
-	if groupSvc.IsSubscriptionType() {
-		// 只查询未软删除的订阅，避免通知已取消订阅的用户
-		rows, err := exec.QueryContext(ctx, "SELECT user_id FROM user_subscriptions WHERE group_id = $1 AND deleted_at IS NULL", id)
+	affectedUserSet := make(map[int64]struct{})
+	for _, groupID := range cascadeGroupIDs {
+		// Lock the group row to avoid concurrent writes while we cascade.
+		// Use the same transaction and distinguish not-found from other errors.
+		rows, err := exec.QueryContext(ctx, "SELECT id FROM groups WHERE id = $1 AND deleted_at IS NULL FOR UPDATE", groupID)
 		if err != nil {
 			return nil, err
 		}
-		for rows.Next() {
-			var userID int64
-			if scanErr := rows.Scan(&userID); scanErr != nil {
+		var lockedID int64
+		if rows.Next() {
+			if err := rows.Scan(&lockedID); err != nil {
 				_ = rows.Close()
-				return nil, scanErr
+				return nil, err
 			}
-			affectedUserIDs = append(affectedUserIDs, userID)
 		}
 		if err := rows.Close(); err != nil {
 			return nil, err
@@ -631,27 +659,56 @@ func (r *groupRepository) DeleteCascade(ctx context.Context, id int64) ([]int64,
 		if err := rows.Err(); err != nil {
 			return nil, err
 		}
+		if lockedID == 0 {
+			return nil, service.ErrGroupNotFound
+		}
 
-		// 软删除订阅：设置 deleted_at 而非硬删除
-		if _, err := exec.ExecContext(ctx, "UPDATE user_subscriptions SET deleted_at = NOW() WHERE group_id = $1 AND deleted_at IS NULL", id); err != nil {
+		isSubscriptionGroup := groupID == id && groupSvc.IsSubscriptionType()
+		if groupID != id {
+			isSubscriptionGroup = true
+		}
+		if isSubscriptionGroup {
+			// Only active/non-deleted subscriptions need cache invalidation.
+			rows, err := exec.QueryContext(ctx, "SELECT user_id FROM user_subscriptions WHERE group_id = $1 AND deleted_at IS NULL", groupID)
+			if err != nil {
+				return nil, err
+			}
+			for rows.Next() {
+				var userID int64
+				if scanErr := rows.Scan(&userID); scanErr != nil {
+					_ = rows.Close()
+					return nil, scanErr
+				}
+				affectedUserSet[userID] = struct{}{}
+			}
+			if err := rows.Close(); err != nil {
+				return nil, err
+			}
+			if err := rows.Err(); err != nil {
+				return nil, err
+			}
+
+			// Soft-delete subscriptions by setting deleted_at.
+			if _, err := exec.ExecContext(ctx, "UPDATE user_subscriptions SET deleted_at = NOW() WHERE group_id = $1 AND deleted_at IS NULL", groupID); err != nil {
+				return nil, err
+			}
+		}
+
+		// 2. Remove the group id from user_allowed_groups join table.
+		// Legacy users.allowed_groups column is deprecated and not synchronized.
+		if _, err := exec.ExecContext(ctx, "DELETE FROM user_allowed_groups WHERE group_id = $1", groupID); err != nil {
 			return nil, err
 		}
-	}
 
-	// 2. Remove the group id from user_allowed_groups join table.
-	// Legacy users.allowed_groups 列已弃用，不再同步。
-	if _, err := exec.ExecContext(ctx, "DELETE FROM user_allowed_groups WHERE group_id = $1", id); err != nil {
-		return nil, err
-	}
+		// 3. Delete account_groups join rows.
+		if _, err := exec.ExecContext(ctx, "DELETE FROM account_groups WHERE group_id = $1", groupID); err != nil {
+			return nil, err
+		}
 
-	// 3. Delete account_groups join rows.
-	if _, err := exec.ExecContext(ctx, "DELETE FROM account_groups WHERE group_id = $1", id); err != nil {
-		return nil, err
-	}
-
-	// 4. Soft-delete group itself.
-	if _, err := txClient.Group.Delete().Where(group.IDEQ(id)).Exec(ctx); err != nil {
-		return nil, err
+		// 4. Soft-delete group itself.
+		if _, err := txClient.Group.Delete().Where(group.IDEQ(groupID)).Exec(ctx); err != nil {
+			return nil, err
+		}
 	}
 
 	if tx != nil {
@@ -659,11 +716,28 @@ func (r *groupRepository) DeleteCascade(ctx context.Context, id int64) ([]int64,
 			return nil, err
 		}
 	}
-	if err := enqueueSchedulerOutbox(ctx, r.sql, service.SchedulerOutboxEventGroupChanged, nil, &id, nil); err != nil {
-		logger.LegacyPrintf("repository.group", "[SchedulerOutbox] enqueue group cascade delete failed: group=%d err=%v", id, err)
+	for _, groupID := range cascadeGroupIDs {
+		if err := enqueueSchedulerOutbox(ctx, r.sql, service.SchedulerOutboxEventGroupChanged, nil, &groupID, nil); err != nil {
+			logger.LegacyPrintf("repository.group", "[SchedulerOutbox] enqueue group cascade delete failed: group=%d err=%v", groupID, err)
+		}
 	}
 
+	affectedUserIDs := make([]int64, 0, len(affectedUserSet))
+	for userID := range affectedUserSet {
+		affectedUserIDs = append(affectedUserIDs, userID)
+	}
 	return affectedUserIDs, nil
+}
+
+func (r *groupRepository) customSubscriptionGroupIDsForCascade(ctx context.Context, groupSvc *service.Group) ([]int64, error) {
+	if groupSvc == nil || groupSvc.ID <= 0 || groupSvc.IsCustomSubscriptionGroup {
+		return nil, nil
+	}
+	ids, err := r.ListCustomSubscriptionGroupIDsBySourceGroupID(ctx, groupSvc.ID)
+	if err != nil {
+		return nil, fmt.Errorf("list custom subscription groups for cascade delete: %w", err)
+	}
+	return ids, nil
 }
 
 type groupAccountCounts struct {
@@ -792,6 +866,16 @@ func (r *groupRepository) BindAccountsToGroup(ctx context.Context, groupID int64
 		logger.LegacyPrintf("repository.group", "[SchedulerOutbox] enqueue bind accounts to group failed: group=%d err=%v", groupID, err)
 	}
 
+	return nil
+}
+
+func (r *groupRepository) NotifyGroupChanged(ctx context.Context, groupID int64) error {
+	if groupID <= 0 {
+		return nil
+	}
+	if err := enqueueSchedulerOutbox(ctx, r.sql, service.SchedulerOutboxEventGroupChanged, nil, &groupID, nil); err != nil {
+		logger.LegacyPrintf("repository.group", "[SchedulerOutbox] enqueue group notify failed: group=%d err=%v", groupID, err)
+	}
 	return nil
 }
 

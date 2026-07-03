@@ -41,7 +41,7 @@ func (r *opsRepository) ListRequestDetails(ctx context.Context, filter *service.
 			addCondition(fmt.Sprintf("platform = $%d", len(args)+1), platform)
 		}
 		if filter.GroupID != nil && *filter.GroupID > 0 {
-			addCondition(fmt.Sprintf("group_id = $%d", len(args)+1), *filter.GroupID)
+			addCondition(usageGroupIDMatchesCondition("group_id", len(args)+1), *filter.GroupID)
 		}
 
 		if filter.UserID != nil && *filter.UserID > 0 {

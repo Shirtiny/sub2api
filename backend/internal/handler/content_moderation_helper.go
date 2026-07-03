@@ -104,6 +104,12 @@ func buildContentModerationInput(c *gin.Context, apiKey *service.APIKey, subject
 		}
 		if apiKey.Group != nil {
 			input.GroupName = apiKey.Group.Name
+			if apiKey.Group.CustomSourceGroupID != nil && *apiKey.Group.CustomSourceGroupID > 0 {
+				sourceGroupID := *apiKey.Group.CustomSourceGroupID
+				if input.GroupID == nil || sourceGroupID != *input.GroupID {
+					input.EffectiveGroupIDs = append(input.EffectiveGroupIDs, sourceGroupID)
+				}
+			}
 		}
 	}
 	if input.Endpoint == "" && c.Request != nil && c.Request.URL != nil {
