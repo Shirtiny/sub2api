@@ -37,6 +37,7 @@ var (
 	ErrMonthlyLimitExceeded       = infraerrors.TooManyRequests("MONTHLY_LIMIT_EXCEEDED", "monthly usage limit exceeded")
 	ErrSubscriptionNilInput       = infraerrors.BadRequest("SUBSCRIPTION_NIL_INPUT", "subscription input cannot be nil")
 	ErrAdjustWouldExpire          = infraerrors.BadRequest("ADJUST_WOULD_EXPIRE", "adjustment would result in expired subscription (remaining days must be > 0)")
+	ErrInvalidCustomEntitlement   = infraerrors.BadRequest("INVALID_CUSTOM_ENTITLEMENT", "invalid custom subscription entitlement")
 )
 
 // SubscriptionService 订阅服务
@@ -149,6 +150,11 @@ type AssignSubscriptionInput struct {
 	ValidityDays int
 	AssignedBy   int64
 	Notes        string
+
+	CustomMultiplier    *int
+	CustomSourcePlanID  *int64
+	CustomSourceGroupID *int64
+	CustomDisplayName   string
 }
 
 // AssignSubscription 分配订阅给用户（不允许重复分配）
@@ -167,6 +173,9 @@ func (s *SubscriptionService) AssignSubscription(ctx context.Context, input *Ass
 //
 // 如果没有订阅：创建新订阅
 func (s *SubscriptionService) AssignOrExtendSubscription(ctx context.Context, input *AssignSubscriptionInput) (*UserSubscription, bool, error) {
+	if err := validateAssignCustomEntitlement(input); err != nil {
+		return nil, false, err
+	}
 	// 检查分组是否存在且为订阅类型
 	group, err := s.groupRepo.GetByID(ctx, input.GroupID)
 	if err != nil {
@@ -194,23 +203,9 @@ func (s *SubscriptionService) AssignOrExtendSubscription(ctx context.Context, in
 	// 已有订阅，执行续期（在事务中完成所有更新）
 	if existingSub != nil {
 		now := time.Now()
-		var newExpiresAt time.Time
+		newExpiresAt, customExpiresAt, isExpired := nextAssignExpiresAt(existingSub, input, validityDays, now)
 
-		isExpired := !existingSub.ExpiresAt.After(now)
-		if !isExpired {
-			// 未过期：从当前过期时间累加
-			newExpiresAt = existingSub.ExpiresAt.AddDate(0, 0, validityDays)
-		} else {
-			// 已过期：从当前时间开始计算
-			newExpiresAt = now.AddDate(0, 0, validityDays)
-		}
-
-		// 确保不超过最大过期时间
-		if newExpiresAt.After(MaxExpiresAt) {
-			newExpiresAt = MaxExpiresAt
-		}
-
-		if err := s.updateExistingSubscriptionTerm(ctx, existingSub, input.Notes, now, newExpiresAt, isExpired); err != nil {
+		if err := s.updateExistingSubscriptionTerm(ctx, existingSub, input, now, newExpiresAt, customExpiresAt, isExpired); err != nil {
 			return nil, false, err
 		}
 
@@ -253,37 +248,35 @@ func (s *SubscriptionService) AssignOrExtendSubscription(ctx context.Context, in
 func (s *SubscriptionService) updateExistingSubscriptionTerm(
 	ctx context.Context,
 	existingSub *UserSubscription,
-	notes string,
+	input *AssignSubscriptionInput,
 	startsAt time.Time,
 	newExpiresAt time.Time,
+	customExpiresAt *time.Time,
 	isExpired bool,
 ) error {
 	return s.withSubscriptionUpdateTx(ctx, func(txCtx context.Context) error {
 		if isExpired {
-			renewed := renewedSubscriptionTerm(existingSub, notes, startsAt, newExpiresAt)
+			renewed := renewedSubscriptionTerm(existingSub, input.Notes, startsAt, newExpiresAt)
+			applyAssignCustomEntitlement(renewed, input, false, customExpiresAt)
 			if err := s.userSubRepo.Update(txCtx, renewed); err != nil {
 				return fmt.Errorf("renew expired subscription: %w", err)
 			}
 			return nil
 		}
 
-		// 更新过期时间
-		if err := s.userSubRepo.ExtendExpiry(txCtx, existingSub.ID, newExpiresAt); err != nil {
+		if conflictReason, conflict := detectActiveCustomEntitlementConflict(existingSub, input, startsAt); conflict {
+			return ErrSubscriptionAssignConflict.WithMetadata(map[string]string{
+				"conflict_reason": conflictReason,
+			})
+		}
+
+		updated := *existingSub
+		updated.ExpiresAt = newExpiresAt
+		updated.Status = SubscriptionStatusActive
+		updated.Notes = appendSubscriptionNotes(existingSub.Notes, input.Notes)
+		applyAssignCustomEntitlement(&updated, input, true, customExpiresAt)
+		if err := s.userSubRepo.Update(txCtx, &updated); err != nil {
 			return fmt.Errorf("extend subscription: %w", err)
-		}
-
-		// 如果订阅被暂停，恢复为 active 状态
-		if existingSub.Status != SubscriptionStatusActive {
-			if err := s.userSubRepo.UpdateStatus(txCtx, existingSub.ID, SubscriptionStatusActive); err != nil {
-				return fmt.Errorf("update subscription status: %w", err)
-			}
-		}
-
-		// 追加备注
-		if notes != "" {
-			if err := s.userSubRepo.UpdateNotes(txCtx, existingSub.ID, appendSubscriptionNotes(existingSub.Notes, notes)); err != nil {
-				return fmt.Errorf("update subscription notes: %w", err)
-			}
 		}
 
 		return nil
@@ -315,6 +308,39 @@ func (s *SubscriptionService) withSubscriptionUpdateTx(ctx context.Context, fn f
 	return nil
 }
 
+func nextAssignExpiresAt(existingSub *UserSubscription, input *AssignSubscriptionInput, validityDays int, now time.Time) (time.Time, *time.Time, bool) {
+	isExpired := existingSub == nil || !existingSub.ExpiresAt.After(now)
+	if input != nil && input.CustomMultiplier != nil {
+		customBase := now
+		if !isExpired && existingSub.HasActiveVirtualCustomEntitlementAt(now) {
+			customBase = existingSub.ExpiresAt
+			if existingSub.CustomExpiresAt != nil {
+				customBase = *existingSub.CustomExpiresAt
+			}
+			if customBase.Before(now) {
+				customBase = now
+			}
+		}
+		customExpiresAt := clampSubscriptionExpiresAt(customBase.AddDate(0, 0, validityDays))
+		baseExpiresAt := customExpiresAt
+		if !isExpired && existingSub.ExpiresAt.After(baseExpiresAt) {
+			baseExpiresAt = existingSub.ExpiresAt
+		}
+		return baseExpiresAt, &customExpiresAt, isExpired
+	}
+	if !isExpired {
+		return clampSubscriptionExpiresAt(existingSub.ExpiresAt.AddDate(0, 0, validityDays)), nil, false
+	}
+	return clampSubscriptionExpiresAt(now.AddDate(0, 0, validityDays)), nil, true
+}
+
+func clampSubscriptionExpiresAt(t time.Time) time.Time {
+	if t.After(MaxExpiresAt) {
+		return MaxExpiresAt
+	}
+	return t
+}
+
 func renewedSubscriptionTerm(existingSub *UserSubscription, notes string, startsAt, expiresAt time.Time) *UserSubscription {
 	renewed := *existingSub
 	windowStart := startOfDay(startsAt)
@@ -329,6 +355,93 @@ func renewedSubscriptionTerm(existingSub *UserSubscription, notes string, starts
 	renewed.MonthlyUsageUSD = 0
 	renewed.Notes = appendSubscriptionNotes(existingSub.Notes, notes)
 	return &renewed
+}
+
+func validateAssignCustomEntitlement(input *AssignSubscriptionInput) error {
+	if input == nil {
+		return ErrSubscriptionNilInput
+	}
+	if input.CustomMultiplier == nil {
+		if input.CustomSourcePlanID != nil || input.CustomSourceGroupID != nil || strings.TrimSpace(input.CustomDisplayName) != "" {
+			return ErrInvalidCustomEntitlement
+		}
+		return nil
+	}
+	multiplier := *input.CustomMultiplier
+	if multiplier < minCustomSubscriptionMultiplier || multiplier > maxCustomSubscriptionMultiplier {
+		return ErrInvalidCustomEntitlement.WithMetadata(map[string]string{
+			"min": strconv.Itoa(minCustomSubscriptionMultiplier),
+			"max": strconv.Itoa(maxCustomSubscriptionMultiplier),
+		})
+	}
+	if input.CustomSourcePlanID == nil || *input.CustomSourcePlanID <= 0 || input.CustomSourceGroupID == nil || *input.CustomSourceGroupID <= 0 {
+		return ErrInvalidCustomEntitlement
+	}
+	return nil
+}
+
+func detectActiveCustomEntitlementConflict(existing *UserSubscription, input *AssignSubscriptionInput, now time.Time) (string, bool) {
+	if existing == nil || input == nil || !existing.HasActiveVirtualCustomEntitlementAt(now) {
+		return "", false
+	}
+	if input.CustomMultiplier == nil {
+		return "active_custom_subscription_requires_custom_entitlement", true
+	}
+	if customEntitlementInputMismatch(existing, input) {
+		return "custom_entitlement_mismatch", true
+	}
+	return "", false
+}
+
+func customEntitlementInputMismatch(existing *UserSubscription, input *AssignSubscriptionInput) bool {
+	if existing == nil || input == nil {
+		return false
+	}
+	if input.CustomMultiplier == nil {
+		return existing.HasVirtualCustomEntitlement()
+	}
+	if existing.CustomMultiplier == nil || *existing.CustomMultiplier != *input.CustomMultiplier {
+		return true
+	}
+	if input.CustomSourcePlanID == nil || existing.CustomSourcePlanID == nil || *existing.CustomSourcePlanID != *input.CustomSourcePlanID {
+		return true
+	}
+	if input.CustomSourceGroupID == nil || existing.CustomSourceGroupID == nil || *existing.CustomSourceGroupID != *input.CustomSourceGroupID {
+		return true
+	}
+	return false
+}
+
+func applyAssignCustomEntitlement(sub *UserSubscription, input *AssignSubscriptionInput, preserveWhenAbsent bool, customExpiresAt *time.Time) {
+	if sub == nil || input == nil {
+		return
+	}
+	if input.CustomMultiplier == nil {
+		if preserveWhenAbsent && sub.IsVirtualCustomSubscription() {
+			return
+		}
+		sub.CustomMultiplier = nil
+		sub.CustomSourcePlanID = nil
+		sub.CustomSourceGroupID = nil
+		sub.CustomExpiresAt = nil
+		sub.CustomDisplayName = ""
+		return
+	}
+	multiplier := *input.CustomMultiplier
+	sourcePlanID := *input.CustomSourcePlanID
+	sourceGroupID := *input.CustomSourceGroupID
+	displayName := truncateCustomSubscriptionGroupName(strings.TrimSpace(input.CustomDisplayName))
+	sub.CustomMultiplier = &multiplier
+	sub.CustomSourcePlanID = &sourcePlanID
+	sub.CustomSourceGroupID = &sourceGroupID
+	if customExpiresAt != nil {
+		expiresAt := *customExpiresAt
+		sub.CustomExpiresAt = &expiresAt
+	} else {
+		expiresAt := sub.ExpiresAt
+		sub.CustomExpiresAt = &expiresAt
+	}
+	sub.CustomDisplayName = displayName
 }
 
 func appendSubscriptionNotes(existingNotes, newNotes string) string {
@@ -372,6 +485,8 @@ func (s *SubscriptionService) createSubscription(ctx context.Context, input *Ass
 	if input.AssignedBy > 0 {
 		sub.AssignedBy = &input.AssignedBy
 	}
+	customExpiresAt := sub.ExpiresAt
+	applyAssignCustomEntitlement(sub, input, false, &customExpiresAt)
 
 	if err := s.userSubRepo.Create(ctx, sub); err != nil {
 		return nil, err
@@ -438,6 +553,9 @@ func (s *SubscriptionService) BulkAssignSubscription(ctx context.Context, input 
 }
 
 func (s *SubscriptionService) assignSubscriptionWithReuse(ctx context.Context, input *AssignSubscriptionInput) (*UserSubscription, bool, error) {
+	if err := validateAssignCustomEntitlement(input); err != nil {
+		return nil, false, err
+	}
 	// 检查分组是否存在且为订阅类型
 	group, err := s.groupRepo.GetByID(ctx, input.GroupID)
 	if err != nil {
@@ -506,6 +624,10 @@ func detectAssignSemanticConflict(existing *UserSubscription, input *AssignSubsc
 		return "notes_mismatch", true
 	}
 
+	if customEntitlementInputMismatch(existing, input) {
+		return "custom_entitlement_mismatch", true
+	}
+
 	return "", false
 }
 
@@ -561,6 +683,9 @@ func (s *SubscriptionService) ExtendSubscription(ctx context.Context, subscripti
 	}
 
 	now := time.Now()
+	if adjusted, handled, adjustErr := s.extendVirtualCustomEntitlement(ctx, sub, days, now); handled {
+		return adjusted, adjustErr
+	}
 	isExpired := !sub.ExpiresAt.After(now)
 
 	// 如果订阅已过期，不允许负向调整
@@ -598,18 +723,47 @@ func (s *SubscriptionService) ExtendSubscription(ctx context.Context, subscripti
 		}
 	}
 
-	// 失效订阅缓存
-	s.InvalidateSubCache(sub.UserID, sub.GroupID)
-	if s.billingCacheService != nil {
-		userID, groupID := sub.UserID, sub.GroupID
-		go func() {
-			cacheCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-			defer cancel()
-			_ = s.billingCacheService.InvalidateSubscription(cacheCtx, userID, groupID)
-		}()
-	}
+	s.invalidateSubscriptionCachesAsync(sub.UserID, sub.GroupID)
 
 	return s.userSubRepo.GetByID(ctx, subscriptionID)
+}
+
+func (s *SubscriptionService) extendVirtualCustomEntitlement(ctx context.Context, sub *UserSubscription, days int, now time.Time) (*UserSubscription, bool, error) {
+	if sub == nil || !sub.HasVirtualCustomEntitlement() || sub.CustomExpiresAt == nil || days == 0 {
+		return nil, false, nil
+	}
+	oldCustomExpiresAt := *sub.CustomExpiresAt
+	customBase := oldCustomExpiresAt
+	if days > 0 && !customBase.After(now) {
+		customBase = now
+	}
+	newCustomExpiresAt := clampSubscriptionExpiresAt(customBase.AddDate(0, 0, days))
+	updated := *sub
+	if days < 0 && !newCustomExpiresAt.After(now) {
+		if sub.ExpiresAt.After(oldCustomExpiresAt) {
+			newCustomExpiresAt = now
+			updated.CustomExpiresAt = &newCustomExpiresAt
+		} else {
+			return nil, true, ErrAdjustWouldExpire
+		}
+	} else {
+		updated.CustomExpiresAt = &newCustomExpiresAt
+		if !sub.ExpiresAt.After(oldCustomExpiresAt) || newCustomExpiresAt.After(sub.ExpiresAt) {
+			updated.ExpiresAt = newCustomExpiresAt
+		}
+	}
+	if days > 0 && updated.Status == SubscriptionStatusExpired {
+		updated.Status = SubscriptionStatusActive
+	}
+	if !updated.ExpiresAt.After(now) {
+		return nil, true, ErrAdjustWouldExpire
+	}
+	if err := s.userSubRepo.Update(ctx, &updated); err != nil {
+		return nil, true, err
+	}
+	s.invalidateSubscriptionCachesAsync(updated.UserID, updated.GroupID)
+	refreshed, err := s.userSubRepo.GetByID(ctx, updated.ID)
+	return refreshed, true, err
 }
 
 // GetByID 根据ID获取订阅
@@ -826,6 +980,17 @@ func (s *SubscriptionService) invalidateSubscriptionCaches(ctx context.Context, 
 	}
 }
 
+func (s *SubscriptionService) invalidateSubscriptionCachesAsync(userID, groupID int64) {
+	s.InvalidateSubCache(userID, groupID)
+	if s.billingCacheService != nil {
+		go func() {
+			cacheCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			_ = s.billingCacheService.InvalidateSubscription(cacheCtx, userID, groupID)
+		}()
+	}
+}
+
 // CheckAndResetWindows 检查并重置过期的窗口
 func (s *SubscriptionService) CheckAndResetWindows(ctx context.Context, sub *UserSubscription) error {
 	// 使用当天零点作为新窗口起始时间
@@ -1024,9 +1189,10 @@ func (s *SubscriptionService) GetSubscriptionProgress(ctx context.Context, subsc
 
 // calculateProgress 根据已加载的订阅和分组数据计算使用进度（纯内存计算，无 DB 查询）
 func (s *SubscriptionService) calculateProgress(sub *UserSubscription, group *Group) *SubscriptionProgress {
+	group = EffectiveSubscriptionGroup(sub, group)
 	progress := &SubscriptionProgress{
 		ID:            sub.ID,
-		GroupName:     group.Name,
+		GroupName:     sub.DisplayName(group),
 		ExpiresAt:     sub.ExpiresAt,
 		ExpiresInDays: sub.DaysRemaining(),
 	}

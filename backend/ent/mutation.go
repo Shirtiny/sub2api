@@ -47484,39 +47484,47 @@ func (m *UserPlatformQuotaMutation) ResetEdge(name string) error {
 // UserSubscriptionMutation represents an operation that mutates the UserSubscription nodes in the graph.
 type UserSubscriptionMutation struct {
 	config
-	op                      Op
-	typ                     string
-	id                      *int64
-	created_at              *time.Time
-	updated_at              *time.Time
-	deleted_at              *time.Time
-	starts_at               *time.Time
-	expires_at              *time.Time
-	status                  *string
-	daily_window_start      *time.Time
-	weekly_window_start     *time.Time
-	monthly_window_start    *time.Time
-	daily_usage_usd         *float64
-	adddaily_usage_usd      *float64
-	weekly_usage_usd        *float64
-	addweekly_usage_usd     *float64
-	monthly_usage_usd       *float64
-	addmonthly_usage_usd    *float64
-	assigned_at             *time.Time
-	notes                   *string
-	clearedFields           map[string]struct{}
-	user                    *int64
-	cleareduser             bool
-	group                   *int64
-	clearedgroup            bool
-	assigned_by_user        *int64
-	clearedassigned_by_user bool
-	usage_logs              map[int64]struct{}
-	removedusage_logs       map[int64]struct{}
-	clearedusage_logs       bool
-	done                    bool
-	oldValue                func(context.Context) (*UserSubscription, error)
-	predicates              []predicate.UserSubscription
+	op                        Op
+	typ                       string
+	id                        *int64
+	created_at                *time.Time
+	updated_at                *time.Time
+	deleted_at                *time.Time
+	starts_at                 *time.Time
+	expires_at                *time.Time
+	status                    *string
+	daily_window_start        *time.Time
+	weekly_window_start       *time.Time
+	monthly_window_start      *time.Time
+	daily_usage_usd           *float64
+	adddaily_usage_usd        *float64
+	weekly_usage_usd          *float64
+	addweekly_usage_usd       *float64
+	monthly_usage_usd         *float64
+	addmonthly_usage_usd      *float64
+	assigned_at               *time.Time
+	notes                     *string
+	custom_multiplier         *int
+	addcustom_multiplier      *int
+	custom_source_plan_id     *int64
+	addcustom_source_plan_id  *int64
+	custom_source_group_id    *int64
+	addcustom_source_group_id *int64
+	custom_expires_at         *time.Time
+	custom_display_name       *string
+	clearedFields             map[string]struct{}
+	user                      *int64
+	cleareduser               bool
+	group                     *int64
+	clearedgroup              bool
+	assigned_by_user          *int64
+	clearedassigned_by_user   bool
+	usage_logs                map[int64]struct{}
+	removedusage_logs         map[int64]struct{}
+	clearedusage_logs         bool
+	done                      bool
+	oldValue                  func(context.Context) (*UserSubscription, error)
+	predicates                []predicate.UserSubscription
 }
 
 var _ ent.Mutation = (*UserSubscriptionMutation)(nil)
@@ -48367,6 +48375,314 @@ func (m *UserSubscriptionMutation) ResetNotes() {
 	delete(m.clearedFields, usersubscription.FieldNotes)
 }
 
+// SetCustomMultiplier sets the "custom_multiplier" field.
+func (m *UserSubscriptionMutation) SetCustomMultiplier(i int) {
+	m.custom_multiplier = &i
+	m.addcustom_multiplier = nil
+}
+
+// CustomMultiplier returns the value of the "custom_multiplier" field in the mutation.
+func (m *UserSubscriptionMutation) CustomMultiplier() (r int, exists bool) {
+	v := m.custom_multiplier
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCustomMultiplier returns the old "custom_multiplier" field's value of the UserSubscription entity.
+// If the UserSubscription object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserSubscriptionMutation) OldCustomMultiplier(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCustomMultiplier is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCustomMultiplier requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCustomMultiplier: %w", err)
+	}
+	return oldValue.CustomMultiplier, nil
+}
+
+// AddCustomMultiplier adds i to the "custom_multiplier" field.
+func (m *UserSubscriptionMutation) AddCustomMultiplier(i int) {
+	if m.addcustom_multiplier != nil {
+		*m.addcustom_multiplier += i
+	} else {
+		m.addcustom_multiplier = &i
+	}
+}
+
+// AddedCustomMultiplier returns the value that was added to the "custom_multiplier" field in this mutation.
+func (m *UserSubscriptionMutation) AddedCustomMultiplier() (r int, exists bool) {
+	v := m.addcustom_multiplier
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearCustomMultiplier clears the value of the "custom_multiplier" field.
+func (m *UserSubscriptionMutation) ClearCustomMultiplier() {
+	m.custom_multiplier = nil
+	m.addcustom_multiplier = nil
+	m.clearedFields[usersubscription.FieldCustomMultiplier] = struct{}{}
+}
+
+// CustomMultiplierCleared returns if the "custom_multiplier" field was cleared in this mutation.
+func (m *UserSubscriptionMutation) CustomMultiplierCleared() bool {
+	_, ok := m.clearedFields[usersubscription.FieldCustomMultiplier]
+	return ok
+}
+
+// ResetCustomMultiplier resets all changes to the "custom_multiplier" field.
+func (m *UserSubscriptionMutation) ResetCustomMultiplier() {
+	m.custom_multiplier = nil
+	m.addcustom_multiplier = nil
+	delete(m.clearedFields, usersubscription.FieldCustomMultiplier)
+}
+
+// SetCustomSourcePlanID sets the "custom_source_plan_id" field.
+func (m *UserSubscriptionMutation) SetCustomSourcePlanID(i int64) {
+	m.custom_source_plan_id = &i
+	m.addcustom_source_plan_id = nil
+}
+
+// CustomSourcePlanID returns the value of the "custom_source_plan_id" field in the mutation.
+func (m *UserSubscriptionMutation) CustomSourcePlanID() (r int64, exists bool) {
+	v := m.custom_source_plan_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCustomSourcePlanID returns the old "custom_source_plan_id" field's value of the UserSubscription entity.
+// If the UserSubscription object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserSubscriptionMutation) OldCustomSourcePlanID(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCustomSourcePlanID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCustomSourcePlanID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCustomSourcePlanID: %w", err)
+	}
+	return oldValue.CustomSourcePlanID, nil
+}
+
+// AddCustomSourcePlanID adds i to the "custom_source_plan_id" field.
+func (m *UserSubscriptionMutation) AddCustomSourcePlanID(i int64) {
+	if m.addcustom_source_plan_id != nil {
+		*m.addcustom_source_plan_id += i
+	} else {
+		m.addcustom_source_plan_id = &i
+	}
+}
+
+// AddedCustomSourcePlanID returns the value that was added to the "custom_source_plan_id" field in this mutation.
+func (m *UserSubscriptionMutation) AddedCustomSourcePlanID() (r int64, exists bool) {
+	v := m.addcustom_source_plan_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearCustomSourcePlanID clears the value of the "custom_source_plan_id" field.
+func (m *UserSubscriptionMutation) ClearCustomSourcePlanID() {
+	m.custom_source_plan_id = nil
+	m.addcustom_source_plan_id = nil
+	m.clearedFields[usersubscription.FieldCustomSourcePlanID] = struct{}{}
+}
+
+// CustomSourcePlanIDCleared returns if the "custom_source_plan_id" field was cleared in this mutation.
+func (m *UserSubscriptionMutation) CustomSourcePlanIDCleared() bool {
+	_, ok := m.clearedFields[usersubscription.FieldCustomSourcePlanID]
+	return ok
+}
+
+// ResetCustomSourcePlanID resets all changes to the "custom_source_plan_id" field.
+func (m *UserSubscriptionMutation) ResetCustomSourcePlanID() {
+	m.custom_source_plan_id = nil
+	m.addcustom_source_plan_id = nil
+	delete(m.clearedFields, usersubscription.FieldCustomSourcePlanID)
+}
+
+// SetCustomSourceGroupID sets the "custom_source_group_id" field.
+func (m *UserSubscriptionMutation) SetCustomSourceGroupID(i int64) {
+	m.custom_source_group_id = &i
+	m.addcustom_source_group_id = nil
+}
+
+// CustomSourceGroupID returns the value of the "custom_source_group_id" field in the mutation.
+func (m *UserSubscriptionMutation) CustomSourceGroupID() (r int64, exists bool) {
+	v := m.custom_source_group_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCustomSourceGroupID returns the old "custom_source_group_id" field's value of the UserSubscription entity.
+// If the UserSubscription object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserSubscriptionMutation) OldCustomSourceGroupID(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCustomSourceGroupID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCustomSourceGroupID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCustomSourceGroupID: %w", err)
+	}
+	return oldValue.CustomSourceGroupID, nil
+}
+
+// AddCustomSourceGroupID adds i to the "custom_source_group_id" field.
+func (m *UserSubscriptionMutation) AddCustomSourceGroupID(i int64) {
+	if m.addcustom_source_group_id != nil {
+		*m.addcustom_source_group_id += i
+	} else {
+		m.addcustom_source_group_id = &i
+	}
+}
+
+// AddedCustomSourceGroupID returns the value that was added to the "custom_source_group_id" field in this mutation.
+func (m *UserSubscriptionMutation) AddedCustomSourceGroupID() (r int64, exists bool) {
+	v := m.addcustom_source_group_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearCustomSourceGroupID clears the value of the "custom_source_group_id" field.
+func (m *UserSubscriptionMutation) ClearCustomSourceGroupID() {
+	m.custom_source_group_id = nil
+	m.addcustom_source_group_id = nil
+	m.clearedFields[usersubscription.FieldCustomSourceGroupID] = struct{}{}
+}
+
+// CustomSourceGroupIDCleared returns if the "custom_source_group_id" field was cleared in this mutation.
+func (m *UserSubscriptionMutation) CustomSourceGroupIDCleared() bool {
+	_, ok := m.clearedFields[usersubscription.FieldCustomSourceGroupID]
+	return ok
+}
+
+// ResetCustomSourceGroupID resets all changes to the "custom_source_group_id" field.
+func (m *UserSubscriptionMutation) ResetCustomSourceGroupID() {
+	m.custom_source_group_id = nil
+	m.addcustom_source_group_id = nil
+	delete(m.clearedFields, usersubscription.FieldCustomSourceGroupID)
+}
+
+// SetCustomExpiresAt sets the "custom_expires_at" field.
+func (m *UserSubscriptionMutation) SetCustomExpiresAt(t time.Time) {
+	m.custom_expires_at = &t
+}
+
+// CustomExpiresAt returns the value of the "custom_expires_at" field in the mutation.
+func (m *UserSubscriptionMutation) CustomExpiresAt() (r time.Time, exists bool) {
+	v := m.custom_expires_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCustomExpiresAt returns the old "custom_expires_at" field's value of the UserSubscription entity.
+// If the UserSubscription object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserSubscriptionMutation) OldCustomExpiresAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCustomExpiresAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCustomExpiresAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCustomExpiresAt: %w", err)
+	}
+	return oldValue.CustomExpiresAt, nil
+}
+
+// ClearCustomExpiresAt clears the value of the "custom_expires_at" field.
+func (m *UserSubscriptionMutation) ClearCustomExpiresAt() {
+	m.custom_expires_at = nil
+	m.clearedFields[usersubscription.FieldCustomExpiresAt] = struct{}{}
+}
+
+// CustomExpiresAtCleared returns if the "custom_expires_at" field was cleared in this mutation.
+func (m *UserSubscriptionMutation) CustomExpiresAtCleared() bool {
+	_, ok := m.clearedFields[usersubscription.FieldCustomExpiresAt]
+	return ok
+}
+
+// ResetCustomExpiresAt resets all changes to the "custom_expires_at" field.
+func (m *UserSubscriptionMutation) ResetCustomExpiresAt() {
+	m.custom_expires_at = nil
+	delete(m.clearedFields, usersubscription.FieldCustomExpiresAt)
+}
+
+// SetCustomDisplayName sets the "custom_display_name" field.
+func (m *UserSubscriptionMutation) SetCustomDisplayName(s string) {
+	m.custom_display_name = &s
+}
+
+// CustomDisplayName returns the value of the "custom_display_name" field in the mutation.
+func (m *UserSubscriptionMutation) CustomDisplayName() (r string, exists bool) {
+	v := m.custom_display_name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCustomDisplayName returns the old "custom_display_name" field's value of the UserSubscription entity.
+// If the UserSubscription object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserSubscriptionMutation) OldCustomDisplayName(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCustomDisplayName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCustomDisplayName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCustomDisplayName: %w", err)
+	}
+	return oldValue.CustomDisplayName, nil
+}
+
+// ClearCustomDisplayName clears the value of the "custom_display_name" field.
+func (m *UserSubscriptionMutation) ClearCustomDisplayName() {
+	m.custom_display_name = nil
+	m.clearedFields[usersubscription.FieldCustomDisplayName] = struct{}{}
+}
+
+// CustomDisplayNameCleared returns if the "custom_display_name" field was cleared in this mutation.
+func (m *UserSubscriptionMutation) CustomDisplayNameCleared() bool {
+	_, ok := m.clearedFields[usersubscription.FieldCustomDisplayName]
+	return ok
+}
+
+// ResetCustomDisplayName resets all changes to the "custom_display_name" field.
+func (m *UserSubscriptionMutation) ResetCustomDisplayName() {
+	m.custom_display_name = nil
+	delete(m.clearedFields, usersubscription.FieldCustomDisplayName)
+}
+
 // ClearUser clears the "user" edge to the User entity.
 func (m *UserSubscriptionMutation) ClearUser() {
 	m.cleareduser = true
@@ -48549,7 +48865,7 @@ func (m *UserSubscriptionMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UserSubscriptionMutation) Fields() []string {
-	fields := make([]string, 0, 17)
+	fields := make([]string, 0, 22)
 	if m.created_at != nil {
 		fields = append(fields, usersubscription.FieldCreatedAt)
 	}
@@ -48601,6 +48917,21 @@ func (m *UserSubscriptionMutation) Fields() []string {
 	if m.notes != nil {
 		fields = append(fields, usersubscription.FieldNotes)
 	}
+	if m.custom_multiplier != nil {
+		fields = append(fields, usersubscription.FieldCustomMultiplier)
+	}
+	if m.custom_source_plan_id != nil {
+		fields = append(fields, usersubscription.FieldCustomSourcePlanID)
+	}
+	if m.custom_source_group_id != nil {
+		fields = append(fields, usersubscription.FieldCustomSourceGroupID)
+	}
+	if m.custom_expires_at != nil {
+		fields = append(fields, usersubscription.FieldCustomExpiresAt)
+	}
+	if m.custom_display_name != nil {
+		fields = append(fields, usersubscription.FieldCustomDisplayName)
+	}
 	return fields
 }
 
@@ -48643,6 +48974,16 @@ func (m *UserSubscriptionMutation) Field(name string) (ent.Value, bool) {
 		return m.AssignedAt()
 	case usersubscription.FieldNotes:
 		return m.Notes()
+	case usersubscription.FieldCustomMultiplier:
+		return m.CustomMultiplier()
+	case usersubscription.FieldCustomSourcePlanID:
+		return m.CustomSourcePlanID()
+	case usersubscription.FieldCustomSourceGroupID:
+		return m.CustomSourceGroupID()
+	case usersubscription.FieldCustomExpiresAt:
+		return m.CustomExpiresAt()
+	case usersubscription.FieldCustomDisplayName:
+		return m.CustomDisplayName()
 	}
 	return nil, false
 }
@@ -48686,6 +49027,16 @@ func (m *UserSubscriptionMutation) OldField(ctx context.Context, name string) (e
 		return m.OldAssignedAt(ctx)
 	case usersubscription.FieldNotes:
 		return m.OldNotes(ctx)
+	case usersubscription.FieldCustomMultiplier:
+		return m.OldCustomMultiplier(ctx)
+	case usersubscription.FieldCustomSourcePlanID:
+		return m.OldCustomSourcePlanID(ctx)
+	case usersubscription.FieldCustomSourceGroupID:
+		return m.OldCustomSourceGroupID(ctx)
+	case usersubscription.FieldCustomExpiresAt:
+		return m.OldCustomExpiresAt(ctx)
+	case usersubscription.FieldCustomDisplayName:
+		return m.OldCustomDisplayName(ctx)
 	}
 	return nil, fmt.Errorf("unknown UserSubscription field %s", name)
 }
@@ -48814,6 +49165,41 @@ func (m *UserSubscriptionMutation) SetField(name string, value ent.Value) error 
 		}
 		m.SetNotes(v)
 		return nil
+	case usersubscription.FieldCustomMultiplier:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCustomMultiplier(v)
+		return nil
+	case usersubscription.FieldCustomSourcePlanID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCustomSourcePlanID(v)
+		return nil
+	case usersubscription.FieldCustomSourceGroupID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCustomSourceGroupID(v)
+		return nil
+	case usersubscription.FieldCustomExpiresAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCustomExpiresAt(v)
+		return nil
+	case usersubscription.FieldCustomDisplayName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCustomDisplayName(v)
+		return nil
 	}
 	return fmt.Errorf("unknown UserSubscription field %s", name)
 }
@@ -48831,6 +49217,15 @@ func (m *UserSubscriptionMutation) AddedFields() []string {
 	if m.addmonthly_usage_usd != nil {
 		fields = append(fields, usersubscription.FieldMonthlyUsageUsd)
 	}
+	if m.addcustom_multiplier != nil {
+		fields = append(fields, usersubscription.FieldCustomMultiplier)
+	}
+	if m.addcustom_source_plan_id != nil {
+		fields = append(fields, usersubscription.FieldCustomSourcePlanID)
+	}
+	if m.addcustom_source_group_id != nil {
+		fields = append(fields, usersubscription.FieldCustomSourceGroupID)
+	}
 	return fields
 }
 
@@ -48845,6 +49240,12 @@ func (m *UserSubscriptionMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedWeeklyUsageUsd()
 	case usersubscription.FieldMonthlyUsageUsd:
 		return m.AddedMonthlyUsageUsd()
+	case usersubscription.FieldCustomMultiplier:
+		return m.AddedCustomMultiplier()
+	case usersubscription.FieldCustomSourcePlanID:
+		return m.AddedCustomSourcePlanID()
+	case usersubscription.FieldCustomSourceGroupID:
+		return m.AddedCustomSourceGroupID()
 	}
 	return nil, false
 }
@@ -48875,6 +49276,27 @@ func (m *UserSubscriptionMutation) AddField(name string, value ent.Value) error 
 		}
 		m.AddMonthlyUsageUsd(v)
 		return nil
+	case usersubscription.FieldCustomMultiplier:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCustomMultiplier(v)
+		return nil
+	case usersubscription.FieldCustomSourcePlanID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCustomSourcePlanID(v)
+		return nil
+	case usersubscription.FieldCustomSourceGroupID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCustomSourceGroupID(v)
+		return nil
 	}
 	return fmt.Errorf("unknown UserSubscription numeric field %s", name)
 }
@@ -48900,6 +49322,21 @@ func (m *UserSubscriptionMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(usersubscription.FieldNotes) {
 		fields = append(fields, usersubscription.FieldNotes)
+	}
+	if m.FieldCleared(usersubscription.FieldCustomMultiplier) {
+		fields = append(fields, usersubscription.FieldCustomMultiplier)
+	}
+	if m.FieldCleared(usersubscription.FieldCustomSourcePlanID) {
+		fields = append(fields, usersubscription.FieldCustomSourcePlanID)
+	}
+	if m.FieldCleared(usersubscription.FieldCustomSourceGroupID) {
+		fields = append(fields, usersubscription.FieldCustomSourceGroupID)
+	}
+	if m.FieldCleared(usersubscription.FieldCustomExpiresAt) {
+		fields = append(fields, usersubscription.FieldCustomExpiresAt)
+	}
+	if m.FieldCleared(usersubscription.FieldCustomDisplayName) {
+		fields = append(fields, usersubscription.FieldCustomDisplayName)
 	}
 	return fields
 }
@@ -48932,6 +49369,21 @@ func (m *UserSubscriptionMutation) ClearField(name string) error {
 		return nil
 	case usersubscription.FieldNotes:
 		m.ClearNotes()
+		return nil
+	case usersubscription.FieldCustomMultiplier:
+		m.ClearCustomMultiplier()
+		return nil
+	case usersubscription.FieldCustomSourcePlanID:
+		m.ClearCustomSourcePlanID()
+		return nil
+	case usersubscription.FieldCustomSourceGroupID:
+		m.ClearCustomSourceGroupID()
+		return nil
+	case usersubscription.FieldCustomExpiresAt:
+		m.ClearCustomExpiresAt()
+		return nil
+	case usersubscription.FieldCustomDisplayName:
+		m.ClearCustomDisplayName()
 		return nil
 	}
 	return fmt.Errorf("unknown UserSubscription nullable field %s", name)
@@ -48991,6 +49443,21 @@ func (m *UserSubscriptionMutation) ResetField(name string) error {
 		return nil
 	case usersubscription.FieldNotes:
 		m.ResetNotes()
+		return nil
+	case usersubscription.FieldCustomMultiplier:
+		m.ResetCustomMultiplier()
+		return nil
+	case usersubscription.FieldCustomSourcePlanID:
+		m.ResetCustomSourcePlanID()
+		return nil
+	case usersubscription.FieldCustomSourceGroupID:
+		m.ResetCustomSourceGroupID()
+		return nil
+	case usersubscription.FieldCustomExpiresAt:
+		m.ResetCustomExpiresAt()
+		return nil
+	case usersubscription.FieldCustomDisplayName:
+		m.ResetCustomDisplayName()
 		return nil
 	}
 	return fmt.Errorf("unknown UserSubscription field %s", name)

@@ -856,14 +856,15 @@ func (s *BillingCacheService) checkBalanceEligibility(ctx context.Context, userI
 
 // checkSubscriptionEligibility 检查订阅模式资格
 func (s *BillingCacheService) checkSubscriptionEligibility(ctx context.Context, userID int64, group *Group, subscription *UserSubscription) error {
-	if err := checkSubscriptionSnapshotEligibility(subscription, group); err != nil {
+	effectiveGroup := EffectiveSubscriptionGroup(subscription, group)
+	if err := checkSubscriptionSnapshotEligibility(subscription, effectiveGroup); err != nil {
 		return err
 	}
-	dailyReset, weeklyReset, monthlyReset := subscriptionRelevantWindowResets(subscription, group)
+	dailyReset, weeklyReset, monthlyReset := subscriptionRelevantWindowResets(subscription, effectiveGroup)
 	if dailyReset || weeklyReset || monthlyReset {
 		if s.cache != nil {
 			if cacheData, cacheErr := s.cache.GetSubscriptionCache(ctx, userID, group.ID); cacheErr == nil && cacheData != nil {
-				if err := checkSubscriptionCacheLimits(s.convertFromPortsData(cacheData), group, dailyReset, weeklyReset, monthlyReset); err != nil {
+				if err := checkSubscriptionCacheLimits(s.convertFromPortsData(cacheData), effectiveGroup, dailyReset, weeklyReset, monthlyReset); err != nil {
 					return err
 				}
 			}
@@ -885,7 +886,7 @@ func (s *BillingCacheService) checkSubscriptionEligibility(ctx context.Context, 
 		s.circuitBreaker.OnSuccess()
 	}
 
-	if err := checkSubscriptionCacheLimits(subData, group, false, false, false); err != nil {
+	if err := checkSubscriptionCacheLimits(subData, effectiveGroup, false, false, false); err != nil {
 		return err
 	}
 

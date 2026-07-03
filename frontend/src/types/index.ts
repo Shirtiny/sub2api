@@ -1626,6 +1626,11 @@ export interface UserSubscription {
   daily_usage_usd: number
   weekly_usage_usd: number
   monthly_usage_usd: number
+  custom_multiplier?: number | null
+  custom_source_plan_id?: number | null
+  custom_source_group_id?: number | null
+  custom_expires_at?: string | null
+  custom_display_name?: string | null
   daily_window_start: string | null
   weekly_window_start: string | null
   monthly_window_start: string | null

@@ -124,6 +124,7 @@ import { useI18n } from 'vue-i18n'
 import Select, { type SelectOption } from '@/components/common/Select.vue'
 import type { SubscriptionPlan } from '@/types/payment'
 import type { UserSubscription } from '@/types'
+import { isCustomSubscriptionForPlan, subscriptionCustomMultiplier } from '@/utils/subscriptionCustom'
 import {
   platformAccentBarClass,
   platformBadgeLightClass,
@@ -177,8 +178,7 @@ watch(() => props.plan.id, () => {
 const customRenewalSubscription = computed(() =>
   props.activeSubscriptions?.find(s =>
     isSubscriptionCurrentlyActive(s)
-      && s.group?.is_custom_subscription_group === true
-      && s.group?.custom_source_plan_id === props.plan.id,
+      && isCustomSubscriptionForPlan(s, props.plan.id),
   ) ?? null,
 )
 
@@ -211,7 +211,7 @@ function handleMultiplierUpdate(value: string | number | boolean | null): void {
 }
 
 const effectiveMultiplier = computed(() => {
-  const customMultiplier = customRenewalSubscription.value?.group?.custom_multiplier
+  const customMultiplier = subscriptionCustomMultiplier(customRenewalSubscription.value)
   if (customMultiplier && customMultiplier >= 1) return customMultiplier
   if (showMultiplierSelector.value) return selectedMultiplier.value
   return 1

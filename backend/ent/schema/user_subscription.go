@@ -79,6 +79,32 @@ func (UserSubscription) Fields() []ent.Field {
 			Optional().
 			Nillable().
 			SchemaType(map[string]string{dialect.Postgres: "text"}),
+
+		// Virtual custom subscription entitlement metadata. Normal subscriptions
+		// keep these fields nil; legacy real custom groups keep their metadata on
+		// groups and continue to work through the existing group binding.
+		field.Int("custom_multiplier").
+			Optional().
+			Nillable().
+			Comment("virtual custom subscription multiplier; nil means normal subscription"),
+		field.Int64("custom_source_plan_id").
+			Optional().
+			Nillable().
+			Comment("source subscription plan id for virtual custom entitlement"),
+		field.Int64("custom_source_group_id").
+			Optional().
+			Nillable().
+			Comment("source base group id for virtual custom entitlement"),
+		field.Time("custom_expires_at").
+			Optional().
+			Nillable().
+			SchemaType(map[string]string{dialect.Postgres: "timestamptz"}).
+			Comment("expiration time for virtual custom entitlement; base subscription may outlive it"),
+		field.String("custom_display_name").
+			Optional().
+			Nillable().
+			MaxLen(120).
+			Comment("stored display name for virtual custom subscription"),
 	}
 }
 
@@ -115,5 +141,6 @@ func (UserSubscription) Indexes() []ent.Index {
 		// 见迁移文件 016_soft_delete_partial_unique_indexes.sql
 		index.Fields("user_id", "group_id"),
 		index.Fields("deleted_at"),
+		index.Fields("custom_source_plan_id"),
 	}
 }

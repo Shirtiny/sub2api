@@ -582,6 +582,12 @@ type UserSubscription struct {
 	WeeklyUsageUSD  float64 `json:"weekly_usage_usd"`
 	MonthlyUsageUSD float64 `json:"monthly_usage_usd"`
 
+	CustomMultiplier    *int       `json:"custom_multiplier,omitempty"`
+	CustomSourcePlanID  *int64     `json:"custom_source_plan_id,omitempty"`
+	CustomSourceGroupID *int64     `json:"custom_source_group_id,omitempty"`
+	CustomExpiresAt     *time.Time `json:"custom_expires_at,omitempty"`
+	CustomDisplayName   string     `json:"custom_display_name,omitempty"`
+
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 

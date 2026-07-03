@@ -262,6 +262,14 @@ func (s *PaymentService) resolveSubscriptionOrderMultiplier(ctx context.Context,
 	} else if err != nil && !dbent.IsNotFound(err) {
 		return 0, fmt.Errorf("find active custom subscription group: %w", err)
 	}
+	if existing, err := s.findActiveVirtualCustomSubscription(ctx, userID, plan.ID); err == nil && existing != nil {
+		if existing.CustomMultiplier == nil || *existing.CustomMultiplier < minCustomSubscriptionMultiplier || *existing.CustomMultiplier > maxCustomSubscriptionMultiplier {
+			return 0, infraerrors.BadRequest("INVALID_SUBSCRIPTION_MULTIPLIER", "active custom subscription multiplier is invalid")
+		}
+		return *existing.CustomMultiplier, nil
+	} else if err != nil && !dbent.IsNotFound(err) {
+		return 0, fmt.Errorf("find active virtual custom subscription: %w", err)
+	}
 	if !plan.CustomMultiplierEnabled {
 		return 1, nil
 	}
@@ -321,6 +329,26 @@ func (s *PaymentService) findActiveCustomSubscriptionGroup(ctx context.Context, 
 			),
 		).
 		Order(dbent.Desc(group.FieldID)).
+		First(ctx)
+}
+
+func (s *PaymentService) findActiveVirtualCustomSubscription(ctx context.Context, userID, planID int64) (*dbent.UserSubscription, error) {
+	if s == nil || s.entClient == nil || userID <= 0 || planID <= 0 {
+		return nil, errors.New("virtual custom subscription not found")
+	}
+	return s.entClient.UserSubscription.Query().
+		Where(
+			usersubscription.UserIDEQ(userID),
+			usersubscription.CustomSourcePlanIDEQ(planID),
+			usersubscription.CustomMultiplierNotNil(),
+			usersubscription.Or(
+				usersubscription.CustomExpiresAtIsNil(),
+				usersubscription.CustomExpiresAtGT(time.Now()),
+			),
+			usersubscription.StatusEQ(SubscriptionStatusActive),
+			usersubscription.ExpiresAtGT(time.Now()),
+		).
+		Order(dbent.Desc(usersubscription.FieldID)).
 		First(ctx)
 }
 

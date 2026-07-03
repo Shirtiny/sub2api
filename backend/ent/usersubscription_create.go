@@ -231,6 +231,76 @@ func (_c *UserSubscriptionCreate) SetNillableNotes(v *string) *UserSubscriptionC
 	return _c
 }
 
+// SetCustomMultiplier sets the "custom_multiplier" field.
+func (_c *UserSubscriptionCreate) SetCustomMultiplier(v int) *UserSubscriptionCreate {
+	_c.mutation.SetCustomMultiplier(v)
+	return _c
+}
+
+// SetNillableCustomMultiplier sets the "custom_multiplier" field if the given value is not nil.
+func (_c *UserSubscriptionCreate) SetNillableCustomMultiplier(v *int) *UserSubscriptionCreate {
+	if v != nil {
+		_c.SetCustomMultiplier(*v)
+	}
+	return _c
+}
+
+// SetCustomSourcePlanID sets the "custom_source_plan_id" field.
+func (_c *UserSubscriptionCreate) SetCustomSourcePlanID(v int64) *UserSubscriptionCreate {
+	_c.mutation.SetCustomSourcePlanID(v)
+	return _c
+}
+
+// SetNillableCustomSourcePlanID sets the "custom_source_plan_id" field if the given value is not nil.
+func (_c *UserSubscriptionCreate) SetNillableCustomSourcePlanID(v *int64) *UserSubscriptionCreate {
+	if v != nil {
+		_c.SetCustomSourcePlanID(*v)
+	}
+	return _c
+}
+
+// SetCustomSourceGroupID sets the "custom_source_group_id" field.
+func (_c *UserSubscriptionCreate) SetCustomSourceGroupID(v int64) *UserSubscriptionCreate {
+	_c.mutation.SetCustomSourceGroupID(v)
+	return _c
+}
+
+// SetNillableCustomSourceGroupID sets the "custom_source_group_id" field if the given value is not nil.
+func (_c *UserSubscriptionCreate) SetNillableCustomSourceGroupID(v *int64) *UserSubscriptionCreate {
+	if v != nil {
+		_c.SetCustomSourceGroupID(*v)
+	}
+	return _c
+}
+
+// SetCustomExpiresAt sets the "custom_expires_at" field.
+func (_c *UserSubscriptionCreate) SetCustomExpiresAt(v time.Time) *UserSubscriptionCreate {
+	_c.mutation.SetCustomExpiresAt(v)
+	return _c
+}
+
+// SetNillableCustomExpiresAt sets the "custom_expires_at" field if the given value is not nil.
+func (_c *UserSubscriptionCreate) SetNillableCustomExpiresAt(v *time.Time) *UserSubscriptionCreate {
+	if v != nil {
+		_c.SetCustomExpiresAt(*v)
+	}
+	return _c
+}
+
+// SetCustomDisplayName sets the "custom_display_name" field.
+func (_c *UserSubscriptionCreate) SetCustomDisplayName(v string) *UserSubscriptionCreate {
+	_c.mutation.SetCustomDisplayName(v)
+	return _c
+}
+
+// SetNillableCustomDisplayName sets the "custom_display_name" field if the given value is not nil.
+func (_c *UserSubscriptionCreate) SetNillableCustomDisplayName(v *string) *UserSubscriptionCreate {
+	if v != nil {
+		_c.SetCustomDisplayName(*v)
+	}
+	return _c
+}
+
 // SetUser sets the "user" edge to the User entity.
 func (_c *UserSubscriptionCreate) SetUser(v *User) *UserSubscriptionCreate {
 	return _c.SetUserID(v.ID)
@@ -392,6 +462,11 @@ func (_c *UserSubscriptionCreate) check() error {
 	if _, ok := _c.mutation.AssignedAt(); !ok {
 		return &ValidationError{Name: "assigned_at", err: errors.New(`ent: missing required field "UserSubscription.assigned_at"`)}
 	}
+	if v, ok := _c.mutation.CustomDisplayName(); ok {
+		if err := usersubscription.CustomDisplayNameValidator(v); err != nil {
+			return &ValidationError{Name: "custom_display_name", err: fmt.Errorf(`ent: validator failed for field "UserSubscription.custom_display_name": %w`, err)}
+		}
+	}
 	if len(_c.mutation.UserIDs()) == 0 {
 		return &ValidationError{Name: "user", err: errors.New(`ent: missing required edge "UserSubscription.user"`)}
 	}
@@ -480,6 +555,26 @@ func (_c *UserSubscriptionCreate) createSpec() (*UserSubscription, *sqlgraph.Cre
 	if value, ok := _c.mutation.Notes(); ok {
 		_spec.SetField(usersubscription.FieldNotes, field.TypeString, value)
 		_node.Notes = &value
+	}
+	if value, ok := _c.mutation.CustomMultiplier(); ok {
+		_spec.SetField(usersubscription.FieldCustomMultiplier, field.TypeInt, value)
+		_node.CustomMultiplier = &value
+	}
+	if value, ok := _c.mutation.CustomSourcePlanID(); ok {
+		_spec.SetField(usersubscription.FieldCustomSourcePlanID, field.TypeInt64, value)
+		_node.CustomSourcePlanID = &value
+	}
+	if value, ok := _c.mutation.CustomSourceGroupID(); ok {
+		_spec.SetField(usersubscription.FieldCustomSourceGroupID, field.TypeInt64, value)
+		_node.CustomSourceGroupID = &value
+	}
+	if value, ok := _c.mutation.CustomExpiresAt(); ok {
+		_spec.SetField(usersubscription.FieldCustomExpiresAt, field.TypeTime, value)
+		_node.CustomExpiresAt = &value
+	}
+	if value, ok := _c.mutation.CustomDisplayName(); ok {
+		_spec.SetField(usersubscription.FieldCustomDisplayName, field.TypeString, value)
+		_node.CustomDisplayName = &value
 	}
 	if nodes := _c.mutation.UserIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -846,6 +941,114 @@ func (u *UserSubscriptionUpsert) ClearNotes() *UserSubscriptionUpsert {
 	return u
 }
 
+// SetCustomMultiplier sets the "custom_multiplier" field.
+func (u *UserSubscriptionUpsert) SetCustomMultiplier(v int) *UserSubscriptionUpsert {
+	u.Set(usersubscription.FieldCustomMultiplier, v)
+	return u
+}
+
+// UpdateCustomMultiplier sets the "custom_multiplier" field to the value that was provided on create.
+func (u *UserSubscriptionUpsert) UpdateCustomMultiplier() *UserSubscriptionUpsert {
+	u.SetExcluded(usersubscription.FieldCustomMultiplier)
+	return u
+}
+
+// AddCustomMultiplier adds v to the "custom_multiplier" field.
+func (u *UserSubscriptionUpsert) AddCustomMultiplier(v int) *UserSubscriptionUpsert {
+	u.Add(usersubscription.FieldCustomMultiplier, v)
+	return u
+}
+
+// ClearCustomMultiplier clears the value of the "custom_multiplier" field.
+func (u *UserSubscriptionUpsert) ClearCustomMultiplier() *UserSubscriptionUpsert {
+	u.SetNull(usersubscription.FieldCustomMultiplier)
+	return u
+}
+
+// SetCustomSourcePlanID sets the "custom_source_plan_id" field.
+func (u *UserSubscriptionUpsert) SetCustomSourcePlanID(v int64) *UserSubscriptionUpsert {
+	u.Set(usersubscription.FieldCustomSourcePlanID, v)
+	return u
+}
+
+// UpdateCustomSourcePlanID sets the "custom_source_plan_id" field to the value that was provided on create.
+func (u *UserSubscriptionUpsert) UpdateCustomSourcePlanID() *UserSubscriptionUpsert {
+	u.SetExcluded(usersubscription.FieldCustomSourcePlanID)
+	return u
+}
+
+// AddCustomSourcePlanID adds v to the "custom_source_plan_id" field.
+func (u *UserSubscriptionUpsert) AddCustomSourcePlanID(v int64) *UserSubscriptionUpsert {
+	u.Add(usersubscription.FieldCustomSourcePlanID, v)
+	return u
+}
+
+// ClearCustomSourcePlanID clears the value of the "custom_source_plan_id" field.
+func (u *UserSubscriptionUpsert) ClearCustomSourcePlanID() *UserSubscriptionUpsert {
+	u.SetNull(usersubscription.FieldCustomSourcePlanID)
+	return u
+}
+
+// SetCustomSourceGroupID sets the "custom_source_group_id" field.
+func (u *UserSubscriptionUpsert) SetCustomSourceGroupID(v int64) *UserSubscriptionUpsert {
+	u.Set(usersubscription.FieldCustomSourceGroupID, v)
+	return u
+}
+
+// UpdateCustomSourceGroupID sets the "custom_source_group_id" field to the value that was provided on create.
+func (u *UserSubscriptionUpsert) UpdateCustomSourceGroupID() *UserSubscriptionUpsert {
+	u.SetExcluded(usersubscription.FieldCustomSourceGroupID)
+	return u
+}
+
+// AddCustomSourceGroupID adds v to the "custom_source_group_id" field.
+func (u *UserSubscriptionUpsert) AddCustomSourceGroupID(v int64) *UserSubscriptionUpsert {
+	u.Add(usersubscription.FieldCustomSourceGroupID, v)
+	return u
+}
+
+// ClearCustomSourceGroupID clears the value of the "custom_source_group_id" field.
+func (u *UserSubscriptionUpsert) ClearCustomSourceGroupID() *UserSubscriptionUpsert {
+	u.SetNull(usersubscription.FieldCustomSourceGroupID)
+	return u
+}
+
+// SetCustomExpiresAt sets the "custom_expires_at" field.
+func (u *UserSubscriptionUpsert) SetCustomExpiresAt(v time.Time) *UserSubscriptionUpsert {
+	u.Set(usersubscription.FieldCustomExpiresAt, v)
+	return u
+}
+
+// UpdateCustomExpiresAt sets the "custom_expires_at" field to the value that was provided on create.
+func (u *UserSubscriptionUpsert) UpdateCustomExpiresAt() *UserSubscriptionUpsert {
+	u.SetExcluded(usersubscription.FieldCustomExpiresAt)
+	return u
+}
+
+// ClearCustomExpiresAt clears the value of the "custom_expires_at" field.
+func (u *UserSubscriptionUpsert) ClearCustomExpiresAt() *UserSubscriptionUpsert {
+	u.SetNull(usersubscription.FieldCustomExpiresAt)
+	return u
+}
+
+// SetCustomDisplayName sets the "custom_display_name" field.
+func (u *UserSubscriptionUpsert) SetCustomDisplayName(v string) *UserSubscriptionUpsert {
+	u.Set(usersubscription.FieldCustomDisplayName, v)
+	return u
+}
+
+// UpdateCustomDisplayName sets the "custom_display_name" field to the value that was provided on create.
+func (u *UserSubscriptionUpsert) UpdateCustomDisplayName() *UserSubscriptionUpsert {
+	u.SetExcluded(usersubscription.FieldCustomDisplayName)
+	return u
+}
+
+// ClearCustomDisplayName clears the value of the "custom_display_name" field.
+func (u *UserSubscriptionUpsert) ClearCustomDisplayName() *UserSubscriptionUpsert {
+	u.SetNull(usersubscription.FieldCustomDisplayName)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create.
 // Using this option is equivalent to using:
 //
@@ -1175,6 +1378,132 @@ func (u *UserSubscriptionUpsertOne) UpdateNotes() *UserSubscriptionUpsertOne {
 func (u *UserSubscriptionUpsertOne) ClearNotes() *UserSubscriptionUpsertOne {
 	return u.Update(func(s *UserSubscriptionUpsert) {
 		s.ClearNotes()
+	})
+}
+
+// SetCustomMultiplier sets the "custom_multiplier" field.
+func (u *UserSubscriptionUpsertOne) SetCustomMultiplier(v int) *UserSubscriptionUpsertOne {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.SetCustomMultiplier(v)
+	})
+}
+
+// AddCustomMultiplier adds v to the "custom_multiplier" field.
+func (u *UserSubscriptionUpsertOne) AddCustomMultiplier(v int) *UserSubscriptionUpsertOne {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.AddCustomMultiplier(v)
+	})
+}
+
+// UpdateCustomMultiplier sets the "custom_multiplier" field to the value that was provided on create.
+func (u *UserSubscriptionUpsertOne) UpdateCustomMultiplier() *UserSubscriptionUpsertOne {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.UpdateCustomMultiplier()
+	})
+}
+
+// ClearCustomMultiplier clears the value of the "custom_multiplier" field.
+func (u *UserSubscriptionUpsertOne) ClearCustomMultiplier() *UserSubscriptionUpsertOne {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.ClearCustomMultiplier()
+	})
+}
+
+// SetCustomSourcePlanID sets the "custom_source_plan_id" field.
+func (u *UserSubscriptionUpsertOne) SetCustomSourcePlanID(v int64) *UserSubscriptionUpsertOne {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.SetCustomSourcePlanID(v)
+	})
+}
+
+// AddCustomSourcePlanID adds v to the "custom_source_plan_id" field.
+func (u *UserSubscriptionUpsertOne) AddCustomSourcePlanID(v int64) *UserSubscriptionUpsertOne {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.AddCustomSourcePlanID(v)
+	})
+}
+
+// UpdateCustomSourcePlanID sets the "custom_source_plan_id" field to the value that was provided on create.
+func (u *UserSubscriptionUpsertOne) UpdateCustomSourcePlanID() *UserSubscriptionUpsertOne {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.UpdateCustomSourcePlanID()
+	})
+}
+
+// ClearCustomSourcePlanID clears the value of the "custom_source_plan_id" field.
+func (u *UserSubscriptionUpsertOne) ClearCustomSourcePlanID() *UserSubscriptionUpsertOne {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.ClearCustomSourcePlanID()
+	})
+}
+
+// SetCustomSourceGroupID sets the "custom_source_group_id" field.
+func (u *UserSubscriptionUpsertOne) SetCustomSourceGroupID(v int64) *UserSubscriptionUpsertOne {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.SetCustomSourceGroupID(v)
+	})
+}
+
+// AddCustomSourceGroupID adds v to the "custom_source_group_id" field.
+func (u *UserSubscriptionUpsertOne) AddCustomSourceGroupID(v int64) *UserSubscriptionUpsertOne {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.AddCustomSourceGroupID(v)
+	})
+}
+
+// UpdateCustomSourceGroupID sets the "custom_source_group_id" field to the value that was provided on create.
+func (u *UserSubscriptionUpsertOne) UpdateCustomSourceGroupID() *UserSubscriptionUpsertOne {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.UpdateCustomSourceGroupID()
+	})
+}
+
+// ClearCustomSourceGroupID clears the value of the "custom_source_group_id" field.
+func (u *UserSubscriptionUpsertOne) ClearCustomSourceGroupID() *UserSubscriptionUpsertOne {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.ClearCustomSourceGroupID()
+	})
+}
+
+// SetCustomExpiresAt sets the "custom_expires_at" field.
+func (u *UserSubscriptionUpsertOne) SetCustomExpiresAt(v time.Time) *UserSubscriptionUpsertOne {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.SetCustomExpiresAt(v)
+	})
+}
+
+// UpdateCustomExpiresAt sets the "custom_expires_at" field to the value that was provided on create.
+func (u *UserSubscriptionUpsertOne) UpdateCustomExpiresAt() *UserSubscriptionUpsertOne {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.UpdateCustomExpiresAt()
+	})
+}
+
+// ClearCustomExpiresAt clears the value of the "custom_expires_at" field.
+func (u *UserSubscriptionUpsertOne) ClearCustomExpiresAt() *UserSubscriptionUpsertOne {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.ClearCustomExpiresAt()
+	})
+}
+
+// SetCustomDisplayName sets the "custom_display_name" field.
+func (u *UserSubscriptionUpsertOne) SetCustomDisplayName(v string) *UserSubscriptionUpsertOne {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.SetCustomDisplayName(v)
+	})
+}
+
+// UpdateCustomDisplayName sets the "custom_display_name" field to the value that was provided on create.
+func (u *UserSubscriptionUpsertOne) UpdateCustomDisplayName() *UserSubscriptionUpsertOne {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.UpdateCustomDisplayName()
+	})
+}
+
+// ClearCustomDisplayName clears the value of the "custom_display_name" field.
+func (u *UserSubscriptionUpsertOne) ClearCustomDisplayName() *UserSubscriptionUpsertOne {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.ClearCustomDisplayName()
 	})
 }
 
@@ -1673,6 +2002,132 @@ func (u *UserSubscriptionUpsertBulk) UpdateNotes() *UserSubscriptionUpsertBulk {
 func (u *UserSubscriptionUpsertBulk) ClearNotes() *UserSubscriptionUpsertBulk {
 	return u.Update(func(s *UserSubscriptionUpsert) {
 		s.ClearNotes()
+	})
+}
+
+// SetCustomMultiplier sets the "custom_multiplier" field.
+func (u *UserSubscriptionUpsertBulk) SetCustomMultiplier(v int) *UserSubscriptionUpsertBulk {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.SetCustomMultiplier(v)
+	})
+}
+
+// AddCustomMultiplier adds v to the "custom_multiplier" field.
+func (u *UserSubscriptionUpsertBulk) AddCustomMultiplier(v int) *UserSubscriptionUpsertBulk {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.AddCustomMultiplier(v)
+	})
+}
+
+// UpdateCustomMultiplier sets the "custom_multiplier" field to the value that was provided on create.
+func (u *UserSubscriptionUpsertBulk) UpdateCustomMultiplier() *UserSubscriptionUpsertBulk {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.UpdateCustomMultiplier()
+	})
+}
+
+// ClearCustomMultiplier clears the value of the "custom_multiplier" field.
+func (u *UserSubscriptionUpsertBulk) ClearCustomMultiplier() *UserSubscriptionUpsertBulk {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.ClearCustomMultiplier()
+	})
+}
+
+// SetCustomSourcePlanID sets the "custom_source_plan_id" field.
+func (u *UserSubscriptionUpsertBulk) SetCustomSourcePlanID(v int64) *UserSubscriptionUpsertBulk {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.SetCustomSourcePlanID(v)
+	})
+}
+
+// AddCustomSourcePlanID adds v to the "custom_source_plan_id" field.
+func (u *UserSubscriptionUpsertBulk) AddCustomSourcePlanID(v int64) *UserSubscriptionUpsertBulk {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.AddCustomSourcePlanID(v)
+	})
+}
+
+// UpdateCustomSourcePlanID sets the "custom_source_plan_id" field to the value that was provided on create.
+func (u *UserSubscriptionUpsertBulk) UpdateCustomSourcePlanID() *UserSubscriptionUpsertBulk {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.UpdateCustomSourcePlanID()
+	})
+}
+
+// ClearCustomSourcePlanID clears the value of the "custom_source_plan_id" field.
+func (u *UserSubscriptionUpsertBulk) ClearCustomSourcePlanID() *UserSubscriptionUpsertBulk {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.ClearCustomSourcePlanID()
+	})
+}
+
+// SetCustomSourceGroupID sets the "custom_source_group_id" field.
+func (u *UserSubscriptionUpsertBulk) SetCustomSourceGroupID(v int64) *UserSubscriptionUpsertBulk {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.SetCustomSourceGroupID(v)
+	})
+}
+
+// AddCustomSourceGroupID adds v to the "custom_source_group_id" field.
+func (u *UserSubscriptionUpsertBulk) AddCustomSourceGroupID(v int64) *UserSubscriptionUpsertBulk {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.AddCustomSourceGroupID(v)
+	})
+}
+
+// UpdateCustomSourceGroupID sets the "custom_source_group_id" field to the value that was provided on create.
+func (u *UserSubscriptionUpsertBulk) UpdateCustomSourceGroupID() *UserSubscriptionUpsertBulk {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.UpdateCustomSourceGroupID()
+	})
+}
+
+// ClearCustomSourceGroupID clears the value of the "custom_source_group_id" field.
+func (u *UserSubscriptionUpsertBulk) ClearCustomSourceGroupID() *UserSubscriptionUpsertBulk {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.ClearCustomSourceGroupID()
+	})
+}
+
+// SetCustomExpiresAt sets the "custom_expires_at" field.
+func (u *UserSubscriptionUpsertBulk) SetCustomExpiresAt(v time.Time) *UserSubscriptionUpsertBulk {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.SetCustomExpiresAt(v)
+	})
+}
+
+// UpdateCustomExpiresAt sets the "custom_expires_at" field to the value that was provided on create.
+func (u *UserSubscriptionUpsertBulk) UpdateCustomExpiresAt() *UserSubscriptionUpsertBulk {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.UpdateCustomExpiresAt()
+	})
+}
+
+// ClearCustomExpiresAt clears the value of the "custom_expires_at" field.
+func (u *UserSubscriptionUpsertBulk) ClearCustomExpiresAt() *UserSubscriptionUpsertBulk {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.ClearCustomExpiresAt()
+	})
+}
+
+// SetCustomDisplayName sets the "custom_display_name" field.
+func (u *UserSubscriptionUpsertBulk) SetCustomDisplayName(v string) *UserSubscriptionUpsertBulk {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.SetCustomDisplayName(v)
+	})
+}
+
+// UpdateCustomDisplayName sets the "custom_display_name" field to the value that was provided on create.
+func (u *UserSubscriptionUpsertBulk) UpdateCustomDisplayName() *UserSubscriptionUpsertBulk {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.UpdateCustomDisplayName()
+	})
+}
+
+// ClearCustomDisplayName clears the value of the "custom_display_name" field.
+func (u *UserSubscriptionUpsertBulk) ClearCustomDisplayName() *UserSubscriptionUpsertBulk {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.ClearCustomDisplayName()
 	})
 }
 

@@ -33,7 +33,12 @@ func (r *paymentFulfillmentSubscriptionRepo) Create(ctx context.Context, sub *Us
 		SetDailyUsageUsd(sub.DailyUsageUSD).
 		SetWeeklyUsageUsd(sub.WeeklyUsageUSD).
 		SetMonthlyUsageUsd(sub.MonthlyUsageUSD).
-		SetNotes(sub.Notes)
+		SetNotes(sub.Notes).
+		SetNillableCustomMultiplier(sub.CustomMultiplier).
+		SetNillableCustomSourcePlanID(sub.CustomSourcePlanID).
+		SetNillableCustomSourceGroupID(sub.CustomSourceGroupID).
+		SetNillableCustomExpiresAt(sub.CustomExpiresAt).
+		SetNillableCustomDisplayName(nillableString(sub.CustomDisplayName))
 	if !sub.StartsAt.IsZero() {
 		builder.SetStartsAt(sub.StartsAt)
 	}
@@ -61,21 +66,26 @@ func (r *paymentFulfillmentSubscriptionRepo) GetByID(ctx context.Context, id int
 		return nil, ErrSubscriptionNotFound
 	}
 	return &UserSubscription{
-		ID:                 m.ID,
-		UserID:             m.UserID,
-		GroupID:            m.GroupID,
-		StartsAt:           m.StartsAt,
-		ExpiresAt:          m.ExpiresAt,
-		Status:             m.Status,
-		AssignedAt:         m.AssignedAt,
-		AssignedBy:         m.AssignedBy,
-		Notes:              derefString(m.Notes),
-		DailyUsageUSD:      m.DailyUsageUsd,
-		WeeklyUsageUSD:     m.WeeklyUsageUsd,
-		MonthlyUsageUSD:    m.MonthlyUsageUsd,
-		DailyWindowStart:   m.DailyWindowStart,
-		WeeklyWindowStart:  m.WeeklyWindowStart,
-		MonthlyWindowStart: m.MonthlyWindowStart,
+		ID:                  m.ID,
+		UserID:              m.UserID,
+		GroupID:             m.GroupID,
+		StartsAt:            m.StartsAt,
+		ExpiresAt:           m.ExpiresAt,
+		Status:              m.Status,
+		AssignedAt:          m.AssignedAt,
+		AssignedBy:          m.AssignedBy,
+		Notes:               derefString(m.Notes),
+		DailyUsageUSD:       m.DailyUsageUsd,
+		WeeklyUsageUSD:      m.WeeklyUsageUsd,
+		MonthlyUsageUSD:     m.MonthlyUsageUsd,
+		DailyWindowStart:    m.DailyWindowStart,
+		WeeklyWindowStart:   m.WeeklyWindowStart,
+		MonthlyWindowStart:  m.MonthlyWindowStart,
+		CustomMultiplier:    m.CustomMultiplier,
+		CustomSourcePlanID:  m.CustomSourcePlanID,
+		CustomSourceGroupID: m.CustomSourceGroupID,
+		CustomExpiresAt:     m.CustomExpiresAt,
+		CustomDisplayName:   derefString(m.CustomDisplayName),
 	}, nil
 }
 
@@ -88,21 +98,26 @@ func (r *paymentFulfillmentSubscriptionRepo) GetByUserIDAndGroupID(ctx context.C
 		return nil, ErrSubscriptionNotFound
 	}
 	return &UserSubscription{
-		ID:                 m.ID,
-		UserID:             m.UserID,
-		GroupID:            m.GroupID,
-		StartsAt:           m.StartsAt,
-		ExpiresAt:          m.ExpiresAt,
-		Status:             m.Status,
-		AssignedAt:         m.AssignedAt,
-		AssignedBy:         m.AssignedBy,
-		Notes:              derefString(m.Notes),
-		DailyUsageUSD:      m.DailyUsageUsd,
-		WeeklyUsageUSD:     m.WeeklyUsageUsd,
-		MonthlyUsageUSD:    m.MonthlyUsageUsd,
-		DailyWindowStart:   m.DailyWindowStart,
-		WeeklyWindowStart:  m.WeeklyWindowStart,
-		MonthlyWindowStart: m.MonthlyWindowStart,
+		ID:                  m.ID,
+		UserID:              m.UserID,
+		GroupID:             m.GroupID,
+		StartsAt:            m.StartsAt,
+		ExpiresAt:           m.ExpiresAt,
+		Status:              m.Status,
+		AssignedAt:          m.AssignedAt,
+		AssignedBy:          m.AssignedBy,
+		Notes:               derefString(m.Notes),
+		DailyUsageUSD:       m.DailyUsageUsd,
+		WeeklyUsageUSD:      m.WeeklyUsageUsd,
+		MonthlyUsageUSD:     m.MonthlyUsageUsd,
+		DailyWindowStart:    m.DailyWindowStart,
+		WeeklyWindowStart:   m.WeeklyWindowStart,
+		MonthlyWindowStart:  m.MonthlyWindowStart,
+		CustomMultiplier:    m.CustomMultiplier,
+		CustomSourcePlanID:  m.CustomSourcePlanID,
+		CustomSourceGroupID: m.CustomSourceGroupID,
+		CustomExpiresAt:     m.CustomExpiresAt,
+		CustomDisplayName:   derefString(m.CustomDisplayName),
 	}, nil
 }
 
@@ -120,21 +135,26 @@ func (r *paymentFulfillmentSubscriptionRepo) GetActiveByUserIDAndGroupID(ctx con
 		return nil, ErrSubscriptionNotFound
 	}
 	return &UserSubscription{
-		ID:                 m.ID,
-		UserID:             m.UserID,
-		GroupID:            m.GroupID,
-		StartsAt:           m.StartsAt,
-		ExpiresAt:          m.ExpiresAt,
-		Status:             m.Status,
-		AssignedAt:         m.AssignedAt,
-		AssignedBy:         m.AssignedBy,
-		Notes:              derefString(m.Notes),
-		DailyUsageUSD:      m.DailyUsageUsd,
-		WeeklyUsageUSD:     m.WeeklyUsageUsd,
-		MonthlyUsageUSD:    m.MonthlyUsageUsd,
-		DailyWindowStart:   m.DailyWindowStart,
-		WeeklyWindowStart:  m.WeeklyWindowStart,
-		MonthlyWindowStart: m.MonthlyWindowStart,
+		ID:                  m.ID,
+		UserID:              m.UserID,
+		GroupID:             m.GroupID,
+		StartsAt:            m.StartsAt,
+		ExpiresAt:           m.ExpiresAt,
+		Status:              m.Status,
+		AssignedAt:          m.AssignedAt,
+		AssignedBy:          m.AssignedBy,
+		Notes:               derefString(m.Notes),
+		DailyUsageUSD:       m.DailyUsageUsd,
+		WeeklyUsageUSD:      m.WeeklyUsageUsd,
+		MonthlyUsageUSD:     m.MonthlyUsageUsd,
+		DailyWindowStart:    m.DailyWindowStart,
+		WeeklyWindowStart:   m.WeeklyWindowStart,
+		MonthlyWindowStart:  m.MonthlyWindowStart,
+		CustomMultiplier:    m.CustomMultiplier,
+		CustomSourcePlanID:  m.CustomSourcePlanID,
+		CustomSourceGroupID: m.CustomSourceGroupID,
+		CustomExpiresAt:     m.CustomExpiresAt,
+		CustomDisplayName:   derefString(m.CustomDisplayName),
 	}, nil
 }
 func (r *paymentFulfillmentSubscriptionRepo) Update(ctx context.Context, sub *UserSubscription) error {
@@ -142,7 +162,7 @@ func (r *paymentFulfillmentSubscriptionRepo) Update(ctx context.Context, sub *Us
 		return ErrSubscriptionNilInput
 	}
 	client := paymentFulfillmentSubscriptionClientFromContext(ctx, r.client)
-	_, err := client.UserSubscription.UpdateOneID(sub.ID).
+	builder := client.UserSubscription.UpdateOneID(sub.ID).
 		SetUserID(sub.UserID).
 		SetGroupID(sub.GroupID).
 		SetStartsAt(sub.StartsAt).
@@ -151,8 +171,33 @@ func (r *paymentFulfillmentSubscriptionRepo) Update(ctx context.Context, sub *Us
 		SetDailyUsageUsd(sub.DailyUsageUSD).
 		SetWeeklyUsageUsd(sub.WeeklyUsageUSD).
 		SetMonthlyUsageUsd(sub.MonthlyUsageUSD).
-		SetNotes(sub.Notes).
-		Save(ctx)
+		SetNotes(sub.Notes)
+	if sub.CustomMultiplier != nil {
+		builder.SetCustomMultiplier(*sub.CustomMultiplier)
+	} else {
+		builder.ClearCustomMultiplier()
+	}
+	if sub.CustomSourcePlanID != nil {
+		builder.SetCustomSourcePlanID(*sub.CustomSourcePlanID)
+	} else {
+		builder.ClearCustomSourcePlanID()
+	}
+	if sub.CustomSourceGroupID != nil {
+		builder.SetCustomSourceGroupID(*sub.CustomSourceGroupID)
+	} else {
+		builder.ClearCustomSourceGroupID()
+	}
+	if sub.CustomExpiresAt != nil {
+		builder.SetCustomExpiresAt(*sub.CustomExpiresAt)
+	} else {
+		builder.ClearCustomExpiresAt()
+	}
+	if sub.CustomDisplayName != "" {
+		builder.SetCustomDisplayName(sub.CustomDisplayName)
+	} else {
+		builder.ClearCustomDisplayName()
+	}
+	_, err := builder.Save(ctx)
 	return err
 }
 func (r *paymentFulfillmentSubscriptionRepo) Delete(ctx context.Context, id int64) error {
@@ -217,6 +262,13 @@ func derefString(v *string) string {
 		return ""
 	}
 	return *v
+}
+
+func nillableString(v string) *string {
+	if v == "" {
+		return nil
+	}
+	return &v
 }
 
 func paymentFulfillmentSubscriptionClientFromContext(ctx context.Context, fallback *dbent.Client) *dbent.Client {

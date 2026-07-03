@@ -49,6 +49,16 @@ const (
 	FieldAssignedAt = "assigned_at"
 	// FieldNotes holds the string denoting the notes field in the database.
 	FieldNotes = "notes"
+	// FieldCustomMultiplier holds the string denoting the custom_multiplier field in the database.
+	FieldCustomMultiplier = "custom_multiplier"
+	// FieldCustomSourcePlanID holds the string denoting the custom_source_plan_id field in the database.
+	FieldCustomSourcePlanID = "custom_source_plan_id"
+	// FieldCustomSourceGroupID holds the string denoting the custom_source_group_id field in the database.
+	FieldCustomSourceGroupID = "custom_source_group_id"
+	// FieldCustomExpiresAt holds the string denoting the custom_expires_at field in the database.
+	FieldCustomExpiresAt = "custom_expires_at"
+	// FieldCustomDisplayName holds the string denoting the custom_display_name field in the database.
+	FieldCustomDisplayName = "custom_display_name"
 	// EdgeUser holds the string denoting the user edge name in mutations.
 	EdgeUser = "user"
 	// EdgeGroup holds the string denoting the group edge name in mutations.
@@ -109,6 +119,11 @@ var Columns = []string{
 	FieldAssignedBy,
 	FieldAssignedAt,
 	FieldNotes,
+	FieldCustomMultiplier,
+	FieldCustomSourcePlanID,
+	FieldCustomSourceGroupID,
+	FieldCustomExpiresAt,
+	FieldCustomDisplayName,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -147,6 +162,8 @@ var (
 	DefaultMonthlyUsageUsd float64
 	// DefaultAssignedAt holds the default value on creation for the "assigned_at" field.
 	DefaultAssignedAt func() time.Time
+	// CustomDisplayNameValidator is a validator for the "custom_display_name" field. It is called by the builders before save.
+	CustomDisplayNameValidator func(string) error
 )
 
 // OrderOption defines the ordering options for the UserSubscription queries.
@@ -240,6 +257,31 @@ func ByAssignedAt(opts ...sql.OrderTermOption) OrderOption {
 // ByNotes orders the results by the notes field.
 func ByNotes(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldNotes, opts...).ToFunc()
+}
+
+// ByCustomMultiplier orders the results by the custom_multiplier field.
+func ByCustomMultiplier(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCustomMultiplier, opts...).ToFunc()
+}
+
+// ByCustomSourcePlanID orders the results by the custom_source_plan_id field.
+func ByCustomSourcePlanID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCustomSourcePlanID, opts...).ToFunc()
+}
+
+// ByCustomSourceGroupID orders the results by the custom_source_group_id field.
+func ByCustomSourceGroupID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCustomSourceGroupID, opts...).ToFunc()
+}
+
+// ByCustomExpiresAt orders the results by the custom_expires_at field.
+func ByCustomExpiresAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCustomExpiresAt, opts...).ToFunc()
+}
+
+// ByCustomDisplayName orders the results by the custom_display_name field.
+func ByCustomDisplayName(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCustomDisplayName, opts...).ToFunc()
 }
 
 // ByUserField orders the results by user field.

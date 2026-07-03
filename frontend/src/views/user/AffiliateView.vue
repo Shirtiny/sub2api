@@ -330,6 +330,7 @@ import Icon from '@/components/icons/Icon.vue'
 import userAPI, { type AffiliateRedeemTargetType } from '@/api/user'
 import { paymentAPI } from '@/api/payment'
 import subscriptionsAPI from '@/api/subscriptions'
+import { isCustomSubscriptionForPlan, subscriptionCustomDisplayName, subscriptionCustomMultiplier } from '@/utils/subscriptionCustom'
 import type { AffiliateInvitee, AffiliateLedgerRecord, SubscriptionPlan, UserAffiliateDetail, UserSubscription } from '@/types'
 import { useAppStore } from '@/stores/app'
 import { useAuthStore } from '@/stores/auth'
@@ -412,18 +413,15 @@ const subscriptionRedeemOptions = computed<SubscriptionRedeemOption[]>(() => {
     .filter((plan) => plan.for_sale !== false)
     .map((plan) => {
       const customSubscription = activeSubscriptions.value.find((item) =>
-        item.group?.is_custom_subscription_group === true &&
-        item.group?.custom_source_plan_id === plan.id,
+        isCustomSubscriptionForPlan(item, plan.id),
       )
       const subscription = customSubscription || activeSubscriptions.value.find((item) => item.group_id === plan.group_id)
-      const multiplier = customSubscription?.group?.custom_multiplier && customSubscription.group.custom_multiplier >= 1
-        ? customSubscription.group.custom_multiplier
-        : 1
+      const multiplier = subscriptionCustomMultiplier(customSubscription) ?? 1
       const groupId = customSubscription?.group_id || plan.group_id
       return {
         group_id: groupId,
         plan_id: plan.id,
-        group_name: customSubscription?.group?.name || plan.group_name || subscription?.group?.name || t('affiliate.redeem.unknownGroup', { id: groupId }),
+        group_name: customSubscription ? subscriptionCustomDisplayName(customSubscription) : (plan.group_name || subscription?.group?.name || t('affiliate.redeem.unknownGroup', { id: groupId })),
         expires_at: subscription?.expires_at,
         plan_price: Math.round((Number(plan.price) || 0) * multiplier * 100) / 100,
         validity_days: plan.validity_days,

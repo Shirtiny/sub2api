@@ -40,6 +40,103 @@ func (s *PaymentService) isCustomSubscriptionPaymentOrder(ctx context.Context, o
 	return plan.CustomMultiplierEnabled, nil
 }
 
+type virtualCustomSubscriptionEntitlement struct {
+	GroupID             int64
+	Multiplier          int
+	SourcePlanID        int64
+	SourceGroupID       int64
+	DisplayName         string
+	MigrateFromGroupIDs []int64
+}
+
+func (s *PaymentService) virtualCustomSubscriptionEntitlementForOrder(ctx context.Context, o *dbent.PaymentOrder) (*virtualCustomSubscriptionEntitlement, error) {
+	if !hasCustomSubscriptionPaymentOrderFields(o) {
+		return nil, nil
+	}
+	if s == nil || s.entClient == nil {
+		return nil, fmt.Errorf("payment service not ready")
+	}
+	planID := *o.PlanID
+	sourceGroupID := *o.SubscriptionSourceGroupID
+	multiplier := *o.SubscriptionMultiplier
+	if multiplier < minCustomSubscriptionMultiplier || multiplier > maxCustomSubscriptionMultiplier {
+		return nil, fmt.Errorf("invalid custom subscription multiplier %d", multiplier)
+	}
+	plan, err := s.entClient.SubscriptionPlan.Get(ctx, planID)
+	if err != nil {
+		return nil, fmt.Errorf("get source subscription plan: %w", err)
+	}
+	source, err := s.entClient.Group.Get(ctx, sourceGroupID)
+	if err != nil {
+		return nil, fmt.Errorf("get source subscription group: %w", err)
+	}
+	if err := validateCustomSubscriptionSourceGroup(source, sourceGroupID); err != nil {
+		return nil, err
+	}
+	migrateFromGroupIDs, err := s.expiredReusableCustomSubscriptionGroupIDs(ctx, o.UserID, planID)
+	if err != nil {
+		return nil, err
+	}
+	return &virtualCustomSubscriptionEntitlement{
+		GroupID:             sourceGroupID,
+		Multiplier:          multiplier,
+		SourcePlanID:        planID,
+		SourceGroupID:       sourceGroupID,
+		DisplayName:         customSubscriptionGroupName(plan.Name, o.UserID, multiplier),
+		MigrateFromGroupIDs: migrateFromGroupIDs,
+	}, nil
+}
+
+func (s *PaymentService) shouldUseLegacyCustomSubscriptionGroup(ctx context.Context, o *dbent.PaymentOrder) (bool, error) {
+	if !hasCustomSubscriptionPaymentOrderFields(o) {
+		return false, nil
+	}
+	active, err := s.findActiveCustomSubscriptionGroup(ctx, o.UserID, *o.PlanID)
+	if err == nil && active != nil {
+		return true, nil
+	}
+	if err != nil && !dbent.IsNotFound(err) {
+		return false, fmt.Errorf("find active custom subscription group: %w", err)
+	}
+	return false, nil
+}
+
+func (s *PaymentService) expiredReusableCustomSubscriptionGroupIDs(ctx context.Context, userID, planID int64) ([]int64, error) {
+	if s == nil || s.entClient == nil || userID <= 0 || planID <= 0 {
+		return nil, nil
+	}
+	groups, err := s.entClient.Group.Query().
+		Where(
+			entgroup.IsCustomSubscriptionGroupEQ(true),
+			entgroup.CustomOwnerUserIDEQ(userID),
+			entgroup.CustomSourcePlanIDEQ(planID),
+		).
+		Order(dbent.Asc(entgroup.FieldID)).
+		All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("list reusable custom subscription groups: %w", err)
+	}
+	ids := make([]int64, 0, len(groups))
+	now := time.Now()
+	for _, g := range groups {
+		active, err := s.entClient.UserSubscription.Query().
+			Where(
+				usersubscription.GroupIDEQ(g.ID),
+				usersubscription.UserIDEQ(userID),
+				usersubscription.StatusEQ(SubscriptionStatusActive),
+				usersubscription.ExpiresAtGT(now),
+			).
+			Exist(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("check reusable custom subscription group activity: %w", err)
+		}
+		if !active {
+			ids = append(ids, g.ID)
+		}
+	}
+	return ids, nil
+}
+
 func (s *PaymentService) ensureCustomSubscriptionGroupForOrder(ctx context.Context, o *dbent.PaymentOrder) (int64, error) {
 	if !hasCustomSubscriptionPaymentOrderFields(o) {
 		if o == nil || o.SubscriptionGroupID == nil {
@@ -624,6 +721,40 @@ func (s *PaymentService) migrateCustomSubscriptionAPIKeys(ctx context.Context, u
 		s.authCacheInvalidator.InvalidateAuthCacheByUserID(ctx, userID)
 	}
 	slog.Info("custom subscription api keys migrated", "userID", userID, "sourceGroupID", sourceGroupID, "customGroupID", customGroupID, "count", migrated)
+}
+
+func (s *PaymentService) migrateLegacyCustomSubscriptionAPIKeysToSource(ctx context.Context, userID, sourceGroupID int64, customGroupIDs []int64) {
+	if s == nil || s.entClient == nil || userID <= 0 || sourceGroupID <= 0 || len(customGroupIDs) == 0 {
+		return
+	}
+	filtered := make([]int64, 0, len(customGroupIDs))
+	for _, groupID := range customGroupIDs {
+		if groupID > 0 && groupID != sourceGroupID {
+			filtered = append(filtered, groupID)
+		}
+	}
+	if len(filtered) == 0 {
+		return
+	}
+	migrated, err := s.entClient.APIKey.Update().
+		Where(
+			apikey.UserIDEQ(userID),
+			apikey.GroupIDIn(filtered...),
+			apikey.DeletedAtIsNil(),
+		).
+		SetGroupID(sourceGroupID).
+		Save(ctx)
+	if err != nil {
+		slog.Warn("legacy custom subscription api key migration to source failed", "userID", userID, "sourceGroupID", sourceGroupID, "customGroupIDs", filtered, "error", err)
+		return
+	}
+	if migrated <= 0 {
+		return
+	}
+	if s.authCacheInvalidator != nil {
+		s.authCacheInvalidator.InvalidateAuthCacheByUserID(ctx, userID)
+	}
+	slog.Info("legacy custom subscription api keys migrated to source group", "userID", userID, "sourceGroupID", sourceGroupID, "customGroupIDs", filtered, "count", migrated)
 }
 
 type groupChangeNotifier interface {

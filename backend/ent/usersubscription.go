@@ -53,6 +53,16 @@ type UserSubscription struct {
 	AssignedAt time.Time `json:"assigned_at,omitempty"`
 	// Notes holds the value of the "notes" field.
 	Notes *string `json:"notes,omitempty"`
+	// virtual custom subscription multiplier; nil means normal subscription
+	CustomMultiplier *int `json:"custom_multiplier,omitempty"`
+	// source subscription plan id for virtual custom entitlement
+	CustomSourcePlanID *int64 `json:"custom_source_plan_id,omitempty"`
+	// source base group id for virtual custom entitlement
+	CustomSourceGroupID *int64 `json:"custom_source_group_id,omitempty"`
+	// expiration time for virtual custom entitlement; base subscription may outlive it
+	CustomExpiresAt *time.Time `json:"custom_expires_at,omitempty"`
+	// stored display name for virtual custom subscription
+	CustomDisplayName *string `json:"custom_display_name,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the UserSubscriptionQuery when eager-loading is set.
 	Edges        UserSubscriptionEdges `json:"edges"`
@@ -123,11 +133,11 @@ func (*UserSubscription) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case usersubscription.FieldDailyUsageUsd, usersubscription.FieldWeeklyUsageUsd, usersubscription.FieldMonthlyUsageUsd:
 			values[i] = new(sql.NullFloat64)
-		case usersubscription.FieldID, usersubscription.FieldUserID, usersubscription.FieldGroupID, usersubscription.FieldAssignedBy:
+		case usersubscription.FieldID, usersubscription.FieldUserID, usersubscription.FieldGroupID, usersubscription.FieldAssignedBy, usersubscription.FieldCustomMultiplier, usersubscription.FieldCustomSourcePlanID, usersubscription.FieldCustomSourceGroupID:
 			values[i] = new(sql.NullInt64)
-		case usersubscription.FieldStatus, usersubscription.FieldNotes:
+		case usersubscription.FieldStatus, usersubscription.FieldNotes, usersubscription.FieldCustomDisplayName:
 			values[i] = new(sql.NullString)
-		case usersubscription.FieldCreatedAt, usersubscription.FieldUpdatedAt, usersubscription.FieldDeletedAt, usersubscription.FieldStartsAt, usersubscription.FieldExpiresAt, usersubscription.FieldDailyWindowStart, usersubscription.FieldWeeklyWindowStart, usersubscription.FieldMonthlyWindowStart, usersubscription.FieldAssignedAt:
+		case usersubscription.FieldCreatedAt, usersubscription.FieldUpdatedAt, usersubscription.FieldDeletedAt, usersubscription.FieldStartsAt, usersubscription.FieldExpiresAt, usersubscription.FieldDailyWindowStart, usersubscription.FieldWeeklyWindowStart, usersubscription.FieldMonthlyWindowStart, usersubscription.FieldAssignedAt, usersubscription.FieldCustomExpiresAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -258,6 +268,41 @@ func (_m *UserSubscription) assignValues(columns []string, values []any) error {
 				_m.Notes = new(string)
 				*_m.Notes = value.String
 			}
+		case usersubscription.FieldCustomMultiplier:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field custom_multiplier", values[i])
+			} else if value.Valid {
+				_m.CustomMultiplier = new(int)
+				*_m.CustomMultiplier = int(value.Int64)
+			}
+		case usersubscription.FieldCustomSourcePlanID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field custom_source_plan_id", values[i])
+			} else if value.Valid {
+				_m.CustomSourcePlanID = new(int64)
+				*_m.CustomSourcePlanID = value.Int64
+			}
+		case usersubscription.FieldCustomSourceGroupID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field custom_source_group_id", values[i])
+			} else if value.Valid {
+				_m.CustomSourceGroupID = new(int64)
+				*_m.CustomSourceGroupID = value.Int64
+			}
+		case usersubscription.FieldCustomExpiresAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field custom_expires_at", values[i])
+			} else if value.Valid {
+				_m.CustomExpiresAt = new(time.Time)
+				*_m.CustomExpiresAt = value.Time
+			}
+		case usersubscription.FieldCustomDisplayName:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field custom_display_name", values[i])
+			} else if value.Valid {
+				_m.CustomDisplayName = new(string)
+				*_m.CustomDisplayName = value.String
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -374,6 +419,31 @@ func (_m *UserSubscription) String() string {
 	builder.WriteString(", ")
 	if v := _m.Notes; v != nil {
 		builder.WriteString("notes=")
+		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	if v := _m.CustomMultiplier; v != nil {
+		builder.WriteString("custom_multiplier=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.CustomSourcePlanID; v != nil {
+		builder.WriteString("custom_source_plan_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.CustomSourceGroupID; v != nil {
+		builder.WriteString("custom_source_group_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.CustomExpiresAt; v != nil {
+		builder.WriteString("custom_expires_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.CustomDisplayName; v != nil {
+		builder.WriteString("custom_display_name=")
 		builder.WriteString(*v)
 	}
 	builder.WriteByte(')')

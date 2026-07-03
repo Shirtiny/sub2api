@@ -369,6 +369,7 @@ import {
   writePaymentRecoverySnapshot,
 } from '@/components/payment/paymentFlow'
 import { platformAccentBarClass, platformBadgeLightClass, platformBadgeClass, platformTextClass, platformLabel } from '@/utils/platformColors'
+import { isCustomSubscriptionForPlan, subscriptionCustomMultiplier, subscriptionCustomSourcePlanId } from '@/utils/subscriptionCustom'
 import SubscriptionPlanCard from '@/components/payment/SubscriptionPlanCard.vue'
 import PaymentStatusPanel from '@/components/payment/PaymentStatusPanel.vue'
 import Icon from '@/components/icons/Icon.vue'
@@ -609,15 +610,12 @@ function activeCustomSubscriptionForPlan(plan: SubscriptionPlan | null | undefin
   if (!plan) return null
   return activeSubscriptions.value.find(sub =>
     isSubscriptionCurrentlyActive(sub)
-      && sub.group?.is_custom_subscription_group === true
-      && sub.group?.custom_source_plan_id === plan.id,
+      && isCustomSubscriptionForPlan(sub, plan.id),
   ) ?? null
 }
 
 function activeSubscriptionMultiplierForPlan(plan: SubscriptionPlan | null | undefined): number | null {
-  const customMultiplier = activeCustomSubscriptionForPlan(plan)?.group?.custom_multiplier
-  if (customMultiplier && customMultiplier >= 1) return customMultiplier
-  return null
+  return subscriptionCustomMultiplier(activeCustomSubscriptionForPlan(plan))
 }
 
 function defaultCustomMultiplierForPlan(plan: SubscriptionPlan | null | undefined): number {
@@ -1152,11 +1150,11 @@ function routeSubscriptionPlanForGroup(groupId: number): SubscriptionPlan | null
   const customSubscription = activeSubscriptions.value.find(sub =>
     sub.group_id === groupId
       && isSubscriptionCurrentlyActive(sub)
-      && sub.group?.is_custom_subscription_group === true
-      && !!sub.group.custom_source_plan_id,
+      && subscriptionCustomSourcePlanId(sub) != null,
   )
-  if (customSubscription?.group?.custom_source_plan_id) {
-    return checkout.value.plans.find(plan => plan.id === customSubscription.group?.custom_source_plan_id) ?? null
+  const customSourcePlanId = subscriptionCustomSourcePlanId(customSubscription)
+  if (customSourcePlanId) {
+    return checkout.value.plans.find(plan => plan.id === customSourcePlanId) ?? null
   }
   const groupPlans = checkout.value.plans.filter(plan => plan.group_id === groupId)
   if (groupPlans.length === 1) return groupPlans[0]

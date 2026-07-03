@@ -41,7 +41,7 @@ type SubscriptionPlan struct {
 	SortOrder int `json:"sort_order,omitempty"`
 	// whether this plan allows integer multiplier purchase
 	CustomMultiplierEnabled bool `json:"custom_multiplier_enabled,omitempty"`
-	// minimum custom multiplier; enabled plans require at least 2
+	// minimum custom multiplier; enabled plans require at least 1
 	CustomMultiplierMin int `json:"custom_multiplier_min,omitempty"`
 	// maximum custom multiplier; must be >= min when enabled
 	CustomMultiplierMax int `json:"custom_multiplier_max,omitempty"`

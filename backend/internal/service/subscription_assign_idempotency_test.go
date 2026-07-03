@@ -405,6 +405,151 @@ func TestAssignSubscriptionGroupTypeValidation(t *testing.T) {
 	require.Equal(t, infraerrors.Code(ErrGroupNotSubscriptionType), infraerrors.Code(err))
 }
 
+func TestAssignOrExtendCustomFromActiveNormalKeepsBaseExpiryAndSetsCustomExpiry(t *testing.T) {
+	groupRepo := &subscriptionGroupRepoStub{group: &Group{ID: 1, SubscriptionType: SubscriptionTypeSubscription}}
+	subRepo := newSubscriptionUserSubRepoStub()
+	now := time.Now()
+	normalExpiresAt := now.AddDate(0, 0, 365)
+	subRepo.seed(&UserSubscription{
+		ID:        31,
+		UserID:    3001,
+		GroupID:   1,
+		StartsAt:  now.AddDate(0, 0, -1),
+		ExpiresAt: normalExpiresAt,
+		Status:    SubscriptionStatusActive,
+		Notes:     "normal",
+	})
+	multiplier := 3
+	planID := int64(10)
+	sourceGroupID := int64(1)
+	svc := NewSubscriptionService(groupRepo, subRepo, nil, nil, nil)
+
+	sub, reused, err := svc.AssignOrExtendSubscription(context.Background(), &AssignSubscriptionInput{
+		UserID:              3001,
+		GroupID:             1,
+		ValidityDays:        30,
+		Notes:               "custom order",
+		CustomMultiplier:    &multiplier,
+		CustomSourcePlanID:  &planID,
+		CustomSourceGroupID: &sourceGroupID,
+		CustomDisplayName:   "[3x]Plan#3001",
+	})
+	require.NoError(t, err)
+	require.True(t, reused)
+	require.Equal(t, normalExpiresAt, sub.ExpiresAt, "custom purchase must not upgrade a longer active normal term for free")
+	require.NotNil(t, sub.CustomExpiresAt)
+	require.True(t, sub.CustomExpiresAt.After(now.AddDate(0, 0, 29)))
+	require.True(t, sub.CustomExpiresAt.Before(now.AddDate(0, 0, 31)))
+	require.True(t, sub.CustomExpiresAt.Before(sub.ExpiresAt))
+	require.Equal(t, 3, *sub.CustomMultiplier)
+}
+
+func TestAssignOrExtendActiveVirtualCustomExtendsCustomExpiry(t *testing.T) {
+	groupRepo := &subscriptionGroupRepoStub{group: &Group{ID: 1, SubscriptionType: SubscriptionTypeSubscription}}
+	subRepo := newSubscriptionUserSubRepoStub()
+	now := time.Now()
+	customExpiresAt := now.AddDate(0, 0, 10)
+	multiplier := 2
+	planID := int64(20)
+	sourceGroupID := int64(1)
+	subRepo.seed(&UserSubscription{
+		ID:                  32,
+		UserID:              3002,
+		GroupID:             1,
+		StartsAt:            now.AddDate(0, 0, -20),
+		ExpiresAt:           customExpiresAt,
+		Status:              SubscriptionStatusActive,
+		Notes:               "custom",
+		CustomMultiplier:    &multiplier,
+		CustomSourcePlanID:  &planID,
+		CustomSourceGroupID: &sourceGroupID,
+		CustomExpiresAt:     &customExpiresAt,
+		CustomDisplayName:   "[2x]Plan#3002",
+	})
+	svc := NewSubscriptionService(groupRepo, subRepo, nil, nil, nil)
+
+	sub, reused, err := svc.AssignOrExtendSubscription(context.Background(), &AssignSubscriptionInput{
+		UserID:              3002,
+		GroupID:             1,
+		ValidityDays:        30,
+		Notes:               "renew",
+		CustomMultiplier:    &multiplier,
+		CustomSourcePlanID:  &planID,
+		CustomSourceGroupID: &sourceGroupID,
+		CustomDisplayName:   "[2x]Plan#3002",
+	})
+	require.NoError(t, err)
+	require.True(t, reused)
+	require.NotNil(t, sub.CustomExpiresAt)
+	require.Equal(t, customExpiresAt.AddDate(0, 0, 30), *sub.CustomExpiresAt)
+	require.Equal(t, *sub.CustomExpiresAt, sub.ExpiresAt)
+}
+
+func TestAssignOrExtendActiveVirtualCustomRejectsPlainRenewal(t *testing.T) {
+	groupRepo := &subscriptionGroupRepoStub{group: &Group{ID: 1, SubscriptionType: SubscriptionTypeSubscription}}
+	subRepo := newSubscriptionUserSubRepoStub()
+	now := time.Now()
+	customExpiresAt := now.AddDate(0, 0, 10)
+	multiplier := 2
+	planID := int64(30)
+	sourceGroupID := int64(1)
+	subRepo.seed(&UserSubscription{
+		ID:                  33,
+		UserID:              3003,
+		GroupID:             1,
+		StartsAt:            now.AddDate(0, 0, -20),
+		ExpiresAt:           customExpiresAt,
+		Status:              SubscriptionStatusActive,
+		Notes:               "custom",
+		CustomMultiplier:    &multiplier,
+		CustomSourcePlanID:  &planID,
+		CustomSourceGroupID: &sourceGroupID,
+		CustomExpiresAt:     &customExpiresAt,
+	})
+	svc := NewSubscriptionService(groupRepo, subRepo, nil, nil, nil)
+
+	_, _, err := svc.AssignOrExtendSubscription(context.Background(), &AssignSubscriptionInput{UserID: 3003, GroupID: 1, ValidityDays: 30, Notes: "plain"})
+	require.Error(t, err)
+	require.Equal(t, "SUBSCRIPTION_ASSIGN_CONFLICT", infraerrorsReason(err))
+}
+
+func TestExtendSubscriptionDeductsVirtualCustomOverlayBeforeBaseTerm(t *testing.T) {
+	groupRepo := &subscriptionGroupRepoStub{group: &Group{ID: 1, SubscriptionType: SubscriptionTypeSubscription}}
+	subRepo := newSubscriptionUserSubRepoStub()
+	now := time.Now()
+	baseExpiresAt := now.AddDate(0, 0, 365)
+	customExpiresAt := now.AddDate(0, 0, 30)
+	multiplier := 4
+	planID := int64(40)
+	sourceGroupID := int64(1)
+	subRepo.seed(&UserSubscription{
+		ID:                  34,
+		UserID:              3004,
+		GroupID:             1,
+		StartsAt:            now.AddDate(0, 0, -1),
+		ExpiresAt:           baseExpiresAt,
+		Status:              SubscriptionStatusActive,
+		CustomMultiplier:    &multiplier,
+		CustomSourcePlanID:  &planID,
+		CustomSourceGroupID: &sourceGroupID,
+		CustomExpiresAt:     &customExpiresAt,
+	})
+	svc := NewSubscriptionService(groupRepo, subRepo, nil, nil, nil)
+
+	sub, err := svc.ExtendSubscription(context.Background(), 34, -30)
+	require.NoError(t, err)
+	require.Equal(t, baseExpiresAt, sub.ExpiresAt)
+	require.NotNil(t, sub.CustomExpiresAt)
+	require.False(t, sub.HasActiveVirtualCustomEntitlementAt(time.Now()))
+
+	restored, err := svc.ExtendSubscription(context.Background(), 34, 30)
+	require.NoError(t, err)
+	require.Equal(t, baseExpiresAt, restored.ExpiresAt)
+	require.NotNil(t, restored.CustomExpiresAt)
+	require.True(t, restored.CustomExpiresAt.After(time.Now().AddDate(0, 0, 29)))
+	require.True(t, restored.HasActiveVirtualCustomEntitlementAt(time.Now()))
+}
+
 func strconvFormatInt(v int64) string {
 	return strconv.FormatInt(v, 10)
 }

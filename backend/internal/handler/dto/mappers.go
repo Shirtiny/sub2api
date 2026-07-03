@@ -761,23 +761,41 @@ func UserSubscriptionFromServiceAdmin(sub *service.UserSubscription) *AdminUserS
 }
 
 func userSubscriptionFromServiceBase(sub *service.UserSubscription) UserSubscription {
+	effectiveGroup := service.EffectiveSubscriptionGroup(sub, sub.Group)
+	groupDTO := GroupFromServiceShallow(effectiveGroup)
+	var customMultiplier *int
+	if multiplier := sub.DisplayCustomMultiplier(); multiplier >= 1 {
+		m := multiplier
+		customMultiplier = &m
+	}
+	customDisplayName := ""
+	var customExpiresAt *time.Time
+	if customMultiplier != nil {
+		customDisplayName = sub.DisplayName(effectiveGroup)
+		customExpiresAt = sub.CustomExpiresAt
+	}
 	return UserSubscription{
-		ID:                 sub.ID,
-		UserID:             sub.UserID,
-		GroupID:            sub.GroupID,
-		StartsAt:           sub.StartsAt,
-		ExpiresAt:          sub.ExpiresAt,
-		Status:             sub.Status,
-		DailyWindowStart:   sub.DailyWindowStart,
-		WeeklyWindowStart:  sub.WeeklyWindowStart,
-		MonthlyWindowStart: sub.MonthlyWindowStart,
-		DailyUsageUSD:      sub.DailyUsageUSD,
-		WeeklyUsageUSD:     sub.WeeklyUsageUSD,
-		MonthlyUsageUSD:    sub.MonthlyUsageUSD,
-		CreatedAt:          sub.CreatedAt,
-		UpdatedAt:          sub.UpdatedAt,
-		User:               UserFromServiceShallow(sub.User),
-		Group:              GroupFromServiceShallow(sub.Group),
+		ID:                  sub.ID,
+		UserID:              sub.UserID,
+		GroupID:             sub.GroupID,
+		StartsAt:            sub.StartsAt,
+		ExpiresAt:           sub.ExpiresAt,
+		Status:              sub.Status,
+		DailyWindowStart:    sub.DailyWindowStart,
+		WeeklyWindowStart:   sub.WeeklyWindowStart,
+		MonthlyWindowStart:  sub.MonthlyWindowStart,
+		DailyUsageUSD:       sub.DailyUsageUSD,
+		WeeklyUsageUSD:      sub.WeeklyUsageUSD,
+		MonthlyUsageUSD:     sub.MonthlyUsageUSD,
+		CustomMultiplier:    customMultiplier,
+		CustomSourcePlanID:  sub.DisplayCustomSourcePlanID(),
+		CustomSourceGroupID: sub.DisplayCustomSourceGroupID(),
+		CustomExpiresAt:     customExpiresAt,
+		CustomDisplayName:   customDisplayName,
+		CreatedAt:           sub.CreatedAt,
+		UpdatedAt:           sub.UpdatedAt,
+		User:                UserFromServiceShallow(sub.User),
+		Group:               groupDTO,
 	}
 }
 

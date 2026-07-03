@@ -357,33 +357,27 @@ func TestExecuteSubscriptionFulfillmentCreatesCustomGroupAndCopiesAccountBinding
 
 	customGroups, err := client.Group.Query().Where(group.IsCustomSubscriptionGroupEQ(true)).All(ctx)
 	require.NoError(t, err)
-	require.Len(t, customGroups, 1)
-	customGroup := customGroups[0]
-	require.Equal(t, user.ID, *customGroup.CustomOwnerUserID)
-	require.Equal(t, plan.ID, *customGroup.CustomSourcePlanID)
-	require.Equal(t, sourceGroup.ID, *customGroup.CustomSourceGroupID)
-	require.Equal(t, "[3x]Select Plan#"+strconv.FormatInt(user.ID, 10), customGroup.Name)
-	require.Equal(t, 3, *customGroup.CustomMultiplier)
-	require.InDelta(t, daily*3, *customGroup.DailyLimitUsd, 1e-9)
-	require.InDelta(t, weekly*3, *customGroup.WeeklyLimitUsd, 1e-9)
-	require.InDelta(t, monthly*3, *customGroup.MonthlyLimitUsd, 1e-9)
-
-	copied, err := client.AccountGroup.Query().
-		Where(accountgroup.AccountIDEQ(account.ID), accountgroup.GroupIDEQ(customGroup.ID)).
-		Only(ctx)
-	require.NoError(t, err)
-	require.Equal(t, 17, copied.Priority)
+	require.Len(t, customGroups, 0)
 
 	updatedOrder, err := client.PaymentOrder.Get(ctx, order.ID)
 	require.NoError(t, err)
-	require.Equal(t, customGroup.ID, *updatedOrder.SubscriptionGroupID)
+	require.Equal(t, sourceGroup.ID, *updatedOrder.SubscriptionGroupID)
 	require.Equal(t, OrderStatusCompleted, updatedOrder.Status)
 
-	subCount, err := client.UserSubscription.Query().
-		Where(usersubscription.UserIDEQ(user.ID), usersubscription.GroupIDEQ(customGroup.ID)).
-		Count(ctx)
+	sub, err := client.UserSubscription.Query().
+		Where(usersubscription.UserIDEQ(user.ID), usersubscription.GroupIDEQ(sourceGroup.ID)).
+		Only(ctx)
 	require.NoError(t, err)
-	require.Equal(t, 1, subCount)
+	require.Equal(t, 3, *sub.CustomMultiplier)
+	require.Equal(t, plan.ID, *sub.CustomSourcePlanID)
+	require.Equal(t, sourceGroup.ID, *sub.CustomSourceGroupID)
+	require.Equal(t, "[3x]Select Plan#"+strconv.FormatInt(user.ID, 10), *sub.CustomDisplayName)
+
+	copied, err := client.AccountGroup.Query().
+		Where(accountgroup.AccountIDEQ(account.ID), accountgroup.GroupIDEQ(sourceGroup.ID)).
+		Only(ctx)
+	require.NoError(t, err)
+	require.Equal(t, 17, copied.Priority)
 }
 
 func TestExecuteSubscriptionFulfillmentCreatesOneXCustomGroup(t *testing.T) {
@@ -420,17 +414,18 @@ func TestExecuteSubscriptionFulfillmentCreatesOneXCustomGroup(t *testing.T) {
 	require.NoError(t, svc.ExecuteSubscriptionFulfillment(ctx, order.ID))
 	customGroups, err := client.Group.Query().Where(group.IsCustomSubscriptionGroupEQ(true)).All(ctx)
 	require.NoError(t, err)
-	require.Len(t, customGroups, 1)
-	customGroup := customGroups[0]
-	require.Equal(t, "[1x]One X Plan#"+strconv.FormatInt(user.ID, 10), customGroup.Name)
-	require.Equal(t, 1, *customGroup.CustomMultiplier)
-	require.InDelta(t, 10, *customGroup.DailyLimitUsd, 1e-9)
-	require.InDelta(t, 20, *customGroup.WeeklyLimitUsd, 1e-9)
-	require.InDelta(t, 30, *customGroup.MonthlyLimitUsd, 1e-9)
+	require.Len(t, customGroups, 0)
+
+	sub, err := client.UserSubscription.Query().Where(usersubscription.UserIDEQ(user.ID), usersubscription.GroupIDEQ(sourceGroup.ID)).Only(ctx)
+	require.NoError(t, err)
+	require.Equal(t, 1, *sub.CustomMultiplier)
+	require.Equal(t, plan.ID, *sub.CustomSourcePlanID)
+	require.Equal(t, sourceGroup.ID, *sub.CustomSourceGroupID)
+	require.Equal(t, "[1x]One X Plan#"+strconv.FormatInt(user.ID, 10), *sub.CustomDisplayName)
 
 	updatedOrder, err := client.PaymentOrder.Get(ctx, order.ID)
 	require.NoError(t, err)
-	require.Equal(t, customGroup.ID, *updatedOrder.SubscriptionGroupID)
+	require.Equal(t, sourceGroup.ID, *updatedOrder.SubscriptionGroupID)
 	require.Equal(t, OrderStatusCompleted, updatedOrder.Status)
 }
 
@@ -465,12 +460,53 @@ func TestExecuteSubscriptionFulfillmentMigratesSourceGroupAPIKeysToCustomGroup(t
 	svc := &PaymentService{entClient: client, groupRepo: groupRepo, subscriptionSvc: subSvc, providersLoaded: true}
 
 	require.NoError(t, svc.ExecuteSubscriptionFulfillment(ctx, order.ID))
-	customGroup, err := client.Group.Query().Where(group.IsCustomSubscriptionGroupEQ(true)).Only(ctx)
+	customGroups, err := client.Group.Query().Where(group.IsCustomSubscriptionGroupEQ(true)).All(ctx)
 	require.NoError(t, err)
+	require.Len(t, customGroups, 0)
 	updatedKey, err := client.APIKey.Get(ctx, key.ID)
 	require.NoError(t, err)
 	require.NotNil(t, updatedKey.GroupID)
-	require.Equal(t, customGroup.ID, *updatedKey.GroupID)
+	require.Equal(t, sourceGroup.ID, *updatedKey.GroupID)
+}
+
+func TestExecuteSubscriptionFulfillmentVirtualCustomDoesNotUpgradeLongNormalRemainder(t *testing.T) {
+	ctx := context.Background()
+	client := newPaymentOrderLifecycleTestClient(t)
+
+	user, err := client.User.Create().SetEmail("custom-normal-overlap@example.com").SetPasswordHash("hash").SetUsername("normal-overlap").Save(ctx)
+	require.NoError(t, err)
+	sourceGroup, err := client.Group.Create().SetName("normal-overlap-source").SetStatus(StatusActive).SetPlatform(PlatformOpenAI).SetSubscriptionType(SubscriptionTypeSubscription).SetDailyLimitUsd(10).Save(ctx)
+	require.NoError(t, err)
+	plan, err := client.SubscriptionPlan.Create().SetName("Overlap Custom").SetDescription("custom").SetGroupID(sourceGroup.ID).SetPrice(100).SetValidityDays(30).SetValidityUnit("days").SetForSale(true).SetCustomMultiplierEnabled(true).SetCustomMultiplierMin(1).SetCustomMultiplierMax(5).Save(ctx)
+	require.NoError(t, err)
+	normalExpiresAt := time.Now().AddDate(0, 0, 365).UTC().Truncate(time.Second)
+	_, err = client.UserSubscription.Create().SetUserID(user.ID).SetGroupID(sourceGroup.ID).SetStatus(SubscriptionStatusActive).SetStartsAt(time.Now().AddDate(0, 0, -1)).SetExpiresAt(normalExpiresAt).SetNotes("active normal").Save(ctx)
+	require.NoError(t, err)
+
+	order, err := client.PaymentOrder.Create().
+		SetUserID(user.ID).SetUserEmail(user.Email).SetUserName(user.Username).
+		SetAmount(300).SetPayAmount(300).SetFeeRate(0).SetRechargeCode("CUSTOM-OVERLAP-001").SetOutTradeNo("sub2_custom_overlap_001").
+		SetPaymentType(payment.TypeAlipay).SetPaymentTradeNo("").SetOrderType(payment.OrderTypeSubscription).
+		SetPlanID(plan.ID).SetSubscriptionGroupID(sourceGroup.ID).SetSubscriptionDays(30).SetSubscriptionMultiplier(3).SetSubscriptionSourceGroupID(sourceGroup.ID).SetSubscriptionSourcePrice(100).
+		SetStatus(OrderStatusPaid).SetExpiresAt(time.Now().Add(time.Hour)).SetClientIP("127.0.0.1").SetSrcHost("app.example.com").Save(ctx)
+	require.NoError(t, err)
+
+	groupRepo := &subscriptionGroupRepoStub{group: &Group{ID: sourceGroup.ID, Name: sourceGroup.Name, Status: StatusActive, SubscriptionType: SubscriptionTypeSubscription}}
+	subRepo := &paymentFulfillmentSubscriptionRepo{client: client}
+	subSvc := NewSubscriptionService(groupRepo, subRepo, nil, client, nil)
+	svc := &PaymentService{entClient: client, groupRepo: groupRepo, subscriptionSvc: subSvc, providersLoaded: true}
+
+	require.NoError(t, svc.ExecuteSubscriptionFulfillment(ctx, order.ID))
+	customGroups, err := client.Group.Query().Where(group.IsCustomSubscriptionGroupEQ(true)).All(ctx)
+	require.NoError(t, err)
+	require.Len(t, customGroups, 0)
+	sub, err := client.UserSubscription.Query().Where(usersubscription.UserIDEQ(user.ID), usersubscription.GroupIDEQ(sourceGroup.ID)).Only(ctx)
+	require.NoError(t, err)
+	require.WithinDuration(t, normalExpiresAt, sub.ExpiresAt, time.Second, "custom entitlement must not convert a longer normal remainder into custom time")
+	require.NotNil(t, sub.CustomExpiresAt)
+	require.True(t, sub.CustomExpiresAt.Before(sub.ExpiresAt))
+	require.True(t, sub.CustomExpiresAt.After(time.Now().AddDate(0, 0, 29)))
+	require.Equal(t, 3, *sub.CustomMultiplier)
 }
 
 func TestCreateOrderStoresResolvedCustomMultiplierSnapshots(t *testing.T) {
@@ -542,8 +578,12 @@ func TestCreateOrderStoresResolvedCustomMultiplierSnapshots(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 400.0, order.Amount)
 	require.Equal(t, plan.ID, *order.PlanID)
-	require.NotEqual(t, sourceGroup.ID, *order.SubscriptionGroupID)
+	require.Equal(t, sourceGroup.ID, *order.SubscriptionGroupID)
 	require.Equal(t, 4, *order.SubscriptionMultiplier)
+	sub, err := client.UserSubscription.Query().Where(usersubscription.UserIDEQ(user.ID), usersubscription.GroupIDEQ(sourceGroup.ID)).Only(ctx)
+	require.NoError(t, err)
+	require.Equal(t, 4, *sub.CustomMultiplier)
+	require.Equal(t, plan.ID, *sub.CustomSourcePlanID)
 	require.Equal(t, sourceGroup.ID, *order.SubscriptionSourceGroupID)
 	require.InDelta(t, 100, *order.SubscriptionSourcePrice, 1e-9)
 	require.InDelta(t, originalPrice, *order.SubscriptionSourceOriginalPrice, 1e-9)
@@ -687,13 +727,17 @@ func TestExecuteSubscriptionFulfillmentReusesExpiredCustomGroupAndUpdatesMultipl
 	require.Len(t, customGroups, 1)
 	updatedOrder, err := client.PaymentOrder.Get(ctx, order.ID)
 	require.NoError(t, err)
-	require.Equal(t, expiredGroup.ID, *updatedOrder.SubscriptionGroupID)
+	require.Equal(t, sourceGroup.ID, *updatedOrder.SubscriptionGroupID)
 	updatedGroup, err := client.Group.Get(ctx, expiredGroup.ID)
 	require.NoError(t, err)
 	require.True(t, updatedGroup.IsCustomSubscriptionGroup)
-	require.Equal(t, "[3x]Expired New#"+strconv.FormatInt(user.ID, 10), updatedGroup.Name)
-	require.Equal(t, 3, *updatedGroup.CustomMultiplier)
-	require.InDelta(t, 30, *updatedGroup.DailyLimitUsd, 1e-9)
+	require.Equal(t, 2, *updatedGroup.CustomMultiplier)
+	sub, err := client.UserSubscription.Query().Where(usersubscription.UserIDEQ(user.ID), usersubscription.GroupIDEQ(sourceGroup.ID)).Only(ctx)
+	require.NoError(t, err)
+	require.Equal(t, 3, *sub.CustomMultiplier)
+	require.Equal(t, plan.ID, *sub.CustomSourcePlanID)
+	require.Equal(t, sourceGroup.ID, *sub.CustomSourceGroupID)
+	require.Equal(t, "[3x]Expired New#"+strconv.FormatInt(user.ID, 10), *sub.CustomDisplayName)
 }
 
 func TestExecuteSubscriptionFulfillmentRejectsActiveCustomGroupMultiplierMismatch(t *testing.T) {
@@ -976,12 +1020,13 @@ func TestExecuteSubscriptionFulfillmentCustomGroupCopiesChannelBinding(t *testin
 	svc := &PaymentService{entClient: client, groupRepo: groupRepo, subscriptionSvc: subSvc, providersLoaded: true}
 
 	require.NoError(t, svc.ExecuteSubscriptionFulfillment(ctx, order.ID))
-	customGroup, err := client.Group.Query().Where(group.IsCustomSubscriptionGroupEQ(true)).Only(ctx)
+	customGroups, err := client.Group.Query().Where(group.IsCustomSubscriptionGroupEQ(true)).All(ctx)
 	require.NoError(t, err)
-	rows, err := client.QueryContext(ctx, `SELECT channel_id FROM channel_groups WHERE group_id = `+strconv.FormatInt(customGroup.ID, 10))
+	require.Len(t, customGroups, 0)
+	rows, err := client.QueryContext(ctx, `SELECT channel_id FROM channel_groups WHERE group_id = `+strconv.FormatInt(sourceGroup.ID, 10))
 	require.NoError(t, err)
 	defer func() { _ = rows.Close() }()
-	require.True(t, rows.Next(), "custom group must inherit source channel binding")
+	require.True(t, rows.Next(), "source group channel binding must remain available")
 	var channelID int64
 	require.NoError(t, rows.Scan(&channelID))
 	require.Equal(t, int64(77), channelID)

@@ -35,7 +35,12 @@ func (r *userSubscriptionRepository) Create(ctx context.Context, sub *service.Us
 		SetDailyUsageUsd(sub.DailyUsageUSD).
 		SetWeeklyUsageUsd(sub.WeeklyUsageUSD).
 		SetMonthlyUsageUsd(sub.MonthlyUsageUSD).
-		SetNillableAssignedBy(sub.AssignedBy)
+		SetNillableAssignedBy(sub.AssignedBy).
+		SetNillableCustomMultiplier(sub.CustomMultiplier).
+		SetNillableCustomSourcePlanID(sub.CustomSourcePlanID).
+		SetNillableCustomSourceGroupID(sub.CustomSourceGroupID).
+		SetNillableCustomExpiresAt(sub.CustomExpiresAt).
+		SetNillableCustomDisplayName(nilIfEmptyString(sub.CustomDisplayName))
 
 	if sub.StartsAt.IsZero() {
 		builder.SetStartsAt(time.Now())
@@ -122,6 +127,32 @@ func (r *userSubscriptionRepository) Update(ctx context.Context, sub *service.Us
 		SetNillableAssignedBy(sub.AssignedBy).
 		SetAssignedAt(sub.AssignedAt).
 		SetNotes(sub.Notes)
+
+	if sub.CustomMultiplier != nil {
+		builder = builder.SetCustomMultiplier(*sub.CustomMultiplier)
+	} else {
+		builder = builder.ClearCustomMultiplier()
+	}
+	if sub.CustomSourcePlanID != nil {
+		builder = builder.SetCustomSourcePlanID(*sub.CustomSourcePlanID)
+	} else {
+		builder = builder.ClearCustomSourcePlanID()
+	}
+	if sub.CustomSourceGroupID != nil {
+		builder = builder.SetCustomSourceGroupID(*sub.CustomSourceGroupID)
+	} else {
+		builder = builder.ClearCustomSourceGroupID()
+	}
+	if sub.CustomExpiresAt != nil {
+		builder = builder.SetCustomExpiresAt(*sub.CustomExpiresAt)
+	} else {
+		builder = builder.ClearCustomExpiresAt()
+	}
+	if sub.CustomDisplayName != "" {
+		builder = builder.SetCustomDisplayName(sub.CustomDisplayName)
+	} else {
+		builder = builder.ClearCustomDisplayName()
+	}
 
 	updated, err := builder.Save(ctx)
 	if err == nil {
@@ -450,23 +481,28 @@ func userSubscriptionEntityToService(m *dbent.UserSubscription) *service.UserSub
 		return nil
 	}
 	out := &service.UserSubscription{
-		ID:                 m.ID,
-		UserID:             m.UserID,
-		GroupID:            m.GroupID,
-		StartsAt:           m.StartsAt,
-		ExpiresAt:          m.ExpiresAt,
-		Status:             m.Status,
-		DailyWindowStart:   m.DailyWindowStart,
-		WeeklyWindowStart:  m.WeeklyWindowStart,
-		MonthlyWindowStart: m.MonthlyWindowStart,
-		DailyUsageUSD:      m.DailyUsageUsd,
-		WeeklyUsageUSD:     m.WeeklyUsageUsd,
-		MonthlyUsageUSD:    m.MonthlyUsageUsd,
-		AssignedBy:         m.AssignedBy,
-		AssignedAt:         m.AssignedAt,
-		Notes:              derefString(m.Notes),
-		CreatedAt:          m.CreatedAt,
-		UpdatedAt:          m.UpdatedAt,
+		ID:                  m.ID,
+		UserID:              m.UserID,
+		GroupID:             m.GroupID,
+		StartsAt:            m.StartsAt,
+		ExpiresAt:           m.ExpiresAt,
+		Status:              m.Status,
+		DailyWindowStart:    m.DailyWindowStart,
+		WeeklyWindowStart:   m.WeeklyWindowStart,
+		MonthlyWindowStart:  m.MonthlyWindowStart,
+		DailyUsageUSD:       m.DailyUsageUsd,
+		WeeklyUsageUSD:      m.WeeklyUsageUsd,
+		MonthlyUsageUSD:     m.MonthlyUsageUsd,
+		AssignedBy:          m.AssignedBy,
+		AssignedAt:          m.AssignedAt,
+		Notes:               derefString(m.Notes),
+		CustomMultiplier:    m.CustomMultiplier,
+		CustomSourcePlanID:  m.CustomSourcePlanID,
+		CustomSourceGroupID: m.CustomSourceGroupID,
+		CustomExpiresAt:     m.CustomExpiresAt,
+		CustomDisplayName:   derefString(m.CustomDisplayName),
+		CreatedAt:           m.CreatedAt,
+		UpdatedAt:           m.UpdatedAt,
 	}
 	if m.Edges.User != nil {
 		out.User = userEntityToService(m.Edges.User)
@@ -488,6 +524,13 @@ func userSubscriptionEntitiesToService(models []*dbent.UserSubscription) []servi
 		}
 	}
 	return out
+}
+
+func nilIfEmptyString(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
 }
 
 func applyUserSubscriptionEntityToService(dst *service.UserSubscription, src *dbent.UserSubscription) {

@@ -384,9 +384,18 @@ func (s *PaymentService) sendSubscriptionPurchaseSuccessNotification(ctx context
 				variables["subscription_group"] = group.Name
 			}
 		}
+		if hasCustomSubscriptionPaymentOrderFields(o) && o.PlanID != nil && o.SubscriptionMultiplier != nil {
+			if plan, err := s.entClient.SubscriptionPlan.Get(ctx, *o.PlanID); err == nil && plan != nil {
+				variables["subscription_group"] = customSubscriptionGroupName(plan.Name, o.UserID, *o.SubscriptionMultiplier)
+			}
+		}
 		if s.subscriptionSvc != nil {
 			if sub, err := s.subscriptionSvc.GetActiveSubscription(ctx, o.UserID, *o.SubscriptionGroupID); err == nil && sub != nil {
-				variables["expiry_time"] = sub.ExpiresAt.Format("2006-01-02 15:04")
+				expiresAt := sub.ExpiresAt
+				if hasCustomSubscriptionPaymentOrderFields(o) && sub.HasActiveVirtualCustomEntitlementAt(time.Now()) && sub.CustomExpiresAt != nil {
+					expiresAt = *sub.CustomExpiresAt
+				}
+				variables["expiry_time"] = expiresAt.Format("2006-01-02 15:04")
 			}
 		}
 	}
@@ -444,6 +453,8 @@ func (s *PaymentService) doSub(ctx context.Context, o *dbent.PaymentOrder) error
 	txSvc.entClient = tx.Client()
 	notifyGroupID := int64(0)
 	notifySourceGroupID := int64(0)
+	var virtualEntitlement *virtualCustomSubscriptionEntitlement
+	var migrateLegacyCustomGroupIDs []int64
 
 	if err := lockPaymentUserForUpdate(txCtx, tx, o.UserID); err != nil {
 		_ = tx.Rollback()
@@ -456,18 +467,37 @@ func (s *PaymentService) doSub(ctx context.Context, o *dbent.PaymentOrder) error
 		return err
 	}
 	if customOrder {
-		customTxSvc := txSvc
-		customTxSvc.groupRepo = nil               // defer scheduler notification until after commit
-		customTxSvc.channelCacheInvalidator = nil // defer channel cache invalidation until after commit
-		customTxSvc.authCacheInvalidator = nil    // defer auth cache invalidation until after commit
-		customGroupID, err := customTxSvc.ensureCustomSubscriptionGroupForOrder(txCtx, o)
+		useLegacyGroup, err := txSvc.shouldUseLegacyCustomSubscriptionGroup(txCtx, o)
 		if err != nil {
 			_ = tx.Rollback()
 			return err
 		}
-		gid = customGroupID
-		notifyGroupID = customGroupID
-		notifySourceGroupID = *o.SubscriptionSourceGroupID
+		if useLegacyGroup {
+			customTxSvc := txSvc
+			customTxSvc.groupRepo = nil               // defer scheduler notification until after commit
+			customTxSvc.channelCacheInvalidator = nil // defer channel cache invalidation until after commit
+			customTxSvc.authCacheInvalidator = nil    // defer auth cache invalidation until after commit
+			customGroupID, err := customTxSvc.ensureCustomSubscriptionGroupForOrder(txCtx, o)
+			if err != nil {
+				_ = tx.Rollback()
+				return err
+			}
+			gid = customGroupID
+			notifyGroupID = customGroupID
+			notifySourceGroupID = *o.SubscriptionSourceGroupID
+		} else {
+			virtualEntitlement, err = txSvc.virtualCustomSubscriptionEntitlementForOrder(txCtx, o)
+			if err != nil {
+				_ = tx.Rollback()
+				return err
+			}
+			if virtualEntitlement == nil {
+				_ = tx.Rollback()
+				return fmt.Errorf("missing virtual custom subscription entitlement")
+			}
+			gid = virtualEntitlement.GroupID
+			migrateLegacyCustomGroupIDs = virtualEntitlement.MigrateFromGroupIDs
+		}
 		if o.SubscriptionGroupID == nil || *o.SubscriptionGroupID != gid {
 			updated, err := tx.Client().PaymentOrder.UpdateOneID(o.ID).SetSubscriptionGroupID(gid).Save(txCtx)
 			if err != nil {
@@ -496,6 +526,9 @@ func (s *PaymentService) doSub(ctx context.Context, o *dbent.PaymentOrder) error
 			}
 			s.migrateCustomSubscriptionAPIKeys(ctx, o.UserID, notifySourceGroupID, notifyGroupID)
 		}
+		if virtualEntitlement != nil {
+			s.migrateLegacyCustomSubscriptionAPIKeysToSource(ctx, o.UserID, virtualEntitlement.SourceGroupID, migrateLegacyCustomGroupIDs)
+		}
 		if err := s.applyAffiliateRebateForOrder(ctx, o); err != nil {
 			return err
 		}
@@ -503,7 +536,14 @@ func (s *PaymentService) doSub(ctx context.Context, o *dbent.PaymentOrder) error
 	}
 	orderNote := fmt.Sprintf("payment order %d", o.ID)
 
-	if _, _, err = s.subscriptionSvc.AssignOrExtendSubscription(txCtx, &AssignSubscriptionInput{UserID: o.UserID, GroupID: gid, ValidityDays: days, AssignedBy: 0, Notes: orderNote}); err != nil {
+	assignInput := &AssignSubscriptionInput{UserID: o.UserID, GroupID: gid, ValidityDays: days, AssignedBy: 0, Notes: orderNote}
+	if virtualEntitlement != nil {
+		assignInput.CustomMultiplier = &virtualEntitlement.Multiplier
+		assignInput.CustomSourcePlanID = &virtualEntitlement.SourcePlanID
+		assignInput.CustomSourceGroupID = &virtualEntitlement.SourceGroupID
+		assignInput.CustomDisplayName = virtualEntitlement.DisplayName
+	}
+	if _, _, err = s.subscriptionSvc.AssignOrExtendSubscription(txCtx, assignInput); err != nil {
 		_ = tx.Rollback()
 		return fmt.Errorf("assign subscription: %w", err)
 	}
@@ -518,6 +558,12 @@ func (s *PaymentService) doSub(ctx context.Context, o *dbent.PaymentOrder) error
 		"subscriptionDays":    days,
 		"creditedAmount":      o.Amount,
 		"payAmount":           o.PayAmount,
+	}
+	if virtualEntitlement != nil {
+		auditDetail["customMultiplier"] = virtualEntitlement.Multiplier
+		auditDetail["customSourcePlanID"] = virtualEntitlement.SourcePlanID
+		auditDetail["customSourceGroupID"] = virtualEntitlement.SourceGroupID
+		auditDetail["customDisplayName"] = virtualEntitlement.DisplayName
 	}
 	if coupon := cafeCouponOrderSnapshot(o); coupon != nil {
 		auditDetail["cafeCoupon"] = coupon
@@ -534,6 +580,9 @@ func (s *PaymentService) doSub(ctx context.Context, o *dbent.PaymentOrder) error
 			slog.Warn("custom subscription group notification failed after commit", "groupID", notifyGroupID, "error", err)
 		}
 		s.migrateCustomSubscriptionAPIKeys(ctx, o.UserID, notifySourceGroupID, notifyGroupID)
+	}
+	if virtualEntitlement != nil {
+		s.migrateLegacyCustomSubscriptionAPIKeysToSource(ctx, o.UserID, virtualEntitlement.SourceGroupID, migrateLegacyCustomGroupIDs)
 	}
 	if err := s.applyAffiliateRebateForOrder(ctx, o); err != nil {
 		return err

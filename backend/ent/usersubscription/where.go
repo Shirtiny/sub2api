@@ -140,6 +140,31 @@ func Notes(v string) predicate.UserSubscription {
 	return predicate.UserSubscription(sql.FieldEQ(FieldNotes, v))
 }
 
+// CustomMultiplier applies equality check predicate on the "custom_multiplier" field. It's identical to CustomMultiplierEQ.
+func CustomMultiplier(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldEQ(FieldCustomMultiplier, v))
+}
+
+// CustomSourcePlanID applies equality check predicate on the "custom_source_plan_id" field. It's identical to CustomSourcePlanIDEQ.
+func CustomSourcePlanID(v int64) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldEQ(FieldCustomSourcePlanID, v))
+}
+
+// CustomSourceGroupID applies equality check predicate on the "custom_source_group_id" field. It's identical to CustomSourceGroupIDEQ.
+func CustomSourceGroupID(v int64) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldEQ(FieldCustomSourceGroupID, v))
+}
+
+// CustomExpiresAt applies equality check predicate on the "custom_expires_at" field. It's identical to CustomExpiresAtEQ.
+func CustomExpiresAt(v time.Time) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldEQ(FieldCustomExpiresAt, v))
+}
+
+// CustomDisplayName applies equality check predicate on the "custom_display_name" field. It's identical to CustomDisplayNameEQ.
+func CustomDisplayName(v string) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldEQ(FieldCustomDisplayName, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.UserSubscription {
 	return predicate.UserSubscription(sql.FieldEQ(FieldCreatedAt, v))
@@ -868,6 +893,281 @@ func NotesEqualFold(v string) predicate.UserSubscription {
 // NotesContainsFold applies the ContainsFold predicate on the "notes" field.
 func NotesContainsFold(v string) predicate.UserSubscription {
 	return predicate.UserSubscription(sql.FieldContainsFold(FieldNotes, v))
+}
+
+// CustomMultiplierEQ applies the EQ predicate on the "custom_multiplier" field.
+func CustomMultiplierEQ(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldEQ(FieldCustomMultiplier, v))
+}
+
+// CustomMultiplierNEQ applies the NEQ predicate on the "custom_multiplier" field.
+func CustomMultiplierNEQ(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldNEQ(FieldCustomMultiplier, v))
+}
+
+// CustomMultiplierIn applies the In predicate on the "custom_multiplier" field.
+func CustomMultiplierIn(vs ...int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldIn(FieldCustomMultiplier, vs...))
+}
+
+// CustomMultiplierNotIn applies the NotIn predicate on the "custom_multiplier" field.
+func CustomMultiplierNotIn(vs ...int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldNotIn(FieldCustomMultiplier, vs...))
+}
+
+// CustomMultiplierGT applies the GT predicate on the "custom_multiplier" field.
+func CustomMultiplierGT(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldGT(FieldCustomMultiplier, v))
+}
+
+// CustomMultiplierGTE applies the GTE predicate on the "custom_multiplier" field.
+func CustomMultiplierGTE(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldGTE(FieldCustomMultiplier, v))
+}
+
+// CustomMultiplierLT applies the LT predicate on the "custom_multiplier" field.
+func CustomMultiplierLT(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldLT(FieldCustomMultiplier, v))
+}
+
+// CustomMultiplierLTE applies the LTE predicate on the "custom_multiplier" field.
+func CustomMultiplierLTE(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldLTE(FieldCustomMultiplier, v))
+}
+
+// CustomMultiplierIsNil applies the IsNil predicate on the "custom_multiplier" field.
+func CustomMultiplierIsNil() predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldIsNull(FieldCustomMultiplier))
+}
+
+// CustomMultiplierNotNil applies the NotNil predicate on the "custom_multiplier" field.
+func CustomMultiplierNotNil() predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldNotNull(FieldCustomMultiplier))
+}
+
+// CustomSourcePlanIDEQ applies the EQ predicate on the "custom_source_plan_id" field.
+func CustomSourcePlanIDEQ(v int64) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldEQ(FieldCustomSourcePlanID, v))
+}
+
+// CustomSourcePlanIDNEQ applies the NEQ predicate on the "custom_source_plan_id" field.
+func CustomSourcePlanIDNEQ(v int64) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldNEQ(FieldCustomSourcePlanID, v))
+}
+
+// CustomSourcePlanIDIn applies the In predicate on the "custom_source_plan_id" field.
+func CustomSourcePlanIDIn(vs ...int64) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldIn(FieldCustomSourcePlanID, vs...))
+}
+
+// CustomSourcePlanIDNotIn applies the NotIn predicate on the "custom_source_plan_id" field.
+func CustomSourcePlanIDNotIn(vs ...int64) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldNotIn(FieldCustomSourcePlanID, vs...))
+}
+
+// CustomSourcePlanIDGT applies the GT predicate on the "custom_source_plan_id" field.
+func CustomSourcePlanIDGT(v int64) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldGT(FieldCustomSourcePlanID, v))
+}
+
+// CustomSourcePlanIDGTE applies the GTE predicate on the "custom_source_plan_id" field.
+func CustomSourcePlanIDGTE(v int64) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldGTE(FieldCustomSourcePlanID, v))
+}
+
+// CustomSourcePlanIDLT applies the LT predicate on the "custom_source_plan_id" field.
+func CustomSourcePlanIDLT(v int64) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldLT(FieldCustomSourcePlanID, v))
+}
+
+// CustomSourcePlanIDLTE applies the LTE predicate on the "custom_source_plan_id" field.
+func CustomSourcePlanIDLTE(v int64) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldLTE(FieldCustomSourcePlanID, v))
+}
+
+// CustomSourcePlanIDIsNil applies the IsNil predicate on the "custom_source_plan_id" field.
+func CustomSourcePlanIDIsNil() predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldIsNull(FieldCustomSourcePlanID))
+}
+
+// CustomSourcePlanIDNotNil applies the NotNil predicate on the "custom_source_plan_id" field.
+func CustomSourcePlanIDNotNil() predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldNotNull(FieldCustomSourcePlanID))
+}
+
+// CustomSourceGroupIDEQ applies the EQ predicate on the "custom_source_group_id" field.
+func CustomSourceGroupIDEQ(v int64) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldEQ(FieldCustomSourceGroupID, v))
+}
+
+// CustomSourceGroupIDNEQ applies the NEQ predicate on the "custom_source_group_id" field.
+func CustomSourceGroupIDNEQ(v int64) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldNEQ(FieldCustomSourceGroupID, v))
+}
+
+// CustomSourceGroupIDIn applies the In predicate on the "custom_source_group_id" field.
+func CustomSourceGroupIDIn(vs ...int64) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldIn(FieldCustomSourceGroupID, vs...))
+}
+
+// CustomSourceGroupIDNotIn applies the NotIn predicate on the "custom_source_group_id" field.
+func CustomSourceGroupIDNotIn(vs ...int64) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldNotIn(FieldCustomSourceGroupID, vs...))
+}
+
+// CustomSourceGroupIDGT applies the GT predicate on the "custom_source_group_id" field.
+func CustomSourceGroupIDGT(v int64) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldGT(FieldCustomSourceGroupID, v))
+}
+
+// CustomSourceGroupIDGTE applies the GTE predicate on the "custom_source_group_id" field.
+func CustomSourceGroupIDGTE(v int64) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldGTE(FieldCustomSourceGroupID, v))
+}
+
+// CustomSourceGroupIDLT applies the LT predicate on the "custom_source_group_id" field.
+func CustomSourceGroupIDLT(v int64) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldLT(FieldCustomSourceGroupID, v))
+}
+
+// CustomSourceGroupIDLTE applies the LTE predicate on the "custom_source_group_id" field.
+func CustomSourceGroupIDLTE(v int64) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldLTE(FieldCustomSourceGroupID, v))
+}
+
+// CustomSourceGroupIDIsNil applies the IsNil predicate on the "custom_source_group_id" field.
+func CustomSourceGroupIDIsNil() predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldIsNull(FieldCustomSourceGroupID))
+}
+
+// CustomSourceGroupIDNotNil applies the NotNil predicate on the "custom_source_group_id" field.
+func CustomSourceGroupIDNotNil() predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldNotNull(FieldCustomSourceGroupID))
+}
+
+// CustomExpiresAtEQ applies the EQ predicate on the "custom_expires_at" field.
+func CustomExpiresAtEQ(v time.Time) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldEQ(FieldCustomExpiresAt, v))
+}
+
+// CustomExpiresAtNEQ applies the NEQ predicate on the "custom_expires_at" field.
+func CustomExpiresAtNEQ(v time.Time) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldNEQ(FieldCustomExpiresAt, v))
+}
+
+// CustomExpiresAtIn applies the In predicate on the "custom_expires_at" field.
+func CustomExpiresAtIn(vs ...time.Time) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldIn(FieldCustomExpiresAt, vs...))
+}
+
+// CustomExpiresAtNotIn applies the NotIn predicate on the "custom_expires_at" field.
+func CustomExpiresAtNotIn(vs ...time.Time) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldNotIn(FieldCustomExpiresAt, vs...))
+}
+
+// CustomExpiresAtGT applies the GT predicate on the "custom_expires_at" field.
+func CustomExpiresAtGT(v time.Time) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldGT(FieldCustomExpiresAt, v))
+}
+
+// CustomExpiresAtGTE applies the GTE predicate on the "custom_expires_at" field.
+func CustomExpiresAtGTE(v time.Time) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldGTE(FieldCustomExpiresAt, v))
+}
+
+// CustomExpiresAtLT applies the LT predicate on the "custom_expires_at" field.
+func CustomExpiresAtLT(v time.Time) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldLT(FieldCustomExpiresAt, v))
+}
+
+// CustomExpiresAtLTE applies the LTE predicate on the "custom_expires_at" field.
+func CustomExpiresAtLTE(v time.Time) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldLTE(FieldCustomExpiresAt, v))
+}
+
+// CustomExpiresAtIsNil applies the IsNil predicate on the "custom_expires_at" field.
+func CustomExpiresAtIsNil() predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldIsNull(FieldCustomExpiresAt))
+}
+
+// CustomExpiresAtNotNil applies the NotNil predicate on the "custom_expires_at" field.
+func CustomExpiresAtNotNil() predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldNotNull(FieldCustomExpiresAt))
+}
+
+// CustomDisplayNameEQ applies the EQ predicate on the "custom_display_name" field.
+func CustomDisplayNameEQ(v string) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldEQ(FieldCustomDisplayName, v))
+}
+
+// CustomDisplayNameNEQ applies the NEQ predicate on the "custom_display_name" field.
+func CustomDisplayNameNEQ(v string) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldNEQ(FieldCustomDisplayName, v))
+}
+
+// CustomDisplayNameIn applies the In predicate on the "custom_display_name" field.
+func CustomDisplayNameIn(vs ...string) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldIn(FieldCustomDisplayName, vs...))
+}
+
+// CustomDisplayNameNotIn applies the NotIn predicate on the "custom_display_name" field.
+func CustomDisplayNameNotIn(vs ...string) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldNotIn(FieldCustomDisplayName, vs...))
+}
+
+// CustomDisplayNameGT applies the GT predicate on the "custom_display_name" field.
+func CustomDisplayNameGT(v string) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldGT(FieldCustomDisplayName, v))
+}
+
+// CustomDisplayNameGTE applies the GTE predicate on the "custom_display_name" field.
+func CustomDisplayNameGTE(v string) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldGTE(FieldCustomDisplayName, v))
+}
+
+// CustomDisplayNameLT applies the LT predicate on the "custom_display_name" field.
+func CustomDisplayNameLT(v string) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldLT(FieldCustomDisplayName, v))
+}
+
+// CustomDisplayNameLTE applies the LTE predicate on the "custom_display_name" field.
+func CustomDisplayNameLTE(v string) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldLTE(FieldCustomDisplayName, v))
+}
+
+// CustomDisplayNameContains applies the Contains predicate on the "custom_display_name" field.
+func CustomDisplayNameContains(v string) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldContains(FieldCustomDisplayName, v))
+}
+
+// CustomDisplayNameHasPrefix applies the HasPrefix predicate on the "custom_display_name" field.
+func CustomDisplayNameHasPrefix(v string) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldHasPrefix(FieldCustomDisplayName, v))
+}
+
+// CustomDisplayNameHasSuffix applies the HasSuffix predicate on the "custom_display_name" field.
+func CustomDisplayNameHasSuffix(v string) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldHasSuffix(FieldCustomDisplayName, v))
+}
+
+// CustomDisplayNameIsNil applies the IsNil predicate on the "custom_display_name" field.
+func CustomDisplayNameIsNil() predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldIsNull(FieldCustomDisplayName))
+}
+
+// CustomDisplayNameNotNil applies the NotNil predicate on the "custom_display_name" field.
+func CustomDisplayNameNotNil() predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldNotNull(FieldCustomDisplayName))
+}
+
+// CustomDisplayNameEqualFold applies the EqualFold predicate on the "custom_display_name" field.
+func CustomDisplayNameEqualFold(v string) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldEqualFold(FieldCustomDisplayName, v))
+}
+
+// CustomDisplayNameContainsFold applies the ContainsFold predicate on the "custom_display_name" field.
+func CustomDisplayNameContainsFold(v string) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldContainsFold(FieldCustomDisplayName, v))
 }
 
 // HasUser applies the HasEdge predicate on the "user" edge.

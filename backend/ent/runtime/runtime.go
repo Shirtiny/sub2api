@@ -2188,6 +2188,10 @@ func init() {
 	usersubscriptionDescAssignedAt := usersubscriptionFields[12].Descriptor()
 	// usersubscription.DefaultAssignedAt holds the default value on creation for the assigned_at field.
 	usersubscription.DefaultAssignedAt = usersubscriptionDescAssignedAt.Default.(func() time.Time)
+	// usersubscriptionDescCustomDisplayName is the schema descriptor for custom_display_name field.
+	usersubscriptionDescCustomDisplayName := usersubscriptionFields[18].Descriptor()
+	// usersubscription.CustomDisplayNameValidator is a validator for the "custom_display_name" field. It is called by the builders before save.
+	usersubscription.CustomDisplayNameValidator = usersubscriptionDescCustomDisplayName.Validators[0].(func(string) error)
 }
 
 const (

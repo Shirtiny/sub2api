@@ -304,6 +304,127 @@ func (_u *UserSubscriptionUpdate) ClearNotes() *UserSubscriptionUpdate {
 	return _u
 }
 
+// SetCustomMultiplier sets the "custom_multiplier" field.
+func (_u *UserSubscriptionUpdate) SetCustomMultiplier(v int) *UserSubscriptionUpdate {
+	_u.mutation.ResetCustomMultiplier()
+	_u.mutation.SetCustomMultiplier(v)
+	return _u
+}
+
+// SetNillableCustomMultiplier sets the "custom_multiplier" field if the given value is not nil.
+func (_u *UserSubscriptionUpdate) SetNillableCustomMultiplier(v *int) *UserSubscriptionUpdate {
+	if v != nil {
+		_u.SetCustomMultiplier(*v)
+	}
+	return _u
+}
+
+// AddCustomMultiplier adds value to the "custom_multiplier" field.
+func (_u *UserSubscriptionUpdate) AddCustomMultiplier(v int) *UserSubscriptionUpdate {
+	_u.mutation.AddCustomMultiplier(v)
+	return _u
+}
+
+// ClearCustomMultiplier clears the value of the "custom_multiplier" field.
+func (_u *UserSubscriptionUpdate) ClearCustomMultiplier() *UserSubscriptionUpdate {
+	_u.mutation.ClearCustomMultiplier()
+	return _u
+}
+
+// SetCustomSourcePlanID sets the "custom_source_plan_id" field.
+func (_u *UserSubscriptionUpdate) SetCustomSourcePlanID(v int64) *UserSubscriptionUpdate {
+	_u.mutation.ResetCustomSourcePlanID()
+	_u.mutation.SetCustomSourcePlanID(v)
+	return _u
+}
+
+// SetNillableCustomSourcePlanID sets the "custom_source_plan_id" field if the given value is not nil.
+func (_u *UserSubscriptionUpdate) SetNillableCustomSourcePlanID(v *int64) *UserSubscriptionUpdate {
+	if v != nil {
+		_u.SetCustomSourcePlanID(*v)
+	}
+	return _u
+}
+
+// AddCustomSourcePlanID adds value to the "custom_source_plan_id" field.
+func (_u *UserSubscriptionUpdate) AddCustomSourcePlanID(v int64) *UserSubscriptionUpdate {
+	_u.mutation.AddCustomSourcePlanID(v)
+	return _u
+}
+
+// ClearCustomSourcePlanID clears the value of the "custom_source_plan_id" field.
+func (_u *UserSubscriptionUpdate) ClearCustomSourcePlanID() *UserSubscriptionUpdate {
+	_u.mutation.ClearCustomSourcePlanID()
+	return _u
+}
+
+// SetCustomSourceGroupID sets the "custom_source_group_id" field.
+func (_u *UserSubscriptionUpdate) SetCustomSourceGroupID(v int64) *UserSubscriptionUpdate {
+	_u.mutation.ResetCustomSourceGroupID()
+	_u.mutation.SetCustomSourceGroupID(v)
+	return _u
+}
+
+// SetNillableCustomSourceGroupID sets the "custom_source_group_id" field if the given value is not nil.
+func (_u *UserSubscriptionUpdate) SetNillableCustomSourceGroupID(v *int64) *UserSubscriptionUpdate {
+	if v != nil {
+		_u.SetCustomSourceGroupID(*v)
+	}
+	return _u
+}
+
+// AddCustomSourceGroupID adds value to the "custom_source_group_id" field.
+func (_u *UserSubscriptionUpdate) AddCustomSourceGroupID(v int64) *UserSubscriptionUpdate {
+	_u.mutation.AddCustomSourceGroupID(v)
+	return _u
+}
+
+// ClearCustomSourceGroupID clears the value of the "custom_source_group_id" field.
+func (_u *UserSubscriptionUpdate) ClearCustomSourceGroupID() *UserSubscriptionUpdate {
+	_u.mutation.ClearCustomSourceGroupID()
+	return _u
+}
+
+// SetCustomExpiresAt sets the "custom_expires_at" field.
+func (_u *UserSubscriptionUpdate) SetCustomExpiresAt(v time.Time) *UserSubscriptionUpdate {
+	_u.mutation.SetCustomExpiresAt(v)
+	return _u
+}
+
+// SetNillableCustomExpiresAt sets the "custom_expires_at" field if the given value is not nil.
+func (_u *UserSubscriptionUpdate) SetNillableCustomExpiresAt(v *time.Time) *UserSubscriptionUpdate {
+	if v != nil {
+		_u.SetCustomExpiresAt(*v)
+	}
+	return _u
+}
+
+// ClearCustomExpiresAt clears the value of the "custom_expires_at" field.
+func (_u *UserSubscriptionUpdate) ClearCustomExpiresAt() *UserSubscriptionUpdate {
+	_u.mutation.ClearCustomExpiresAt()
+	return _u
+}
+
+// SetCustomDisplayName sets the "custom_display_name" field.
+func (_u *UserSubscriptionUpdate) SetCustomDisplayName(v string) *UserSubscriptionUpdate {
+	_u.mutation.SetCustomDisplayName(v)
+	return _u
+}
+
+// SetNillableCustomDisplayName sets the "custom_display_name" field if the given value is not nil.
+func (_u *UserSubscriptionUpdate) SetNillableCustomDisplayName(v *string) *UserSubscriptionUpdate {
+	if v != nil {
+		_u.SetCustomDisplayName(*v)
+	}
+	return _u
+}
+
+// ClearCustomDisplayName clears the value of the "custom_display_name" field.
+func (_u *UserSubscriptionUpdate) ClearCustomDisplayName() *UserSubscriptionUpdate {
+	_u.mutation.ClearCustomDisplayName()
+	return _u
+}
+
 // SetUser sets the "user" edge to the User entity.
 func (_u *UserSubscriptionUpdate) SetUser(v *User) *UserSubscriptionUpdate {
 	return _u.SetUserID(v.ID)
@@ -441,6 +562,11 @@ func (_u *UserSubscriptionUpdate) check() error {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "UserSubscription.status": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.CustomDisplayName(); ok {
+		if err := usersubscription.CustomDisplayNameValidator(v); err != nil {
+			return &ValidationError{Name: "custom_display_name", err: fmt.Errorf(`ent: validator failed for field "UserSubscription.custom_display_name": %w`, err)}
+		}
+	}
 	if _u.mutation.UserCleared() && len(_u.mutation.UserIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "UserSubscription.user"`)
 	}
@@ -524,6 +650,45 @@ func (_u *UserSubscriptionUpdate) sqlSave(ctx context.Context) (_node int, err e
 	}
 	if _u.mutation.NotesCleared() {
 		_spec.ClearField(usersubscription.FieldNotes, field.TypeString)
+	}
+	if value, ok := _u.mutation.CustomMultiplier(); ok {
+		_spec.SetField(usersubscription.FieldCustomMultiplier, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedCustomMultiplier(); ok {
+		_spec.AddField(usersubscription.FieldCustomMultiplier, field.TypeInt, value)
+	}
+	if _u.mutation.CustomMultiplierCleared() {
+		_spec.ClearField(usersubscription.FieldCustomMultiplier, field.TypeInt)
+	}
+	if value, ok := _u.mutation.CustomSourcePlanID(); ok {
+		_spec.SetField(usersubscription.FieldCustomSourcePlanID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedCustomSourcePlanID(); ok {
+		_spec.AddField(usersubscription.FieldCustomSourcePlanID, field.TypeInt64, value)
+	}
+	if _u.mutation.CustomSourcePlanIDCleared() {
+		_spec.ClearField(usersubscription.FieldCustomSourcePlanID, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.CustomSourceGroupID(); ok {
+		_spec.SetField(usersubscription.FieldCustomSourceGroupID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedCustomSourceGroupID(); ok {
+		_spec.AddField(usersubscription.FieldCustomSourceGroupID, field.TypeInt64, value)
+	}
+	if _u.mutation.CustomSourceGroupIDCleared() {
+		_spec.ClearField(usersubscription.FieldCustomSourceGroupID, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.CustomExpiresAt(); ok {
+		_spec.SetField(usersubscription.FieldCustomExpiresAt, field.TypeTime, value)
+	}
+	if _u.mutation.CustomExpiresAtCleared() {
+		_spec.ClearField(usersubscription.FieldCustomExpiresAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.CustomDisplayName(); ok {
+		_spec.SetField(usersubscription.FieldCustomDisplayName, field.TypeString, value)
+	}
+	if _u.mutation.CustomDisplayNameCleared() {
+		_spec.ClearField(usersubscription.FieldCustomDisplayName, field.TypeString)
 	}
 	if _u.mutation.UserCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -950,6 +1115,127 @@ func (_u *UserSubscriptionUpdateOne) ClearNotes() *UserSubscriptionUpdateOne {
 	return _u
 }
 
+// SetCustomMultiplier sets the "custom_multiplier" field.
+func (_u *UserSubscriptionUpdateOne) SetCustomMultiplier(v int) *UserSubscriptionUpdateOne {
+	_u.mutation.ResetCustomMultiplier()
+	_u.mutation.SetCustomMultiplier(v)
+	return _u
+}
+
+// SetNillableCustomMultiplier sets the "custom_multiplier" field if the given value is not nil.
+func (_u *UserSubscriptionUpdateOne) SetNillableCustomMultiplier(v *int) *UserSubscriptionUpdateOne {
+	if v != nil {
+		_u.SetCustomMultiplier(*v)
+	}
+	return _u
+}
+
+// AddCustomMultiplier adds value to the "custom_multiplier" field.
+func (_u *UserSubscriptionUpdateOne) AddCustomMultiplier(v int) *UserSubscriptionUpdateOne {
+	_u.mutation.AddCustomMultiplier(v)
+	return _u
+}
+
+// ClearCustomMultiplier clears the value of the "custom_multiplier" field.
+func (_u *UserSubscriptionUpdateOne) ClearCustomMultiplier() *UserSubscriptionUpdateOne {
+	_u.mutation.ClearCustomMultiplier()
+	return _u
+}
+
+// SetCustomSourcePlanID sets the "custom_source_plan_id" field.
+func (_u *UserSubscriptionUpdateOne) SetCustomSourcePlanID(v int64) *UserSubscriptionUpdateOne {
+	_u.mutation.ResetCustomSourcePlanID()
+	_u.mutation.SetCustomSourcePlanID(v)
+	return _u
+}
+
+// SetNillableCustomSourcePlanID sets the "custom_source_plan_id" field if the given value is not nil.
+func (_u *UserSubscriptionUpdateOne) SetNillableCustomSourcePlanID(v *int64) *UserSubscriptionUpdateOne {
+	if v != nil {
+		_u.SetCustomSourcePlanID(*v)
+	}
+	return _u
+}
+
+// AddCustomSourcePlanID adds value to the "custom_source_plan_id" field.
+func (_u *UserSubscriptionUpdateOne) AddCustomSourcePlanID(v int64) *UserSubscriptionUpdateOne {
+	_u.mutation.AddCustomSourcePlanID(v)
+	return _u
+}
+
+// ClearCustomSourcePlanID clears the value of the "custom_source_plan_id" field.
+func (_u *UserSubscriptionUpdateOne) ClearCustomSourcePlanID() *UserSubscriptionUpdateOne {
+	_u.mutation.ClearCustomSourcePlanID()
+	return _u
+}
+
+// SetCustomSourceGroupID sets the "custom_source_group_id" field.
+func (_u *UserSubscriptionUpdateOne) SetCustomSourceGroupID(v int64) *UserSubscriptionUpdateOne {
+	_u.mutation.ResetCustomSourceGroupID()
+	_u.mutation.SetCustomSourceGroupID(v)
+	return _u
+}
+
+// SetNillableCustomSourceGroupID sets the "custom_source_group_id" field if the given value is not nil.
+func (_u *UserSubscriptionUpdateOne) SetNillableCustomSourceGroupID(v *int64) *UserSubscriptionUpdateOne {
+	if v != nil {
+		_u.SetCustomSourceGroupID(*v)
+	}
+	return _u
+}
+
+// AddCustomSourceGroupID adds value to the "custom_source_group_id" field.
+func (_u *UserSubscriptionUpdateOne) AddCustomSourceGroupID(v int64) *UserSubscriptionUpdateOne {
+	_u.mutation.AddCustomSourceGroupID(v)
+	return _u
+}
+
+// ClearCustomSourceGroupID clears the value of the "custom_source_group_id" field.
+func (_u *UserSubscriptionUpdateOne) ClearCustomSourceGroupID() *UserSubscriptionUpdateOne {
+	_u.mutation.ClearCustomSourceGroupID()
+	return _u
+}
+
+// SetCustomExpiresAt sets the "custom_expires_at" field.
+func (_u *UserSubscriptionUpdateOne) SetCustomExpiresAt(v time.Time) *UserSubscriptionUpdateOne {
+	_u.mutation.SetCustomExpiresAt(v)
+	return _u
+}
+
+// SetNillableCustomExpiresAt sets the "custom_expires_at" field if the given value is not nil.
+func (_u *UserSubscriptionUpdateOne) SetNillableCustomExpiresAt(v *time.Time) *UserSubscriptionUpdateOne {
+	if v != nil {
+		_u.SetCustomExpiresAt(*v)
+	}
+	return _u
+}
+
+// ClearCustomExpiresAt clears the value of the "custom_expires_at" field.
+func (_u *UserSubscriptionUpdateOne) ClearCustomExpiresAt() *UserSubscriptionUpdateOne {
+	_u.mutation.ClearCustomExpiresAt()
+	return _u
+}
+
+// SetCustomDisplayName sets the "custom_display_name" field.
+func (_u *UserSubscriptionUpdateOne) SetCustomDisplayName(v string) *UserSubscriptionUpdateOne {
+	_u.mutation.SetCustomDisplayName(v)
+	return _u
+}
+
+// SetNillableCustomDisplayName sets the "custom_display_name" field if the given value is not nil.
+func (_u *UserSubscriptionUpdateOne) SetNillableCustomDisplayName(v *string) *UserSubscriptionUpdateOne {
+	if v != nil {
+		_u.SetCustomDisplayName(*v)
+	}
+	return _u
+}
+
+// ClearCustomDisplayName clears the value of the "custom_display_name" field.
+func (_u *UserSubscriptionUpdateOne) ClearCustomDisplayName() *UserSubscriptionUpdateOne {
+	_u.mutation.ClearCustomDisplayName()
+	return _u
+}
+
 // SetUser sets the "user" edge to the User entity.
 func (_u *UserSubscriptionUpdateOne) SetUser(v *User) *UserSubscriptionUpdateOne {
 	return _u.SetUserID(v.ID)
@@ -1100,6 +1386,11 @@ func (_u *UserSubscriptionUpdateOne) check() error {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "UserSubscription.status": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.CustomDisplayName(); ok {
+		if err := usersubscription.CustomDisplayNameValidator(v); err != nil {
+			return &ValidationError{Name: "custom_display_name", err: fmt.Errorf(`ent: validator failed for field "UserSubscription.custom_display_name": %w`, err)}
+		}
+	}
 	if _u.mutation.UserCleared() && len(_u.mutation.UserIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "UserSubscription.user"`)
 	}
@@ -1200,6 +1491,45 @@ func (_u *UserSubscriptionUpdateOne) sqlSave(ctx context.Context) (_node *UserSu
 	}
 	if _u.mutation.NotesCleared() {
 		_spec.ClearField(usersubscription.FieldNotes, field.TypeString)
+	}
+	if value, ok := _u.mutation.CustomMultiplier(); ok {
+		_spec.SetField(usersubscription.FieldCustomMultiplier, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedCustomMultiplier(); ok {
+		_spec.AddField(usersubscription.FieldCustomMultiplier, field.TypeInt, value)
+	}
+	if _u.mutation.CustomMultiplierCleared() {
+		_spec.ClearField(usersubscription.FieldCustomMultiplier, field.TypeInt)
+	}
+	if value, ok := _u.mutation.CustomSourcePlanID(); ok {
+		_spec.SetField(usersubscription.FieldCustomSourcePlanID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedCustomSourcePlanID(); ok {
+		_spec.AddField(usersubscription.FieldCustomSourcePlanID, field.TypeInt64, value)
+	}
+	if _u.mutation.CustomSourcePlanIDCleared() {
+		_spec.ClearField(usersubscription.FieldCustomSourcePlanID, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.CustomSourceGroupID(); ok {
+		_spec.SetField(usersubscription.FieldCustomSourceGroupID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedCustomSourceGroupID(); ok {
+		_spec.AddField(usersubscription.FieldCustomSourceGroupID, field.TypeInt64, value)
+	}
+	if _u.mutation.CustomSourceGroupIDCleared() {
+		_spec.ClearField(usersubscription.FieldCustomSourceGroupID, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.CustomExpiresAt(); ok {
+		_spec.SetField(usersubscription.FieldCustomExpiresAt, field.TypeTime, value)
+	}
+	if _u.mutation.CustomExpiresAtCleared() {
+		_spec.ClearField(usersubscription.FieldCustomExpiresAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.CustomDisplayName(); ok {
+		_spec.SetField(usersubscription.FieldCustomDisplayName, field.TypeString, value)
+	}
+	if _u.mutation.CustomDisplayNameCleared() {
+		_spec.ClearField(usersubscription.FieldCustomDisplayName, field.TypeString)
 	}
 	if _u.mutation.UserCleared() {
 		edge := &sqlgraph.EdgeSpec{
