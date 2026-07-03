@@ -215,6 +215,16 @@ export interface CafeCouponStatusResponse {
   coupon?: CafeCouponSummary
 }
 
+export interface CafeCouponInfoRequest {
+  code: string
+}
+
+export interface CafeCouponInfoResponse {
+  valid: boolean
+  coupon?: CafeCouponSummary
+  message?: string
+}
+
 export interface CafeCouponPreviewRequest {
   code: string
   amount: number

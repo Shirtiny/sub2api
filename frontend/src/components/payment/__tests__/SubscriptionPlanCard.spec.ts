@@ -120,6 +120,7 @@ describe("SubscriptionPlanCard", () => {
     const wrapper = mountCustomPlanCard();
 
     expect(wrapper.text()).toContain("\u00a5200");
+    expect(wrapper.find('[data-testid="plan-rate-display"]').text()).toBe("2x");
     expect(wrapper.text()).toContain("$20");
     expect(wrapper.text()).toContain("$40");
     expect(wrapper.text()).toContain("$60");
@@ -127,6 +128,7 @@ describe("SubscriptionPlanCard", () => {
     await wrapper.find('[data-testid="multiplier-select"]').setValue("4");
 
     expect(wrapper.text()).toContain("\u00a5400");
+    expect(wrapper.find('[data-testid="plan-rate-display"]').text()).toBe("4x");
     expect(wrapper.text()).toContain("$40");
     expect(wrapper.text()).toContain("$80");
     expect(wrapper.text()).toContain("$120");
@@ -175,6 +177,7 @@ describe("SubscriptionPlanCard", () => {
     });
 
     expect(wrapper.find('[data-testid="multiplier-select"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="plan-rate-display"]').text()).toBe("3x");
     expect(wrapper.text()).toContain("3x");
     expect(wrapper.text()).toContain("\u00a5300");
   });
@@ -225,6 +228,13 @@ describe("SubscriptionPlanCard", () => {
 
     expect(wrapper.find('[data-testid="multiplier-select"]').exists()).toBe(true);
     expect(wrapper.text()).toContain("\u00a5200");
+  });
+
+  it("does not render null coupon pay amount as zero", () => {
+    const wrapper = mountCustomPlanCard({ couponPayAmount: null });
+
+    expect(wrapper.text()).toContain("\u00a5200");
+    expect(wrapper.text()).not.toContain("\u00a50");
   });
 
   it("shows coupon pay amount with the effective price struck through", () => {

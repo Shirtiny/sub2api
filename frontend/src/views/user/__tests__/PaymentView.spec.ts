@@ -13,6 +13,7 @@ const routerPush = vi.hoisted(() => vi.fn())
 const routerResolve = vi.hoisted(() => vi.fn(() => ({ href: '/payment/stripe?mock=1' })))
 const createOrder = vi.hoisted(() => vi.fn())
 const previewCafeCoupon = vi.hoisted(() => vi.fn())
+const getCafeCouponInfo = vi.hoisted(() => vi.fn())
 const refreshUser = vi.hoisted(() => vi.fn())
 const fetchActiveSubscriptions = vi.hoisted(() => vi.fn().mockResolvedValue(undefined))
 const activeSubscriptionsState = vi.hoisted(() => [] as any[])
@@ -77,6 +78,7 @@ vi.mock('@/stores/payment', () => ({
   usePaymentStore: () => ({
     createOrder,
     previewCafeCoupon,
+    getCafeCouponInfo,
   }),
 }))
 
@@ -232,6 +234,7 @@ describe('PaymentView WeChat JSAPI flow', () => {
     routerResolve.mockClear()
     createOrder.mockReset()
     previewCafeCoupon.mockReset()
+    getCafeCouponInfo.mockReset().mockResolvedValue({ valid: true, coupon: { code: 'CAFEPREVIEW', type: 'cash', value: 56 } })
     refreshUser.mockReset()
     fetchActiveSubscriptions.mockReset().mockResolvedValue(undefined)
     showError.mockReset()
@@ -245,6 +248,25 @@ describe('PaymentView WeChat JSAPI flow', () => {
     ;(window as Window & { WeixinJSBridge?: { invoke: typeof bridgeInvoke } }).WeixinJSBridge = {
       invoke: bridgeInvoke,
     }
+  })
+
+  it('honors the recharge tab from route query before coupon preview', async () => {
+    routeState.query = { tab: 'recharge' }
+    getCheckoutInfo.mockResolvedValue(checkoutInfoFixture())
+
+    const wrapper = shallowMount(PaymentView, {
+      global: {
+        stubs: {
+          AppLayout: { template: '<div><slot /></div>' },
+          Teleport: true,
+          Transition: false,
+        },
+      },
+    })
+    await flushPromises()
+    await flushPromises()
+
+    expect((wrapper.vm as unknown as { activeTab: string }).activeTab).toBe('recharge')
   })
 
   it('defaults to subscription tab and lists it before top up', async () => {
@@ -307,6 +329,48 @@ describe('PaymentView WeChat JSAPI flow', () => {
     expect(vm.activeTab).toBe('subscription')
     expect(vm.selectedPlan?.id).toBe(7)
     expect(vm.selectedSubscriptionMultiplier).toBe(3)
+  })
+
+
+  it('displays custom subscription multiplier instead of base rate in purchase details', async () => {
+    routeState.query = { tab: 'subscription', plan: '7', multiplier: '4' }
+    const customSub = {
+      id: 88,
+      user_id: 1,
+      group_id: 3,
+      status: 'active',
+      expires_at: '2099-01-01T00:00:00Z',
+      custom_multiplier: 4,
+      custom_source_plan_id: 7,
+      custom_source_group_id: 3,
+      custom_expires_at: '2099-01-01T00:00:00Z',
+      custom_display_name: '[4x]Starter#1',
+      group: {
+        id: 3,
+        name: '[4x]Starter#1',
+        rate_multiplier: 1,
+        is_custom_subscription_group: false,
+      },
+    }
+    activeSubscriptionsState.push(customSub)
+    getCheckoutInfo.mockResolvedValue(checkoutInfoWithPlansFixture())
+
+    const wrapper = shallowMount(PaymentView, {
+      global: {
+        stubs: {
+          Teleport: true,
+          Transition: false,
+        },
+      },
+    })
+    await flushPromises()
+
+    const vm = wrapper.vm as unknown as {
+      selectedPlanRateDisplay: string
+      activeSubscriptionRateDisplay: (subscription: typeof customSub) => string
+    }
+    expect(vm.selectedPlanRateDisplay).toBe('4x')
+    expect(vm.activeSubscriptionRateDisplay(customSub)).toBe('4x')
   })
 
   it('resets payment state and redirects to /payment/result after JSAPI reports success', async () => {
@@ -627,7 +691,7 @@ describe('PaymentView WeChat JSAPI flow', () => {
     expect(vm.subscriptionButtonAmount).toBe(202)
   })
 
-  it('passes Cafe coupon preview pay amount to subscription plan cards', async () => {
+  it('calculates Cafe coupon plan-card amount from one coupon info lookup', async () => {
     routeState.query = { cafe_coupon_code: 'CAFEPREVIEW' }
     getCheckoutInfo.mockResolvedValue({
       data: {
@@ -635,12 +699,10 @@ describe('PaymentView WeChat JSAPI flow', () => {
         balance_disabled: true,
       },
     })
-    previewCafeCoupon.mockImplementation(async (request: { code: string; amount: number; order_type: string }) => ({
+    getCafeCouponInfo.mockResolvedValueOnce({
       valid: true,
-      discount_amount: request.order_type === 'subscription' ? 56 : 0,
-      pay_amount: request.order_type === 'subscription' ? 200 : request.amount,
-      coupon: { code: request.code, type: 'cash', value: 56 },
-    }))
+      coupon: { code: 'CAFEPREVIEW', type: 'cash', value: 56 },
+    })
 
     const wrapper = shallowMount(PaymentView, {
       global: {
@@ -655,13 +717,9 @@ describe('PaymentView WeChat JSAPI flow', () => {
     await flushPromises()
     await flushPromises()
 
-    expect(previewCafeCoupon).toHaveBeenCalledWith(expect.objectContaining({
-      code: 'CAFEPREVIEW',
-      amount: 256,
-      order_type: 'subscription',
-      plan_id: 7,
-      multiplier: 2,
-    }))
+    expect(getCafeCouponInfo).toHaveBeenCalledTimes(1)
+    expect(getCafeCouponInfo).toHaveBeenCalledWith({ code: 'CAFEPREVIEW' })
+    expect(previewCafeCoupon).not.toHaveBeenCalled()
     expect(wrapper.find('[data-testid="plan-card-7"]').attributes('data-coupon-pay-amount')).toBe('200')
   })
 

@@ -40,7 +40,7 @@
               <div class="min-w-0">
                 <div class="flex min-w-0 items-center gap-2">
                   <h3 class="truncate font-semibold text-content-primary">
-                    {{ subscriptionCustomDisplayName(subscription) || `Group #${subscription.group_id}` }}
+                    {{ subscriptionCustomPlanName(subscription) || `Group #${subscription.group_id}` }}
                   </h3>
                   <span :class="['rounded-md border px-2 py-0.5 text-[11px] font-medium', platformBadgeClass(subscription.group?.platform || '')]">
                     {{ platformLabel(subscription.group?.platform || '') }}
@@ -260,7 +260,7 @@ import Icon from '@/components/icons/Icon.vue'
 import { formatDateOnly } from '@/utils/format'
 import { platformBorderClass, platformBadgeClass, platformButtonClass, platformLabel } from '@/utils/platformColors'
 import { getRemainingDurationParts, isOneTimeDailyQuota, type RemainingDurationParts } from '@/utils/subscriptionQuota'
-import { subscriptionCustomDisplayName, subscriptionCustomMultiplier, subscriptionCustomSourceGroupId, subscriptionCustomSourcePlanId } from '@/utils/subscriptionCustom'
+import { subscriptionCustomMultiplier, subscriptionCustomPlanName, subscriptionCustomSourceGroupId, subscriptionCustomSourcePlanId } from '@/utils/subscriptionCustom'
 
 function platformAccentDotClass(p: string): string {
   switch (p) {
@@ -293,11 +293,7 @@ async function loadSubscriptions() {
 
 
 function shouldShowCustomMultiplierBadge(subscription: UserSubscription): boolean {
-  const multiplier = subscriptionCustomMultiplier(subscription)
-  if (!multiplier) return false
-
-  const groupName = subscriptionCustomDisplayName(subscription)
-  return !groupName.startsWith(`[${multiplier}x]`)
+  return subscriptionCustomMultiplier(subscription) != null && subscriptionCustomSourcePlanId(subscription) != null
 }
 
 function renewalQuery(subscription: UserSubscription): Record<string, string> {

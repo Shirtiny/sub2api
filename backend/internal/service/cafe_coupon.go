@@ -140,6 +140,19 @@ type CafeCouponPreview struct {
 	ValidUntilMonthEnd bool      `json:"valid_until_month_end"`
 }
 
+type CafeCouponInfo struct {
+	Code               string    `json:"code"`
+	CouponType         string    `json:"type"`
+	Value              float64   `json:"value"`
+	Period             string    `json:"period"`
+	MembershipLevel    int       `json:"membership_level"`
+	ExpiresAt          time.Time `json:"expires_at"`
+	ClaimedAt          time.Time `json:"claimed_at"`
+	Transferable       bool      `json:"transferable"`
+	Validity           string    `json:"validity"`
+	ValidUntilMonthEnd bool      `json:"valid_until_month_end"`
+}
+
 func defaultCafeCouponConfig() CafeCouponConfig {
 	levels := make(map[int]CafeCouponLevelConfig, 4)
 	for level := 0; level <= 3; level++ {
@@ -875,6 +888,25 @@ func (s *PaymentService) CafeCouponStatus(ctx context.Context, userID int64) (*C
 	return status, nil
 }
 
+func (s *PaymentService) CafeCouponInfo(ctx context.Context, userID int64, code string) (*CafeCouponInfo, error) {
+	coupon, levelCfg, err := s.validateCafeCoupon(ctx, userID, code)
+	if err != nil {
+		return nil, err
+	}
+	return &CafeCouponInfo{
+		Code:               coupon.Code,
+		CouponType:         coupon.CouponType,
+		Value:              coupon.Value,
+		Period:             coupon.Period,
+		MembershipLevel:    coupon.MembershipLevel,
+		ExpiresAt:          cafeCouponExpiresAt(coupon.CreatedAt, coupon.Period),
+		ClaimedAt:          coupon.CreatedAt,
+		Transferable:       levelCfg.Transferable,
+		Validity:           levelCfg.Validity,
+		ValidUntilMonthEnd: levelCfg.ValidUntilMonthEnd,
+	}, nil
+}
+
 func (s *PaymentService) PreviewCafeCoupon(ctx context.Context, userID int64, code string, originalAmount float64) (*CafeCouponPreview, error) {
 	coupon, levelCfg, err := s.validateCafeCoupon(ctx, userID, code)
 	if err != nil {
@@ -1163,6 +1195,9 @@ func (s *PaymentService) PreviewCafeCouponForOrder(ctx context.Context, req Crea
 	if plan != nil {
 		multiplier, err := s.resolveSubscriptionOrderMultiplier(ctx, req.UserID, plan, req.Multiplier)
 		if err != nil {
+			return nil, err
+		}
+		if err := validateResolvedSubscriptionMultiplier(req.Multiplier, multiplier); err != nil {
 			return nil, err
 		}
 		req.Multiplier = multiplier

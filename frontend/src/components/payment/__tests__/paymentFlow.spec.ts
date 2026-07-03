@@ -308,6 +308,23 @@ describe('buildCreateOrderPayload', () => {
     })
   })
 
+  it('keeps explicit 1x subscription multiplier in create order payloads', () => {
+    expect(buildCreateOrderPayload({
+      amount: 128,
+      paymentType: 'alipay',
+      orderType: 'subscription',
+      planId: 7,
+      multiplier: 1,
+      origin: 'https://app.example.com',
+      isMobile: false,
+      isWechatBrowser: false,
+    })).toMatchObject({
+      order_type: 'subscription',
+      plan_id: 7,
+      multiplier: 1,
+    })
+  })
+
   it('preserves a café coupon code in create order payloads', () => {
     expect(buildCreateOrderPayload({
       amount: 128,

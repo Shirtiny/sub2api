@@ -54,6 +54,9 @@ func (s *PaymentService) CreateOrder(ctx context.Context, req CreateOrderRequest
 		if err != nil {
 			return nil, err
 		}
+		if err := validateResolvedSubscriptionMultiplier(req.Multiplier, resolvedMultiplier); err != nil {
+			return nil, err
+		}
 		req.Multiplier = resolvedMultiplier
 	}
 	if err := s.checkCancelRateLimit(ctx, req.UserID, cfg); err != nil {
@@ -241,10 +244,21 @@ func (s *PaymentService) validateSubOrder(ctx context.Context, req CreateOrderRe
 	if !group.IsSubscriptionType() {
 		return nil, infraerrors.BadRequest("GROUP_TYPE_MISMATCH", "group is not a subscription type")
 	}
-	if _, err := s.resolveSubscriptionOrderMultiplier(ctx, req.UserID, plan, req.Multiplier); err != nil {
+	resolvedMultiplier, err := s.resolveSubscriptionOrderMultiplier(ctx, req.UserID, plan, req.Multiplier)
+	if err != nil {
+		return nil, err
+	}
+	if err := validateResolvedSubscriptionMultiplier(req.Multiplier, resolvedMultiplier); err != nil {
 		return nil, err
 	}
 	return plan, nil
+}
+
+func validateResolvedSubscriptionMultiplier(requested, resolved int) error {
+	if requested > 0 && resolved > 0 && requested != resolved {
+		return infraerrors.Conflict("SUBSCRIPTION_STATE_CHANGED", "subscription multiplier changed, please retry")
+	}
+	return nil
 }
 
 func (s *PaymentService) resolveSubscriptionOrderMultiplier(ctx context.Context, userID int64, plan *dbent.SubscriptionPlan, requested int) (int, error) {
@@ -326,6 +340,7 @@ func (s *PaymentService) findActiveCustomSubscriptionGroup(ctx context.Context, 
 				usersubscription.UserIDEQ(userID),
 				usersubscription.StatusEQ(SubscriptionStatusActive),
 				usersubscription.ExpiresAtGT(time.Now()),
+				usersubscription.DeletedAtIsNil(),
 			),
 		).
 		Order(dbent.Desc(group.FieldID)).
@@ -341,12 +356,12 @@ func (s *PaymentService) findActiveVirtualCustomSubscription(ctx context.Context
 			usersubscription.UserIDEQ(userID),
 			usersubscription.CustomSourcePlanIDEQ(planID),
 			usersubscription.CustomMultiplierNotNil(),
-			usersubscription.Or(
-				usersubscription.CustomExpiresAtIsNil(),
-				usersubscription.CustomExpiresAtGT(time.Now()),
-			),
+			usersubscription.CustomSourceGroupIDNotNil(),
+			usersubscription.CustomExpiresAtNotNil(),
+			usersubscription.CustomExpiresAtGT(time.Now()),
 			usersubscription.StatusEQ(SubscriptionStatusActive),
 			usersubscription.ExpiresAtGT(time.Now()),
+			usersubscription.DeletedAtIsNil(),
 		).
 		Order(dbent.Desc(usersubscription.FieldID)).
 		First(ctx)

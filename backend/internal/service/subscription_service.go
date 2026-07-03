@@ -654,15 +654,8 @@ func (s *SubscriptionService) RevokeSubscription(ctx context.Context, subscripti
 	}
 
 	// 失效订阅缓存
-	s.InvalidateSubCache(sub.UserID, sub.GroupID)
-	if s.billingCacheService != nil {
-		userID, groupID := sub.UserID, sub.GroupID
-		go func() {
-			cacheCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-			defer cancel()
-			_ = s.billingCacheService.InvalidateSubscription(cacheCtx, userID, groupID)
-		}()
-	}
+	// Revoke is security-sensitive: invalidate subscription caches synchronously so a just-revoked key cannot pass on stale cache.
+	s.invalidateSubscriptionCaches(ctx, sub.UserID, sub.GroupID)
 
 	return nil
 }

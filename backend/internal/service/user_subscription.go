@@ -45,7 +45,7 @@ func (s *UserSubscription) VirtualCustomMultiplier() int {
 }
 
 func (s *UserSubscription) HasVirtualCustomEntitlement() bool {
-	return s != nil && s.CustomMultiplier != nil && *s.CustomMultiplier >= 1 && s.CustomSourcePlanID != nil && s.CustomSourceGroupID != nil
+	return s != nil && s.CustomMultiplier != nil && *s.CustomMultiplier >= 1 && s.CustomSourcePlanID != nil && s.CustomSourceGroupID != nil && s.CustomExpiresAt != nil
 }
 
 func (s *UserSubscription) HasActiveVirtualCustomEntitlementAt(now time.Time) bool {

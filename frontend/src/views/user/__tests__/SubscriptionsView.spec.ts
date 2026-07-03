@@ -73,10 +73,11 @@ describe('SubscriptionsView renewal routing', () => {
     expect(multiplier.text()).toContain('3x')
   })
 
-  it('does not duplicate the multiplier badge when the custom group name already includes it', async () => {
+  it('shows the multiplier badge even when the custom group name already includes it', async () => {
     getMySubscriptions.mockResolvedValue([
       {
         id: 46,
+        user_id: 7,
         group_id: 100,
         status: 'active',
         expires_at: '2099-01-01T00:00:00Z',
@@ -106,8 +107,9 @@ describe('SubscriptionsView renewal routing', () => {
     })
     await flushPromises()
 
-    expect(wrapper.text()).toContain('[3x]Starter#7')
-    expect(wrapper.find('[data-testid="subscription-custom-multiplier"]').exists()).toBe(false)
+    expect(wrapper.text()).toContain('Starter')
+    expect(wrapper.text()).not.toContain('[3x]Starter#7')
+    expect(wrapper.find('[data-testid="subscription-custom-multiplier"]').text()).toContain('3x')
   })
 
   it('does not show a multiplier on normal subscription cards', async () => {

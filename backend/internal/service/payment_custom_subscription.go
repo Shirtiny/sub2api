@@ -40,6 +40,22 @@ func (s *PaymentService) isCustomSubscriptionPaymentOrder(ctx context.Context, o
 	return plan.CustomMultiplierEnabled, nil
 }
 
+func (s *PaymentService) isCustomSubscriptionPaymentOrderForRefund(ctx context.Context, o *dbent.PaymentOrder, force bool) (bool, *RefundResult) {
+	customOrder, err := s.isCustomSubscriptionPaymentOrder(ctx, o)
+	if err == nil {
+		return customOrder, nil
+	}
+	if !force {
+		return false, &RefundResult{Success: false, Warning: "cannot verify custom subscription order, use force", RequireForce: true}
+	}
+	orderID := int64(0)
+	if o != nil {
+		orderID = o.ID
+	}
+	slog.Warn("refund: custom subscription order verification failed; continuing because force=true", "orderID", orderID, "error", err)
+	return false, nil
+}
+
 type virtualCustomSubscriptionEntitlement struct {
 	GroupID             int64
 	Multiplier          int
@@ -65,6 +81,9 @@ func (s *PaymentService) virtualCustomSubscriptionEntitlementForOrder(ctx contex
 	plan, err := s.entClient.SubscriptionPlan.Get(ctx, planID)
 	if err != nil {
 		return nil, fmt.Errorf("get source subscription plan: %w", err)
+	}
+	if err := validateCustomSubscriptionPlanSource(plan, sourceGroupID); err != nil {
+		return nil, err
 	}
 	source, err := s.entClient.Group.Get(ctx, sourceGroupID)
 	if err != nil {
@@ -125,6 +144,7 @@ func (s *PaymentService) expiredReusableCustomSubscriptionGroupIDs(ctx context.C
 				usersubscription.UserIDEQ(userID),
 				usersubscription.StatusEQ(SubscriptionStatusActive),
 				usersubscription.ExpiresAtGT(now),
+				usersubscription.DeletedAtIsNil(),
 			).
 			Exist(ctx)
 		if err != nil {
@@ -155,6 +175,14 @@ func (s *PaymentService) ensureCustomSubscriptionGroupForOrder(ctx context.Conte
 		return 0, fmt.Errorf("invalid custom subscription multiplier %d", multiplier)
 	}
 
+	plan, err := s.entClient.SubscriptionPlan.Get(ctx, planID)
+	if err != nil {
+		return 0, fmt.Errorf("get source subscription plan: %w", err)
+	}
+	if err := validateCustomSubscriptionPlanSource(plan, sourceGroupID); err != nil {
+		return 0, err
+	}
+
 	active, err := s.findActiveCustomSubscriptionGroup(ctx, o.UserID, planID)
 	if err == nil && active != nil {
 		if active.Status != payment.EntityStatusActive {
@@ -169,10 +197,6 @@ func (s *PaymentService) ensureCustomSubscriptionGroupForOrder(ctx context.Conte
 		return 0, fmt.Errorf("find active custom subscription group: %w", err)
 	}
 
-	plan, err := s.entClient.SubscriptionPlan.Get(ctx, planID)
-	if err != nil {
-		return 0, fmt.Errorf("get source subscription plan: %w", err)
-	}
 	source, err := s.entClient.Group.Get(ctx, sourceGroupID)
 	if err != nil {
 		return 0, fmt.Errorf("get source subscription group: %w", err)
@@ -264,6 +288,7 @@ func (s *PaymentService) ensureReusableCustomGroupSafety(ctx context.Context, cu
 			usersubscription.GroupIDEQ(customGroupID),
 			usersubscription.StatusEQ(SubscriptionStatusActive),
 			usersubscription.ExpiresAtGT(time.Now()),
+			usersubscription.DeletedAtIsNil(),
 		).
 		Count(ctx)
 	if err != nil {
@@ -285,6 +310,16 @@ func (s *PaymentService) ensureReusableCustomGroupSafety(ctx context.Context, cu
 				return fmt.Errorf("active custom subscription source group mismatch")
 			}
 		}
+	}
+	return nil
+}
+
+func validateCustomSubscriptionPlanSource(plan *dbent.SubscriptionPlan, sourceGroupID int64) error {
+	if plan == nil {
+		return fmt.Errorf("source subscription plan not found")
+	}
+	if plan.GroupID != sourceGroupID {
+		return fmt.Errorf("subscription plan %d source group mismatch", plan.ID)
 	}
 	return nil
 }

@@ -166,7 +166,7 @@
                   <div>
                     <span class="text-xs text-gray-400 dark:text-gray-500">{{ t('payment.planCard.rate') }}</span>
                     <div class="flex items-baseline">
-                      <span :class="['text-lg font-bold', planTextClass]">{{ selectedPlan.rate_multiplier ?? 1 }}x</span>
+                      <span :class="['text-lg font-bold', planTextClass]">{{ selectedPlanRateDisplay }}</span>
                     </div>
                   </div>
                   <div v-if="effectiveSelectedDailyLimit != null">
@@ -281,7 +281,7 @@
                         <span :class="['shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-medium', platformBadgeLightClass(sub.group?.platform || '')]">{{ platformLabel(sub.group?.platform || '') }}</span>
                       </div>
                       <div class="flex flex-wrap gap-x-3 text-[11px] text-gray-400 dark:text-gray-500">
-                        <span>{{ t('payment.planCard.rate') }}: {{ sub.group?.rate_multiplier ?? 1 }}x</span>
+                        <span>{{ t('payment.planCard.rate') }}: {{ activeSubscriptionRateDisplay(sub) }}</span>
                         <span v-if="sub.group?.daily_limit_usd == null && sub.group?.weekly_limit_usd == null && sub.group?.monthly_limit_usd == null">{{ t('payment.planCard.quota') }}: {{ t('payment.planCard.unlimited') }}</span>
                         <span v-if="sub.expires_at">{{ t('userSubscriptions.daysRemaining', { days: getDaysRemaining(sub.expires_at) }) }}</span>
                         <span v-else>{{ t('userSubscriptions.noExpiration') }}</span>
@@ -418,13 +418,15 @@ const cafeCouponError = ref('')
 const cafeCouponDiscountAmount = ref<number | null>(null)
 const cafeCouponPayableAmount = ref<number | null>(null)
 const cafeCouponAppliedCoupon = ref<CafeCouponSummary | null>(null)
+const cafeCouponInfoCode = ref('')
+const cafeCouponInfoCoupon = ref<CafeCouponSummary | null>(null)
+const cafeCouponInfoLoadingCode = ref('')
 const previewingCafeCoupon = ref(false)
 const planCardMultipliers = ref<Record<number, number>>({})
-const planCouponPreviewByKey = ref<Record<string, PlanCardCouponPreview>>({})
-const planCouponPreviewPendingKeys = ref<Record<string, boolean>>({})
 let cafeCouponPreviewTimer: ReturnType<typeof setTimeout> | null = null
 let cafeCouponPreviewPromise: Promise<void> | null = null
 let cafeCouponPreviewSeq = 0
+let cafeCouponInfoSeq = 0
 
 const paymentPhase = ref<'select' | 'paying'>('select')
 
@@ -436,9 +438,6 @@ interface CreateOrderOptions {
   mobileQrFallbackAttempted?: boolean
 }
 
-interface PlanCardCouponPreview {
-  payAmount: number
-}
 
 interface WeixinJSBridgeLike {
   invoke(
@@ -647,6 +646,19 @@ const effectiveSelectedCouponPrice = computed(() => {
 const effectiveSelectedDailyLimit = computed(() => multiplyPlanLimit(selectedPlan.value?.daily_limit_usd, effectiveSelectedMultiplier.value))
 const effectiveSelectedWeeklyLimit = computed(() => multiplyPlanLimit(selectedPlan.value?.weekly_limit_usd, effectiveSelectedMultiplier.value))
 const effectiveSelectedMonthlyLimit = computed(() => multiplyPlanLimit(selectedPlan.value?.monthly_limit_usd, effectiveSelectedMultiplier.value))
+
+const selectedPlanRateDisplay = computed(() => {
+  if (selectedPlan.value?.custom_multiplier_enabled === true || activeCustomSubscriptionForPlan(selectedPlan.value)) {
+    return `${effectiveSelectedMultiplier.value}x`
+  }
+  return `${selectedPlan.value?.rate_multiplier ?? 1}x`
+})
+
+function activeSubscriptionRateDisplay(subscription: UserSubscription): string {
+  const customMultiplier = subscriptionCustomMultiplier(subscription)
+  if (subscriptionCustomSourcePlanId(subscription) != null && customMultiplier && customMultiplier >= 1) return `${customMultiplier}x`
+  return `${subscription.group?.rate_multiplier ?? 1}x`
+}
 
 // Adaptive grid: center single card, 2-col for 2 plans, 3-col for 3+
 const planGridClass = computed(() => {
@@ -880,13 +892,20 @@ const currentOrderPayAmountBelowMinimum = computed(() =>
   currentOrderType.value === 'subscription' ? subscriptionPayAmountBelowMinimum.value : rechargePayAmountBelowMinimum.value
 )
 
+function shouldPreviewCafeCouponForCurrentContext(): boolean {
+  if (activeTab.value === 'subscription') {
+    return selectedPlan.value != null && effectiveSelectedPlanPrice.value > 0
+  }
+  return validAmount.value > 0
+}
+
 watch(normalizedCafeCouponCode, () => {
-  clearPlanCardCouponPreviews()
-  refreshPlanCardCouponPreviews()
+  resetCafeCouponInfoState()
+  loadCafeCouponInfoForPlanCards().catch(() => {})
 })
 
 watch([activeTab, () => selectedPlan.value?.id, () => checkout.value.plans.length, () => activeSubscriptions.value.length], () => {
-  refreshPlanCardCouponPreviews()
+  loadCafeCouponInfoForPlanCards().catch(() => {})
 })
 
 function resetCafeCouponState(keepError = false) {
@@ -903,13 +922,17 @@ function resetCafeCouponState(keepError = false) {
   }
 }
 
-function clearPlanCardCouponPreviews(): void {
-  planCouponPreviewByKey.value = {}
-  planCouponPreviewPendingKeys.value = {}
+function resetCafeCouponInfoState(): void {
+  cafeCouponInfoCode.value = ''
+  cafeCouponInfoCoupon.value = null
+  cafeCouponInfoLoadingCode.value = ''
 }
 
-function planCouponPreviewKey(planId: number, multiplier: number, code: string): string {
-  return `${planId}:${multiplier}:${code}`
+function rememberCafeCouponInfo(coupon: CafeCouponSummary | null | undefined): void {
+  const code = (coupon?.code || '').trim().toUpperCase()
+  if (!code) return
+  cafeCouponInfoCode.value = code
+  cafeCouponInfoCoupon.value = coupon ?? null
 }
 
 function planCardMultiplierForPlan(plan: SubscriptionPlan): number {
@@ -920,65 +943,65 @@ function planCardMultiplierForPlan(plan: SubscriptionPlan): number {
   return defaultCustomMultiplierForPlan(plan)
 }
 
+function planCardCafeCoupon(): CafeCouponSummary | null {
+  const code = normalizedCafeCouponCode.value
+  if (!code) return null
+  const appliedCode = (cafeCouponAppliedCoupon.value?.code || '').trim().toUpperCase()
+  if (appliedCode === code) return cafeCouponAppliedCoupon.value
+  if (cafeCouponInfoCode.value === code) return cafeCouponInfoCoupon.value
+  return null
+}
+
+function localCafeCouponPayAmount(amount: number, coupon: CafeCouponSummary | null): number | null {
+  if (!coupon || amount <= 0) return null
+  const value = Number(coupon.value)
+  if (!Number.isFinite(value) || value <= 0) return null
+  let discount = 0
+  if (coupon.type === 'discount') {
+    discount = amount * Math.min(value, 100) / 100
+  } else {
+    discount = value
+  }
+  discount = roundPaymentAmount(Math.max(0, discount))
+  const maxDiscount = Math.max(0, amount - 0.01)
+  const payable = roundPaymentAmount(amount - Math.min(discount, maxDiscount))
+  return payable < amount ? payable : null
+}
+
 function planCardCouponPayAmount(plan: SubscriptionPlan): number | null {
   const code = normalizedCafeCouponCode.value
   if (!code) return null
+  const coupon = planCardCafeCoupon()
+  if (!coupon) return null
   const multiplier = planCardMultiplierForPlan(plan)
-  const key = planCouponPreviewKey(plan.id, multiplier, code)
-  return planCouponPreviewByKey.value[key]?.payAmount ?? null
+  const amount = roundPaymentAmount(plan.price * multiplier)
+  return localCafeCouponPayAmount(amount, coupon)
 }
 
-function setPlanCouponPreviewPending(key: string, pending: boolean): void {
-  if (pending) {
-    planCouponPreviewPendingKeys.value = { ...planCouponPreviewPendingKeys.value, [key]: true }
-    return
-  }
-  const next = { ...planCouponPreviewPendingKeys.value }
-  delete next[key]
-  planCouponPreviewPendingKeys.value = next
-}
-
-function removePlanCouponPreview(key: string): void {
-  const next = { ...planCouponPreviewByKey.value }
-  delete next[key]
-  planCouponPreviewByKey.value = next
-}
-
-async function previewCafeCouponForPlanCard(plan: SubscriptionPlan, multiplier: number): Promise<void> {
+async function loadCafeCouponInfoForPlanCards(): Promise<void> {
   const code = normalizedCafeCouponCode.value
-  const safeMultiplier = Number(multiplier)
-  if (!code || activeTab.value !== 'subscription') return
-  if (!Number.isFinite(safeMultiplier) || safeMultiplier < 1) return
-  const amount = roundPaymentAmount(plan.price * safeMultiplier)
-  if (amount <= 0) return
+  if (!code || activeTab.value !== 'subscription' || selectedPlan.value) return
+  if (cafeCouponInfoCode.value === code && cafeCouponInfoCoupon.value) return
+  if (cafeCouponInfoLoadingCode.value === code) return
 
-  const key = planCouponPreviewKey(plan.id, safeMultiplier, code)
-  if (planCouponPreviewByKey.value[key] || planCouponPreviewPendingKeys.value[key]) return
-
-  setPlanCouponPreviewPending(key, true)
+  const seq = ++cafeCouponInfoSeq
+  cafeCouponInfoLoadingCode.value = code
   try {
-    const response = await paymentStore.previewCafeCoupon({
-      code,
-      amount,
-      order_type: 'subscription',
-      plan_id: plan.id,
-      multiplier: safeMultiplier,
-    })
-    if (normalizedCafeCouponCode.value !== code) return
-    if (response.valid === false || !Number.isFinite(response.pay_amount)) {
-      removePlanCouponPreview(key)
+    const response = await paymentStore.getCafeCouponInfo({ code })
+    if (seq !== cafeCouponInfoSeq || normalizedCafeCouponCode.value !== code) return
+    if (response.valid === false || !response.coupon) {
+      if (cafeCouponInfoCode.value === code) resetCafeCouponInfoState()
       return
     }
-    planCouponPreviewByKey.value = {
-      ...planCouponPreviewByKey.value,
-      [key]: { payAmount: roundPaymentAmount(Math.max(0, response.pay_amount)) },
-    }
+    rememberCafeCouponInfo(response.coupon)
   } catch {
-    if (normalizedCafeCouponCode.value === code) {
-      removePlanCouponPreview(key)
+    if (seq === cafeCouponInfoSeq && normalizedCafeCouponCode.value === code && cafeCouponInfoCode.value === code) {
+      resetCafeCouponInfoState()
     }
   } finally {
-    setPlanCouponPreviewPending(key, false)
+    if (seq === cafeCouponInfoSeq && cafeCouponInfoLoadingCode.value === code) {
+      cafeCouponInfoLoadingCode.value = ''
+    }
   }
 }
 
@@ -986,14 +1009,6 @@ function onPlanCardMultiplierChange(plan: SubscriptionPlan, multiplier: number):
   const safeMultiplier = Number(multiplier)
   if (!Number.isFinite(safeMultiplier) || safeMultiplier < 1) return
   planCardMultipliers.value = { ...planCardMultipliers.value, [plan.id]: safeMultiplier }
-  previewCafeCouponForPlanCard(plan, safeMultiplier).catch(() => {})
-}
-
-function refreshPlanCardCouponPreviews(): void {
-  if (!normalizedCafeCouponCode.value || activeTab.value !== 'subscription' || selectedPlan.value) return
-  for (const plan of checkout.value.plans) {
-    previewCafeCouponForPlanCard(plan, planCardMultiplierForPlan(plan)).catch(() => {})
-  }
 }
 
 async function previewCafeCoupon() {
@@ -1041,6 +1056,7 @@ async function previewCafeCoupon() {
         cafeCouponDiscountAmount.value = null
         cafeCouponPayableAmount.value = null
         cafeCouponAppliedCoupon.value = null
+        if (cafeCouponInfoCode.value === code) resetCafeCouponInfoState()
         cafeCouponError.value = response.message || t('payment.cafeCoupon.invalid')
         return
       }
@@ -1050,6 +1066,7 @@ async function previewCafeCoupon() {
       cafeCouponDiscountAmount.value = Number.isFinite(response.discount_amount) ? response.discount_amount : null
       cafeCouponPayableAmount.value = Number.isFinite(response.pay_amount) ? response.pay_amount : null
       cafeCouponAppliedCoupon.value = response.coupon ?? null
+      rememberCafeCouponInfo(response.coupon)
     } catch (error: unknown) {
       if (seq !== cafeCouponPreviewSeq || cafeCouponCurrentContextKey(code) !== requestContextKey) return
       console.error('Failed to preview Cafe coupon:', error)
@@ -1078,9 +1095,12 @@ function scheduleCafeCouponAutoPreview() {
 }
 
 watch([currentOrderAmount, currentOrderType, currentPlanId, selectedMethod, effectiveSelectedMultiplier], () => {
-  if (normalizedCafeCouponCode.value) {
-    resetCafeCouponState()
+  if (!normalizedCafeCouponCode.value) return
+  resetCafeCouponState()
+  if (shouldPreviewCafeCouponForCurrentContext()) {
     scheduleCafeCouponAutoPreview()
+  } else {
+    loadCafeCouponInfoForPlanCards().catch(() => {})
   }
 })
 
@@ -1533,8 +1553,10 @@ function applyRouteCafeCouponCode() {
     resetCafeCouponState()
     appStore.showSuccess(t('payment.cafeCoupon.applied'))
   }
-  if (!cafeCouponApplied.value && !previewingCafeCoupon.value && currentOrderAmount.value > 0) {
+  if (!cafeCouponApplied.value && !previewingCafeCoupon.value && shouldPreviewCafeCouponForCurrentContext()) {
     previewCafeCoupon().catch(() => {})
+  } else if (!codeChanged) {
+    loadCafeCouponInfoForPlanCards().catch(() => {})
   }
 }
 
@@ -1615,7 +1637,10 @@ onMounted(async () => {
       }
     }
     await resumeWechatPaymentFromQuery()
-    if (checkout.value.balance_disabled) {
+    const routeTab = firstRouteQueryString(route.query.tab)
+    if (routeTab === 'recharge' && !checkout.value.balance_disabled) {
+      activeTab.value = 'recharge'
+    } else if (routeTab === 'subscription' || checkout.value.balance_disabled) {
       activeTab.value = 'subscription'
     }
     applyRouteCafeCouponCode()

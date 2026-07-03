@@ -1,8 +1,7 @@
 <template>
   <div
     :class="[
-      'group relative flex flex-col overflow-hidden rounded-2xl border transition-all',
-      'hover:shadow-xl',
+      'group relative flex flex-col overflow-hidden rounded-2xl border transition-colors',
       borderClass,
       'bg-surface-card',
     ]"
@@ -32,17 +31,17 @@
         </div>
         <div class="shrink-0 text-right">
           <div v-if="couponDisplayPrice != null" class="flex items-baseline justify-end gap-1.5">
-            <span class="text-xs text-gray-400 line-through dark:text-dark-500">&yen;{{ effectivePrice }}</span>
+            <span class="text-xs text-gray-400 line-through dark:text-dark-500">&yen;{{ formatPlanAmount(effectivePrice) }}</span>
             <span class="text-xs text-content-tertiary">&yen;</span>
-            <span class="text-2xl font-extrabold tracking-tight text-[#3D2E2A] dark:text-[#F5C66B]">{{ couponDisplayPrice }}</span>
+            <span class="text-2xl font-extrabold tracking-tight text-[#3D2E2A] dark:text-[#F5C66B]">{{ formatPlanAmount(couponDisplayPrice) }}</span>
           </div>
           <div v-else class="flex items-baseline justify-end gap-1">
             <span class="text-xs text-content-tertiary">&yen;</span>
-            <span :class="['text-2xl font-extrabold tracking-tight', textClass]">{{ effectivePrice }}</span>
+            <span :class="['text-2xl font-extrabold tracking-tight', textClass]">{{ formatPlanAmount(effectivePrice) }}</span>
           </div>
           <span class="text-[11px] text-content-tertiary">/ {{ validitySuffix }}</span>
           <div v-if="effectiveOriginalPrice" class="mt-0.5 flex items-center justify-end gap-1.5">
-            <span class="text-xs text-gray-400 line-through dark:text-dark-500">&yen;{{ effectiveOriginalPrice }}</span>
+            <span class="text-xs text-gray-400 line-through dark:text-dark-500">&yen;{{ formatPlanAmount(effectiveOriginalPrice) }}</span>
             <span :class="['rounded px-1 py-0.5 text-[10px] font-semibold', discountClass]">{{ discountText }}</span>
           </div>
         </div>
@@ -52,7 +51,7 @@
       <div class="mb-3 grid grid-cols-2 gap-x-3 gap-y-1 rounded-lg bg-gray-50 px-3 py-2 text-xs dark:bg-dark-700/50">
         <div class="flex items-center justify-between">
           <span class="text-content-tertiary">{{ t('payment.planCard.rate') }}</span>
-          <span class="font-medium text-content-secondary">{{ rateDisplay }}</span>
+          <span data-testid="plan-rate-display" class="font-medium text-content-secondary">{{ rateDisplay }}</span>
         </div>
         <div v-if="effectiveDailyLimit != null" class="flex items-center justify-between">
           <span class="text-content-tertiary">{{ t('payment.planCard.dailyLimit') }}</span>
@@ -157,6 +156,13 @@ function roundAmount(value: number): number {
   return Math.round(value * 100) / 100
 }
 
+function formatPlanAmount(value: number | null | undefined): string {
+  if (value == null || !Number.isFinite(Number(value))) return ''
+  const rounded = roundAmount(Number(value))
+  if (Number.isInteger(rounded)) return String(rounded)
+  return rounded.toFixed(2)
+}
+
 function multiplyLimit(value: number | null | undefined, multiplier: number): number | null {
   if (value == null) return null
   return roundAmount(value * multiplier)
@@ -233,6 +239,7 @@ const pLabel = computed(() => platformLabel(platform.value))
 
 const effectivePrice = computed(() => roundAmount(props.plan.price * effectiveMultiplier.value))
 const couponDisplayPrice = computed(() => {
+  if (props.couponPayAmount == null) return null
   const value = Number(props.couponPayAmount)
   if (!Number.isFinite(value)) return null
   const rounded = roundAmount(Math.max(0, value))
@@ -250,6 +257,9 @@ const discountText = computed(() => {
 })
 
 const rateDisplay = computed(() => {
+  if (props.plan.custom_multiplier_enabled === true || customRenewalSubscription.value) {
+    return `${effectiveMultiplier.value}x`
+  }
   const rate = props.plan.rate_multiplier ?? 1
   return `${Number(rate.toPrecision(10))}x`
 })

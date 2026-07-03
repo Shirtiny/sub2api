@@ -119,6 +119,33 @@ func TestIsMigrationChecksumCompatible(t *testing.T) {
 		require.True(t, ok)
 	})
 
+	t.Run("161 historical checksum is compatible with embedded virtual custom entitlement migration", func(t *testing.T) {
+		content, err := migrations.FS.ReadFile("161_user_subscription_virtual_custom_entitlement.sql")
+		require.NoError(t, err)
+		sum := sha256.Sum256([]byte(strings.TrimSpace(string(content))))
+
+		ok := isMigrationChecksumCompatible(
+			"161_user_subscription_virtual_custom_entitlement.sql",
+			"c8bb22ddaecc46efbee7bc60ac3cfeabef4c96c9662df76d1dc10829676b9c26",
+			hex.EncodeToString(sum[:]),
+		)
+		require.True(t, ok)
+	})
+
+	t.Run("161 historical checksum is compatible with LF checkout", func(t *testing.T) {
+		content, err := migrations.FS.ReadFile("161_user_subscription_virtual_custom_entitlement.sql")
+		require.NoError(t, err)
+		lfContent := strings.ReplaceAll(string(content), "\r\n", "\n")
+		sum := sha256.Sum256([]byte(strings.TrimSpace(lfContent)))
+
+		ok := isMigrationChecksumCompatible(
+			"161_user_subscription_virtual_custom_entitlement.sql",
+			"c8bb22ddaecc46efbee7bc60ac3cfeabef4c96c9662df76d1dc10829676b9c26",
+			hex.EncodeToString(sum[:]),
+		)
+		require.True(t, ok)
+	})
+
 	t.Run("119历史checksum可兼容占位文件", func(t *testing.T) {
 		ok := isMigrationChecksumCompatible(
 			"119_enforce_payment_orders_out_trade_no_unique.sql",

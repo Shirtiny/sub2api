@@ -427,6 +427,33 @@ func TestCafeCouponPreviewAllowsConfigChangedIssuedCoupon(t *testing.T) {
 	require.Equal(t, cafeCouponExpiresAt(coupon.CreatedAt, coupon.Period), preview.ExpiresAt)
 }
 
+func TestCafeCouponInfoReturnsMetadataWithoutOrderAmount(t *testing.T) {
+	ctx := context.Background()
+	client := newCafeCouponTestClient(t)
+	owner, err := client.User.Create().SetEmail("info-owner@example.com").SetPasswordHash("hash").SetUsername("info-owner").Save(ctx)
+	require.NoError(t, err)
+	viewerID := owner.ID + 1
+	start, end := cafeCouponRollingPeriodWindow(time.Now(), CafeCouponPeriodMonth)
+	coupon, err := client.CafeCoupon.Create().
+		SetCode("CAFE-INFO").SetUserID(owner.ID).SetMembershipLevel(1).SetCouponType(CafeCouponTypeDiscount).SetValue(20).
+		SetPeriod(CafeCouponPeriodMonth).SetPeriodStart(start).SetPeriodEnd(end).SetStatus(CafeCouponStatusIssued).
+		Save(ctx)
+	require.NoError(t, err)
+	svc := &PaymentService{
+		entClient:     client,
+		userRepo:      &mockUserRepo{getByIDUser: &User{ID: viewerID, Status: payment.EntityStatusActive, TotalRecharged: MembershipLevel1Threshold + 1}},
+		configService: &PaymentConfigService{settingRepo: cafeCouponSettingsRepo(map[string]string{SettingKeyCafeCouponConfig: `{"levels":{"1":{"enabled":true,"type":"cash","value":5,"period":"month","transferable":true}}}`})},
+	}
+
+	info, err := svc.CafeCouponInfo(ctx, viewerID, coupon.Code)
+	require.NoError(t, err)
+	require.Equal(t, coupon.Code, info.Code)
+	require.Equal(t, CafeCouponTypeDiscount, info.CouponType)
+	require.Equal(t, 20.0, info.Value)
+	require.True(t, info.Transferable)
+	require.Equal(t, cafeCouponExpiresAt(coupon.CreatedAt, coupon.Period), info.ExpiresAt)
+}
+
 func TestCafeCouponConcurrentClaimCreatesOneCoupon(t *testing.T) {
 	ctx := context.Background()
 	client := newCafeCouponTestClient(t)

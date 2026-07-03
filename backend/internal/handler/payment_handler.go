@@ -252,6 +252,16 @@ type CafeCouponSummary struct {
 	ValidUntilMonthEnd bool      `json:"valid_until_month_end"`
 }
 
+type CafeCouponInfoRequest struct {
+	Code string `json:"code" binding:"required"`
+}
+
+type CafeCouponInfoResponse struct {
+	Valid   bool               `json:"valid"`
+	Coupon  *CafeCouponSummary `json:"coupon,omitempty"`
+	Message string             `json:"message,omitempty"`
+}
+
 type CafeCouponPreviewRequest struct {
 	Code       string  `json:"code" binding:"required"`
 	Amount     float64 `json:"amount"`
@@ -296,6 +306,31 @@ func (h *PaymentHandler) ClaimCafeCoupon(c *gin.Context) {
 		return
 	}
 	response.Success(c, cafeCouponSummaryFromClaim(claimed))
+}
+
+// CafeCouponInfo validates a cafe coupon and returns its display metadata.
+// POST /api/v1/payment/cafe-coupons/info
+// This endpoint is read-only and order-agnostic; final payable amounts are still verified by Preview/CreateOrder.
+func (h *PaymentHandler) CafeCouponInfo(c *gin.Context) {
+	subject, ok := requireAuth(c)
+	if !ok {
+		return
+	}
+	var req CafeCouponInfoRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+	info, err := h.paymentService.CafeCouponInfo(c.Request.Context(), subject.UserID, req.Code)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, CafeCouponInfoResponse{
+		Valid:   true,
+		Coupon:  cafeCouponSummaryFromInfo(info),
+		Message: "cafe coupon info loaded",
+	})
 }
 
 // PreviewCafeCoupon previews the server-side discount for a cafe coupon.
@@ -363,6 +398,25 @@ func cafeCouponSummaryFromClaim(claimed *service.CafeCouponClaimResult) *CafeCou
 		Transferable:       claimed.Transferable,
 		Validity:           claimed.Validity,
 		ValidUntilMonthEnd: claimed.ValidUntilMonthEnd,
+	}
+}
+
+func cafeCouponSummaryFromInfo(info *service.CafeCouponInfo) *CafeCouponSummary {
+	if info == nil {
+		return nil
+	}
+	return &CafeCouponSummary{
+		Code:               info.Code,
+		CouponType:         info.CouponType,
+		Value:              info.Value,
+		Period:             info.Period,
+		ExpiresAt:          info.ExpiresAt,
+		ClaimedAt:          info.ClaimedAt,
+		DisplayName:        cafeCouponDisplayName(info.CouponType, info.Value),
+		CopyText:           info.Code,
+		Transferable:       info.Transferable,
+		Validity:           info.Validity,
+		ValidUntilMonthEnd: info.ValidUntilMonthEnd,
 	}
 }
 

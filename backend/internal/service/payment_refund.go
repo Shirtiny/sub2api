@@ -254,6 +254,16 @@ func (s *PaymentService) prepDeduct(ctx context.Context, o *dbent.PaymentOrder, 
 			p.SubDaysToDeduct = *o.SubscriptionDays
 			sub, err := s.subscriptionSvc.GetActiveSubscription(ctx, o.UserID, *o.SubscriptionGroupID)
 			if err == nil && sub != nil {
+				customOrder, verifyResult := s.isCustomSubscriptionPaymentOrderForRefund(ctx, o, force)
+				if verifyResult != nil {
+					return verifyResult
+				}
+				if customOrder && sub.HasVirtualCustomEntitlement() && sub.CustomExpiresAt != nil && !sub.CustomExpiresAt.After(time.Now()) {
+					if !force {
+						return &RefundResult{Success: false, Warning: "custom subscription entitlement already expired, use force", RequireForce: true}
+					}
+					p.SubDaysToDeduct = 0
+				}
 				p.SubscriptionID = sub.ID
 			} else if !force {
 				return &RefundResult{Success: false, Warning: "cannot find active subscription for deduction, use force", RequireForce: true}

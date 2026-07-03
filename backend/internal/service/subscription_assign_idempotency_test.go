@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Wei-Shaw/sub2api/internal/config"
 	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
 	"github.com/stretchr/testify/require"
@@ -181,6 +182,15 @@ func (s *subscriptionUserSubRepoStub) GetByUserIDAndGroupID(_ context.Context, u
 	return &cp, nil
 }
 
+func (s *subscriptionUserSubRepoStub) GetActiveByUserIDAndGroupID(_ context.Context, userID, groupID int64) (*UserSubscription, error) {
+	sub := s.byUserGroup[s.key(userID, groupID)]
+	if sub == nil || sub.Status != SubscriptionStatusActive || !sub.ExpiresAt.After(time.Now()) {
+		return nil, ErrSubscriptionNotFound
+	}
+	cp := *sub
+	return &cp, nil
+}
+
 func (s *subscriptionUserSubRepoStub) Create(_ context.Context, sub *UserSubscription) error {
 	if sub == nil {
 		return nil
@@ -222,6 +232,41 @@ func (s *subscriptionUserSubRepoStub) Update(_ context.Context, sub *UserSubscri
 	}
 	s.byUserGroup[s.key(cp.UserID, cp.GroupID)] = &cp
 	return nil
+}
+
+func (s *subscriptionUserSubRepoStub) Delete(_ context.Context, id int64) error {
+	existing := s.byID[id]
+	if existing == nil {
+		return ErrSubscriptionNotFound
+	}
+	delete(s.byID, id)
+	delete(s.byUserGroup, s.key(existing.UserID, existing.GroupID))
+	return nil
+}
+
+func TestRevokeSubscriptionInvalidatesL1CacheSynchronously(t *testing.T) {
+	subRepo := newSubscriptionUserSubRepoStub()
+	subRepo.seed(&UserSubscription{
+		ID:        88,
+		UserID:    7,
+		GroupID:   9,
+		Status:    SubscriptionStatusActive,
+		StartsAt:  time.Now().Add(-time.Hour),
+		ExpiresAt: time.Now().Add(time.Hour),
+	})
+	cfg := &config.Config{}
+	cfg.SubscriptionCache.L1Size = 64
+	cfg.SubscriptionCache.L1TTLSeconds = 60
+	svc := NewSubscriptionService(groupRepoNoop{}, subRepo, nil, nil, cfg)
+	t.Cleanup(svc.Stop)
+
+	_, err := svc.GetActiveSubscription(context.Background(), 7, 9)
+	require.NoError(t, err)
+	require.NoError(t, svc.RevokeSubscription(context.Background(), 88))
+
+	_, err = svc.GetActiveSubscription(context.Background(), 7, 9)
+	require.Error(t, err)
+	require.Equal(t, "SUBSCRIPTION_NOT_FOUND", infraerrors.Reason(err))
 }
 
 func TestAssignSubscriptionReuseWhenSemanticsMatch(t *testing.T) {

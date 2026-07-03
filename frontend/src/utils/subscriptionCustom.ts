@@ -34,6 +34,21 @@ export function subscriptionCustomDisplayName(subscription: UserSubscription | n
   return subscription?.group?.name?.trim() || ''
 }
 
+export function subscriptionCustomPlanName(subscription: UserSubscription | null | undefined): string {
+  const fullName = subscriptionCustomDisplayName(subscription)
+  if (!fullName) return ''
+  const multiplier = subscriptionCustomMultiplier(subscription)
+  let name = fullName
+  if (multiplier != null) {
+    name = name.replace(new RegExp(`^\\[${multiplier}x\\]\\s*`), '')
+  }
+  const userID = Number(subscription?.user_id)
+  if (Number.isFinite(userID) && userID > 0) {
+    name = name.replace(new RegExp(`#${userID}$`), '')
+  }
+  return name.trim() || fullName
+}
+
 export function isCustomSubscription(subscription: UserSubscription | null | undefined): boolean {
   return subscriptionCustomMultiplier(subscription) != null && subscriptionCustomSourcePlanId(subscription) != null
 }

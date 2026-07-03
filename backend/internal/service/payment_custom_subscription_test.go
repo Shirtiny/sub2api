@@ -91,6 +91,132 @@ func TestResolveSubscriptionOrderMultiplierValidatesRangeAndUsesActiveCustomRene
 	require.Equal(t, 3, got)
 }
 
+func TestResolveSubscriptionOrderMultiplierIgnoresSoftDeletedCustomRenewal(t *testing.T) {
+	ctx := context.Background()
+	client := newPaymentOrderLifecycleTestClient(t)
+
+	user, err := client.User.Create().
+		SetEmail("custom-soft-deleted-renewal@example.com").
+		SetPasswordHash("hash").
+		SetUsername("custom-soft-deleted-renewal").
+		Save(ctx)
+	require.NoError(t, err)
+
+	sourceGroup, err := client.Group.Create().
+		SetName("soft-deleted-renewal-source").
+		SetStatus(StatusActive).
+		SetPlatform(PlatformOpenAI).
+		SetSubscriptionType(SubscriptionTypeSubscription).
+		Save(ctx)
+	require.NoError(t, err)
+
+	plan, err := client.SubscriptionPlan.Create().
+		SetName("Soft Deleted Renewal").
+		SetDescription("custom").
+		SetGroupID(sourceGroup.ID).
+		SetPrice(100).
+		SetValidityDays(30).
+		SetValidityUnit("days").
+		SetForSale(true).
+		SetCustomMultiplierEnabled(true).
+		SetCustomMultiplierMin(1).
+		SetCustomMultiplierMax(5).
+		Save(ctx)
+	require.NoError(t, err)
+
+	customGroup, err := client.Group.Create().
+		SetName("[2x]Soft Deleted Renewal#" + strconv.FormatInt(user.ID, 10)).
+		SetStatus(StatusActive).
+		SetPlatform(PlatformOpenAI).
+		SetSubscriptionType(SubscriptionTypeSubscription).
+		SetIsCustomSubscriptionGroup(true).
+		SetCustomOwnerUserID(user.ID).
+		SetCustomSourcePlanID(plan.ID).
+		SetCustomSourceGroupID(sourceGroup.ID).
+		SetCustomMultiplier(2).
+		Save(ctx)
+	require.NoError(t, err)
+
+	deletedSub, err := client.UserSubscription.Create().
+		SetUserID(user.ID).
+		SetGroupID(customGroup.ID).
+		SetStatus(SubscriptionStatusActive).
+		SetStartsAt(time.Now().Add(-time.Hour)).
+		SetExpiresAt(time.Now().Add(24 * time.Hour)).
+		SetNotes("revoked custom renewal").
+		Save(ctx)
+	require.NoError(t, err)
+	err = client.UserSubscription.DeleteOneID(deletedSub.ID).Exec(ctx)
+	require.NoError(t, err)
+
+	svc := &PaymentService{entClient: client}
+	got, err := svc.resolveSubscriptionOrderMultiplier(ctx, user.ID, plan, 4)
+	require.NoError(t, err)
+	require.Equal(t, 4, got)
+}
+
+func TestResolveSubscriptionOrderMultiplierIgnoresIncompleteVirtualCustomEntitlement(t *testing.T) {
+	ctx := context.Background()
+	client := newPaymentOrderLifecycleTestClient(t)
+
+	user, err := client.User.Create().
+		SetEmail("custom-incomplete-virtual@example.com").
+		SetPasswordHash("hash").
+		SetUsername("custom-incomplete-virtual").
+		Save(ctx)
+	require.NoError(t, err)
+
+	sourceGroup, err := client.Group.Create().
+		SetName("incomplete-virtual-source").
+		SetStatus(StatusActive).
+		SetPlatform(PlatformOpenAI).
+		SetSubscriptionType(SubscriptionTypeSubscription).
+		Save(ctx)
+	require.NoError(t, err)
+
+	plan, err := client.SubscriptionPlan.Create().
+		SetName("Incomplete Virtual Plan").
+		SetDescription("custom").
+		SetGroupID(sourceGroup.ID).
+		SetPrice(100).
+		SetValidityDays(30).
+		SetValidityUnit("days").
+		SetForSale(true).
+		SetCustomMultiplierEnabled(true).
+		SetCustomMultiplierMin(1).
+		SetCustomMultiplierMax(5).
+		Save(ctx)
+	require.NoError(t, err)
+
+	staleSub, err := client.UserSubscription.Create().
+		SetUserID(user.ID).
+		SetGroupID(sourceGroup.ID).
+		SetStatus(SubscriptionStatusActive).
+		SetStartsAt(time.Now().Add(-time.Hour)).
+		SetExpiresAt(time.Now().Add(24 * time.Hour)).
+		SetCustomMultiplier(2).
+		SetCustomSourcePlanID(plan.ID).
+		SetNotes("incomplete early virtual custom metadata").
+		Save(ctx)
+	require.NoError(t, err)
+
+	svc := &PaymentService{entClient: client}
+	got, err := svc.resolveSubscriptionOrderMultiplier(ctx, user.ID, plan, 1)
+	require.NoError(t, err)
+	require.Equal(t, 1, got)
+
+	customExpiresAt := time.Now().Add(24 * time.Hour)
+	_, err = client.UserSubscription.UpdateOneID(staleSub.ID).
+		SetCustomSourceGroupID(sourceGroup.ID).
+		SetCustomExpiresAt(customExpiresAt).
+		Save(ctx)
+	require.NoError(t, err)
+
+	got, err = svc.resolveSubscriptionOrderMultiplier(ctx, user.ID, plan, 1)
+	require.NoError(t, err)
+	require.Equal(t, 2, got)
+}
+
 func TestResolveSubscriptionOrderMultiplierUsesActiveCustomRenewalWhenPlanCustomizationDisabled(t *testing.T) {
 	ctx := context.Background()
 	client := newPaymentOrderLifecycleTestClient(t)
@@ -272,6 +398,75 @@ func TestPreviewCafeCouponForOrderUsesResolvedSubscriptionMultiplier(t *testing.
 	require.NoError(t, err)
 	require.InDelta(t, 75, preview.DiscountAmount, 1e-9)
 	require.InDelta(t, 225, preview.PayableAmount, 1e-9)
+}
+
+func TestPreviewCafeCouponForOrderRejectsRequestedMultiplierMismatch(t *testing.T) {
+	ctx := context.Background()
+	client := newCafeCouponTestClient(t)
+
+	user, err := client.User.Create().SetEmail("custom-coupon-mismatch@example.com").SetPasswordHash("hash").SetUsername("custom-coupon-mismatch").Save(ctx)
+	require.NoError(t, err)
+	sourceGroup, err := client.Group.Create().SetName("coupon-mismatch-source").SetStatus(StatusActive).SetPlatform(PlatformOpenAI).SetSubscriptionType(SubscriptionTypeSubscription).Save(ctx)
+	require.NoError(t, err)
+	plan, err := client.SubscriptionPlan.Create().SetName("Coupon Mismatch Custom").SetDescription("custom").SetGroupID(sourceGroup.ID).SetPrice(429).SetValidityDays(30).SetValidityUnit("days").SetForSale(true).SetCustomMultiplierEnabled(true).SetCustomMultiplierMin(1).SetCustomMultiplierMax(5).Save(ctx)
+	require.NoError(t, err)
+	activeGroup, err := client.Group.Create().SetName("[2x]Coupon Mismatch Custom#" + strconv.FormatInt(user.ID, 10)).SetStatus(StatusActive).SetPlatform(PlatformOpenAI).SetSubscriptionType(SubscriptionTypeSubscription).SetIsCustomSubscriptionGroup(true).SetCustomOwnerUserID(user.ID).SetCustomSourcePlanID(plan.ID).SetCustomSourceGroupID(sourceGroup.ID).SetCustomMultiplier(2).Save(ctx)
+	require.NoError(t, err)
+	_, err = client.UserSubscription.Create().SetUserID(user.ID).SetGroupID(activeGroup.ID).SetStatus(SubscriptionStatusActive).SetStartsAt(time.Now().Add(-time.Hour)).SetExpiresAt(time.Now().Add(24 * time.Hour)).SetNotes("active custom 2x").Save(ctx)
+	require.NoError(t, err)
+	start, end := cafeCouponRollingPeriodWindow(time.Now(), CafeCouponPeriodMonth)
+	coupon, err := client.CafeCoupon.Create().SetCode("CAFE-MULT-MISMATCH").SetUserID(user.ID).SetMembershipLevel(1).SetCouponType(CafeCouponTypeDiscount).SetValue(20).SetPeriod(CafeCouponPeriodMonth).SetPeriodStart(start).SetPeriodEnd(end).SetStatus(CafeCouponStatusIssued).Save(ctx)
+	require.NoError(t, err)
+
+	svc := &PaymentService{
+		entClient: client,
+		configService: &PaymentConfigService{entClient: client, settingRepo: cafeCouponSettingsRepo(map[string]string{
+			SettingPaymentEnabled:      "true",
+			SettingEnabledPaymentTypes: "alipay",
+			SettingKeyCafeCouponConfig: `{"levels":{"1":{"enabled":true,"type":"discount","value":20,"period":"month"}}}`,
+		})},
+		groupRepo: &subscriptionGroupRepoStub{group: &Group{ID: sourceGroup.ID, Name: sourceGroup.Name, Status: StatusActive, SubscriptionType: SubscriptionTypeSubscription}},
+	}
+
+	_, err = svc.PreviewCafeCouponForOrder(ctx, CreateOrderRequest{UserID: user.ID, OrderType: payment.OrderTypeSubscription, PlanID: plan.ID, Multiplier: 4, CafeCouponCode: coupon.Code})
+	require.Error(t, err)
+	require.Equal(t, "SUBSCRIPTION_STATE_CHANGED", infraerrors.Reason(err))
+}
+
+func TestCreateOrderRejectsRequestedMultiplierMismatchWithActiveCustomRenewal(t *testing.T) {
+	ctx := context.Background()
+	client := newPaymentOrderLifecycleTestClient(t)
+
+	user, err := client.User.Create().SetEmail("custom-order-mismatch@example.com").SetPasswordHash("hash").SetUsername("custom-order-mismatch").Save(ctx)
+	require.NoError(t, err)
+	sourceGroup, err := client.Group.Create().SetName("order-mismatch-source").SetStatus(StatusActive).SetPlatform(PlatformOpenAI).SetSubscriptionType(SubscriptionTypeSubscription).Save(ctx)
+	require.NoError(t, err)
+	plan, err := client.SubscriptionPlan.Create().SetName("Order Mismatch Custom").SetDescription("custom").SetGroupID(sourceGroup.ID).SetPrice(429).SetValidityDays(30).SetValidityUnit("days").SetForSale(true).SetCustomMultiplierEnabled(true).SetCustomMultiplierMin(1).SetCustomMultiplierMax(5).Save(ctx)
+	require.NoError(t, err)
+	activeGroup, err := client.Group.Create().SetName("[2x]Order Mismatch Custom#" + strconv.FormatInt(user.ID, 10)).SetStatus(StatusActive).SetPlatform(PlatformOpenAI).SetSubscriptionType(SubscriptionTypeSubscription).SetIsCustomSubscriptionGroup(true).SetCustomOwnerUserID(user.ID).SetCustomSourcePlanID(plan.ID).SetCustomSourceGroupID(sourceGroup.ID).SetCustomMultiplier(2).Save(ctx)
+	require.NoError(t, err)
+	_, err = client.UserSubscription.Create().SetUserID(user.ID).SetGroupID(activeGroup.ID).SetStatus(SubscriptionStatusActive).SetStartsAt(time.Now().Add(-time.Hour)).SetExpiresAt(time.Now().Add(24 * time.Hour)).SetNotes("active custom 2x").Save(ctx)
+	require.NoError(t, err)
+
+	groupRepo := &subscriptionGroupRepoStub{group: &Group{ID: sourceGroup.ID, Name: sourceGroup.Name, Status: StatusActive, SubscriptionType: SubscriptionTypeSubscription}}
+	svc := &PaymentService{
+		entClient: client,
+		configService: &PaymentConfigService{entClient: client, settingRepo: &paymentConfigSettingRepoStub{values: map[string]string{
+			SettingPaymentEnabled:      "true",
+			SettingEnabledPaymentTypes: payment.TypeAlipay,
+		}}},
+		groupRepo: groupRepo,
+		userRepo:  &mockUserRepo{getByIDUser: &User{ID: user.ID, Email: user.Email, Username: user.Username, Status: StatusActive}},
+	}
+
+	t.Setenv(paymentDevAutoSuccessEnv, paymentDevAutoSuccessToken)
+	t.Setenv(paymentDevEnvironmentEnv, "development")
+	_, err = svc.CreateOrder(ctx, CreateOrderRequest{UserID: user.ID, PaymentType: payment.TypeAlipay, OrderType: payment.OrderTypeSubscription, PlanID: plan.ID, Multiplier: 4, ClientIP: "127.0.0.1", SrcHost: "app.example.com"})
+	require.Error(t, err)
+	require.Equal(t, "SUBSCRIPTION_STATE_CHANGED", infraerrors.Reason(err))
+	count, err := client.PaymentOrder.Query().Count(ctx)
+	require.NoError(t, err)
+	require.Zero(t, count)
 }
 
 func TestExecuteSubscriptionFulfillmentCreatesCustomGroupAndCopiesAccountBindings(t *testing.T) {
@@ -1075,6 +1270,91 @@ func TestExecuteSubscriptionFulfillmentRejectsReusedCustomGroupWhenSourceInactiv
 	require.Equal(t, activeSub.ExpiresAt, updatedSub.ExpiresAt, "failed fulfillment must not extend the subscription")
 }
 
+func TestExecuteSubscriptionFulfillmentRejectsVirtualCustomSourceGroupMismatch(t *testing.T) {
+	ctx := context.Background()
+	client := newPaymentOrderLifecycleTestClient(t)
+
+	user, err := client.User.Create().SetEmail("custom-virtual-source-mismatch@example.com").SetPasswordHash("hash").SetUsername("virtual-source-mismatch").Save(ctx)
+	require.NoError(t, err)
+	planSource, err := client.Group.Create().SetName("virtual-source-plan").SetStatus(StatusActive).SetPlatform(PlatformOpenAI).SetSubscriptionType(SubscriptionTypeSubscription).SetDailyLimitUsd(10).Save(ctx)
+	require.NoError(t, err)
+	forgedSource, err := client.Group.Create().SetName("virtual-source-forged").SetStatus(StatusActive).SetPlatform(PlatformOpenAI).SetSubscriptionType(SubscriptionTypeSubscription).SetDailyLimitUsd(1000).Save(ctx)
+	require.NoError(t, err)
+	plan, err := client.SubscriptionPlan.Create().SetName("Virtual Source Mismatch").SetDescription("custom").SetGroupID(planSource.ID).SetPrice(100).SetValidityDays(30).SetValidityUnit("days").SetForSale(true).SetCustomMultiplierEnabled(true).SetCustomMultiplierMin(1).SetCustomMultiplierMax(5).Save(ctx)
+	require.NoError(t, err)
+
+	order, err := client.PaymentOrder.Create().
+		SetUserID(user.ID).SetUserEmail(user.Email).SetUserName(user.Username).
+		SetAmount(300).SetPayAmount(300).SetFeeRate(0).SetRechargeCode("CUSTOM-VIRTUAL-SOURCE-MISMATCH-001").SetOutTradeNo("sub2_custom_virtual_source_mismatch_001").
+		SetPaymentType(payment.TypeAlipay).SetPaymentTradeNo("").SetOrderType(payment.OrderTypeSubscription).
+		SetPlanID(plan.ID).SetSubscriptionGroupID(forgedSource.ID).SetSubscriptionDays(30).SetSubscriptionMultiplier(3).SetSubscriptionSourceGroupID(forgedSource.ID).SetSubscriptionSourcePrice(100).
+		SetStatus(OrderStatusPaid).SetExpiresAt(time.Now().Add(time.Hour)).SetClientIP("127.0.0.1").SetSrcHost("app.example.com").Save(ctx)
+	require.NoError(t, err)
+
+	groupRepo := &subscriptionGroupRepoStub{group: &Group{ID: forgedSource.ID, Name: forgedSource.Name, Status: StatusActive, SubscriptionType: SubscriptionTypeSubscription}}
+	subRepo := &paymentFulfillmentSubscriptionRepo{client: client}
+	subSvc := NewSubscriptionService(groupRepo, subRepo, nil, client, nil)
+	svc := &PaymentService{entClient: client, groupRepo: groupRepo, subscriptionSvc: subSvc, providersLoaded: true}
+
+	err = svc.ExecuteSubscriptionFulfillment(ctx, order.ID)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "source group mismatch")
+	updatedOrder, err := client.PaymentOrder.Get(ctx, order.ID)
+	require.NoError(t, err)
+	require.Equal(t, OrderStatusFailed, updatedOrder.Status)
+	subCount, err := client.UserSubscription.Query().Where(usersubscription.UserIDEQ(user.ID)).Count(ctx)
+	require.NoError(t, err)
+	require.Zero(t, subCount, "forged source group must not create or extend a subscription")
+}
+
+func TestExecuteSubscriptionFulfillmentRejectsLegacyCustomSourceGroupMismatchBeforeSync(t *testing.T) {
+	ctx := context.Background()
+	client := newPaymentOrderLifecycleTestClient(t)
+
+	user, err := client.User.Create().SetEmail("custom-legacy-source-mismatch@example.com").SetPasswordHash("hash").SetUsername("legacy-source-mismatch").Save(ctx)
+	require.NoError(t, err)
+	planSource, err := client.Group.Create().SetName("legacy-source-plan").SetStatus(StatusActive).SetPlatform(PlatformOpenAI).SetSubscriptionType(SubscriptionTypeSubscription).SetDailyLimitUsd(10).Save(ctx)
+	require.NoError(t, err)
+	forgedSource, err := client.Group.Create().SetName("legacy-source-forged").SetStatus(StatusActive).SetPlatform(PlatformOpenAI).SetSubscriptionType(SubscriptionTypeSubscription).SetDailyLimitUsd(1000).Save(ctx)
+	require.NoError(t, err)
+	plan, err := client.SubscriptionPlan.Create().SetName("Legacy Source Mismatch").SetDescription("custom").SetGroupID(planSource.ID).SetPrice(100).SetValidityDays(30).SetValidityUnit("days").SetForSale(true).SetCustomMultiplierEnabled(true).SetCustomMultiplierMin(1).SetCustomMultiplierMax(5).Save(ctx)
+	require.NoError(t, err)
+	activeGroup, err := client.Group.Create().
+		SetName("Legacy Source Mismatch-active").SetStatus(StatusActive).SetPlatform(PlatformOpenAI).SetSubscriptionType(SubscriptionTypeSubscription).
+		SetIsCustomSubscriptionGroup(true).SetCustomOwnerUserID(user.ID).SetCustomSourcePlanID(plan.ID).SetCustomMultiplier(2).SetDailyLimitUsd(20).Save(ctx)
+	require.NoError(t, err)
+	activeSub, err := client.UserSubscription.Create().SetUserID(user.ID).SetGroupID(activeGroup.ID).SetStatus(SubscriptionStatusActive).SetStartsAt(time.Now().AddDate(0, 0, -1)).SetExpiresAt(time.Now().AddDate(0, 0, 10)).SetNotes("active legacy custom with missing source metadata").Save(ctx)
+	require.NoError(t, err)
+
+	order, err := client.PaymentOrder.Create().
+		SetUserID(user.ID).SetUserEmail(user.Email).SetUserName(user.Username).
+		SetAmount(200).SetPayAmount(200).SetFeeRate(0).SetRechargeCode("CUSTOM-LEGACY-SOURCE-MISMATCH-001").SetOutTradeNo("sub2_custom_legacy_source_mismatch_001").
+		SetPaymentType(payment.TypeAlipay).SetPaymentTradeNo("").SetOrderType(payment.OrderTypeSubscription).
+		SetPlanID(plan.ID).SetSubscriptionGroupID(planSource.ID).SetSubscriptionDays(30).SetSubscriptionMultiplier(2).SetSubscriptionSourceGroupID(forgedSource.ID).SetSubscriptionSourcePrice(100).
+		SetStatus(OrderStatusPaid).SetExpiresAt(time.Now().Add(time.Hour)).SetClientIP("127.0.0.1").SetSrcHost("app.example.com").Save(ctx)
+	require.NoError(t, err)
+
+	groupRepo := &subscriptionGroupRepoStub{group: &Group{ID: activeGroup.ID, Name: activeGroup.Name, Status: StatusActive, SubscriptionType: SubscriptionTypeSubscription}}
+	subRepo := &paymentFulfillmentSubscriptionRepo{client: client}
+	subSvc := NewSubscriptionService(groupRepo, subRepo, nil, client, nil)
+	svc := &PaymentService{entClient: client, groupRepo: groupRepo, subscriptionSvc: subSvc, providersLoaded: true}
+
+	err = svc.ExecuteSubscriptionFulfillment(ctx, order.ID)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "source group mismatch")
+	updatedOrder, err := client.PaymentOrder.Get(ctx, order.ID)
+	require.NoError(t, err)
+	require.Equal(t, OrderStatusFailed, updatedOrder.Status)
+	updatedGroup, err := client.Group.Get(ctx, activeGroup.ID)
+	require.NoError(t, err)
+	require.Nil(t, updatedGroup.CustomSourceGroupID, "failed fulfillment must not rewrite legacy custom group metadata")
+	require.Equal(t, 2, *updatedGroup.CustomMultiplier)
+	require.InDelta(t, 20, *updatedGroup.DailyLimitUsd, 1e-9)
+	updatedSub, err := client.UserSubscription.Get(ctx, activeSub.ID)
+	require.NoError(t, err)
+	require.Equal(t, activeSub.ExpiresAt, updatedSub.ExpiresAt, "failed fulfillment must not extend the active legacy custom subscription")
+}
+
 func TestExecuteSubscriptionFulfillmentRejectsCustomSourceGroupTypeMismatch(t *testing.T) {
 	ctx := context.Background()
 	client := newPaymentOrderLifecycleTestClient(t)
@@ -1175,6 +1455,106 @@ func TestPrepareRefundUsesCustomGroupSubscriptionForDeduction(t *testing.T) {
 	require.Equal(t, payment.DeductionTypeSubscription, plan.DeductionType)
 	require.Equal(t, sub.ID, plan.SubscriptionID)
 	require.Equal(t, 30, plan.SubDaysToDeduct)
+}
+
+func TestPrepareRefundRequiresForceWhenVirtualCustomEntitlementExpired(t *testing.T) {
+	ctx := context.Background()
+	client := newPaymentOrderLifecycleTestClient(t)
+
+	user, err := client.User.Create().SetEmail("custom-refund-expired-overlay@example.com").SetPasswordHash("hash").SetUsername("refund-expired-overlay").Save(ctx)
+	require.NoError(t, err)
+	sourceGroup, err := client.Group.Create().SetName("refund-expired-overlay-source").SetStatus(StatusActive).SetPlatform(PlatformOpenAI).SetSubscriptionType(SubscriptionTypeSubscription).Save(ctx)
+	require.NoError(t, err)
+	plan, err := client.SubscriptionPlan.Create().SetName("Refund Expired Overlay").SetDescription("custom").SetGroupID(sourceGroup.ID).SetPrice(100).SetValidityDays(30).SetValidityUnit("days").SetForSale(true).SetCustomMultiplierEnabled(true).SetCustomMultiplierMin(1).SetCustomMultiplierMax(5).Save(ctx)
+	require.NoError(t, err)
+	customExpiredAt := time.Now().AddDate(0, 0, -1)
+	baseExpiresAt := time.Now().AddDate(0, 0, 365)
+	sub, err := client.UserSubscription.Create().
+		SetUserID(user.ID).SetGroupID(sourceGroup.ID).SetStatus(SubscriptionStatusActive).
+		SetStartsAt(time.Now().AddDate(0, 0, -10)).SetExpiresAt(baseExpiresAt).SetNotes("expired virtual custom over long base").
+		SetCustomMultiplier(3).SetCustomSourcePlanID(plan.ID).SetCustomSourceGroupID(sourceGroup.ID).SetCustomExpiresAt(customExpiredAt).
+		Save(ctx)
+	require.NoError(t, err)
+	inst, err := client.PaymentProviderInstance.Create().SetProviderKey(payment.TypeAlipay).SetName("refund-expired-overlay-provider").SetConfig("{}").SetSupportedTypes("alipay").SetEnabled(true).SetRefundEnabled(true).Save(ctx)
+	require.NoError(t, err)
+	instID := strconv.FormatInt(inst.ID, 10)
+	order, err := client.PaymentOrder.Create().
+		SetUserID(user.ID).SetUserEmail(user.Email).SetUserName(user.Username).SetAmount(300).SetPayAmount(300).SetFeeRate(0).
+		SetRechargeCode("CUSTOM-REFUND-EXPIRED-OVERLAY-001").SetOutTradeNo("sub2_custom_refund_expired_overlay_001").SetPaymentType(payment.TypeAlipay).SetPaymentTradeNo("trade-custom-refund-expired-overlay").
+		SetOrderType(payment.OrderTypeSubscription).SetStatus(OrderStatusCompleted).SetExpiresAt(time.Now().Add(time.Hour)).SetPaidAt(time.Now()).SetCompletedAt(time.Now()).
+		SetPlanID(plan.ID).SetSubscriptionGroupID(sourceGroup.ID).SetSubscriptionDays(30).SetSubscriptionMultiplier(3).SetSubscriptionSourceGroupID(sourceGroup.ID).SetSubscriptionSourcePrice(100).
+		SetProviderInstanceID(instID).SetProviderKey(payment.TypeAlipay).SetProviderSnapshot(map[string]any{"schema_version": 2, "provider_instance_id": instID, "provider_key": payment.TypeAlipay}).
+		SetClientIP("127.0.0.1").SetSrcHost("app.example.com").Save(ctx)
+	require.NoError(t, err)
+
+	groupRepo := &subscriptionGroupRepoStub{group: &Group{ID: sourceGroup.ID, Name: sourceGroup.Name, Status: StatusActive, SubscriptionType: SubscriptionTypeSubscription}}
+	subSvc := NewSubscriptionService(groupRepo, &paymentFulfillmentSubscriptionRepo{client: client}, nil, client, nil)
+	svc := &PaymentService{entClient: client, subscriptionSvc: subSvc}
+
+	planResult, result, err := svc.PrepareRefund(ctx, order.ID, 0, "", false, true)
+	require.NoError(t, err)
+	require.Nil(t, planResult)
+	require.NotNil(t, result)
+	require.True(t, result.RequireForce)
+	require.Contains(t, result.Warning, "custom subscription entitlement already expired")
+
+	forcedPlan, forcedResult, err := svc.PrepareRefund(ctx, order.ID, 0, "", true, true)
+	require.NoError(t, err)
+	require.Nil(t, forcedResult)
+	require.NotNil(t, forcedPlan)
+	require.Equal(t, payment.DeductionTypeSubscription, forcedPlan.DeductionType)
+	require.Equal(t, sub.ID, forcedPlan.SubscriptionID)
+	require.Zero(t, forcedPlan.SubDaysToDeduct, "force refund for an already-expired custom overlay must not deduct the remaining base subscription")
+
+	unchangedSub, err := client.UserSubscription.Get(ctx, sub.ID)
+	require.NoError(t, err)
+	require.Equal(t, sub.ExpiresAt, unchangedSub.ExpiresAt)
+	require.Equal(t, sub.CustomExpiresAt, unchangedSub.CustomExpiresAt)
+}
+
+func TestPrepareRefundPlainSubscriptionDeductsBaseEvenWithExpiredVirtualCustomMetadata(t *testing.T) {
+	ctx := context.Background()
+	client := newPaymentOrderLifecycleTestClient(t)
+
+	user, err := client.User.Create().SetEmail("plain-refund-expired-custom@example.com").SetPasswordHash("hash").SetUsername("plain-refund-expired-custom").Save(ctx)
+	require.NoError(t, err)
+	sourceGroup, err := client.Group.Create().SetName("plain-refund-source").SetStatus(StatusActive).SetPlatform(PlatformOpenAI).SetSubscriptionType(SubscriptionTypeSubscription).Save(ctx)
+	require.NoError(t, err)
+	plainPlan, err := client.SubscriptionPlan.Create().SetName("Plain Refund Plan").SetDescription("plain").SetGroupID(sourceGroup.ID).SetPrice(100).SetValidityDays(30).SetValidityUnit("days").SetForSale(true).SetCustomMultiplierEnabled(false).SetCustomMultiplierMin(1).SetCustomMultiplierMax(1).Save(ctx)
+	require.NoError(t, err)
+	customPlan, err := client.SubscriptionPlan.Create().SetName("Historical Custom Plan").SetDescription("custom").SetGroupID(sourceGroup.ID).SetPrice(100).SetValidityDays(30).SetValidityUnit("days").SetForSale(true).SetCustomMultiplierEnabled(true).SetCustomMultiplierMin(1).SetCustomMultiplierMax(5).Save(ctx)
+	require.NoError(t, err)
+	customExpiredAt := time.Now().AddDate(0, 0, -1)
+	baseExpiresAt := time.Now().AddDate(0, 0, 365)
+	sub, err := client.UserSubscription.Create().
+		SetUserID(user.ID).SetGroupID(sourceGroup.ID).SetStatus(SubscriptionStatusActive).
+		SetStartsAt(time.Now().AddDate(0, 0, -10)).SetExpiresAt(baseExpiresAt).SetNotes("plain refund over expired custom metadata").
+		SetCustomMultiplier(3).SetCustomSourcePlanID(customPlan.ID).SetCustomSourceGroupID(sourceGroup.ID).SetCustomExpiresAt(customExpiredAt).
+		Save(ctx)
+	require.NoError(t, err)
+	inst, err := client.PaymentProviderInstance.Create().SetProviderKey(payment.TypeAlipay).SetName("plain-refund-provider").SetConfig("{}").SetSupportedTypes("alipay").SetEnabled(true).SetRefundEnabled(true).Save(ctx)
+	require.NoError(t, err)
+	instID := strconv.FormatInt(inst.ID, 10)
+	order, err := client.PaymentOrder.Create().
+		SetUserID(user.ID).SetUserEmail(user.Email).SetUserName(user.Username).SetAmount(100).SetPayAmount(100).SetFeeRate(0).
+		SetRechargeCode("PLAIN-REFUND-EXPIRED-CUSTOM-001").SetOutTradeNo("sub2_plain_refund_expired_custom_001").SetPaymentType(payment.TypeAlipay).SetPaymentTradeNo("trade-plain-refund-expired-custom").
+		SetOrderType(payment.OrderTypeSubscription).SetStatus(OrderStatusCompleted).SetExpiresAt(time.Now().Add(time.Hour)).SetPaidAt(time.Now()).SetCompletedAt(time.Now()).
+		SetPlanID(plainPlan.ID).SetSubscriptionGroupID(sourceGroup.ID).SetSubscriptionDays(30).SetSubscriptionMultiplier(1).SetSubscriptionSourceGroupID(sourceGroup.ID).SetSubscriptionSourcePrice(100).
+		SetProviderInstanceID(instID).SetProviderKey(payment.TypeAlipay).SetProviderSnapshot(map[string]any{"schema_version": 2, "provider_instance_id": instID, "provider_key": payment.TypeAlipay}).
+		SetClientIP("127.0.0.1").SetSrcHost("app.example.com").Save(ctx)
+	require.NoError(t, err)
+
+	groupRepo := &subscriptionGroupRepoStub{group: &Group{ID: sourceGroup.ID, Name: sourceGroup.Name, Status: StatusActive, SubscriptionType: SubscriptionTypeSubscription}}
+	subSvc := NewSubscriptionService(groupRepo, &paymentFulfillmentSubscriptionRepo{client: client}, nil, client, nil)
+	svc := &PaymentService{entClient: client, subscriptionSvc: subSvc}
+
+	planResult, result, err := svc.PrepareRefund(ctx, order.ID, 0, "", false, true)
+	require.NoError(t, err)
+	require.Nil(t, result)
+	require.NotNil(t, planResult)
+	require.Equal(t, payment.DeductionTypeSubscription, planResult.DeductionType)
+	require.Equal(t, sub.ID, planResult.SubscriptionID)
+	require.Equal(t, 30, planResult.SubDaysToDeduct, "plain subscription refunds must still deduct base days")
 }
 
 func TestAdminCreateCustomSubscriptionGroupMetadataRejected(t *testing.T) {

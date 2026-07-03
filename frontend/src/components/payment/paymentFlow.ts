@@ -141,7 +141,7 @@ export function buildCreateOrderPayload(input: BuildCreateOrderPayloadInput): Cr
   if (input.cafeCouponCode) {
     payload.cafe_coupon_code = input.cafeCouponCode
   }
-  if (input.multiplier && input.multiplier > 1) {
+  if (input.multiplier && input.multiplier >= 1) {
     payload.multiplier = input.multiplier
   }
   if (normalizedOrigin) {

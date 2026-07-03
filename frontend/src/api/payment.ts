@@ -13,6 +13,8 @@ import type {
   CreateOrderRequest,
   CreateOrderResult,
   PaymentOrder,
+  CafeCouponInfoRequest,
+  CafeCouponInfoResponse,
   CafeCouponPreviewRequest,
   CafeCouponPreviewResponse,
   CafeCouponClaimResponse,
@@ -59,6 +61,11 @@ export const paymentAPI = {
   /** Get current café coupon claim status for the current user */
   getCafeCouponStatus() {
     return apiClient.get<CafeCouponStatusResponse>('/payment/cafe-coupons/status')
+  },
+
+  /** Validate a Cafe coupon and fetch display metadata. Read-only; does not consume the coupon. */
+  getCafeCouponInfo(data: CafeCouponInfoRequest) {
+    return apiClient.post<CafeCouponInfoResponse>('/payment/cafe-coupons/info', data)
   },
 
   /** Preview a Cafe coupon before creating an order. Read-only; does not consume the coupon. */

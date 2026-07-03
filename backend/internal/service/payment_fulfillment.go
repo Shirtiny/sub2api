@@ -384,7 +384,11 @@ func (s *PaymentService) sendSubscriptionPurchaseSuccessNotification(ctx context
 				variables["subscription_group"] = group.Name
 			}
 		}
-		if hasCustomSubscriptionPaymentOrderFields(o) && o.PlanID != nil && o.SubscriptionMultiplier != nil {
+		customOrder := false
+		if detected, err := s.isCustomSubscriptionPaymentOrder(ctx, o); err == nil {
+			customOrder = detected
+		}
+		if customOrder && o.PlanID != nil && o.SubscriptionMultiplier != nil {
 			if plan, err := s.entClient.SubscriptionPlan.Get(ctx, *o.PlanID); err == nil && plan != nil {
 				variables["subscription_group"] = customSubscriptionGroupName(plan.Name, o.UserID, *o.SubscriptionMultiplier)
 			}
@@ -392,7 +396,7 @@ func (s *PaymentService) sendSubscriptionPurchaseSuccessNotification(ctx context
 		if s.subscriptionSvc != nil {
 			if sub, err := s.subscriptionSvc.GetActiveSubscription(ctx, o.UserID, *o.SubscriptionGroupID); err == nil && sub != nil {
 				expiresAt := sub.ExpiresAt
-				if hasCustomSubscriptionPaymentOrderFields(o) && sub.HasActiveVirtualCustomEntitlementAt(time.Now()) && sub.CustomExpiresAt != nil {
+				if customOrder && sub.HasActiveVirtualCustomEntitlementAt(time.Now()) && sub.CustomExpiresAt != nil {
 					expiresAt = *sub.CustomExpiresAt
 				}
 				variables["expiry_time"] = expiresAt.Format("2006-01-02 15:04")
