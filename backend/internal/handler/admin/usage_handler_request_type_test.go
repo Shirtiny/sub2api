@@ -109,7 +109,7 @@ func TestAdminUsageStatsRequestTypePriority(t *testing.T) {
 	repo := &adminUsageRepoCapture{}
 	router := newAdminUsageRequestTypeTestRouter(repo)
 
-	req := httptest.NewRequest(http.MethodGet, "/admin/usage/stats?request_type=stream&stream=bad", nil)
+	req := httptest.NewRequest(http.MethodGet, "/admin/usage/stats?request_type=stream&stream=bad&nocache=true", nil)
 	rec := httptest.NewRecorder()
 	router.ServeHTTP(rec, req)
 
