@@ -14,12 +14,21 @@ import (
 func resetViperWithJWTSecret(t *testing.T) {
 	t.Helper()
 	viper.Reset()
+	isolateDefaultConfigFile(t)
 	t.Setenv("JWT_SECRET", strings.Repeat("x", 32))
 	t.Setenv("SECURITY_API_KEY_HASH_SECRET", strings.Repeat("k", 32))
 }
 
+func isolateDefaultConfigFile(t *testing.T) {
+	t.Helper()
+	dir := t.TempDir()
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "config.yaml"), []byte("{}\n"), 0o644))
+	t.Setenv("DATA_DIR", dir)
+}
+
 func TestLoadForBootstrapAllowsMissingRuntimeSecrets(t *testing.T) {
 	viper.Reset()
+	isolateDefaultConfigFile(t)
 	t.Setenv("JWT_SECRET", "")
 	t.Setenv("SECURITY_API_KEY_HASH_SECRET", "")
 
@@ -37,6 +46,7 @@ func TestLoadForBootstrapAllowsMissingRuntimeSecrets(t *testing.T) {
 
 func TestLoadForBootstrapAllowsAPIKeyHashSecretPlaceholder(t *testing.T) {
 	viper.Reset()
+	isolateDefaultConfigFile(t)
 	placeholder := "change-me-generate-with-openssl-rand-hex-32"
 	t.Setenv("JWT_SECRET", strings.Repeat("x", 32))
 	t.Setenv("SECURITY_API_KEY_HASH_SECRET", placeholder)
