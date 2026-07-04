@@ -354,7 +354,7 @@ import { useAuthStore } from '@/stores/auth'
 import { usePaymentStore } from '@/stores/payment'
 import { useSubscriptionStore } from '@/stores/subscriptions'
 import { useAppStore } from '@/stores'
-import { paymentAPI } from '@/api/payment'
+import { createPaymentOrderIdempotencyKey, paymentAPI } from '@/api/payment'
 import { extractApiErrorMessage, extractI18nErrorMessage } from '@/utils/apiError'
 import { isMobileDevice } from '@/utils/device'
 import type { SubscriptionPlan, CheckoutInfoResponse, CreateOrderResult, OrderType, CafeCouponSummary } from '@/types/payment'
@@ -406,6 +406,7 @@ function getDaysRemaining(expiresAt: string): number {
 
 const loading = ref(true)
 const submitting = ref(false)
+const createOrderIdempotencyKey = ref('')
 const errorMessage = ref('')
 const errorHintMessage = ref('')
 const activeTab = ref<'recharge' | 'subscription'>('subscription')
@@ -513,6 +514,17 @@ async function invokeWechatJsapiPayment(payload: Record<string, unknown>): Promi
 
 const paymentState = ref<PaymentRecoverySnapshot>(emptyPaymentState())
 
+function nextCreateOrderIdempotencyKey(): string {
+  if (!createOrderIdempotencyKey.value) {
+    createOrderIdempotencyKey.value = createPaymentOrderIdempotencyKey()
+  }
+  return createOrderIdempotencyKey.value
+}
+
+function resetCreateOrderIdempotencyKey() {
+  createOrderIdempotencyKey.value = ''
+}
+
 function persistRecoverySnapshot(snapshot: PaymentRecoverySnapshot) {
   if (typeof window === 'undefined' || !snapshot.orderId) return
   writePaymentRecoverySnapshot(window.localStorage, snapshot, PAYMENT_RECOVERY_STORAGE_KEY)
@@ -526,6 +538,7 @@ function removeRecoverySnapshot() {
 function resetPayment() {
   paymentPhase.value = 'select'
   paymentState.value = emptyPaymentState()
+  resetCreateOrderIdempotencyKey()
   removeRecoverySnapshot()
 }
 
@@ -932,6 +945,7 @@ function shouldPreviewCafeCouponForCurrentContext(): boolean {
 }
 
 watch(normalizedCafeCouponCode, () => {
+  resetCreateOrderIdempotencyKey()
   resetCafeCouponInfoState()
   loadCafeCouponInfoForPlanCards().catch(() => {})
 })
@@ -1128,6 +1142,7 @@ function scheduleCafeCouponAutoPreview() {
 }
 
 watch([currentOrderAmount, currentOrderType, currentPlanId, selectedMethod, effectiveSelectedMultiplier], () => {
+  resetCreateOrderIdempotencyKey()
   if (!normalizedCafeCouponCode.value) return
   resetCafeCouponState()
   if (shouldPreviewCafeCouponForCurrentContext()) {
@@ -1297,7 +1312,8 @@ async function createOrder(orderAmount: number, orderType: OrderType, planId?: n
       payload.wechat_resume_token = options.wechatResumeToken
     }
 
-    const result = await paymentStore.createOrder(payload) as CreateOrderResult & { resume_token?: string }
+    const idempotencyKey = nextCreateOrderIdempotencyKey()
+    const result = await paymentStore.createOrder(payload, idempotencyKey) as CreateOrderResult & { resume_token?: string }
     const openWindow = (url: string) => {
       const win = window.open(url, 'paymentPopup', getPaymentPopupFeatures())
       if (!win || win.closed) {

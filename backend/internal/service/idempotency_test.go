@@ -226,6 +226,48 @@ func TestIdempotencyCoordinator_ReplaySucceededResult(t *testing.T) {
 	require.Equal(t, uint64(1), metrics.ReplayTotal)
 }
 
+func TestIdempotencyCoordinator_RawStoredResponsePreservesClientSecret(t *testing.T) {
+	resetIdempotencyMetricsForTest()
+	repo := newInMemoryIdempotencyRepo()
+	coordinator := NewIdempotencyCoordinator(repo, DefaultIdempotencyConfig())
+
+	opts := IdempotencyExecuteOptions{
+		Scope:            "payment.orders.create",
+		Method:           "POST",
+		Route:            "/payment/orders",
+		ActorScope:       "user:1",
+		RequireKey:       true,
+		IdempotencyKey:   "payment-key-1",
+		Payload:          map[string]any{"amount": 100, "payment_type": "stripe"},
+		StoreRawResponse: true,
+	}
+
+	execCount := 0
+	first, err := coordinator.Execute(context.Background(), opts, func(ctx context.Context) (any, error) {
+		execCount++
+		return map[string]any{
+			"order_id":      123,
+			"client_secret": "pi_secret_for_client_retry",
+			"pay_url":       "https://pay.example/checkout?client_secret=visible-to-client",
+		}, nil
+	})
+	require.NoError(t, err)
+	require.False(t, first.Replayed)
+
+	second, err := coordinator.Execute(context.Background(), opts, func(ctx context.Context) (any, error) {
+		execCount++
+		return nil, errors.New("must not execute")
+	})
+	require.NoError(t, err)
+	require.True(t, second.Replayed)
+	require.Equal(t, 1, execCount)
+
+	body, ok := second.Data.(map[string]any)
+	require.True(t, ok)
+	require.Equal(t, "pi_secret_for_client_retry", body["client_secret"])
+	require.Equal(t, "https://pay.example/checkout?client_secret=visible-to-client", body["pay_url"])
+}
+
 func TestIdempotencyCoordinator_ReclaimExpiredSucceededRecord(t *testing.T) {
 	resetIdempotencyMetricsForTest()
 	repo := newInMemoryIdempotencyRepo()
@@ -825,7 +867,7 @@ func TestIdempotencyCoordinator_HelperBranches(t *testing.T) {
 	require.Equal(t, infraerrors.Code(base), infraerrors.Code(err))
 
 	// marshalStoredResponse should truncate.
-	body, err := c.marshalStoredResponse(map[string]any{"long": "abcdefghijklmnopqrstuvwxyz"})
+	body, err := c.marshalStoredResponse(map[string]any{"long": "abcdefghijklmnopqrstuvwxyz"}, false)
 	require.NoError(t, err)
 	require.Contains(t, body, "...(truncated)")
 

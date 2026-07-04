@@ -533,7 +533,17 @@ func TestCafeCouponPreviewRejectsInvalidInputsAndOwnership(t *testing.T) {
 
 	_, err = svc.PreviewCafeCoupon(ctx, owner.ID+1, coupon.Code, 100)
 	require.Error(t, err)
-	require.Equal(t, "CAFE_COUPON_FORBIDDEN", infraerrors.Reason(err))
+	require.Equal(t, "CAFE_COUPON_NOT_FOUND", infraerrors.Reason(err))
+
+	_, err = svc.CafeCouponInfo(ctx, owner.ID+1, coupon.Code)
+	require.Error(t, err)
+	require.Equal(t, "CAFE_COUPON_NOT_FOUND", infraerrors.Reason(err))
+
+	_, err = client.CafeCoupon.UpdateOneID(coupon.ID).SetStatus(CafeCouponStatusApplied).Save(ctx)
+	require.NoError(t, err)
+	_, err = svc.PreviewCafeCoupon(ctx, owner.ID+1, coupon.Code, 100)
+	require.Error(t, err)
+	require.Equal(t, "CAFE_COUPON_NOT_FOUND", infraerrors.Reason(err))
 }
 
 func TestCafeCouponPreviewAllowsTransferableCoupon(t *testing.T) {

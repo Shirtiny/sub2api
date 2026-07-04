@@ -165,6 +165,30 @@ func TestCreateOrderStrictJSONRequiresPaymentType(t *testing.T) {
 	require.Contains(t, recorder.Body.String(), "payment_type is required")
 }
 
+func TestCreateOrderUsesUserIdempotency(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	service.SetDefaultIdempotencyCoordinator(service.NewIdempotencyCoordinator(userStoreUnavailableRepoStub{}, service.DefaultIdempotencyConfig()))
+	t.Cleanup(func() { service.SetDefaultIdempotencyCoordinator(nil) })
+
+	h := NewPaymentHandler(nil, nil, nil)
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	ctx.Set(string(middleware2.ContextKeyUser), middleware2.AuthSubject{UserID: 1})
+	ctx.Request = httptest.NewRequest(
+		http.MethodPost,
+		"/api/v1/payment/orders",
+		bytes.NewBufferString(`{"amount":20,"payment_type":"alipay","order_type":"balance"}`),
+	)
+	ctx.Request.Header.Set("Content-Type", "application/json")
+	ctx.Request.Header.Set("Idempotency-Key", "payment-order-test")
+
+	h.CreateOrder(ctx)
+
+	require.Equal(t, http.StatusServiceUnavailable, recorder.Code)
+	require.Contains(t, recorder.Body.String(), "IDEMPOTENCY_STORE_UNAVAILABLE")
+}
+
 func TestVerifyOrderPublicReturnsLegacyOrderState(t *testing.T) {
 	t.Parallel()
 

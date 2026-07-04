@@ -29,6 +29,10 @@ function createIdempotencyKey(prefix: string): string {
   return `${prefix}-${random}`
 }
 
+export function createPaymentOrderIdempotencyKey(): string {
+  return createIdempotencyKey('payment-order')
+}
+
 export const paymentAPI = {
   /** Get payment configuration (enabled types, limits, etc.) */
   getConfig() {
@@ -56,9 +60,9 @@ export const paymentAPI = {
   },
 
   /** Create a new payment order */
-  createOrder(data: CreateOrderRequest) {
+  createOrder(data: CreateOrderRequest, idempotencyKey = createPaymentOrderIdempotencyKey()) {
     return apiClient.post<CreateOrderResult>('/payment/orders', data, {
-      headers: { 'Idempotency-Key': createIdempotencyKey('payment-order') },
+      headers: { 'Idempotency-Key': idempotencyKey },
     })
   },
 

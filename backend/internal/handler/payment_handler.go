@@ -1,11 +1,13 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	dbent "github.com/Wei-Shaw/sub2api/ent"
@@ -21,18 +23,95 @@ import (
 
 // PaymentHandler handles user-facing payment requests.
 type PaymentHandler struct {
-	channelService *service.ChannelService
-	paymentService *service.PaymentService
-	configService  *service.PaymentConfigService
+	channelService          *service.ChannelService
+	paymentService          *service.PaymentService
+	configService           *service.PaymentConfigService
+	cafeCouponLookupLimiter *cafeCouponLookupLimiter
 }
 
 // NewPaymentHandler creates a new PaymentHandler.
 func NewPaymentHandler(paymentService *service.PaymentService, configService *service.PaymentConfigService, channelService *service.ChannelService) *PaymentHandler {
 	return &PaymentHandler{
-		channelService: channelService,
-		paymentService: paymentService,
-		configService:  configService,
+		channelService:          channelService,
+		paymentService:          paymentService,
+		configService:           configService,
+		cafeCouponLookupLimiter: newCafeCouponLookupLimiter(defaultCafeCouponLookupLimit, defaultCafeCouponLookupWindow),
 	}
+}
+
+const (
+	defaultCafeCouponLookupLimit  = 10
+	defaultCafeCouponLookupWindow = time.Minute
+	cafeCouponLookupCleanupAge    = 5 * time.Minute
+	cafeCouponLookupMaxBuckets    = 8192
+)
+
+type cafeCouponLookupBucket struct {
+	windowStart time.Time
+	count       int
+	lastSeen    time.Time
+}
+
+type cafeCouponLookupLimiter struct {
+	mu      sync.Mutex
+	limit   int
+	window  time.Duration
+	buckets map[string]cafeCouponLookupBucket
+}
+
+func newCafeCouponLookupLimiter(limit int, window time.Duration) *cafeCouponLookupLimiter {
+	return &cafeCouponLookupLimiter{limit: limit, window: window, buckets: make(map[string]cafeCouponLookupBucket)}
+}
+
+func (l *cafeCouponLookupLimiter) allow(key string, now time.Time) bool {
+	if l == nil || l.limit <= 0 || l.window <= 0 || strings.TrimSpace(key) == "" {
+		return true
+	}
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	bucket, exists := l.buckets[key]
+	if !exists {
+		l.cleanupLocked(now)
+		if len(l.buckets) >= cafeCouponLookupMaxBuckets {
+			return false
+		}
+	}
+	if bucket.windowStart.IsZero() || now.Sub(bucket.windowStart) >= l.window || now.Before(bucket.windowStart) {
+		l.buckets[key] = cafeCouponLookupBucket{windowStart: now, count: 1, lastSeen: now}
+		return true
+	}
+	bucket.lastSeen = now
+	if bucket.count >= l.limit {
+		l.buckets[key] = bucket
+		return false
+	}
+	bucket.count++
+	l.buckets[key] = bucket
+	return true
+}
+
+func (l *cafeCouponLookupLimiter) cleanupLocked(now time.Time) {
+	if len(l.buckets) < 1024 {
+		return
+	}
+	cutoff := now.Add(-cafeCouponLookupCleanupAge)
+	for key, bucket := range l.buckets {
+		if bucket.lastSeen.Before(cutoff) {
+			delete(l.buckets, key)
+		}
+	}
+}
+
+func (h *PaymentHandler) allowCafeCouponLookup(c *gin.Context, subject middleware2.AuthSubject) bool {
+	if h == nil || h.cafeCouponLookupLimiter == nil {
+		return true
+	}
+	key := fmt.Sprintf("%d:%s", subject.UserID, c.ClientIP())
+	if h.cafeCouponLookupLimiter.allow(key, time.Now()) {
+		return true
+	}
+	response.ErrorFrom(c, infraerrors.TooManyRequests("CAFE_COUPON_LOOKUP_RATE_LIMITED", "too many cafe coupon lookup attempts, please try again later"))
+	return false
 }
 
 // GetPaymentConfig returns the payment system configuration.
@@ -318,6 +397,9 @@ func (h *PaymentHandler) CafeCouponInfo(c *gin.Context) {
 	if !ok {
 		return
 	}
+	if !h.allowCafeCouponLookup(c, subject) {
+		return
+	}
 	var req CafeCouponInfoRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "Invalid request: "+err.Error())
@@ -351,6 +433,9 @@ func (h *PaymentHandler) ApplyCafeCoupon(c *gin.Context) {
 func (h *PaymentHandler) previewCafeCoupon(c *gin.Context) {
 	subject, ok := requireAuth(c)
 	if !ok {
+		return
+	}
+	if !h.allowCafeCouponLookup(c, subject) {
 		return
 	}
 	var req CafeCouponPreviewRequest
@@ -513,7 +598,7 @@ func (h *PaymentHandler) CreateOrder(c *gin.Context) {
 	if req.IsMobile != nil {
 		mobile = *req.IsMobile
 	}
-	result, err := h.paymentService.CreateOrder(c.Request.Context(), service.CreateOrderRequest{
+	svcReq := service.CreateOrderRequest{
 		UserID:          subject.UserID,
 		Amount:          req.Amount,
 		PaymentType:     req.PaymentType,
@@ -530,12 +615,47 @@ func (h *PaymentHandler) CreateOrder(c *gin.Context) {
 		Multiplier:      req.Multiplier,
 		CafeCouponCode:  req.CafeCouponCode,
 		Locale:          c.GetHeader("Accept-Language"),
-	})
-	if err != nil {
-		response.ErrorFrom(c, err)
-		return
 	}
-	response.Success(c, result)
+
+	executeUserIdempotentJSONWithRawStoredResponse(
+		c,
+		"user.payment.orders.create",
+		paymentCreateOrderIdempotencyPayload(svcReq),
+		service.DefaultWriteIdempotencyTTL(),
+		func(ctx context.Context) (any, error) {
+			return h.paymentService.CreateOrder(ctx, svcReq)
+		},
+	)
+}
+
+type paymentCreateOrderIdempotencyRequest struct {
+	Amount          float64 `json:"amount"`
+	PaymentType     string  `json:"payment_type"`
+	OpenID          string  `json:"openid,omitempty"`
+	IsMobile        bool    `json:"is_mobile"`
+	IsWeChatBrowser bool    `json:"is_wechat_browser"`
+	ReturnURL       string  `json:"return_url,omitempty"`
+	PaymentSource   string  `json:"payment_source,omitempty"`
+	OrderType       string  `json:"order_type,omitempty"`
+	PlanID          int64   `json:"plan_id,omitempty"`
+	Multiplier      int     `json:"multiplier,omitempty"`
+	CafeCouponCode  string  `json:"cafe_coupon_code,omitempty"`
+}
+
+func paymentCreateOrderIdempotencyPayload(req service.CreateOrderRequest) paymentCreateOrderIdempotencyRequest {
+	return paymentCreateOrderIdempotencyRequest{
+		Amount:          req.Amount,
+		PaymentType:     req.PaymentType,
+		OpenID:          req.OpenID,
+		IsMobile:        req.IsMobile,
+		IsWeChatBrowser: req.IsWeChatBrowser,
+		ReturnURL:       req.ReturnURL,
+		PaymentSource:   req.PaymentSource,
+		OrderType:       req.OrderType,
+		PlanID:          req.PlanID,
+		Multiplier:      req.Multiplier,
+		CafeCouponCode:  req.CafeCouponCode,
+	}
 }
 
 func applyWeChatPaymentResumeClaims(req *CreateOrderRequest, claims *service.WeChatPaymentResumeClaims, currentUserID int64) error {

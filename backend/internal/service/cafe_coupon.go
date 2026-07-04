@@ -978,6 +978,14 @@ func (s *PaymentService) validateCafeCouponEntityForStatus(ctx context.Context, 
 	if coupon == nil {
 		return CafeCouponLevelConfig{}, infraerrors.NotFound("CAFE_COUPON_NOT_FOUND", "cafe coupon not found")
 	}
+	levelCfg, err := cafeCouponConfigFromCoupon(ctx, s, coupon)
+	if err != nil {
+		return CafeCouponLevelConfig{}, err
+	}
+	// Do not reveal existence/status of another user's non-transferable coupon.
+	if coupon.UserID != userID && !levelCfg.Transferable {
+		return CafeCouponLevelConfig{}, infraerrors.NotFound("CAFE_COUPON_NOT_FOUND", "cafe coupon not found")
+	}
 	if coupon.Status != allowedStatus {
 		return CafeCouponLevelConfig{}, infraerrors.Conflict("CAFE_COUPON_USED", "cafe coupon has already been applied")
 	}
@@ -995,13 +1003,6 @@ func (s *PaymentService) validateCafeCouponEntityForStatus(ctx context.Context, 
 		if CalculateMembershipLevel(user.TotalRecharged) < coupon.MembershipLevel {
 			return CafeCouponLevelConfig{}, infraerrors.Forbidden("CAFE_COUPON_NOT_ELIGIBLE", "membership level no longer satisfies this coupon")
 		}
-	}
-	levelCfg, err := cafeCouponConfigFromCoupon(ctx, s, coupon)
-	if err != nil {
-		return CafeCouponLevelConfig{}, err
-	}
-	if coupon.UserID != userID && !levelCfg.Transferable {
-		return CafeCouponLevelConfig{}, infraerrors.Forbidden("CAFE_COUPON_FORBIDDEN", "cafe coupon does not belong to current user")
 	}
 	return levelCfg, nil
 }
