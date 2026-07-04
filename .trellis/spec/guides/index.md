@@ -23,6 +23,7 @@ These guides help you **ask the right questions before coding**.
 |-------|---------|-------------|
 | [Code Reuse Thinking Guide](./code-reuse-thinking-guide.md) | Identify patterns and reduce duplication | When you notice repeated patterns |
 | [Cross-Layer Thinking Guide](./cross-layer-thinking-guide.md) | Think through data flow across layers | Features spanning multiple layers |
+| [Release and Container Guidelines](./release-container-guidelines.md) | Version tags, image publication, update records, and rollback identity | Release workflow, Docker image, or production update changes |
 
 ---
 
@@ -46,6 +47,16 @@ These guides help you **ask the right questions before coding**.
 - [ ] **You're creating a new utility/helper function** ← Search first!
 
 → Read [Code Reuse Thinking Guide](./code-reuse-thinking-guide.md)
+
+### When to Think About Releases and Containers
+
+- [ ] You are changing GitHub Actions release workflows
+- [ ] You are changing Dockerfiles or image tags
+- [ ] You are preparing a production update
+- [ ] You need rollback identity for a running container
+- [ ] You are adding or reviewing migration-bearing releases
+
+→ Read [Release and Container Guidelines](./release-container-guidelines.md)
 
 ---
 

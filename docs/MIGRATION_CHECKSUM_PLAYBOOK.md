@@ -224,14 +224,8 @@ For `CONCURRENTLY`, use a separate `*_notx.sql` migration and follow the `_notx.
 - [ ] No normal-development manual edit to `schema_migrations` is required.
 - [ ] Startup was tested against a DB with the affected historical checksum when applicable.
 
-## Example: 157 custom subscription incident
+## Example: pre-deployment consolidation
 
-The custom subscription rollout hit a mismatch where an environment had already recorded an earlier checksum for `157_custom_subscription_multiplier.sql`, while the repository file had changed later.
+If a migration series has not been applied in the target environment yet, prefer consolidating review fixes into the first unapplied migration instead of shipping repair-only follow-ups.
 
-Safe remediation pattern used:
-
-1. Kept checksum validation enabled.
-2. Added a narrow compatibility rule for `157_custom_subscription_multiplier.sql` only.
-3. Added tests that compute the embedded migration checksum and verify known historical checksums.
-4. Moved index follow-up work into `158_custom_subscription_multiplier_indexes.sql` with `CREATE INDEX IF NOT EXISTS`.
-5. Verified repository and migration tests, then verified server startup.
+For example, when production has applied migrations only through `156_*.sql`, review fixes for the custom subscription rollout should be folded into `157_custom_subscription_multiplier.sql`, `161_user_subscription_virtual_custom_entitlement.sql`, or `163_retire_orphan_legacy_custom_subscription_groups.sql` as appropriate. Do not add checksum compatibility rules for migrations that have not been recorded in any shared database.

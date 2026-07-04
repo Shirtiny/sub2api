@@ -2,10 +2,10 @@ ALTER TABLE subscription_plans
     ADD COLUMN IF NOT EXISTS custom_multiplier_enabled BOOLEAN NOT NULL DEFAULT FALSE;
 
 ALTER TABLE subscription_plans
-    ADD COLUMN IF NOT EXISTS custom_multiplier_min INT NOT NULL DEFAULT 2;
+    ADD COLUMN IF NOT EXISTS custom_multiplier_min INT NOT NULL DEFAULT 1;
 
 ALTER TABLE subscription_plans
-    ADD COLUMN IF NOT EXISTS custom_multiplier_max INT NOT NULL DEFAULT 2;
+    ADD COLUMN IF NOT EXISTS custom_multiplier_max INT NOT NULL DEFAULT 1;
 
 ALTER TABLE groups
     ADD COLUMN IF NOT EXISTS is_custom_subscription_group BOOLEAN NOT NULL DEFAULT FALSE;
@@ -48,4 +48,4 @@ CREATE INDEX IF NOT EXISTS idx_groups_custom_owner_plan
 
 CREATE INDEX IF NOT EXISTS idx_payment_orders_custom_subscription_pending
     ON payment_orders(user_id, plan_id, status, expires_at)
-    WHERE subscription_multiplier >= 2;
+    WHERE subscription_multiplier >= 1;

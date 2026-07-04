@@ -1,13 +1,10 @@
-name: Release
+name: Legacy GoReleaser Release
 
 on:
-  push:
-    tags:
-      - 'v*'
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag to release (e.g., v1.0.0)'
+        description: 'Legacy manual release tag (prefer Container Image Release by pushing a validated cafecode-v* tag)'
         required: true
         type: string
       simple_release:
@@ -16,8 +13,9 @@ on:
         type: boolean
         default: true
 
-# 环境变量：合并 workflow_dispatch 输入和 repository variable
-# tag push 触发时读取 vars.SIMPLE_RELEASE，workflow_dispatch 时使用输入参数
+# Legacy manual GoReleaser path. It is disabled by default so it cannot bypass
+# the tag-driven container release workflow. Set repository variable
+# ENABLE_LEGACY_GORELEASER=true only for an intentional one-off legacy release.
 env:
   SIMPLE_RELEASE: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.simple_release || vars.SIMPLE_RELEASE || 'true' }}
 
@@ -28,6 +26,7 @@ permissions:
 jobs:
   # Update VERSION file with tag version
   update-version:
+    if: ${{ vars.ENABLE_LEGACY_GORELEASER == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -37,9 +36,12 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             VERSION=${{ github.event.inputs.tag }}
+            VERSION=${VERSION#cafecode-v}
             VERSION=${VERSION#v}
           else
-            VERSION=${GITHUB_REF#refs/tags/v}
+            VERSION=${GITHUB_REF#refs/tags/}
+            VERSION=${VERSION#cafecode-v}
+            VERSION=${VERSION#v}
           fi
           echo "$VERSION" > backend/cmd/server/VERSION
           echo "Updated VERSION file to: $VERSION"
@@ -52,6 +54,7 @@ jobs:
           retention-days: 1
 
   build-frontend:
+    if: ${{ vars.ENABLE_LEGACY_GORELEASER == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -85,6 +88,7 @@ jobs:
           retention-days: 1
 
   release:
+    if: ${{ vars.ENABLE_LEGACY_GORELEASER == 'true' }}
     needs: [update-version, build-frontend]
     runs-on: ubuntu-latest
     steps:
@@ -195,7 +199,8 @@ jobs:
           else
             TAG_NAME=${GITHUB_REF#refs/tags/}
           fi
-          VERSION=${TAG_NAME#v}
+          VERSION=${TAG_NAME#cafecode-v}
+          VERSION=${VERSION#v}
           REPO="${{ github.repository }}"
           GHCR_IMAGE="ghcr.io/${REPO,,}"  # ${,,} converts to lowercase
 
@@ -263,9 +268,12 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             VERSION=${{ github.event.inputs.tag }}
+            VERSION=${VERSION#cafecode-v}
             VERSION=${VERSION#v}
           else
-            VERSION=${GITHUB_REF#refs/tags/v}
+            VERSION=${GITHUB_REF#refs/tags/}
+            VERSION=${VERSION#cafecode-v}
+            VERSION=${VERSION#v}
           fi
 
           CURRENT_VERSION=$(tr -d '\r\n' < backend/cmd/server/VERSION || true)

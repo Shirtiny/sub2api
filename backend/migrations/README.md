@@ -138,7 +138,7 @@ If production is already down, restore service first with the narrowest possible
 
 ## Migration System Details
 
-- **Checksum Algorithm**: SHA256 of the exact migration file content read by the runner; line endings and BOM changes affect the checksum
+- **Checksum Algorithm**: SHA256 of the migration content after surrounding whitespace is trimmed by the runner; line endings and BOM changes inside that content still affect the checksum
 - **Tracking Table**: `schema_migrations` (filename, checksum, applied_at)
 - **Runner**: `internal/repository/migrations_runner.go`
 - **Auto-run**: Migrations run automatically on service startup
