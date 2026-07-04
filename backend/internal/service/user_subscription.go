@@ -99,8 +99,12 @@ func (s *UserSubscription) DisplayCustomSourceGroupID() *int64 {
 }
 
 func (s *UserSubscription) DisplayName(group *Group) string {
-	if s != nil && s.IsVirtualCustomSubscription() && s.CustomDisplayName != "" {
-		return s.CustomDisplayName
+	if s != nil && s.IsVirtualCustomSubscription() {
+		groupName := ""
+		if group != nil {
+			groupName = group.Name
+		}
+		return customSubscriptionGroupName(groupName, s.VirtualCustomMultiplier())
 	}
 	if group != nil {
 		return group.Name

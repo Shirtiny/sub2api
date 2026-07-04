@@ -566,7 +566,7 @@ func TestExecuteSubscriptionFulfillmentCreatesCustomGroupAndCopiesAccountBinding
 	require.Equal(t, 3, *sub.CustomMultiplier)
 	require.Equal(t, plan.ID, *sub.CustomSourcePlanID)
 	require.Equal(t, sourceGroup.ID, *sub.CustomSourceGroupID)
-	require.Equal(t, "[3x]Select Plan#"+strconv.FormatInt(user.ID, 10), *sub.CustomDisplayName)
+	require.Equal(t, "Specially-3x", *sub.CustomDisplayName)
 
 	copied, err := client.AccountGroup.Query().
 		Where(accountgroup.AccountIDEQ(account.ID), accountgroup.GroupIDEQ(sourceGroup.ID)).
@@ -616,7 +616,7 @@ func TestExecuteSubscriptionFulfillmentCreatesOneXCustomGroup(t *testing.T) {
 	require.Equal(t, 1, *sub.CustomMultiplier)
 	require.Equal(t, plan.ID, *sub.CustomSourcePlanID)
 	require.Equal(t, sourceGroup.ID, *sub.CustomSourceGroupID)
-	require.Equal(t, "[1x]One X Plan#"+strconv.FormatInt(user.ID, 10), *sub.CustomDisplayName)
+	require.Equal(t, "one-x-source-1x", *sub.CustomDisplayName)
 
 	updatedOrder, err := client.PaymentOrder.Get(ctx, order.ID)
 	require.NoError(t, err)
@@ -938,7 +938,7 @@ func TestExecuteSubscriptionFulfillmentReusesExpiredCustomGroupAndUpdatesMultipl
 	require.Equal(t, 3, *sub.CustomMultiplier)
 	require.Equal(t, plan.ID, *sub.CustomSourcePlanID)
 	require.Equal(t, sourceGroup.ID, *sub.CustomSourceGroupID)
-	require.Equal(t, "[3x]Expired New#"+strconv.FormatInt(user.ID, 10), *sub.CustomDisplayName)
+	require.Equal(t, "expired-new-source-3x", *sub.CustomDisplayName)
 }
 
 func TestRetireLegacyCustomSubscriptionGroupsKeepsGroupWithAnyActiveSubscription(t *testing.T) {
@@ -1136,11 +1136,12 @@ func TestUniqueCustomSubscriptionGroupNameTruncatesToSchemaLimit(t *testing.T) {
 	require.True(t, strings.HasSuffix(second, "-2"))
 }
 
-func TestCustomSubscriptionGroupNamePreservesMultiplierAndUserSuffix(t *testing.T) {
-	name := customSubscriptionGroupName(strings.Repeat("??", 80), 123456789, 12)
+func TestCustomSubscriptionGroupNameUsesSourceGroupNameAndMultiplierSuffix(t *testing.T) {
+	name := customSubscriptionGroupName(strings.Repeat("??", 80), 12)
 	require.LessOrEqual(t, len([]rune(name)), 100)
-	require.True(t, strings.HasPrefix(name, "[12x]"))
-	require.True(t, strings.HasSuffix(name, "#123456789"))
+	require.True(t, strings.HasSuffix(name, "-12x"))
+	require.False(t, strings.HasPrefix(name, "[12x]"))
+	require.NotContains(t, name, "#")
 }
 
 func TestExecuteSubscriptionFulfillmentReusedCustomGroupSyncsAccountBindings(t *testing.T) {

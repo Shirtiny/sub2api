@@ -205,7 +205,7 @@ func TestCheckBillingEligibility_UsesVirtualCustomMultiplierForSubscriptionLimit
 	multiplier := 4
 	planID := int64(7)
 	sourceGroupID := int64(24)
-	customDisplayName := "[4x]Special#43"
+	customDisplayName := "Special-4x"
 	subscription := &UserSubscription{
 		ID:                  730,
 		UserID:              43,

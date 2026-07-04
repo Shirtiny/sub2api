@@ -477,7 +477,7 @@ func TestAssignOrExtendCustomFromActiveNormalKeepsBaseExpiryAndSetsCustomExpiry(
 		CustomMultiplier:    &multiplier,
 		CustomSourcePlanID:  &planID,
 		CustomSourceGroupID: &sourceGroupID,
-		CustomDisplayName:   "[3x]Plan#3001",
+		CustomDisplayName:   "Plan-3x",
 	})
 	require.NoError(t, err)
 	require.True(t, reused)
@@ -509,7 +509,7 @@ func TestAssignOrExtendActiveVirtualCustomExtendsCustomExpiry(t *testing.T) {
 		CustomSourcePlanID:  &planID,
 		CustomSourceGroupID: &sourceGroupID,
 		CustomExpiresAt:     &customExpiresAt,
-		CustomDisplayName:   "[2x]Plan#3002",
+		CustomDisplayName:   "Plan-2x",
 	})
 	svc := NewSubscriptionService(groupRepo, subRepo, nil, nil, nil)
 
@@ -521,7 +521,7 @@ func TestAssignOrExtendActiveVirtualCustomExtendsCustomExpiry(t *testing.T) {
 		CustomMultiplier:    &multiplier,
 		CustomSourcePlanID:  &planID,
 		CustomSourceGroupID: &sourceGroupID,
-		CustomDisplayName:   "[2x]Plan#3002",
+		CustomDisplayName:   "Plan-2x",
 	})
 	require.NoError(t, err)
 	require.True(t, reused)

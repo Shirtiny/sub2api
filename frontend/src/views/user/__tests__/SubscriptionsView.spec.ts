@@ -73,7 +73,7 @@ describe('SubscriptionsView renewal routing', () => {
     expect(multiplier.text()).toContain('3x')
   })
 
-  it('shows the multiplier badge even when the custom group name already includes it', async () => {
+  it('shows the multiplier badge with the custom group suffix name', async () => {
     getMySubscriptions.mockResolvedValue([
       {
         id: 46,
@@ -86,7 +86,7 @@ describe('SubscriptionsView renewal routing', () => {
         monthly_usage_usd: 0,
         group: {
           id: 100,
-          name: '[3x]Starter#7',
+          name: 'Starter-3x',
           platform: 'openai',
           description: '',
           is_custom_subscription_group: true,
@@ -108,7 +108,7 @@ describe('SubscriptionsView renewal routing', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('Starter')
-    expect(wrapper.text()).not.toContain('[3x]Starter#7')
+    expect(wrapper.text()).toContain('Starter-3x')
     expect(wrapper.find('[data-testid="subscription-custom-multiplier"]').text()).toContain('3x')
   })
 

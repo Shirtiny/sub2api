@@ -388,10 +388,8 @@ func (s *PaymentService) sendSubscriptionPurchaseSuccessNotification(ctx context
 		if detected, err := s.isCustomSubscriptionPaymentOrder(ctx, o); err == nil {
 			customOrder = detected
 		}
-		if customOrder && o.PlanID != nil && o.SubscriptionMultiplier != nil {
-			if plan, err := s.entClient.SubscriptionPlan.Get(ctx, *o.PlanID); err == nil && plan != nil {
-				variables["subscription_group"] = customSubscriptionGroupName(plan.Name, o.UserID, *o.SubscriptionMultiplier)
-			}
+		if customOrder && o.SubscriptionMultiplier != nil {
+			variables["subscription_group"] = customSubscriptionGroupName(variables["subscription_group"], *o.SubscriptionMultiplier)
 		}
 		if s.subscriptionSvc != nil {
 			if sub, err := s.subscriptionSvc.GetActiveSubscription(ctx, o.UserID, *o.SubscriptionGroupID); err == nil && sub != nil {

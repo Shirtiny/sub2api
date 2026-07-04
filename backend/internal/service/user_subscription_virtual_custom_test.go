@@ -23,13 +23,13 @@ func TestEffectiveSubscriptionGroupAppliesActiveVirtualCustomMultiplier(t *testi
 		CustomSourcePlanID:  &planID,
 		CustomSourceGroupID: &sourceGroupID,
 		CustomExpiresAt:     &customExpiresAt,
-		CustomDisplayName:   "[3x]Plan#1",
+		CustomDisplayName:   "ignored-old-display-name",
 	}
 	group := &Group{ID: sourceGroupID, Name: "Plan", DailyLimitUSD: &daily, WeeklyLimitUSD: &weekly, MonthlyLimitUSD: &monthly}
 
 	effective := EffectiveSubscriptionGroup(sub, group)
 	require.NotSame(t, group, effective)
-	require.Equal(t, "[3x]Plan#1", effective.Name)
+	require.Equal(t, "Plan-3x", effective.Name)
 	require.InDelta(t, 30, *effective.DailyLimitUSD, 1e-9)
 	require.InDelta(t, 60, *effective.WeeklyLimitUSD, 1e-9)
 	require.InDelta(t, 90, *effective.MonthlyLimitUSD, 1e-9)
@@ -50,7 +50,7 @@ func TestEffectiveSubscriptionGroupIgnoresExpiredVirtualCustomMultiplier(t *test
 		CustomSourcePlanID:  &planID,
 		CustomSourceGroupID: &sourceGroupID,
 		CustomExpiresAt:     &customExpiresAt,
-		CustomDisplayName:   "[3x]Plan#1",
+		CustomDisplayName:   "ignored-old-display-name",
 	}
 	group := &Group{ID: sourceGroupID, Name: "Plan", DailyLimitUSD: &daily}
 

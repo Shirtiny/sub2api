@@ -101,7 +101,7 @@ func (s *PaymentService) virtualCustomSubscriptionEntitlementForOrder(ctx contex
 		Multiplier:          multiplier,
 		SourcePlanID:        planID,
 		SourceGroupID:       sourceGroupID,
-		DisplayName:         customSubscriptionGroupName(plan.Name, o.UserID, multiplier),
+		DisplayName:         customSubscriptionGroupName(source.Name, multiplier),
 		MigrateFromGroupIDs: migrateFromGroupIDs,
 	}, nil
 }
@@ -216,7 +216,7 @@ func (s *PaymentService) ensureCustomSubscriptionGroupForOrder(ctx context.Conte
 		return 0, fmt.Errorf("find reusable custom subscription group: %w", err)
 	}
 
-	name, err := s.uniqueCustomSubscriptionGroupName(ctx, customSubscriptionGroupName(plan.Name, o.UserID, multiplier))
+	name, err := s.uniqueCustomSubscriptionGroupName(ctx, customSubscriptionGroupName(source.Name, multiplier))
 	if err != nil {
 		return 0, err
 	}
@@ -337,26 +337,28 @@ func validateCustomSubscriptionSourceGroup(source *dbent.Group, sourceGroupID in
 	return nil
 }
 
-func customSubscriptionGroupName(planName string, userID int64, multiplier int) string {
+func customSubscriptionGroupName(groupName string, multiplier int) string {
 	const maxGroupNameRunes = 100
-	planName = strings.TrimSpace(planName)
-	if planName == "" {
-		planName = "Subscription"
+	groupName = strings.TrimSpace(groupName)
+	if groupName == "" {
+		groupName = "Subscription"
 	}
 	if multiplier < 1 {
 		multiplier = 1
 	}
-	prefix := fmt.Sprintf("[%dx]", multiplier)
-	suffix := fmt.Sprintf("#%d", userID)
-	allowedPlanRunes := maxGroupNameRunes - len([]rune(prefix)) - len([]rune(suffix))
-	if allowedPlanRunes < 0 {
-		allowedPlanRunes = 0
+	suffix := fmt.Sprintf("-%dx", multiplier)
+	if strings.HasSuffix(groupName, suffix) {
+		return truncateCustomSubscriptionGroupName(groupName)
 	}
-	nameRunes := []rune(planName)
-	if len(nameRunes) > allowedPlanRunes {
-		nameRunes = nameRunes[:allowedPlanRunes]
+	allowedNameRunes := maxGroupNameRunes - len([]rune(suffix))
+	if allowedNameRunes < 0 {
+		allowedNameRunes = 0
 	}
-	return prefix + string(nameRunes) + suffix
+	nameRunes := []rune(groupName)
+	if len(nameRunes) > allowedNameRunes {
+		nameRunes = nameRunes[:allowedNameRunes]
+	}
+	return string(nameRunes) + suffix
 }
 
 func (s *PaymentService) uniqueCustomSubscriptionGroupName(ctx context.Context, base string) (string, error) {
@@ -550,11 +552,7 @@ func (s *PaymentService) syncCustomGroupLimits(ctx context.Context, customGroupI
 	if customGroup.CustomOwnerUserID == nil || customGroup.CustomSourcePlanID == nil {
 		return fmt.Errorf("custom subscription group %d missing ownership metadata", customGroupID)
 	}
-	plan, err := s.entClient.SubscriptionPlan.Get(ctx, *customGroup.CustomSourcePlanID)
-	if err != nil {
-		return fmt.Errorf("get source subscription plan: %w", err)
-	}
-	name, err := s.uniqueCustomSubscriptionGroupNameExcept(ctx, customSubscriptionGroupName(plan.Name, *customGroup.CustomOwnerUserID, multiplier), customGroupID)
+	name, err := s.uniqueCustomSubscriptionGroupNameExcept(ctx, customSubscriptionGroupName(source.Name, multiplier), customGroupID)
 	if err != nil {
 		return fmt.Errorf("generate custom subscription group name: %w", err)
 	}
