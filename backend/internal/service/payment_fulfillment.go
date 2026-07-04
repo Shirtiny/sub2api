@@ -453,8 +453,7 @@ func (s *PaymentService) doSub(ctx context.Context, o *dbent.PaymentOrder) error
 		return fmt.Errorf("begin transaction: %w", err)
 	}
 	txCtx := dbent.NewTxContext(ctx, tx)
-	txSvc := *s
-	txSvc.entClient = tx.Client()
+	txSvc := s.withEntClient(tx.Client())
 	notifyGroupID := int64(0)
 	notifySourceGroupID := int64(0)
 	var virtualEntitlement *virtualCustomSubscriptionEntitlement
@@ -477,10 +476,7 @@ func (s *PaymentService) doSub(ctx context.Context, o *dbent.PaymentOrder) error
 			return err
 		}
 		if useLegacyGroup {
-			customTxSvc := txSvc
-			customTxSvc.groupRepo = nil               // defer scheduler notification until after commit
-			customTxSvc.channelCacheInvalidator = nil // defer channel cache invalidation until after commit
-			customTxSvc.authCacheInvalidator = nil    // defer auth cache invalidation until after commit
+			customTxSvc := txSvc.withoutPostCommitInvalidators()
 			customGroupID, err := customTxSvc.ensureCustomSubscriptionGroupForOrder(txCtx, o)
 			if err != nil {
 				_ = tx.Rollback()

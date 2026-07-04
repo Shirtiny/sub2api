@@ -8,7 +8,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"strconv"
 	"strings"
 	"time"
 
@@ -1334,36 +1333,6 @@ func (h *AuthHandler) resolveWeChatPaymentOAuthCallbackURL(ctx context.Context, 
 		}
 	}
 	return resolveWeChatOAuthAbsoluteURL(apiBaseURL, c, "/api/v1/auth/oauth/wechat/payment/callback")
-}
-
-func encodeWeChatPaymentOAuthContext(ctx wechatPaymentOAuthContext) (string, error) {
-	data, err := json.Marshal(ctx)
-	if err != nil {
-		return "", err
-	}
-	return string(data), nil
-}
-
-func decodeWeChatPaymentOAuthContext(raw string) (wechatPaymentOAuthContext, error) {
-	raw = strings.TrimSpace(raw)
-	if raw == "" {
-		return wechatPaymentOAuthContext{}, nil
-	}
-	var ctx wechatPaymentOAuthContext
-	if err := json.Unmarshal([]byte(raw), &ctx); err != nil {
-		return wechatPaymentOAuthContext{}, err
-	}
-	return ctx, nil
-}
-
-func parseWeChatPaymentPlanID(raw string) int64 {
-	id, _ := strconv.ParseInt(strings.TrimSpace(raw), 10, 64)
-	return id
-}
-
-func parseWeChatPaymentMultiplier(raw string) int {
-	multiplier, _ := strconv.Atoi(strings.TrimSpace(raw))
-	return multiplier
 }
 
 func wechatPaymentSetCookie(c *gin.Context, name string, value string, maxAgeSec int, secure bool) {

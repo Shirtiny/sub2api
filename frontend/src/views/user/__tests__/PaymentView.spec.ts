@@ -22,6 +22,7 @@ const showInfo = vi.hoisted(() => vi.fn())
 const showWarning = vi.hoisted(() => vi.fn())
 const showSuccess = vi.hoisted(() => vi.fn())
 const getCheckoutInfo = vi.hoisted(() => vi.fn())
+const createPaymentOrderIdempotencyKey = vi.hoisted(() => vi.fn(() => 'payment-order-test-key'))
 const bridgeInvoke = vi.hoisted(() => vi.fn())
 
 function deferred<T>() {
@@ -99,6 +100,7 @@ vi.mock('@/stores', () => ({
 }))
 
 vi.mock('@/api/payment', () => ({
+  createPaymentOrderIdempotencyKey,
   paymentAPI: {
     getCheckoutInfo,
   },
@@ -243,6 +245,7 @@ describe('PaymentView WeChat JSAPI flow', () => {
     showSuccess.mockReset()
     activeSubscriptionsState.splice(0)
     getCheckoutInfo.mockReset().mockResolvedValue(checkoutInfoFixture())
+    createPaymentOrderIdempotencyKey.mockReset().mockReturnValue('payment-order-test-key')
     bridgeInvoke.mockReset()
     window.localStorage.clear()
     ;(window as Window & { WeixinJSBridge?: { invoke: typeof bridgeInvoke } }).WeixinJSBridge = {
@@ -486,7 +489,7 @@ describe('PaymentView WeChat JSAPI flow', () => {
 
     expect(createOrder).toHaveBeenCalledWith(expect.objectContaining({
       wechat_resume_token: 'resume-token-123',
-    }))
+    }), 'payment-order-test-key')
     expect(window.localStorage.getItem(PAYMENT_RECOVERY_STORAGE_KEY)).toBeNull()
   })
 
@@ -529,7 +532,7 @@ describe('PaymentView WeChat JSAPI flow', () => {
       plan_id: 7,
       multiplier: 2,
       wechat_resume_token: 'resume-subscription-7',
-    }))
+    }), 'payment-order-test-key')
     expect(locationState.href).toContain('/api/v1/auth/oauth/wechat/payment/start?')
     const parsedAuthorizeUrl = new URL(locationState.href, 'http://localhost')
     expect(parsedAuthorizeUrl.searchParams.get('context_token')).toBe('signed-context-token')
@@ -585,7 +588,7 @@ describe('PaymentView WeChat JSAPI flow', () => {
       plan_id: 7,
       wechat_resume_token: 'resume-coupon-7',
       cafe_coupon_code: 'CAFE-KEEP123',
-    }))
+    }), 'payment-order-test-key')
     expect(previewCafeCoupon).not.toHaveBeenCalled()
   })
 
@@ -995,7 +998,7 @@ describe('PaymentView WeChat JSAPI flow', () => {
       payment_type: 'wxpay',
       is_mobile: true,
       wechat_resume_token: 'resume-token-h5',
-    }))
+    }), 'payment-order-test-key')
     expect(createOrder).toHaveBeenNthCalledWith(2, expect.objectContaining({
       payment_type: 'wxpay',
       is_mobile: false,

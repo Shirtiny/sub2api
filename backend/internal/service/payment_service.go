@@ -223,6 +223,50 @@ func (s *PaymentService) SetChannelCacheInvalidator(invalidator channelCacheInva
 	s.channelCacheInvalidator = invalidator
 }
 
+func (s *PaymentService) withEntClient(entClient *dbent.Client) *PaymentService {
+	if s == nil {
+		return nil
+	}
+	return &PaymentService{
+		providersLoaded:          s.providersLoaded,
+		entClient:                entClient,
+		registry:                 s.registry,
+		loadBalancer:             s.loadBalancer,
+		redeemService:            s.redeemService,
+		subscriptionSvc:          s.subscriptionSvc,
+		configService:            s.configService,
+		userRepo:                 s.userRepo,
+		groupRepo:                s.groupRepo,
+		authCacheInvalidator:     s.authCacheInvalidator,
+		channelCacheInvalidator:  s.channelCacheInvalidator,
+		resumeService:            s.resumeService,
+		affiliateService:         s.affiliateService,
+		notificationEmailService: s.notificationEmailService,
+	}
+}
+
+func (s *PaymentService) withoutPostCommitInvalidators() *PaymentService {
+	if s == nil {
+		return nil
+	}
+	return &PaymentService{
+		providersLoaded:          s.providersLoaded,
+		entClient:                s.entClient,
+		registry:                 s.registry,
+		loadBalancer:             s.loadBalancer,
+		redeemService:            s.redeemService,
+		subscriptionSvc:          s.subscriptionSvc,
+		configService:            s.configService,
+		userRepo:                 s.userRepo,
+		groupRepo:                nil,
+		authCacheInvalidator:     nil,
+		channelCacheInvalidator:  nil,
+		resumeService:            s.resumeService,
+		affiliateService:         s.affiliateService,
+		notificationEmailService: s.notificationEmailService,
+	}
+}
+
 // --- Provider Registry ---
 
 // EnsureProviders lazily initializes the provider registry on first call.

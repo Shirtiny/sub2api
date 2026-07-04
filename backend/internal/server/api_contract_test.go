@@ -347,6 +347,7 @@ func TestAPIContracts(t *testing.T) {
 						"platform": "anthropic",
 						"rate_multiplier": 1.5,
 						"is_exclusive": false,
+						"is_custom_subscription_group": false,
 						"status": "active",
 						"subscription_type": "standard",
 						"daily_limit_usd": null,

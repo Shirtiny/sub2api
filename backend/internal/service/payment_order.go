@@ -404,8 +404,7 @@ func (s *PaymentService) createOrderInTx(ctx context.Context, req CreateOrderReq
 		return nil, err
 	}
 	if plan != nil {
-		txSvc := *s
-		txSvc.entClient = tx.Client()
+		txSvc := s.withEntClient(tx.Client())
 		resolvedMultiplier, err := txSvc.resolveSubscriptionOrderMultiplier(txCtx, req.UserID, plan, req.Multiplier)
 		if err != nil {
 			return nil, err
