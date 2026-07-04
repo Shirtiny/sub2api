@@ -1005,7 +1005,7 @@ func TestExecuteSubscriptionFulfillmentRejectsActiveCustomGroupMultiplierMismatc
 	require.Equal(t, 2, *updatedGroup.CustomMultiplier)
 	updatedSub, err := client.UserSubscription.Get(ctx, activeSub.ID)
 	require.NoError(t, err)
-	require.Equal(t, activeSub.ExpiresAt, updatedSub.ExpiresAt)
+	require.True(t, activeSub.ExpiresAt.Equal(updatedSub.ExpiresAt), "expires_at changed: before=%s after=%s", activeSub.ExpiresAt, updatedSub.ExpiresAt)
 }
 
 func TestCreateOrderRejectsSecondPendingCustomSubscriptionForSamePlan(t *testing.T) {
@@ -1298,7 +1298,7 @@ func TestExecuteSubscriptionFulfillmentRejectsReusedCustomGroupWhenSourceInactiv
 	require.Equal(t, OrderStatusFailed, updatedOrder.Status)
 	updatedSub, err := client.UserSubscription.Get(ctx, activeSub.ID)
 	require.NoError(t, err)
-	require.Equal(t, activeSub.ExpiresAt, updatedSub.ExpiresAt, "failed fulfillment must not extend the subscription")
+	require.True(t, activeSub.ExpiresAt.Equal(updatedSub.ExpiresAt), "failed fulfillment must not extend the subscription: before=%s after=%s", activeSub.ExpiresAt, updatedSub.ExpiresAt)
 }
 
 func TestExecuteSubscriptionFulfillmentRejectsVirtualCustomSourceGroupMismatch(t *testing.T) {
@@ -1383,7 +1383,7 @@ func TestExecuteSubscriptionFulfillmentRejectsLegacyCustomSourceGroupMismatchBef
 	require.InDelta(t, 20, *updatedGroup.DailyLimitUsd, 1e-9)
 	updatedSub, err := client.UserSubscription.Get(ctx, activeSub.ID)
 	require.NoError(t, err)
-	require.Equal(t, activeSub.ExpiresAt, updatedSub.ExpiresAt, "failed fulfillment must not extend the active legacy custom subscription")
+	require.True(t, activeSub.ExpiresAt.Equal(updatedSub.ExpiresAt), "failed fulfillment must not extend the active legacy custom subscription: before=%s after=%s", activeSub.ExpiresAt, updatedSub.ExpiresAt)
 }
 
 func TestExecuteSubscriptionFulfillmentRejectsCustomSourceGroupTypeMismatch(t *testing.T) {
@@ -1539,8 +1539,10 @@ func TestPrepareRefundRequiresForceWhenVirtualCustomEntitlementExpired(t *testin
 
 	unchangedSub, err := client.UserSubscription.Get(ctx, sub.ID)
 	require.NoError(t, err)
-	require.Equal(t, sub.ExpiresAt, unchangedSub.ExpiresAt)
-	require.Equal(t, sub.CustomExpiresAt, unchangedSub.CustomExpiresAt)
+	require.True(t, sub.ExpiresAt.Equal(unchangedSub.ExpiresAt), "expires_at changed: before=%s after=%s", sub.ExpiresAt, unchangedSub.ExpiresAt)
+	require.NotNil(t, sub.CustomExpiresAt)
+	require.NotNil(t, unchangedSub.CustomExpiresAt)
+	require.True(t, sub.CustomExpiresAt.Equal(*unchangedSub.CustomExpiresAt), "custom_expires_at changed: before=%s after=%s", *sub.CustomExpiresAt, *unchangedSub.CustomExpiresAt)
 }
 
 func TestPrepareRefundPlainSubscriptionDeductsBaseEvenWithExpiredVirtualCustomMetadata(t *testing.T) {
