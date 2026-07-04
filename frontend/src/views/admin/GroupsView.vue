@@ -3164,7 +3164,7 @@ const columns = computed<Column[]>(() => [
 const statusOptions = computed(() => [
   { value: "", label: t("admin.groups.allStatus") },
   { value: "active", label: t("admin.accounts.status.active") },
-  { value: "inactive", label: t("admin.accounts.status.inactive") },
+  { value: "disabled", label: t("admin.accounts.status.disabled") },
 ]);
 
 const exclusiveOptions = computed(() => [
@@ -3190,7 +3190,7 @@ const platformFilterOptions = computed(() => [
 
 const editStatusOptions = computed(() => [
   { value: "active", label: t("admin.accounts.status.active") },
-  { value: "inactive", label: t("admin.accounts.status.inactive") },
+  { value: "disabled", label: t("admin.accounts.status.disabled") },
 ]);
 
 const subscriptionTypeOptions = computed(() => [
@@ -3699,7 +3699,7 @@ const editForm = reactive({
   platform: "anthropic" as GroupPlatform,
   rate_multiplier: 1.0,
   is_exclusive: false,
-  status: "active" as "active" | "inactive",
+  status: "active" as "active" | "disabled",
   subscription_type: "standard" as SubscriptionType,
   daily_limit_usd: null as number | null,
   weekly_limit_usd: null as number | null,

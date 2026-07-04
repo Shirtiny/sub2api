@@ -531,7 +531,9 @@ func (s *PaymentService) doSub(ctx context.Context, o *dbent.PaymentOrder) error
 			s.migrateCustomSubscriptionAPIKeys(ctx, o.UserID, notifySourceGroupID, notifyGroupID)
 		}
 		if virtualEntitlement != nil {
-			s.migrateLegacyCustomSubscriptionAPIKeysToSource(ctx, o.UserID, virtualEntitlement.SourceGroupID, migrateLegacyCustomGroupIDs)
+			if s.migrateLegacyCustomSubscriptionAPIKeysToSource(ctx, o.UserID, virtualEntitlement.SourceGroupID, migrateLegacyCustomGroupIDs) {
+				s.retireLegacyCustomSubscriptionGroups(ctx, o.UserID, virtualEntitlement.SourceGroupID, migrateLegacyCustomGroupIDs)
+			}
 		}
 		if err := s.applyAffiliateRebateForOrder(ctx, o); err != nil {
 			return err
@@ -586,7 +588,9 @@ func (s *PaymentService) doSub(ctx context.Context, o *dbent.PaymentOrder) error
 		s.migrateCustomSubscriptionAPIKeys(ctx, o.UserID, notifySourceGroupID, notifyGroupID)
 	}
 	if virtualEntitlement != nil {
-		s.migrateLegacyCustomSubscriptionAPIKeysToSource(ctx, o.UserID, virtualEntitlement.SourceGroupID, migrateLegacyCustomGroupIDs)
+		if s.migrateLegacyCustomSubscriptionAPIKeysToSource(ctx, o.UserID, virtualEntitlement.SourceGroupID, migrateLegacyCustomGroupIDs) {
+			s.retireLegacyCustomSubscriptionGroups(ctx, o.UserID, virtualEntitlement.SourceGroupID, migrateLegacyCustomGroupIDs)
+		}
 	}
 	if err := s.applyAffiliateRebateForOrder(ctx, o); err != nil {
 		return err

@@ -146,6 +146,19 @@ func TestIsMigrationChecksumCompatible(t *testing.T) {
 		require.True(t, ok)
 	})
 
+	t.Run("163 historical checksum is compatible with embedded legacy custom group retirement migration", func(t *testing.T) {
+		content, err := migrations.FS.ReadFile("163_retire_orphan_legacy_custom_subscription_groups.sql")
+		require.NoError(t, err)
+		sum := sha256.Sum256([]byte(strings.TrimSpace(string(content))))
+
+		ok := isMigrationChecksumCompatible(
+			"163_retire_orphan_legacy_custom_subscription_groups.sql",
+			"6e6134f48cfb9d9b4e4d3b2c4be1b6411bc95cf5ebe23e3c4f790f3203f612a4",
+			hex.EncodeToString(sum[:]),
+		)
+		require.True(t, ok)
+	})
+
 	t.Run("119历史checksum可兼容占位文件", func(t *testing.T) {
 		ok := isMigrationChecksumCompatible(
 			"119_enforce_payment_orders_out_trade_no_unique.sql",

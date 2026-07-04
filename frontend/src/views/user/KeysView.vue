@@ -99,7 +99,14 @@
                   :rate-multiplier="row.group.rate_multiplier"
                   :user-rate-multiplier="userGroupRates[row.group.id]"
                 />
-                <span v-else class="text-sm text-content-tertiary">{{
+                <span
+                  v-if="apiKeyVirtualCustomMultiplier(row)"
+                  class="inline-flex shrink-0 items-center rounded-full bg-[#F5C66B]/15 px-2 py-0.5 text-[11px] font-bold text-[#3D2E2A] dark:bg-[#F5C66B]/10 dark:text-[#F5C66B]"
+                  :title="apiKeyVirtualCustomHint(row)"
+                >
+                  {{ apiKeyVirtualCustomMultiplier(row) }}x
+                </span>
+                <span v-else-if="!row.group" class="text-sm text-content-tertiary">{{
                   t('keys.noGroup')
                 }}</span>
                 <span class="text-xs text-gray-500 dark:text-gray-400">{{ t('keys.selectGroup') }}</span>
@@ -1120,6 +1127,7 @@ import { getPersistedPageSize } from '@/composables/usePersistedPageSize'
 
 const { t } = useI18n()
 import { keysAPI, authAPI, usageAPI, userGroupsAPI } from '@/api'
+import * as subscriptionsAPI from '@/api/subscriptions'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import TablePageLayout from '@/components/layout/TablePageLayout.vue'
 	import DataTable from '@/components/common/DataTable.vue'
@@ -1134,10 +1142,11 @@ import TablePageLayout from '@/components/layout/TablePageLayout.vue'
 	import EndpointPopover from '@/components/keys/EndpointPopover.vue'
 	import GroupBadge from '@/components/common/GroupBadge.vue'
 	import GroupOptionItem from '@/components/common/GroupOptionItem.vue'
-	import type { ApiKey, Group, PublicSettings, SubscriptionType, GroupPlatform } from '@/types'
+	import type { ApiKey, Group, PublicSettings, SubscriptionType, GroupPlatform, UserSubscription } from '@/types'
 import type { Column } from '@/components/common/types'
 import type { BatchApiKeyUsageStats } from '@/api/usage'
 import { formatDateTime } from '@/utils/format'
+import { subscriptionCustomDisplayName, subscriptionCustomMultiplier, subscriptionCustomSourceGroupId } from '@/utils/subscriptionCustom'
 import {
   buildCcSwitchImportDeeplink,
   type CcSwitchClientType
@@ -1179,6 +1188,7 @@ const columns = computed<Column[]>(() => [
 
 const apiKeys = ref<ApiKey[]>([])
 const groups = ref<Group[]>([])
+const activeSubscriptions = ref<UserSubscription[]>([])
 const loading = ref(false)
 const submitting = ref(false)
 const now = ref(new Date())
@@ -1239,6 +1249,27 @@ const selectedKeyForGroup = computed(() => {
   if (groupSelectorKeyId.value === null) return null
   return apiKeys.value.find((k) => k.id === groupSelectorKeyId.value) || null
 })
+
+function virtualCustomSubscriptionForApiKey(row: ApiKey): UserSubscription | null {
+  const groupId = Number(row.group_id ?? row.group?.id ?? 0)
+  if (!Number.isFinite(groupId) || groupId <= 0) return null
+  return activeSubscriptions.value.find((sub) => {
+    const sourceGroupId = subscriptionCustomSourceGroupId(sub)
+    const multiplier = subscriptionCustomMultiplier(sub)
+    return sourceGroupId === groupId && multiplier != null && multiplier >= 1
+  }) ?? null
+}
+
+function apiKeyVirtualCustomMultiplier(row: ApiKey): number | null {
+  return subscriptionCustomMultiplier(virtualCustomSubscriptionForApiKey(row))
+}
+
+function apiKeyVirtualCustomHint(row: ApiKey): string {
+  const sub = virtualCustomSubscriptionForApiKey(row)
+  const multiplier = subscriptionCustomMultiplier(sub)
+  const name = subscriptionCustomDisplayName(sub) || row.group?.name || ''
+  return multiplier ? t('keys.virtualCustomEntitlementHint', { multiplier: `${multiplier}x`, name }) : ''
+}
 
 
 const setGroupButtonRef = (keyId: number, el: Element | ComponentPublicInstance | null) => {
@@ -1467,6 +1498,14 @@ const loadGroups = async () => {
     groups.value = await userGroupsAPI.getAvailable()
   } catch (error) {
     console.error('Failed to load groups:', error)
+  }
+}
+
+const loadActiveSubscriptions = async () => {
+  try {
+    activeSubscriptions.value = await subscriptionsAPI.getActiveSubscriptions()
+  } catch (error) {
+    console.error('Failed to load active subscriptions:', error)
   }
 }
 
@@ -1947,6 +1986,7 @@ function formatResetTime(resetAt: string | null): string {
 onMounted(() => {
   loadApiKeys()
   loadGroups()
+  loadActiveSubscriptions()
   loadUserGroupRates()
   loadPublicSettings()
   document.addEventListener('click', closeGroupSelector)

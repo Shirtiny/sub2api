@@ -16,6 +16,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/cafecoupon"
 	"github.com/Wei-Shaw/sub2api/ent/group"
 	"github.com/Wei-Shaw/sub2api/ent/paymentorder"
+	"github.com/Wei-Shaw/sub2api/ent/predicate"
 	entuser "github.com/Wei-Shaw/sub2api/ent/user"
 	"github.com/Wei-Shaw/sub2api/ent/usersubscription"
 	"github.com/Wei-Shaw/sub2api/internal/payment"
@@ -27,6 +28,7 @@ const (
 	minCreateOrderPayAmount         = 1.0
 	minCustomSubscriptionMultiplier = 1
 	maxCustomSubscriptionMultiplier = 100
+	recentDuplicateOrderWindow      = 10 * time.Second
 )
 
 // --- Order Creation ---
@@ -339,7 +341,7 @@ func (s *PaymentService) findActiveCustomSubscriptionGroup(ctx context.Context, 
 			group.HasSubscriptionsWith(
 				usersubscription.UserIDEQ(userID),
 				usersubscription.StatusEQ(SubscriptionStatusActive),
-				usersubscription.ExpiresAtGT(time.Now()),
+				activeUserSubscriptionExpiresAt(time.Now()),
 				usersubscription.DeletedAtIsNil(),
 			),
 		).
@@ -360,7 +362,7 @@ func (s *PaymentService) findActiveVirtualCustomSubscription(ctx context.Context
 			usersubscription.CustomExpiresAtNotNil(),
 			usersubscription.CustomExpiresAtGT(time.Now()),
 			usersubscription.StatusEQ(SubscriptionStatusActive),
-			usersubscription.ExpiresAtGT(time.Now()),
+			activeUserSubscriptionExpiresAt(time.Now()),
 			usersubscription.DeletedAtIsNil(),
 		).
 		Order(dbent.Desc(usersubscription.FieldID)).
@@ -412,7 +414,10 @@ func (s *PaymentService) createOrderInTx(ctx context.Context, req CreateOrderReq
 			return nil, infraerrors.Conflict("SUBSCRIPTION_STATE_CHANGED", "subscription state changed, please retry")
 		}
 	}
-	if err := s.checkPendingLimit(ctx, tx, req.UserID, cfg.MaxPendingOrders); err != nil {
+	if err := s.checkPendingLimit(txCtx, tx, req.UserID, cfg.MaxPendingOrders); err != nil {
+		return nil, err
+	}
+	if err := s.checkRecentDuplicateOrder(txCtx, tx, req, orderAmount, plan); err != nil {
 		return nil, err
 	}
 	if plan != nil && plan.CustomMultiplierEnabled {
@@ -575,6 +580,52 @@ func (s *PaymentService) checkPendingCustomSubscriptionOrder(ctx context.Context
 	}
 	if count > 0 {
 		return infraerrors.Conflict("CUSTOM_SUBSCRIPTION_ORDER_PENDING", "custom subscription order already pending or processing")
+	}
+	return nil
+}
+
+func (s *PaymentService) checkRecentDuplicateOrder(ctx context.Context, tx *dbent.Tx, req CreateOrderRequest, orderAmount float64, plan *dbent.SubscriptionPlan) error {
+	if tx == nil || req.UserID <= 0 || recentDuplicateOrderWindow <= 0 {
+		return nil
+	}
+	now := time.Now()
+	orderType := req.OrderType
+	if orderType == "" {
+		orderType = payment.OrderTypeBalance
+	}
+	preds := []predicate.PaymentOrder{
+		paymentorder.UserIDEQ(req.UserID),
+		paymentorder.StatusIn(OrderStatusPending, OrderStatusPaid, OrderStatusRecharging, OrderStatusCompleted),
+		paymentorder.ExpiresAtGT(now),
+		paymentorder.CreatedAtGTE(now.Add(-recentDuplicateOrderWindow)),
+		paymentorder.OrderTypeEQ(orderType),
+		paymentorder.PaymentTypeEQ(req.PaymentType),
+		paymentorder.AmountEQ(orderAmount),
+	}
+	if plan != nil {
+		multiplier := req.Multiplier
+		if multiplier < 1 {
+			multiplier = 1
+		}
+		preds = append(preds, paymentorder.PlanIDEQ(plan.ID), paymentorder.SubscriptionMultiplierEQ(multiplier))
+	} else {
+		preds = append(preds, paymentorder.PlanIDIsNil())
+	}
+	if strings.TrimSpace(req.CafeCouponCode) == "" {
+		preds = append(preds, paymentorder.CafeCouponCodeIsNil())
+	} else {
+		code, err := normalizeCafeCouponCode(req.CafeCouponCode)
+		if err != nil {
+			return err
+		}
+		preds = append(preds, paymentorder.CafeCouponCodeEQ(code))
+	}
+	exists, err := tx.PaymentOrder.Query().Where(preds...).Exist(ctx)
+	if err != nil {
+		return fmt.Errorf("check duplicate pending payment order: %w", err)
+	}
+	if exists {
+		return infraerrors.Conflict("DUPLICATE_PAYMENT_ORDER_RECENT", "a matching payment order was just created; please continue with the existing order or retry later")
 	}
 	return nil
 }

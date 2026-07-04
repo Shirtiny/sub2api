@@ -22,6 +22,13 @@ import type {
 } from '@/types/payment'
 import type { BasePaginationResponse } from '@/types'
 
+function createIdempotencyKey(prefix: string): string {
+  const random = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2)}`
+  return `${prefix}-${random}`
+}
+
 export const paymentAPI = {
   /** Get payment configuration (enabled types, limits, etc.) */
   getConfig() {
@@ -50,7 +57,9 @@ export const paymentAPI = {
 
   /** Create a new payment order */
   createOrder(data: CreateOrderRequest) {
-    return apiClient.post<CreateOrderResult>('/payment/orders', data)
+    return apiClient.post<CreateOrderResult>('/payment/orders', data, {
+      headers: { 'Idempotency-Key': createIdempotencyKey('payment-order') },
+    })
   },
 
   /** Claim a café coupon for the current user */

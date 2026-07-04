@@ -16,6 +16,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/enttest"
 	"github.com/Wei-Shaw/sub2api/internal/payment"
 	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
+	middleware2 "github.com/Wei-Shaw/sub2api/internal/server/middleware"
 	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
@@ -121,6 +122,47 @@ func TestApplyWeChatPaymentResumeClaimsTreatsTokenContextAsAuthoritative(t *test
 	require.Equal(t, int64(7), req.PlanID)
 	require.Equal(t, 3, req.Multiplier)
 	require.Equal(t, "SIGNED-COUPON", req.CafeCouponCode)
+}
+
+func TestCreateOrderRejectsUnknownSensitiveFields(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	h := NewPaymentHandler(nil, nil, nil)
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	ctx.Set(string(middleware2.ContextKeyUser), middleware2.AuthSubject{UserID: 1})
+	ctx.Request = httptest.NewRequest(
+		http.MethodPost,
+		"/api/v1/payment/orders",
+		bytes.NewBufferString(`{"amount":1,"payment_type":"alipay","order_type":"subscription","plan_id":2,"multiplier":4,"source_group_id":999999}`),
+	)
+	ctx.Request.Header.Set("Content-Type", "application/json")
+
+	h.CreateOrder(ctx)
+
+	require.Equal(t, http.StatusBadRequest, recorder.Code)
+	require.Contains(t, recorder.Body.String(), "unknown field")
+	require.Contains(t, recorder.Body.String(), "source_group_id")
+}
+
+func TestCreateOrderStrictJSONRequiresPaymentType(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	h := NewPaymentHandler(nil, nil, nil)
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	ctx.Set(string(middleware2.ContextKeyUser), middleware2.AuthSubject{UserID: 1})
+	ctx.Request = httptest.NewRequest(
+		http.MethodPost,
+		"/api/v1/payment/orders",
+		bytes.NewBufferString(`{"amount":20,"order_type":"balance"}`),
+	)
+	ctx.Request.Header.Set("Content-Type", "application/json")
+
+	h.CreateOrder(ctx)
+
+	require.Equal(t, http.StatusBadRequest, recorder.Code)
+	require.Contains(t, recorder.Body.String(), "payment_type is required")
 }
 
 func TestVerifyOrderPublicReturnsLegacyOrderState(t *testing.T) {

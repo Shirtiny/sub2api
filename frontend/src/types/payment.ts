@@ -102,6 +102,7 @@ export interface PaymentOrder {
   subscription_source_group_id?: number
   subscription_source_price?: number
   subscription_source_original_price?: number
+  cafe_coupon_discount?: number
 }
 
 // ==================== Plans & Channels ====================

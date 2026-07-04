@@ -78,6 +78,7 @@ var migrationChecksumCompatibilityRules = map[string]migrationChecksumCompatibil
 	"155_hash_api_keys.sql":                                   newMigrationChecksumCompatibilityRule("1d7e3f980ad52f821ef84b5a644bb9a53c4dfe57d061f502ac73743a2cf18341", "33d7246686c64a786bbfd18ff141645098bcde953d81bf17e8dcbe40b994129d", "a490c4f55170254c174d3a1a96ea65b88747cd9cc99bed48e18c6c5d0681eec1"),
 	"157_custom_subscription_multiplier.sql":                  newMigrationChecksumCompatibilityRule("3ced6dc337f2d18d0e6032d13fb5fdd3eb3549f4c2a545e3e1958518d4ec69f6", "ae7eadf2b5c908d46a89c7176c0e6204987ff2bf38ef7aee6fb2e75dfb334213", "d235b7e458372c21e4a27100d9089b2ce6e91af424ed8a8221b6e0f3d2f0a023", "ab8d5a06dc3f638fa399bc5c22ab3a8a35b21ee21974366e2333b51128e63cef", "53d4b5b9641b8052f75ddb34e7e344ab33ccfa8015dc6a9a7d6b920a6fe56e2d"),
 	"161_user_subscription_virtual_custom_entitlement.sql":    newMigrationChecksumCompatibilityRule("4afa6609d53933c2107cf1ecd13e728d1a9870f757c500347e50336842d11d1e", "c8bb22ddaecc46efbee7bc60ac3cfeabef4c96c9662df76d1dc10829676b9c26", "c54f0aa81a1a809030596b82883e7263d965eb37f60dde0be3014e1f39c99b7d"),
+	"163_retire_orphan_legacy_custom_subscription_groups.sql": newMigrationChecksumCompatibilityRule("022351cc8220d5796ee6f1492c71a9cdd637a028d27a3eb459d6a72ed97e1028", "6e6134f48cfb9d9b4e4d3b2c4be1b6411bc95cf5ebe23e3c4f790f3203f612a4"),
 }
 
 // ApplyMigrations 将嵌入的 SQL 迁移文件应用到指定的数据库。

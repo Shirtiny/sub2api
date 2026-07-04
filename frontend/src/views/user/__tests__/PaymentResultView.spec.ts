@@ -444,6 +444,103 @@ describe('PaymentResultView', () => {
     expect(wrapper.text()).toContain(formatPaymentAmount(103, 'HKD'))
   })
 
+  it('shows original recharge amount and Cafe coupon discount on the result page', async () => {
+    routeState.query = {
+      resume_token: 'resume-balance-coupon',
+    }
+    resolveOrderPublicByResumeToken.mockResolvedValue({
+      data: {
+        ...orderFactory('PAID'),
+        order_type: 'balance',
+        amount: 80,
+        pay_amount: 16.16,
+        fee_rate: 1,
+        cafe_coupon_discount: 4,
+      },
+    })
+
+    const wrapper = mount(PaymentResultView, {
+      global: {
+        stubs: {
+          OrderStatusBadge: true,
+        },
+      },
+    })
+
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('payment.orders.baseAmount')
+    expect(wrapper.text()).toContain(formatPaymentAmount(20))
+    expect(wrapper.text()).toContain('payment.cafeCoupon.discountLabel')
+    expect(wrapper.text()).toContain(formatPaymentAmount(4))
+    expect(wrapper.text()).toContain('payment.orders.discountedAmount')
+    expect(wrapper.text()).toContain(formatPaymentAmount(16))
+    expect(wrapper.text()).toContain('payment.orders.creditedAmount')
+    expect(wrapper.text()).toContain('$80.00')
+  })
+
+  it('uses subscription-specific amount labels on the result page', async () => {
+    routeState.query = {
+      resume_token: 'resume-subscription',
+    }
+    resolveOrderPublicByResumeToken.mockResolvedValue({
+      data: {
+        ...orderFactory('PAID'),
+        order_type: 'subscription',
+        amount: 1716,
+        pay_amount: 1386.53,
+        fee_rate: 1,
+        cafe_coupon_discount: 343.2,
+      },
+    })
+
+    const wrapper = mount(PaymentResultView, {
+      global: {
+        stubs: {
+          OrderStatusBadge: true,
+        },
+      },
+    })
+
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('payment.orders.discountedAmount')
+    expect(wrapper.text()).toContain(formatPaymentAmount(1372.8))
+    expect(wrapper.text()).toContain('payment.orders.subscriptionAmount')
+    expect(wrapper.text()).toContain(formatPaymentAmount(1716))
+    expect(wrapper.text()).not.toContain('payment.orders.baseAmount')
+    expect(wrapper.text()).not.toContain('payment.orders.creditedAmount')
+  })
+
+  it('does not label a no-coupon subscription order as discounted', async () => {
+    routeState.query = {
+      resume_token: 'resume-subscription-no-coupon',
+    }
+    resolveOrderPublicByResumeToken.mockResolvedValue({
+      data: {
+        ...orderFactory('PAID'),
+        order_type: 'subscription',
+        amount: 1716,
+        pay_amount: 1733.16,
+        fee_rate: 1,
+      },
+    })
+
+    const wrapper = mount(PaymentResultView, {
+      global: {
+        stubs: {
+          OrderStatusBadge: true,
+        },
+      },
+    })
+
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('payment.orders.subscriptionAmount')
+    expect(wrapper.text()).not.toContain('payment.orders.discountedAmount')
+    expect(wrapper.text()).not.toContain('payment.orders.creditedAmount')
+  })
+
   it('normalizes aliased payment methods before rendering the label', async () => {
     routeState.query = {
       resume_token: 'resume-88',

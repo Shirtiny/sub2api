@@ -184,6 +184,78 @@ func TestCheckBillingEligibility_InvalidatesStaleDailyUsageCacheAfterWindowReset
 	require.Equal(t, int64(1), atomic.LoadInt64(&cache.subscriptionInvalidates))
 }
 
+func TestCheckBillingEligibility_UsesVirtualCustomMultiplierForSubscriptionLimits(t *testing.T) {
+	sourceDailyLimit := 250.0
+	expiresAt := time.Now().Add(24 * time.Hour)
+	customExpiresAt := time.Now().Add(24 * time.Hour)
+	windowStart := time.Now()
+	cache := &billingCacheWorkerStub{
+		subscriptionCache: &SubscriptionCacheData{
+			Status:       SubscriptionStatusActive,
+			ExpiresAt:    expiresAt,
+			DailyUsage:   300,
+			WeeklyUsage:  0,
+			MonthlyUsage: 0,
+			Version:      time.Now().Unix(),
+		},
+	}
+	svc := NewBillingCacheService(cache, nil, nil, nil, nil, nil, &config.Config{}, nil)
+	t.Cleanup(svc.Stop)
+
+	multiplier := 4
+	planID := int64(7)
+	sourceGroupID := int64(24)
+	customDisplayName := "[4x]Special#43"
+	subscription := &UserSubscription{
+		ID:                  730,
+		UserID:              43,
+		GroupID:             sourceGroupID,
+		Status:              SubscriptionStatusActive,
+		ExpiresAt:           expiresAt,
+		DailyWindowStart:    &windowStart,
+		DailyUsageUSD:       300,
+		CustomMultiplier:    &multiplier,
+		CustomSourcePlanID:  &planID,
+		CustomSourceGroupID: &sourceGroupID,
+		CustomExpiresAt:     &customExpiresAt,
+		CustomDisplayName:   customDisplayName,
+	}
+
+	err := svc.CheckBillingEligibility(
+		context.Background(),
+		&User{ID: 43, Status: StatusActive},
+		&APIKey{ID: 99, UserID: 43, GroupID: &sourceGroupID, Status: StatusActive},
+		&Group{
+			ID:               sourceGroupID,
+			Status:           StatusActive,
+			SubscriptionType: SubscriptionTypeSubscription,
+			DailyLimitUSD:    &sourceDailyLimit,
+		},
+		subscription,
+		"openai",
+	)
+
+	require.NoError(t, err, "source-group API keys should use the virtual custom 4x quota, not the base source quota")
+
+	cache.subscriptionCache.DailyUsage = 1000
+	subscription.DailyUsageUSD = 1000
+	err = svc.CheckBillingEligibility(
+		context.Background(),
+		&User{ID: 43, Status: StatusActive},
+		nil,
+		&Group{
+			ID:               sourceGroupID,
+			Status:           StatusActive,
+			SubscriptionType: SubscriptionTypeSubscription,
+			DailyLimitUSD:    &sourceDailyLimit,
+		},
+		subscription,
+		"openai",
+	)
+
+	require.ErrorIs(t, err, ErrDailyLimitExceeded, "effective custom quota should still cap usage at source limit * multiplier")
+}
+
 func TestCheckBillingEligibility_RejectsCacheDailyLimitInCurrentWindow(t *testing.T) {
 	dailyLimit := 300.0
 	windowStart := time.Now()

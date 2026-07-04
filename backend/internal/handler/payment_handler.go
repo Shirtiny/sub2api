@@ -1,7 +1,9 @@
 package handler
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
 	"strconv"
 	"strings"
 	"time"
@@ -464,6 +466,24 @@ type CreateOrderRequest struct {
 	IsMobile *bool `json:"is_mobile,omitempty"`
 }
 
+func bindStrictCreateOrderJSON(c *gin.Context, req *CreateOrderRequest) error {
+	decoder := json.NewDecoder(c.Request.Body)
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(req); err != nil {
+		return err
+	}
+	if err := decoder.Decode(&struct{}{}); err != io.EOF {
+		if err == nil {
+			return fmt.Errorf("request body must contain a single JSON object")
+		}
+		return err
+	}
+	if strings.TrimSpace(req.PaymentType) == "" {
+		return fmt.Errorf("payment_type is required")
+	}
+	return nil
+}
+
 // CreateOrder creates a new payment order.
 // POST /api/v1/payment/orders
 func (h *PaymentHandler) CreateOrder(c *gin.Context) {
@@ -473,7 +493,7 @@ func (h *PaymentHandler) CreateOrder(c *gin.Context) {
 	}
 
 	var req CreateOrderRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err := bindStrictCreateOrderJSON(c, &req); err != nil {
 		response.BadRequest(c, "Invalid request: "+err.Error())
 		return
 	}
@@ -730,6 +750,7 @@ type PublicOrderResult struct {
 	RefundRequestedBy   *string    `json:"refund_requested_by,omitempty"`
 	RefundRequestReason *string    `json:"refund_request_reason,omitempty"`
 	PlanID              *int64     `json:"plan_id,omitempty"`
+	CafeCouponDiscount  float64    `json:"cafe_coupon_discount,omitempty"`
 }
 
 func buildPublicOrderResult(order *dbent.PaymentOrder) PublicOrderResult {
@@ -753,6 +774,7 @@ func buildPublicOrderResult(order *dbent.PaymentOrder) PublicOrderResult {
 		RefundRequestedBy:   order.RefundRequestedBy,
 		RefundRequestReason: order.RefundRequestReason,
 		PlanID:              order.PlanID,
+		CafeCouponDiscount:  order.CafeCouponDiscount,
 	}
 }
 
@@ -840,6 +862,7 @@ type PaymentOrderResult struct {
 	SubscriptionSourceGroupID       *int64     `json:"subscription_source_group_id,omitempty"`
 	SubscriptionSourcePrice         *float64   `json:"subscription_source_price,omitempty"`
 	SubscriptionSourceOriginalPrice *float64   `json:"subscription_source_original_price,omitempty"`
+	CafeCouponDiscount              float64    `json:"cafe_coupon_discount,omitempty"`
 }
 
 func sanitizePaymentOrdersForResponse(orders []*dbent.PaymentOrder) []PaymentOrderResult {
@@ -883,6 +906,7 @@ func sanitizePaymentOrderForResponse(order *dbent.PaymentOrder) *PaymentOrderRes
 		SubscriptionSourceGroupID:       order.SubscriptionSourceGroupID,
 		SubscriptionSourcePrice:         order.SubscriptionSourcePrice,
 		SubscriptionSourceOriginalPrice: order.SubscriptionSourceOriginalPrice,
+		CafeCouponDiscount:              order.CafeCouponDiscount,
 	}
 }
 

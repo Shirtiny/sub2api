@@ -24,7 +24,7 @@ export async function list(
   pageSize: number = 20,
   filters?: {
     platform?: GroupPlatform
-    status?: 'active' | 'inactive'
+    status?: 'active' | 'disabled'
     is_exclusive?: boolean
     search?: string
     sort_by?: string
@@ -130,7 +130,7 @@ export async function deleteGroup(id: number): Promise<{ message: string }> {
  * @param status - New status
  * @returns Updated group
  */
-export async function toggleStatus(id: number, status: 'active' | 'inactive'): Promise<AdminGroup> {
+export async function toggleStatus(id: number, status: 'active' | 'disabled'): Promise<AdminGroup> {
   return update(id, { status })
 }
 

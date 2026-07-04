@@ -791,6 +791,7 @@ export default {
     failedToDelete: '删除 API 密钥失败',
     failedToUpdateStatus: '更新 API 密钥状态失败',
     clickToChangeGroup: '点击更换分组',
+    virtualCustomEntitlementHint: '此密钥绑定源分组，但当前享受 {name} 的 {multiplier} 定制订阅权益',
     groupChangedSuccess: '分组更换成功',
     failedToChangeGroup: '更换分组失败',
     groupRequired: '请选择分组',
@@ -3469,6 +3470,7 @@ export default {
       status: {
         active: '正常',
         inactive: '停用',
+        disabled: '已禁用',
         error: '错误',
         cooldown: '冷却中',
         paused: '暂停',
@@ -7298,6 +7300,8 @@ export default {
       creditedAmount: '到账金额',
       fee: '手续费',
       baseAmount: '充值金额',
+      discountedAmount: '券后金额',
+      subscriptionAmount: '订阅金额',
       includedInPayAmount: '已含在实付金额中',
       status: '状态',
       paymentMethod: '支付方式',
@@ -7331,6 +7335,7 @@ export default {
     amountTooLow: '最低金额为 {min}',
     amountTooHigh: '最高金额为 {max}',
     amountNoMethod: '该金额没有可用的支付方式',
+    customMultiplierConflict: '您当前已有 {current} 定制套餐，不能在未到期前直接改为 {selected}。请按当前倍数续费，或等到期后重新购买。',
     actualPayTooLow: '优惠后实付金额不能低于 {min}',
     rechargeRatePreview: '当前倍率：1 CNY = {usd} USD',
     cafeCoupon: {

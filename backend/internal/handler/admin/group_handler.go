@@ -132,7 +132,7 @@ type UpdateGroupRequest struct {
 	Platform                  string             `json:"platform" binding:"omitempty,oneof=anthropic openai gemini antigravity"`
 	RateMultiplier            *float64           `json:"rate_multiplier"`
 	IsExclusive               *bool              `json:"is_exclusive"`
-	Status                    string             `json:"status" binding:"omitempty,oneof=active inactive"`
+	Status                    string             `json:"status" binding:"omitempty,oneof=active disabled"`
 	SubscriptionType          string             `json:"subscription_type" binding:"omitempty,oneof=standard subscription"`
 	DailyLimitUSD             optionalLimitField `json:"daily_limit_usd"`
 	WeeklyLimitUSD            optionalLimitField `json:"weekly_limit_usd"`

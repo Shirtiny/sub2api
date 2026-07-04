@@ -4,8 +4,10 @@ import (
 	"context"
 	"time"
 
+	"entgo.io/ent/dialect/sql"
 	dbent "github.com/Wei-Shaw/sub2api/ent"
 	"github.com/Wei-Shaw/sub2api/ent/group"
+	"github.com/Wei-Shaw/sub2api/ent/predicate"
 	"github.com/Wei-Shaw/sub2api/ent/usersubscription"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
 	"github.com/Wei-Shaw/sub2api/internal/service"
@@ -13,6 +15,26 @@ import (
 
 type userSubscriptionRepository struct {
 	client *dbent.Client
+}
+
+var subscriptionNoExpirySentinel = time.Date(2099, 12, 31, 23, 59, 59, 0, time.UTC)
+
+func activeSubscriptionExpiresAt(now time.Time) predicate.UserSubscription {
+	return usersubscription.Or(
+		predicate.UserSubscription(sql.FieldIsNull(usersubscription.FieldExpiresAt)),
+		usersubscription.ExpiresAtGT(now),
+	)
+}
+
+func normalizeSubscriptionExpiresAt(expiresAt time.Time) time.Time {
+	// Some legacy production rows can have NULL expires_at even though the current
+	// ent schema is non-nullable. ent scans those rows as the zero time; normalize
+	// them to the existing long-lived sentinel so downstream service checks do not
+	// treat a row returned by activeSubscriptionExpiresAt as already expired.
+	if expiresAt.IsZero() {
+		return subscriptionNoExpirySentinel
+	}
+	return expiresAt
 }
 
 func NewUserSubscriptionRepository(client *dbent.Client) service.UserSubscriptionRepository {
@@ -96,7 +118,7 @@ func (r *userSubscriptionRepository) GetActiveByUserIDAndGroupID(ctx context.Con
 			usersubscription.UserIDEQ(userID),
 			usersubscription.GroupIDEQ(groupID),
 			usersubscription.StatusEQ(service.SubscriptionStatusActive),
-			usersubscription.ExpiresAtGT(time.Now()),
+			activeSubscriptionExpiresAt(time.Now()),
 		).
 		WithGroup().
 		Only(ctx)
@@ -188,7 +210,7 @@ func (r *userSubscriptionRepository) ListActiveByUserID(ctx context.Context, use
 		Where(
 			usersubscription.UserIDEQ(userID),
 			usersubscription.StatusEQ(service.SubscriptionStatusActive),
-			usersubscription.ExpiresAtGT(time.Now()),
+			activeSubscriptionExpiresAt(time.Now()),
 		).
 		WithGroup().
 		Order(dbent.Desc(usersubscription.FieldCreatedAt)).
@@ -242,7 +264,7 @@ func (r *userSubscriptionRepository) List(ctx context.Context, params pagination
 		// Active: status is active AND not yet expired
 		q = q.Where(
 			usersubscription.StatusEQ(service.SubscriptionStatusActive),
-			usersubscription.ExpiresAtGT(now),
+			activeSubscriptionExpiresAt(now),
 		)
 	case service.SubscriptionStatusExpired:
 		// Expired: status is expired OR (status is active but already expired)
@@ -372,7 +394,7 @@ func (r *userSubscriptionRepository) ResetActiveUsage(ctx context.Context, reset
 	update := client.UserSubscription.Update().
 		Where(
 			usersubscription.StatusEQ(service.SubscriptionStatusActive),
-			usersubscription.ExpiresAtGT(time.Now()),
+			activeSubscriptionExpiresAt(time.Now()),
 		)
 	if resetDaily {
 		update.SetDailyUsageUsd(0).SetDailyWindowStart(newWindowStart)
@@ -464,7 +486,7 @@ func (r *userSubscriptionRepository) CountActiveByGroupID(ctx context.Context, g
 		Where(
 			usersubscription.GroupIDEQ(groupID),
 			usersubscription.StatusEQ(service.SubscriptionStatusActive),
-			usersubscription.ExpiresAtGT(time.Now()),
+			activeSubscriptionExpiresAt(time.Now()),
 		).
 		Count(ctx)
 	return int64(count), err
@@ -485,7 +507,7 @@ func userSubscriptionEntityToService(m *dbent.UserSubscription) *service.UserSub
 		UserID:              m.UserID,
 		GroupID:             m.GroupID,
 		StartsAt:            m.StartsAt,
-		ExpiresAt:           m.ExpiresAt,
+		ExpiresAt:           normalizeSubscriptionExpiresAt(m.ExpiresAt),
 		Status:              m.Status,
 		DailyWindowStart:    m.DailyWindowStart,
 		WeeklyWindowStart:   m.WeeklyWindowStart,

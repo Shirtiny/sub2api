@@ -902,6 +902,8 @@ func TestExecuteSubscriptionFulfillmentReusesExpiredCustomGroupAndUpdatesMultipl
 	require.NoError(t, err)
 	_, err = client.UserSubscription.Create().SetUserID(user.ID).SetGroupID(expiredGroup.ID).SetStatus(SubscriptionStatusActive).SetStartsAt(time.Now().AddDate(0, 0, -60)).SetExpiresAt(time.Now().AddDate(0, 0, -1)).SetNotes("expired custom").Save(ctx)
 	require.NoError(t, err)
+	legacyKey, err := client.APIKey.Create().SetUserID(user.ID).SetKey("legacy-custom-key").SetName("legacy custom key").SetGroupID(expiredGroup.ID).SetStatus(StatusActive).Save(ctx)
+	require.NoError(t, err)
 
 	order, err := client.PaymentOrder.Create().
 		SetUserID(user.ID).SetUserEmail(user.Email).SetUserName(user.Username).
@@ -926,13 +928,42 @@ func TestExecuteSubscriptionFulfillmentReusesExpiredCustomGroupAndUpdatesMultipl
 	updatedGroup, err := client.Group.Get(ctx, expiredGroup.ID)
 	require.NoError(t, err)
 	require.True(t, updatedGroup.IsCustomSubscriptionGroup)
+	require.Equal(t, StatusDisabled, updatedGroup.Status)
 	require.Equal(t, 2, *updatedGroup.CustomMultiplier)
+	updatedKey, err := client.APIKey.Get(ctx, legacyKey.ID)
+	require.NoError(t, err)
+	require.Equal(t, sourceGroup.ID, *updatedKey.GroupID)
 	sub, err := client.UserSubscription.Query().Where(usersubscription.UserIDEQ(user.ID), usersubscription.GroupIDEQ(sourceGroup.ID)).Only(ctx)
 	require.NoError(t, err)
 	require.Equal(t, 3, *sub.CustomMultiplier)
 	require.Equal(t, plan.ID, *sub.CustomSourcePlanID)
 	require.Equal(t, sourceGroup.ID, *sub.CustomSourceGroupID)
 	require.Equal(t, "[3x]Expired New#"+strconv.FormatInt(user.ID, 10), *sub.CustomDisplayName)
+}
+
+func TestRetireLegacyCustomSubscriptionGroupsKeepsGroupWithAnyActiveSubscription(t *testing.T) {
+	ctx := context.Background()
+	client := newPaymentOrderLifecycleTestClient(t)
+
+	owner, err := client.User.Create().SetEmail("legacy-retire-owner@example.com").SetPasswordHash("hash").SetUsername("legacy-retire-owner").Save(ctx)
+	require.NoError(t, err)
+	other, err := client.User.Create().SetEmail("legacy-retire-other@example.com").SetPasswordHash("hash").SetUsername("legacy-retire-other").Save(ctx)
+	require.NoError(t, err)
+	sourceGroup, err := client.Group.Create().SetName("legacy-retire-source").SetStatus(StatusActive).SetPlatform(PlatformOpenAI).SetSubscriptionType(SubscriptionTypeSubscription).Save(ctx)
+	require.NoError(t, err)
+	plan, err := client.SubscriptionPlan.Create().SetName("Legacy Retire").SetDescription("legacy retire").SetGroupID(sourceGroup.ID).SetPrice(100).SetValidityDays(30).SetValidityUnit("days").SetForSale(true).SetCustomMultiplierEnabled(true).SetCustomMultiplierMin(1).SetCustomMultiplierMax(5).Save(ctx)
+	require.NoError(t, err)
+	legacyGroup, err := client.Group.Create().SetName("[2x]Legacy Retire#owner").SetStatus(StatusActive).SetPlatform(PlatformOpenAI).SetSubscriptionType(SubscriptionTypeSubscription).SetIsCustomSubscriptionGroup(true).SetCustomOwnerUserID(owner.ID).SetCustomSourcePlanID(plan.ID).SetCustomSourceGroupID(sourceGroup.ID).SetCustomMultiplier(2).Save(ctx)
+	require.NoError(t, err)
+	_, err = client.UserSubscription.Create().SetUserID(other.ID).SetGroupID(legacyGroup.ID).SetStatus(SubscriptionStatusActive).SetStartsAt(time.Now().Add(-time.Hour)).SetExpiresAt(time.Now().Add(24 * time.Hour)).SetNotes("unexpected active assignee").Save(ctx)
+	require.NoError(t, err)
+
+	svc := &PaymentService{entClient: client}
+	svc.retireLegacyCustomSubscriptionGroups(ctx, owner.ID, sourceGroup.ID, []int64{legacyGroup.ID})
+
+	updated, err := client.Group.Get(ctx, legacyGroup.ID)
+	require.NoError(t, err)
+	require.Equal(t, StatusActive, updated.Status, "must not disable a legacy custom group that still has any active subscription")
 }
 
 func TestExecuteSubscriptionFulfillmentRejectsActiveCustomGroupMultiplierMismatch(t *testing.T) {

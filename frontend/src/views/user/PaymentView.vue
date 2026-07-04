@@ -186,6 +186,12 @@
                     <div class="text-lg font-semibold text-gray-800 dark:text-gray-200">{{ t('payment.planCard.unlimited') }}</div>
                   </div>
                 </div>
+                <p
+                  v-if="selectedMultiplierConflictsActiveCustom"
+                  class="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:border-amber-900/40 dark:bg-amber-900/20 dark:text-amber-300"
+                >
+                  {{ t('payment.customMultiplierConflict', { current: `${selectedActiveCustomMultiplier}x`, selected: `${effectiveSelectedMultiplier}x` }) }}
+                </p>
               </div>
               <div v-if="enabledMethods.length >= 1" class="card p-6">
                 <PaymentMethodSelector
@@ -197,7 +203,7 @@
               <div v-if="effectiveSelectedPlanPrice > 0 && (feeRate > 0 || subscriptionCouponPayableAmount != null)" class="card p-6">
                 <div class="space-y-2 text-sm">
                   <div class="flex justify-between gap-3">
-                    <span class="text-gray-500 dark:text-gray-400">{{ t('payment.amountLabel') }}</span>
+                    <span class="text-gray-500 dark:text-gray-400">{{ t('payment.orders.subscriptionAmount') }}</span>
                     <span class="text-right text-content-primary">{{ formatSelectedPaymentAmount(effectiveSelectedPlanPrice) }}</span>
                   </div>
                   <div v-if="subscriptionCouponDiscountAmount != null" class="flex justify-between gap-3">
@@ -622,12 +628,29 @@ function defaultCustomMultiplierForPlan(plan: SubscriptionPlan | null | undefine
   return Math.max(1, plan.custom_multiplier_min ?? 1)
 }
 
+function maxCustomMultiplierForPlan(plan: SubscriptionPlan | null | undefined): number {
+  const min = defaultCustomMultiplierForPlan(plan)
+  if (!plan?.custom_multiplier_enabled) return min
+  return Math.max(min, Number(plan.custom_multiplier_max || min))
+}
+
+function clampCustomMultiplierForPlan(plan: SubscriptionPlan | null | undefined, multiplier: number): number {
+  const fallback = activeSubscriptionMultiplierForPlan(plan) ?? defaultCustomMultiplierForPlan(plan)
+  const parsed = Math.trunc(Number(multiplier || fallback || 1))
+  if (!plan?.custom_multiplier_enabled) {
+    return Math.max(1, Number.isFinite(parsed) ? parsed : fallback)
+  }
+  const min = defaultCustomMultiplierForPlan(plan)
+  const max = maxCustomMultiplierForPlan(plan)
+  const safe = Number.isFinite(parsed) ? parsed : min
+  return Math.min(max, Math.max(min, safe))
+}
+
 function effectivePlanMultiplier(plan: SubscriptionPlan | null | undefined): number {
   if (!plan) return 1
   const renewalMultiplier = activeSubscriptionMultiplierForPlan(plan)
-  if (renewalMultiplier != null) return renewalMultiplier
-  if (plan.custom_multiplier_enabled) {
-    return Math.max(defaultCustomMultiplierForPlan(plan), selectedSubscriptionMultiplier.value || 1)
+  if (plan.custom_multiplier_enabled || renewalMultiplier != null) {
+    return clampCustomMultiplierForPlan(plan, selectedSubscriptionMultiplier.value || renewalMultiplier || defaultCustomMultiplierForPlan(plan))
   }
   return 1
 }
@@ -638,14 +661,25 @@ const effectiveSelectedOriginalPrice = computed(() => {
   if (!selectedPlan.value?.original_price) return null
   return roundPaymentAmount(selectedPlan.value.original_price * effectiveSelectedMultiplier.value)
 })
-const effectiveSelectedCouponPrice = computed(() => {
+function selectedSubscriptionCouponPayableEstimate(): number | null {
   if (currentOrderType.value !== 'subscription') return null
-  if (!cafeCouponApplied.value || cafeCouponPayableAmount.value == null) return null
-  return roundPaymentAmount(cafeCouponPayableAmount.value)
-})
+  if (cafeCouponApplied.value && cafeCouponPayableAmount.value != null) {
+    return roundPaymentAmount(cafeCouponPayableAmount.value)
+  }
+  const coupon = planCardCafeCoupon()
+  if (!coupon) return null
+  return localCafeCouponPayAmount(effectiveSelectedPlanPrice.value, coupon)
+}
+
+const effectiveSelectedCouponPrice = computed(() => selectedSubscriptionCouponPayableEstimate())
 const effectiveSelectedDailyLimit = computed(() => multiplyPlanLimit(selectedPlan.value?.daily_limit_usd, effectiveSelectedMultiplier.value))
 const effectiveSelectedWeeklyLimit = computed(() => multiplyPlanLimit(selectedPlan.value?.weekly_limit_usd, effectiveSelectedMultiplier.value))
 const effectiveSelectedMonthlyLimit = computed(() => multiplyPlanLimit(selectedPlan.value?.monthly_limit_usd, effectiveSelectedMultiplier.value))
+const selectedActiveCustomMultiplier = computed(() => activeSubscriptionMultiplierForPlan(selectedPlan.value))
+const selectedMultiplierConflictsActiveCustom = computed(() => {
+  const activeMultiplier = selectedActiveCustomMultiplier.value
+  return activeMultiplier != null && effectiveSelectedMultiplier.value !== activeMultiplier
+})
 
 const selectedPlanRateDisplay = computed(() => {
   if (selectedPlan.value?.custom_multiplier_enabled === true || activeCustomSubscriptionForPlan(selectedPlan.value)) {
@@ -820,8 +854,9 @@ const subMethodOptions = computed<PaymentMethodOption[]>(() => {
   return enabledMethods.value.map((type) => {
     const ml = visibleMethods.value[type]
     const methodCurrency = normalizePaymentCurrency(ml?.currency)
-    const payableAmount = cafeCouponApplied.value && cafeCouponPayableAmount.value != null
-      ? calculateFeeAdjustedPayAmount(cafeCouponPayableAmount.value, feeRate.value, methodCurrency)
+    const couponPayable = selectedSubscriptionCouponPayableEstimate()
+    const payableAmount = couponPayable != null
+      ? calculateFeeAdjustedPayAmount(couponPayable, feeRate.value, methodCurrency)
       : calculateFeeAdjustedPayAmount(planPrice, feeRate.value, methodCurrency)
     return {
       type,
@@ -831,11 +866,7 @@ const subMethodOptions = computed<PaymentMethodOption[]>(() => {
   })
 })
 
-const subscriptionCouponPayableAmount = computed(() => {
-  if (!cafeCouponApplied.value || cafeCouponPayableAmount.value == null) return null
-  if (currentOrderType.value !== 'subscription') return null
-  return roundPaymentAmount(cafeCouponPayableAmount.value)
-})
+const subscriptionCouponPayableAmount = computed(() => selectedSubscriptionCouponPayableEstimate())
 const subscriptionCouponDiscountAmount = computed(() => {
   if (subscriptionCouponPayableAmount.value == null) return null
   if (cafeCouponDiscountAmount.value != null) return roundPaymentAmount(cafeCouponDiscountAmount.value)
@@ -879,6 +910,7 @@ const subscriptionPayAmountBelowMinimum = computed(() =>
 
 const canSubmitSubscription = computed(() =>
   selectedPlan.value !== null
+    && !selectedMultiplierConflictsActiveCustom.value
     && !subscriptionPayAmountBelowMinimum.value
     && amountFitsMethod(effectiveSubscriptionMethodAmount(), selectedMethod.value)
     && selectedLimit.value?.available !== false
@@ -1071,6 +1103,7 @@ async function previewCafeCoupon() {
       if (seq !== cafeCouponPreviewSeq || cafeCouponCurrentContextKey(code) !== requestContextKey) return
       console.error('Failed to preview Cafe coupon:', error)
       resetCafeCouponState(true)
+      if (cafeCouponInfoCode.value === code) resetCafeCouponInfoState()
       cafeCouponError.value = extractI18nErrorMessage(error, t, 'payment.cafeCoupon.errors', extractApiErrorMessage(error, t('payment.cafeCoupon.invalid')))
     } finally {
       if (seq === cafeCouponPreviewSeq) {
@@ -1185,16 +1218,18 @@ function routeSubscriptionPlanForGroup(groupId: number): SubscriptionPlan | null
   return null
 }
 
-function initialMultiplierForPlan(plan: SubscriptionPlan | null | undefined, multiplier = 1): number {
+function initialMultiplierForPlan(plan: SubscriptionPlan | null | undefined, multiplier = 1, preferActive = true): number {
   const renewalMultiplier = activeSubscriptionMultiplierForPlan(plan)
-  if (renewalMultiplier != null) return renewalMultiplier
-  if (plan?.custom_multiplier_enabled) return Math.max(defaultCustomMultiplierForPlan(plan), multiplier)
+  if (preferActive && renewalMultiplier != null) return renewalMultiplier
+  if (plan?.custom_multiplier_enabled || renewalMultiplier != null) {
+    return clampCustomMultiplierForPlan(plan, multiplier || renewalMultiplier || 1)
+  }
   return 1
 }
 
 function selectPlan(plan: SubscriptionPlan, multiplier = 1) {
   selectedPlan.value = plan
-  selectedSubscriptionMultiplier.value = initialMultiplierForPlan(plan, multiplier)
+  selectedSubscriptionMultiplier.value = initialMultiplierForPlan(plan, multiplier, false)
   errorMessage.value = ''
 }
 
@@ -1202,7 +1237,7 @@ function selectPlanFromModal(plan: SubscriptionPlan, multiplier = 1) {
   showRenewalModal.value = false
   renewGroupId.value = null
   selectedPlan.value = plan
-  selectedSubscriptionMultiplier.value = initialMultiplierForPlan(plan, multiplier)
+  selectedSubscriptionMultiplier.value = initialMultiplierForPlan(plan, multiplier, false)
   errorMessage.value = ''
 }
 
@@ -1213,6 +1248,7 @@ function closeRenewalModal() {
 
 async function ensureCafeCouponReady(): Promise<boolean> {
   if (!normalizedCafeCouponCode.value) return true
+  if (cafeCouponError.value && !cafeCouponApplied.value) return false
   await previewCafeCoupon()
   return cafeCouponApplied.value && !cafeCouponError.value
 }
@@ -1551,7 +1587,6 @@ function applyRouteCafeCouponCode() {
   if (codeChanged) {
     cafeCouponCode.value = code
     resetCafeCouponState()
-    appStore.showSuccess(t('payment.cafeCoupon.applied'))
   }
   if (!cafeCouponApplied.value && !previewingCafeCoupon.value && shouldPreviewCafeCouponForCurrentContext()) {
     previewCafeCoupon().catch(() => {})
@@ -1572,7 +1607,7 @@ async function resumeWechatPaymentFromQuery() {
   }
   if (resume.orderType === 'subscription' && resume.planId) {
     selectedPlan.value = checkout.value.plans.find(plan => plan.id === resume.planId) ?? null
-    selectedSubscriptionMultiplier.value = initialMultiplierForPlan(selectedPlan.value, resume.multiplier || 1)
+    selectedSubscriptionMultiplier.value = initialMultiplierForPlan(selectedPlan.value, resume.multiplier || 1, false)
   }
 
   if (resume.cafeCouponCode) {
@@ -1655,7 +1690,8 @@ onMounted(async () => {
     }
     if (route.query.tab === 'subscription') {
       activeTab.value = 'subscription'
-      const multiplier = positiveRouteNumber(route.query.multiplier) ?? 1
+      const routeMultiplier = positiveRouteNumber(route.query.multiplier)
+      const multiplier = routeMultiplier ?? 1
       const planId = positiveRouteNumber(route.query.plan)
       const groupId = positiveRouteNumber(route.query.group)
       const plan = planId
@@ -1663,7 +1699,7 @@ onMounted(async () => {
         : groupId != null ? routeSubscriptionPlanForGroup(groupId) : null
       if (plan) {
         selectedPlan.value = plan
-        selectedSubscriptionMultiplier.value = initialMultiplierForPlan(plan, multiplier)
+        selectedSubscriptionMultiplier.value = initialMultiplierForPlan(plan, multiplier, routeMultiplier == null)
       }
     }
     if (!activeSubscriptionsFetchedForRoute) {

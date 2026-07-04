@@ -44,7 +44,15 @@
               <span class="font-medium text-content-primary">{{ order.out_trade_no }}</span>
             </div>
             <div class="flex justify-between">
-              <span class="text-gray-500 dark:text-gray-400">{{ t('payment.orders.baseAmount') }}</span>
+              <span class="text-gray-500 dark:text-gray-400">{{ baseAmountLabel }}</span>
+              <span class="font-medium text-content-primary">{{ formatGatewayAmount(originalGatewayAmount) }}</span>
+            </div>
+            <div v-if="hasCafeCouponDiscount" class="flex justify-between">
+              <span class="text-gray-500 dark:text-gray-400">{{ t('payment.cafeCoupon.discountLabel') }}</span>
+              <span class="font-semibold text-[#3D2E2A] dark:text-[#F5C66B]">-{{ formatGatewayAmount(cafeCouponDiscountAmount) }}</span>
+            </div>
+            <div v-if="hasCafeCouponDiscount" class="flex justify-between">
+              <span class="text-gray-500 dark:text-gray-400">{{ t('payment.orders.discountedAmount') }}</span>
               <span class="font-medium text-content-primary">{{ formatGatewayAmount(baseAmount) }}</span>
             </div>
             <div v-if="order.fee_rate > 0" class="flex justify-between">
@@ -55,8 +63,8 @@
               <span class="text-gray-500 dark:text-gray-400">{{ t('payment.orders.payAmount') }}</span>
               <span class="font-bold text-primary-600 dark:text-primary-400">{{ formatGatewayAmount(order.pay_amount) }}</span>
             </div>
-            <div v-if="order.amount !== order.pay_amount" class="flex justify-between">
-              <span class="text-gray-500 dark:text-gray-400">{{ t('payment.orders.creditedAmount') }}</span>
+            <div v-if="showOrderAmountRow" class="flex justify-between">
+              <span class="text-gray-500 dark:text-gray-400">{{ orderAmountLabel }}</span>
               <span class="font-medium text-content-primary">{{ order.order_type === 'balance' ? '$' + order.amount.toFixed(2) : formatGatewayAmount(order.amount) }}</span>
             </div>
             <div class="flex justify-between">
@@ -141,6 +149,10 @@ const refreshAttempts = ref(0)
 /** 充值金额 = pay_amount / (1 + fee_rate/100)，fee_rate=0 时等于 pay_amount */
 const baseAmount = computed(() => {
   if (!order.value) return 0
+  if (order.value.order_type === 'subscription') {
+    const discount = Math.max(0, Number(order.value.cafe_coupon_discount || 0))
+    return Math.round(Math.max(0, order.value.amount - discount) * 100) / 100
+  }
   const feeRate = Number(order.value.fee_rate) || 0
   if (feeRate <= 0) return order.value.pay_amount ?? 0
   return Math.round((order.value.pay_amount / (1 + feeRate / 100)) * 100) / 100
@@ -152,6 +164,22 @@ const feeAmount = computed(() => {
   const feeRate = Number(order.value.fee_rate) || 0
   if (feeRate <= 0) return 0
   return Math.round((order.value.pay_amount - baseAmount.value) * 100) / 100
+})
+
+const isSubscriptionOrder = computed(() => order.value?.order_type === 'subscription')
+const cafeCouponDiscountAmount = computed(() => Math.round(Math.max(0, Number(order.value?.cafe_coupon_discount || 0)) * 100) / 100)
+const hasCafeCouponDiscount = computed(() => cafeCouponDiscountAmount.value > 0)
+const originalGatewayAmount = computed(() => {
+  if (!order.value) return 0
+  if (isSubscriptionOrder.value) return order.value.amount
+  if (hasCafeCouponDiscount.value) return Math.round((baseAmount.value + cafeCouponDiscountAmount.value) * 100) / 100
+  return baseAmount.value
+})
+const baseAmountLabel = computed(() => isSubscriptionOrder.value ? t('payment.orders.subscriptionAmount') : t('payment.orders.baseAmount'))
+const orderAmountLabel = computed(() => t('payment.orders.creditedAmount'))
+const showOrderAmountRow = computed(() => {
+  if (!order.value || isSubscriptionOrder.value) return false
+  return Math.abs(order.value.amount - order.value.pay_amount) > 0.009
 })
 
 const localeCode = computed(() => {

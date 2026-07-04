@@ -143,7 +143,7 @@ func (s *PaymentService) expiredReusableCustomSubscriptionGroupIDs(ctx context.C
 				usersubscription.GroupIDEQ(g.ID),
 				usersubscription.UserIDEQ(userID),
 				usersubscription.StatusEQ(SubscriptionStatusActive),
-				usersubscription.ExpiresAtGT(now),
+				activeUserSubscriptionExpiresAt(now),
 				usersubscription.DeletedAtIsNil(),
 			).
 			Exist(ctx)
@@ -287,7 +287,7 @@ func (s *PaymentService) ensureReusableCustomGroupSafety(ctx context.Context, cu
 		Where(
 			usersubscription.GroupIDEQ(customGroupID),
 			usersubscription.StatusEQ(SubscriptionStatusActive),
-			usersubscription.ExpiresAtGT(time.Now()),
+			activeUserSubscriptionExpiresAt(time.Now()),
 			usersubscription.DeletedAtIsNil(),
 		).
 		Count(ctx)
@@ -758,18 +758,13 @@ func (s *PaymentService) migrateCustomSubscriptionAPIKeys(ctx context.Context, u
 	slog.Info("custom subscription api keys migrated", "userID", userID, "sourceGroupID", sourceGroupID, "customGroupID", customGroupID, "count", migrated)
 }
 
-func (s *PaymentService) migrateLegacyCustomSubscriptionAPIKeysToSource(ctx context.Context, userID, sourceGroupID int64, customGroupIDs []int64) {
+func (s *PaymentService) migrateLegacyCustomSubscriptionAPIKeysToSource(ctx context.Context, userID, sourceGroupID int64, customGroupIDs []int64) bool {
 	if s == nil || s.entClient == nil || userID <= 0 || sourceGroupID <= 0 || len(customGroupIDs) == 0 {
-		return
+		return false
 	}
-	filtered := make([]int64, 0, len(customGroupIDs))
-	for _, groupID := range customGroupIDs {
-		if groupID > 0 && groupID != sourceGroupID {
-			filtered = append(filtered, groupID)
-		}
-	}
+	filtered := filterLegacyCustomSubscriptionGroupIDs(sourceGroupID, customGroupIDs)
 	if len(filtered) == 0 {
-		return
+		return false
 	}
 	migrated, err := s.entClient.APIKey.Update().
 		Where(
@@ -781,15 +776,77 @@ func (s *PaymentService) migrateLegacyCustomSubscriptionAPIKeysToSource(ctx cont
 		Save(ctx)
 	if err != nil {
 		slog.Warn("legacy custom subscription api key migration to source failed", "userID", userID, "sourceGroupID", sourceGroupID, "customGroupIDs", filtered, "error", err)
+		return false
+	}
+	if migrated > 0 {
+		if s.authCacheInvalidator != nil {
+			s.authCacheInvalidator.InvalidateAuthCacheByUserID(ctx, userID)
+		}
+		slog.Info("legacy custom subscription api keys migrated to source group", "userID", userID, "sourceGroupID", sourceGroupID, "customGroupIDs", filtered, "count", migrated)
+	}
+	return true
+}
+
+func filterLegacyCustomSubscriptionGroupIDs(sourceGroupID int64, customGroupIDs []int64) []int64 {
+	filtered := make([]int64, 0, len(customGroupIDs))
+	seen := make(map[int64]struct{}, len(customGroupIDs))
+	for _, groupID := range customGroupIDs {
+		if groupID <= 0 || groupID == sourceGroupID {
+			continue
+		}
+		if _, ok := seen[groupID]; ok {
+			continue
+		}
+		seen[groupID] = struct{}{}
+		filtered = append(filtered, groupID)
+	}
+	return filtered
+}
+
+func (s *PaymentService) retireLegacyCustomSubscriptionGroups(ctx context.Context, userID, sourceGroupID int64, customGroupIDs []int64) {
+	if s == nil || s.entClient == nil || userID <= 0 || sourceGroupID <= 0 || len(customGroupIDs) == 0 {
 		return
 	}
-	if migrated <= 0 {
+	filtered := filterLegacyCustomSubscriptionGroupIDs(sourceGroupID, customGroupIDs)
+	if len(filtered) == 0 {
 		return
 	}
-	if s.authCacheInvalidator != nil {
-		s.authCacheInvalidator.InvalidateAuthCacheByUserID(ctx, userID)
+	now := time.Now()
+	retirableIDs, err := s.entClient.Group.Query().
+		Where(
+			entgroup.IDIn(filtered...),
+			entgroup.IsCustomSubscriptionGroupEQ(true),
+			entgroup.CustomOwnerUserIDEQ(userID),
+			entgroup.CustomSourceGroupIDEQ(sourceGroupID),
+			entgroup.StatusEQ(StatusActive),
+			entgroup.Not(entgroup.HasSubscriptionsWith(
+				usersubscription.StatusEQ(SubscriptionStatusActive),
+				usersubscription.DeletedAtIsNil(),
+				activeUserSubscriptionExpiresAt(now),
+			)),
+		).
+		IDs(ctx)
+	if err != nil {
+		slog.Warn("legacy custom subscription group retirement lookup failed", "userID", userID, "sourceGroupID", sourceGroupID, "customGroupIDs", filtered, "error", err)
+		return
 	}
-	slog.Info("legacy custom subscription api keys migrated to source group", "userID", userID, "sourceGroupID", sourceGroupID, "customGroupIDs", filtered, "count", migrated)
+	if len(retirableIDs) == 0 {
+		return
+	}
+	retired, err := s.entClient.Group.Update().
+		Where(entgroup.IDIn(retirableIDs...)).
+		SetStatus(StatusDisabled).
+		Save(ctx)
+	if err != nil {
+		slog.Warn("legacy custom subscription group retirement failed", "userID", userID, "sourceGroupID", sourceGroupID, "customGroupIDs", retirableIDs, "error", err)
+		return
+	}
+	for _, groupID := range retirableIDs {
+		if err := s.notifyCustomSubscriptionGroupChanged(ctx, groupID); err != nil {
+			slog.Warn("legacy custom subscription group retirement notification failed", "groupID", groupID, "error", err)
+		}
+	}
+	slog.Info("legacy custom subscription groups retired", "userID", userID, "sourceGroupID", sourceGroupID, "customGroupIDs", retirableIDs, "count", retired)
 }
 
 type groupChangeNotifier interface {

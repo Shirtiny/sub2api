@@ -691,6 +691,91 @@ describe('PaymentView WeChat JSAPI flow', () => {
     expect(vm.subscriptionButtonAmount).toBe(202)
   })
 
+  it('does not show a success toast for route Cafe coupon before validation', async () => {
+    routeState.query = { tab: 'subscription', cafe_coupon_code: 'CAFE-NOTFOUND' }
+    getCheckoutInfo.mockResolvedValue({
+      data: {
+        ...checkoutInfoWithPlansFixture().data,
+        balance_disabled: true,
+      },
+    })
+    getCafeCouponInfo.mockResolvedValueOnce({ valid: false, coupon: null })
+
+    shallowMount(PaymentView, {
+      global: {
+        stubs: {
+          AppLayout: { template: '<div><slot /></div>' },
+          Teleport: true,
+          Transition: false,
+          SubscriptionPlanCard: SubscriptionPlanCardCouponPreviewStub,
+        },
+      },
+    })
+    await flushPromises()
+    await flushPromises()
+
+    expect(showSuccess).not.toHaveBeenCalled()
+    expect(previewCafeCoupon).not.toHaveBeenCalled()
+  })
+
+  it('honors an explicit route multiplier instead of silently using the active custom multiplier', async () => {
+    routeState.query = { tab: 'subscription', plan: '7', multiplier: '2' }
+    activeSubscriptionsState.push({
+      id: 101,
+      user_id: 1,
+      group_id: 3,
+      status: 'active',
+      starts_at: '2026-01-01T00:00:00.000Z',
+      expires_at: '2099-01-01T00:00:00.000Z',
+      custom_multiplier: 4,
+      custom_source_plan_id: 7,
+      custom_source_group_id: 3,
+      custom_expires_at: '2099-01-01T00:00:00.000Z',
+      custom_display_name: '[4x]Starter#1',
+      daily_usage_usd: 0,
+      weekly_usage_usd: 0,
+      monthly_usage_usd: 0,
+      daily_window_start: null,
+      weekly_window_start: null,
+      monthly_window_start: null,
+      created_at: '2026-01-01T00:00:00.000Z',
+      updated_at: '2026-01-01T00:00:00.000Z',
+      group: { id: 3, name: 'Starter' },
+    })
+    getCheckoutInfo.mockResolvedValue({
+      data: {
+        ...checkoutInfoWithPlansFixture().data,
+        balance_disabled: true,
+      },
+    })
+
+    const wrapper = shallowMount(PaymentView, {
+      global: {
+        stubs: {
+          AppLayout: { template: '<div><slot /></div>' },
+          Teleport: true,
+          Transition: false,
+          SubscriptionPlanCard: SubscriptionPlanCardCouponPreviewStub,
+        },
+      },
+    })
+    await flushPromises()
+    await flushPromises()
+
+    const vm = wrapper.vm as unknown as {
+      selectedSubscriptionMultiplier: number
+      effectiveSelectedMultiplier: number
+      effectiveSelectedPlanPrice: number
+      selectedMultiplierConflictsActiveCustom: boolean
+      canSubmitSubscription: boolean
+    }
+    expect(vm.selectedSubscriptionMultiplier).toBe(2)
+    expect(vm.effectiveSelectedMultiplier).toBe(2)
+    expect(vm.effectiveSelectedPlanPrice).toBe(256)
+    expect(vm.selectedMultiplierConflictsActiveCustom).toBe(true)
+    expect(vm.canSubmitSubscription).toBe(false)
+  })
+
   it('calculates Cafe coupon plan-card amount from one coupon info lookup', async () => {
     routeState.query = { cafe_coupon_code: 'CAFEPREVIEW' }
     getCheckoutInfo.mockResolvedValue({
@@ -721,6 +806,48 @@ describe('PaymentView WeChat JSAPI flow', () => {
     expect(getCafeCouponInfo).toHaveBeenCalledWith({ code: 'CAFEPREVIEW' })
     expect(previewCafeCoupon).not.toHaveBeenCalled()
     expect(wrapper.find('[data-testid="plan-card-7"]').attributes('data-coupon-pay-amount')).toBe('200')
+  })
+
+  it('uses coupon info for the selected subscription confirmation amount before preview returns', async () => {
+    routeState.query = { cafe_coupon_code: 'CAFEPREVIEW' }
+    getCheckoutInfo.mockResolvedValue({
+      data: {
+        ...checkoutInfoWithPlansFixture().data,
+        balance_disabled: true,
+      },
+    })
+    getCafeCouponInfo.mockResolvedValueOnce({
+      valid: true,
+      coupon: { code: 'CAFEPREVIEW', type: 'cash', value: 56 },
+    })
+
+    const wrapper = shallowMount(PaymentView, {
+      global: {
+        stubs: {
+          AppLayout: { template: '<div><slot /></div>' },
+          Teleport: true,
+          Transition: false,
+          SubscriptionPlanCard: SubscriptionPlanCardCouponPreviewStub,
+        },
+      },
+    })
+    await flushPromises()
+    await flushPromises()
+
+    const vm = wrapper.vm as unknown as {
+      checkout: { plans: Array<Record<string, unknown>> }
+      selectPlan: (plan: Record<string, unknown>, multiplier?: number) => void
+      effectiveSelectedCouponPrice: number | null
+      subscriptionCouponPayableAmount: number | null
+      subscriptionButtonAmount: number
+    }
+    vm.selectPlan(vm.checkout.plans[0], 2)
+    await flushPromises()
+
+    expect(previewCafeCoupon).not.toHaveBeenCalled()
+    expect(vm.effectiveSelectedCouponPrice).toBe(200)
+    expect(vm.subscriptionCouponPayableAmount).toBe(200)
+    expect(vm.subscriptionButtonAmount).toBe(200)
   })
 
   it('ignores stale Cafe coupon responses after switching order context', async () => {
@@ -823,6 +950,15 @@ describe('PaymentView WeChat JSAPI flow', () => {
     }))
     expect(createOrder).not.toHaveBeenCalled()
     expect(vm.cafeCouponError).toBe('券码无效')
+    const firstCouponError = vm.cafeCouponError
+
+    await vm.handleSubmitRecharge()
+    await flushPromises()
+
+    expect(previewCafeCoupon).toHaveBeenCalledTimes(1)
+    expect(createOrder).not.toHaveBeenCalled()
+    expect(vm.cafeCouponError).toBe(firstCouponError)
+
   })
 
   it('falls back to QR flow when mobile WeChat payment is unavailable', async () => {

@@ -204,6 +204,31 @@ func (s *UserSubscriptionRepoSuite) TestGetActiveByUserIDAndGroupID_ExpiredIgnor
 	s.Require().Error(err, "expected error for expired subscription")
 }
 
+func (s *UserSubscriptionRepoSuite) TestActiveQueriesIncludeLegacyNullExpiresAt() {
+	user := s.mustCreateUser("active-null-expires@test.com", service.RoleUser)
+	group := s.mustCreateGroup("g-active-null-expires")
+	sub := s.mustCreateSubscription(user.ID, group.ID, nil)
+
+	_, err := s.client.ExecContext(s.ctx, `ALTER TABLE user_subscriptions ALTER COLUMN expires_at DROP NOT NULL`)
+	s.Require().NoError(err, "allow legacy NULL expires_at in this transaction")
+	_, err = s.client.ExecContext(s.ctx, `UPDATE user_subscriptions SET expires_at = NULL WHERE id = $1`, sub.ID)
+	s.Require().NoError(err, "force legacy NULL expires_at")
+
+	got, err := s.repo.GetActiveByUserIDAndGroupID(s.ctx, user.ID, group.ID)
+	s.Require().NoError(err, "GetActiveByUserIDAndGroupID should include NULL expires_at")
+	s.Require().Equal(sub.ID, got.ID)
+	s.Require().False(got.ExpiresAt.IsZero(), "service model should not expose zero expires_at as already expired")
+
+	active, err := s.repo.ListActiveByUserID(s.ctx, user.ID)
+	s.Require().NoError(err, "ListActiveByUserID should include NULL expires_at")
+	s.Require().Len(active, 1)
+	s.Require().Equal(sub.ID, active[0].ID)
+
+	count, err := s.repo.CountActiveByGroupID(s.ctx, group.ID)
+	s.Require().NoError(err, "CountActiveByGroupID should include NULL expires_at")
+	s.Require().Equal(int64(1), count)
+}
+
 // --- ListByUserID / ListActiveByUserID ---
 
 func (s *UserSubscriptionRepoSuite) TestListByUserID() {
