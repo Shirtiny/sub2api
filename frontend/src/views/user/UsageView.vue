@@ -36,6 +36,7 @@
               <p class="text-xl font-bold text-content-primary">
                 {{ formatTokens(usageStats?.total_tokens || 0) }}
               </p>
+              <!-- Temporarily hidden: token breakdown and cache hit rate summary.
               <p class="text-xs text-gray-500 dark:text-gray-400">
                 <span>{{ t('usage.in') }} {{ formatTokens(usageStats?.total_input_tokens || 0) }}</span>
                 <span> · </span>
@@ -64,6 +65,7 @@
               <p v-else class="mt-1 text-xs text-gray-400 dark:text-gray-500">
                 {{ usageStats ? t('usage.noCacheHitRecords') : '-' }}
               </p>
+              -->
             </div>
           </div>
         </div>
@@ -674,6 +676,7 @@ const tokenTooltipData = ref<UsageLog | null>(null)
 // Usage stats from API
 const usageStats = ref<UsageStatsResponse | null>(null)
 
+/* Temporarily hidden together with the token breakdown/cache hit rate summary in template.
 const cacheGroupTypeStats = computed(() => {
   return (usageStats.value?.cache_by_group_type || [])
     .filter((item) => item.total_input_tokens > 0)
@@ -692,6 +695,7 @@ const cacheGroupTypeLabel = (groupType: string): string => {
   if (groupType === 'standard') return t('usage.balanceGroup')
   return groupType || t('usage.unknownGroup')
 }
+*/
 
 const columns = computed<Column[]>(() => [
   { key: 'api_key', label: t('usage.apiKeyFilter'), sortable: false },
