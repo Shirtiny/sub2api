@@ -293,7 +293,57 @@ describe('PaymentView WeChat JSAPI flow', () => {
     expect(vm.activeTab).toBe('subscription')
   })
 
+  it('shows the usage warning when only the subscription tab is available', async () => {
+    routeState.query = { tab: 'subscription' }
+    getCheckoutInfo.mockResolvedValue({
+      data: {
+        ...checkoutInfoWithPlansFixture().data,
+        balance_disabled: true,
+      },
+    })
 
+    const wrapper = shallowMount(PaymentView, {
+      global: {
+        stubs: {
+          AppLayout: { template: '<div><slot /></div>' },
+          Teleport: true,
+          Transition: false,
+        },
+      },
+    })
+    await flushPromises()
+
+    const vm = wrapper.vm as unknown as { tabs: Array<{ key: string; label: string }> }
+    expect(vm.tabs.map((tab) => tab.key)).toEqual(['subscription'])
+    expect(wrapper.text()).toContain('payment.usagePolicyWarning')
+  })
+
+  it('keeps the usage warning visible while confirming a selected plan', async () => {
+    routeState.query = { tab: 'subscription' }
+    getCheckoutInfo.mockResolvedValue(checkoutInfoWithPlansFixture())
+
+    const wrapper = shallowMount(PaymentView, {
+      global: {
+        stubs: {
+          AppLayout: { template: '<div><slot /></div>' },
+          Teleport: true,
+          Transition: false,
+        },
+      },
+    })
+    await flushPromises()
+
+    const vm = wrapper.vm as unknown as {
+      checkout: { plans: Array<unknown> }
+      selectPlan: (plan: unknown) => void
+      selectedPlan: unknown
+    }
+    vm.selectPlan(vm.checkout.plans[0])
+    await flushPromises()
+
+    expect(vm.selectedPlan).not.toBeNull()
+    expect(wrapper.text()).toContain('payment.usagePolicyWarning')
+  })
 
   it('selects the source plan when renewal route points at an active custom subscription group', async () => {
     routeState.query = { tab: 'subscription', group: '99' }

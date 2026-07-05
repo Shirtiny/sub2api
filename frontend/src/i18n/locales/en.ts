@@ -7148,6 +7148,7 @@ export default {
     noActiveSubscription: 'No active subscription',
     tabTopUp: 'Top Up',
     tabSubscribe: 'Subscribe',
+    usagePolicyWarning: 'Distribution, quota bypassing, and policy-violating usage are strictly prohibited. All activity is monitored and recorded; improper use may result in a ban without refund.',
     noPlans: 'No subscription plans available',
     notAvailable: 'Top-up is currently unavailable',
     confirmSubscription: 'Confirm Subscription',

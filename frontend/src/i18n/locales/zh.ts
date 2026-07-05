@@ -7328,6 +7328,7 @@ export default {
     noActiveSubscription: '暂无有效订阅',
     tabTopUp: '充值',
     tabSubscribe: '订阅',
+    usagePolicyWarning: '严禁分发、破限、违规使用，所有行为都有监管、记录，不正当使用将被无退款封禁。',
     noPlans: '暂无可用订阅套餐',
     notAvailable: '充值功能暂未开放',
     confirmSubscription: '确认订阅',
