@@ -699,16 +699,16 @@ const selectedMultiplierConflictsActiveCustom = computed(() => {
 })
 
 const selectedPlanRateDisplay = computed(() => {
-  if (selectedPlan.value?.custom_multiplier_enabled === true || activeCustomSubscriptionForPlan(selectedPlan.value)) {
-    return `${effectiveSelectedMultiplier.value}x`
-  }
-  return `${selectedPlan.value?.rate_multiplier ?? 1}x`
+  return formatBillingRateMultiplier(selectedPlan.value?.rate_multiplier)
 })
 
 function activeSubscriptionRateDisplay(subscription: UserSubscription): string {
-  const customMultiplier = subscriptionCustomMultiplier(subscription)
-  if (subscriptionCustomSourcePlanId(subscription) != null && customMultiplier && customMultiplier >= 1) return `${customMultiplier}x`
-  return `${subscription.group?.rate_multiplier ?? 1}x`
+  return formatBillingRateMultiplier(subscription.group?.rate_multiplier)
+}
+
+function formatBillingRateMultiplier(rate: number | null | undefined): string {
+  const numericRate = rate ?? 1
+  return `${Number(numericRate.toPrecision(10))}x`
 }
 
 // Adaptive grid: center single card, 2-col for 2 plans, 3-col for 3+

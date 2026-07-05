@@ -77,7 +77,7 @@ const customPlan = () => ({
   original_price: 120,
   amount: 1000,
   features: [],
-  rate_multiplier: 1,
+  rate_multiplier: 1.25,
   daily_limit_usd: 10,
   weekly_limit_usd: 20,
   monthly_limit_usd: 30,
@@ -116,11 +116,11 @@ describe("SubscriptionPlanCard", () => {
     expect(text).toContain("Imagen");
   });
 
-  it("scales price and limits and emits selected custom multiplier", async () => {
+  it("scales price and limits but keeps billing rate display stable", async () => {
     const wrapper = mountCustomPlanCard();
 
     expect(wrapper.text()).toContain("\u00a5200");
-    expect(wrapper.find('[data-testid="plan-rate-display"]').text()).toBe("2x");
+    expect(wrapper.find('[data-testid="plan-rate-display"]').text()).toBe("1.25x");
     expect(wrapper.text()).toContain("$20");
     expect(wrapper.text()).toContain("$40");
     expect(wrapper.text()).toContain("$60");
@@ -128,7 +128,7 @@ describe("SubscriptionPlanCard", () => {
     await wrapper.find('[data-testid="multiplier-select"]').setValue("4");
 
     expect(wrapper.text()).toContain("\u00a5400");
-    expect(wrapper.find('[data-testid="plan-rate-display"]').text()).toBe("4x");
+    expect(wrapper.find('[data-testid="plan-rate-display"]').text()).toBe("1.25x");
     expect(wrapper.text()).toContain("$40");
     expect(wrapper.text()).toContain("$80");
     expect(wrapper.text()).toContain("$120");
@@ -167,7 +167,7 @@ describe("SubscriptionPlanCard", () => {
           group: {
             id: 99,
             name: "Custom Pro-user",
-            rate_multiplier: 1,
+            rate_multiplier: 1.25,
             is_custom_subscription_group: true,
             custom_source_plan_id: 2,
             custom_multiplier: 3,
@@ -177,7 +177,7 @@ describe("SubscriptionPlanCard", () => {
     });
 
     expect(wrapper.find('[data-testid="multiplier-select"]').exists()).toBe(false);
-    expect(wrapper.find('[data-testid="plan-rate-display"]').text()).toBe("3x");
+    expect(wrapper.find('[data-testid="plan-rate-display"]').text()).toBe("1.25x");
     expect(wrapper.text()).toContain("3x");
     expect(wrapper.text()).toContain("\u00a5300");
   });

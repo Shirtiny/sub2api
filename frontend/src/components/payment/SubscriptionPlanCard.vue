@@ -257,9 +257,6 @@ const discountText = computed(() => {
 })
 
 const rateDisplay = computed(() => {
-  if (props.plan.custom_multiplier_enabled === true || customRenewalSubscription.value) {
-    return `${effectiveMultiplier.value}x`
-  }
   const rate = props.plan.rate_multiplier ?? 1
   return `${Number(rate.toPrecision(10))}x`
 })

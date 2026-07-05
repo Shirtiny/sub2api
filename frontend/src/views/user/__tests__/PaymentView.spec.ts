@@ -385,7 +385,7 @@ describe('PaymentView WeChat JSAPI flow', () => {
   })
 
 
-  it('displays custom subscription multiplier instead of base rate in purchase details', async () => {
+  it('displays billing rate instead of custom subscription multiplier in purchase details', async () => {
     routeState.query = { tab: 'subscription', plan: '7', multiplier: '4' }
     const customSub = {
       id: 88,
@@ -401,12 +401,14 @@ describe('PaymentView WeChat JSAPI flow', () => {
       group: {
         id: 3,
         name: 'Starter-4x',
-        rate_multiplier: 1,
+        rate_multiplier: 1.25,
         is_custom_subscription_group: false,
       },
     }
     activeSubscriptionsState.push(customSub)
-    getCheckoutInfo.mockResolvedValue(checkoutInfoWithPlansFixture())
+    const checkout = checkoutInfoWithPlansFixture()
+    checkout.data.plans[0].rate_multiplier = 1.25
+    getCheckoutInfo.mockResolvedValue(checkout)
 
     const wrapper = shallowMount(PaymentView, {
       global: {
@@ -422,8 +424,8 @@ describe('PaymentView WeChat JSAPI flow', () => {
       selectedPlanRateDisplay: string
       activeSubscriptionRateDisplay: (subscription: typeof customSub) => string
     }
-    expect(vm.selectedPlanRateDisplay).toBe('4x')
-    expect(vm.activeSubscriptionRateDisplay(customSub)).toBe('4x')
+    expect(vm.selectedPlanRateDisplay).toBe('1.25x')
+    expect(vm.activeSubscriptionRateDisplay(customSub)).toBe('1.25x')
   })
 
   it('resets payment state and redirects to /payment/result after JSAPI reports success', async () => {
