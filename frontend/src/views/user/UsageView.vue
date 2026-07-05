@@ -36,7 +36,6 @@
               <p class="text-xl font-bold text-content-primary">
                 {{ formatTokens(usageStats?.total_tokens || 0) }}
               </p>
-              <!-- Temporarily hidden: token breakdown and cache hit rate summary.
               <p class="text-xs text-gray-500 dark:text-gray-400">
                 <span>{{ t('usage.in') }} {{ formatTokens(usageStats?.total_input_tokens || 0) }}</span>
                 <span> · </span>
@@ -65,7 +64,6 @@
               <p v-else class="mt-1 text-xs text-gray-400 dark:text-gray-500">
                 {{ usageStats ? t('usage.noCacheHitRecords') : '-' }}
               </p>
-              -->
             </div>
           </div>
         </div>
@@ -287,6 +285,9 @@
                     <Icon name="inbox" size="sm" class="text-sky-500" />
                     <span class="font-medium text-sky-600 dark:text-sky-400">{{
                       formatCacheTokens(row.cache_read_tokens)
+                    }}</span>
+                    <span class="font-medium text-sky-600 dark:text-sky-400">{{
+                      formatCacheHitRate(row)
                     }}</span>
                   </div>
                   <!-- Cache Write -->
@@ -676,7 +677,6 @@ const tokenTooltipData = ref<UsageLog | null>(null)
 // Usage stats from API
 const usageStats = ref<UsageStatsResponse | null>(null)
 
-/* Temporarily hidden together with the token breakdown/cache hit rate summary in template.
 const cacheGroupTypeStats = computed(() => {
   return (usageStats.value?.cache_by_group_type || [])
     .filter((item) => item.total_input_tokens > 0)
@@ -695,7 +695,6 @@ const cacheGroupTypeLabel = (groupType: string): string => {
   if (groupType === 'standard') return t('usage.balanceGroup')
   return groupType || t('usage.unknownGroup')
 }
-*/
 
 const columns = computed<Column[]>(() => [
   { key: 'api_key', label: t('usage.apiKeyFilter'), sortable: false },
@@ -829,6 +828,12 @@ const formatTokens = (value: number): string => {
     return `${(value / 1_000).toFixed(2)}K`
   }
   return value.toLocaleString()
+}
+
+const formatCacheHitRate = (log: UsageLog): string => {
+  const promptTokens = (log.input_tokens || 0) + (log.cache_creation_tokens || 0) + (log.cache_read_tokens || 0)
+  if (promptTokens <= 0) return '0.00%'
+  return `${((log.cache_read_tokens / promptTokens) * 100).toFixed(2)}%`
 }
 
 type UsageTableQueryParams = UsageQueryParams & {
