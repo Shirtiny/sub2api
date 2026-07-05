@@ -120,6 +120,8 @@ export async function getStats(params: {
   model?: string
   request_type?: UsageRequestType
   stream?: boolean
+  billing_type?: number | null
+  billing_mode?: string | null
   period?: string
   start_date?: string
   end_date?: string

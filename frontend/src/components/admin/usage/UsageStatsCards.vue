@@ -12,12 +12,36 @@
     </div>
     <div class="card p-4 flex items-center gap-3">
       <div class="rounded-lg bg-amber-100 p-2 dark:bg-amber-900/30 text-amber-600"><svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m21 7.5-9-5.25L3 7.5m18 0-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" /></svg></div>
-      <div>
+      <div class="min-w-0 flex-1">
         <p class="text-xs font-medium text-gray-500">{{ t('usage.totalTokens') }}</p>
         <p class="text-xl font-bold">{{ formatTokens(stats?.total_tokens || 0) }}</p>
         <p class="text-xs text-gray-500">
-          {{ t('usage.in') }}: {{ formatTokens(stats?.total_input_tokens || 0) }} /
-          {{ t('usage.out') }}: {{ formatTokens(stats?.total_output_tokens || 0) }}
+          <span>{{ t('usage.in') }}: {{ formatTokens(stats?.total_input_tokens || 0) }}</span>
+          <span> / </span>
+          <span>{{ t('usage.out') }}: {{ formatTokens(stats?.total_output_tokens || 0) }}</span>
+          <span> · </span>
+          <span class="text-sky-600 dark:text-sky-400">{{ t('usage.cacheHit') }} {{ formatTokens(stats?.total_cache_read_tokens || 0) }}</span>
+          <span> · </span>
+          <span class="text-amber-600 dark:text-amber-400">{{ t('usage.cacheCreate') }} {{ formatTokens(stats?.total_cache_creation_tokens || 0) }}</span>
+        </p>
+        <p class="text-xs text-gray-400 dark:text-gray-500">
+          {{ t('usage.cacheHitRate') }}:
+        </p>
+        <div
+          v-if="cacheGroupTypeStats.length > 0"
+          class="mt-1 space-y-0.5 text-xs text-gray-400 dark:text-gray-500"
+        >
+          <div
+            v-for="item in cacheGroupTypeStats"
+            :key="item.group_type"
+            class="flex items-center gap-1"
+          >
+            <span>{{ cacheGroupTypeLabel(item.group_type) }}:</span>
+            <span class="text-sky-600 dark:text-sky-400">{{ item.hit_rate.toFixed(1) }}%</span>
+          </div>
+        </div>
+        <p v-else class="mt-1 text-xs text-gray-400 dark:text-gray-500">
+          {{ stats ? t('usage.noCacheHitRecords') : '-' }}
         </p>
       </div>
     </div>
@@ -47,13 +71,33 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { AdminUsageStatsResponse } from '@/api/admin/usage'
 import Icon from '@/components/icons/Icon.vue'
 
-defineProps<{ stats: AdminUsageStatsResponse | null }>()
+const props = defineProps<{ stats: AdminUsageStatsResponse | null }>()
 
 const { t } = useI18n()
+
+const cacheGroupTypeStats = computed(() => {
+  return (props.stats?.cache_by_group_type || [])
+    .filter((item) => item.total_input_tokens > 0)
+    .map((item) => ({ ...item, hit_rate: item.hit_rate || 0 }))
+    .sort((a, b) => cacheGroupTypeSortRank(a.group_type) - cacheGroupTypeSortRank(b.group_type))
+})
+
+const cacheGroupTypeSortRank = (groupType: string): number => {
+  if (groupType === 'subscription') return 0
+  if (groupType === 'standard') return 1
+  return 2
+}
+
+const cacheGroupTypeLabel = (groupType: string): string => {
+  if (groupType === 'subscription') return t('usage.subscriptionGroup')
+  if (groupType === 'standard') return t('usage.balanceGroup')
+  return groupType || t('usage.unknownGroup')
+}
 
 const formatDuration = (ms: number) =>
   ms < 1000 ? `${ms.toFixed(0)}ms` : `${(ms / 1000).toFixed(2)}s`

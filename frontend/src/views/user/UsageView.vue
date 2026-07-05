@@ -638,7 +638,7 @@ import type { UsageLog, ApiKey, UsageQueryParams, UsageStatsResponse, UserErrorR
 import type { Column } from '@/components/common/types'
 import { formatDateTime, formatReasoningEffort } from '@/utils/format'
 import { getPersistedPageSize } from '@/composables/usePersistedPageSize'
-import { formatCacheTokens, formatMultiplier } from '@/utils/formatters'
+import { formatCacheHitRate, formatCacheTokens, formatMultiplier } from '@/utils/formatters'
 import { formatTokenPricePerMillion } from '@/utils/usagePricing'
 import { getUsageServiceTierLabel } from '@/utils/usageServiceTier'
 import { resolveUsageRequestType } from '@/utils/usageRequestType'
@@ -830,12 +830,6 @@ const formatTokens = (value: number): string => {
     return `${(value / 1_000).toFixed(2)}K`
   }
   return value.toLocaleString()
-}
-
-const formatCacheHitRate = (log: UsageLog): string => {
-  const promptTokens = (log.input_tokens || 0) + (log.cache_creation_tokens || 0) + (log.cache_read_tokens || 0)
-  if (promptTokens <= 0) return '0.0%'
-  return `${((log.cache_read_tokens / promptTokens) * 100).toFixed(1)}%`
 }
 
 type UsageTableQueryParams = UsageQueryParams & {

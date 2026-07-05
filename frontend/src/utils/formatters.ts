@@ -7,6 +7,22 @@ export function formatCacheTokens(tokens: number): string {
   return tokens.toLocaleString()
 }
 
+interface CacheHitRateUsage {
+  input_tokens?: number | null
+  cache_creation_tokens?: number | null
+  cache_read_tokens?: number | null
+}
+
+/**
+ * Format cache hit rate against all prompt-side tokens:
+ * input + cache creation + cache read.
+ */
+export function formatCacheHitRate(log: CacheHitRateUsage): string {
+  const promptTokens = (log.input_tokens || 0) + (log.cache_creation_tokens || 0) + (log.cache_read_tokens || 0)
+  if (promptTokens <= 0) return '0.0%'
+  return `${(((log.cache_read_tokens || 0) / promptTokens) * 100).toFixed(1)}%`
+}
+
 /**
  * 自适应精度格式化倍率（确保小数值如 0.001 不被截断）
  */
