@@ -118,9 +118,6 @@ jobs:
             echo "latest_migration=${LATEST_MIGRATION}"
           } >> "$GITHUB_OUTPUT"
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -163,7 +160,11 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          platforms: linux/amd64,linux/arm64
+          # Keep release builds single-arch to match the production host and
+          # preserve the previous ~3 minute build time. Multi-arch builds make
+          # linux/arm64 run through QEMU on GitHub-hosted amd64 runners and are
+          # much slower.
+          platforms: linux/amd64
           build-args: |
             VERSION=${{ needs.preflight.outputs.version }}
             COMMIT=${{ steps.context.outputs.sha }}

@@ -140,6 +140,20 @@ The `latest` tag is allowed only for stable releases and is a convenience pointe
 
 ---
 
+## Image Architecture Policy
+
+Production release images are built for the production host architecture only:
+
+```text
+linux/amd64
+```
+
+Do not enable multi-architecture release builds by default. In particular, do not add `linux/arm64` to the production release workflow unless there is an explicit deployment requirement and the slower build time is accepted.
+
+Reason: GitHub-hosted `ubuntu-latest` runners are amd64; adding `linux/arm64` makes Buildx use QEMU emulation and can turn a normal ~3 minute image publication into a much longer multi-arch build.
+
+---
+
 ## Build Record Requirements
 
 Every image publication must upload a release record artifact containing at least:
@@ -262,6 +276,7 @@ When reviewing release or container workflow changes:
 - [ ] Release tags are validated with the strict SemVer-style pattern.
 - [ ] Prereleases do not update `latest` or `MAJOR.MINOR`.
 - [ ] Stable releases publish immutable version tags and may update `latest`.
+- [ ] Release image platforms remain `linux/amd64` unless multi-arch is explicitly required.
 - [ ] Build records include image digest and migration SQL hashes.
 - [ ] No workflow can bypass the tag-driven release path unless it is explicitly disabled by default and guarded.
 - [ ] Production update instructions use image digests for deployment and rollback identity.
