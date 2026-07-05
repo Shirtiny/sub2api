@@ -278,27 +278,29 @@
                 <!-- Cache Tokens (Read + Write) -->
                 <div
                   v-if="row.cache_read_tokens > 0 || row.cache_creation_tokens > 0"
-                  class="flex items-center gap-2"
+                  class="flex items-center justify-between gap-2"
                 >
-                  <!-- Cache Read -->
-                  <div v-if="row.cache_read_tokens > 0" class="inline-flex items-center gap-1">
-                    <Icon name="inbox" size="sm" class="text-sky-500" />
-                    <span class="font-medium text-sky-600 dark:text-sky-400">{{
-                      formatCacheTokens(row.cache_read_tokens)
-                    }}</span>
-                    <span class="font-medium text-sky-600 dark:text-sky-400">{{
-                      formatCacheHitRate(row)
-                    }}</span>
+                  <div class="flex items-center gap-2">
+                    <!-- Cache Read -->
+                    <div v-if="row.cache_read_tokens > 0" class="inline-flex items-center gap-1">
+                      <Icon name="inbox" size="sm" class="text-sky-500" />
+                      <span class="font-medium text-sky-600 dark:text-sky-400">{{
+                        formatCacheTokens(row.cache_read_tokens)
+                      }}</span>
+                    </div>
+                    <!-- Cache Write -->
+                    <div v-if="row.cache_creation_tokens > 0" class="inline-flex items-center gap-1">
+                      <Icon name="edit" size="sm" class="text-amber-500" />
+                      <span class="font-medium text-amber-600 dark:text-amber-400">{{
+                        formatCacheTokens(row.cache_creation_tokens)
+                      }}</span>
+                      <span v-if="row.cache_creation_1h_tokens > 0" class="inline-flex items-center rounded px-1 py-px text-[10px] font-medium leading-tight bg-orange-100 text-orange-600 ring-1 ring-inset ring-orange-200 dark:bg-orange-500/20 dark:text-orange-400 dark:ring-orange-500/30">1h</span>
+                      <span v-if="row.cache_ttl_overridden" :title="t('usage.cacheTtlOverriddenHint')" class="inline-flex items-center rounded px-1 py-px text-[10px] font-medium leading-tight bg-rose-100 text-rose-600 ring-1 ring-inset ring-rose-200 dark:bg-rose-500/20 dark:text-rose-400 dark:ring-rose-500/30 cursor-help">R</span>
+                    </div>
                   </div>
-                  <!-- Cache Write -->
-                  <div v-if="row.cache_creation_tokens > 0" class="inline-flex items-center gap-1">
-                    <Icon name="edit" size="sm" class="text-amber-500" />
-                    <span class="font-medium text-amber-600 dark:text-amber-400">{{
-                      formatCacheTokens(row.cache_creation_tokens)
-                    }}</span>
-                    <span v-if="row.cache_creation_1h_tokens > 0" class="inline-flex items-center rounded px-1 py-px text-[10px] font-medium leading-tight bg-orange-100 text-orange-600 ring-1 ring-inset ring-orange-200 dark:bg-orange-500/20 dark:text-orange-400 dark:ring-orange-500/30">1h</span>
-                    <span v-if="row.cache_ttl_overridden" :title="t('usage.cacheTtlOverriddenHint')" class="inline-flex items-center rounded px-1 py-px text-[10px] font-medium leading-tight bg-rose-100 text-rose-600 ring-1 ring-inset ring-rose-200 dark:bg-rose-500/20 dark:text-rose-400 dark:ring-rose-500/30 cursor-help">R</span>
-                  </div>
+                  <span v-if="row.cache_read_tokens > 0" class="font-medium text-sky-600 dark:text-sky-400">{{
+                    formatCacheHitRate(row)
+                  }}</span>
                 </div>
                 <div v-if="hasImageOutputTokens(row)" class="flex items-center gap-2">
                   <div class="inline-flex items-center gap-1">
@@ -832,8 +834,8 @@ const formatTokens = (value: number): string => {
 
 const formatCacheHitRate = (log: UsageLog): string => {
   const promptTokens = (log.input_tokens || 0) + (log.cache_creation_tokens || 0) + (log.cache_read_tokens || 0)
-  if (promptTokens <= 0) return '0.00%'
-  return `${((log.cache_read_tokens / promptTokens) * 100).toFixed(2)}%`
+  if (promptTokens <= 0) return '0.0%'
+  return `${((log.cache_read_tokens / promptTokens) * 100).toFixed(1)}%`
 }
 
 type UsageTableQueryParams = UsageQueryParams & {
