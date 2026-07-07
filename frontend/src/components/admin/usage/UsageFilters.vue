@@ -159,9 +159,12 @@
         <button type="button" @click="$emit('cleanup')" class="btn btn-danger">
           {{ t('admin.usage.cleanup.button') }}
         </button>
+        <!-- Export disabled while removing the xlsx dependency for Security Scan. -->
+        <!--
         <button type="button" @click="$emit('export')" :disabled="exporting" class="btn btn-primary">
           {{ t('usage.exportExcel') }}
         </button>
+        -->
       </div>
     </div>
   </div>
