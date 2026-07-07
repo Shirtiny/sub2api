@@ -137,6 +137,28 @@ func TestGetModelPricing_OpenAIGPT54Fallback(t *testing.T) {
 	require.InDelta(t, 1.5, pricing.LongContextOutputMultiplier, 1e-12)
 }
 
+func TestIsOpenAIGPT54Model_IncludesKnownLongContextOpenAIModelsOnly(t *testing.T) {
+	for _, model := range []string{
+		"gpt-5.4",
+		"gpt-5.5",
+		"gpt-5.5-pro",
+		"gpt-5.6-sol",
+		"gpt-5.6-terra",
+		"gpt-5.6-luna",
+		"gpt-5.6-sol-high",
+	} {
+		require.True(t, isOpenAIGPT54Model(model), model)
+	}
+
+	for _, model := range []string{
+		"gpt-5.6-solstice",
+		"gpt-5.99-experimental",
+		"claude-opus-4-6",
+	} {
+		require.False(t, isOpenAIGPT54Model(model), model)
+	}
+}
+
 func TestGetModelPricing_OpenAICompactAliasesFallback(t *testing.T) {
 	svc := newTestBillingService()
 

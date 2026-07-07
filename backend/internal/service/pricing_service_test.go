@@ -129,6 +129,36 @@ func TestDefaultPricingIncludesCodexAutoReview(t *testing.T) {
 	require.InDelta(t, 5e-7, got.CacheReadInputTokenCost, 1e-12)
 }
 
+func TestDefaultPricingIncludesGPT56Variants(t *testing.T) {
+	data, err := os.ReadFile(filepath.Join("..", "..", "resources", "model-pricing", "model_prices_and_context_window.json"))
+	require.NoError(t, err)
+
+	svc := &PricingService{}
+	pricingData, err := svc.parsePricingData(data)
+	require.NoError(t, err)
+	svc.pricingData = pricingData
+
+	for _, model := range []string{"gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna"} {
+		got := svc.GetModelPricing(model)
+		require.NotNil(t, got, model)
+		require.InDelta(t, 5e-6, got.InputCostPerToken, 1e-12, model)
+		require.InDelta(t, 3e-5, got.OutputCostPerToken, 1e-12, model)
+		require.InDelta(t, 5e-7, got.CacheReadInputTokenCost, 1e-12, model)
+	}
+}
+
+func TestGetModelPricing_GPT56ReasoningSuffixUsesBasePricing(t *testing.T) {
+	solPricing := &LiteLLMModelPricing{InputCostPerToken: 5e-6}
+	svc := &PricingService{
+		pricingData: map[string]*LiteLLMModelPricing{
+			"gpt-5.6-sol": solPricing,
+		},
+	}
+
+	require.Same(t, solPricing, svc.GetModelPricing("gpt-5.6-sol-high"))
+	require.Nil(t, svc.GetModelPricing("gpt-5.6-solstice"))
+}
+
 func TestGetModelPricing_Gpt54MiniUsesDedicatedStaticFallbackWhenRemoteMissing(t *testing.T) {
 	svc := &PricingService{
 		pricingData: map[string]*LiteLLMModelPricing{

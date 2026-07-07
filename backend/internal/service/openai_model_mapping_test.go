@@ -225,6 +225,14 @@ func TestNormalizeCodexModel(t *testing.T) {
 		"gpt-image-2":               "gpt-image-2",
 		"gpt-5.4-nano":              "gpt-5.4-nano",
 		"gpt-5.4-nano-high":         "gpt-5.4-nano",
+		"gpt-5.6-sol":               "gpt-5.6-sol",
+		"gpt-5.6-sol-high":          "gpt-5.6-sol",
+		"gpt-5.6-solstice":          "gpt-5.6-solstice",
+		"gpt-5.6-terra":             "gpt-5.6-terra",
+		"gpt-5.6-luna":              "gpt-5.6-luna",
+		"gpt-5.4-preview":           "gpt-5.4-preview",
+		"codex-next":                "codex-next",
+		"gpt-5.99-experimental":     "gpt-5.99-experimental",
 		"gpt6":                      "gpt6",
 		"claude-opus-4-6":           "claude-opus-4-6",
 	}
@@ -254,6 +262,18 @@ func TestNormalizeOpenAIModelForUpstream(t *testing.T) {
 			account: &Account{Type: AccountTypeOAuth},
 			model:   "gpt6",
 			want:    "gpt6",
+		},
+		{
+			name:    "oauth preserves unknown gpt-5 family model",
+			account: &Account{Type: AccountTypeOAuth},
+			model:   "gpt-5.99-experimental",
+			want:    "gpt-5.99-experimental",
+		},
+		{
+			name:    "oauth preserves unknown gpt-5.6 prefix collision",
+			account: &Account{Type: AccountTypeOAuth},
+			model:   "gpt-5.6-solstice",
+			want:    "gpt-5.6-solstice",
 		},
 		{
 			name:    "oauth normalizes known codex alias",

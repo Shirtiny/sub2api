@@ -583,6 +583,9 @@ func (s *PricingService) buildModelLookupCandidates(modelLower string) []string 
 		normalizeModelNameForPricing(modelLower),
 		modelLower,
 	}
+	if normalizedKnown := normalizeKnownOpenAICodexModel(modelLower); normalizedKnown != "" {
+		candidates = append(candidates, normalizedKnown)
+	}
 	candidates = append(candidates,
 		strings.TrimPrefix(modelLower, "models/"),
 		lastSegment(modelLower),

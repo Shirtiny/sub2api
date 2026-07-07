@@ -55,39 +55,50 @@ func normalizeKnownOpenAICodexModel(model string) string {
 		return ""
 	}
 
-	if mapped := getNormalizedCodexModel(normalized); mapped != "" {
-		return mapped
-	}
+	candidates := []string{normalized}
 	if strings.HasSuffix(normalized, "-openai-compact") {
-		if mapped := getNormalizedCodexModel(strings.TrimSuffix(normalized, "-openai-compact")); mapped != "" {
+		candidates = append(candidates, strings.TrimSuffix(normalized, "-openai-compact"))
+	}
+
+	for _, candidate := range candidates {
+		if mapped := getNormalizedCodexModel(candidate); mapped != "" {
+			return mapped
+		}
+		if mapped := matchKnownOpenAICodexModelVariant(candidate); mapped != "" {
 			return mapped
 		}
 	}
+	return ""
+}
 
-	switch {
-	case strings.Contains(normalized, "gpt-5.5"):
-		return "gpt-5.5"
-	case strings.Contains(normalized, "gpt-5.4-mini"):
-		return "gpt-5.4-mini"
-	case strings.Contains(normalized, "gpt-5.4-nano"):
-		return "gpt-5.4-nano"
-	case strings.Contains(normalized, "gpt-5.4"):
-		return "gpt-5.4"
-	case strings.Contains(normalized, "gpt-5.2"):
-		return "gpt-5.2"
-	case strings.Contains(normalized, "gpt-5.3-codex-spark"):
-		return "gpt-5.3-codex-spark"
-	case strings.Contains(normalized, "gpt-5.3-codex"):
-		return "gpt-5.3-codex"
-	case strings.Contains(normalized, "gpt-5.3"):
-		return "gpt-5.3-codex"
-	case strings.Contains(normalized, "codex"):
-		return "gpt-5.3-codex"
-	case strings.Contains(normalized, "gpt-5"):
-		return "gpt-5.4"
-	default:
-		return ""
+var knownOpenAICodexModelVariants = []struct {
+	base   string
+	target string
+}{
+	{base: "gpt-5.6-sol", target: "gpt-5.6-sol"},
+	{base: "gpt-5.6-terra", target: "gpt-5.6-terra"},
+	{base: "gpt-5.6-luna", target: "gpt-5.6-luna"},
+	{base: "gpt-5.5-pro", target: "gpt-5.5-pro"},
+	{base: "gpt-5.5", target: "gpt-5.5"},
+	{base: "gpt-5.4-mini", target: "gpt-5.4-mini"},
+	{base: "gpt-5.4-nano", target: "gpt-5.4-nano"},
+	{base: "gpt-5.4", target: "gpt-5.4"},
+	{base: "gpt-5.3-codex-spark", target: "gpt-5.3-codex-spark"},
+	{base: "gpt-5.3-codex", target: "gpt-5.3-codex"},
+	{base: "gpt-5.3", target: "gpt-5.3-codex"},
+	{base: "gpt-5.2", target: "gpt-5.2"},
+}
+
+func matchKnownOpenAICodexModelVariant(normalized string) string {
+	for _, item := range knownOpenAICodexModelVariants {
+		if normalized == item.base {
+			return item.target
+		}
+		if suffix, ok := strings.CutPrefix(normalized, item.base+"-"); ok && isKnownCodexModelSuffix(suffix) {
+			return item.target
+		}
 	}
+	return ""
 }
 
 func appendUsageBillingModelCandidate(candidates []string, seen map[string]struct{}, model string) []string {
