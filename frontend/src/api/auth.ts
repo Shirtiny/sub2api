@@ -289,6 +289,13 @@ export async function prepareOAuthBindAccessTokenCookie(): Promise<void> {
 }
 
 /**
+ * Sync the signed parent-domain browser-history cookie for the current user.
+ */
+export async function syncBrowserHistoryCookie(): Promise<void> {
+  await apiClient.post('/auth/browser-history')
+}
+
+/**
  * Refresh the access token using the refresh token
  * @returns New token pair
  */
@@ -680,6 +687,7 @@ export const authAPI = {
   forgotPassword,
   resetPassword,
   refreshToken,
+  syncBrowserHistoryCookie,
   revokeAllSessions,
   getPendingOAuthBindLoginKind,
   isPendingOAuthCreateAccountRequired,

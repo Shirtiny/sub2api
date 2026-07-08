@@ -65,6 +65,39 @@ func TestBrowserHistoryCookieSetsCompactParentDomainCookie(t *testing.T) {
 	require.Equal(t, []int64{12345}, state.userIDs)
 }
 
+func TestTouchBrowserHistoryCookieForUserMergesWithoutAuthorization(t *testing.T) {
+	clearBrowserHistoryCookieSecretEnv(t)
+	gin.SetMode(gin.TestMode)
+
+	secret := "test-shared-cookie-secret-32bytes"
+	oldValue := signBrowserHistoryCookie(browserHistoryCookieState{
+		id:         "abcdefghijklmnop",
+		firstDay:   unixDay(time.Now().UTC()),
+		lastDay:    unixDay(time.Now().UTC()),
+		visitCount: 1,
+		userIDs:    []int64{1},
+	}, secret)
+
+	r := gin.New()
+	r.POST("/api/v1/auth/browser-history", func(c *gin.Context) {
+		require.True(t, TouchBrowserHistoryCookieForUser(c, &config.Config{JWT: config.JWTConfig{Secret: secret}}, 375))
+		c.Status(http.StatusNoContent)
+	})
+
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "https://api.cafecode.work/api/v1/auth/browser-history", nil)
+	req.AddCookie(&http.Cookie{Name: CafeCodeBrowserHistoryCookieName, Value: oldValue})
+	r.ServeHTTP(w, req)
+
+	require.Equal(t, http.StatusNoContent, w.Code)
+	cookies := w.Result().Cookies()
+	require.Len(t, cookies, 1)
+	state, ok := parseBrowserHistoryCookie(cookies[0].Value, secret)
+	require.True(t, ok)
+	require.Equal(t, "abcdefghijklmnop", state.id)
+	require.Equal(t, []int64{375, 1}, state.userIDs)
+}
+
 func TestBrowserHistoryCookieAllowsSeparateCookieAndJWTSecrets(t *testing.T) {
 	clearBrowserHistoryCookieSecretEnv(t)
 	gin.SetMode(gin.TestMode)
@@ -170,6 +203,25 @@ func TestBrowserHistoryCookieUsesForwardedHost(t *testing.T) {
 	r.ServeHTTP(w, req)
 
 	require.Len(t, w.Result().Cookies(), 1)
+}
+
+func TestBrowserHistoryCookieAllowsCafeCodeSubdomains(t *testing.T) {
+	clearBrowserHistoryCookieSecretEnv(t)
+	gin.SetMode(gin.TestMode)
+
+	for _, host := range []string{"api.cafecode.work", "aether.cafecode.work", "foo.cafecode.work"} {
+		t.Run(host, func(t *testing.T) {
+			r := gin.New()
+			r.Use(BrowserHistoryCookie(&config.Config{JWT: config.JWTConfig{Secret: "test-shared-cookie-secret-32bytes"}}))
+			r.GET("/", func(c *gin.Context) { c.Status(http.StatusOK) })
+
+			w := httptest.NewRecorder()
+			req := httptest.NewRequest(http.MethodGet, "https://"+host+"/", nil)
+			r.ServeHTTP(w, req)
+
+			require.Len(t, w.Result().Cookies(), 1)
+		})
+	}
 }
 
 func TestBrowserHistoryCookieSkipsStaticAssets(t *testing.T) {

@@ -68,6 +68,14 @@ function clearPendingAuthSessionStorage(): void {
   localStorage.removeItem(PENDING_AUTH_SESSION_KEY)
 }
 
+async function syncBrowserHistoryCookieSilently(): Promise<void> {
+  try {
+    await authAPI.syncBrowserHistoryCookie()
+  } catch {
+    // Browser-history sync is a best-effort anti-abuse signal; do not block login.
+  }
+}
+
 export const useAuthStore = defineStore('auth', () => {
   // ==================== State ====================
 
@@ -299,6 +307,7 @@ export const useAuthStore = defineStore('auth', () => {
     // Persist to localStorage
     localStorage.setItem(AUTH_TOKEN_KEY, response.access_token)
     localStorage.setItem(AUTH_USER_KEY, JSON.stringify(userData))
+    void syncBrowserHistoryCookieSilently()
     clearPendingAuthSession()
 
     // Start auto-refresh interval for user data
@@ -347,6 +356,7 @@ export const useAuthStore = defineStore('auth', () => {
 
     token.value = newToken
     localStorage.setItem(AUTH_TOKEN_KEY, newToken)
+    await syncBrowserHistoryCookieSilently()
 
     // Read refresh token and expires_at from localStorage if set by OAuth callback
     const savedRefreshToken = localStorage.getItem(REFRESH_TOKEN_KEY)

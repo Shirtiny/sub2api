@@ -48,15 +48,32 @@ func BrowserHistoryCookie(cfg *config.Config) gin.HandlerFunc {
 			return
 		}
 
-		nowDay := unixDay(time.Now().UTC())
-		currentUserID := currentCafeCodeUserID(c, cfg)
-		value, refresh := nextBrowserHistoryCookieValue(c, secret, nowDay, currentUserID)
-		if refresh {
-			setBrowserHistoryCookie(c, value)
-		}
-
+		touchBrowserHistoryCookie(c, secret, currentCafeCodeUserID(c, cfg))
 		c.Next()
 	}
+}
+
+// TouchBrowserHistoryCookieForUser immediately merges a known CafeCode user ID
+// into the signed parent-domain browser-history cookie. It is intended for auth
+// success responses and explicit frontend syncs where the current user is known
+// even if the incoming request does not yet carry an Authorization header.
+func TouchBrowserHistoryCookieForUser(c *gin.Context, cfg *config.Config, userID int64) bool {
+	secret := browserHistoryCookieSecret(cfg)
+	if shouldSkipBrowserHistoryCookie(c, secret) {
+		return false
+	}
+	return touchBrowserHistoryCookie(c, secret, userID)
+}
+
+func touchBrowserHistoryCookie(c *gin.Context, secret string, currentUserID int64) bool {
+	if c == nil || c.Request == nil {
+		return false
+	}
+	value, refresh := nextBrowserHistoryCookieValue(c, secret, unixDay(time.Now().UTC()), currentUserID)
+	if refresh {
+		setBrowserHistoryCookie(c, value)
+	}
+	return refresh
 }
 
 func browserHistoryCookieSecret(cfg *config.Config) string {
@@ -136,12 +153,14 @@ func isCafeCodeCookieHost(hostport string) bool {
 	if parsedHost, _, err := net.SplitHostPort(host); err == nil {
 		host = parsedHost
 	}
-	switch strings.TrimSuffix(host, ".") {
-	case "cafecode.work", "www.cafecode.work":
+	host = strings.TrimSuffix(host, ".")
+	if host == "cafecode.work" || host == "www.cafecode.work" {
 		return true
-	default:
+	}
+	if host == "store.cafecode.work" {
 		return false
 	}
+	return strings.HasSuffix(host, ".cafecode.work")
 }
 
 type browserHistoryJWTClaims struct {

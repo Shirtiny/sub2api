@@ -112,6 +112,7 @@ func (h *AuthHandler) respondWithTokenPair(c *gin.Context, user *service.User) {
 			response.InternalError(c, "Failed to generate token")
 			return
 		}
+		h.touchBrowserHistoryCookieForUser(c, user)
 		response.Success(c, AuthResponse{
 			AccessToken: token,
 			TokenType:   "Bearer",
@@ -119,6 +120,7 @@ func (h *AuthHandler) respondWithTokenPair(c *gin.Context, user *service.User) {
 		})
 		return
 	}
+	h.touchBrowserHistoryCookieForUser(c, user)
 	response.Success(c, AuthResponse{
 		AccessToken:  tokenPair.AccessToken,
 		RefreshToken: tokenPair.RefreshToken,
@@ -126,6 +128,13 @@ func (h *AuthHandler) respondWithTokenPair(c *gin.Context, user *service.User) {
 		TokenType:    "Bearer",
 		User:         dto.UserFromService(user),
 	})
+}
+
+func (h *AuthHandler) touchBrowserHistoryCookieForUser(c *gin.Context, user *service.User) bool {
+	if user == nil {
+		return false
+	}
+	return middleware2.TouchBrowserHistoryCookieForUser(c, h.cfg, user.ID)
 }
 
 func (h *AuthHandler) ensureBackendModeAllowsUser(ctx context.Context, user *service.User) error {
@@ -399,6 +408,24 @@ func (h *AuthHandler) Login2FA(c *gin.Context) {
 	}
 
 	h.respondWithTokenPair(c, user)
+}
+
+type BrowserHistoryCookieSyncResponse struct {
+	Synced bool `json:"synced"`
+}
+
+// SyncBrowserHistoryCookie refreshes the signed parent-domain browser-history
+// cookie for the currently authenticated user.
+// POST /api/v1/auth/browser-history
+func (h *AuthHandler) SyncBrowserHistoryCookie(c *gin.Context) {
+	subject, ok := middleware2.GetAuthSubjectFromContext(c)
+	if !ok {
+		response.Unauthorized(c, "User not authenticated")
+		return
+	}
+
+	synced := middleware2.TouchBrowserHistoryCookieForUser(c, h.cfg, subject.UserID)
+	response.Success(c, BrowserHistoryCookieSyncResponse{Synced: synced})
 }
 
 // GetCurrentUser handles getting current authenticated user
