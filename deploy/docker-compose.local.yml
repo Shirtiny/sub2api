@@ -92,6 +92,8 @@ services:
       # will be generated on each startup.
       # Generate a secure secret: openssl rand -hex 32
       - JWT_SECRET=${JWT_SECRET:-}
+      # Shared parent-domain browser-history cookie secret for CafeCode/LDC Shop
+      - CAFE_BROWSER_COOKIE_SECRET=${CAFE_BROWSER_COOKIE_SECRET:-}
       - SECURITY_API_KEY_HASH_SECRET=${SECURITY_API_KEY_HASH_SECRET:-}
       - JWT_EXPIRE_HOUR=${JWT_EXPIRE_HOUR:-24}
 

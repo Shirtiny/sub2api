@@ -213,6 +213,7 @@ docker compose down -v
 |----------|----------|---------|-------------|
 | `POSTGRES_PASSWORD` | **Yes** | - | PostgreSQL password |
 | `JWT_SECRET` | **Recommended** | *(auto-generated)* | JWT secret (fixed for persistent sessions) |
+| `CAFE_BROWSER_COOKIE_SECRET` | Optional | empty | Shared HMAC secret for the `.cafecode.work` `cfw_bh` browser-history cookie. Set the same value in the `ldc-shop` Worker secret so `store.cafecode.work` can verify CafeCode browser-history signals. |
 | `SECURITY_API_KEY_HASH_SECRET` | **Yes** | *(auto-generated)* | Independent HMAC secret for stored user API key hashes. Keep fixed across deployments. |
 | `TOTP_ENCRYPTION_KEY` | **Recommended** | *(auto-generated)* | TOTP encryption key (fixed for persistent 2FA) |
 | `SERVER_PORT` | No | `8080` | Server port |

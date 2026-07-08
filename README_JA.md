@@ -295,6 +295,11 @@ POSTGRES_PASSWORD=your_secure_password_here
 # JWT シークレット（推奨 - 再起動後もユーザーのログイン状態を保持）
 JWT_SECRET=your_jwt_secret_here
 
+# 任意: CafeCode/LDC Shop 共有ブラウザ履歴 Cookie シークレット
+# ldc-shop Worker の CAFE_BROWSER_COOKIE_SECRET と同じ値を設定し、
+# store.cafecode.work が検証する .cafecode.work の cfw_bh Cookie に署名します。
+CAFE_BROWSER_COOKIE_SECRET=your_shared_browser_cookie_secret_here
+
 # TOTP 暗号化キー（推奨 - 再起動後も二要素認証を維持）
 TOTP_ENCRYPTION_KEY=your_totp_key_here
 

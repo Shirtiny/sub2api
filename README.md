@@ -294,6 +294,11 @@ POSTGRES_PASSWORD=your_secure_password_here
 # JWT Secret (RECOMMENDED - keeps users logged in after restart)
 JWT_SECRET=your_jwt_secret_here
 
+# Optional shared browser-history cookie secret for CafeCode/LDC Shop
+# Set the same value as the ldc-shop Worker secret CAFE_BROWSER_COOKIE_SECRET
+# to sign the .cafecode.work cfw_bh cookie that store.cafecode.work verifies.
+CAFE_BROWSER_COOKIE_SECRET=your_shared_browser_cookie_secret_here
+
 # TOTP Encryption Key (RECOMMENDED - preserves 2FA after restart)
 TOTP_ENCRYPTION_KEY=your_totp_key_here
 

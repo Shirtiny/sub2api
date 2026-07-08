@@ -38,6 +38,8 @@ services:
       - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@sub2api.local}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-}
       - JWT_SECRET=${JWT_SECRET:-}
+      # Shared parent-domain browser-history cookie secret for CafeCode/LDC Shop
+      - CAFE_BROWSER_COOKIE_SECRET=${CAFE_BROWSER_COOKIE_SECRET:-}
       - SECURITY_API_KEY_HASH_SECRET=${SECURITY_API_KEY_HASH_SECRET:-}
       - TOTP_ENCRYPTION_KEY=${TOTP_ENCRYPTION_KEY:-}
       - TZ=${TZ:-Asia/Shanghai}

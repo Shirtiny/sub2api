@@ -295,6 +295,11 @@ POSTGRES_PASSWORD=your_secure_password_here
 # JWT 密钥（推荐 - 重启后保持用户登录状态）
 JWT_SECRET=your_jwt_secret_here
 
+# 可选：CafeCode/LDC Shop 共享浏览痕迹 Cookie 密钥
+# 需要与 ldc-shop Worker 的 CAFE_BROWSER_COOKIE_SECRET 保持一致，
+# 用于签名 .cafecode.work 域下的 cfw_bh Cookie，供 store.cafecode.work 验证。
+CAFE_BROWSER_COOKIE_SECRET=your_shared_browser_cookie_secret_here
+
 # TOTP 加密密钥（推荐 - 重启后保留双因素认证）
 TOTP_ENCRYPTION_KEY=your_totp_key_here
 
