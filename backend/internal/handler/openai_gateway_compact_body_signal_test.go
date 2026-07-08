@@ -36,12 +36,14 @@ func TestNormalizeOpenAIResponsesCompactRequest_BodySignalPromoted(t *testing.T)
 		]
 	}`)
 	c := newCompactBodySignalTestContext(t, "/v1/responses", body)
+	c.Set(ctxKeyInboundEndpoint, EndpointResponses)
 
 	normalized, ok := h.normalizeOpenAIResponsesCompactRequest(c, zap.NewNop(), body)
 	require.True(t, ok)
 
 	require.Equal(t, "/v1/responses/compact", c.Request.URL.Path)
 	require.True(t, isOpenAIRemoteCompactPath(c))
+	require.Equal(t, EndpointResponsesCompact, GetInboundEndpoint(c))
 
 	require.False(t, gjson.GetBytes(normalized, "stream").Exists())
 	require.False(t, gjson.GetBytes(normalized, "store").Exists())
@@ -82,11 +84,13 @@ func TestNormalizeOpenAIResponsesCompactRequest_NoTriggerUntouched(t *testing.T)
 	h := &OpenAIGatewayHandler{}
 	body := []byte(`{"model":"gpt-5.5","stream":true,"input":[{"type":"message","role":"user","content":"hello"}]}`)
 	c := newCompactBodySignalTestContext(t, "/v1/responses", body)
+	c.Set(ctxKeyInboundEndpoint, EndpointResponses)
 
 	normalized, ok := h.normalizeOpenAIResponsesCompactRequest(c, zap.NewNop(), body)
 	require.True(t, ok)
 	require.Equal(t, "/v1/responses", c.Request.URL.Path)
 	require.False(t, isOpenAIRemoteCompactPath(c))
+	require.Equal(t, EndpointResponses, GetInboundEndpoint(c))
 	require.Equal(t, body, normalized)
 	require.True(t, gjson.GetBytes(normalized, "stream").Bool())
 }
@@ -95,10 +99,12 @@ func TestNormalizeOpenAIResponsesCompactRequest_PathBasedNoDoubleSuffix(t *testi
 	h := &OpenAIGatewayHandler{}
 	body := []byte(`{"model":"gpt-5.5","stream":true,"store":true,"input":[{"type":"message","role":"user","content":"hello"}]}`)
 	c := newCompactBodySignalTestContext(t, "/v1/responses/compact", body)
+	c.Set(ctxKeyInboundEndpoint, EndpointResponses)
 
 	normalized, ok := h.normalizeOpenAIResponsesCompactRequest(c, zap.NewNop(), body)
 	require.True(t, ok)
 	require.Equal(t, "/v1/responses/compact", c.Request.URL.Path)
+	require.Equal(t, EndpointResponsesCompact, GetInboundEndpoint(c))
 	require.False(t, gjson.GetBytes(normalized, "stream").Exists())
 	require.False(t, gjson.GetBytes(normalized, "store").Exists())
 }
