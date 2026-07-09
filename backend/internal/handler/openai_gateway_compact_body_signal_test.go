@@ -45,7 +45,7 @@ func TestNormalizeOpenAIResponsesCompactRequest_BodySignalPromoted(t *testing.T)
 	require.True(t, isOpenAIRemoteCompactPath(c))
 	require.Equal(t, EndpointResponsesCompact, GetInboundEndpoint(c))
 
-	require.False(t, gjson.GetBytes(normalized, "stream").Exists())
+	require.True(t, gjson.GetBytes(normalized, "stream").Bool())
 	require.False(t, gjson.GetBytes(normalized, "store").Exists())
 	require.False(t, gjson.GetBytes(normalized, "prompt_cache_key").Exists())
 	require.Equal(t, "gpt-5.5", gjson.GetBytes(normalized, "model").String())
@@ -53,7 +53,7 @@ func TestNormalizeOpenAIResponsesCompactRequest_BodySignalPromoted(t *testing.T)
 
 	reqStream, streamOK := parseOpenAICompatibleStream(normalized)
 	require.True(t, streamOK)
-	require.False(t, reqStream)
+	require.True(t, reqStream)
 
 	seed, exists := c.Get(service.OpenAICompactSessionSeedKeyForTest())
 	require.True(t, exists)
@@ -105,7 +105,7 @@ func TestNormalizeOpenAIResponsesCompactRequest_PathBasedNoDoubleSuffix(t *testi
 	require.True(t, ok)
 	require.Equal(t, "/v1/responses/compact", c.Request.URL.Path)
 	require.Equal(t, EndpointResponsesCompact, GetInboundEndpoint(c))
-	require.False(t, gjson.GetBytes(normalized, "stream").Exists())
+	require.True(t, gjson.GetBytes(normalized, "stream").Bool())
 	require.False(t, gjson.GetBytes(normalized, "store").Exists())
 }
 

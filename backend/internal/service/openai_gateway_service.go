@@ -3221,8 +3221,15 @@ func (s *OpenAIGatewayService) forwardOpenAIPassthrough(
 	upstreamPassthroughModel := ""
 	isCompactRequest := isOpenAIResponsesCompactPath(c)
 	if isCompactRequest {
+		// Keep the downstream framing requested by the client, but decide the
+		// upstream compact transport from the body-level stream flag. Some Codex
+		// clients send Accept: text/event-stream globally even for sync requests;
+		// only stream=true means the upstream hop should be long-lived SSE.
+		compactUpstreamStream := reqStream
+		compactDownstreamStream := compactUpstreamStream || openAIClientAcceptsEventStream(c)
 		if c != nil {
-			c.Set("openai_compact_downstream_stream", reqStream || openAIClientAcceptsEventStream(c))
+			c.Set("openai_compact_upstream_stream", compactUpstreamStream)
+			c.Set("openai_compact_downstream_stream", compactDownstreamStream)
 		}
 		compactMappedModel := resolveOpenAICompactForwardModel(account, reqModel)
 		if compactMappedModel != "" && compactMappedModel != reqModel {
@@ -3240,13 +3247,27 @@ func (s *OpenAIGatewayService) forwardOpenAIPassthrough(
 		if normalized {
 			body = normalizedBody
 		}
-		// /responses/compact must be handled as a synchronous upstream request
-		// even when Codex clients include a body-level stream=true from the
-		// regular responses path. Keep sub2api on the non-streaming upstream
-		// branch so an upstream SSE fallback can be buffered, usage can be
-		// parsed, and the downstream response can then be adapted back to the
-		// client's requested framing (JSON or SSE).
-		reqStream = false
+		if compactUpstreamStream {
+			if stream := gjson.GetBytes(body, "stream"); !stream.Exists() || stream.Type != gjson.True {
+				nextBody, setErr := sjson.SetBytes(body, "stream", true)
+				if setErr != nil {
+					return nil, fmt.Errorf("normalize compact body stream=true: %w", setErr)
+				}
+				body = nextBody
+			}
+		} else if stream := gjson.GetBytes(body, "stream"); stream.Exists() {
+			nextBody, delErr := sjson.DeleteBytes(body, "stream")
+			if delErr != nil {
+				return nil, fmt.Errorf("normalize compact body delete stream: %w", delErr)
+			}
+			body = nextBody
+		}
+		// /responses/compact now follows the client's body-level stream flag for
+		// the upstream hop: stream=true keeps SSE end-to-end to avoid long silent
+		// compact calls timing out; sync requests still use JSON upstream and may
+		// be wrapped back to downstream SSE when the client only advertised
+		// Accept: text/event-stream.
+		reqStream = compactUpstreamStream
 	}
 
 	if account != nil && account.Type == AccountTypeOAuth {
@@ -3263,7 +3284,7 @@ func (s *OpenAIGatewayService) forwardOpenAIPassthrough(
 			return nil, fmt.Errorf("openai passthrough rejected before upstream: %s", rejectReason)
 		}
 
-		normalizedBody, normalized, err := normalizeOpenAIPassthroughOAuthBody(body, isCompactRequest)
+		normalizedBody, normalized, err := normalizeOpenAIPassthroughOAuthBody(body, isCompactRequest, reqStream)
 		if err != nil {
 			return nil, err
 		}
@@ -3271,7 +3292,7 @@ func (s *OpenAIGatewayService) forwardOpenAIPassthrough(
 			body = normalizedBody
 		}
 		if isCompactRequest {
-			reqStream = false
+			reqStream = openAICompactUpstreamWantsStream(c, body)
 		} else {
 			reqStream = gjson.GetBytes(body, "stream").Bool()
 		}
@@ -3424,7 +3445,7 @@ func (s *OpenAIGatewayService) forwardOpenAIPassthrough(
 	responseID := ""
 	imageCount := 0
 	var imageOutputSizes []string
-	if reqStream {
+	if reqStream && (!isCompactRequest || isEventStreamResponse(resp.Header)) {
 		result, err := s.handleStreamingResponsePassthrough(ctx, resp, c, account, startTime, reqModel, upstreamPassthroughModel)
 		if err != nil {
 			return nil, err
@@ -3558,13 +3579,16 @@ func (s *OpenAIGatewayService) buildUpstreamRequestOpenAIPassthrough(
 	req.Header.Del("x-goog-api-key")
 	req.Header.Set("authorization", "Bearer "+token)
 	applyCafecodeIdentityHeaders(req, c, account)
-	// /responses/compact is a sync compaction endpoint. Codex Desktop may send
-	// Accept: text/event-stream globally, but forwarding that to a same-format
-	// upstream such as Aether makes the upstream return SSE for a sync compact
-	// request. Force JSON on the sub2api -> upstream hop so the downstream Codex
-	// client receives the compact object shape it expects.
+	// /responses/compact follows the body-level stream flag for the upstream
+	// hop. Accept: text/event-stream alone is only a downstream framing hint:
+	// sync compact requests still ask upstream for JSON, while stream=true keeps
+	// the upstream connection alive as SSE for long-running Codex compactions.
 	if isCompactRequest {
-		req.Header.Set("accept", "application/json")
+		if openAICompactUpstreamWantsStream(c, body) {
+			req.Header.Set("accept", "text/event-stream")
+		} else {
+			req.Header.Set("accept", "application/json")
+		}
 	}
 
 	// OAuth 透传到 ChatGPT internal API 时补齐必要头。
@@ -5484,6 +5508,17 @@ func openAIClientAcceptsEventStream(c *gin.Context) bool {
 	return false
 }
 
+func openAICompactUpstreamWantsStream(c *gin.Context, body []byte) bool {
+	if c != nil {
+		if value, ok := c.Get("openai_compact_upstream_stream"); ok {
+			wantsStream, _ := value.(bool)
+			return wantsStream
+		}
+	}
+	stream := gjson.GetBytes(body, "stream")
+	return stream.Exists() && stream.Type == gjson.True
+}
+
 func openAICompactDownstreamWantsStream(c *gin.Context) bool {
 	if c == nil {
 		return false
@@ -6144,7 +6179,8 @@ func normalizeOpenAICompactRequestBody(body []byte) ([]byte, bool, error) {
 
 	normalized := []byte(`{}`)
 	// Keep the current Codex /compact schema while still dropping request-scoped
-	// fields such as prompt_cache_key, store, and stream.
+	// fields such as prompt_cache_key and store. Preserve stream long enough so
+	// compact routing can follow the client's requested upstream transport.
 	for _, field := range []string{
 		"model",
 		"input",
@@ -6153,6 +6189,7 @@ func normalizeOpenAICompactRequestBody(body []byte) ([]byte, bool, error) {
 		"parallel_tool_calls",
 		"reasoning",
 		"text",
+		"stream",
 		"previous_response_id",
 	} {
 		value := gjson.GetBytes(body, field)
@@ -7082,8 +7119,9 @@ func extractOpenAIRequestMetaFromBody(body []byte) (model string, stream bool, p
 
 // normalizeOpenAIPassthroughOAuthBody 将透传 OAuth 请求体收敛为旧链路关键行为：
 // 1) 删除 ChatGPT internal API 不支持的顶层 Responses 参数
-// 2) store=false 3) 非 compact 保持 stream=true；compact 强制 stream=false
-func normalizeOpenAIPassthroughOAuthBody(body []byte, compact bool) ([]byte, bool, error) {
+// 2) 非 compact: store=false 且 stream=true
+// 3) compact: 删除 store；stream=true 时保留流式 upstream，否则删除 stream 走同步 JSON
+func normalizeOpenAIPassthroughOAuthBody(body []byte, compact bool, compactStream bool) ([]byte, bool, error) {
 	if len(body) == 0 {
 		return body, false, nil
 	}
@@ -7112,7 +7150,16 @@ func normalizeOpenAIPassthroughOAuthBody(body []byte, compact bool) ([]byte, boo
 			normalized = next
 			changed = true
 		}
-		if stream := gjson.GetBytes(normalized, "stream"); stream.Exists() {
+		if compactStream {
+			if stream := gjson.GetBytes(normalized, "stream"); !stream.Exists() || stream.Type != gjson.True {
+				next, err := sjson.SetBytes(normalized, "stream", true)
+				if err != nil {
+					return body, false, fmt.Errorf("normalize passthrough body stream=true: %w", err)
+				}
+				normalized = next
+				changed = true
+			}
+		} else if stream := gjson.GetBytes(normalized, "stream"); stream.Exists() {
 			next, err := sjson.DeleteBytes(normalized, "stream")
 			if err != nil {
 				return body, false, fmt.Errorf("normalize passthrough body delete stream: %w", err)

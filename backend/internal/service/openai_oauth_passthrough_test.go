@@ -402,7 +402,7 @@ func TestOpenAIGatewayService_OAuthPassthrough_StreamKeepsToolNameAndBodyNormali
 	require.NotContains(t, body, "\"name\":\"edit\"")
 }
 
-func TestOpenAIGatewayService_OAuthPassthrough_CompactUsesJSONAndKeepsNonStreaming(t *testing.T) {
+func TestOpenAIGatewayService_OAuthPassthrough_CompactSyncUsesJSONAndKeepsNonStreaming(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	rec := httptest.NewRecorder()
@@ -411,7 +411,7 @@ func TestOpenAIGatewayService_OAuthPassthrough_CompactUsesJSONAndKeepsNonStreami
 	c.Request.Header.Set("User-Agent", "codex_cli_rs/0.1.0")
 	c.Request.Header.Set("Content-Type", "application/json")
 
-	originalBody := []byte(`{"model":"gpt-5.1-codex","stream":true,"store":true,"instructions":"local-test-instructions","input":[{"type":"text","text":"compact me"}]}`)
+	originalBody := []byte(`{"model":"gpt-5.1-codex","store":true,"instructions":"local-test-instructions","input":[{"type":"text","text":"compact me"}]}`)
 
 	resp := &http.Response{
 		StatusCode: http.StatusOK,
@@ -456,7 +456,7 @@ func TestOpenAIGatewayService_OAuthPassthrough_CompactUsesJSONAndKeepsNonStreami
 	require.Contains(t, rec.Body.String(), `"id":"cmp_123"`)
 }
 
-func TestOpenAIGatewayService_APIKeyPassthrough_CompactForcesJSONAccept(t *testing.T) {
+func TestOpenAIGatewayService_APIKeyPassthrough_CompactStreamRequestsEventStreamAndWrapsJSONFallback(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	rec := httptest.NewRecorder()
@@ -499,13 +499,13 @@ func TestOpenAIGatewayService_APIKeyPassthrough_CompactForcesJSONAccept(t *testi
 	result, err := svc.Forward(context.Background(), c, account, originalBody)
 	require.NoError(t, err)
 	require.NotNil(t, result)
-	require.False(t, result.Stream)
+	require.True(t, result.Stream)
 	require.Equal(t, 5, result.Usage.InputTokens)
 	require.Equal(t, 6, result.Usage.OutputTokens)
 	require.NotNil(t, upstream.lastReq)
 	require.Equal(t, "https://aether.example/v1/responses/compact", upstream.lastReq.URL.String())
-	require.Equal(t, "application/json", upstream.lastReq.Header.Get("Accept"))
-	require.False(t, gjson.GetBytes(upstream.lastBody, "stream").Exists())
+	require.Equal(t, "text/event-stream", upstream.lastReq.Header.Get("Accept"))
+	require.True(t, gjson.GetBytes(upstream.lastBody, "stream").Bool())
 	require.False(t, gjson.GetBytes(upstream.lastBody, "store").Exists())
 	require.False(t, gjson.GetBytes(upstream.lastBody, "prompt_cache_key").Exists())
 	require.Equal(t, "text/event-stream", rec.Header().Get("Content-Type"))
@@ -514,7 +514,7 @@ func TestOpenAIGatewayService_APIKeyPassthrough_CompactForcesJSONAccept(t *testi
 	require.Contains(t, rec.Body.String(), `"id":"cmp_apikey"`)
 }
 
-func TestOpenAIGatewayService_APIKeyPassthrough_CompactEventNamedSSEConvertedToJSON(t *testing.T) {
+func TestOpenAIGatewayService_APIKeyPassthrough_CompactSyncEventNamedSSEConvertedToDownstreamSSE(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	rec := httptest.NewRecorder()
@@ -524,7 +524,7 @@ func TestOpenAIGatewayService_APIKeyPassthrough_CompactEventNamedSSEConvertedToJ
 	c.Request.Header.Set("Content-Type", "application/json")
 	c.Request.Header.Set("Accept", "text/event-stream")
 
-	originalBody := []byte(`{"model":"gpt-5.5","stream":true,"store":true,"prompt_cache_key":"cache-compact","instructions":"compact-test","input":[{"type":"text","text":"compact me"}]}`)
+	originalBody := []byte(`{"model":"gpt-5.5","store":true,"prompt_cache_key":"cache-compact","instructions":"compact-test","input":[{"type":"text","text":"compact me"}]}`)
 	upstreamBody := strings.Join([]string{
 		`event: response.completed`,
 		`data: {"response":{"id":"cmp_event","object":"response","status":"completed","model":"gpt-5.5","output":[{"type":"message","id":"msg_1","role":"assistant","status":"completed","content":[{"type":"output_text","text":"compact summary"}]}],"usage":{"input_tokens":7,"output_tokens":8,"total_tokens":15}}}`,
@@ -574,6 +574,77 @@ func TestOpenAIGatewayService_APIKeyPassthrough_CompactEventNamedSSEConvertedToJ
 	require.Contains(t, rec.Body.String(), "compact summary")
 	require.Equal(t, "application/json", upstream.lastReq.Header.Get("Accept"))
 	require.False(t, gjson.GetBytes(upstream.lastBody, "stream").Exists())
+	require.False(t, gjson.GetBytes(upstream.lastBody, "store").Exists())
+	require.False(t, gjson.GetBytes(upstream.lastBody, "prompt_cache_key").Exists())
+}
+
+func TestOpenAIGatewayService_APIKeyPassthrough_CompactStreamPassesThroughUpstreamSSE(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request = httptest.NewRequest(http.MethodPost, "/v1/responses/compact", bytes.NewReader(nil))
+	c.Request.Header.Set("User-Agent", "codex-tui/0.143.0")
+	c.Request.Header.Set("Content-Type", "application/json")
+	c.Request.Header.Set("Accept", "text/event-stream")
+
+	originalBody := []byte(`{"model":"gpt-5.5","stream":true,"store":true,"prompt_cache_key":"cache-compact","instructions":"compact-test","input":[{"type":"text","text":"compact me"}]}`)
+	upstreamBody := strings.Join([]string{
+		`event: response.output_item.done`,
+		`data: {"type":"response.output_item.done","output_index":0,"item":{"type":"message","role":"user","content":[{"type":"input_text","text":"retained"}]}}`,
+		``,
+		`event: response.output_item.done`,
+		`data: {"type":"response.output_item.done","output_index":1,"item":{"type":"compaction_summary","encrypted_content":"summary-ciphertext"}}`,
+		``,
+		`event: response.completed`,
+		`data: {"type":"response.completed","response":{"id":"resp_compaction_sse","object":"response.compaction","output":[{"type":"message","role":"user","content":[{"type":"input_text","text":"retained"}]},{"type":"compaction_summary","encrypted_content":"summary-ciphertext"}],"usage":{"input_tokens":12,"output_tokens":13,"total_tokens":25}}}`,
+		``,
+		`data: [DONE]`,
+		``,
+	}, "\n")
+	upstream := &httpUpstreamRecorder{resp: &http.Response{
+		StatusCode: http.StatusOK,
+		Header:     http.Header{"Content-Type": []string{"text/event-stream"}, "x-request-id": []string{"rid-apikey-compact-stream-sse"}},
+		Body:       io.NopCloser(strings.NewReader(upstreamBody)),
+	}}
+
+	svc := &OpenAIGatewayService{
+		cfg:          &config.Config{},
+		httpUpstream: upstream,
+	}
+	account := &Account{
+		ID:          237,
+		Name:        "aether-upstream",
+		Platform:    PlatformOpenAI,
+		Type:        AccountTypeAPIKey,
+		Concurrency: 1,
+		Credentials: map[string]any{
+			"api_key":  "sk-upstream",
+			"base_url": "https://aether.example/v1",
+		},
+		Extra: map[string]any{
+			"openai_passthrough":                     true,
+			openai_compat.ExtraKeyResponsesMode:      string(openai_compat.ResponsesSupportModeAuto),
+			openai_compat.ExtraKeyResponsesSupported: true,
+		},
+		Status:      StatusActive,
+		Schedulable: true,
+	}
+
+	result, err := svc.Forward(context.Background(), c, account, originalBody)
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	require.True(t, result.Stream)
+	require.Equal(t, 12, result.Usage.InputTokens)
+	require.Equal(t, 13, result.Usage.OutputTokens)
+	require.Equal(t, "text/event-stream", rec.Header().Get("Content-Type"))
+	require.Equal(t, 2, strings.Count(rec.Body.String(), "event: response.output_item.done"))
+	require.Contains(t, rec.Body.String(), `"type":"compaction_summary"`)
+	require.Contains(t, rec.Body.String(), `"encrypted_content":"summary-ciphertext"`)
+	require.Contains(t, rec.Body.String(), "event: response.completed")
+	require.Contains(t, rec.Body.String(), `"object":"response.compaction"`)
+	require.Equal(t, "text/event-stream", upstream.lastReq.Header.Get("Accept"))
+	require.True(t, gjson.GetBytes(upstream.lastBody, "stream").Bool())
 	require.False(t, gjson.GetBytes(upstream.lastBody, "store").Exists())
 	require.False(t, gjson.GetBytes(upstream.lastBody, "prompt_cache_key").Exists())
 }
@@ -629,7 +700,7 @@ func TestOpenAIGatewayService_APIKeyPassthrough_CompactJSONCompactionBodyStreams
 	result, err := svc.Forward(context.Background(), c, account, originalBody)
 	require.NoError(t, err)
 	require.NotNil(t, result)
-	require.False(t, result.Stream)
+	require.True(t, result.Stream)
 	require.Equal(t, 9, result.Usage.InputTokens)
 	require.Equal(t, 10, result.Usage.OutputTokens)
 	require.Equal(t, "text/event-stream", rec.Header().Get("Content-Type"))
@@ -638,8 +709,8 @@ func TestOpenAIGatewayService_APIKeyPassthrough_CompactJSONCompactionBodyStreams
 	require.Contains(t, rec.Body.String(), `"encrypted_content":"summary-ciphertext"`)
 	require.Contains(t, rec.Body.String(), "event: response.completed")
 	require.Contains(t, rec.Body.String(), `"object":"response.compaction"`)
-	require.Equal(t, "application/json", upstream.lastReq.Header.Get("Accept"))
-	require.False(t, gjson.GetBytes(upstream.lastBody, "stream").Exists())
+	require.Equal(t, "text/event-stream", upstream.lastReq.Header.Get("Accept"))
+	require.True(t, gjson.GetBytes(upstream.lastBody, "stream").Bool())
 }
 
 func TestOpenAIGatewayService_OAuthPassthrough_UpstreamRequestIgnoresClientCancel(t *testing.T) {

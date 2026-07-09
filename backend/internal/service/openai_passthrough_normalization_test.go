@@ -10,7 +10,7 @@ import (
 func TestNormalizeOpenAIPassthroughOAuthBody_RemovesUnsupportedUser(t *testing.T) {
 	body := []byte(`{"model":"gpt-5.4","input":"hello","user":"user_123","metadata":{"user_id":"user_123"},"prompt_cache_retention":"24h","safety_identifier":"sid","stream_options":{"include_usage":true}}`)
 
-	normalized, changed, err := normalizeOpenAIPassthroughOAuthBody(body, false)
+	normalized, changed, err := normalizeOpenAIPassthroughOAuthBody(body, false, false)
 	require.NoError(t, err)
 	require.True(t, changed)
 	for _, field := range openAIChatGPTInternalUnsupportedFields {
@@ -23,11 +23,23 @@ func TestNormalizeOpenAIPassthroughOAuthBody_RemovesUnsupportedUser(t *testing.T
 func TestNormalizeOpenAIPassthroughOAuthBody_CompactRemovesUnsupportedUser(t *testing.T) {
 	body := []byte(`{"model":"gpt-5.4","input":"hello","user":"user_123","metadata":{"user_id":"user_123"},"stream":true,"store":true}`)
 
-	normalized, changed, err := normalizeOpenAIPassthroughOAuthBody(body, true)
+	normalized, changed, err := normalizeOpenAIPassthroughOAuthBody(body, true, false)
 	require.NoError(t, err)
 	require.True(t, changed)
 	require.False(t, gjson.GetBytes(normalized, "user").Exists())
 	require.False(t, gjson.GetBytes(normalized, "metadata").Exists())
 	require.False(t, gjson.GetBytes(normalized, "stream").Exists())
+	require.False(t, gjson.GetBytes(normalized, "store").Exists())
+}
+
+func TestNormalizeOpenAIPassthroughOAuthBody_CompactStreamKeepsStreamTrue(t *testing.T) {
+	body := []byte(`{"model":"gpt-5.4","input":"hello","user":"user_123","metadata":{"user_id":"user_123"},"store":true}`)
+
+	normalized, changed, err := normalizeOpenAIPassthroughOAuthBody(body, true, true)
+	require.NoError(t, err)
+	require.True(t, changed)
+	require.False(t, gjson.GetBytes(normalized, "user").Exists())
+	require.False(t, gjson.GetBytes(normalized, "metadata").Exists())
+	require.True(t, gjson.GetBytes(normalized, "stream").Bool())
 	require.False(t, gjson.GetBytes(normalized, "store").Exists())
 }
