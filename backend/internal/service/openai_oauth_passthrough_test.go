@@ -456,7 +456,7 @@ func TestOpenAIGatewayService_OAuthPassthrough_CompactSyncUsesJSONAndKeepsNonStr
 	require.Contains(t, rec.Body.String(), `"id":"cmp_123"`)
 }
 
-func TestOpenAIGatewayService_APIKeyPassthrough_CompactStreamRequestsEventStreamAndWrapsJSONFallback(t *testing.T) {
+func TestOpenAIGatewayService_APIKeyPassthrough_CompactStreamClientUsesSyncUpstreamAndWrapsJSON(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	rec := httptest.NewRecorder()
@@ -499,13 +499,13 @@ func TestOpenAIGatewayService_APIKeyPassthrough_CompactStreamRequestsEventStream
 	result, err := svc.Forward(context.Background(), c, account, originalBody)
 	require.NoError(t, err)
 	require.NotNil(t, result)
-	require.True(t, result.Stream)
+	require.False(t, result.Stream)
 	require.Equal(t, 5, result.Usage.InputTokens)
 	require.Equal(t, 6, result.Usage.OutputTokens)
 	require.NotNil(t, upstream.lastReq)
 	require.Equal(t, "https://aether.example/v1/responses/compact", upstream.lastReq.URL.String())
-	require.Equal(t, "text/event-stream", upstream.lastReq.Header.Get("Accept"))
-	require.True(t, gjson.GetBytes(upstream.lastBody, "stream").Bool())
+	require.Equal(t, "application/json", upstream.lastReq.Header.Get("Accept"))
+	require.False(t, gjson.GetBytes(upstream.lastBody, "stream").Exists())
 	require.False(t, gjson.GetBytes(upstream.lastBody, "store").Exists())
 	require.False(t, gjson.GetBytes(upstream.lastBody, "prompt_cache_key").Exists())
 	require.Equal(t, "text/event-stream", rec.Header().Get("Content-Type"))
@@ -578,7 +578,7 @@ func TestOpenAIGatewayService_APIKeyPassthrough_CompactSyncEventNamedSSEConverte
 	require.False(t, gjson.GetBytes(upstream.lastBody, "prompt_cache_key").Exists())
 }
 
-func TestOpenAIGatewayService_APIKeyPassthrough_CompactStreamPassesThroughUpstreamSSE(t *testing.T) {
+func TestOpenAIGatewayService_APIKeyPassthrough_CompactSyncUpstreamSSEFallbackWrapped(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	rec := httptest.NewRecorder()
@@ -634,7 +634,7 @@ func TestOpenAIGatewayService_APIKeyPassthrough_CompactStreamPassesThroughUpstre
 	result, err := svc.Forward(context.Background(), c, account, originalBody)
 	require.NoError(t, err)
 	require.NotNil(t, result)
-	require.True(t, result.Stream)
+	require.False(t, result.Stream)
 	require.Equal(t, 12, result.Usage.InputTokens)
 	require.Equal(t, 13, result.Usage.OutputTokens)
 	require.Equal(t, "text/event-stream", rec.Header().Get("Content-Type"))
@@ -643,8 +643,8 @@ func TestOpenAIGatewayService_APIKeyPassthrough_CompactStreamPassesThroughUpstre
 	require.Contains(t, rec.Body.String(), `"encrypted_content":"summary-ciphertext"`)
 	require.Contains(t, rec.Body.String(), "event: response.completed")
 	require.Contains(t, rec.Body.String(), `"object":"response.compaction"`)
-	require.Equal(t, "text/event-stream", upstream.lastReq.Header.Get("Accept"))
-	require.True(t, gjson.GetBytes(upstream.lastBody, "stream").Bool())
+	require.Equal(t, "application/json", upstream.lastReq.Header.Get("Accept"))
+	require.False(t, gjson.GetBytes(upstream.lastBody, "stream").Exists())
 	require.False(t, gjson.GetBytes(upstream.lastBody, "store").Exists())
 	require.False(t, gjson.GetBytes(upstream.lastBody, "prompt_cache_key").Exists())
 }
@@ -700,7 +700,7 @@ func TestOpenAIGatewayService_APIKeyPassthrough_CompactJSONCompactionBodyStreams
 	result, err := svc.Forward(context.Background(), c, account, originalBody)
 	require.NoError(t, err)
 	require.NotNil(t, result)
-	require.True(t, result.Stream)
+	require.False(t, result.Stream)
 	require.Equal(t, 9, result.Usage.InputTokens)
 	require.Equal(t, 10, result.Usage.OutputTokens)
 	require.Equal(t, "text/event-stream", rec.Header().Get("Content-Type"))
@@ -709,8 +709,8 @@ func TestOpenAIGatewayService_APIKeyPassthrough_CompactJSONCompactionBodyStreams
 	require.Contains(t, rec.Body.String(), `"encrypted_content":"summary-ciphertext"`)
 	require.Contains(t, rec.Body.String(), "event: response.completed")
 	require.Contains(t, rec.Body.String(), `"object":"response.compaction"`)
-	require.Equal(t, "text/event-stream", upstream.lastReq.Header.Get("Accept"))
-	require.True(t, gjson.GetBytes(upstream.lastBody, "stream").Bool())
+	require.Equal(t, "application/json", upstream.lastReq.Header.Get("Accept"))
+	require.False(t, gjson.GetBytes(upstream.lastBody, "stream").Exists())
 }
 
 func TestOpenAIGatewayService_OAuthPassthrough_UpstreamRequestIgnoresClientCancel(t *testing.T) {
