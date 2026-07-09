@@ -2500,6 +2500,45 @@ func TestExtractCodexFinalResponse_EventNamedTerminalVariants(t *testing.T) {
 	}
 }
 
+func TestExtractCodexFinalResponse_SynthesizesFromTerminalWithoutResponse(t *testing.T) {
+	body := strings.Join([]string{
+		`event: response.created`,
+		`data: {"type":"response.created","response":{"id":"resp_synth","object":"response","model":"gpt-5.5","status":"in_progress","output":[]}}`,
+		``,
+		`event: response.output_text.delta`,
+		`data: {"type":"response.output_text.delta","output_index":0,"content_index":0,"delta":"Hello"}`,
+		``,
+		`event: response.output_text.delta`,
+		`data: {"type":"response.output_text.delta","output_index":0,"content_index":0,"delta":" Compact"}`,
+		``,
+		`event: response.completed`,
+		`data: {"type":"response.completed","usage":{"input_tokens":7,"output_tokens":9,"input_tokens_details":{"cached_tokens":2}}}`,
+		``,
+		`data: [DONE]`,
+		``,
+	}, "\n")
+
+	finalResp, ok := extractCodexFinalResponse(body)
+	require.True(t, ok)
+	require.Equal(t, "resp_synth", gjson.GetBytes(finalResp, "id").String())
+	require.Equal(t, "completed", gjson.GetBytes(finalResp, "status").String())
+	require.Equal(t, "Hello Compact", gjson.GetBytes(finalResp, "output.0.content.0.text").String())
+	require.Equal(t, int64(7), gjson.GetBytes(finalResp, "usage.input_tokens").Int())
+	require.Equal(t, int64(2), gjson.GetBytes(finalResp, "usage.input_tokens_details.cached_tokens").Int())
+}
+
+func TestExtractCodexFinalResponse_UnwrapsExecutionRuntimeJSONLText(t *testing.T) {
+	body := strings.Join([]string{
+		`{"type":"headers","payload":{"kind":"headers","status_code":200,"headers":{"content-type":"text/event-stream"}}}`,
+		`{"type":"data","payload":{"kind":"data","text":"event: response.completed\ndata: {\"type\":\"response.completed\",\"response\":{\"id\":\"resp_jsonl\",\"object\":\"response\",\"model\":\"gpt-5.5\",\"status\":\"completed\",\"output\":[],\"usage\":{\"input_tokens\":3,\"output_tokens\":4}}}\n\n"}}`,
+	}, "\n")
+
+	finalResp, ok := extractCodexFinalResponse(body)
+	require.True(t, ok)
+	require.Equal(t, "resp_jsonl", gjson.GetBytes(finalResp, "id").String())
+	require.Equal(t, int64(3), gjson.GetBytes(finalResp, "usage.input_tokens").Int())
+}
+
 func TestHandleSSEToJSON_CompletedEventReturnsJSON(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	rec := httptest.NewRecorder()

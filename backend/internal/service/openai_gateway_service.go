@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -5480,7 +5481,17 @@ func (s *OpenAIGatewayService) writeOpenAINonStreamingProtocolError(resp *http.R
 }
 
 func extractCodexFinalResponse(body string) ([]byte, bool) {
+	body = normalizeOpenAISSEBodyForParsing(body)
+	trimmedBody := strings.TrimSpace(body)
+	if trimmedBody != "" && looksLikeOpenAIResponseJSON([]byte(trimmedBody)) {
+		return []byte(trimmedBody), true
+	}
+
 	var finalResponse []byte
+	var fallbackResponse []byte
+	var terminalPayload []byte
+	var terminalType string
+	var usageJSON []byte
 	forEachOpenAISSEEventPayload(body, func(eventName string, data []byte) {
 		if finalResponse != nil {
 			return
@@ -5489,20 +5500,206 @@ func extractCodexFinalResponse(body string) ([]byte, bool) {
 		if eventType == "" {
 			eventType = strings.TrimSpace(eventName)
 		}
-		if eventType == "response.done" || eventType == "response.completed" {
-			if response := gjson.GetBytes(data, "response"); response.Exists() && response.Type == gjson.JSON && response.Raw != "" {
-				finalResponse = []byte(response.Raw)
+		if usageJSON == nil {
+			usageJSON = extractOpenAIUsageJSONBytes(data)
+		}
+
+		if response := gjson.GetBytes(data, "response"); response.Exists() && response.Type == gjson.JSON && response.Raw != "" {
+			responseBytes := []byte(response.Raw)
+			if isOpenAISSETerminalType(eventType) {
+				finalResponse = responseBytes
 				return
 			}
-			if looksLikeOpenAIResponseJSON(data) {
-				finalResponse = append([]byte(nil), data...)
+			if looksLikeOpenAIResponseJSON(responseBytes) || fallbackResponse == nil {
+				fallbackResponse = responseBytes
 			}
+		}
+
+		if looksLikeOpenAIResponseJSON(data) {
+			if isOpenAISSETerminalType(eventType) || strings.EqualFold(strings.TrimSpace(gjson.GetBytes(data, "status").String()), "completed") {
+				finalResponse = append([]byte(nil), data...)
+				return
+			}
+			if fallbackResponse == nil {
+				fallbackResponse = append([]byte(nil), data...)
+			}
+		}
+
+		if isOpenAISSETerminalType(eventType) {
+			terminalType = eventType
+			terminalPayload = append([]byte(nil), data...)
 		}
 	})
 	if finalResponse != nil {
-		return finalResponse, true
+		return patchOpenAIFinalResponseFromSSE(body, finalResponse, terminalType, usageJSON), true
+	}
+	if terminalPayload != nil {
+		if synthesized, ok := synthesizeOpenAIFinalResponseFromSSE(body, fallbackResponse, terminalPayload, terminalType, usageJSON); ok {
+			return synthesized, true
+		}
 	}
 	return nil, false
+}
+
+func normalizeOpenAISSEBodyForParsing(body string) string {
+	nested := extractNestedOpenAISSEText(body)
+	if strings.TrimSpace(nested) == "" {
+		return body
+	}
+	if bodyHasSSEFraming([]byte(body)) {
+		return body + "\n" + nested
+	}
+	return nested
+}
+
+func extractNestedOpenAISSEText(body string) string {
+	if strings.TrimSpace(body) == "" {
+		return ""
+	}
+	var parts []string
+	appendFromJSON := func(raw string) {
+		raw = strings.TrimSpace(raw)
+		if raw == "" || !gjson.Valid(raw) {
+			return
+		}
+		for _, path := range []string{"payload.text", "text", "body.text", "body.body_text"} {
+			text := gjson.Get(raw, path).String()
+			if bodyHasSSEFraming([]byte(text)) {
+				parts = append(parts, text)
+			}
+		}
+		for _, path := range []string{"body.body_bytes_b64", "payload.body_bytes_b64", "body_bytes_b64"} {
+			encoded := strings.TrimSpace(gjson.Get(raw, path).String())
+			if encoded == "" {
+				continue
+			}
+			decoded, err := base64.StdEncoding.DecodeString(encoded)
+			if err == nil && bodyHasSSEFraming(decoded) {
+				parts = append(parts, string(decoded))
+			}
+		}
+	}
+	appendFromJSON(body)
+	for _, line := range strings.Split(body, "\n") {
+		appendFromJSON(line)
+	}
+	return strings.Join(parts, "\n")
+}
+
+func isOpenAISSETerminalType(eventType string) bool {
+	switch strings.TrimSpace(eventType) {
+	case "response.completed", "response.done", "response.failed", "response.incomplete", "response.cancelled", "response.canceled":
+		return true
+	default:
+		return false
+	}
+}
+
+func extractOpenAIUsageJSONBytes(body []byte) []byte {
+	if len(body) == 0 || !gjson.ValidBytes(body) {
+		return nil
+	}
+	for _, path := range []string{"usage", "response.usage"} {
+		value := gjson.GetBytes(body, path)
+		if value.Exists() && value.IsObject() && value.Raw != "" {
+			return []byte(value.Raw)
+		}
+	}
+	return nil
+}
+
+func patchOpenAIFinalResponseFromSSE(bodyText string, body []byte, terminalType string, usageJSON []byte) []byte {
+	if len(body) == 0 || !gjson.ValidBytes(body) {
+		return body
+	}
+	patched := append([]byte(nil), body...)
+	if !gjson.GetBytes(patched, "object").Exists() {
+		if next, err := sjson.SetBytes(patched, "object", "response"); err == nil {
+			patched = next
+		}
+	}
+	if status := openAIStatusFromTerminalType(terminalType); status != "" {
+		current := strings.TrimSpace(gjson.GetBytes(patched, "status").String())
+		if current == "" || current == "in_progress" {
+			if next, err := sjson.SetBytes(patched, "status", status); err == nil {
+				patched = next
+			}
+		}
+	}
+	if len(gjson.GetBytes(patched, "output").Array()) == 0 {
+		if outputJSON, reconstructed := reconstructResponseOutputFromSSE(bodyText); reconstructed {
+			if next, err := sjson.SetRawBytes(patched, "output", outputJSON); err == nil {
+				patched = next
+			}
+		}
+	}
+	if usageJSON != nil && !gjson.GetBytes(patched, "usage").Exists() {
+		if next, err := sjson.SetRawBytes(patched, "usage", usageJSON); err == nil {
+			patched = next
+		}
+	}
+	return patched
+}
+
+func synthesizeOpenAIFinalResponseFromSSE(bodyText string, fallbackResponse []byte, terminalPayload []byte, terminalType string, usageJSON []byte) ([]byte, bool) {
+	var body []byte
+	terminalResponse := gjson.GetBytes(terminalPayload, "response")
+	switch {
+	case len(fallbackResponse) > 0 && gjson.ValidBytes(fallbackResponse):
+		body = append([]byte(nil), fallbackResponse...)
+	case terminalResponse.Exists() && terminalResponse.Type == gjson.JSON && terminalResponse.Raw != "":
+		body = []byte(terminalResponse.Raw)
+	default:
+		body = []byte(`{"object":"response","output":[]}`)
+	}
+	if !gjson.ValidBytes(body) {
+		return nil, false
+	}
+
+	if !gjson.GetBytes(body, "id").Exists() {
+		if id := firstOpenAIResponseStringFromSSE(terminalPayload, "response.id", "id"); id != "" {
+			if next, err := sjson.SetBytes(body, "id", id); err == nil {
+				body = next
+			}
+		}
+	}
+	if !gjson.GetBytes(body, "model").Exists() {
+		if model := firstOpenAIResponseStringFromSSE(terminalPayload, "response.model", "model"); model != "" {
+			if next, err := sjson.SetBytes(body, "model", model); err == nil {
+				body = next
+			}
+		}
+	}
+
+	body = patchOpenAIFinalResponseFromSSE(bodyText, body, terminalType, usageJSON)
+	hasID := strings.TrimSpace(gjson.GetBytes(body, "id").String()) != ""
+	hasOutput := len(gjson.GetBytes(body, "output").Array()) > 0
+	hasUsage := gjson.GetBytes(body, "usage").Exists()
+	return body, hasID || hasOutput || hasUsage || len(fallbackResponse) > 0
+}
+
+func openAIStatusFromTerminalType(eventType string) string {
+	switch strings.TrimSpace(eventType) {
+	case "response.completed", "response.done":
+		return "completed"
+	case "response.failed":
+		return "failed"
+	case "response.incomplete":
+		return "incomplete"
+	case "response.cancelled", "response.canceled":
+		return "cancelled"
+	default:
+		return ""
+	}
+}
+
+func firstOpenAIResponseStringFromSSE(data []byte, paths ...string) string {
+	for _, path := range paths {
+		if value := strings.TrimSpace(gjson.GetBytes(data, path).String()); value != "" {
+			return value
+		}
+	}
+	return ""
 }
 
 func looksLikeOpenAIResponseJSON(data []byte) bool {
