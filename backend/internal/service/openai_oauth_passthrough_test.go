@@ -578,6 +578,70 @@ func TestOpenAIGatewayService_APIKeyPassthrough_CompactEventNamedSSEConvertedToJ
 	require.False(t, gjson.GetBytes(upstream.lastBody, "prompt_cache_key").Exists())
 }
 
+func TestOpenAIGatewayService_APIKeyPassthrough_CompactJSONCompactionBodyStreamsOutputItemDone(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request = httptest.NewRequest(http.MethodPost, "/v1/responses/compact", bytes.NewReader(nil))
+	c.Request.Header.Set("User-Agent", "codex-tui/0.143.0")
+	c.Request.Header.Set("Content-Type", "application/json")
+	c.Request.Header.Set("Accept", "text/event-stream")
+
+	originalBody := []byte(`{"model":"gpt-5.5","stream":true,"instructions":"compact-test","input":[{"type":"text","text":"compact me"}]}`)
+	upstream := &httpUpstreamRecorder{resp: &http.Response{
+		StatusCode: http.StatusOK,
+		Header:     http.Header{"Content-Type": []string{"application/json"}, "x-request-id": []string{"rid-apikey-compact-compaction-json"}},
+		Body: io.NopCloser(strings.NewReader(`{
+			"id":"resp_compaction",
+			"object":"response.compaction",
+			"output":[
+				{"type":"message","role":"user","content":[{"type":"input_text","text":"retained"}]},
+				{"type":"compaction_summary","encrypted_content":"summary-ciphertext"}
+			],
+			"usage":{"input_tokens":9,"output_tokens":10,"total_tokens":19}
+		}`)),
+	}}
+
+	svc := &OpenAIGatewayService{
+		cfg:          &config.Config{},
+		httpUpstream: upstream,
+	}
+	account := &Account{
+		ID:          236,
+		Name:        "aether-upstream",
+		Platform:    PlatformOpenAI,
+		Type:        AccountTypeAPIKey,
+		Concurrency: 1,
+		Credentials: map[string]any{
+			"api_key":  "sk-upstream",
+			"base_url": "https://aether.example/v1",
+		},
+		Extra: map[string]any{
+			"openai_passthrough":                     true,
+			openai_compat.ExtraKeyResponsesMode:      string(openai_compat.ResponsesSupportModeAuto),
+			openai_compat.ExtraKeyResponsesSupported: true,
+		},
+		Status:      StatusActive,
+		Schedulable: true,
+	}
+
+	result, err := svc.Forward(context.Background(), c, account, originalBody)
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	require.False(t, result.Stream)
+	require.Equal(t, 9, result.Usage.InputTokens)
+	require.Equal(t, 10, result.Usage.OutputTokens)
+	require.Equal(t, "text/event-stream", rec.Header().Get("Content-Type"))
+	require.Equal(t, 2, strings.Count(rec.Body.String(), "event: response.output_item.done"))
+	require.Contains(t, rec.Body.String(), `"type":"compaction_summary"`)
+	require.Contains(t, rec.Body.String(), `"encrypted_content":"summary-ciphertext"`)
+	require.Contains(t, rec.Body.String(), "event: response.completed")
+	require.Contains(t, rec.Body.String(), `"object":"response.compaction"`)
+	require.Equal(t, "application/json", upstream.lastReq.Header.Get("Accept"))
+	require.False(t, gjson.GetBytes(upstream.lastBody, "stream").Exists())
+}
+
 func TestOpenAIGatewayService_OAuthPassthrough_UpstreamRequestIgnoresClientCancel(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 

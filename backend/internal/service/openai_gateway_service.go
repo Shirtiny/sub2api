@@ -4254,6 +4254,26 @@ func writeOpenAIResponsesSSEFromJSON(c *gin.Context, statusCode int, body []byte
 	header.Set("Connection", "keep-alive")
 	header.Set("X-Accel-Buffering", "no")
 	c.Writer.WriteHeader(statusCode)
+	for i, item := range openAIResponsesOutputItemsFromBody(body) {
+		payload, err := json.Marshal(struct {
+			Type        string          `json:"type"`
+			OutputIndex int             `json:"output_index"`
+			Item        json.RawMessage `json:"item"`
+		}{
+			Type:        "response.output_item.done",
+			OutputIndex: i,
+			Item:        item,
+		})
+		if err != nil {
+			return err
+		}
+		if _, err := fmt.Fprint(c.Writer, "event: response.output_item.done\n"); err != nil {
+			return err
+		}
+		if _, err := fmt.Fprintf(c.Writer, "data: %s\n\n", payload); err != nil {
+			return err
+		}
+	}
 	if _, err := fmt.Fprintf(c.Writer, "event: %s\n", eventType); err != nil {
 		return err
 	}
@@ -4267,6 +4287,25 @@ func writeOpenAIResponsesSSEFromJSON(c *gin.Context, statusCode int, body []byte
 		flusher.Flush()
 	}
 	return nil
+}
+
+func openAIResponsesOutputItemsFromBody(body []byte) []json.RawMessage {
+	output := gjson.GetBytes(body, "output")
+	if !output.IsArray() {
+		return nil
+	}
+	items := output.Array()
+	if len(items) == 0 {
+		return nil
+	}
+	result := make([]json.RawMessage, 0, len(items))
+	for _, item := range items {
+		if !item.IsObject() || item.Raw == "" {
+			continue
+		}
+		result = append(result, json.RawMessage(item.Raw))
+	}
+	return result
 }
 
 func openAIResponsesTerminalEventForBody(body []byte) string {
