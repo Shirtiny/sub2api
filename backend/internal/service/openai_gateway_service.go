@@ -2593,6 +2593,11 @@ func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, acco
 	}
 	upstreamModel := billingModel
 	isCompactRequest := isOpenAIResponsesCompactPath(c)
+	if isCompactRequest && c != nil {
+		compactUpstreamStream := reqStream
+		c.Set("openai_compact_upstream_stream", compactUpstreamStream)
+		c.Set("openai_compact_downstream_stream", compactUpstreamStream || openAIClientAcceptsEventStream(c))
+	}
 	compactMapped := false
 	if isCompactRequest {
 		compactMappedModel := resolveOpenAICompactForwardModel(account, billingModel)
@@ -2687,11 +2692,11 @@ func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, acco
 		}
 		codexResult := codexTransformResult{}
 		if compatMessagesBridge {
-			codexResult = applyCodexOAuthTransformWithOptions(decoded, codexOAuthTransformOptions{IsCodexCLI: isCodexCLI, IsCompact: isCompactRequest, SkipDefaultInstructions: true, PreserveToolCallIDs: true})
+			codexResult = applyCodexOAuthTransformWithOptions(decoded, codexOAuthTransformOptions{IsCodexCLI: isCodexCLI, IsCompact: isCompactRequest, CompactStream: isCompactRequest && reqStream, SkipDefaultInstructions: true, PreserveToolCallIDs: true})
 			ensureCodexOAuthInstructionsField(decoded)
 			markDecodedModified()
 		} else {
-			codexResult = applyCodexOAuthTransform(decoded, isCodexCLI, isCompactRequest)
+			codexResult = applyCodexOAuthTransformWithOptions(decoded, codexOAuthTransformOptions{IsCodexCLI: isCodexCLI, IsCompact: isCompactRequest, CompactStream: isCompactRequest && reqStream})
 		}
 		if codexResult.Modified {
 			markDecodedModified()
@@ -3151,7 +3156,7 @@ func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, acco
 		responseID := ""
 		imageCount := 0
 		var imageOutputSizes []string
-		if reqStream {
+		if reqStream && (!isCompactRequest || isEventStreamResponse(resp.Header)) {
 			streamResult, err := s.handleStreamingResponse(ctx, resp, c, account, startTime, originalModel, upstreamModel)
 			if err != nil {
 				return nil, err
@@ -4463,7 +4468,11 @@ func (s *OpenAIGatewayService) buildUpstreamRequest(ctx context.Context, c *gin.
 		}
 		apiKeyID := getAPIKeyIDFromContext(c)
 		if isOpenAIResponsesCompactPath(c) {
-			req.Header.Set("accept", "application/json")
+			if isStream {
+				req.Header.Set("accept", "text/event-stream")
+			} else {
+				req.Header.Set("accept", "application/json")
+			}
 			if req.Header.Get("version") == "" {
 				req.Header.Set("version", codexCLIVersion)
 			}
@@ -5472,6 +5481,18 @@ func (s *OpenAIGatewayService) handleNonStreamingResponse(ctx context.Context, r
 	}
 
 	responseheaders.WriteFilteredHeaders(c.Writer.Header(), resp.Header, s.responseHeaderFilter)
+	if openAICompactDownstreamWantsStream(c) {
+		if err := writeOpenAIResponsesSSEFromJSON(c, resp.StatusCode, body); err != nil {
+			return nil, err
+		}
+		return &openaiNonStreamingResult{
+			OpenAIUsage:      usage,
+			usage:            usage,
+			responseID:       extractOpenAIResponseIDFromJSONBytes(body),
+			imageCount:       countOpenAIResponseImageOutputsFromJSONBytes(body),
+			imageOutputSizes: collectOpenAIResponseImageOutputSizesFromJSONBytes(body),
+		}, nil
+	}
 
 	contentType := "application/json"
 	if s.cfg != nil && !s.cfg.Security.ResponseHeaders.Enabled {
@@ -5589,6 +5610,18 @@ func (s *OpenAIGatewayService) handleSSEToJSON(resp *http.Response, c *gin.Conte
 	}
 
 	responseheaders.WriteFilteredHeaders(c.Writer.Header(), resp.Header, s.responseHeaderFilter)
+	if ok && openAICompactDownstreamWantsStream(c) {
+		if err := writeOpenAIResponsesSSEFromJSON(c, resp.StatusCode, body); err != nil {
+			return nil, err
+		}
+		return &openaiNonStreamingResult{
+			OpenAIUsage:      usage,
+			usage:            usage,
+			responseID:       extractOpenAIResponseIDFromJSONBytes(body),
+			imageCount:       countOpenAIImageOutputsFromSSEBody(bodyText),
+			imageOutputSizes: collectOpenAIImageOutputSizesFromSSEBody(bodyText),
+		}, nil
+	}
 
 	contentType := "application/json; charset=utf-8"
 	if !ok {

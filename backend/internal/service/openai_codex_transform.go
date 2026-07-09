@@ -81,6 +81,7 @@ type codexTransformResult struct {
 type codexOAuthTransformOptions struct {
 	IsCodexCLI              bool
 	IsCompact               bool
+	CompactStream           bool
 	SkipDefaultInstructions bool
 	PreserveToolCallIDs     bool
 }
@@ -139,7 +140,12 @@ func applyCodexOAuthTransformWithOptions(reqBody map[string]any, opts codexOAuth
 			delete(reqBody, "store")
 			result.Modified = true
 		}
-		if _, ok := reqBody["stream"]; ok {
+		if opts.CompactStream {
+			if v, ok := reqBody["stream"].(bool); !ok || !v {
+				reqBody["stream"] = true
+				result.Modified = true
+			}
+		} else if _, ok := reqBody["stream"]; ok {
 			delete(reqBody, "stream")
 			result.Modified = true
 		}
