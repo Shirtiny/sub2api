@@ -3221,6 +3221,9 @@ func (s *OpenAIGatewayService) forwardOpenAIPassthrough(
 	upstreamPassthroughModel := ""
 	isCompactRequest := isOpenAIResponsesCompactPath(c)
 	if isCompactRequest {
+		if c != nil {
+			c.Set("openai_compact_downstream_stream", reqStream || openAIClientAcceptsEventStream(c))
+		}
 		compactMappedModel := resolveOpenAICompactForwardModel(account, reqModel)
 		if compactMappedModel != "" && compactMappedModel != reqModel {
 			nextBody, setErr := sjson.SetBytes(body, "model", compactMappedModel)
@@ -3237,11 +3240,12 @@ func (s *OpenAIGatewayService) forwardOpenAIPassthrough(
 		if normalized {
 			body = normalizedBody
 		}
-		// /responses/compact is always a synchronous compaction endpoint even
-		// when Codex clients include a body-level stream=true from the regular
-		// responses path. Keep sub2api on the non-streaming handling branch so
-		// an upstream SSE fallback can be buffered and converted back to the
-		// compact JSON response shape expected by the client.
+		// /responses/compact must be handled as a synchronous upstream request
+		// even when Codex clients include a body-level stream=true from the
+		// regular responses path. Keep sub2api on the non-streaming upstream
+		// branch so an upstream SSE fallback can be buffered, usage can be
+		// parsed, and the downstream response can then be adapted back to the
+		// client's requested framing (JSON or SSE).
 		reqStream = false
 	}
 
@@ -4124,6 +4128,18 @@ func (s *OpenAIGatewayService) handleNonStreamingResponsePassthrough(
 	if originalModel != "" && mappedModel != "" && originalModel != mappedModel {
 		body = s.replaceModelInResponseBody(body, mappedModel, originalModel)
 	}
+	if openAICompactDownstreamWantsStream(c) {
+		if err := writeOpenAIResponsesSSEFromJSON(c, resp.StatusCode, body); err != nil {
+			return nil, err
+		}
+		return &openaiNonStreamingResultPassthrough{
+			OpenAIUsage:      usage,
+			usage:            usage,
+			responseID:       extractOpenAIResponseIDFromJSONBytes(body),
+			imageCount:       countOpenAIResponseImageOutputsFromJSONBytes(body),
+			imageOutputSizes: collectOpenAIResponseImageOutputSizesFromJSONBytes(body),
+		}, nil
+	}
 	c.Data(resp.StatusCode, contentType, body)
 	return &openaiNonStreamingResultPassthrough{
 		OpenAIUsage:      usage,
@@ -4188,6 +4204,18 @@ func (s *OpenAIGatewayService) handlePassthroughSSEToJSON(resp *http.Response, c
 		}
 	}
 	c.Writer.Header().Set("Content-Type", contentType)
+	if ok && openAICompactDownstreamWantsStream(c) {
+		if err := writeOpenAIResponsesSSEFromJSON(c, resp.StatusCode, body); err != nil {
+			return nil, err
+		}
+		return &openaiNonStreamingResultPassthrough{
+			OpenAIUsage:      usage,
+			usage:            usage,
+			responseID:       extractOpenAIResponseIDFromJSONBytes(body),
+			imageCount:       countOpenAIImageOutputsFromSSEBody(bodyText),
+			imageOutputSizes: collectOpenAIImageOutputSizesFromSSEBody(bodyText),
+		}, nil
+	}
 	c.Data(resp.StatusCode, contentType, body)
 
 	return &openaiNonStreamingResultPassthrough{
@@ -4197,6 +4225,61 @@ func (s *OpenAIGatewayService) handlePassthroughSSEToJSON(resp *http.Response, c
 		imageCount:       countOpenAIImageOutputsFromSSEBody(bodyText),
 		imageOutputSizes: collectOpenAIImageOutputSizesFromSSEBody(bodyText),
 	}, nil
+}
+
+func writeOpenAIResponsesSSEFromJSON(c *gin.Context, statusCode int, body []byte) error {
+	if c == nil {
+		return errors.New("gin context is nil")
+	}
+	if len(body) == 0 || !gjson.ValidBytes(body) {
+		return errors.New("invalid OpenAI response JSON for SSE framing")
+	}
+	eventType := openAIResponsesTerminalEventForBody(body)
+	payload, err := json.Marshal(struct {
+		Type     string          `json:"type"`
+		Response json.RawMessage `json:"response"`
+	}{
+		Type:     eventType,
+		Response: json.RawMessage(body),
+	})
+	if err != nil {
+		return err
+	}
+
+	header := c.Writer.Header()
+	header.Del("Content-Length")
+	header.Del("Content-Encoding")
+	header.Set("Content-Type", "text/event-stream")
+	header.Set("Cache-Control", "no-cache")
+	header.Set("Connection", "keep-alive")
+	header.Set("X-Accel-Buffering", "no")
+	c.Writer.WriteHeader(statusCode)
+	if _, err := fmt.Fprintf(c.Writer, "event: %s\n", eventType); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(c.Writer, "data: %s\n\n", payload); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprint(c.Writer, "data: [DONE]\n\n"); err != nil {
+		return err
+	}
+	if flusher, ok := c.Writer.(http.Flusher); ok {
+		flusher.Flush()
+	}
+	return nil
+}
+
+func openAIResponsesTerminalEventForBody(body []byte) string {
+	switch strings.TrimSpace(gjson.GetBytes(body, "status").String()) {
+	case "failed":
+		return "response.failed"
+	case "incomplete":
+		return "response.incomplete"
+	case "cancelled", "canceled":
+		return "response.cancelled"
+	default:
+		return "response.completed"
+	}
 }
 
 func writeOpenAIPassthroughResponseHeaders(dst http.Header, src http.Header, filter *responseheaders.CompiledHeaderFilter) {
@@ -5348,6 +5431,30 @@ func (s *OpenAIGatewayService) handleNonStreamingResponse(ctx context.Context, r
 func isEventStreamResponse(header http.Header) bool {
 	contentType := strings.ToLower(header.Get("Content-Type"))
 	return strings.Contains(contentType, "text/event-stream")
+}
+
+func openAIClientAcceptsEventStream(c *gin.Context) bool {
+	if c == nil || c.Request == nil {
+		return false
+	}
+	for _, value := range c.Request.Header.Values("Accept") {
+		if strings.Contains(strings.ToLower(value), "text/event-stream") {
+			return true
+		}
+	}
+	return false
+}
+
+func openAICompactDownstreamWantsStream(c *gin.Context) bool {
+	if c == nil {
+		return false
+	}
+	value, ok := c.Get("openai_compact_downstream_stream")
+	if !ok {
+		return false
+	}
+	wantsStream, _ := value.(bool)
+	return wantsStream
 }
 
 // bodyHasSSEFraming reports whether body contains genuine SSE framing by
