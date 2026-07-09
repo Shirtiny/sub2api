@@ -432,7 +432,7 @@ func TestApplyCodexOAuthTransform_ExplicitStoreTrueForcedFalse(t *testing.T) {
 	require.False(t, store)
 }
 
-func TestApplyCodexOAuthTransform_CompactDefaultsNonStreaming(t *testing.T) {
+func TestApplyCodexOAuthTransform_CompactForcesNonStreaming(t *testing.T) {
 	reqBody := map[string]any{
 		"model":  "gpt-5.1-codex",
 		"store":  true,
@@ -445,26 +445,6 @@ func TestApplyCodexOAuthTransform_CompactDefaultsNonStreaming(t *testing.T) {
 	require.False(t, hasStore)
 	_, hasStream := reqBody["stream"]
 	require.False(t, hasStream)
-	require.True(t, result.Modified)
-}
-
-func TestApplyCodexOAuthTransform_CompactStreamKeepsStreamTrue(t *testing.T) {
-	reqBody := map[string]any{
-		"model": "gpt-5.1-codex",
-		"store": true,
-	}
-
-	result := applyCodexOAuthTransformWithOptions(reqBody, codexOAuthTransformOptions{
-		IsCodexCLI:    true,
-		IsCompact:     true,
-		CompactStream: true,
-	})
-
-	_, hasStore := reqBody["store"]
-	require.False(t, hasStore)
-	stream, ok := reqBody["stream"].(bool)
-	require.True(t, ok)
-	require.True(t, stream)
 	require.True(t, result.Modified)
 }
 
