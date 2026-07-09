@@ -3218,7 +3218,8 @@ func (s *OpenAIGatewayService) forwardOpenAIPassthrough(
 	startTime time.Time,
 ) (*OpenAIForwardResult, error) {
 	upstreamPassthroughModel := ""
-	if isOpenAIResponsesCompactPath(c) {
+	isCompactRequest := isOpenAIResponsesCompactPath(c)
+	if isCompactRequest {
 		compactMappedModel := resolveOpenAICompactForwardModel(account, reqModel)
 		if compactMappedModel != "" && compactMappedModel != reqModel {
 			nextBody, setErr := sjson.SetBytes(body, "model", compactMappedModel)
@@ -3228,6 +3229,19 @@ func (s *OpenAIGatewayService) forwardOpenAIPassthrough(
 			body = nextBody
 			upstreamPassthroughModel = compactMappedModel
 		}
+		normalizedBody, normalized, normalizeErr := normalizeOpenAICompactRequestBody(body)
+		if normalizeErr != nil {
+			return nil, normalizeErr
+		}
+		if normalized {
+			body = normalizedBody
+		}
+		// /responses/compact is always a synchronous compaction endpoint even
+		// when Codex clients include a body-level stream=true from the regular
+		// responses path. Keep sub2api on the non-streaming handling branch so
+		// an upstream SSE fallback can be buffered and converted back to the
+		// compact JSON response shape expected by the client.
+		reqStream = false
 	}
 
 	if account != nil && account.Type == AccountTypeOAuth {
@@ -3244,14 +3258,18 @@ func (s *OpenAIGatewayService) forwardOpenAIPassthrough(
 			return nil, fmt.Errorf("openai passthrough rejected before upstream: %s", rejectReason)
 		}
 
-		normalizedBody, normalized, err := normalizeOpenAIPassthroughOAuthBody(body, isOpenAIResponsesCompactPath(c))
+		normalizedBody, normalized, err := normalizeOpenAIPassthroughOAuthBody(body, isCompactRequest)
 		if err != nil {
 			return nil, err
 		}
 		if normalized {
 			body = normalizedBody
 		}
-		reqStream = gjson.GetBytes(body, "stream").Bool()
+		if isCompactRequest {
+			reqStream = false
+		} else {
+			reqStream = gjson.GetBytes(body, "stream").Bool()
+		}
 	}
 
 	sanitizedBody, sanitized, err := sanitizeEmptyBase64InputImagesInOpenAIBody(body)

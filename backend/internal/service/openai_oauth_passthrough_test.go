@@ -466,7 +466,7 @@ func TestOpenAIGatewayService_APIKeyPassthrough_CompactForcesJSONAccept(t *testi
 	c.Request.Header.Set("Content-Type", "application/json")
 	c.Request.Header.Set("Accept", "text/event-stream")
 
-	originalBody := []byte(`{"model":"gpt-5.5","instructions":"compact-test","input":[{"type":"text","text":"compact me"}]}`)
+	originalBody := []byte(`{"model":"gpt-5.5","stream":true,"store":true,"prompt_cache_key":"cache-compact","instructions":"compact-test","input":[{"type":"text","text":"compact me"}]}`)
 	upstream := &httpUpstreamRecorder{resp: &http.Response{
 		StatusCode: http.StatusOK,
 		Header:     http.Header{"Content-Type": []string{"application/json"}, "x-request-id": []string{"rid-apikey-compact-json"}},
@@ -505,6 +505,9 @@ func TestOpenAIGatewayService_APIKeyPassthrough_CompactForcesJSONAccept(t *testi
 	require.NotNil(t, upstream.lastReq)
 	require.Equal(t, "https://aether.example/v1/responses/compact", upstream.lastReq.URL.String())
 	require.Equal(t, "application/json", upstream.lastReq.Header.Get("Accept"))
+	require.False(t, gjson.GetBytes(upstream.lastBody, "stream").Exists())
+	require.False(t, gjson.GetBytes(upstream.lastBody, "store").Exists())
+	require.False(t, gjson.GetBytes(upstream.lastBody, "prompt_cache_key").Exists())
 	require.Contains(t, rec.Body.String(), `"id":"cmp_apikey"`)
 }
 
@@ -518,7 +521,7 @@ func TestOpenAIGatewayService_APIKeyPassthrough_CompactEventNamedSSEConvertedToJ
 	c.Request.Header.Set("Content-Type", "application/json")
 	c.Request.Header.Set("Accept", "text/event-stream")
 
-	originalBody := []byte(`{"model":"gpt-5.5","instructions":"compact-test","input":[{"type":"text","text":"compact me"}]}`)
+	originalBody := []byte(`{"model":"gpt-5.5","stream":true,"store":true,"prompt_cache_key":"cache-compact","instructions":"compact-test","input":[{"type":"text","text":"compact me"}]}`)
 	upstreamBody := strings.Join([]string{
 		`event: response.completed`,
 		`data: {"response":{"id":"cmp_event","object":"response","status":"completed","model":"gpt-5.5","output":[{"type":"message","id":"msg_1","role":"assistant","status":"completed","content":[{"type":"output_text","text":"compact summary"}]}],"usage":{"input_tokens":7,"output_tokens":8,"total_tokens":15}}}`,
@@ -566,6 +569,9 @@ func TestOpenAIGatewayService_APIKeyPassthrough_CompactEventNamedSSEConvertedToJ
 	require.Equal(t, "cmp_event", gjson.GetBytes(rec.Body.Bytes(), "id").String())
 	require.Equal(t, "compact summary", gjson.GetBytes(rec.Body.Bytes(), "output.0.content.0.text").String())
 	require.Equal(t, "application/json", upstream.lastReq.Header.Get("Accept"))
+	require.False(t, gjson.GetBytes(upstream.lastBody, "stream").Exists())
+	require.False(t, gjson.GetBytes(upstream.lastBody, "store").Exists())
+	require.False(t, gjson.GetBytes(upstream.lastBody, "prompt_cache_key").Exists())
 }
 
 func TestOpenAIGatewayService_OAuthPassthrough_UpstreamRequestIgnoresClientCancel(t *testing.T) {
