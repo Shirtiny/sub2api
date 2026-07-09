@@ -3513,6 +3513,7 @@ func (s *OpenAIGatewayService) buildUpstreamRequestOpenAIPassthrough(
 		return nil, err
 	}
 	req = req.WithContext(WithHTTPUpstreamProfile(req.Context(), HTTPUpstreamProfileOpenAI))
+	isCompactRequest := isOpenAIResponsesCompactPath(c)
 
 	// 透传客户端请求头（安全白名单）。
 	allowTimeoutHeaders := s.isOpenAIPassthroughTimeoutHeadersAllowed()
@@ -3534,6 +3535,14 @@ func (s *OpenAIGatewayService) buildUpstreamRequestOpenAIPassthrough(
 	req.Header.Del("x-goog-api-key")
 	req.Header.Set("authorization", "Bearer "+token)
 	applyCafecodeIdentityHeaders(req, c, account)
+	// /responses/compact is a sync compaction endpoint. Codex Desktop may send
+	// Accept: text/event-stream globally, but forwarding that to a same-format
+	// upstream such as Aether makes the upstream return SSE for a sync compact
+	// request. Force JSON on the sub2api -> upstream hop so the downstream Codex
+	// client receives the compact object shape it expects.
+	if isCompactRequest {
+		req.Header.Set("accept", "application/json")
+	}
 
 	// OAuth 透传到 ChatGPT internal API 时补齐必要头。
 	if account.Type == AccountTypeOAuth {
@@ -3546,8 +3555,7 @@ func (s *OpenAIGatewayService) buildUpstreamRequestOpenAIPassthrough(
 		// 先保存客户端原始值，再做 compact 补充，避免后续统一隔离时读到已处理的值。
 		clientSessionID := strings.TrimSpace(req.Header.Get("session_id"))
 		clientConversationID := strings.TrimSpace(req.Header.Get("conversation_id"))
-		if isOpenAIResponsesCompactPath(c) {
-			req.Header.Set("accept", "application/json")
+		if isCompactRequest {
 			if req.Header.Get("version") == "" {
 				req.Header.Set("version", codexCLIVersion)
 			}
@@ -4160,6 +4168,7 @@ func (s *OpenAIGatewayService) handlePassthroughSSEToJSON(resp *http.Response, c
 			contentType = "text/event-stream"
 		}
 	}
+	c.Writer.Header().Set("Content-Type", contentType)
 	c.Data(resp.StatusCode, contentType, body)
 
 	return &openaiNonStreamingResultPassthrough{
@@ -5388,6 +5397,7 @@ func (s *OpenAIGatewayService) handleSSEToJSON(resp *http.Response, c *gin.Conte
 			contentType = "text/event-stream"
 		}
 	}
+	c.Writer.Header().Set("Content-Type", contentType)
 	c.Data(resp.StatusCode, contentType, body)
 
 	return &openaiNonStreamingResult{
@@ -5402,11 +5412,14 @@ func (s *OpenAIGatewayService) handleSSEToJSON(resp *http.Response, c *gin.Conte
 func extractOpenAISSETerminalEvent(body string) (string, []byte, bool) {
 	var terminalType string
 	var terminalPayload []byte
-	forEachOpenAISSEDataPayload(body, func(data []byte) {
+	forEachOpenAISSEEventPayload(body, func(eventName string, data []byte) {
 		if terminalPayload != nil {
 			return
 		}
 		eventType := strings.TrimSpace(gjson.GetBytes(data, "type").String())
+		if eventType == "" {
+			eventType = strings.TrimSpace(eventName)
+		}
 		switch eventType {
 		case "response.completed", "response.done", "response.failed", "response.incomplete", "response.cancelled", "response.canceled":
 			terminalType = eventType
@@ -5450,14 +5463,21 @@ func (s *OpenAIGatewayService) writeOpenAINonStreamingProtocolError(resp *http.R
 
 func extractCodexFinalResponse(body string) ([]byte, bool) {
 	var finalResponse []byte
-	forEachOpenAISSEDataPayload(body, func(data []byte) {
+	forEachOpenAISSEEventPayload(body, func(eventName string, data []byte) {
 		if finalResponse != nil {
 			return
 		}
-		eventType := gjson.GetBytes(data, "type").String()
+		eventType := strings.TrimSpace(gjson.GetBytes(data, "type").String())
+		if eventType == "" {
+			eventType = strings.TrimSpace(eventName)
+		}
 		if eventType == "response.done" || eventType == "response.completed" {
 			if response := gjson.GetBytes(data, "response"); response.Exists() && response.Type == gjson.JSON && response.Raw != "" {
 				finalResponse = []byte(response.Raw)
+				return
+			}
+			if looksLikeOpenAIResponseJSON(data) {
+				finalResponse = append([]byte(nil), data...)
 			}
 		}
 	})
@@ -5465,6 +5485,17 @@ func extractCodexFinalResponse(body string) ([]byte, bool) {
 		return finalResponse, true
 	}
 	return nil, false
+}
+
+func looksLikeOpenAIResponseJSON(data []byte) bool {
+	if len(data) == 0 {
+		return false
+	}
+	if object := strings.TrimSpace(gjson.GetBytes(data, "object").String()); object == "response" {
+		return true
+	}
+	return gjson.GetBytes(data, "id").Exists() &&
+		(gjson.GetBytes(data, "output").Exists() || gjson.GetBytes(data, "status").Exists())
 }
 
 func normalizeResponsesStreamingTerminalOutput(data []byte, acc *apicompat.BufferedResponseAccumulator, imageOutputs []json.RawMessage) ([]byte, bool) {

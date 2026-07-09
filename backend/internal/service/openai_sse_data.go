@@ -68,3 +68,73 @@ func emitOpenAISSEDataPayload(data string, fn func([]byte)) {
 	}
 	fn([]byte(data))
 }
+
+type openAISSEEventAccumulator struct {
+	event string
+	lines []string
+}
+
+func (a *openAISSEEventAccumulator) AddLine(line string, fn func(string, []byte)) {
+	if fn == nil {
+		return
+	}
+	trimmedLine := strings.TrimRight(line, "\r\n")
+	if event, ok := extractOpenAISSEEventLine(trimmedLine); ok {
+		a.event = event
+		return
+	}
+	if data, ok := extractOpenAISSEDataLine(trimmedLine); ok {
+		a.lines = append(a.lines, data)
+		return
+	}
+	if strings.TrimSpace(trimmedLine) == "" {
+		a.Flush(fn)
+	}
+}
+
+func (a *openAISSEEventAccumulator) Flush(fn func(string, []byte)) {
+	if fn == nil || len(a.lines) == 0 {
+		a.event = ""
+		return
+	}
+	emitOpenAISSEEventPayloads(a.event, a.lines, fn)
+	a.event = ""
+	a.lines = a.lines[:0]
+}
+
+func forEachOpenAISSEEventPayload(body string, fn func(string, []byte)) {
+	if fn == nil || strings.TrimSpace(body) == "" {
+		return
+	}
+	var acc openAISSEEventAccumulator
+	for _, line := range strings.Split(body, "\n") {
+		acc.AddLine(line, fn)
+	}
+	acc.Flush(fn)
+}
+
+func emitOpenAISSEEventPayloads(event string, lines []string, fn func(string, []byte)) {
+	if fn == nil || len(lines) == 0 {
+		return
+	}
+	if len(lines) == 1 {
+		emitOpenAISSEEventPayload(event, lines[0], fn)
+		return
+	}
+	joined := strings.Join(lines, "\n")
+	if gjson.Valid(joined) {
+		emitOpenAISSEEventPayload(event, joined, fn)
+		return
+	}
+	for _, line := range lines {
+		emitOpenAISSEEventPayload(event, line, fn)
+	}
+}
+
+func emitOpenAISSEEventPayload(event string, data string, fn func(string, []byte)) {
+	data = strings.TrimSpace(data)
+	if data == "" || data == "[DONE]" {
+		return
+	}
+	fn(strings.TrimSpace(event), []byte(data))
+}

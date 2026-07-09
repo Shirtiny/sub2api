@@ -456,6 +456,118 @@ func TestOpenAIGatewayService_OAuthPassthrough_CompactUsesJSONAndKeepsNonStreami
 	require.Contains(t, rec.Body.String(), `"id":"cmp_123"`)
 }
 
+func TestOpenAIGatewayService_APIKeyPassthrough_CompactForcesJSONAccept(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request = httptest.NewRequest(http.MethodPost, "/v1/responses/compact", bytes.NewReader(nil))
+	c.Request.Header.Set("User-Agent", "Codex Desktop/0.142.5")
+	c.Request.Header.Set("Content-Type", "application/json")
+	c.Request.Header.Set("Accept", "text/event-stream")
+
+	originalBody := []byte(`{"model":"gpt-5.5","instructions":"compact-test","input":[{"type":"text","text":"compact me"}]}`)
+	upstream := &httpUpstreamRecorder{resp: &http.Response{
+		StatusCode: http.StatusOK,
+		Header:     http.Header{"Content-Type": []string{"application/json"}, "x-request-id": []string{"rid-apikey-compact-json"}},
+		Body:       io.NopCloser(strings.NewReader(`{"id":"cmp_apikey","object":"response","status":"completed","model":"gpt-5.5","output":[],"usage":{"input_tokens":5,"output_tokens":6}}`)),
+	}}
+
+	svc := &OpenAIGatewayService{
+		cfg:          &config.Config{},
+		httpUpstream: upstream,
+	}
+	account := &Account{
+		ID:          234,
+		Name:        "aether-upstream",
+		Platform:    PlatformOpenAI,
+		Type:        AccountTypeAPIKey,
+		Concurrency: 1,
+		Credentials: map[string]any{
+			"api_key":  "sk-upstream",
+			"base_url": "https://aether.example/v1",
+		},
+		Extra: map[string]any{
+			"openai_passthrough":                     true,
+			openai_compat.ExtraKeyResponsesMode:      string(openai_compat.ResponsesSupportModeAuto),
+			openai_compat.ExtraKeyResponsesSupported: true,
+		},
+		Status:      StatusActive,
+		Schedulable: true,
+	}
+
+	result, err := svc.Forward(context.Background(), c, account, originalBody)
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	require.False(t, result.Stream)
+	require.Equal(t, 5, result.Usage.InputTokens)
+	require.Equal(t, 6, result.Usage.OutputTokens)
+	require.NotNil(t, upstream.lastReq)
+	require.Equal(t, "https://aether.example/v1/responses/compact", upstream.lastReq.URL.String())
+	require.Equal(t, "application/json", upstream.lastReq.Header.Get("Accept"))
+	require.Contains(t, rec.Body.String(), `"id":"cmp_apikey"`)
+}
+
+func TestOpenAIGatewayService_APIKeyPassthrough_CompactEventNamedSSEConvertedToJSON(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request = httptest.NewRequest(http.MethodPost, "/v1/responses/compact", bytes.NewReader(nil))
+	c.Request.Header.Set("User-Agent", "Codex Desktop/0.142.5")
+	c.Request.Header.Set("Content-Type", "application/json")
+	c.Request.Header.Set("Accept", "text/event-stream")
+
+	originalBody := []byte(`{"model":"gpt-5.5","instructions":"compact-test","input":[{"type":"text","text":"compact me"}]}`)
+	upstreamBody := strings.Join([]string{
+		`event: response.completed`,
+		`data: {"response":{"id":"cmp_event","object":"response","status":"completed","model":"gpt-5.5","output":[{"type":"message","id":"msg_1","role":"assistant","status":"completed","content":[{"type":"output_text","text":"compact summary"}]}],"usage":{"input_tokens":7,"output_tokens":8,"total_tokens":15}}}`,
+		``,
+		`data: [DONE]`,
+		``,
+	}, "\n")
+	upstream := &httpUpstreamRecorder{resp: &http.Response{
+		StatusCode: http.StatusOK,
+		Header:     http.Header{"Content-Type": []string{"text/event-stream"}, "x-request-id": []string{"rid-apikey-compact-sse"}},
+		Body:       io.NopCloser(strings.NewReader(upstreamBody)),
+	}}
+
+	svc := &OpenAIGatewayService{
+		cfg:          &config.Config{},
+		httpUpstream: upstream,
+	}
+	account := &Account{
+		ID:          235,
+		Name:        "aether-upstream",
+		Platform:    PlatformOpenAI,
+		Type:        AccountTypeAPIKey,
+		Concurrency: 1,
+		Credentials: map[string]any{
+			"api_key":  "sk-upstream",
+			"base_url": "https://aether.example/v1",
+		},
+		Extra: map[string]any{
+			"openai_passthrough":                     true,
+			openai_compat.ExtraKeyResponsesMode:      string(openai_compat.ResponsesSupportModeAuto),
+			openai_compat.ExtraKeyResponsesSupported: true,
+		},
+		Status:      StatusActive,
+		Schedulable: true,
+	}
+
+	result, err := svc.Forward(context.Background(), c, account, originalBody)
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	require.False(t, result.Stream)
+	require.Equal(t, 7, result.Usage.InputTokens)
+	require.Equal(t, 8, result.Usage.OutputTokens)
+	require.Equal(t, "application/json; charset=utf-8", rec.Header().Get("Content-Type"))
+	require.NotContains(t, rec.Body.String(), "event: response.completed")
+	require.Equal(t, "cmp_event", gjson.GetBytes(rec.Body.Bytes(), "id").String())
+	require.Equal(t, "compact summary", gjson.GetBytes(rec.Body.Bytes(), "output.0.content.0.text").String())
+	require.Equal(t, "application/json", upstream.lastReq.Header.Get("Accept"))
+}
+
 func TestOpenAIGatewayService_OAuthPassthrough_UpstreamRequestIgnoresClientCancel(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
