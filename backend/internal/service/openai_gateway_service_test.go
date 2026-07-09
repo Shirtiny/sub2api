@@ -2460,6 +2460,46 @@ func TestExtractCodexFinalResponse_SampleReplay(t *testing.T) {
 	require.Contains(t, string(finalResp), `"input_tokens":11`)
 }
 
+func TestExtractCodexFinalResponse_EventNamedTerminalVariants(t *testing.T) {
+	tests := []struct {
+		name   string
+		body   string
+		wantID string
+	}{
+		{
+			name: "event named terminal with wrapped response and no type",
+			body: strings.Join([]string{
+				`event: response.completed`,
+				`data: {"response":{"id":"resp_wrapped","object":"response","status":"completed","output":[],"usage":{"input_tokens":3,"output_tokens":4}}}`,
+				``,
+				`data: [DONE]`,
+				``,
+			}, "\n"),
+			wantID: "resp_wrapped",
+		},
+		{
+			name: "event named terminal with raw response object and no type",
+			body: strings.Join([]string{
+				`event: response.completed`,
+				`data: {"id":"resp_raw","object":"response","status":"completed","output":[],"usage":{"input_tokens":5,"output_tokens":6}}`,
+				``,
+				`data: [DONE]`,
+				``,
+			}, "\n"),
+			wantID: "resp_raw",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			finalResp, ok := extractCodexFinalResponse(tt.body)
+			require.True(t, ok)
+			require.Equal(t, tt.wantID, gjson.GetBytes(finalResp, "id").String())
+			require.True(t, gjson.GetBytes(finalResp, "usage.input_tokens").Exists())
+		})
+	}
+}
+
 func TestHandleSSEToJSON_CompletedEventReturnsJSON(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	rec := httptest.NewRecorder()
