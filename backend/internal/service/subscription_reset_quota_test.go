@@ -335,3 +335,85 @@ func TestAdminBulkResetQuota_ResetError(t *testing.T) {
 	require.Equal(t, int64(0), count)
 	require.True(t, stub.resetActiveCalled)
 }
+
+func TestEnsureWindowMaintenance_VirtualCustomSubscriptionPreservesEntitlement(t *testing.T) {
+	now := time.Now()
+	windowStart := now.Add(-25 * time.Hour)
+	customExpiresAt := now.Add(15 * 24 * time.Hour)
+	multiplier := 3
+	planID := int64(100)
+	sourceGroupID := int64(200)
+	sourceDailyLimit := 10.0
+	sub := &UserSubscription{
+		ID:                  11,
+		UserID:              21,
+		GroupID:             sourceGroupID,
+		Status:              SubscriptionStatusActive,
+		StartsAt:            now.Add(-24 * time.Hour),
+		ExpiresAt:           now.Add(30 * 24 * time.Hour),
+		DailyUsageUSD:       31,
+		DailyWindowStart:    &windowStart,
+		CustomMultiplier:    &multiplier,
+		CustomSourcePlanID:  &planID,
+		CustomSourceGroupID: &sourceGroupID,
+		CustomExpiresAt:     &customExpiresAt,
+		CustomDisplayName:   "Custom Plan-3x",
+	}
+	group := &Group{ID: sourceGroupID, DailyLimitUSD: &sourceDailyLimit}
+	stub := &resetQuotaUserSubRepoStub{sub: sub}
+	svc := newResetQuotaSvc(stub)
+
+	needsMaintenance, err := svc.ValidateAndCheckLimits(sub, group)
+	require.NoError(t, err)
+	require.True(t, needsMaintenance)
+
+	refreshed, err := svc.EnsureWindowMaintenance(context.Background(), sub)
+	require.NoError(t, err)
+	require.True(t, stub.resetDailyCalled)
+	require.Zero(t, refreshed.DailyUsageUSD)
+	require.Equal(t, multiplier, *refreshed.CustomMultiplier)
+	require.Equal(t, planID, *refreshed.CustomSourcePlanID)
+	require.Equal(t, sourceGroupID, *refreshed.CustomSourceGroupID)
+	require.Equal(t, "Custom Plan-3x", refreshed.CustomDisplayName)
+	require.True(t, refreshed.CheckDailyLimit(group, 30))
+	require.False(t, refreshed.CheckDailyLimit(group, 30.01))
+}
+
+func TestEnsureWindowMaintenance_LegacyCustomGroupPreservesMultipliedLimit(t *testing.T) {
+	now := time.Now()
+	windowStart := now.Add(-25 * time.Hour)
+	customDailyLimit := 20.0
+	multiplier := 2
+	sub := &UserSubscription{
+		ID:               12,
+		UserID:           22,
+		GroupID:          202,
+		Status:           SubscriptionStatusActive,
+		StartsAt:         now.Add(-24 * time.Hour),
+		ExpiresAt:        now.Add(30 * 24 * time.Hour),
+		DailyUsageUSD:    21,
+		DailyWindowStart: &windowStart,
+	}
+	group := &Group{
+		ID:                        202,
+		IsCustomSubscriptionGroup: true,
+		CustomMultiplier:          &multiplier,
+		DailyLimitUSD:             &customDailyLimit,
+	}
+	stub := &resetQuotaUserSubRepoStub{sub: sub}
+	svc := newResetQuotaSvc(stub)
+
+	needsMaintenance, err := svc.ValidateAndCheckLimits(sub, group)
+	require.NoError(t, err)
+	require.True(t, needsMaintenance)
+
+	refreshed, err := svc.EnsureWindowMaintenance(context.Background(), sub)
+	require.NoError(t, err)
+	require.True(t, stub.resetDailyCalled)
+	require.Zero(t, refreshed.DailyUsageUSD)
+	require.True(t, group.IsCustomSubscriptionGroup)
+	require.Equal(t, multiplier, *group.CustomMultiplier)
+	require.InDelta(t, 20, *group.DailyLimitUSD, 1e-9)
+	require.True(t, refreshed.CheckDailyLimit(group, 20))
+	require.False(t, refreshed.CheckDailyLimit(group, 20.01))
+}

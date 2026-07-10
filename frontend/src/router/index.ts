@@ -811,35 +811,25 @@ router.beforeEach(async (to, _from, next) => {
     return
   }
 
-  // Public settings may not be loaded before the first navigation. Wait for
-  // the initial request when a route depends on a server-side feature flag,
-  // but treat a transient load failure as unknown rather than disabled.
-  if ((to.meta.requiresPayment || to.meta.requiresRiskControl) && !appStore.publicSettingsLoaded) {
-    try {
+
+  // Check payment requirement (internal payment system only)
+  if (to.meta.requiresPayment) {
+    if (!appStore.publicSettingsLoaded || !appStore.cachedPublicSettings) {
       await appStore.fetchPublicSettings()
-    } catch (error) {
-      console.warn('Failed to load public settings in route guard', error)
+    }
+    const paymentEnabled = appStore.cachedPublicSettings?.payment_enabled
+    if (!paymentEnabled) {
+      next(authStore.isAdmin ? '/admin/dashboard' : '/dashboard')
+      return
     }
   }
 
-  // Only an explicit value from successfully loaded settings can disable a route.
-  // A transient settings failure is unknown state, not a confirmed feature toggle.
-  if (
-    to.meta.requiresPayment &&
-    appStore.publicSettingsLoaded &&
-    appStore.cachedPublicSettings?.payment_enabled === false
-  ) {
-    next(authStore.isAdmin ? '/admin/dashboard' : '/dashboard')
-    return
-  }
-
-  if (
-    to.meta.requiresRiskControl &&
-    appStore.publicSettingsLoaded &&
-    appStore.cachedPublicSettings?.risk_control_enabled === false
-  ) {
-    next(authStore.isAdmin ? '/admin/settings' : '/dashboard')
-    return
+  if (to.meta.requiresRiskControl) {
+    const riskControlEnabled = appStore.cachedPublicSettings?.risk_control_enabled === true
+    if (!riskControlEnabled) {
+      next(authStore.isAdmin ? '/admin/settings' : '/dashboard')
+      return
+    }
   }
 
   if (to.meta.requiresAffiliate) {

@@ -137,17 +137,26 @@ func TestGetModelPricing_OpenAIGPT54Fallback(t *testing.T) {
 	require.InDelta(t, 1.5, pricing.LongContextOutputMultiplier, 1e-12)
 }
 
-func TestIsOpenAIGPT54Model_IncludesKnownLongContextOpenAIModelsOnly(t *testing.T) {
+func TestOpenAIModelPricingPolicyClassification(t *testing.T) {
 	for _, model := range []string{
 		"gpt-5.4",
 		"gpt-5.5",
 		"gpt-5.5-pro",
+	} {
+		normalized := normalizeKnownOpenAICodexModel(model)
+		require.True(t, usesOpenAILegacyLongContextPricing(normalized), model)
+		require.False(t, isOpenAIGPT56Model(normalized), model)
+	}
+
+	for _, model := range []string{
 		"gpt-5.6-sol",
 		"gpt-5.6-terra",
 		"gpt-5.6-luna",
 		"gpt-5.6-sol-high",
 	} {
-		require.True(t, isOpenAIGPT54Model(model), model)
+		normalized := normalizeKnownOpenAICodexModel(model)
+		require.True(t, isOpenAIGPT56Model(normalized), model)
+		require.False(t, usesOpenAILegacyLongContextPricing(normalized), model)
 	}
 
 	for _, model := range []string{
@@ -155,7 +164,9 @@ func TestIsOpenAIGPT54Model_IncludesKnownLongContextOpenAIModelsOnly(t *testing.
 		"gpt-5.99-experimental",
 		"claude-opus-4-6",
 	} {
-		require.False(t, isOpenAIGPT54Model(model), model)
+		normalized := normalizeKnownOpenAICodexModel(model)
+		require.False(t, isOpenAIGPT56Model(normalized), model)
+		require.False(t, usesOpenAILegacyLongContextPricing(normalized), model)
 	}
 }
 

@@ -588,13 +588,15 @@ func (s *PaymentService) doSub(ctx context.Context, o *dbent.PaymentOrder, lease
 			migrateLegacyCustomGroupIDs = virtualEntitlement.MigrateFromGroupIDs
 		}
 		if o.SubscriptionGroupID == nil || *o.SubscriptionGroupID != gid {
-			updated, err := tx.Client().PaymentOrder.UpdateOneID(o.ID).SetSubscriptionGroupID(gid).Save(txCtx)
+			updated, err := tx.Client().PaymentOrder.UpdateOneID(o.ID).
+				SetSubscriptionGroupID(gid).
+				SetUpdatedAt(lease.version).
+				Save(txCtx)
 			if err != nil {
 				_ = tx.Rollback()
 				return fmt.Errorf("update order subscription group: %w", err)
 			}
 			o = applyPaymentOrderSubscriptionGroup(updated, gid)
-			lease.version = updated.UpdatedAt
 		}
 	}
 
@@ -743,6 +745,25 @@ func (s *PaymentService) ensurePaymentSubscriptionAssigned(ctx context.Context, 
 				}
 			}
 			return fmt.Errorf("record subscription assignment audit: %w", err)
+		}
+
+		if o.PayAmount > 0 {
+			if _, err := txClient.User.UpdateOneID(o.UserID).AddTotalRecharged(o.PayAmount).Save(txCtx); err != nil {
+				return fmt.Errorf("update membership points: %w", err)
+			}
+		}
+
+		auditDetail := map[string]any{
+			"subscriptionGroupID": groupID,
+			"subscriptionDays":    days,
+			"creditedAmount":      o.Amount,
+			"payAmount":           o.PayAmount,
+		}
+		if coupon := cafeCouponOrderSnapshot(o); coupon != nil {
+			auditDetail["cafeCoupon"] = coupon
+		}
+		if err := s.writeAuditLogStrict(txCtx, o.ID, "SUBSCRIPTION_SUCCESS", "system", auditDetail); err != nil {
+			return fmt.Errorf("write audit log: %w", err)
 		}
 	} else {
 		slog.Info("subscription already assigned for order, skipping", "orderID", o.ID, "groupID", groupID)

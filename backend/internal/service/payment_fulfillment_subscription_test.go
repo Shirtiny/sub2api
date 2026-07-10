@@ -238,13 +238,16 @@ func (r *paymentFulfillmentSubscriptionRepo) UpdateNotes(ctx context.Context, id
 func (r *paymentFulfillmentSubscriptionRepo) ActivateWindows(context.Context, int64, time.Time) error {
 	panic("unexpected ActivateWindows call")
 }
-func (r *paymentFulfillmentSubscriptionRepo) ResetDailyUsage(context.Context, int64, time.Time) error {
+func (r *paymentFulfillmentSubscriptionRepo) ResetUsageWindows(context.Context, int64, bool, bool, bool, time.Time) error {
+	panic("unexpected ResetUsageWindows call")
+}
+func (r *paymentFulfillmentSubscriptionRepo) ResetDailyUsage(context.Context, int64, *time.Time, time.Time) error {
 	panic("unexpected ResetDailyUsage call")
 }
-func (r *paymentFulfillmentSubscriptionRepo) ResetWeeklyUsage(context.Context, int64, time.Time) error {
+func (r *paymentFulfillmentSubscriptionRepo) ResetWeeklyUsage(context.Context, int64, *time.Time, time.Time) error {
 	panic("unexpected ResetWeeklyUsage call")
 }
-func (r *paymentFulfillmentSubscriptionRepo) ResetMonthlyUsage(context.Context, int64, time.Time) error {
+func (r *paymentFulfillmentSubscriptionRepo) ResetMonthlyUsage(context.Context, int64, *time.Time, time.Time) error {
 	panic("unexpected ResetMonthlyUsage call")
 }
 func (r *paymentFulfillmentSubscriptionRepo) ResetActiveUsage(context.Context, bool, bool, bool, time.Time) (int64, error) {
