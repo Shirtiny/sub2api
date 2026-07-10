@@ -31,6 +31,12 @@ func RegisterGatewayRoutes(
 	requireGroupAnthropic := middleware.RequireGroupAssignment(settingService, middleware.AnthropicErrorWriter)
 	requireGroupGoogle := middleware.RequireGroupAssignment(settingService, middleware.GoogleErrorWriter)
 
+	// Public OpenAI-compatible discovery endpoint. Its catalog is static and is
+	// intentionally independent of API keys, groups, account mappings, and
+	// platform routing. Keep generic request/observability middleware, but do
+	// not attach API-key or group-assignment middleware.
+	r.GET("/v1/models", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, h.Gateway.Models)
+
 	// API网关（Claude API兼容）
 	gateway := r.Group("/v1")
 	gateway.Use(bodyLimit)
@@ -63,7 +69,6 @@ func RegisterGatewayRoutes(
 			}
 			h.Gateway.CountTokens(c)
 		})
-		gateway.GET("/models", h.Gateway.Models)
 		gateway.GET("/usage", h.Gateway.Usage)
 		// OpenAI Responses API: auto-route based on group platform
 		gateway.POST("/responses", func(c *gin.Context) {
