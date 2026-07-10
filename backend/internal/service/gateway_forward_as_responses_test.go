@@ -21,6 +21,14 @@ func TestExtractResponsesReasoningEffortFromBody(t *testing.T) {
 	require.NotNil(t, got)
 	require.Equal(t, "high", *got)
 
+	for _, effort := range []string{"max", "ultra"} {
+		t.Run("records "+effort, func(t *testing.T) {
+			got := ExtractResponsesReasoningEffortFromBody([]byte(`{"reasoning":{"effort":"` + effort + `"}}`))
+			require.NotNil(t, got)
+			require.Equal(t, effort, *got)
+		})
+	}
+
 	require.Nil(t, ExtractResponsesReasoningEffortFromBody([]byte(`{"model":"claude-sonnet-4.5"}`)))
 }
 

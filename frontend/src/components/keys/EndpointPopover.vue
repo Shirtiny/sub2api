@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useClipboard } from '@/composables/useClipboard'
 import type { CustomEndpoint } from '@/types'
@@ -12,8 +12,17 @@ const props = defineProps<{
 const { t } = useI18n()
 const { copyToClipboard } = useClipboard()
 const copiedEndpoint = ref<string | null>(null)
+const endpointLatencies = ref<Record<string, number | null>>({})
 
 let copiedResetTimer: number | undefined
+let latencyScheduleGeneration = 0
+let isMounted = false
+const latencyTimers: number[] = []
+const activePingControllers = new Set<AbortController>()
+
+const PING_TIMEOUT_MS = 10_000
+// Immediate, then 30 seconds later, then 60 seconds after the second check.
+const LATENCY_REFRESH_DELAYS_MS = [30_000, 90_000] as const
 
 const allEndpoints = computed(() => {
   const items: Array<{ name: string; endpoint: string; description: string; isDefault: boolean }> = []
@@ -52,11 +61,134 @@ function tooltipHint(endpoint: string): string {
     : t('keys.endpoints.clickToCopy')
 }
 
-function speedTestUrl(endpoint: string): string {
-  return `https://www.tcptest.cn/http/${encodeURIComponent(endpoint)}`
+function buildPingUrl(endpoint: string): string | null {
+  try {
+    const url = new URL(endpoint, window.location.origin)
+    url.pathname = '/v1/ping'
+    url.search = ''
+    url.searchParams.set('_ts', Date.now().toString())
+    url.hash = ''
+    return url.toString()
+  } catch {
+    return null
+  }
 }
 
+function latencyLabel(endpoint: string): string {
+  const latency = endpointLatencies.value[endpoint.trim()]
+  if (latency === undefined) return '...ms'
+  if (latency === null) return '--ms'
+  return `${latency}ms`
+}
+
+function latencyTitle(endpoint: string): string {
+  const latency = endpointLatencies.value[endpoint.trim()]
+  if (latency === undefined) return t('keys.endpoints.checkingLatency')
+  if (latency === null) return t('keys.endpoints.latencyUnavailable')
+  return `${t('keys.endpoints.latency')}: ${latency}ms`
+}
+
+function latencyTextClass(endpoint: string): string {
+  const latency = endpointLatencies.value[endpoint.trim()]
+  if (typeof latency !== 'number') return 'text-content-tertiary'
+  if (latency < 200) return 'text-emerald-600 dark:text-emerald-400'
+  if (latency < 500) return 'text-amber-600 dark:text-amber-400'
+  return 'text-red-600 dark:text-red-400'
+}
+
+function requestTtfbMs(pingUrl: string, fallbackTtfb: number): number {
+  let ttfb = fallbackTtfb
+  if (typeof performance.getEntriesByName === 'function') {
+    const entries = performance.getEntriesByName(pingUrl, 'resource')
+    const entry = entries[entries.length - 1] as PerformanceResourceTiming | undefined
+    if (entry && entry.requestStart > 0 && entry.responseStart >= entry.requestStart) {
+      ttfb = entry.responseStart - entry.requestStart
+    }
+  }
+  return Math.max(0, Math.round(ttfb))
+}
+
+async function measureEndpointLatency(endpoint: string): Promise<number | null> {
+  const pingUrl = buildPingUrl(endpoint)
+  if (!pingUrl) return null
+
+  const controller = new AbortController()
+  activePingControllers.add(controller)
+  const timeout = window.setTimeout(() => controller.abort(), PING_TIMEOUT_MS)
+  const startedAt = performance.now()
+  try {
+    const response = await fetch(pingUrl, {
+      method: 'GET',
+      credentials: 'omit',
+      signal: controller.signal,
+    })
+    const fallbackTtfb = performance.now() - startedAt
+    if (!response.ok) return null
+
+    await response.json()
+    return requestTtfbMs(pingUrl, fallbackTtfb)
+  } catch {
+    return null
+  } finally {
+    window.clearTimeout(timeout)
+    activePingControllers.delete(controller)
+  }
+}
+
+async function refreshEndpointLatencies(generation: number) {
+  const endpoints = [...new Set(
+    allEndpoints.value
+      .map((item) => item.endpoint.trim())
+      .filter(Boolean),
+  )]
+  const results = await Promise.all(endpoints.map(async (endpoint) => (
+    [endpoint, await measureEndpointLatency(endpoint)] as const
+  )))
+
+  if (!isMounted || generation !== latencyScheduleGeneration) return
+  endpointLatencies.value = Object.fromEntries(results)
+}
+
+function clearLatencySchedule() {
+  for (const timer of latencyTimers.splice(0)) {
+    window.clearTimeout(timer)
+  }
+  for (const controller of activePingControllers) {
+    controller.abort()
+  }
+  activePingControllers.clear()
+}
+
+function startLatencySchedule() {
+  clearLatencySchedule()
+  endpointLatencies.value = {}
+  const generation = ++latencyScheduleGeneration
+
+  void refreshEndpointLatencies(generation)
+  for (const delay of LATENCY_REFRESH_DELAYS_MS) {
+    latencyTimers.push(window.setTimeout(() => {
+      void refreshEndpointLatencies(generation)
+    }, delay))
+  }
+}
+
+const endpointSignature = computed(() => allEndpoints.value
+  .map((item) => item.endpoint.trim())
+  .join('\u0000'))
+
+onMounted(() => {
+  isMounted = true
+  startLatencySchedule()
+})
+
+watch(endpointSignature, () => {
+  if (isMounted) startLatencySchedule()
+})
+
 onBeforeUnmount(() => {
+  isMounted = false
+  latencyScheduleGeneration += 1
+  clearLatencySchedule()
   if (copiedResetTimer !== undefined) {
     window.clearTimeout(copiedResetTimer)
   }
@@ -80,22 +212,23 @@ onBeforeUnmount(() => {
 
       <div class="group/endpoint relative flex items-center gap-1.5">
         <div
-          class="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 w-max max-w-[24rem] -translate-x-1/2 translate-y-1 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-left opacity-0 shadow-[0_14px_36px_-20px_rgba(15,23,42,0.35)] ring-1 ring-slate-200/80 transition-all duration-150 group-hover/endpoint:translate-y-0 group-hover/endpoint:opacity-100 group-focus-within/endpoint:translate-y-0 group-focus-within/endpoint:opacity-100 dark:border-slate-700 dark:bg-slate-900 dark:ring-slate-700/70"
+          role="tooltip"
+          class="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 w-max max-w-[24rem] -translate-x-1/2 translate-y-1 rounded-lg border border-stroke-default bg-surface-card px-3 py-2.5 text-left opacity-0 shadow-xl ring-1 ring-stroke-subtle/70 transition-all duration-150 group-hover/endpoint:translate-y-0 group-hover/endpoint:opacity-100 group-focus-within/endpoint:translate-y-0 group-focus-within/endpoint:opacity-100"
         >
           <p
             v-if="item.description"
-            class="max-w-[24rem] break-words text-xs leading-5 text-slate-600 dark:text-slate-200"
+            class="max-w-[24rem] break-words text-xs leading-5 text-content-secondary"
           >
             {{ item.description }}
           </p>
           <p
-            class="flex items-center gap-1.5 text-[11px] leading-4 text-primary-600 dark:text-primary-300"
+            class="flex items-center gap-1.5 text-[11px] font-medium leading-4 text-content-primary"
             :class="item.description ? 'mt-1.5' : ''"
           >
-            <span class="h-1.5 w-1.5 rounded-full bg-primary-500 dark:bg-primary-300"></span>
+            <span class="h-1.5 w-1.5 rounded-full bg-primary-500 dark:bg-primary-600"></span>
             {{ tooltipHint(item.endpoint) }}
           </p>
-          <div class="absolute left-1/2 top-full h-3 w-3 -translate-x-1/2 -translate-y-1/2 rotate-45 border-b border-r border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900"></div>
+          <div class="absolute left-1/2 top-full h-3 w-3 -translate-x-1/2 -translate-y-1/2 rotate-45 border-b border-r border-stroke-default bg-surface-card"></div>
         </div>
 
         <code
@@ -111,7 +244,7 @@ onBeforeUnmount(() => {
           type="button"
           class="rounded p-0.5 transition-colors"
           :class="copiedEndpoint === item.endpoint
-            ? 'text-emerald-500 dark:text-emerald-400'
+            ? 'text-primary-500'
             : 'text-gray-400 hover:text-primary-500 dark:text-gray-500 dark:hover:text-primary-400'"
           :aria-label="tooltipHint(item.endpoint)"
           @click="copy(item.endpoint)"
@@ -124,17 +257,14 @@ onBeforeUnmount(() => {
           </svg>
         </button>
 
-        <a
-          :href="speedTestUrl(item.endpoint)"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="rounded p-0.5 text-gray-400 transition-colors hover:text-amber-500 dark:text-gray-500 dark:hover:text-amber-400"
-          :title="t('keys.endpoints.speedTest')"
+        <span
+          class="shrink-0 whitespace-nowrap font-mono text-[11px] tabular-nums"
+          :class="latencyTextClass(item.endpoint)"
+          :title="latencyTitle(item.endpoint)"
+          aria-live="polite"
         >
-          <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-          </svg>
-        </a>
+          {{ latencyLabel(item.endpoint) }}
+        </span>
       </div>
     </div>
   </div>

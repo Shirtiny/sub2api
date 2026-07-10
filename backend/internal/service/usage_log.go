@@ -115,7 +115,7 @@ type UsageLog struct {
 	// ServiceTier records the OpenAI service tier used for billing, e.g. "priority" / "flex".
 	ServiceTier *string
 	// ReasoningEffort is the request's reasoning effort level.
-	// OpenAI: "low" / "medium" / "high" / "xhigh"; Claude: "low" / "medium" / "high" / "max".
+	// Supported values include "low", "medium", "high", "xhigh", "max", and "ultra".
 	// Nil means not provided / not applicable.
 	ReasoningEffort *string
 	// InboundEndpoint is the client-facing API endpoint path, e.g. /v1/chat/completions.

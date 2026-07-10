@@ -1235,8 +1235,10 @@ func TestNormalizeClaudeOutputEffort(t *testing.T) {
 		{"medium", strPtr("medium")},
 		{"high", strPtr("high")},
 		{"max", strPtr("max")},
+		{"ultra", strPtr("ultra")},
 		{"LOW", strPtr("low")},
 		{"Max", strPtr("max")},
+		{"ULTRA", strPtr("ultra")},
 		{" medium ", strPtr("medium")},
 		{"xhigh", strPtr("xhigh")},
 		{"XHIGH", strPtr("xhigh")},
@@ -1348,6 +1350,11 @@ func TestDeriveClaudeReasoningEffort(t *testing.T) {
 			want:   strPtr("xhigh"),
 		},
 		{
+			name:   "OpenAI-style ultra effort is preserved",
+			parsed: &ParsedRequest{RequestReasoningEffort: "ultra", ThinkingBudgetTokens: 1000},
+			want:   strPtr("ultra"),
+		},
+		{
 			name:   "fallback to budget when effort empty",
 			parsed: &ParsedRequest{OutputEffort: "", ThinkingBudgetTokens: 5000},
 			want:   strPtr("high"),
@@ -1411,6 +1418,16 @@ func TestPassthroughFallback_DeriveReasoningEffortFromBudgetTokens(t *testing.T)
 			name:       "flat reasoning_effort maps to high",
 			body:       `{"model":"claude-sonnet-4-5","max_tokens":8192,"reasoning_effort":"high","messages":[{"role":"user","content":"hi"}]}`,
 			wantEffort: strPtr("high"),
+		},
+		{
+			name:       "reasoning effort preserves max",
+			body:       `{"model":"gpt-5.6-sol","max_tokens":8192,"reasoning":{"effort":"max"},"messages":[{"role":"user","content":"hi"}]}`,
+			wantEffort: strPtr("max"),
+		},
+		{
+			name:       "reasoning effort preserves ultra",
+			body:       `{"model":"gpt-5.6-sol","max_tokens":8192,"reasoning":{"effort":"ultra"},"messages":[{"role":"user","content":"hi"}]}`,
+			wantEffort: strPtr("ultra"),
 		},
 		{
 			name:       "thinking budget at minimum maps to low",
