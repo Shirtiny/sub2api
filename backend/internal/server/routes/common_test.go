@@ -21,7 +21,7 @@ func TestCommonRoutesPingIsPublicTimingProbe(t *testing.T) {
 	router.ServeHTTP(recorder, req)
 
 	require.Equal(t, http.StatusOK, recorder.Code)
-	require.Equal(t, "*", recorder.Header().Get("Access-Control-Allow-Origin"))
+	require.Empty(t, recorder.Header().Values("Access-Control-Allow-Origin"))
 	require.Equal(t, "*", recorder.Header().Get("Timing-Allow-Origin"))
 	require.Equal(t, "no-store", recorder.Header().Get("Cache-Control"))
 

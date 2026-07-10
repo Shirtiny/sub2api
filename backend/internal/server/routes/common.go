@@ -15,7 +15,8 @@ func RegisterCommonRoutes(r *gin.Engine) {
 
 	// Public probe target for browser-side endpoint timing.
 	r.GET("/v1/ping", func(c *gin.Context) {
-		c.Header("Access-Control-Allow-Origin", "*")
+		// CORS is owned by the global middleware/proxy. Setting it here can
+		// produce duplicate values when an upstream already reflects Origin.
 		c.Header("Timing-Allow-Origin", "*")
 		c.Header("Cache-Control", "no-store")
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
