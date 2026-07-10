@@ -811,6 +811,16 @@ router.beforeEach(async (to, _from, next) => {
     return
   }
 
+  // Public settings may not be loaded before the first navigation. Wait for
+  // the initial request when a route depends on a server-side feature flag,
+  // but treat a transient load failure as unknown rather than disabled.
+  if ((to.meta.requiresPayment || to.meta.requiresRiskControl) && !appStore.publicSettingsLoaded) {
+    try {
+      await appStore.fetchPublicSettings()
+    } catch (error) {
+      console.warn('Failed to load public settings in route guard', error)
+    }
+  }
 
   // Only an explicit value from successfully loaded settings can disable a route.
   // A transient settings failure is unknown state, not a confirmed feature toggle.
