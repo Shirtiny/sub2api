@@ -54,6 +54,13 @@ func normalizeKnownOpenAICodexModel(model string) string {
 	if normalized == "" {
 		return ""
 	}
+	if normalized == "gpt-5.6" {
+		return "gpt-5.6-sol"
+	}
+	if suffix, ok := strings.CutPrefix(normalized, "gpt-5.6-"); ok &&
+		(suffix == "max" || isKnownCodexModelSuffix(suffix)) {
+		return "gpt-5.6-sol"
+	}
 
 	candidates := []string{normalized}
 	if strings.HasSuffix(normalized, "-openai-compact") {
@@ -99,6 +106,24 @@ func matchKnownOpenAICodexModelVariant(normalized string) string {
 		}
 	}
 	return ""
+}
+
+// isOpenAIGPT56Model accepts canonical model names as well as supported aliases.
+func isOpenAIGPT56Model(model string) bool {
+	normalized := canonicalizeOpenAIModelAliasSpelling(model)
+	if normalized == "gpt-5.6" {
+		return true
+	}
+	if suffix, ok := strings.CutPrefix(normalized, "gpt-5.6-"); ok &&
+		(suffix == "max" || isKnownCodexModelSuffix(suffix)) {
+		return true
+	}
+	for _, prefix := range []string{"gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna"} {
+		if normalized == prefix || strings.HasPrefix(normalized, prefix+"-") {
+			return true
+		}
+	}
+	return false
 }
 
 func appendUsageBillingModelCandidate(candidates []string, seen map[string]struct{}, model string) []string {
