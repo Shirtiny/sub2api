@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"mime"
@@ -29,6 +30,8 @@ const (
 	GrokMediaEndpointVideoStatus       GrokMediaEndpoint = "video_status"
 )
 
+var ErrGrokPoolVideoUnsupported = errors.New("grok pool mode does not support video requests")
+
 func (e GrokMediaEndpoint) RequiresRequestBody() bool {
 	return e != GrokMediaEndpointVideoStatus
 }
@@ -40,6 +43,17 @@ func (e GrokMediaEndpoint) IsGenerationRequest() bool {
 	default:
 		return false
 	}
+}
+
+func (e GrokMediaEndpoint) IsVideo() bool {
+	return e == GrokMediaEndpointVideosGenerations || e == GrokMediaEndpointVideoStatus
+}
+
+func (a *Account) SupportsGrokMediaEndpoint(endpoint GrokMediaEndpoint) bool {
+	if a == nil || !a.IsGrok() {
+		return false
+	}
+	return !(a.IsGrokPoolPassthrough() && endpoint.IsVideo())
 }
 
 type GrokMediaRequestInfo struct {
@@ -282,6 +296,9 @@ func (e GrokMediaEndpoint) upstreamURL(baseURL, requestID string) (string, error
 }
 
 func (s *OpenAIGatewayService) grokPoolMediaUpstreamURL(account *Account, endpoint GrokMediaEndpoint, requestID string) (string, error) {
+	if endpoint.IsVideo() {
+		return "", ErrGrokPoolVideoUnsupported
+	}
 	baseURL, err := s.validateUpstreamBaseURL(account.GetOpenAICompatibleBaseURL())
 	if err != nil {
 		return "", err
@@ -291,10 +308,6 @@ func (s *OpenAIGatewayService) grokPoolMediaUpstreamURL(account *Account, endpoi
 		return buildOpenAIEndpointURL(baseURL, "/v1/images/generations"), nil
 	case GrokMediaEndpointImagesEdits:
 		return buildOpenAIEndpointURL(baseURL, "/v1/images/edits"), nil
-	case GrokMediaEndpointVideosGenerations:
-		return buildOpenAIEndpointURL(baseURL, "/v1/videos/generations"), nil
-	case GrokMediaEndpointVideoStatus:
-		return buildOpenAIEndpointURL(baseURL, "/v1/videos/"+strings.TrimSpace(requestID)), nil
 	default:
 		return "", fmt.Errorf("unsupported grok media endpoint: %s", endpoint)
 	}

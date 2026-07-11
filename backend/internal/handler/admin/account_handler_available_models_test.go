@@ -140,6 +140,10 @@ func TestAccountHandlerGetAvailableModels_GrokDefaultsToXAIModelsWithoutMapping(
 	}
 	require.Contains(t, ids, "grok-4.3")
 	require.Contains(t, ids, "grok-build-0.1")
+	require.NotContains(t, ids, "grok-composer-2.5-fast")
+	require.NotContains(t, ids, "grok-4.20-0309-reasoning")
+	require.NotContains(t, ids, "grok-4.20-0309-non-reasoning")
+	require.NotContains(t, ids, "grok-4.20-multi-agent-0309")
 }
 
 func TestAccountHandlerGetAvailableModels_OpenAIOAuthUsesExplicitModelMapping(t *testing.T) {

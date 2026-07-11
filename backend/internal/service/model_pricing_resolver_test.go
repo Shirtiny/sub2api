@@ -526,6 +526,77 @@ func TestGetIntervalPricing_WithChannelIntervals(t *testing.T) {
 	require.InDelta(t, 10e-6, pricing2.OutputPricePerToken, 1e-12)
 }
 
+func TestCalculateCostUnified_ChannelIntervalsApplyServiceTierMultipliers(t *testing.T) {
+	bs := &BillingService{}
+	resolver := NewModelPricingResolver(nil, bs)
+	shortMax := 272000
+	resolved := &ResolvedPricing{
+		Mode: BillingModeToken,
+		Intervals: []PricingInterval{
+			{
+				MinTokens:       0,
+				MaxTokens:       &shortMax,
+				InputPrice:      testPtrFloat64(5e-6),
+				OutputPrice:     testPtrFloat64(30e-6),
+				CacheWritePrice: testPtrFloat64(6.25e-6),
+				CacheReadPrice:  testPtrFloat64(0.5e-6),
+			},
+			{
+				MinTokens:       272000,
+				InputPrice:      testPtrFloat64(10e-6),
+				OutputPrice:     testPtrFloat64(45e-6),
+				CacheWritePrice: testPtrFloat64(12.5e-6),
+				CacheReadPrice:  testPtrFloat64(1e-6),
+			},
+		},
+	}
+	shortTokens := UsageTokens{
+		InputTokens:         100,
+		OutputTokens:        10,
+		CacheCreationTokens: 20,
+		CacheReadTokens:     30,
+	}
+
+	standard, err := bs.CalculateCostUnified(CostInput{
+		Model: "gpt-5.6-sol", Tokens: shortTokens, RateMultiplier: 1,
+		Resolver: resolver, Resolved: resolved,
+	})
+	require.NoError(t, err)
+	priority, err := bs.CalculateCostUnified(CostInput{
+		Model: "gpt-5.6-sol", Tokens: shortTokens, RateMultiplier: 1,
+		ServiceTier: "priority", Resolver: resolver, Resolved: resolved,
+	})
+	require.NoError(t, err)
+	flex, err := bs.CalculateCostUnified(CostInput{
+		Model: "gpt-5.6-sol", Tokens: shortTokens, RateMultiplier: 1,
+		ServiceTier: "flex", Resolver: resolver, Resolved: resolved,
+	})
+	require.NoError(t, err)
+
+	require.InDelta(t, standard.TotalCost*2, priority.TotalCost, 1e-12)
+	require.InDelta(t, standard.InputCost*2, priority.InputCost, 1e-12)
+	require.InDelta(t, standard.OutputCost*2, priority.OutputCost, 1e-12)
+	require.InDelta(t, standard.CacheCreationCost*2, priority.CacheCreationCost, 1e-12)
+	require.InDelta(t, standard.CacheReadCost*2, priority.CacheReadCost, 1e-12)
+	require.InDelta(t, standard.TotalCost*0.5, flex.TotalCost, 1e-12)
+
+	shortPricing := resolver.GetIntervalPricing(resolved, 150)
+	require.Zero(t, shortPricing.InputPricePerTokenPriority)
+	require.Zero(t, shortPricing.OutputPricePerTokenPriority)
+	require.Zero(t, shortPricing.CacheCreationPricePerTokenPriority)
+	require.Zero(t, shortPricing.CacheReadPricePerTokenPriority)
+
+	longPriority, err := bs.CalculateCostUnified(CostInput{
+		Model:          "gpt-5.6-sol",
+		Tokens:         UsageTokens{InputTokens: 272001, OutputTokens: 1},
+		RateMultiplier: 1, ServiceTier: "priority",
+		Resolver: resolver, Resolved: resolved,
+	})
+	require.NoError(t, err)
+	require.InDelta(t, float64(272001)*20e-6, longPriority.InputCost, 1e-12)
+	require.InDelta(t, 90e-6, longPriority.OutputCost, 1e-12)
+}
+
 func TestGetIntervalPricing_ChannelIntervalsNoMatch(t *testing.T) {
 	// Channel intervals don't match token count → falls back to BasePricing.
 	r := newResolverWithChannel(t, []ChannelModelPricing{{

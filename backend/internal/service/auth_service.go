@@ -730,9 +730,7 @@ func (s *AuthService) LoginOrRegisterOAuthWithTokenPair(ctx context.Context, ema
 					}
 					s.postAuthUserBootstrap(txCtx, user, signupSource, false)
 					s.assignSubscriptions(txCtx, user.ID, grantPlan.Subscriptions, "auto assigned by signup defaults")
-					// snapshot user × platform quota（fail-open）
-					_ = s.snapshotPlatformQuotaDefaults(txCtx, user.ID, &grantPlan)
-					if err := tx.Commit(); err != nil {
+					if err := s.commitOAuthRegistrationWithQuotaSnapshot(ctx, tx, user.ID, &grantPlan); err != nil {
 						logger.LegacyPrintf("service.auth", "[Auth] Failed to commit oauth registration transaction: %v", err)
 						return nil, nil, ErrServiceUnavailable
 					}
@@ -1717,5 +1715,26 @@ func (s *AuthService) snapshotPlatformQuotaDefaults(ctx context.Context, userID 
 		logger.LegacyPrintf("service.auth", "[Auth] Warning: snapshot platform quota failed user=%d: %v (fail-open)", userID, err)
 		return nil // fail-open：返回 nil，让调用方继续
 	}
+	return nil
+}
+
+type transactionCommitter interface {
+	Commit() error
+}
+
+func (s *AuthService) commitOAuthRegistrationWithQuotaSnapshot(
+	ctx context.Context,
+	tx transactionCommitter,
+	userID int64,
+	plan *signupGrantPlan,
+) error {
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+	// The user is created inside tx, while quota snapshots deliberately detach
+	// from caller transactions for fail-open isolation. Snapshot only after
+	// commit so the independent connection can observe the user row and cannot
+	// wait on its still-open parent transaction's FK.
+	_ = s.snapshotPlatformQuotaDefaults(ctx, userID, plan)
 	return nil
 }

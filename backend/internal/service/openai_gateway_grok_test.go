@@ -1176,11 +1176,42 @@ func TestGrokPoolPassthroughUsesAetherMediaEndpoints(t *testing.T) {
 	}{
 		{GrokMediaEndpointImagesGenerations, "", "https://aether.example/v1/images/generations"},
 		{GrokMediaEndpointImagesEdits, "", "https://aether.example/v1/images/edits"},
-		{GrokMediaEndpointVideosGenerations, "", "https://aether.example/v1/videos/generations"},
-		{GrokMediaEndpointVideoStatus, "video-123", "https://aether.example/v1/videos/video-123"},
 	} {
 		got, err := svc.grokPoolMediaUpstreamURL(account, tc.endpoint, tc.requestID)
 		require.NoError(t, err)
 		require.Equal(t, tc.want, got)
 	}
+
+	for _, endpoint := range []GrokMediaEndpoint{GrokMediaEndpointVideosGenerations, GrokMediaEndpointVideoStatus} {
+		got, err := svc.grokPoolMediaUpstreamURL(account, endpoint, "video-123")
+		require.ErrorIs(t, err, ErrGrokPoolVideoUnsupported)
+		require.Empty(t, got)
+	}
+}
+
+func TestGrokPoolVideoUnsupportedWithoutAffectingDirectXAI(t *testing.T) {
+	poolAccount := &Account{
+		Platform: PlatformGrok,
+		Type:     AccountTypeAPIKey,
+		Credentials: map[string]any{
+			"api_key":   "aether-key",
+			"base_url":  "https://aether.example/v1",
+			"pool_mode": true,
+		},
+	}
+	directAccount := &Account{
+		Platform: PlatformGrok,
+		Type:     AccountTypeOAuth,
+		Credentials: map[string]any{
+			"base_url": xai.DefaultCLIBaseURL,
+		},
+	}
+
+	for _, endpoint := range []GrokMediaEndpoint{GrokMediaEndpointVideosGenerations, GrokMediaEndpointVideoStatus} {
+		require.True(t, endpoint.IsVideo())
+		require.False(t, poolAccount.SupportsGrokMediaEndpoint(endpoint))
+		require.True(t, directAccount.SupportsGrokMediaEndpoint(endpoint))
+	}
+	require.True(t, poolAccount.SupportsGrokMediaEndpoint(GrokMediaEndpointImagesGenerations))
+	require.True(t, poolAccount.SupportsGrokMediaEndpoint(GrokMediaEndpointImagesEdits))
 }

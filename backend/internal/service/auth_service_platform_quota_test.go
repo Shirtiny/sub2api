@@ -18,6 +18,30 @@ type fakeInsertRecorder struct {
 	lastCtx context.Context // 捕获最后一次 BulkInsertInitial 收到的 ctx（用于断言事务隔离）
 }
 
+type fakeTransactionCommitter struct {
+	events *[]string
+	err    error
+}
+
+func (f *fakeTransactionCommitter) Commit() error {
+	if f.events != nil {
+		*f.events = append(*f.events, "commit")
+	}
+	return f.err
+}
+
+type orderedQuotaRepo struct {
+	fakeInsertRecorder
+	events *[]string
+}
+
+func (r *orderedQuotaRepo) BulkInsertInitial(ctx context.Context, records []UserPlatformQuotaRecord) error {
+	if r.events != nil {
+		*r.events = append(*r.events, "snapshot")
+	}
+	return r.fakeInsertRecorder.BulkInsertInitial(ctx, records)
+}
+
 func (f *fakeInsertRecorder) GetByUserPlatform(_ context.Context, _ int64, _ string) (*UserPlatformQuotaRecord, error) {
 	return nil, nil
 }
@@ -109,6 +133,51 @@ func TestSnapshotPlatformQuotaDefaults_DetachesCallerTransaction(t *testing.T) {
 	}
 	if dbent.TxFromContext(fakeRepo.lastCtx) != nil {
 		t.Error("快照必须脱离调用方事务执行（best-effort，失败不得毒化注册事务），但 repo 收到了仍携带事务的 ctx")
+	}
+}
+
+func TestCommitOAuthRegistrationWithQuotaSnapshot_CommitsBeforeSnapshot(t *testing.T) {
+	events := make([]string, 0, 2)
+	quotaRepo := &orderedQuotaRepo{events: &events}
+	s := &AuthService{userPlatformQuotaRepo: quotaRepo}
+	tx := &fakeTransactionCommitter{events: &events}
+	limit := 5.0
+	plan := &signupGrantPlan{PlatformQuotas: map[string]*DefaultPlatformQuotaSetting{
+		"openai": {DailyLimitUSD: &limit},
+	}}
+
+	err := s.commitOAuthRegistrationWithQuotaSnapshot(context.Background(), tx, 999, plan)
+	if err != nil {
+		t.Fatalf("commit and snapshot: %v", err)
+	}
+	if got, want := fmt.Sprint(events), "[commit snapshot]"; got != want {
+		t.Fatalf("unexpected operation order: got %s want %s", got, want)
+	}
+	if len(quotaRepo.records) != 1 || quotaRepo.records[0].UserID != 999 {
+		t.Fatalf("expected post-commit quota snapshot for user 999, got %#v", quotaRepo.records)
+	}
+}
+
+func TestCommitOAuthRegistrationWithQuotaSnapshot_CommitFailureSkipsSnapshot(t *testing.T) {
+	events := make([]string, 0, 1)
+	quotaRepo := &orderedQuotaRepo{events: &events}
+	s := &AuthService{userPlatformQuotaRepo: quotaRepo}
+	commitErr := fmt.Errorf("commit failed")
+	tx := &fakeTransactionCommitter{events: &events, err: commitErr}
+	limit := 5.0
+	plan := &signupGrantPlan{PlatformQuotas: map[string]*DefaultPlatformQuotaSetting{
+		"openai": {DailyLimitUSD: &limit},
+	}}
+
+	err := s.commitOAuthRegistrationWithQuotaSnapshot(context.Background(), tx, 999, plan)
+	if err != commitErr {
+		t.Fatalf("expected commit error, got %v", err)
+	}
+	if got, want := fmt.Sprint(events), "[commit]"; got != want {
+		t.Fatalf("snapshot must not run after failed commit: got %s want %s", got, want)
+	}
+	if len(quotaRepo.records) != 0 {
+		t.Fatalf("snapshot must not persist after failed commit, got %#v", quotaRepo.records)
 	}
 }
 

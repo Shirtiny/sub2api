@@ -14,6 +14,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/internal/config"
 	"github.com/gin-gonic/gin"
 	"github.com/tidwall/gjson"
+	"github.com/tidwall/sjson"
 )
 
 const (
@@ -178,7 +179,25 @@ func (s *OpenAIGatewayService) proxyOpenAIWSHTTPBridgeTurn(
 
 	upstreamCtx, releaseUpstreamCtx := detachUpstreamContext(ctx)
 	var upstreamReq *http.Request
-	if account.Platform == PlatformGrok {
+	if account.IsGrokPoolPassthrough() {
+		// Pool-mode Grok accounts point at Aether's OpenAI-compatible endpoint.
+		// Keep the Responses payload intact for Aether, while applying the same
+		// account model mapping as the regular HTTP passthrough path.
+		upstreamModel := strings.TrimSpace(gjson.GetBytes(body, "model").String())
+		if originalModel != "" {
+			if mappedModel := normalizeOpenAIModelForUpstream(account, account.GetMappedModel(originalModel)); mappedModel != "" {
+				upstreamModel = mappedModel
+			}
+		}
+		if upstreamModel != "" && upstreamModel != strings.TrimSpace(gjson.GetBytes(body, "model").String()) {
+			body, err = sjson.SetBytes(body, "model", upstreamModel)
+			if err != nil {
+				releaseUpstreamCtx()
+				return nil, fmt.Errorf("set grok pool passthrough model: %w", err)
+			}
+		}
+		upstreamReq, err = s.buildUpstreamRequestOpenAIPassthrough(upstreamCtx, c, account, body, token)
+	} else if account.Platform == PlatformGrok {
 		upstreamModel := strings.TrimSpace(gjson.GetBytes(body, "model").String())
 		if originalModel != "" {
 			if mappedModel := normalizeOpenAIModelForUpstream(account, account.GetMappedModel(originalModel)); mappedModel != "" {

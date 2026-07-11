@@ -156,6 +156,7 @@ func (h *OpenAIGatewayHandler) handleGrokMedia(c *gin.Context, endpoint service.
 	failedAccountIDs := make(map[int64]struct{})
 	sameAccountRetryCount := make(map[int64]int)
 	var lastFailoverErr *service.UpstreamFailoverError
+	poolVideoAccountSkipped := false
 	switchCount := 0
 	maxAccountSwitches := h.maxAccountSwitches
 	if maxAccountSwitches <= 0 {
@@ -181,6 +182,10 @@ func (h *OpenAIGatewayHandler) handleGrokMedia(c *gin.Context, endpoint service.
 				zap.Error(err),
 				zap.Int("excluded_account_count", len(failedAccountIDs)),
 			)
+			if poolVideoAccountSkipped && lastFailoverErr == nil {
+				h.errorResponse(c, http.StatusBadRequest, "unsupported_error", service.ErrGrokPoolVideoUnsupported.Error())
+				return
+			}
 			if len(failedAccountIDs) == 0 {
 				cls := classifyNoAccountErrorFromGin(c, h.gatewayService, apiKey, requestModel, requestModel, service.PlatformGrok)
 				if !cls.ModelNotFound {
@@ -197,6 +202,10 @@ func (h *OpenAIGatewayHandler) handleGrokMedia(c *gin.Context, endpoint service.
 			return
 		}
 		if selection == nil || selection.Account == nil {
+			if poolVideoAccountSkipped && lastFailoverErr == nil {
+				h.errorResponse(c, http.StatusBadRequest, "unsupported_error", service.ErrGrokPoolVideoUnsupported.Error())
+				return
+			}
 			cls := classifyNoAccountErrorFromGin(c, h.gatewayService, apiKey, requestModel, requestModel, service.PlatformGrok)
 			if !cls.ModelNotFound {
 				markOpsRoutingCapacityLimited(c)
@@ -215,6 +224,18 @@ func (h *OpenAIGatewayHandler) handleGrokMedia(c *gin.Context, endpoint service.
 		)
 
 		account := selection.Account
+		if !account.SupportsGrokMediaEndpoint(endpoint) {
+			if selection.Acquired && selection.ReleaseFunc != nil {
+				selection.ReleaseFunc()
+			}
+			failedAccountIDs[account.ID] = struct{}{}
+			poolVideoAccountSkipped = true
+			reqLog.Debug("grok_media.pool_video_account_skipped",
+				zap.Int64("account_id", account.ID),
+				zap.String("endpoint", string(endpoint)),
+			)
+			continue
+		}
 		sessionHash = ensureOpenAIPoolModeSessionHash(sessionHash, account)
 		setOpsSelectedAccount(c, account.ID, account.Platform)
 

@@ -289,6 +289,79 @@ func TestProxyResponsesWebSocketFromClientForGrokUsesXAIHTTPBridge(t *testing.T)
 	require.False(t, gjson.GetBytes(upstream.lastBody, "prompt_cache_retention").Exists())
 }
 
+func TestGrokPoolResponsesWebSocketHTTPBridgeUsesAetherPassthrough(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	sseBody := strings.Join([]string{
+		`data: {"type":"response.created","response":{"id":"resp_grok_pool_ws","model":"grok-4.5"}}`,
+		"",
+		`data: {"type":"response.completed","response":{"id":"resp_grok_pool_ws","model":"grok-4.5","usage":{"input_tokens":4,"output_tokens":2}}}`,
+		"",
+	}, "\n")
+	upstream := &httpUpstreamRecorder{resp: &http.Response{
+		StatusCode: http.StatusOK,
+		Header:     http.Header{"Content-Type": []string{"text/event-stream"}},
+		Body:       io.NopCloser(strings.NewReader(sseBody)),
+	}}
+	svc := &OpenAIGatewayService{
+		cfg:          &config.Config{Gateway: config.GatewayConfig{MaxLineSize: defaultMaxLineSize}},
+		httpUpstream: upstream,
+	}
+	account := &Account{
+		ID:          72,
+		Name:        "grok-pool",
+		Platform:    PlatformGrok,
+		Type:        AccountTypeAPIKey,
+		Concurrency: 1,
+		Status:      StatusActive,
+		Credentials: map[string]any{
+			"api_key":   "aether-key",
+			"base_url":  "https://aether.example/v1",
+			"pool_mode": true,
+		},
+	}
+	require.True(t, account.IsGrokPoolPassthrough())
+
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request = httptest.NewRequest(http.MethodPost, "/v1/responses", nil)
+	payload := []byte(`{"type":"response.create","generate":true,"model":"grok-latest","stream":true,"input":"hi","prompt_cache_retention":"24h","parallel_tool_calls":false}`)
+	var events [][]byte
+
+	result, err := svc.proxyOpenAIWSHTTPBridgeTurn(
+		context.Background(),
+		c,
+		account,
+		"aether-key",
+		payload,
+		len(payload),
+		"grok-latest",
+		"",
+		"",
+		"",
+		1,
+		func(message []byte) error {
+			events = append(events, append([]byte(nil), message...))
+			return nil
+		},
+	)
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	require.Equal(t, "grok-latest", result.Model)
+	require.Equal(t, "grok-4.5", result.UpstreamModel)
+	require.Len(t, events, 2)
+
+	require.NotNil(t, upstream.lastReq)
+	require.Equal(t, "https://aether.example/v1/responses", upstream.lastReq.URL.String())
+	require.Equal(t, "Bearer aether-key", upstream.lastReq.Header.Get("Authorization"))
+	require.Equal(t, "grok-4.5", gjson.GetBytes(upstream.lastBody, "model").String())
+	require.Equal(t, "24h", gjson.GetBytes(upstream.lastBody, "prompt_cache_retention").String())
+	require.True(t, gjson.GetBytes(upstream.lastBody, "parallel_tool_calls").Exists())
+	require.False(t, gjson.GetBytes(upstream.lastBody, "parallel_tool_calls").Bool())
+	require.False(t, gjson.GetBytes(upstream.lastBody, "type").Exists())
+	require.False(t, gjson.GetBytes(upstream.lastBody, "generate").Exists())
+}
+
 func TestOpenAIWSHTTPBridgeAcceptsFirstFrameAboveLegacy16MiB(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
