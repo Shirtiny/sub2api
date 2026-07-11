@@ -441,6 +441,11 @@ func (s *PaymentService) createCustomSubscriptionGroup(ctx context.Context, sour
 		SetNillableImagePrice1k(source.ImagePrice1k).
 		SetNillableImagePrice2k(source.ImagePrice2k).
 		SetNillableImagePrice4k(source.ImagePrice4k).
+		SetVideoRateIndependent(source.VideoRateIndependent).
+		SetVideoRateMultiplier(source.VideoRateMultiplier).
+		SetNillableVideoPrice480p(source.VideoPrice480p).
+		SetNillableVideoPrice720p(source.VideoPrice720p).
+		SetNillableVideoPrice1080p(source.VideoPrice1080p).
 		SetDefaultValidityDays(source.DefaultValidityDays).
 		SetClaudeCodeOnly(source.ClaudeCodeOnly).
 		SetNillableFallbackGroupID(source.FallbackGroupID).
@@ -572,6 +577,11 @@ func (s *PaymentService) syncCustomGroupLimits(ctx context.Context, customGroupI
 		SetNillableImagePrice1k(source.ImagePrice1k).
 		SetNillableImagePrice2k(source.ImagePrice2k).
 		SetNillableImagePrice4k(source.ImagePrice4k).
+		SetVideoRateIndependent(source.VideoRateIndependent).
+		SetVideoRateMultiplier(source.VideoRateMultiplier).
+		SetNillableVideoPrice480p(source.VideoPrice480p).
+		SetNillableVideoPrice720p(source.VideoPrice720p).
+		SetNillableVideoPrice1080p(source.VideoPrice1080p).
 		SetDefaultValidityDays(source.DefaultValidityDays).
 		SetClaudeCodeOnly(source.ClaudeCodeOnly).
 		SetNillableFallbackGroupID(source.FallbackGroupID).
@@ -589,6 +599,15 @@ func (s *PaymentService) syncCustomGroupLimits(ctx context.Context, customGroupI
 		SetIsCustomSubscriptionGroup(true).
 		SetCustomSourceGroupID(sourceGroupID).
 		SetCustomMultiplier(multiplier)
+	if source.VideoPrice480p == nil {
+		update = update.ClearVideoPrice480p()
+	}
+	if source.VideoPrice720p == nil {
+		update = update.ClearVideoPrice720p()
+	}
+	if source.VideoPrice1080p == nil {
+		update = update.ClearVideoPrice1080p()
+	}
 	update = update.SetName(name)
 	if source.ModelRouting != nil {
 		update = update.SetModelRouting(source.ModelRouting)

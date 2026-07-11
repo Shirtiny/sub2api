@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
+	"github.com/Wei-Shaw/sub2api/internal/util/logredact"
 )
 
 // tokenRefreshTempUnschedDuration token 鍒锋柊閲嶈瘯鑰楀敖鍚庝复鏃朵笉鍙皟搴︾殑鎸佺画鏃堕棿
@@ -49,6 +50,7 @@ func NewTokenRefreshService(
 	schedulerCache SchedulerCache,
 	cfg *config.Config,
 	tempUnschedCache TempUnschedCache,
+	grokOAuthServices ...*GrokOAuthService,
 ) *TokenRefreshService {
 	s := &TokenRefreshService{
 		accountRepo:      accountRepo,
@@ -65,6 +67,11 @@ func NewTokenRefreshService(
 	claudeRefresher := NewClaudeTokenRefresher(oauthService)
 	geminiRefresher := NewGeminiTokenRefresher(geminiOAuthService)
 	agRefresher := NewAntigravityTokenRefresher(antigravityOAuthService)
+	var grokOAuthService *GrokOAuthService
+	if len(grokOAuthServices) > 0 {
+		grokOAuthService = grokOAuthServices[0]
+	}
+	grokRefresher := NewGrokTokenRefresher(grokOAuthService)
 
 	// 娉ㄥ唽骞冲彴鐗瑰畾鐨勫埛鏂板櫒锛圱okenRefresher 鎺ュ彛锛?
 	s.refreshers = []TokenRefresher{
@@ -72,6 +79,7 @@ func NewTokenRefreshService(
 		openAIRefresher,
 		geminiRefresher,
 		agRefresher,
+		grokRefresher,
 	}
 
 	// 娉ㄥ唽瀵瑰簲鐨?OAuthRefreshExecutor锛堝甫 CacheKey 鏂规硶锛?
@@ -80,6 +88,7 @@ func NewTokenRefreshService(
 		openAIRefresher,
 		geminiRefresher,
 		agRefresher,
+		grokRefresher,
 	}
 
 	return s
@@ -302,7 +311,8 @@ func (s *TokenRefreshService) refreshWithRetry(ctx context.Context, account *Acc
 
 		// 涓嶅彲閲嶈瘯閿欒锛坕nvalid_grant/invalid_client 绛夛級鐩存帴鏍囪 error 鐘舵€佸苟杩斿洖
 		if isNonRetryableRefreshError(err) {
-			errorMsg := fmt.Sprintf("Token refresh failed (non-retryable): %v", err)
+			errorMsg := "Token refresh failed (non-retryable): " + logredact.RedactText(err.Error())
+			s.notifyAccountSchedulingBlocked(account, time.Time{}, "token_refresh_non_retryable")
 			if !account.IsPoolMode() {
 				if setErr := s.accountRepo.SetError(ctx, account.ID, errorMsg); setErr != nil {
 					slog.Error("token_refresh.set_error_status_failed",
@@ -311,7 +321,6 @@ func (s *TokenRefreshService) refreshWithRetry(ctx context.Context, account *Acc
 					)
 				}
 			}
-			s.notifyAccountSchedulingBlocked(account, time.Time{}, "token_refresh_non_retryable")
 			// 鍒锋柊澶辫触浣?access_token 鍙兘浠嶆湁鏁堬紝灏濊瘯璁剧疆闅愮
 			s.ensureOpenAIPrivacy(ctx, account)
 			s.ensureAntigravityPrivacy(ctx, account)
@@ -348,7 +357,10 @@ func (s *TokenRefreshService) refreshWithRetry(ctx context.Context, account *Acc
 
 	// 璁剧疆涓存椂涓嶅彲璋冨害 10 鍒嗛挓锛堜笉鏍囪 error锛屼繚鎸?status=active 璁╀笅涓埛鏂板懆鏈熻兘缁х画灏濊瘯锛?
 	until := time.Now().Add(tokenRefreshTempUnschedDuration)
-	reason := fmt.Sprintf("token refresh retry exhausted: %v", lastErr)
+	reason := "token refresh retry exhausted"
+	if lastErr != nil {
+		reason += ": " + logredact.RedactText(lastErr.Error())
+	}
 	s.notifyAccountSchedulingBlocked(account, until, "token_refresh_retry_exhausted")
 	if setErr := s.accountRepo.SetTempUnschedulable(ctx, account.ID, until, reason); setErr != nil {
 		slog.Warn("token_refresh.set_temp_unschedulable_failed",
@@ -442,12 +454,21 @@ func isNonRetryableRefreshError(err error) bool {
 	msg := strings.ToLower(err.Error())
 	nonRetryable := []string{
 		"invalid_grant",
+		"invalid_refresh_token",
+		"app_session_terminated",
 		"refresh_token_reused",
+		"refresh_token_invalidated",
 		"invalid_client",
 		"unauthorized_client",
 		"access_denied",
 		"missing_project_id",
 		"no refresh token available",
+		"grok_oauth_entitlement_denied",
+		"entitlement_denied",
+		"invalid_scope",
+		"unknown scope",
+		"subscription required",
+		"no active grok subscription",
 	}
 	for _, needle := range nonRetryable {
 		if strings.Contains(msg, needle) {

@@ -106,7 +106,9 @@
                     ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
                     : value === 'antigravity'
                       ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
-                      : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+                      : value === 'grok'
+                        ? 'bg-zinc-200 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-100'
+                        : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
               ]"
             >
               <PlatformIcon :platform="value" size="xs" />
@@ -757,20 +759,16 @@
 
         <!-- 图片生成计费配置 -->
         <div
-          v-if="
-            createForm.platform === 'antigravity' ||
-            createForm.platform === 'gemini' ||
-            createForm.platform === 'openai'
-          "
+          v-if="supportsImagePricingPlatform(createForm.platform)"
           class="border-t pt-4"
         >
           <label
             class="block mb-2 font-medium text-content-secondary"
           >
-            {{ t("admin.groups.imagePricing.title") }}
+            {{ t(imagePricingI18nKey(createForm.platform, "title")) }}
           </label>
           <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">
-            {{ t("admin.groups.imagePricing.description") }}
+            {{ t(imagePricingI18nKey(createForm.platform, "description")) }}
           </p>
           <div class="mb-4 grid grid-cols-1 gap-3 md:grid-cols-2">
             <label class="flex items-center gap-2 text-sm text-content-secondary">
@@ -779,7 +777,7 @@
                 type="checkbox"
                 class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
-              {{ t("admin.groups.imagePricing.allowImageGeneration") }}
+              {{ t(imagePricingI18nKey(createForm.platform, "allowImageGeneration")) }}
             </label>
             <label class="flex items-center gap-2 text-sm text-content-secondary">
               <input
@@ -787,7 +785,7 @@
                 type="checkbox"
                 class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
-              {{ t("admin.groups.imagePricing.independentMultiplier") }}
+              {{ t(imagePricingI18nKey(createForm.platform, "independentMultiplier")) }}
             </label>
           </div>
           <div
@@ -795,7 +793,7 @@
             class="mb-4"
           >
             <label class="input-label">{{
-              t("admin.groups.imagePricing.imageMultiplier")
+              t(imagePricingI18nKey(createForm.platform, "imageMultiplier"))
             }}</label>
             <input
               v-model.number="createForm.image_rate_multiplier"
@@ -842,11 +840,11 @@
             </div>
           </div>
           <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">
-            {{ t("admin.groups.imagePricing.modeHint") }}
+            {{ t(imagePricingI18nKey(createForm.platform, "modeHint")) }}
           </p>
           <div class="mt-2 rounded-lg bg-gray-50 p-3 text-xs text-gray-700 dark:bg-gray-800 dark:text-gray-300">
             <div class="mb-1 font-medium">
-              {{ t("admin.groups.imagePricing.finalPricePreview") }}
+              {{ t(imagePricingI18nKey(createForm.platform, "finalPricePreview")) }}
             </div>
             <div class="grid grid-cols-3 gap-2">
               <div
@@ -857,6 +855,27 @@
               </div>
             </div>
           </div>
+        </div>
+
+
+        <!-- 视频生成计费配置（仅 Grok） -->
+        <div v-if="supportsVideoPricingPlatform(createForm.platform)" class="border-t pt-4">
+          <label class="block mb-2 font-medium text-content-secondary">{{ t(videoPricingI18nKey("title")) }}</label>
+          <p class="mb-3 text-xs text-gray-500 dark:text-gray-400">{{ t(videoPricingI18nKey("description")) }}</p>
+          <label class="mb-4 flex items-center gap-2 text-sm text-content-secondary">
+            <input v-model="createForm.video_rate_independent" type="checkbox" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+            {{ t(videoPricingI18nKey("independentMultiplier")) }}
+          </label>
+          <div v-if="createForm.video_rate_independent" class="mb-4">
+            <label class="input-label">{{ t(videoPricingI18nKey("videoMultiplier")) }}</label>
+            <input v-model.number="createForm.video_rate_multiplier" type="number" step="0.0001" min="0" class="input" placeholder="1" />
+          </div>
+          <div class="grid grid-cols-3 gap-3">
+            <div><label class="input-label">480p ($/s)</label><input v-model.number="createForm.video_price_480p" type="number" step="0.001" min="0" class="input" placeholder="0.05" /></div>
+            <div><label class="input-label">720p ($/s)</label><input v-model.number="createForm.video_price_720p" type="number" step="0.001" min="0" class="input" placeholder="0.07" /></div>
+            <div><label class="input-label">1080p ($/s)</label><input v-model.number="createForm.video_price_1080p" type="number" step="0.001" min="0" class="input" placeholder="0.25" /></div>
+          </div>
+          <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">{{ t(videoPricingI18nKey("modeHint")) }}</p>
         </div>
 
         <!-- 支持的模型系列（仅 antigravity 平台） -->
@@ -2043,6 +2062,27 @@
           </div>
         </div>
 
+
+        <!-- 视频生成计费配置（仅 Grok） -->
+        <div v-if="supportsVideoPricingPlatform(editForm.platform)" class="border-t pt-4">
+          <label class="block mb-2 font-medium text-content-secondary">{{ t(videoPricingI18nKey("title")) }}</label>
+          <p class="mb-3 text-xs text-gray-500 dark:text-gray-400">{{ t(videoPricingI18nKey("description")) }}</p>
+          <label class="mb-4 flex items-center gap-2 text-sm text-content-secondary">
+            <input v-model="editForm.video_rate_independent" type="checkbox" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+            {{ t(videoPricingI18nKey("independentMultiplier")) }}
+          </label>
+          <div v-if="editForm.video_rate_independent" class="mb-4">
+            <label class="input-label">{{ t(videoPricingI18nKey("videoMultiplier")) }}</label>
+            <input v-model.number="editForm.video_rate_multiplier" type="number" step="0.0001" min="0" class="input" placeholder="1" />
+          </div>
+          <div class="grid grid-cols-3 gap-3">
+            <div><label class="input-label">480p ($/s)</label><input v-model.number="editForm.video_price_480p" type="number" step="0.001" min="0" class="input" placeholder="0.05" /></div>
+            <div><label class="input-label">720p ($/s)</label><input v-model.number="editForm.video_price_720p" type="number" step="0.001" min="0" class="input" placeholder="0.07" /></div>
+            <div><label class="input-label">1080p ($/s)</label><input v-model.number="editForm.video_price_1080p" type="number" step="0.001" min="0" class="input" placeholder="0.25" /></div>
+          </div>
+          <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">{{ t(videoPricingI18nKey("modeHint")) }}</p>
+        </div>
+
         <div
           v-if="editingGroup?.is_custom_subscription_group"
           class="rounded-lg border border-primary-100 bg-primary-50/60 p-3 dark:border-primary-900/40 dark:bg-primary-900/10"
@@ -2077,22 +2117,19 @@
           </div>
         </div>
 
-        <!-- 图片生成计费配置 -->
+        <!-- 图片/视频生成计费配置 -->
+
         <div
-          v-if="
-            editForm.platform === 'antigravity' ||
-            editForm.platform === 'gemini' ||
-            editForm.platform === 'openai'
-          "
+          v-if="supportsImagePricingPlatform(editForm.platform)"
           class="border-t pt-4"
         >
           <label
             class="block mb-2 font-medium text-content-secondary"
           >
-            {{ t("admin.groups.imagePricing.title") }}
+            {{ t(imagePricingI18nKey(editForm.platform, "title")) }}
           </label>
           <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">
-            {{ t("admin.groups.imagePricing.description") }}
+            {{ t(imagePricingI18nKey(editForm.platform, "description")) }}
           </p>
           <div class="mb-4 grid grid-cols-1 gap-3 md:grid-cols-2">
             <label class="flex items-center gap-2 text-sm text-content-secondary">
@@ -2101,7 +2138,7 @@
                 type="checkbox"
                 class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
-              {{ t("admin.groups.imagePricing.allowImageGeneration") }}
+              {{ t(imagePricingI18nKey(editForm.platform, "allowImageGeneration")) }}
             </label>
             <label class="flex items-center gap-2 text-sm text-content-secondary">
               <input
@@ -2109,7 +2146,7 @@
                 type="checkbox"
                 class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
-              {{ t("admin.groups.imagePricing.independentMultiplier") }}
+              {{ t(imagePricingI18nKey(editForm.platform, "independentMultiplier")) }}
             </label>
           </div>
           <div
@@ -2117,7 +2154,7 @@
             class="mb-4"
           >
             <label class="input-label">{{
-              t("admin.groups.imagePricing.imageMultiplier")
+              t(imagePricingI18nKey(editForm.platform, "imageMultiplier"))
             }}</label>
             <input
               v-model.number="editForm.image_rate_multiplier"
@@ -2164,11 +2201,11 @@
             </div>
           </div>
           <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">
-            {{ t("admin.groups.imagePricing.modeHint") }}
+            {{ t(imagePricingI18nKey(editForm.platform, "modeHint")) }}
           </p>
           <div class="mt-2 rounded-lg bg-gray-50 p-3 text-xs text-gray-700 dark:bg-gray-800 dark:text-gray-300">
             <div class="mb-1 font-medium">
-              {{ t("admin.groups.imagePricing.finalPricePreview") }}
+              {{ t(imagePricingI18nKey(editForm.platform, "finalPricePreview")) }}
             </div>
             <div class="grid grid-cols-3 gap-2">
               <div
@@ -3006,7 +3043,9 @@
                         ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
                         : group.platform === 'antigravity'
                           ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
-                          : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+                          : group.platform === 'grok'
+                            ? 'bg-zinc-200 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-100'
+                            : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
                   ]"
                 >
                   {{ t("admin.groups.platforms." + group.platform) }}
@@ -3118,6 +3157,12 @@ import {
 } from "./groupsModelsList";
 import { createModelsListCandidatesTracker } from "./groupsModelsListCandidates";
 import { normalizeSupportedModelScopesForPlatform } from "./groupsSupportedModelScopes";
+import {
+  imagePricingI18nKey,
+  supportsImagePricingPlatform,
+  supportsVideoPricingPlatform,
+  videoPricingI18nKey,
+} from "./groupsImagePricing";
 
 const { t } = useI18n();
 const appStore = useAppStore();
@@ -3178,6 +3223,7 @@ const platformOptions = computed(() => [
   { value: "openai", label: "OpenAI" },
   { value: "gemini", label: "Gemini" },
   { value: "antigravity", label: "Antigravity" },
+  { value: "grok", label: "Grok" },
 ]);
 
 const platformFilterOptions = computed(() => [
@@ -3186,6 +3232,7 @@ const platformFilterOptions = computed(() => [
   { value: "openai", label: "OpenAI" },
   { value: "gemini", label: "Gemini" },
   { value: "antigravity", label: "Antigravity" },
+  { value: "grok", label: "Grok" },
 ]);
 
 const editStatusOptions = computed(() => [
@@ -3380,6 +3427,11 @@ const createForm = reactive({
   image_price_1k: null as number | null,
   image_price_2k: null as number | null,
   image_price_4k: null as number | null,
+  video_rate_independent: false,
+  video_rate_multiplier: 1,
+  video_price_480p: null as number | null,
+  video_price_720p: null as number | null,
+  video_price_1080p: null as number | null,
   // Claude Code 客户端限制（仅 anthropic 平台使用）
   claude_code_only: false,
   fallback_group_id: null as number | null,
@@ -3712,6 +3764,11 @@ const editForm = reactive({
   image_price_1k: null as number | null,
   image_price_2k: null as number | null,
   image_price_4k: null as number | null,
+  video_rate_independent: false,
+  video_rate_multiplier: 1,
+  video_price_480p: null as number | null,
+  video_price_720p: null as number | null,
+  video_price_1080p: null as number | null,
   // Claude Code 客户端限制（仅 anthropic 平台使用）
   claude_code_only: false,
   fallback_group_id: null as number | null,
@@ -3963,6 +4020,11 @@ const closeCreateModal = () => {
   createForm.image_price_1k = null;
   createForm.image_price_2k = null;
   createForm.image_price_4k = null;
+  createForm.video_rate_independent = false;
+  createForm.video_rate_multiplier = 1;
+  createForm.video_price_480p = null;
+  createForm.video_price_720p = null;
+  createForm.video_price_1080p = null;
   createForm.claude_code_only = false;
   createForm.fallback_group_id = null;
   createForm.fallback_group_id_on_invalid_request = null;
@@ -4052,6 +4114,13 @@ const handleCreateGroup = async () => {
     requestData.image_rate_multiplier = normalizeImageRateMultiplier(
       requestData.image_rate_multiplier,
     );
+    requestData.video_rate_multiplier = normalizeImageRateMultiplier(requestData.video_rate_multiplier);
+    requestData.image_price_1k = emptyToNull(requestData.image_price_1k);
+    requestData.image_price_2k = emptyToNull(requestData.image_price_2k);
+    requestData.image_price_4k = emptyToNull(requestData.image_price_4k);
+    requestData.video_price_480p = emptyToNull(requestData.video_price_480p);
+    requestData.video_price_720p = emptyToNull(requestData.video_price_720p);
+    requestData.video_price_1080p = emptyToNull(requestData.video_price_1080p);
     await adminAPI.groups.create(requestData);
     appStore.showSuccess(t("admin.groups.groupCreated"));
     closeCreateModal();
@@ -4090,6 +4159,11 @@ const handleEdit = async (group: AdminGroup) => {
   editForm.image_price_1k = group.image_price_1k;
   editForm.image_price_2k = group.image_price_2k;
   editForm.image_price_4k = group.image_price_4k;
+  editForm.video_rate_independent = group.video_rate_independent ?? false;
+  editForm.video_rate_multiplier = group.video_rate_multiplier ?? 1;
+  editForm.video_price_480p = group.video_price_480p;
+  editForm.video_price_720p = group.video_price_720p;
+  editForm.video_price_1080p = group.video_price_1080p;
   editForm.claude_code_only = group.claude_code_only || false;
   editForm.fallback_group_id = group.fallback_group_id;
   editForm.fallback_group_id_on_invalid_request =
@@ -4197,6 +4271,11 @@ const handleUpdateGroup = async () => {
     payload.image_rate_multiplier = normalizeImageRateMultiplier(
       payload.image_rate_multiplier,
     );
+    payload.video_rate_multiplier = normalizeImageRateMultiplier(payload.video_rate_multiplier);
+    const clearedToMinusOne = (v: any) => (v === "" ? -1 : v);
+    payload.video_price_480p = clearedToMinusOne(payload.video_price_480p);
+    payload.video_price_720p = clearedToMinusOne(payload.video_price_720p);
+    payload.video_price_1080p = clearedToMinusOne(payload.video_price_1080p);
     if (!editingGroup.value.is_custom_subscription_group) {
       delete (payload as Partial<typeof payload>).custom_multiplier;
     }
@@ -4284,6 +4363,7 @@ watch(
 watch(
   () => createForm.platform,
   (newVal) => {
+	createForm.allow_image_generation = newVal === "grok";
     if (!["anthropic", "antigravity"].includes(newVal)) {
       createForm.fallback_group_id_on_invalid_request = null;
     }

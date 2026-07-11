@@ -958,6 +958,7 @@ type GatewayOpenAIWSSchedulerScoreWeights struct {
 	Queue     float64 `mapstructure:"queue"`
 	ErrorRate float64 `mapstructure:"error_rate"`
 	TTFT      float64 `mapstructure:"ttft"`
+	Reset     float64 `mapstructure:"reset"`
 }
 
 // GatewayOpenAISchedulerConfig OpenAI 高级调度器配置。

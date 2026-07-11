@@ -273,6 +273,11 @@ func TestSyncCustomGroupsForSourceGroupUpdateRefreshesActiveCustomLimits(t *test
 		SetDailyLimitUsd(10).
 		SetWeeklyLimitUsd(20).
 		SetMonthlyLimitUsd(30).
+		SetVideoRateIndependent(true).
+		SetVideoRateMultiplier(1.25).
+		SetVideoPrice480p(0.08).
+		SetVideoPrice720p(0.14).
+		SetVideoPrice1080p(0.25).
 		Save(ctx)
 	require.NoError(t, err)
 	plan, err := client.SubscriptionPlan.Create().SetName("Source Sync Plan").SetDescription("sync").SetGroupID(sourceGroup.ID).SetPrice(100).SetValidityDays(30).SetValidityUnit("days").SetForSale(true).SetCustomMultiplierEnabled(true).SetCustomMultiplierMin(1).SetCustomMultiplierMax(5).Save(ctx)
@@ -311,6 +316,11 @@ func TestSyncCustomGroupsForSourceGroupUpdateRefreshesActiveCustomLimits(t *test
 	require.InDelta(t, 50, *updated.WeeklyLimitUsd, 0.0001)
 	require.NotNil(t, updated.MonthlyLimitUsd)
 	require.InDelta(t, 70, *updated.MonthlyLimitUsd, 0.0001)
+	require.True(t, updated.VideoRateIndependent)
+	require.InDelta(t, 1.25, updated.VideoRateMultiplier, 0.0001)
+	require.InDelta(t, 0.08, *updated.VideoPrice480p, 0.0001)
+	require.InDelta(t, 0.14, *updated.VideoPrice720p, 0.0001)
+	require.InDelta(t, 0.25, *updated.VideoPrice1080p, 0.0001)
 }
 
 func TestSyncCustomGroupsForSourceGroupUpdateDisablesCustomGroupsWhenSourceDisabled(t *testing.T) {
