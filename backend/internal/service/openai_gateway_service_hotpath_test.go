@@ -643,6 +643,32 @@ func TestExtractOpenAIReasoningEffortFromBody(t *testing.T) {
 	}
 }
 
+func TestNormalizeOpenAIReasoningEffortForUpstream(t *testing.T) {
+	tests := []struct {
+		name      string
+		model     string
+		effort    string
+		want      string
+		wantPatch bool
+	}{
+		{name: "GPT-5.6 off uses lowest supported effort", model: "gpt-5.6-sol", effort: "off", want: "low", wantPatch: true},
+		{name: "GPT-5.6 none uses lowest supported effort", model: "gpt-5.6-terra", effort: "NONE", want: "low", wantPatch: true},
+		{name: "GPT-5.6 minimal alias uses lowest supported effort", model: "gpt-5.6-luna", effort: " minimal ", want: "low", wantPatch: true},
+		{name: "GPT-5.6 reasoning suffix is recognized", model: "gpt-5.6-sol-high", effort: "off", want: "low", wantPatch: true},
+		{name: "legacy minimal remains none", model: "gpt-5.4", effort: "minimal", want: "none", wantPatch: true},
+		{name: "legacy off is preserved", model: "gpt-5.4", effort: "off", want: "", wantPatch: false},
+		{name: "supported GPT-5.6 effort is preserved", model: "gpt-5.6-sol", effort: "high", want: "", wantPatch: false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, patched := normalizeOpenAIReasoningEffortForUpstream(tt.model, tt.effort)
+			require.Equal(t, tt.want, got)
+			require.Equal(t, tt.wantPatch, patched)
+		})
+	}
+}
+
 func TestGetOpenAIRequestBodyMap_ParseError(t *testing.T) {
 	_, err := getOpenAIRequestBodyMap(nil, []byte(`{invalid-json`))
 	require.Error(t, err)

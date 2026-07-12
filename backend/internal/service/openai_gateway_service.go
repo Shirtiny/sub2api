@@ -2741,9 +2741,19 @@ func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, acco
 			markPatchSet("model", upstreamModel)
 		}
 	}
-	if strings.TrimSpace(gjson.GetBytes(body, "reasoning.effort").String()) == "minimal" {
-		markPatchSet("reasoning.effort", "none")
-		logger.LegacyPrintf("service.openai_gateway", "[OpenAI] Normalized reasoning.effort: minimal -> none (account: %s)", account.Name)
+	if normalizedEffort, ok := normalizeOpenAIReasoningEffortForUpstream(
+		upstreamModel,
+		gjson.GetBytes(body, "reasoning.effort").String(),
+	); ok {
+		markPatchSet("reasoning.effort", normalizedEffort)
+		logger.LegacyPrintf(
+			"service.openai_gateway",
+			"[OpenAI] Normalized reasoning.effort for upstream model %s: %s -> %s (account: %s)",
+			upstreamModel,
+			strings.TrimSpace(gjson.GetBytes(body, "reasoning.effort").String()),
+			normalizedEffort,
+			account.Name,
+		)
 	}
 
 	imageIntent = imageIntent || IsImageGenerationIntent(openAIResponsesEndpoint, reqModel, nil) || isOpenAIImageGenerationModel(upstreamModel)
@@ -8064,4 +8074,25 @@ func normalizeOpenAIReasoningEffort(raw string) string {
 		// Only store known effort levels so usage records stay consistent.
 		return ""
 	}
+}
+
+// normalizeOpenAIReasoningEffortForUpstream returns a wire-compatible effort
+// only when the caller-provided value needs rewriting. GPT-5.6 rejects
+// disabled-reasoning aliases, so their closest supported value is "low".
+func normalizeOpenAIReasoningEffortForUpstream(model, raw string) (string, bool) {
+	value := strings.ToLower(strings.TrimSpace(raw))
+	if value == "" {
+		return "", false
+	}
+
+	if isOpenAIGPT56Model(model) {
+		switch value {
+		case "off", "none", "minimal":
+			return "low", true
+		}
+	}
+	if value == "minimal" {
+		return "none", true
+	}
+	return "", false
 }
