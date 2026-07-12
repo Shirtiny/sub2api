@@ -37,14 +37,26 @@ func DefaultModelIDs() []string {
 }
 
 func DefaultModelMapping() map[string]string {
-	mapping := make(map[string]string, len(defaultModels)+5)
+	mapping := make(map[string]string, len(defaultModels)+16)
 	for _, model := range defaultModels {
 		mapping[model.ID] = model.ID
 	}
 	mapping["grok"] = "grok-4.5"
-	mapping["grok-latest"] = "grok-4.5"
+	mapping["grok-latest"] = "grok-4.3"
+	mapping["grok-4.3-latest"] = "grok-4.3"
 	mapping["grok-4.5-latest"] = "grok-4.5"
 	mapping["grok-build"] = "grok-build-0.1"
 	mapping["grok-build-latest"] = "grok-4.5"
+	mapping["grok-code-fast-1"] = "grok-build-0.1"
+	mapping["grok-code-fast"] = "grok-build-0.1"
+	mapping["grok-code-fast-1-0825"] = "grok-build-0.1"
+	mapping["grok-imagine-edit"] = "grok-imagine-image-quality"
+	mapping["grok-imagine-image-edit"] = "grok-imagine-image-quality"
+	mapping["grok-imagine-image-2026-03-02"] = "grok-imagine-image"
+	mapping["grok-imagine-image-quality-20260403"] = "grok-imagine-image-quality"
+	mapping["grok-imagine-image-quality-latest"] = "grok-imagine-image-quality"
+	mapping["grok-imagine-image-pro"] = "grok-imagine-image-quality"
+	mapping["grok-imagine-video-1.5-preview"] = "grok-imagine-video-1.5"
+	mapping["grok-imagine-video-1.5-2026-05-30"] = "grok-imagine-video-1.5"
 	return mapping
 }

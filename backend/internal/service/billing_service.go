@@ -362,11 +362,13 @@ func (s *BillingService) initFallbackPricing() {
 	s.fallbackPrices["grok-4.3"] = &ModelPricing{
 		InputPricePerToken:     1.25e-6,
 		OutputPricePerToken:    2.5e-6,
+		CacheReadPricePerToken: 0.2e-6,
 		SupportsCacheBreakdown: false,
 	}
 	s.fallbackPrices["grok-build-0.1"] = &ModelPricing{
 		InputPricePerToken:     1e-6,
 		OutputPricePerToken:    2e-6,
+		CacheReadPricePerToken: 0.2e-6,
 		SupportsCacheBreakdown: false,
 	}
 }
@@ -433,11 +435,11 @@ func (s *BillingService) getFallbackPricing(model string) *ModelPricing {
 	}
 
 	switch modelLower {
-	case "grok", "grok-latest", "grok-4.5", "grok-4.5-latest", "grok-build-latest":
+	case "grok", "grok-4.5", "grok-4.5-latest", "grok-build-latest":
 		return s.fallbackPrices["grok-4.5"]
-	case "grok-4.3":
+	case "grok-latest", "grok-4.3", "grok-4.3-latest":
 		return s.fallbackPrices["grok-4.3"]
-	case "grok-build", "grok-build-0.1":
+	case "grok-build", "grok-build-0.1", "grok-code-fast-1", "grok-code-fast", "grok-code-fast-1-0825":
 		return s.fallbackPrices["grok-build-0.1"]
 	}
 

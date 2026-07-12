@@ -139,7 +139,7 @@ func TestGrokOAuthHandlerRuntimeSanityDoesNotExposeSecrets(t *testing.T) {
 	router.ServeHTTP(rec, req)
 
 	require.Equal(t, http.StatusOK, rec.Code)
-	require.Contains(t, rec.Body.String(), `"public_gateway_scope":"responses_only"`)
+	require.Contains(t, rec.Body.String(), `"public_gateway_scope":"responses_chat_messages_media"`)
 	require.Contains(t, rec.Body.String(), `"valid":false`)
 	require.NotContains(t, rec.Body.String(), "access_token")
 	require.NotContains(t, rec.Body.String(), "secret")

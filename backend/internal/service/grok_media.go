@@ -159,7 +159,10 @@ func parseGrokMediaJSONRequest(body []byte, info *GrokMediaRequestInfo) {
 		switch {
 		case value.IsArray():
 			for _, item := range value.Array() {
-				if imageURL := strings.TrimSpace(item.Get("image_url").String()); imageURL != "" {
+				if imageURL := firstNonEmpty(
+					strings.TrimSpace(item.Get("image_url").String()),
+					strings.TrimSpace(item.Get("url").String()),
+				); imageURL != "" {
 					info.InputImageURLs = append(info.InputImageURLs, imageURL)
 					continue
 				}
@@ -172,7 +175,10 @@ func parseGrokMediaJSONRequest(body []byte, info *GrokMediaRequestInfo) {
 				}
 			}
 		default:
-			if imageURL := strings.TrimSpace(value.Get("image_url").String()); imageURL != "" {
+			if imageURL := firstNonEmpty(
+				strings.TrimSpace(value.Get("image_url").String()),
+				strings.TrimSpace(value.Get("url").String()),
+			); imageURL != "" {
 				info.InputImageURLs = append(info.InputImageURLs, imageURL)
 				return
 			}
@@ -187,7 +193,10 @@ func parseGrokMediaJSONRequest(body []byte, info *GrokMediaRequestInfo) {
 	}
 	appendJSONImageURLs(gjson.GetBytes(body, "image"))
 	appendJSONImageURLs(gjson.GetBytes(body, "images"))
-	info.MaskImageURL = strings.TrimSpace(gjson.GetBytes(body, "mask.image_url").String())
+	info.MaskImageURL = firstNonEmpty(
+		strings.TrimSpace(gjson.GetBytes(body, "mask.image_url").String()),
+		strings.TrimSpace(gjson.GetBytes(body, "mask.url").String()),
+	)
 }
 
 func parseGrokMediaMultipartRequest(contentType string, body []byte, info *GrokMediaRequestInfo) {
@@ -451,7 +460,7 @@ func prepareGrokMediaForwardBody(endpoint GrokMediaEndpoint, body []byte, conten
 	images := make([]map[string]string, 0, len(info.InputImageURLs)+len(info.Uploads))
 	for _, imageURL := range info.InputImageURLs {
 		if imageURL = strings.TrimSpace(imageURL); imageURL != "" {
-			images = append(images, map[string]string{"image_url": imageURL})
+			images = append(images, grokXAIImageReference(imageURL))
 		}
 	}
 	for _, upload := range info.Uploads {
@@ -459,7 +468,7 @@ func prepareGrokMediaForwardBody(endpoint GrokMediaEndpoint, body []byte, conten
 		if err != nil {
 			return nil, "", err
 		}
-		images = append(images, map[string]string{"image_url": dataURL})
+		images = append(images, grokXAIImageReference(dataURL))
 	}
 	if len(images) > 0 {
 		payload["image"] = images[0]
@@ -477,7 +486,7 @@ func prepareGrokMediaForwardBody(endpoint GrokMediaEndpoint, body []byte, conten
 		maskImageURL = dataURL
 	}
 	if maskImageURL != "" {
-		payload["mask"] = map[string]string{"image_url": maskImageURL}
+		payload["mask"] = grokXAIImageReference(maskImageURL)
 	}
 
 	out, err := marshalOpenAIUpstreamJSON(payload)
@@ -485,6 +494,13 @@ func prepareGrokMediaForwardBody(endpoint GrokMediaEndpoint, body []byte, conten
 		return nil, "", err
 	}
 	return out, "application/json", nil
+}
+
+func grokXAIImageReference(imageURL string) map[string]string {
+	return map[string]string{
+		"type": "image_url",
+		"url":  imageURL,
+	}
 }
 
 func normalizeGrokMediaForwardBody(endpoint GrokMediaEndpoint, body []byte, contentType string) ([]byte, string, error) {
@@ -530,7 +546,8 @@ func normalizeGrokMediaModelForEndpoint(endpoint GrokMediaEndpoint, model string
 	model = strings.TrimSpace(model)
 	switch endpoint {
 	case GrokMediaEndpointImagesGenerations, GrokMediaEndpointImagesEdits:
-		if model == "grok-imagine" {
+		switch model {
+		case "grok-imagine", "grok-imagine-edit", "grok-imagine-image-edit":
 			return "grok-imagine-image-quality"
 		}
 	case GrokMediaEndpointVideosGenerations:

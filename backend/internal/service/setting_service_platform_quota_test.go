@@ -188,7 +188,7 @@ func TestSystemPlatformQuotas_WriteReadRoundTrip(t *testing.T) {
 }
 
 // TestSystemPlatformQuotas_EmptyMapClearsAll 验证空 map 的整体替换语义：
-// 写入 DefaultPlatformQuotas={} 后，GetDefaultPlatformQuotas 返回 4 个平台、所有字段均为 nil，
+// 写入 DefaultPlatformQuotas={} 后，GetDefaultPlatformQuotas 返回全部允许平台、所有字段均为 nil，
 // 明确文档化"空 map = 清空全部配额"是有意为之的 whole-replace 语义。
 func TestSystemPlatformQuotas_EmptyMapClearsAll(t *testing.T) {
 	svc := newSettingServiceForPlatformQuotaTest(nil)

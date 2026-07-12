@@ -256,6 +256,23 @@ func TestParseGrokMediaRequestBuildsMultipartModerationBody(t *testing.T) {
 	require.True(t, strings.HasPrefix(gjson.GetBytes(moderationBody, "images.0.image_url").String(), "data:image/"))
 }
 
+func TestParseGrokMediaRequestSupportsOfficialXAIImageReferences(t *testing.T) {
+	body := []byte(`{
+		"model":"grok-imagine-image-quality",
+		"prompt":"combine these images",
+		"image":{"type":"image_url","url":"https://example.com/source.png"},
+		"images":[{"type":"image_url","url":"https://example.com/reference.png"}],
+		"mask":{"type":"image_url","url":"https://example.com/mask.png"}
+	}`)
+
+	info := ParseGrokMediaRequest("application/json", body)
+	require.Equal(t, []string{
+		"https://example.com/source.png",
+		"https://example.com/reference.png",
+	}, info.InputImageURLs)
+	require.Equal(t, "https://example.com/mask.png", info.MaskImageURL)
+}
+
 func TestParseGrokMediaVideoRequestResolution(t *testing.T) {
 	info := ParseGrokMediaRequest("application/json", []byte(`{"model":"grok-imagine-video","prompt":"waves","resolution":"720p"}`))
 
@@ -273,6 +290,8 @@ func TestNormalizeGrokMediaModelForEndpoint(t *testing.T) {
 	}{
 		{name: "image generation alias", endpoint: GrokMediaEndpointImagesGenerations, model: "grok-imagine", want: "grok-imagine-image-quality"},
 		{name: "image edit alias", endpoint: GrokMediaEndpointImagesEdits, model: "grok-imagine", want: "grok-imagine-image-quality"},
+		{name: "legacy image edit alias", endpoint: GrokMediaEndpointImagesEdits, model: "grok-imagine-edit", want: "grok-imagine-image-quality"},
+		{name: "legacy image edit long alias", endpoint: GrokMediaEndpointImagesEdits, model: "grok-imagine-image-edit", want: "grok-imagine-image-quality"},
 		{name: "image quality passthrough", endpoint: GrokMediaEndpointImagesGenerations, model: "grok-imagine-image-quality", want: "grok-imagine-image-quality"},
 		{name: "image fast passthrough", endpoint: GrokMediaEndpointImagesGenerations, model: "grok-imagine-image", want: "grok-imagine-image"},
 		{name: "video passthrough", endpoint: GrokMediaEndpointVideosGenerations, model: "grok-imagine-video", want: "grok-imagine-video"},
@@ -418,9 +437,10 @@ func TestForwardGrokMediaImagesEditMultipartConvertsToJSON(t *testing.T) {
 	require.Equal(t, "https://xai.test/v1/images/edits", upstream.lastReq.URL.String())
 	require.Equal(t, "application/json", upstream.lastReq.Header.Get("Content-Type"))
 	require.True(t, json.Valid(upstream.lastBody))
-	require.Equal(t, "grok-imagine-edit", gjson.GetBytes(upstream.lastBody, "model").String())
+	require.Equal(t, "grok-imagine-image-quality", gjson.GetBytes(upstream.lastBody, "model").String())
 	require.Equal(t, "edit this private image", gjson.GetBytes(upstream.lastBody, "prompt").String())
-	require.True(t, strings.HasPrefix(gjson.GetBytes(upstream.lastBody, "image.image_url").String(), "data:image/png;base64,"))
+	require.Equal(t, "image_url", gjson.GetBytes(upstream.lastBody, "image.type").String())
+	require.True(t, strings.HasPrefix(gjson.GetBytes(upstream.lastBody, "image.url").String(), "data:image/png;base64,"))
 }
 
 func TestForwardGrokMediaVideoGenerationReturnsUsageAndResponseID(t *testing.T) {
@@ -1039,7 +1059,7 @@ func TestGrokPoolPassthroughMapsResponsesAliasBeforeAether(t *testing.T) {
 		StatusCode: http.StatusOK,
 		Header:     http.Header{"Content-Type": []string{"application/json"}},
 		Body: io.NopCloser(strings.NewReader(
-			`{"id":"resp_1","model":"grok-4.5","usage":{"input_tokens":1,"output_tokens":1}}`,
+			`{"id":"resp_1","model":"grok-4.3","usage":{"input_tokens":1,"output_tokens":1}}`,
 		)),
 	}}
 	svc := &OpenAIGatewayService{cfg: &config.Config{}, httpUpstream: upstream}
@@ -1048,9 +1068,9 @@ func TestGrokPoolPassthroughMapsResponsesAliasBeforeAether(t *testing.T) {
 		context.Background(), c, account, body, "grok-latest", nil, false, time.Now(),
 	)
 	require.NoError(t, err)
-	require.JSONEq(t, `{"model":"grok-4.5","input":"hello"}`, string(upstream.lastBody))
+	require.JSONEq(t, `{"model":"grok-4.3","input":"hello"}`, string(upstream.lastBody))
 	require.Equal(t, "grok-latest", result.Model)
-	require.Equal(t, "grok-4.5", result.UpstreamModel)
+	require.Equal(t, "grok-4.3", result.UpstreamModel)
 }
 
 func TestGrokDirectAPIKeyResponsesUsesRawXAIPath(t *testing.T) {
@@ -1073,7 +1093,7 @@ func TestGrokDirectAPIKeyResponsesUsesRawXAIPath(t *testing.T) {
 		StatusCode: http.StatusOK,
 		Header:     http.Header{"Content-Type": []string{"application/json"}},
 		Body: io.NopCloser(strings.NewReader(
-			`{"id":"resp_2","model":"grok-4.5","usage":{"input_tokens":1,"output_tokens":1}}`,
+			`{"id":"resp_2","model":"grok-4.3","usage":{"input_tokens":1,"output_tokens":1}}`,
 		)),
 	}}
 	svc := &OpenAIGatewayService{cfg: &config.Config{}, httpUpstream: upstream}
@@ -1081,9 +1101,9 @@ func TestGrokDirectAPIKeyResponsesUsesRawXAIPath(t *testing.T) {
 	result, err := svc.Forward(context.Background(), c, account, body)
 	require.NoError(t, err)
 	require.Equal(t, "https://api.x.ai/v1/responses", upstream.lastReq.URL.String())
-	require.JSONEq(t, `{"model":"grok-4.5","input":"hello"}`, string(upstream.lastBody))
+	require.JSONEq(t, `{"model":"grok-4.3","input":"hello"}`, string(upstream.lastBody))
 	require.Equal(t, "grok-latest", result.Model)
-	require.Equal(t, "grok-4.5", result.UpstreamModel)
+	require.Equal(t, "grok-4.3", result.UpstreamModel)
 }
 
 func TestGrokPoolResponsesMarksConfiguredAuthErrorForSameAccountRetry(t *testing.T) {

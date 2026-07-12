@@ -662,7 +662,7 @@ func TestCalculateCostWithLongContext_PropagatesError(t *testing.T) {
 func TestGetModelPricing_Grok45OfficialFallback(t *testing.T) {
 	svc := newTestBillingService()
 
-	for _, model := range []string{"grok", "grok-latest", "grok-4.5", "grok-4.5-latest", "grok-build-latest"} {
+	for _, model := range []string{"grok", "grok-4.5", "grok-4.5-latest", "grok-build-latest"} {
 		model := model
 		t.Run(model, func(t *testing.T) {
 			pricing, err := svc.GetModelPricing(model)
@@ -670,6 +670,38 @@ func TestGetModelPricing_Grok45OfficialFallback(t *testing.T) {
 			require.InDelta(t, 2e-6, pricing.InputPricePerToken, 1e-12)
 			require.InDelta(t, 6e-6, pricing.OutputPricePerToken, 1e-12)
 			require.InDelta(t, 0.5e-6, pricing.CacheReadPricePerToken, 1e-12)
+			require.False(t, pricing.SupportsCacheBreakdown)
+		})
+	}
+}
+
+func TestGetModelPricing_Grok43OfficialFallback(t *testing.T) {
+	svc := newTestBillingService()
+
+	for _, model := range []string{"grok-latest", "grok-4.3", "grok-4.3-latest"} {
+		model := model
+		t.Run(model, func(t *testing.T) {
+			pricing, err := svc.GetModelPricing(model)
+			require.NoError(t, err)
+			require.InDelta(t, 1.25e-6, pricing.InputPricePerToken, 1e-12)
+			require.InDelta(t, 2.5e-6, pricing.OutputPricePerToken, 1e-12)
+			require.InDelta(t, 0.2e-6, pricing.CacheReadPricePerToken, 1e-12)
+			require.False(t, pricing.SupportsCacheBreakdown)
+		})
+	}
+}
+
+func TestGetModelPricing_GrokBuildOfficialFallback(t *testing.T) {
+	svc := newTestBillingService()
+
+	for _, model := range []string{"grok-build", "grok-build-0.1", "grok-code-fast-1", "grok-code-fast", "grok-code-fast-1-0825"} {
+		model := model
+		t.Run(model, func(t *testing.T) {
+			pricing, err := svc.GetModelPricing(model)
+			require.NoError(t, err)
+			require.InDelta(t, 1e-6, pricing.InputPricePerToken, 1e-12)
+			require.InDelta(t, 2e-6, pricing.OutputPricePerToken, 1e-12)
+			require.InDelta(t, 0.2e-6, pricing.CacheReadPricePerToken, 1e-12)
 			require.False(t, pricing.SupportsCacheBreakdown)
 		})
 	}
