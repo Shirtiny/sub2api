@@ -203,10 +203,10 @@ func maxInt(a, b int) int {
 }
 
 func mapUpstreamStatus(status int) int {
-	switch {
-	case status == http.StatusUnauthorized || status == http.StatusForbidden:
+	switch status {
+	case http.StatusUnauthorized, http.StatusForbidden:
 		return status
-	case status == http.StatusTooManyRequests:
+	case http.StatusTooManyRequests:
 		return http.StatusTooManyRequests
 	default:
 		return http.StatusBadGateway

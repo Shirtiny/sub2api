@@ -53,7 +53,7 @@ func (a *Account) SupportsGrokMediaEndpoint(endpoint GrokMediaEndpoint) bool {
 	if a == nil || !a.IsGrok() {
 		return false
 	}
-	return !(a.IsGrokPoolPassthrough() && endpoint.IsVideo())
+	return !a.IsGrokPoolPassthrough() || !endpoint.IsVideo()
 }
 
 type GrokMediaRequestInfo struct {

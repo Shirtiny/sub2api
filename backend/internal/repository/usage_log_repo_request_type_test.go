@@ -289,7 +289,7 @@ func TestAppendUsageLogBillingModeWhereCondition(t *testing.T) {
 		{
 			name:          "image includes legacy image rows",
 			billingMode:   string(service.BillingModeImage),
-			wantCondition: "(billing_mode = $1 OR COALESCE(image_count, 0) > 0)",
+			wantCondition: "(billing_mode = $1 OR ((billing_mode IS NULL OR billing_mode = '') AND COALESCE(image_count, 0) > 0))",
 		},
 		{
 			name:          "token includes legacy non-image rows",
