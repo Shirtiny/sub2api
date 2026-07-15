@@ -671,9 +671,28 @@
       :confirm-text="t('admin.subscriptions.bulkResetQuota')"
       :cancel-text="t('common.cancel')"
       :danger="true"
+      :confirm-disabled="!hasBulkResetWindow"
       @confirm="confirmBulkResetQuota"
       @cancel="showBulkResetQuotaConfirm = false"
-    />
+    >
+      <div class="space-y-2">
+        <label
+          v-for="window in bulkResetWindows"
+          :key="window.key"
+          class="flex items-center gap-2"
+        >
+          <input
+            v-model="bulkResetSelection[window.key]"
+            type="checkbox"
+            class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+          />
+          <span class="text-sm text-content-secondary">{{ t(window.label) }}</span>
+        </label>
+        <p v-if="!hasBulkResetWindow" class="text-sm text-red-600 dark:text-red-400">
+          {{ t('admin.subscriptions.bulkResetQuotaNoWindow') }}
+        </p>
+      </div>
+    </ConfirmDialog>
     <!-- Subscription Guide Modal -->
     <teleport to="body">
       <transition name="modal">
@@ -965,6 +984,17 @@ const submitting = ref(false)
 const resettingSubscription = ref<UserSubscription | null>(null)
 const resettingQuota = ref(false)
 const bulkResettingQuota = ref(false)
+// 月度窗口默认不勾选：月额度分组（如冰摇茶）的周期远长于日/周分组，
+// 跟随批量重置会提前作废用户当期额度。
+const bulkResetSelection = reactive({ daily: true, weekly: true, monthly: false })
+const bulkResetWindows = [
+  { key: 'daily', label: 'admin.subscriptions.bulkResetQuotaDaily' },
+  { key: 'weekly', label: 'admin.subscriptions.bulkResetQuotaWeekly' },
+  { key: 'monthly', label: 'admin.subscriptions.bulkResetQuotaMonthly' }
+] as const
+const hasBulkResetWindow = computed(
+  () => bulkResetSelection.daily || bulkResetSelection.weekly || bulkResetSelection.monthly
+)
 const extendingSubscription = ref<UserSubscription | null>(null)
 const revokingSubscription = ref<UserSubscription | null>(null)
 
@@ -1310,10 +1340,10 @@ const handleBulkResetQuota = () => {
 }
 
 const confirmBulkResetQuota = async () => {
-  if (bulkResettingQuota.value) return
+  if (bulkResettingQuota.value || !hasBulkResetWindow.value) return
   bulkResettingQuota.value = true
   try {
-    const result = await adminAPI.subscriptions.bulkResetQuota({ daily: true, weekly: true, monthly: true })
+    const result = await adminAPI.subscriptions.bulkResetQuota({ ...bulkResetSelection })
     appStore.showSuccess(t('admin.subscriptions.bulkQuotaResetSuccess', { count: result.count }))
     showBulkResetQuotaConfirm.value = false
     await loadSubscriptions()
