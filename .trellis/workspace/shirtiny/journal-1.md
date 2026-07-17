@@ -239,3 +239,49 @@ OpenAI API Key account passthrough now preserves Chat Completions format; fronte
 ### Next Steps
 
 - None - task complete
+
+---
+
+## Session 6: End-to-end Codex WebSocket transport
+
+**Date**: 2026-07-17
+**Task**: Add end-to-end Codex WebSocket transport
+
+### Summary
+
+Implemented account-controlled client WebSocket ingress in sub2api, direct local route-v1 Aether WebSocket transport, and an official-Codex-only native WebSocket connector in Aether with TLS fingerprint/profile parity. Added scheduling and reconnect migration, bounded backpressure, authorization/billing/quota/moderation fences, administrator controls, tests, and rollout documentation.
+
+### Main Changes
+
+- Added sub2api WebSocket passthrough, context-pool, shared, dedicated, HTTP bridge, and Grok bridge paths with bounded framing and backpressure.
+- Added the performance-oriented direct local route-v1 WebSocket link from sub2api to Aether with account-level controls on both sides.
+- Added Aether native official Codex WebSocket support with pinned profile and TLS behavior; other providers remain outside this scope.
+- Added initial failover, later-turn reconnect/migration, versioned scheduler cache generations, quota lease closure, and final pre-dispatch fences for all transports.
+- Added bounded usage finalization and moderation queue ordering safeguards.
+- Added frontend account controls and the implementation/release plan document.
+
+### Git Commits
+
+- sub2api: `f4a25381b9ad6f7ede39ea60f8b990bba1da240f` — `feat(openai): add end-to-end Codex websocket transport`
+- Aether: `dbf4bd82e7d91dfdfa55564da25931dfe700efe3` — `feat(codex): add native websocket transport`
+
+### Testing
+
+- [OK] `go test -p 1 ./internal/... -count=1`
+- [OK] `go vet ./internal/...`
+- [OK] repository unit-tag suites and scheduler race tests
+- [OK] `openai_ws_v2` and focused service race tests
+- [OK] frontend typecheck and 44/44 tests
+- [OK] focused Aether connector, gateway, provider, runtime, and frontend suites
+- [OK] `git diff --check` in both repositories
+- [OK] benchmark: 64 KiB approximately 223 us / 19 allocations; 1 MiB approximately 3.0 ms / 20 allocations
+
+### Status
+
+[OK] **Completed and committed; no production deployment performed**
+
+### Next Steps
+
+- Before production enablement: drain pre-v2 sessions and complete the final v2 scheduler rebuild/readiness gate.
+- Validate real official credentials/TLS capture, shared Redis across multiple instances, MySQL/PostgreSQL integration, staging proxies, and load evidence.
+- Consider a durable moderation outbox as a later reliability enhancement.

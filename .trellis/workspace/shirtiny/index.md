@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 5
-- **Last Active**: 2026-05-11
+- **Total Sessions**: 6
+- **Last Active**: 2026-07-17
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~252 | Active |
+| `journal-1.md` | ~285 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits |
 |---|------|-------|---------|
+| 6 | 2026-07-17 | End-to-end Codex WebSocket transport | `f4a25381`, Aether `dbf4bd82` |
 | 5 | 2026-05-11 | Account pass-through toggle | - |
 | 4 | 2026-05-01 | Merge main into custom-prod | `a2bcb5ab` |
 | 3 | 2026-04-12 | Refactor pre-submit workflow and stabilize rate-limit tests | `496bf76279069e809a926db661f182ec6f23391f` |

@@ -3,7 +3,7 @@
   "name": "codex-websocket-transport",
   "title": "Add end-to-end Codex WebSocket transport",
   "description": "Add account-controlled Codex WebSocket ingress in sub2api and native official-Codex WebSocket egress in Aether, including TLS fingerprint parity, scheduling and migration fences, bounded backpressure, billing and authorization enforcement, administration UI, performance gates, and production rollout documentation.",
-  "status": "in_progress",
+  "status": "completed",
   "dev_type": "feature",
   "scope": "fullstack",
   "package": "sub2api+aether",
@@ -11,11 +11,11 @@
   "creator": "codex-agent",
   "assignee": "codex-agent",
   "createdAt": "2026-07-17",
-  "completedAt": null,
+  "completedAt": "2026-07-17",
   "branch": "custom-prod",
   "base_branch": "custom-prod",
   "worktree_path": null,
-  "commit": null,
+  "commit": "f4a25381b9ad6f7ede39ea60f8b990bba1da240f",
   "pr_url": null,
   "subtasks": [
     "sub2api client WebSocket ingress and account-level transport controls",
@@ -44,6 +44,7 @@
   "meta": {
     "aether_branch": "custom",
     "aether_commit": "dbf4bd82e7d91dfdfa55564da25931dfe700efe3",
+    "sub2api_commit": "f4a25381b9ad6f7ede39ea60f8b990bba1da240f",
     "design_document": "docs/CODEX_WEBSOCKET_TRANSPORT_AND_SCHEDULING_PLAN.md",
     "review_goal_thread": "019f663c-b498-7571-9aa0-38925c4d957a"
   }
