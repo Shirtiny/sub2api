@@ -167,6 +167,25 @@ func TestBillingCacheService_CheckRPM_NilOverrideFallsThroughToGroup(t *testing.
 	require.EqualValues(t, 1, atomic.LoadInt32(&cache.userCalls), "group 未超时 user 也应检查；group 超时直接返回")
 }
 
+func TestBillingCacheService_CheckRPM_ResolvedNilOverrideDoesNotQueryRepository(t *testing.T) {
+	cache := &userRPMCacheStub{userGroupCounts: []int{1, 2}}
+	repo := &rpmOverrideRepoStub{err: errors.New("repository must stay off the websocket step hot path")}
+	svc := newBillingServiceForRPM(t, cache, repo)
+
+	user := &User{
+		ID:                           1,
+		RPMLimit:                     100,
+		UserGroupRPMOverride:         nil,
+		UserGroupRPMOverrideResolved: true,
+	}
+	group := &Group{ID: 10, RPMLimit: 10}
+
+	require.NoError(t, svc.checkRPM(context.Background(), user, group))
+	require.NoError(t, svc.checkRPM(context.Background(), user, group))
+	require.Zero(t, atomic.LoadInt32(&repo.calls), "resolved nil is a cached value, not a cache miss")
+	require.EqualValues(t, 2, atomic.LoadInt32(&cache.userGroupCalls))
+}
+
 func TestBillingCacheService_CheckRPM_OverrideLookupErrorFallsThroughToGroup(t *testing.T) {
 	cache := &userRPMCacheStub{userGroupCounts: []int{3}}
 	repo := &rpmOverrideRepoStub{err: errors.New("db down")}

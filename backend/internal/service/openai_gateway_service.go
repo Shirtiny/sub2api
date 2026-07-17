@@ -28,6 +28,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/internal/pkg/openai"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/openai_compat"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/xai"
+	openaiwsv2 "github.com/Wei-Shaw/sub2api/internal/service/openai_ws_v2"
 	"github.com/Wei-Shaw/sub2api/internal/util/responseheaders"
 	"github.com/Wei-Shaw/sub2api/internal/util/urlvalidator"
 	"github.com/cespare/xxhash/v2"
@@ -247,6 +248,7 @@ type OpenAIForwardResult struct {
 	ReasoningEffort    *string
 	Stream             bool
 	OpenAIWSMode       bool
+	TerminalEventType  string
 	ResponseHeaders    http.Header
 	Duration           time.Duration
 	FirstTokenMs       *int
@@ -1341,6 +1343,15 @@ func (s *OpenAIGatewayService) BindStickySession(ctx context.Context, groupID *i
 		ttl = time.Duration(s.cfg.Gateway.OpenAIWS.StickySessionTTLSeconds) * time.Second
 	}
 	return s.setStickySessionAccountID(ctx, groupID, sessionHash, accountID, ttl)
+}
+
+// UnbindStickySession clears a binding after a pre-dispatch account failure so
+// a subsequent physical connection cannot inherit a candidate that never ran.
+func (s *OpenAIGatewayService) UnbindStickySession(ctx context.Context, groupID *int64, sessionHash string) error {
+	if strings.TrimSpace(sessionHash) == "" {
+		return nil
+	}
+	return s.deleteStickySessionAccountID(ctx, groupID, sessionHash)
 }
 
 // SelectAccount selects an OpenAI account with sticky session support
@@ -7575,6 +7586,23 @@ func (s *OpenAIGatewayService) evaluateOpenAIFastPolicy(ctx context.Context, acc
 	return evaluateOpenAIFastPolicyWithSettings(settings, account, model, tier)
 }
 
+// SnapshotOpenAIWSFastPolicySettings loads the immutable policy snapshot used
+// for one client WebSocket connection. Callers bind it before account
+// selection so initial failover reuses the same snapshot.
+func (s *OpenAIGatewayService) SnapshotOpenAIWSFastPolicySettings(ctx context.Context) (*OpenAIFastPolicySettings, error) {
+	if s == nil || s.settingService == nil {
+		return DefaultOpenAIFastPolicySettings(), nil
+	}
+	settings, err := s.settingService.GetOpenAIFastPolicySettings(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if settings == nil {
+		return DefaultOpenAIFastPolicySettings(), nil
+	}
+	return settings, nil
+}
+
 // evaluateOpenAIFastPolicyWithSettings is the pure-function core extracted so
 // long-lived sessions (e.g. WS) can prefetch settings once and avoid hitting
 // the settingService on every frame. See WSSession entry and
@@ -7731,54 +7759,149 @@ func (s *OpenAIGatewayService) applyOpenAIFastPolicyToWSResponseCreate(
 	model string,
 	frame []byte,
 ) ([]byte, *OpenAIFastBlockedError, error) {
-	if len(frame) == 0 {
+	return s.applyOpenAIFastPolicyToWSResponseCreateInternal(ctx, account, model, frame, false)
+}
+
+func (s *OpenAIGatewayService) applyValidatedOpenAIFastPolicyToWSResponseCreate(
+	ctx context.Context,
+	account *Account,
+	model string,
+	frame []byte,
+) ([]byte, *OpenAIFastBlockedError, error) {
+	return s.applyOpenAIFastPolicyToWSResponseCreateInternal(ctx, account, model, frame, true)
+}
+
+func (s *OpenAIGatewayService) applyValidatedOpenAIFastPolicyToWSResponseCreateWithTier(
+	ctx context.Context,
+	account *Account,
+	model string,
+	frame []byte,
+	rawTier string,
+	hasTier bool,
+) ([]byte, *OpenAIFastBlockedError, error) {
+	if len(frame) == 0 || !hasTier {
 		return frame, nil, nil
 	}
-	if !gjson.ValidBytes(frame) {
-		return frame, nil, nil
+	return s.applyOpenAIFastPolicyToWSResponseCreateWithTier(ctx, account, model, frame, rawTier)
+}
+
+type openAIWSFastPolicyDecision struct {
+	action         string
+	normalizedTier string
+}
+
+func (d openAIWSFastPolicyDecision) serviceTierMutation() *aetherWSServiceTierMutation {
+	if d.action == BetaPolicyActionFilter {
+		return &aetherWSServiceTierMutation{remove: true}
 	}
-	frameType := strings.TrimSpace(gjson.GetBytes(frame, "type").String())
-	// Strict match: only response.create is policy-checked. Empty / other
-	// types pass through untouched so we never accidentally strip fields
-	// from response.cancel, conversation.item.create, or any future
-	// client-event the spec adds. The Realtime spec requires "type" on
-	// every client event, so an empty type is malformed input — let the
-	// upstream reject it rather than guessing at our layer.
-	if frameType != "response.create" {
-		return frame, nil, nil
+	if d.normalizedTier != "" {
+		return &aetherWSServiceTierMutation{replacement: d.normalizedTier}
 	}
-	rawTier := gjson.GetBytes(frame, "service_tier").String()
-	if rawTier == "" {
-		return frame, nil, nil
+	return nil
+}
+
+func (d openAIWSFastPolicyDecision) applyToEnvelope(envelope openaiwsv2.ClientEnvelope) openaiwsv2.ClientEnvelope {
+	if d.action == BetaPolicyActionFilter {
+		envelope.ServiceTier = ""
+		envelope.HasServiceTier = false
+	} else if d.normalizedTier != "" {
+		envelope.ServiceTier = d.normalizedTier
+		envelope.HasServiceTier = true
+	}
+	return envelope
+}
+
+func (s *OpenAIGatewayService) evaluateOpenAIFastPolicyForWS(
+	ctx context.Context,
+	account *Account,
+	model string,
+	rawTier string,
+	hasTier bool,
+) (openAIWSFastPolicyDecision, *OpenAIFastBlockedError) {
+	if !hasTier || rawTier == "" {
+		return openAIWSFastPolicyDecision{}, nil
 	}
 	normTier := normalizedOpenAIServiceTierValue(rawTier)
 	if normTier == "" {
-		return frame, nil, nil
+		return openAIWSFastPolicyDecision{}, nil
 	}
 	action, errMsg := s.evaluateOpenAIFastPolicy(ctx, account, model, normTier)
-	switch action {
-	case BetaPolicyActionBlock:
-		msg := errMsg
-		if msg == "" {
-			msg = fmt.Sprintf("openai service_tier=%s is not allowed for model %s", normTier, model)
+	if action == BetaPolicyActionBlock {
+		if errMsg == "" {
+			errMsg = fmt.Sprintf("openai service_tier=%s is not allowed for model %s", normTier, model)
 		}
-		return frame, &OpenAIFastBlockedError{Message: msg}, nil
-	case BetaPolicyActionFilter:
-		trimmed, err := sjson.DeleteBytes(frame, "service_tier")
-		if err != nil {
-			return frame, nil, fmt.Errorf("strip service_tier from ws frame: %w", err)
-		}
-		return trimmed, nil, nil
-	default:
-		if normTier == rawTier {
+		return openAIWSFastPolicyDecision{action: action, normalizedTier: normTier}, &OpenAIFastBlockedError{Message: errMsg}
+	}
+	decision := openAIWSFastPolicyDecision{action: action}
+	if action != BetaPolicyActionFilter && normTier != rawTier {
+		decision.normalizedTier = normTier
+	}
+	return decision, nil
+}
+
+func applyOpenAIWSFastPolicyDecision(frame []byte, decision openAIWSFastPolicyDecision) ([]byte, error) {
+	if decision.action == BetaPolicyActionFilter {
+		return sjson.DeleteBytes(frame, "service_tier")
+	}
+	if decision.normalizedTier != "" {
+		return sjson.SetBytes(frame, "service_tier", decision.normalizedTier)
+	}
+	return frame, nil
+}
+
+func (s *OpenAIGatewayService) applyOpenAIFastPolicyToWSResponseCreateInternal(
+	ctx context.Context,
+	account *Account,
+	model string,
+	frame []byte,
+	alreadyValidatedResponseCreate bool,
+) ([]byte, *OpenAIFastBlockedError, error) {
+	if len(frame) == 0 {
+		return frame, nil, nil
+	}
+	if !alreadyValidatedResponseCreate {
+		if !gjson.ValidBytes(frame) {
 			return frame, nil, nil
 		}
-		updated, err := sjson.SetBytes(frame, "service_tier", normTier)
-		if err != nil {
-			return frame, nil, fmt.Errorf("normalize service_tier in ws frame: %w", err)
+		frameType := strings.TrimSpace(gjson.GetBytes(frame, "type").String())
+		// Strict match: only response.create is policy-checked. Empty / other
+		// types pass through untouched so we never accidentally strip fields
+		// from response.cancel, conversation.item.create, or any future
+		// client-event the spec adds. The Realtime spec requires "type" on
+		// every client event, so an empty type is malformed input — let the
+		// upstream reject it rather than guessing at our layer.
+		if frameType != "response.create" {
+			return frame, nil, nil
 		}
-		return updated, nil, nil
 	}
+	return s.applyOpenAIFastPolicyToWSResponseCreateWithTier(
+		ctx,
+		account,
+		model,
+		frame,
+		gjson.GetBytes(frame, "service_tier").String(),
+	)
+}
+
+func (s *OpenAIGatewayService) applyOpenAIFastPolicyToWSResponseCreateWithTier(
+	ctx context.Context,
+	account *Account,
+	model string,
+	frame []byte,
+	rawTier string,
+) ([]byte, *OpenAIFastBlockedError, error) {
+	if rawTier == "" {
+		return frame, nil, nil
+	}
+	decision, blocked := s.evaluateOpenAIFastPolicyForWS(ctx, account, model, rawTier, true)
+	if blocked != nil {
+		return frame, blocked, nil
+	}
+	updated, err := applyOpenAIWSFastPolicyDecision(frame, decision)
+	if err != nil {
+		return frame, nil, fmt.Errorf("apply service_tier mutation to ws frame: %w", err)
+	}
+	return updated, nil, nil
 }
 
 // newOpenAIFastPolicyWSEventID returns a Realtime-style event_id for a

@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"strings"
 	"sync/atomic"
+	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/openai"
@@ -15,10 +16,61 @@ import (
 	coderws "github.com/coder/websocket"
 	"github.com/gin-gonic/gin"
 	"github.com/tidwall/gjson"
+	"github.com/tidwall/sjson"
 )
 
 type openAIWSClientFrameConn struct {
 	conn *coderws.Conn
+}
+
+type OpenAIWSClientEnvelope = openaiwsv2.ClientEnvelope
+
+// ParseOpenAIWSClientEnvelope validates one client text event without copying
+// its request body. Callers receive only bounded routing metadata.
+func ParseOpenAIWSClientEnvelope(payload []byte) (OpenAIWSClientEnvelope, error) {
+	return openaiwsv2.ParseClientEnvelope(payload)
+}
+
+func validateOpenAIWSPassthroughSessionModel(envelope OpenAIWSClientEnvelope, frozenModel string) error {
+	if envelope.Type != "session.update" || !envelope.HasSessionModel || envelope.SessionModel == frozenModel {
+		return nil
+	}
+	return NewOpenAIWSClientCloseError(
+		coderws.StatusPolicyViolation,
+		"changing model requires a new websocket connection",
+		errors.New("session.update attempted to change the websocket model"),
+	)
+}
+
+func transformOpenAIWSPassthroughSessionModel(
+	payload []byte,
+	envelope OpenAIWSClientEnvelope,
+	upstreamModel string,
+) ([]byte, error) {
+	if envelope.Type != "session.update" || !envelope.HasSessionModel || envelope.SessionModel == upstreamModel {
+		return payload, nil
+	}
+	return sjson.SetBytes(payload, "session.model", upstreamModel)
+}
+
+func transformOpenAIWSPassthroughResponseModel(payload []byte, currentModel string, upstreamModel string) ([]byte, error) {
+	if len(payload) == 0 || strings.TrimSpace(upstreamModel) == "" {
+		return nil, errors.New("websocket upstream model is unavailable")
+	}
+	if strings.TrimSpace(currentModel) == strings.TrimSpace(upstreamModel) {
+		return payload, nil
+	}
+	return sjson.SetBytes(payload, "model", upstreamModel)
+}
+
+func sameOpenAIWSPayload(payload, updated []byte) bool {
+	if len(payload) != len(updated) {
+		return false
+	}
+	if len(payload) == 0 {
+		return true
+	}
+	return &payload[0] == &updated[0]
 }
 
 // openAIWSPolicyEnforcingFrameConn wraps a client-side FrameConn and runs
@@ -142,6 +194,43 @@ func newOpenAIWSPassthroughUsageMeta(initialRequestModel string, firstFrame []by
 	return meta
 }
 
+func newOpenAIWSPassthroughUsageMetaFromEnvelope(initialRequestModel string, envelope OpenAIWSClientEnvelope) *openAIWSPassthroughUsageMeta {
+	requestModel := strings.TrimSpace(initialRequestModel)
+	if requestModel == "" {
+		requestModel = envelope.Model
+	}
+	return &openAIWSPassthroughUsageMeta{sessionRequestModel: requestModel}
+}
+
+func openAIWSServiceTierFromEnvelope(envelope OpenAIWSClientEnvelope) *string {
+	if !envelope.HasServiceTier {
+		return nil
+	}
+	return normalizeOpenAIServiceTier(envelope.ServiceTier)
+}
+
+func openAIWSReasoningEffortFromEnvelope(envelope OpenAIWSClientEnvelope, requestedModel string) *string {
+	if envelope.HasReasoningEffort {
+		if normalized := normalizeOpenAIReasoningEffort(envelope.ReasoningEffort); normalized != "" {
+			return &normalized
+		}
+		return nil
+	}
+	value := deriveOpenAIReasoningEffortFromModel(requestedModel)
+	if value == "" {
+		return nil
+	}
+	return &value
+}
+
+func (m *openAIWSPassthroughUsageMeta) initFromEnvelope(envelope OpenAIWSClientEnvelope) {
+	if m == nil {
+		return
+	}
+	m.serviceTier.Store(openAIWSServiceTierFromEnvelope(envelope))
+	m.reasoningEffort.Store(openAIWSReasoningEffortFromEnvelope(envelope, m.sessionRequestModel))
+}
+
 func (m *openAIWSPassthroughUsageMeta) initFromFirstFrame(policyOutput []byte) {
 	if m == nil {
 		return
@@ -169,12 +258,30 @@ func (m *openAIWSPassthroughUsageMeta) requestModelForFrame(payload []byte) stri
 	return m.sessionRequestModel
 }
 
+func (m *openAIWSPassthroughUsageMeta) requestModelForEnvelope(envelope OpenAIWSClientEnvelope) string {
+	if envelope.Model != "" {
+		return envelope.Model
+	}
+	if m == nil {
+		return ""
+	}
+	return m.sessionRequestModel
+}
+
 func (m *openAIWSPassthroughUsageMeta) updateFromResponseCreate(policyOutput []byte, requestModelForFrame string) {
 	if m == nil {
 		return
 	}
 	m.serviceTier.Store(extractOpenAIServiceTierFromBody(policyOutput))
 	m.reasoningEffort.Store(extractOpenAIReasoningEffortFromBody(policyOutput, requestModelForFrame))
+}
+
+func (m *openAIWSPassthroughUsageMeta) updateFromEnvelope(envelope OpenAIWSClientEnvelope, requestModelForFrame string) {
+	if m == nil {
+		return
+	}
+	m.serviceTier.Store(openAIWSServiceTierFromEnvelope(envelope))
+	m.reasoningEffort.Store(openAIWSReasoningEffortFromEnvelope(envelope, requestModelForFrame))
 }
 
 func openAIWSPassthroughRequestModelForFrame(payload []byte) string {
@@ -246,8 +353,30 @@ func (s *OpenAIGatewayService) proxyResponsesWebSocketV2Passthrough(
 	if strings.TrimSpace(token) == "" {
 		return errors.New("token is empty")
 	}
-	requestModel := strings.TrimSpace(gjson.GetBytes(firstClientMessage, "model").String())
-	requestPreviousResponseID := strings.TrimSpace(gjson.GetBytes(firstClientMessage, "previous_response_id").String())
+	if wsDecision.AetherCapability.Effective {
+		if sizeErr := validateAetherWSClientPayload(firstClientMessage); sizeErr != nil {
+			return wrapOpenAIWSIngressTurnError(
+				"write_upstream",
+				NewOpenAIWSClientCloseError(coderws.StatusMessageTooBig, "websocket request payload is too large", sizeErr),
+				false,
+			)
+		}
+	}
+	firstEnvelope := OpenAIWSClientEnvelope{}
+	var envelopeErr error
+	if hooks != nil && hooks.HasValidatedFirstEnvelope {
+		firstEnvelope = hooks.ValidatedFirstEnvelope
+	} else {
+		firstEnvelope, envelopeErr = ParseOpenAIWSClientEnvelope(firstClientMessage)
+	}
+	if envelopeErr != nil || firstEnvelope.Type != "response.create" {
+		if envelopeErr == nil {
+			envelopeErr = errors.New("first websocket event must be response.create")
+		}
+		return NewOpenAIWSClientCloseError(coderws.StatusPolicyViolation, "invalid websocket request payload", envelopeErr)
+	}
+	requestModel := firstEnvelope.Model
+	requestPreviousResponseID := firstEnvelope.PreviousResponseID
 	logOpenAIWSV2Passthrough(
 		"relay_start account_id=%d model=%s previous_response_id=%s first_message_type=%s first_message_bytes=%d",
 		account.ID,
@@ -257,27 +386,64 @@ func (s *OpenAIGatewayService) proxyResponsesWebSocketV2Passthrough(
 		len(firstClientMessage),
 	)
 
-	// Apply OpenAI Fast Policy on the first response.create frame. Subsequent
-	// frames are filtered via a wrapping FrameConn below so every client→
-	// upstream frame goes through the same policy evaluator/normalize/scope as
-	// HTTP entrypoints.
+	// Apply OpenAI Fast Policy on the first response.create frame. The relay's
+	// admitted-response callback applies the same policy to later turns.
 	//
 	// We capture the session-level model from the first frame here so the
-	// per-frame filter (below) can fall back to it when a follow-up frame
+	// later-turn callback can fall back to it when a follow-up frame
 	// omits "model" — Realtime clients are allowed to send response.create
 	// without re-stating the model, in which case the upstream uses the model
 	// negotiated at session.update time. Without this fallback, an empty
 	// model would miss any admin-configured model whitelist and be silently
 	// passed through, defeating that policy on every frame after the first.
-	capturedSessionModel := openAIWSPassthroughPolicyModelForFrame(account, firstClientMessage)
 	initialRequestModel := ""
+	routedRequestModel := requestModel
 	if hooks != nil {
 		initialRequestModel = hooks.InitialRequestModel
+		if candidate := strings.TrimSpace(hooks.RoutedRequestModel); candidate != "" {
+			routedRequestModel = candidate
+		}
 	}
-	usageMeta := newOpenAIWSPassthroughUsageMeta(initialRequestModel, firstClientMessage)
-	updatedFirst, blocked, policyErr := s.applyOpenAIFastPolicyToWSResponseCreate(ctx, account, capturedSessionModel, firstClientMessage)
+	originalRequestModel := strings.TrimSpace(initialRequestModel)
+	if originalRequestModel == "" {
+		originalRequestModel = requestModel
+	}
+	frozenRequestModel := normalizeOpenAIModelForUpstream(account, account.GetMappedModel(routedRequestModel))
+	if frozenRequestModel == "" {
+		return NewOpenAIWSClientCloseError(
+			coderws.StatusPolicyViolation,
+			"websocket upstream model is unavailable",
+			errors.New("account model mapping resolved to an empty model"),
+		)
+	}
+	capturedSessionModel := frozenRequestModel
+	usageMeta := newOpenAIWSPassthroughUsageMetaFromEnvelope(initialRequestModel, firstEnvelope)
+	validatedFirstPayload := firstClientMessage
+	firstPolicyDecision := openAIWSFastPolicyDecision{}
+	firstPolicyDeferred := wsDecision.AetherCapability.Effective && (hooks == nil || hooks.TransformRequest == nil)
+	updatedFirst := firstClientMessage
+	var blocked *OpenAIFastBlockedError
+	var policyErr error
+	if firstPolicyDeferred {
+		firstPolicyDecision, blocked = s.evaluateOpenAIFastPolicyForWS(
+			ctx,
+			account,
+			frozenRequestModel,
+			firstEnvelope.ServiceTier,
+			firstEnvelope.HasServiceTier,
+		)
+	} else {
+		updatedFirst, blocked, policyErr = s.applyValidatedOpenAIFastPolicyToWSResponseCreateWithTier(
+			ctx,
+			account,
+			frozenRequestModel,
+			firstClientMessage,
+			firstEnvelope.ServiceTier,
+			firstEnvelope.HasServiceTier,
+		)
+	}
 	if policyErr != nil {
-		return fmt.Errorf("apply openai fast policy on first ws frame: %w", policyErr)
+		return fmt.Errorf("%w: apply openai fast policy on first ws frame: %w", ErrOpenAIWSLocalAdmission, policyErr)
 	}
 	if blocked != nil {
 		MarkOpsClientBusinessLimited(c, OpsClientBusinessLimitedReasonLocalPolicyDenied)
@@ -297,6 +463,16 @@ func (s *OpenAIGatewayService) proxyResponsesWebSocketV2Passthrough(
 		return NewOpenAIWSClientCloseError(coderws.StatusPolicyViolation, blocked.Message, blocked)
 	}
 	firstClientMessage = updatedFirst
+	firstTransformEnvelope := firstEnvelope
+	if firstPolicyDeferred {
+		firstTransformEnvelope = firstPolicyDecision.applyToEnvelope(firstEnvelope)
+	}
+	if !sameOpenAIWSPayload(validatedFirstPayload, firstClientMessage) {
+		firstTransformEnvelope, envelopeErr = ParseOpenAIWSClientEnvelope(firstClientMessage)
+		if envelopeErr != nil {
+			return NewOpenAIWSClientCloseError(coderws.StatusPolicyViolation, "invalid websocket request payload", envelopeErr)
+		}
+	}
 
 	// 在 policy filter 之后再提取 service_tier / reasoning_effort 用于
 	// usage 上报：filter
@@ -311,10 +487,10 @@ func (s *OpenAIGatewayService) proxyResponsesWebSocketV2Passthrough(
 	// 因此使用 atomic.Pointer[string] 在 filter（runClientToUpstream
 	// goroutine）和 OnTurnComplete / final result（runUpstreamToClient
 	// goroutine）之间同步当前 turn 的 usage metadata。
-	usageMeta.initFromFirstFrame(firstClientMessage)
-	promptCacheKey := strings.TrimSpace(gjson.GetBytes(firstClientMessage, "prompt_cache_key").String())
+	usageMeta.initFromEnvelope(firstTransformEnvelope)
+	promptCacheKey := firstTransformEnvelope.PromptCacheKey
 
-	wsURL, err := s.buildOpenAIResponsesWSURL(account)
+	wsURL, err := s.buildOpenAIResponsesWSURL(account, wsDecision)
 	if err != nil {
 		return fmt.Errorf("build ws url: %w", err)
 	}
@@ -329,7 +505,7 @@ func (s *OpenAIGatewayService) proxyResponsesWebSocketV2Passthrough(
 		account.ID,
 		wsHost,
 		wsPath,
-		account.ProxyID != nil && account.Proxy != nil,
+		!wsDecision.AetherCapability.Effective && account.ProxyID != nil && account.Proxy != nil,
 	)
 
 	isCodexCLI := false
@@ -346,8 +522,13 @@ func (s *OpenAIGatewayService) proxyResponsesWebSocketV2Passthrough(
 		turnMetadata = strings.TrimSpace(c.GetHeader(openAIWSTurnMetadataHeader))
 	}
 	headers, _ := s.buildOpenAIWSHeaders(c, account, token, wsDecision, isCodexCLI, turnState, turnMetadata, promptCacheKey)
+	aetherCapability := wsDecision.AetherCapability
+	if account.IsAetherWSManaged() && (!wsDecision.AetherManaged || !aetherCapability.Effective) {
+		return fmt.Errorf("aether websocket account is not effective: %s", aetherCapability.Reason)
+	}
+	applyAetherWSHandshakeRequestHeaders(headers, aetherCapability)
 	proxyURL := ""
-	if account.ProxyID != nil && account.Proxy != nil {
+	if !aetherCapability.Effective && account.ProxyID != nil && account.Proxy != nil {
 		proxyURL = account.Proxy.URL()
 	}
 
@@ -358,7 +539,26 @@ func (s *OpenAIGatewayService) proxyResponsesWebSocketV2Passthrough(
 
 	dialCtx, cancelDial := context.WithTimeout(ctx, s.openAIWSDialTimeout())
 	defer cancelDial()
-	upstreamConn, statusCode, handshakeHeaders, err := dialer.Dial(dialCtx, wsURL, headers, proxyURL)
+	var upstreamConn openAIWSClientConn
+	var statusCode int
+	var handshakeHeaders http.Header
+	if aetherCapability.Effective {
+		// The administrator-managed Aether hop is local: avoid proxy lookup and
+		// compression CPU. route-v1 is still negotiated in the same 101 RTT.
+		optionsDialer, optionsErr := requireAetherLocalOpenAIWSDialer(dialer)
+		if optionsErr != nil {
+			return optionsErr
+		}
+		upstreamConn, statusCode, handshakeHeaders, err = optionsDialer.DialWithOptions(
+			dialCtx,
+			wsURL,
+			headers,
+			proxyURL,
+			aetherLocalOpenAIWSDialOptions(),
+		)
+	} else {
+		upstreamConn, statusCode, handshakeHeaders, err = dialer.Dial(dialCtx, wsURL, headers, proxyURL)
+	}
 	if err != nil {
 		logOpenAIWSV2Passthrough(
 			"relay_dial_failed account_id=%d status_code=%d err=%s",
@@ -368,12 +568,52 @@ func (s *OpenAIGatewayService) proxyResponsesWebSocketV2Passthrough(
 		)
 		if statusCode == http.StatusTooManyRequests {
 			s.persistOpenAIWSRateLimitSignal(ctx, account, handshakeHeaders, nil, "rate_limit_exceeded", "rate_limit_error", strings.TrimSpace(err.Error()))
-			return &UpstreamFailoverError{
-				StatusCode:      http.StatusTooManyRequests,
-				ResponseHeaders: cloneHeader(handshakeHeaders),
-			}
 		}
-		return s.mapOpenAIWSPassthroughDialError(err, statusCode, handshakeHeaders)
+		if errors.Is(err, context.Canceled) {
+			return err
+		}
+		return newOpenAIWSPreDispatchFailover(statusCode, handshakeHeaders)
+	}
+	negotiatedAether, negotiationErr := validateAetherWSHandshakeResponse(handshakeHeaders, aetherCapability)
+	if negotiationErr != nil {
+		_ = upstreamConn.Close()
+		logOpenAIWSV2Passthrough(
+			"aether_route_control_negotiation_failed account_id=%d err=%s",
+			account.ID,
+			truncateOpenAIWSLogValue(negotiationErr.Error(), openAIWSLogValueMaxLen),
+		)
+		return newOpenAIWSPreDispatchFailover(http.StatusBadGateway, handshakeHeaders)
+	}
+	var aetherRouteControl *aetherWSRouteControlConsumer
+	if aetherCapability.Effective {
+		reconnectEnabled := false
+		reconnectSignalMode := ""
+		if s.cfg != nil {
+			reconnectEnabled = s.cfg.Gateway.OpenAIWS.ReconnectMigrationEnabled
+			reconnectSignalMode = s.cfg.Gateway.OpenAIWS.ReconnectSignalMode
+		}
+		bindingGeneration := uint64(0)
+		if hooks != nil {
+			bindingGeneration = hooks.RouteControlBindingGeneration
+			reconnectEnabled = reconnectEnabled && hooks.BeforeReconnectSignal != nil && bindingGeneration > 0
+		} else {
+			reconnectEnabled = false
+		}
+		aetherRouteControl, negotiationErr = newAetherWSRouteControlConsumer(aetherWSRouteControlConsumerConfig{
+			Negotiated:          negotiatedAether,
+			ReconnectEnabled:    reconnectEnabled,
+			ReconnectSignalMode: reconnectSignalMode,
+			BindingGeneration:   bindingGeneration,
+		})
+		if negotiationErr != nil {
+			_ = upstreamConn.Close()
+			logOpenAIWSV2Passthrough(
+				"aether_route_control_setup_failed account_id=%d err=%s",
+				account.ID,
+				truncateOpenAIWSLogValue(negotiationErr.Error(), openAIWSLogValueMaxLen),
+			)
+			return newOpenAIWSPreDispatchFailover(http.StatusBadGateway, handshakeHeaders)
+		}
 	}
 	defer func() {
 		_ = upstreamConn.Close()
@@ -391,86 +631,67 @@ func (s *OpenAIGatewayService) proxyResponsesWebSocketV2Passthrough(
 	}
 
 	completedTurns := atomic.Int32{}
-	policyClientConn := &openAIWSPolicyEnforcingFrameConn{
-		inner: &openAIWSClientFrameConn{conn: clientConn},
-		// 注意线程安全：filter 仅在 runClientToUpstream 这一条
-		// goroutine 中被调用（passthrough_relay.go: ReadFrame loop），
-		// capturedSessionModel 的读写都发生在该 goroutine 内，因此无需
-		// 加锁/原子化。
-		filter: func(msgType coderws.MessageType, payload []byte) ([]byte, *OpenAIFastBlockedError, error) {
-			if msgType != coderws.MessageText {
-				return payload, nil, nil
-			}
-			if strings.TrimSpace(gjson.GetBytes(payload, "type").String()) == "response.create" && hooks != nil && hooks.BeforeRequest != nil {
-				turnNo := int(completedTurns.Load()) + 1
-				if turnNo < 2 {
-					turnNo = 2
-				}
-				requestModel := usageMeta.requestModelForFrame(payload)
-				if requestModel == "" {
-					requestModel = capturedSessionModel
-				}
-				if err := hooks.BeforeRequest(turnNo, payload, requestModel); err != nil {
-					return payload, nil, err
-				}
-			}
-			// 在评估策略前先刷新 capturedSessionModel：客户端可能通过
-			// session.update 修改 session-level model（Realtime /
-			// Responses WS 协议允许），如果不刷新就会出现
-			// "首帧 model=gpt-4o（pass）→ session.update 改成 gpt-5.5
-			// → 不带 model 的 response.create fallback 到 gpt-4o" 的
-			// 绕过路径。这里只看 session.update 事件中的 session.model
-			// 字段，response.create 自己的 model 仍然由其本帧字段决定。
-			if updated := openAIWSPassthroughPolicyModelFromSessionFrame(account, payload); updated != "" {
-				capturedSessionModel = updated
-			}
-			usageMeta.updateSessionRequestModel(payload)
-			requestModelForThisFrame := usageMeta.requestModelForFrame(payload)
-			// Per-frame model first; if the client omits "model" on a
-			// follow-up frame (legal in Realtime), fall back to the
-			// session-level model captured from the first frame so the
-			// model whitelist still resolves. An empty model would miss
-			// any whitelist and silently fall back to pass.
-			model := openAIWSPassthroughPolicyModelForFrame(account, payload)
-			if model == "" {
-				model = capturedSessionModel
-			}
-			out, blocked, policyErr := s.applyOpenAIFastPolicyToWSResponseCreate(ctx, account, model, payload)
-			// 多轮 passthrough usage：仅在成功（non-block / non-err）
-			// 的 response.create 帧上更新 usageMeta，使用
-			// filter 处理后的 payload，与首帧 policy-after-extract 语义
-			// 保持一致（参见上方 extractOpenAIServiceTierFromBody 注释）。
-			//   - 非 response.create 帧（response.cancel /
-			//     conversation.item.create / session.update 等）不携带
-			//     per-response metadata，不应覆盖前一轮值。
-			//   - blocked != nil：该帧不会发送上游，usage metadata 应保持
-			//     上一轮值。
-			//   - policyErr != nil：异常路径，保持上一轮值。
-			//   - 不带 service_tier 的 response.create 会让
-			//     extractOpenAIServiceTierFromBody 返回 nil；这里有意
-			//     覆盖（Store(nil)），因为 OpenAI 上游对该帧实际不传
-			//     service_tier 时按 default 处理，billing 应如实反映。
-			if policyErr == nil && blocked == nil &&
-				strings.TrimSpace(gjson.GetBytes(payload, "type").String()) == "response.create" {
-				usageMeta.updateFromResponseCreate(out, requestModelForThisFrame)
-			}
-			return out, blocked, policyErr
-		},
-		onBlock: func(blocked *OpenAIFastBlockedError) {
-			MarkOpsClientBusinessLimited(c, OpsClientBusinessLimitedReasonLocalPolicyDenied)
-			// See note above on Conn.Write being synchronous w.r.t. flush;
-			// no explicit flush is required to ensure the error event lands
-			// before the close frame.
-			eventBytes := buildOpenAIFastPolicyBlockedWSEvent(blocked)
-			if eventBytes == nil {
-				return
-			}
-			writeCtx, cancel := context.WithTimeout(ctx, s.openAIWSWriteTimeout())
-			_ = clientConn.Write(writeCtx, coderws.MessageText, eventBytes)
-			cancel()
-		},
+	onPolicyBlock := func(blocked *OpenAIFastBlockedError) {
+		MarkOpsClientBusinessLimited(c, OpsClientBusinessLimitedReasonLocalPolicyDenied)
+		// coder/websocket writes synchronously, so this error event is flushed
+		// before the relay returns and the close frame is sent.
+		eventBytes := buildOpenAIFastPolicyBlockedWSEvent(blocked)
+		if eventBytes == nil {
+			return
+		}
+		writeCtx, cancel := context.WithTimeout(ctx, s.openAIWSWriteTimeout())
+		_ = clientConn.Write(writeCtx, coderws.MessageText, eventBytes)
+		cancel()
+	}
+	clientFrameConn := &openAIWSClientFrameConn{conn: clientConn}
+	var readClientFrame func(context.Context, openaiwsv2.FrameConn) (coderws.MessageType, []byte, error)
+	if hooks != nil && hooks.ReadClientFrame != nil {
+		readClientFrame = func(readCtx context.Context, _ openaiwsv2.FrameConn) (coderws.MessageType, []byte, error) {
+			return hooks.ReadClientFrame(readCtx)
+		}
 	}
 	upstreamFirstMessageSent := false
+	if hooks != nil && hooks.BeforeRequest != nil {
+		if err := hooks.BeforeRequest(1, firstClientMessage, originalRequestModel); err != nil {
+			return err
+		}
+	}
+	if hooks != nil && hooks.BeforeTurn != nil {
+		if err := hooks.BeforeTurn(1); err != nil {
+			return err
+		}
+	}
+	if aetherRouteControl != nil {
+		routeEnvelope := firstTransformEnvelope
+		tierMutation := (*aetherWSServiceTierMutation)(nil)
+		if firstPolicyDeferred {
+			routeEnvelope = firstEnvelope
+			tierMutation = firstPolicyDecision.serviceTierMutation()
+		}
+		firstClientMessage, err = aetherRouteControl.prepareValidatedResponseCreateWithEnvelopeAndModelAndServiceTier(
+			firstClientMessage,
+			routeEnvelope,
+			frozenRequestModel,
+			tierMutation,
+		)
+		if err != nil {
+			return NewOpenAIWSClientCloseError(coderws.StatusPolicyViolation, "invalid websocket request payload", err)
+		}
+	} else {
+		firstClientMessage, err = transformOpenAIWSPassthroughResponseModel(firstClientMessage, firstTransformEnvelope.Model, frozenRequestModel)
+		if err != nil {
+			return NewOpenAIWSClientCloseError(coderws.StatusPolicyViolation, "invalid websocket request payload", err)
+		}
+	}
+	if aetherCapability.Effective {
+		if sizeErr := validateAetherWSRoutedPayload(firstClientMessage); sizeErr != nil {
+			return NewOpenAIWSClientCloseError(coderws.StatusMessageTooBig, "websocket request payload is too large", sizeErr)
+		}
+	}
+	if err := runOpenAIWSBeforeProviderWrite(hooks, 1, firstClientMessage, originalRequestModel); err != nil {
+		return err
+	}
+	firstMessageStartedAt := time.Now()
 	firstWriteCtx, cancelFirstWrite := context.WithTimeout(ctx, s.openAIWSWriteTimeout())
 	firstWriteErr := upstreamFrameConn.WriteFrame(firstWriteCtx, coderws.MessageText, firstClientMessage)
 	cancelFirstWrite()
@@ -483,33 +704,193 @@ func (s *OpenAIGatewayService) proxyResponsesWebSocketV2Passthrough(
 	}
 	upstreamFirstMessageSent = true
 
-	readNextClientFrame := func(readCtx context.Context, conn openaiwsv2.FrameConn) (coderws.MessageType, []byte, error) {
-		for {
-			msgType, payload, readErr := conn.ReadFrame(readCtx)
-			if readErr != nil {
-				return msgType, payload, readErr
-			}
-			if msgType == coderws.MessageText && strings.TrimSpace(gjson.GetBytes(payload, "type").String()) == "response.create" {
-				return msgType, payload, nil
-			}
-			if writeErr := upstreamFrameConn.WriteFrame(readCtx, msgType, payload); writeErr != nil {
-				return msgType, payload, writeErr
-			}
-		}
-	}
-
 	relayResult, relayExit := openaiwsv2.RunEntry(openaiwsv2.EntryInput{
 		Ctx:                ctx,
-		ClientConn:         policyClientConn,
+		ClientConn:         clientFrameConn,
 		UpstreamConn:       upstreamFrameConn,
 		FirstClientMessage: firstClientMessage,
 		Options: openaiwsv2.RelayOptions{
-			WriteTimeout:                    s.openAIWSWriteTimeout(),
-			IdleTimeout:                     s.openAIWSPassthroughIdleTimeout(),
-			FirstMessageType:                coderws.MessageText,
-			FirstMessageSent:                upstreamFirstMessageSent,
-			StartClientAfterFirstDownstream: true,
-			ReadClientFrame:                 readNextClientFrame,
+			WriteTimeout:            s.openAIWSWriteTimeout(),
+			IdleTimeout:             s.openAIWSPassthroughIdleTimeout(),
+			FirstMessageType:        coderws.MessageText,
+			FirstMessageSent:        upstreamFirstMessageSent,
+			FirstMessageStartedAt:   firstMessageStartedAt,
+			InitialRequestModel:     initialRequestModel,
+			ValidatedFirstEnvelope:  &firstEnvelope,
+			ReadClientFrame:         readClientFrame,
+			RequireClientTextFrames: true,
+			BeforeInspectUpstreamFrame: func(msgType coderws.MessageType, payload []byte) error {
+				if msgType != coderws.MessageText {
+					return NewOpenAIWSClientCloseError(
+						coderws.StatusUnsupportedData,
+						"websocket binary request frames are unsupported",
+						errors.New("client websocket request frame was binary"),
+					)
+				}
+				if !aetherCapability.Effective {
+					return nil
+				}
+				if sizeErr := validateAetherWSClientPayload(payload); sizeErr != nil {
+					return NewOpenAIWSClientCloseError(coderws.StatusMessageTooBig, "websocket request payload is too large", sizeErr)
+				}
+				return nil
+			},
+			BeforeWriteUpstreamFrame: func(_ coderws.MessageType, _ []byte, envelope openaiwsv2.ClientEnvelope) error {
+				if freezeErr := validateOpenAIWSPassthroughSessionModel(envelope, originalRequestModel); freezeErr != nil {
+					return freezeErr
+				}
+				if envelope.Type != "session.update" || !envelope.HasSessionModel {
+					return nil
+				}
+				usageMeta.sessionRequestModel = envelope.SessionModel
+				return nil
+			},
+			TransformUpstreamFrame: func(_ coderws.MessageType, payload []byte, envelope openaiwsv2.ClientEnvelope) ([]byte, error) {
+				updated, transformErr := transformOpenAIWSPassthroughSessionModel(payload, envelope, frozenRequestModel)
+				if transformErr != nil {
+					return nil, NewOpenAIWSClientCloseError(
+						coderws.StatusPolicyViolation,
+						"invalid websocket session update",
+						transformErr,
+					)
+				}
+				return updated, nil
+			},
+			BeforeWriteResponseCreate: func(_ coderws.MessageType, payload []byte, originalModel string) error {
+				turnNo := int(completedTurns.Load()) + 1
+				if turnNo < 2 {
+					turnNo = 2
+				}
+				if originalModel != "" && originalModel != originalRequestModel {
+					return NewOpenAIWSClientCloseError(
+						coderws.StatusPolicyViolation,
+						"changing model requires a new websocket connection",
+						nil,
+					)
+				}
+				if hooks != nil && hooks.BeforeRequest != nil {
+					if err := hooks.BeforeRequest(turnNo, payload, originalModel); err != nil {
+						return err
+					}
+				}
+				if hooks != nil && hooks.BeforeTurn != nil {
+					return hooks.BeforeTurn(turnNo)
+				}
+				return nil
+			},
+			TransformResponseCreate: func(payload []byte, envelope openaiwsv2.ClientEnvelope) ([]byte, error) {
+				turnNo := int(completedTurns.Load()) + 1
+				if turnNo < 2 {
+					turnNo = 2
+				}
+				requestModelForThisFrame := usageMeta.requestModelForEnvelope(envelope)
+				policyDecision, policyBlocked := s.evaluateOpenAIFastPolicyForWS(
+					ctx,
+					account,
+					capturedSessionModel,
+					envelope.ServiceTier,
+					envelope.HasServiceTier,
+				)
+				if policyBlocked != nil {
+					onPolicyBlock(policyBlocked)
+					return nil, NewOpenAIWSClientCloseError(coderws.StatusPolicyViolation, policyBlocked.Message, policyBlocked)
+				}
+				// The normal Aether path has no transform hook after this point. Fold
+				// policy tier mutation into the same route-fence/model edit pass so a
+				// filtered or aliased tier does not create a second payload-sized copy.
+				if aetherRouteControl != nil && (hooks == nil || hooks.TransformRequest == nil) {
+					policyEnvelope := policyDecision.applyToEnvelope(envelope)
+					usageMeta.updateFromEnvelope(policyEnvelope, requestModelForThisFrame)
+					return aetherRouteControl.prepareValidatedResponseCreateWithEnvelopeAndModelAndServiceTier(
+						payload,
+						envelope,
+						frozenRequestModel,
+						policyDecision.serviceTierMutation(),
+					)
+				}
+				validatedPayload := payload
+				filtered, policyErr := applyOpenAIWSFastPolicyDecision(payload, policyDecision)
+				if policyErr != nil {
+					return nil, fmt.Errorf("apply openai fast policy to ws frame: %w", policyErr)
+				}
+				payload = filtered
+				currentModel := requestModelForThisFrame
+				mustReparseEnvelope := !sameOpenAIWSPayload(validatedPayload, payload)
+				if hooks != nil && hooks.TransformRequest != nil {
+					payload, err = hooks.TransformRequest(turnNo, payload)
+					if err != nil {
+						return nil, err
+					}
+					// A transform hook is not trusted to preserve the frozen physical
+					// model. Force a final set instead of using a stale pre-hook hint.
+					currentModel = ""
+					mustReparseEnvelope = true
+				}
+				transformEnvelope := envelope
+				if mustReparseEnvelope {
+					transformEnvelope, err = ParseOpenAIWSClientEnvelope(payload)
+					if err != nil {
+						return nil, err
+					}
+				}
+				usageMeta.updateFromEnvelope(transformEnvelope, requestModelForThisFrame)
+				if aetherRouteControl == nil {
+					return transformOpenAIWSPassthroughResponseModel(payload, currentModel, frozenRequestModel)
+				}
+				return aetherRouteControl.prepareValidatedResponseCreateWithEnvelopeAndModel(
+					payload,
+					transformEnvelope,
+					frozenRequestModel,
+				)
+			},
+			BeforeDispatchResponseCreate: func(_ coderws.MessageType, payload []byte, originalModel string) error {
+				if aetherCapability.Effective {
+					if sizeErr := validateAetherWSRoutedPayload(payload); sizeErr != nil {
+						return NewOpenAIWSClientCloseError(coderws.StatusMessageTooBig, "websocket request payload is too large", sizeErr)
+					}
+				}
+				turnNo := int(completedTurns.Load()) + 1
+				if turnNo < 2 {
+					turnNo = 2
+				}
+				return runOpenAIWSBeforeProviderWrite(hooks, turnNo, payload, originalModel)
+			},
+			InterceptUpstreamFrame: func(msgType coderws.MessageType, payload []byte) openaiwsv2.UpstreamFrameDirective {
+				if aetherRouteControl == nil || msgType != coderws.MessageText {
+					return openaiwsv2.UpstreamFrameDirective{}
+				}
+				consumed, decision, controlErr := aetherRouteControl.consumeUpstreamFrame(payload)
+				if !consumed {
+					return openaiwsv2.UpstreamFrameDirective{}
+				}
+				directive := openaiwsv2.UpstreamFrameDirective{Consume: true}
+				if controlErr != nil {
+					directive.Err = NewOpenAIWSClientCloseError(
+						coderws.StatusInternalError,
+						"aether route control protocol error",
+						controlErr,
+					)
+					return directive
+				}
+				if decision.CloseAfterTerminal {
+					directive.CloseAfterTerminal = true
+					return directive
+				}
+				if !decision.SignalReconnect {
+					directive.Err = NewOpenAIWSClientCloseError(
+						coderws.StatusInternalError,
+						"aether route control protocol error",
+						errors.New("aether route control produced no supported action"),
+					)
+					return directive
+				}
+				return buildAetherWSReconnectDirective(hooks, decision, handshakeHeaders)
+			},
+			OnProviderFrameWritten: func(terminal bool) {
+				if aetherRouteControl != nil {
+					aetherRouteControl.markProviderFrameWritten(terminal)
+				}
+			},
 			OnUsageParseFailure: func(eventType string, usageRaw string) {
 				logOpenAIWSV2Passthrough(
 					"usage_parse_failed event_type=%s usage_raw=%s",
@@ -528,14 +909,16 @@ func (s *OpenAIGatewayService) proxyResponsesWebSocketV2Passthrough(
 						CacheReadInputTokens:     turn.Usage.CacheReadInputTokens,
 						ImageOutputTokens:        turn.Usage.ImageOutputTokens,
 					},
-					Model:           turn.RequestModel,
-					ServiceTier:     usageMeta.serviceTier.Load(),
-					ReasoningEffort: usageMeta.reasoningEffort.Load(),
-					Stream:          true,
-					OpenAIWSMode:    true,
-					ResponseHeaders: cloneHeader(handshakeHeaders),
-					Duration:        turn.Duration,
-					FirstTokenMs:    turn.FirstTokenMs,
+					Model:             turn.RequestModel,
+					UpstreamModel:     frozenRequestModel,
+					ServiceTier:       usageMeta.serviceTier.Load(),
+					ReasoningEffort:   usageMeta.reasoningEffort.Load(),
+					Stream:            true,
+					OpenAIWSMode:      true,
+					TerminalEventType: turn.TerminalEventType,
+					ResponseHeaders:   cloneHeader(handshakeHeaders),
+					Duration:          turn.Duration,
+					FirstTokenMs:      turn.FirstTokenMs,
 				}
 				logOpenAIWSV2Passthrough(
 					"relay_turn_completed account_id=%d turn=%d request_id=%s terminal_event=%s duration_ms=%d first_token_ms=%d input_tokens=%d output_tokens=%d cache_read_tokens=%d",
@@ -564,6 +947,18 @@ func (s *OpenAIGatewayService) proxyResponsesWebSocketV2Passthrough(
 				if !isOpenAIWSRateLimitError(errCodeRaw, errTypeRaw, errMsgRaw) {
 					return nil
 				}
+				if aetherRouteControl != nil {
+					// The official Codex key/provider belongs to Aether. A valid
+					// provider error proves the middle hop worked and must not rate
+					// limit the local Aether account in sub2api.
+					logOpenAIWSV2Passthrough(
+						"relay_aether_provider_rate_limit account_id=%d err_code=%s err_type=%s",
+						account.ID,
+						truncateOpenAIWSLogValue(errCodeRaw, openAIWSLogValueMaxLen),
+						truncateOpenAIWSLogValue(errTypeRaw, openAIWSLogValueMaxLen),
+					)
+					return nil
+				}
 				s.persistOpenAIWSRateLimitSignal(ctx, account, handshakeHeaders, payload, errCodeRaw, errTypeRaw, errMsgRaw)
 				logOpenAIWSV2Passthrough(
 					"relay_rate_limit_failover account_id=%d err_code=%s err_type=%s err_message=%s",
@@ -572,11 +967,16 @@ func (s *OpenAIGatewayService) proxyResponsesWebSocketV2Passthrough(
 					truncateOpenAIWSLogValue(errTypeRaw, openAIWSLogValueMaxLen),
 					truncateOpenAIWSLogValue(errMsgRaw, openAIWSLogValueMaxLen),
 				)
-				return &UpstreamFailoverError{
+				failoverErr := &UpstreamFailoverError{
 					StatusCode:      http.StatusTooManyRequests,
 					ResponseBody:    append([]byte(nil), payload...),
 					ResponseHeaders: cloneHeader(handshakeHeaders),
 				}
+				return openAIWSRateLimitFailoverError(
+					int(completedTurns.Load())+1,
+					aetherRouteControl != nil,
+					failoverErr,
+				)
 			},
 			OnTrace: func(event openaiwsv2.RelayTraceEvent) {
 				logOpenAIWSV2Passthrough(
@@ -603,14 +1003,16 @@ func (s *OpenAIGatewayService) proxyResponsesWebSocketV2Passthrough(
 			CacheReadInputTokens:     relayResult.Usage.CacheReadInputTokens,
 			ImageOutputTokens:        relayResult.Usage.ImageOutputTokens,
 		},
-		Model:           relayResult.RequestModel,
-		ServiceTier:     usageMeta.serviceTier.Load(),
-		ReasoningEffort: usageMeta.reasoningEffort.Load(),
-		Stream:          true,
-		OpenAIWSMode:    true,
-		ResponseHeaders: cloneHeader(handshakeHeaders),
-		Duration:        relayResult.Duration,
-		FirstTokenMs:    relayResult.FirstTokenMs,
+		Model:             relayResult.RequestModel,
+		UpstreamModel:     frozenRequestModel,
+		ServiceTier:       usageMeta.serviceTier.Load(),
+		ReasoningEffort:   usageMeta.reasoningEffort.Load(),
+		Stream:            true,
+		OpenAIWSMode:      true,
+		TerminalEventType: relayResult.TerminalEventType,
+		ResponseHeaders:   cloneHeader(handshakeHeaders),
+		Duration:          relayResult.Duration,
+		FirstTokenMs:      relayResult.FirstTokenMs,
 	}
 
 	turnCount := int(completedTurns.Load())
@@ -662,6 +1064,55 @@ func (s *OpenAIGatewayService) proxyResponsesWebSocketV2Passthrough(
 		hooks.AfterTurn(turnCount+1, nil, turnErr)
 	}
 	return turnErr
+}
+
+func buildAetherWSReconnectDirective(
+	hooks *OpenAIWSIngressHooks,
+	decision aetherWSRouteControlDecision,
+	handshakeHeaders http.Header,
+) openaiwsv2.UpstreamFrameDirective {
+	directive := openaiwsv2.UpstreamFrameDirective{Consume: true}
+	if decision.InitialStepFailover {
+		directive.Err = NewOpenAIWSInitialStepFailoverError(&UpstreamFailoverError{
+			StatusCode:             http.StatusServiceUnavailable,
+			ResponseHeaders:        cloneHeader(handshakeHeaders),
+			DoNotPenalizeAccount:   decision.MiddleRouteDisposition == OpenAIWSMiddleRouteDispositionRetain,
+			RetryAfterMS:           decision.RetryAfterMS,
+			MiddleRouteDisposition: decision.MiddleRouteDisposition,
+		})
+		return directive
+	}
+	if hooks == nil || hooks.BeforeReconnectSignal == nil {
+		directive.Err = NewOpenAIWSClientCloseError(
+			coderws.StatusInternalError,
+			"aether route migration admission unavailable",
+			fmt.Errorf("%w: aether reconnect pre-signal hook is unavailable", ErrOpenAIWSLocalAdmission),
+		)
+		return directive
+	}
+	if admissionErr := hooks.BeforeReconnectSignal(OpenAIWSReconnectControl{
+		ControlID:              decision.ControlID,
+		BindingGeneration:      decision.BindingGeneration,
+		MiddleRouteDisposition: decision.MiddleRouteDisposition,
+	}); admissionErr != nil {
+		directive.Err = NewOpenAIWSClientCloseError(
+			coderws.StatusTryAgainLater,
+			"aether route migration was not admitted",
+			fmt.Errorf("%w: %w", ErrOpenAIWSLocalAdmission, admissionErr),
+		)
+		return directive
+	}
+	// The synthetic client payload is populated only after the shared-state
+	// admission returns successfully. This ordering is the replay-safety fence.
+	directive.ClientMessageType = coderws.MessageText
+	directive.ClientPayload = aetherWSReconnectErrorPayload()
+	directive.Exit = true
+	directive.Err = NewOpenAIWSClientCloseError(
+		coderws.StatusNormalClosure,
+		"aether route migration requested",
+		ErrOpenAIWSReconnectMigrationRequested,
+	)
+	return directive
 }
 
 func (s *OpenAIGatewayService) mapOpenAIWSPassthroughDialError(

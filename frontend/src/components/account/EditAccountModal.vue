@@ -1450,6 +1450,42 @@
         </div>
       </div>
 
+      <!-- OpenAI API Key Aether WS account -->
+      <div
+        v-if="account?.platform === 'openai' && account?.type === 'apikey'"
+        class="space-y-3 border-t border-gray-200 pt-4 dark:border-dark-600"
+      >
+        <div class="flex items-center justify-between gap-4">
+          <div>
+            <label class="input-label mb-0" for="edit-aether-ws-account-toggle">
+              {{ t('admin.accounts.openai.aetherWSAccount') }}
+            </label>
+            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              {{ t('admin.accounts.openai.aetherWSAccountDesc') }}
+            </p>
+          </div>
+          <button
+            id="edit-aether-ws-account-toggle"
+            type="button"
+            role="switch"
+            :aria-checked="aetherWSAccountEnabled"
+            data-testid="edit-aether-ws-account-toggle"
+            @click="toggleAetherWSAccount"
+            :class="[
+              'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
+              aetherWSAccountEnabled ? 'bg-primary-600' : 'bg-gray-200 dark:bg-dark-600'
+            ]"
+          >
+            <span
+              :class="[
+                'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
+                aetherWSAccountEnabled ? 'translate-x-5' : 'translate-x-0'
+              ]"
+            />
+          </button>
+        </div>
+      </div>
+
       <!-- OpenAI WS Mode 三态（off/ctx_pool/passthrough） -->
       <div
         v-if="account?.platform === 'openai' && (account?.type === 'oauth' || account?.type === 'apikey')"
@@ -1466,9 +1502,19 @@
             </p>
           </div>
           <div class="w-52">
-            <Select v-model="openaiResponsesWebSocketV2Mode" :options="openAIWSModeOptions" />
+            <Select
+              v-model="openaiResponsesWebSocketV2Mode"
+              :options="openAIWSModeOptions"
+              :disabled="aetherWSAccountConfigured"
+            />
           </div>
         </div>
+        <p
+          v-if="aetherWSAccountConfigured"
+          class="mt-2 text-xs text-gray-500 dark:text-gray-400"
+        >
+          {{ t('admin.accounts.openai.aetherWSModeManagedHint') }}
+        </p>
       </div>
 
       <!-- OpenAI APIKey Responses API support mode -->
@@ -2447,6 +2493,12 @@ import {
   resolveOpenAIWSModeFromExtra
 } from '@/utils/openaiWsMode'
 import {
+  aetherWSManagedMode,
+  applyAetherWSAccountConfig,
+  readAetherWSAccountState
+} from '@/utils/aetherWsAccount'
+import { buildAccountExtraPatch, isAccountExtraPatchEmpty } from '@/utils/accountExtraPatch'
+import {
   getPresetMappingsByPlatform,
   commonErrorCodes,
   buildModelMappingObject,
@@ -2619,6 +2671,8 @@ const openAIResponsesMode = ref<OpenAIResponsesMode>('auto')
 const openAIEndpointCapabilities = ref<OpenAIEndpointCapability[]>(['chat_completions', 'embeddings'])
 const openaiOAuthResponsesWebSocketV2Mode = ref<OpenAIWSMode>(OPENAI_WS_MODE_OFF)
 const openaiAPIKeyResponsesWebSocketV2Mode = ref<OpenAIWSMode>(OPENAI_WS_MODE_OFF)
+const aetherWSAccountConfigured = ref(false)
+const aetherWSAccountEnabled = ref(false)
 const cafecodeIdentityHeadersEnabled = ref(false)
 const codexCLIOnlyEnabled = ref(false)
 const codexCLIOnlyAllowClaudeCodeEnabled = ref(false)
@@ -2651,11 +2705,25 @@ const editWeeklyResetMode = ref<'rolling' | 'fixed' | null>(null)
 const editWeeklyResetDay = ref<number | null>(null)
 const editWeeklyResetHour = ref<number | null>(null)
 const editResetTimezone = ref<string | null>(null)
-const openAIWSModeOptions = computed(() => [
-  { value: OPENAI_WS_MODE_OFF, label: t('admin.accounts.openai.wsModeOff') },
-  { value: OPENAI_WS_MODE_CTX_POOL, label: t('admin.accounts.openai.wsModeCtxPool') },
-  { value: OPENAI_WS_MODE_PASSTHROUGH, label: t('admin.accounts.openai.wsModePassthrough') }
-])
+const openAIWSModeOptions = computed<Array<{ value: OpenAIWSMode; label: string }>>(() => {
+  const options: Array<{ value: OpenAIWSMode; label: string }> = [
+    { value: OPENAI_WS_MODE_OFF, label: t('admin.accounts.openai.wsModeOff') },
+    { value: OPENAI_WS_MODE_PASSTHROUGH, label: t('admin.accounts.openai.wsModePassthrough') }
+  ]
+  if (!aetherWSAccountConfigured.value) {
+    options.splice(1, 0, {
+      value: OPENAI_WS_MODE_CTX_POOL,
+      label: t('admin.accounts.openai.wsModeCtxPool')
+    })
+  }
+  return options
+})
+
+const toggleAetherWSAccount = () => {
+  aetherWSAccountConfigured.value = true
+  aetherWSAccountEnabled.value = !aetherWSAccountEnabled.value
+  openaiAPIKeyResponsesWebSocketV2Mode.value = aetherWSManagedMode(aetherWSAccountEnabled.value)
+}
 const openaiResponsesWebSocketV2Mode = computed({
   get: () => {
     if (props.account?.type === 'apikey') {
@@ -2997,6 +3065,8 @@ const syncFormFromAccount = (newAccount: Account | null) => {
   openAICompactModelMappings.value = []
   openaiOAuthResponsesWebSocketV2Mode.value = OPENAI_WS_MODE_OFF
   openaiAPIKeyResponsesWebSocketV2Mode.value = OPENAI_WS_MODE_OFF
+  aetherWSAccountConfigured.value = false
+  aetherWSAccountEnabled.value = false
   cafecodeIdentityHeadersEnabled.value = false
   codexCLIOnlyEnabled.value = false
   codexCLIOnlyAllowClaudeCodeEnabled.value = false
@@ -3036,6 +3106,14 @@ const syncFormFromAccount = (newAccount: Account | null) => {
       fallbackEnabledKeys: ['responses_websockets_v2_enabled', 'openai_ws_enabled'],
       defaultMode: OPENAI_WS_MODE_OFF
     })
+    if (newAccount.type === 'apikey') {
+      const aetherWSState = readAetherWSAccountState(extra)
+      aetherWSAccountConfigured.value = aetherWSState.configured
+      aetherWSAccountEnabled.value = aetherWSState.enabled
+      if (aetherWSState.configured) {
+        openaiAPIKeyResponsesWebSocketV2Mode.value = aetherWSManagedMode(aetherWSState.enabled)
+      }
+    }
     if (newAccount.type === 'oauth') {
       codexCLIOnlyEnabled.value = extra?.codex_cli_only === true
       codexCLIOnlyAllowClaudeCodeEnabled.value =
@@ -4140,7 +4218,7 @@ const handleSubmit = async () => {
         (updatePayload.extra as Record<string, unknown>) ||
         (props.account.extra as Record<string, unknown>) ||
         {}
-      const newExtra: Record<string, unknown> = { ...currentExtra }
+      let newExtra: Record<string, unknown> = { ...currentExtra }
       const hadCodexCLIOnlyEnabled = currentExtra.codex_cli_only === true
       if (props.account.type === 'oauth') {
         newExtra.openai_oauth_responses_websockets_v2_mode = openaiOAuthResponsesWebSocketV2Mode.value
@@ -4214,6 +4292,13 @@ const handleSubmit = async () => {
         }
       }
 
+      if (props.account.type === 'apikey' && aetherWSAccountConfigured.value) {
+        newExtra = applyAetherWSAccountConfig(
+          newExtra,
+          aetherWSAccountEnabled.value
+        )
+      }
+
       updatePayload.extra = newExtra
     }
 
@@ -4269,6 +4354,17 @@ const handleSubmit = async () => {
       // Quota notify config
       writeQuotaNotifyToExtra(newExtra, 'update')
       updatePayload.extra = newExtra
+    }
+
+    if (Object.prototype.hasOwnProperty.call(updatePayload, 'extra')) {
+      const extraPatch = buildAccountExtraPatch(
+        props.account.extra as Record<string, unknown> | undefined,
+        updatePayload.extra as Record<string, unknown> | undefined
+      )
+      delete updatePayload.extra
+      if (!isAccountExtraPatchEmpty(extraPatch)) {
+        updatePayload.extra_patch = extraPatch
+      }
     }
 
     const canContinue = await ensureAntigravityMixedChannelConfirmed(async () => {

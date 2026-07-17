@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -13,6 +14,8 @@ const (
 	SchedulerModeMixed  = "mixed"
 	SchedulerModeForced = "forced"
 )
+
+var ErrSchedulerAccountMutationInProgress = errors.New("scheduler account mutation already in progress")
 
 type SchedulerBucket struct {
 	GroupID  int64
@@ -67,4 +70,27 @@ type SchedulerCache interface {
 	GetOutboxWatermark(ctx context.Context) (int64, error)
 	// SetOutboxWatermark 保存 outbox 水位。
 	SetOutboxWatermark(ctx context.Context, id int64) error
+}
+
+// SchedulerAccountMutationCache is an optional extension used by account
+// repositories that need a fail-closed lease fence around persisted account
+// mutations. Keeping it separate from SchedulerCache preserves compatibility
+// with lightweight caches and test doubles that do not participate in the
+// retained WebSocket lease protocol.
+type SchedulerAccountMutationCache interface {
+	// BeginAccountMutations makes the full account snapshots unavailable and
+	// returns a monotonically increasing token for each account.
+	BeginAccountMutations(ctx context.Context, accountIDs []int64, ttl time.Duration) (map[int64]int64, error)
+	// PublishAccountMutation restores a snapshot only when epoch is still the
+	// latest mutation token. A false result means a newer mutation superseded it.
+	PublishAccountMutation(ctx context.Context, account *Account, epoch int64) (bool, error)
+	// CompleteAccountDeletion finalizes a deletion only when epoch is current.
+	CompleteAccountDeletion(ctx context.Context, accountID, epoch int64) (bool, error)
+}
+
+// SchedulerAccountMutationBatchCache is an optional performance extension for
+// reconciling many mutation tokens in one Redis pipeline. Missing account IDs
+// in accounts are finalized as deletions.
+type SchedulerAccountMutationBatchCache interface {
+	ReconcileAccountMutations(ctx context.Context, accounts map[int64]*Account, epochs map[int64]int64) (map[int64]bool, error)
 }

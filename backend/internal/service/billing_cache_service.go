@@ -569,21 +569,7 @@ func (s *BillingCacheService) checkAPIKeyRateLimits(ctx context.Context, apiKey 
 		if dbErr != nil {
 			return nil // Don't block requests on DB errors
 		}
-		// Build cache entry from DB data
-		cacheEntry := &APIKeyRateLimitCacheData{
-			Usage5h: dbData.Usage5h,
-			Usage1d: dbData.Usage1d,
-			Usage7d: dbData.Usage7d,
-		}
-		if dbData.Window5hStart != nil {
-			cacheEntry.Window5h = dbData.Window5hStart.Unix()
-		}
-		if dbData.Window1dStart != nil {
-			cacheEntry.Window1d = dbData.Window1dStart.Unix()
-		}
-		if dbData.Window7dStart != nil {
-			cacheEntry.Window7d = dbData.Window7dStart.Unix()
-		}
+		cacheEntry := apiKeyRateLimitCacheDataFromDB(dbData)
 		_ = s.cache.SetAPIKeyRateLimit(ctx, apiKey.ID, cacheEntry)
 		cacheData = cacheEntry
 	}
@@ -602,6 +588,26 @@ func (s *BillingCacheService) checkAPIKeyRateLimits(ctx context.Context, apiKey 
 		w7d = &t
 	}
 	return s.evaluateRateLimits(ctx, apiKey, cacheData.Usage5h, cacheData.Usage1d, cacheData.Usage7d, w5h, w1d, w7d)
+}
+
+func apiKeyRateLimitCacheDataFromDB(data *APIKeyRateLimitData) *APIKeyRateLimitCacheData {
+	cacheEntry := &APIKeyRateLimitCacheData{}
+	if data == nil {
+		return cacheEntry
+	}
+	cacheEntry.Usage5h = data.Usage5h
+	cacheEntry.Usage1d = data.Usage1d
+	cacheEntry.Usage7d = data.Usage7d
+	if data.Window5hStart != nil {
+		cacheEntry.Window5h = data.Window5hStart.Unix()
+	}
+	if data.Window1dStart != nil {
+		cacheEntry.Window1d = data.Window1dStart.Unix()
+	}
+	if data.Window7dStart != nil {
+		cacheEntry.Window7d = data.Window7dStart.Unix()
+	}
+	return cacheEntry
 }
 
 // evaluateRateLimits checks usage against limits, triggering async resets for expired windows.
@@ -749,6 +755,235 @@ func (s *BillingCacheService) CheckBillingEligibility(ctx context.Context, user 
 	return nil
 }
 
+// CheckBillingEligibilityCacheOnly is the retained-WebSocket turn gate. It
+// preserves the normal billing semantics but never falls back to a repository.
+// A missing or malformed cache entry fails closed so a reconnect can perform
+// the cold-path hydration without turning every WS turn into a DB read.
+func (s *BillingCacheService) CheckBillingEligibilityCacheOnly(
+	ctx context.Context,
+	user *User,
+	apiKey *APIKey,
+	group *Group,
+	subscription *UserSubscription,
+	platform string,
+) error {
+	if s != nil && s.cfg != nil && s.cfg.RunMode == config.RunModeSimple {
+		return nil
+	}
+	if s == nil || s.cache == nil || user == nil {
+		return billingCacheOnlyUnavailable("billing cache is unavailable", nil)
+	}
+	if s.circuitBreaker != nil && !s.circuitBreaker.Allow() {
+		return ErrBillingServiceUnavailable
+	}
+
+	isSubscriptionMode := group != nil && group.IsSubscriptionType() && subscription != nil
+	if isSubscriptionMode {
+		if subscription.Status != SubscriptionStatusActive || subscription.IsExpired() {
+			return ErrSubscriptionInvalid
+		}
+		cacheData, err := s.cache.GetSubscriptionCache(ctx, user.ID, group.ID)
+		if err != nil || cacheData == nil {
+			return billingCacheOnlyUnavailable("subscription cache miss", err)
+		}
+		if err := checkSubscriptionCacheLimits(s.convertFromPortsData(cacheData), EffectiveSubscriptionGroup(subscription, group), false, false, false); err != nil {
+			return err
+		}
+	} else {
+		balance, err := s.cache.GetUserBalance(ctx, user.ID)
+		if err != nil {
+			return billingCacheOnlyUnavailable("balance cache miss", err)
+		}
+		if balance <= 0 {
+			return ErrInsufficientBalance
+		}
+		if err := s.checkUserPlatformQuotaEligibilityCacheOnly(ctx, user.ID, platform); err != nil {
+			return err
+		}
+	}
+
+	if apiKey != nil && apiKey.HasRateLimits() {
+		if err := s.checkAPIKeyRateLimitsCacheOnly(ctx, apiKey); err != nil {
+			return err
+		}
+	}
+	if group != nil && !user.UserGroupRPMOverrideResolved && s.userGroupRateRepo != nil {
+		return billingCacheOnlyUnavailable("user/group RPM lease is unresolved", nil)
+	}
+	return s.checkRPM(ctx, user, group)
+}
+
+// PrimeLongLivedBillingEligibility synchronously establishes every cache entry
+// that later retained-WS turns require. Repository fallback is allowed only in
+// this cold admission method; successful return guarantees the cache-only gate
+// can run without racing the service's asynchronous cache-write workers.
+func (s *BillingCacheService) PrimeLongLivedBillingEligibility(
+	ctx context.Context,
+	user *User,
+	apiKey *APIKey,
+	group *Group,
+	subscription *UserSubscription,
+	platform string,
+) error {
+	if s != nil && s.cfg != nil && s.cfg.RunMode == config.RunModeSimple {
+		return nil
+	}
+	if s == nil || s.cache == nil || user == nil {
+		return billingCacheOnlyUnavailable("billing cache cannot be primed", nil)
+	}
+
+	isSubscriptionMode := group != nil && group.IsSubscriptionType() && subscription != nil
+	if isSubscriptionMode {
+		cached, err := s.cache.GetSubscriptionCache(ctx, user.ID, group.ID)
+		if err != nil || cached == nil {
+			if s.subRepo == nil {
+				return billingCacheOnlyUnavailable("subscription cache prime has no repository", err)
+			}
+			loaded, loadErr := s.getSubscriptionFromDB(ctx, user.ID, group.ID)
+			if loadErr != nil {
+				return billingCacheOnlyUnavailable("load subscription for cache prime", loadErr)
+			}
+			if setErr := s.cache.SetSubscriptionCache(ctx, user.ID, group.ID, s.convertToPortsData(loaded)); setErr != nil {
+				return billingCacheOnlyUnavailable("write subscription cache prime", setErr)
+			}
+		}
+	} else {
+		if _, err := s.cache.GetUserBalance(ctx, user.ID); err != nil {
+			if s.userRepo == nil {
+				return billingCacheOnlyUnavailable("balance cache prime has no repository", err)
+			}
+			balance, loadErr := s.getUserBalanceFromDB(ctx, user.ID)
+			if loadErr != nil {
+				return billingCacheOnlyUnavailable("load balance for cache prime", loadErr)
+			}
+			if setErr := s.cache.SetUserBalance(ctx, user.ID, balance); setErr != nil {
+				return billingCacheOnlyUnavailable("write balance cache prime", setErr)
+			}
+		}
+		if platform != "" && s.userPlatformQuotaRepo != nil {
+			entry, hit, err := s.cache.GetUserPlatformQuotaCache(ctx, user.ID, platform)
+			if err != nil || !hit || entry == nil || entry.SchemaVersion != UserPlatformQuotaCacheSchemaV1 {
+				if checkErr := s.checkUserPlatformQuotaEligibility(ctx, user.ID, platform); checkErr != nil {
+					return checkErr
+				}
+				entry, hit, err = s.cache.GetUserPlatformQuotaCache(ctx, user.ID, platform)
+				if err != nil || !hit || entry == nil || entry.SchemaVersion != UserPlatformQuotaCacheSchemaV1 {
+					return billingCacheOnlyUnavailable("user platform quota cache prime did not settle", err)
+				}
+			}
+		}
+	}
+
+	if apiKey != nil && apiKey.HasRateLimits() {
+		cached, err := s.cache.GetAPIKeyRateLimit(ctx, apiKey.ID)
+		if err != nil || cached == nil {
+			if s.apiKeyRateLimitLoader == nil {
+				return billingCacheOnlyUnavailable("API key rate-limit prime has no repository", err)
+			}
+			loaded, loadErr := s.apiKeyRateLimitLoader.GetRateLimitData(ctx, apiKey.ID)
+			if loadErr != nil {
+				return billingCacheOnlyUnavailable("load API key rate-limit cache prime", loadErr)
+			}
+			if setErr := s.cache.SetAPIKeyRateLimit(ctx, apiKey.ID, apiKeyRateLimitCacheDataFromDB(loaded)); setErr != nil {
+				return billingCacheOnlyUnavailable("write API key rate-limit cache prime", setErr)
+			}
+		}
+	}
+	if group != nil && !user.UserGroupRPMOverrideResolved && s.userGroupRateRepo != nil {
+		return billingCacheOnlyUnavailable("user/group RPM lease is unresolved", nil)
+	}
+	return nil
+}
+
+func billingCacheOnlyUnavailable(reason string, cause error) error {
+	if cause == nil {
+		cause = errBillingCacheUnavailable
+	}
+	return ErrBillingServiceUnavailable.WithCause(fmt.Errorf("%s: %w", reason, cause))
+}
+
+func (s *BillingCacheService) checkAPIKeyRateLimitsCacheOnly(ctx context.Context, apiKey *APIKey) error {
+	cacheData, err := s.cache.GetAPIKeyRateLimit(ctx, apiKey.ID)
+	if err != nil || cacheData == nil {
+		return billingCacheOnlyUnavailable("API key rate-limit cache miss", err)
+	}
+
+	usage5h, usage1d, usage7d := cacheData.Usage5h, cacheData.Usage1d, cacheData.Usage7d
+	if cacheData.Window5h <= 0 || IsWindowExpired(timePtrFromUnix(cacheData.Window5h), RateLimitWindow5h) {
+		usage5h = 0
+	}
+	if cacheData.Window1d <= 0 || IsWindowExpired(timePtrFromUnix(cacheData.Window1d), RateLimitWindow1d) {
+		usage1d = 0
+	}
+	if cacheData.Window7d <= 0 || IsWindowExpired(timePtrFromUnix(cacheData.Window7d), RateLimitWindow7d) {
+		usage7d = 0
+	}
+	if apiKey.RateLimit5h > 0 && usage5h >= apiKey.RateLimit5h {
+		return ErrAPIKeyRateLimit5hExceeded
+	}
+	if apiKey.RateLimit1d > 0 && usage1d >= apiKey.RateLimit1d {
+		return ErrAPIKeyRateLimit1dExceeded
+	}
+	if apiKey.RateLimit7d > 0 && usage7d >= apiKey.RateLimit7d {
+		return ErrAPIKeyRateLimit7dExceeded
+	}
+	return nil
+}
+
+func timePtrFromUnix(value int64) *time.Time {
+	if value <= 0 {
+		return nil
+	}
+	t := time.Unix(value, 0)
+	return &t
+}
+
+func (s *BillingCacheService) checkUserPlatformQuotaEligibilityCacheOnly(ctx context.Context, userID int64, platform string) error {
+	if platform == "" || s.userPlatformQuotaRepo == nil {
+		return nil
+	}
+	entry, hit, err := s.cache.GetUserPlatformQuotaCache(ctx, userID, platform)
+	if err != nil || !hit || entry == nil || entry.SchemaVersion != UserPlatformQuotaCacheSchemaV1 {
+		return billingCacheOnlyUnavailable("user platform quota cache miss", err)
+	}
+	now := time.Now()
+	dailyUsage, weeklyUsage, monthlyUsage := entry.DailyUsageUSD, entry.WeeklyUsageUSD, entry.MonthlyUsageUSD
+	if entry.DailyLimitUSD != nil {
+		if entry.DailyWindowStart == nil {
+			return billingCacheOnlyUnavailable("daily quota cache window is missing", nil)
+		}
+		if quotaWindowExpired(entry.DailyWindowStart, timezone.StartOfDay(now)) {
+			dailyUsage = 0
+		}
+		if dailyUsage >= *entry.DailyLimitUSD {
+			return withWindowResetsMetadata(ErrUserPlatformDailyQuotaExhausted, nextDailyReset(now))
+		}
+	}
+	if entry.WeeklyLimitUSD != nil {
+		if entry.WeeklyWindowStart == nil {
+			return billingCacheOnlyUnavailable("weekly quota cache window is missing", nil)
+		}
+		if quotaWindowExpired(entry.WeeklyWindowStart, timezone.StartOfWeek(now)) {
+			weeklyUsage = 0
+		}
+		if weeklyUsage >= *entry.WeeklyLimitUSD {
+			return withWindowResetsMetadata(ErrUserPlatformWeeklyQuotaExhausted, nextWeeklyReset(now))
+		}
+	}
+	if entry.MonthlyLimitUSD != nil {
+		if entry.MonthlyWindowStart == nil {
+			return billingCacheOnlyUnavailable("monthly quota cache window is missing", nil)
+		}
+		if monthlyQuotaWindowExpired(entry.MonthlyWindowStart, now) {
+			monthlyUsage = 0
+		}
+		if monthlyUsage >= *entry.MonthlyLimitUSD {
+			return withWindowResetsMetadata(ErrUserPlatformMonthlyQuotaExhausted, nextMonthlyResetFrom(entry.MonthlyWindowStart, now))
+		}
+	}
+	return nil
+}
+
 // checkRPM 执行并行 RPM 限流，所有适用的限制同时生效，任一超限即拒绝：
 //
 //  1. (用户, 分组) rpm_override       — 最细粒度：管理员为特定用户在特定分组设定的专属限额。
@@ -767,7 +1002,7 @@ func (s *BillingCacheService) checkRPM(ctx context.Context, user *User, group *G
 	if group != nil {
 		// 解析 override：优先从 auth cache snapshot，nil 时回退 DB。
 		var override *int
-		if user.UserGroupRPMOverride != nil {
+		if user.UserGroupRPMOverrideResolved {
 			override = user.UserGroupRPMOverride
 		} else if s.userGroupRateRepo != nil {
 			dbOverride, err := s.userGroupRateRepo.GetRPMOverrideByUserAndGroup(ctx, user.ID, group.ID)

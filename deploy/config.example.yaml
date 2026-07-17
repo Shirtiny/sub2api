@@ -252,6 +252,20 @@ gateway:
     # ingress 默认模式：off|ctx_pool|passthrough（仅 mode_router_v2_enabled=true 生效）
     # 兼容旧值：shared/dedicated 会按 ctx_pool 处理。
     ingress_mode_default: ctx_pool
+    # Aether route-v1 中间跳控制协议。仅管理员显式标记的 Aether API Key 账号可使用。
+    aether_route_control_enabled: false
+    # 允许 Aether 在“官方未执行当前 step”的证明落入调度状态后，通知 Codex 重连迁移。
+    reconnect_migration_enabled: false
+    # unset | websocket_connection_limit_reached。只有 pinned Codex 兼容信号可启用迁移。
+    reconnect_signal_mode: unset
+    # 同一 authenticated session/thread 在窗口内的迁移上限与失败账号最短排除时间。
+    max_migrations_per_session: 3
+    migration_window_seconds: 600
+    route_min_dwell_seconds: 30
+    # 独立于推理并发的入站长连接上限；覆盖首帧等待及 terminal 后 idle binding。0=不限制该维度。
+    max_ingress_connections: 10000
+    max_ingress_connections_per_user: 64
+    max_ingress_connections_per_api_key: 32
     # 全局总开关，默认 true；关闭时所有请求保持原有 HTTP/SSE 路由
     enabled: true
     # 按账号类型细分开关

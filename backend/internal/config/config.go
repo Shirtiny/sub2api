@@ -866,6 +866,19 @@ type GatewayOpenAIWSConfig struct {
 	ModeRouterV2Enabled bool `mapstructure:"mode_router_v2_enabled"`
 	// IngressModeDefault: ingress 默认模式（off/ctx_pool/passthrough）
 	IngressModeDefault string `mapstructure:"ingress_mode_default"`
+	// AetherRouteControlEnabled: 是否允许显式标记的 Aether API Key 账号协商 route-v1。
+	// 账号只能由管理员管理，因此账号 Extra 中的显式标记就是授权边界。
+	AetherRouteControlEnabled bool `mapstructure:"aether_route_control_enabled"`
+	// ReconnectMigrationEnabled: 是否允许通过已协商的 route-v1 请求客户端重连迁移。
+	ReconnectMigrationEnabled bool `mapstructure:"reconnect_migration_enabled"`
+	// ReconnectSignalMode: 已通过 pinned Codex fixture 验证的重连信号模式。
+	ReconnectSignalMode string `mapstructure:"reconnect_signal_mode"`
+	// MaxMigrationsPerSession: 单个逻辑会话允许的迁移次数上限。
+	MaxMigrationsPerSession int `mapstructure:"max_migrations_per_session"`
+	// MigrationWindowSeconds: 迁移计数窗口。
+	MigrationWindowSeconds int `mapstructure:"migration_window_seconds"`
+	// RouteMinDwellSeconds: 两次 route 变更间的最短驻留时间。
+	RouteMinDwellSeconds int `mapstructure:"route_min_dwell_seconds"`
 	// Enabled: 全局总开关（默认 true）
 	Enabled bool `mapstructure:"enabled"`
 	// OAuthEnabled: 是否允许 OpenAI OAuth 账号使用 WS
@@ -890,6 +903,11 @@ type GatewayOpenAIWSConfig struct {
 	PrewarmGenerateEnabled bool `mapstructure:"prewarm_generate_enabled"`
 	// ClientReadLimitBytes: 入站客户端 WS 单帧读取上限。
 	ClientReadLimitBytes int64 `mapstructure:"client_read_limit_bytes"`
+	// Ingress connection limits are independent from per-turn inference
+	// concurrency and include first-frame wait plus idle retained bindings.
+	MaxIngressConnections          int `mapstructure:"max_ingress_connections"`
+	MaxIngressConnectionsPerUser   int `mapstructure:"max_ingress_connections_per_user"`
+	MaxIngressConnectionsPerAPIKey int `mapstructure:"max_ingress_connections_per_api_key"`
 	// HTTPBridgeEnabled: 首包过大时，保持客户端 WS，改用 HTTP Responses 上游。
 	HTTPBridgeEnabled bool `mapstructure:"http_bridge_enabled"`
 	// HTTPBridgeThresholdBytes: 触发 HTTP bridge 的入站 WS payload 阈值。
@@ -979,6 +997,9 @@ type GatewayUsageRecordConfig struct {
 	QueueSize int `mapstructure:"queue_size"`
 	// TaskTimeoutSeconds: 单个使用量记录任务超时（秒）
 	TaskTimeoutSeconds int `mapstructure:"task_timeout_seconds"`
+	// RequiredReserveTimeoutMS: 长连接在 provider write 前等待必需结算容量的上限。
+	// 0 使用默认值；队列满后必须在该时限内失败，避免每个连接长期保留大帧。
+	RequiredReserveTimeoutMS int `mapstructure:"required_reserve_timeout_ms"`
 	// OverflowPolicy: 队列满时策略（drop/sample/sync）
 	OverflowPolicy string `mapstructure:"overflow_policy"`
 	// OverflowSamplePercent: sample 策略下，同步回写采样百分比（1-100）
@@ -1839,6 +1860,12 @@ func setDefaults() {
 	viper.SetDefault("gateway.openai_ws.enabled", true)
 	viper.SetDefault("gateway.openai_ws.mode_router_v2_enabled", false)
 	viper.SetDefault("gateway.openai_ws.ingress_mode_default", "ctx_pool")
+	viper.SetDefault("gateway.openai_ws.aether_route_control_enabled", false)
+	viper.SetDefault("gateway.openai_ws.reconnect_migration_enabled", false)
+	viper.SetDefault("gateway.openai_ws.reconnect_signal_mode", "unset")
+	viper.SetDefault("gateway.openai_ws.max_migrations_per_session", 3)
+	viper.SetDefault("gateway.openai_ws.migration_window_seconds", 600)
+	viper.SetDefault("gateway.openai_ws.route_min_dwell_seconds", 30)
 	viper.SetDefault("gateway.openai_ws.oauth_enabled", true)
 	viper.SetDefault("gateway.openai_ws.apikey_enabled", true)
 	viper.SetDefault("gateway.openai_ws.force_http", false)
@@ -1848,6 +1875,9 @@ func setDefaults() {
 	viper.SetDefault("gateway.openai_ws.store_disabled_force_new_conn", true)
 	viper.SetDefault("gateway.openai_ws.prewarm_generate_enabled", false)
 	viper.SetDefault("gateway.openai_ws.client_read_limit_bytes", 64*1024*1024)
+	viper.SetDefault("gateway.openai_ws.max_ingress_connections", 10000)
+	viper.SetDefault("gateway.openai_ws.max_ingress_connections_per_user", 64)
+	viper.SetDefault("gateway.openai_ws.max_ingress_connections_per_api_key", 32)
 	viper.SetDefault("gateway.openai_ws.http_bridge_enabled", true)
 	viper.SetDefault("gateway.openai_ws.http_bridge_threshold_bytes", 15*1024*1024)
 	viper.SetDefault("gateway.openai_ws.responses_websockets", false)
@@ -1937,6 +1967,7 @@ func setDefaults() {
 	viper.SetDefault("gateway.usage_record.worker_count", 128)
 	viper.SetDefault("gateway.usage_record.queue_size", 16384)
 	viper.SetDefault("gateway.usage_record.task_timeout_seconds", 5)
+	viper.SetDefault("gateway.usage_record.required_reserve_timeout_ms", 100)
 	viper.SetDefault("gateway.usage_record.overflow_policy", UsageRecordOverflowPolicySample)
 	viper.SetDefault("gateway.usage_record.overflow_sample_percent", 10)
 	viper.SetDefault("gateway.usage_record.auto_scale_enabled", true)
@@ -2600,6 +2631,11 @@ func (c *Config) Validate() error {
 	if c.Gateway.OpenAIWS.ClientReadLimitBytes <= 0 {
 		return fmt.Errorf("gateway.openai_ws.client_read_limit_bytes must be positive")
 	}
+	if c.Gateway.OpenAIWS.MaxIngressConnections < 0 ||
+		c.Gateway.OpenAIWS.MaxIngressConnectionsPerUser < 0 ||
+		c.Gateway.OpenAIWS.MaxIngressConnectionsPerAPIKey < 0 {
+		return fmt.Errorf("gateway.openai_ws ingress connection limits must be non-negative")
+	}
 	if c.Gateway.OpenAIWS.HTTPBridgeThresholdBytes < 0 {
 		return fmt.Errorf("gateway.openai_ws.http_bridge_threshold_bytes must be non-negative")
 	}
@@ -2632,6 +2668,41 @@ func (c *Config) Validate() error {
 			slog.Warn("gateway.openai_ws.ingress_mode_default is deprecated, treating as ctx_pool; please update to off|ctx_pool|passthrough", "value", mode)
 		default:
 			return fmt.Errorf("gateway.openai_ws.ingress_mode_default must be one of off|ctx_pool|passthrough")
+		}
+	}
+	if c.Gateway.OpenAIWS.MaxMigrationsPerSession < 0 {
+		return fmt.Errorf("gateway.openai_ws.max_migrations_per_session must be non-negative")
+	}
+	if c.Gateway.OpenAIWS.MigrationWindowSeconds <= 0 {
+		return fmt.Errorf("gateway.openai_ws.migration_window_seconds must be positive")
+	}
+	if c.Gateway.OpenAIWS.RouteMinDwellSeconds < 0 {
+		return fmt.Errorf("gateway.openai_ws.route_min_dwell_seconds must be non-negative")
+	}
+	if c.Gateway.OpenAIWS.AetherRouteControlEnabled {
+		if !c.Gateway.OpenAIWS.Enabled || c.Gateway.OpenAIWS.ForceHTTP {
+			return fmt.Errorf("gateway.openai_ws.aether_route_control_enabled requires enabled=true and force_http=false")
+		}
+		if !c.Gateway.OpenAIWS.ModeRouterV2Enabled || !c.Gateway.OpenAIWS.ResponsesWebsocketsV2 || !c.Gateway.OpenAIWS.APIKeyEnabled {
+			return fmt.Errorf("gateway.openai_ws.aether_route_control_enabled requires mode_router_v2_enabled, responses_websockets_v2, and apikey_enabled")
+		}
+	}
+	reconnectSignalMode := strings.ToLower(strings.TrimSpace(c.Gateway.OpenAIWS.ReconnectSignalMode))
+	if reconnectSignalMode == "" {
+		reconnectSignalMode = "unset"
+	}
+	if reconnectSignalMode != "unset" && reconnectSignalMode != "websocket_connection_limit_reached" {
+		return fmt.Errorf("gateway.openai_ws.reconnect_signal_mode must be unset or websocket_connection_limit_reached")
+	}
+	if c.Gateway.OpenAIWS.ReconnectMigrationEnabled {
+		if !c.Gateway.OpenAIWS.AetherRouteControlEnabled {
+			return fmt.Errorf("gateway.openai_ws.reconnect_migration_enabled requires aether_route_control_enabled")
+		}
+		if reconnectSignalMode == "unset" {
+			return fmt.Errorf("gateway.openai_ws.reconnect_migration_enabled requires a pinned reconnect_signal_mode")
+		}
+		if c.Gateway.OpenAIWS.MaxMigrationsPerSession <= 0 {
+			return fmt.Errorf("gateway.openai_ws.reconnect_migration_enabled requires max_migrations_per_session > 0")
 		}
 	}
 	if mode := strings.ToLower(strings.TrimSpace(c.Gateway.OpenAIWS.StoreDisabledConnMode)); mode != "" {
@@ -2700,6 +2771,9 @@ func (c *Config) Validate() error {
 	}
 	if c.Gateway.UsageRecord.TaskTimeoutSeconds <= 0 {
 		return fmt.Errorf("gateway.usage_record.task_timeout_seconds must be positive")
+	}
+	if c.Gateway.UsageRecord.RequiredReserveTimeoutMS < 0 || c.Gateway.UsageRecord.RequiredReserveTimeoutMS > 10000 {
+		return fmt.Errorf("gateway.usage_record.required_reserve_timeout_ms must be between 0-10000")
 	}
 	switch strings.ToLower(strings.TrimSpace(c.Gateway.UsageRecord.OverflowPolicy)) {
 	case UsageRecordOverflowPolicyDrop, UsageRecordOverflowPolicySample, UsageRecordOverflowPolicySync:

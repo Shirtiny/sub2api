@@ -4,11 +4,118 @@ package service
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
 )
+
+type schedulerEpochAccountRepo struct {
+	AccountRepository
+	account *Account
+}
+
+func (r schedulerEpochAccountRepo) GetByID(_ context.Context, id int64) (*Account, error) {
+	if r.account == nil || r.account.ID != id {
+		return nil, ErrAccountNotFound
+	}
+	return r.account, nil
+}
+
+func (r schedulerEpochAccountRepo) GetByIDs(_ context.Context, ids []int64) ([]*Account, error) {
+	if r.account == nil {
+		return nil, nil
+	}
+	for _, id := range ids {
+		if id == r.account.ID {
+			return []*Account{r.account}, nil
+		}
+	}
+	return nil, nil
+}
+
+func (r schedulerEpochAccountRepo) ListSchedulableUngroupedByPlatform(context.Context, string) ([]Account, error) {
+	return nil, nil
+}
+
+func (r schedulerEpochAccountRepo) ListSchedulableUngroupedByPlatforms(context.Context, []string) ([]Account, error) {
+	return nil, nil
+}
+
+func (r schedulerEpochAccountRepo) ListSchedulableByPlatform(context.Context, string) ([]Account, error) {
+	return nil, nil
+}
+
+func (r schedulerEpochAccountRepo) ListSchedulableByPlatforms(context.Context, []string) ([]Account, error) {
+	return nil, nil
+}
+
+type schedulerEpochRecordingCache struct {
+	snapshotHydrationCache
+	publishedAccount *Account
+	publishedEpoch   int64
+	deletedAccountID int64
+	deletedEpoch     int64
+	legacySetCalls   int
+}
+
+func (c *schedulerEpochRecordingCache) SetAccount(_ context.Context, _ *Account) error {
+	c.legacySetCalls++
+	return nil
+}
+
+func (c *schedulerEpochRecordingCache) BeginAccountMutations(context.Context, []int64, time.Duration) (map[int64]int64, error) {
+	return nil, errors.New("unexpected begin")
+}
+
+func (c *schedulerEpochRecordingCache) PublishAccountMutation(_ context.Context, account *Account, epoch int64) (bool, error) {
+	c.publishedAccount = account
+	c.publishedEpoch = epoch
+	return true, nil
+}
+
+func (c *schedulerEpochRecordingCache) CompleteAccountDeletion(_ context.Context, accountID, epoch int64) (bool, error) {
+	c.deletedAccountID = accountID
+	c.deletedEpoch = epoch
+	return true, nil
+}
+
+func TestSchedulerSnapshotOutboxUsesEpochCASForAccountPublishAndDelete(t *testing.T) {
+	t.Run("publish", func(t *testing.T) {
+		account := &Account{ID: 7101, Name: "fresh"}
+		cache := &schedulerEpochRecordingCache{}
+		snapshot := NewSchedulerSnapshotService(cache, nil, schedulerEpochAccountRepo{account: account}, nil, nil)
+		accountID := account.ID
+		err := snapshot.handleAccountEvent(context.Background(), &accountID, map[string]any{
+			"scheduler_epoch": "9007199254740997",
+		}, nil)
+		if err != nil {
+			t.Fatalf("handleAccountEvent: %v", err)
+		}
+		if cache.publishedAccount != account || cache.publishedEpoch != 9007199254740997 {
+			t.Fatalf("unexpected epoch publish: account=%v epoch=%d", cache.publishedAccount, cache.publishedEpoch)
+		}
+		if cache.legacySetCalls != 0 {
+			t.Fatalf("epoch event used legacy SetAccount %d times", cache.legacySetCalls)
+		}
+	})
+
+	t.Run("delete", func(t *testing.T) {
+		cache := &schedulerEpochRecordingCache{}
+		snapshot := NewSchedulerSnapshotService(cache, nil, schedulerEpochAccountRepo{}, nil, nil)
+		accountID := int64(7102)
+		err := snapshot.handleAccountEvent(context.Background(), &accountID, map[string]any{
+			"scheduler_epoch": "42",
+		}, nil)
+		if err != nil {
+			t.Fatalf("handleAccountEvent delete: %v", err)
+		}
+		if cache.deletedAccountID != accountID || cache.deletedEpoch != 42 {
+			t.Fatalf("unexpected epoch delete: account=%d epoch=%d", cache.deletedAccountID, cache.deletedEpoch)
+		}
+	})
+}
 
 type snapshotHydrationCache struct {
 	snapshot []*Account

@@ -189,3 +189,19 @@ func TestOpenAIGatewayHandlerSubmitOpenAIUsageRecordTask_ImageResultUsesMandator
 
 	require.True(t, called.Load(), "image usage task must be mandatory when async submit is dropped")
 }
+
+func TestOpenAIGatewayHandlerSubmitOpenAIWSUsageRecordTaskUsesRequiredQueue(t *testing.T) {
+	pool := newUsageRecordTestPool(t)
+	h := &OpenAIGatewayHandler{usageRecordWorkerPool: pool}
+	done := make(chan struct{})
+
+	h.submitOpenAIWSUsageRecordTask(context.Background(), func(context.Context) {
+		close(done)
+	})
+
+	select {
+	case <-done:
+	case <-time.After(time.Second):
+		t.Fatal("websocket usage task not executed")
+	}
+}

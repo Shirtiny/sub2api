@@ -236,6 +236,55 @@ describe('BulkEditAccountModal', () => {
     })
   })
 
+  it('OpenAI API Key 批量编辑可原子开启 Aether WS 账号', async () => {
+    const wrapper = mountModal({
+      selectedPlatforms: ['openai'],
+      selectedTypes: ['apikey']
+    })
+
+    await wrapper.get('#bulk-edit-aether-ws-account-enabled').setValue(true)
+    await wrapper.get('[data-testid="bulk-edit-aether-ws-account-toggle"]').trigger('click')
+    expect(wrapper.find('[data-testid="bulk-edit-aether-ws-provider-fallback"]').exists()).toBe(false)
+    await wrapper.get('#bulk-edit-account-form').trigger('submit.prevent')
+    await flushPromises()
+
+    expect(adminAPI.accounts.bulkUpdate).toHaveBeenCalledWith([1, 2], {
+      extra: {
+        openai_apikey_responses_websockets_v2_mode: 'passthrough',
+        openai_apikey_responses_websockets_v2_enabled: true,
+        aether_ws: {
+          schema_version: 1,
+          enabled: true,
+          required_control_protocol: 'route-v1'
+        }
+      }
+    })
+  })
+
+  it('OpenAI API Key 批量编辑可原子关闭 Aether WS 账号', async () => {
+    const wrapper = mountModal({
+      selectedPlatforms: ['openai'],
+      selectedTypes: ['apikey']
+    })
+
+    await wrapper.get('#bulk-edit-aether-ws-account-enabled').setValue(true)
+    expect(wrapper.get('#bulk-edit-openai-apikey-ws-mode-enabled').attributes('disabled')).toBeDefined()
+    await wrapper.get('#bulk-edit-account-form').trigger('submit.prevent')
+    await flushPromises()
+
+    expect(adminAPI.accounts.bulkUpdate).toHaveBeenCalledWith([1, 2], {
+      extra: {
+        openai_apikey_responses_websockets_v2_mode: 'off',
+        openai_apikey_responses_websockets_v2_enabled: false,
+        aether_ws: {
+          schema_version: 1,
+          enabled: false,
+          required_control_protocol: 'route-v1'
+        }
+      }
+    })
+  })
+
   it('筛选 OpenAI 账号批量编辑应提交 Compact 模式和专属模型映射', async () => {
     const wrapper = mountModal({
       accountIds: [],

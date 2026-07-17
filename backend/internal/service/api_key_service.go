@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
@@ -159,6 +160,14 @@ type APIKeyCache interface {
 	SubscribeAuthCacheInvalidation(ctx context.Context, handler func(cacheKey string)) error
 }
 
+// APIKeyAuthEpochStore is an optional Redis generation fence for long-lived
+// authentication leases. A successful invalidation write closes the Pub/Sub
+// message-loss gap without adding epoch reads to ordinary HTTP auth.
+type APIKeyAuthEpochStore interface {
+	GetAuthCacheEpoch(ctx context.Context, cacheKey string) (uint64, error)
+	IncrementAuthCacheEpoch(ctx context.Context, cacheKey string) error
+}
+
 // APIKeyAuthCacheInvalidator 提供认证缓存失效能力
 type APIKeyAuthCacheInvalidator interface {
 	InvalidateAuthCacheByKey(ctx context.Context, key string)
@@ -221,10 +230,95 @@ type APIKeyService struct {
 	rateLimitCacheInvalid RateLimitCacheInvalidator // optional: invalidate Redis rate limit cache
 	cfg                   *config.Config
 	authCacheL1           *ristretto.Cache
+	authCacheEpochs       sync.Map // cache key -> *atomic.Uint64
 	authCfg               apiKeyAuthCacheConfig
 	authGroup             singleflight.Group
 	lastUsedTouchL1       sync.Map // keyID -> nextAllowedAt(time.Time)
 	lastUsedTouchSF       singleflight.Group
+}
+
+// APIKeyAuthEpochLease records both the process-local and Redis generations for
+// a long-lived authenticated connection. The local precheck is zero-I/O;
+// ValidateAuthEpochLeaseContext performs one Redis GET per WS response step.
+type APIKeyAuthEpochLease struct {
+	cacheKey         string
+	epoch            uint64
+	distributedEpoch uint64
+	distributed      bool
+}
+
+func (s *APIKeyService) authCacheEpoch(cacheKey string) *atomic.Uint64 {
+	if s == nil || strings.TrimSpace(cacheKey) == "" {
+		return nil
+	}
+	value, _ := s.authCacheEpochs.LoadOrStore(cacheKey, &atomic.Uint64{})
+	counter, _ := value.(*atomic.Uint64)
+	return counter
+}
+
+func (s *APIKeyService) bumpAuthCacheEpoch(cacheKey string) {
+	if counter := s.authCacheEpoch(cacheKey); counter != nil {
+		counter.Add(1)
+	}
+}
+
+func (s *APIKeyService) CaptureAuthEpochLease(apiKey *APIKey) APIKeyAuthEpochLease {
+	lease, _ := s.captureAuthEpochLeaseContext(context.Background(), apiKey)
+	return lease
+}
+
+func (s *APIKeyService) captureAuthEpochLeaseContext(ctx context.Context, apiKey *APIKey) (APIKeyAuthEpochLease, error) {
+	if s == nil || apiKey == nil {
+		return APIKeyAuthEpochLease{}, nil
+	}
+	lookupHash := strings.TrimSpace(apiKey.KeyLookupHash)
+	if lookupHash == "" && strings.TrimSpace(apiKey.Key) != "" {
+		lookupHash = APIKeyLookupHashValue(apiKey.Key)
+	}
+	cacheKey := APIKeyAuthCacheKeyFromHash(APIKeyLookupHash{Alg: APIKeyHashAlgLookupSHA256, Hash: lookupHash})
+	counter := s.authCacheEpoch(cacheKey)
+	if counter == nil {
+		return APIKeyAuthEpochLease{}, nil
+	}
+	lease := APIKeyAuthEpochLease{cacheKey: cacheKey, epoch: counter.Load()}
+	if store, ok := s.cache.(APIKeyAuthEpochStore); ok && store != nil {
+		epoch, err := store.GetAuthCacheEpoch(ctx, cacheKey)
+		if err != nil {
+			return lease, err
+		}
+		lease.distributed = true
+		lease.distributedEpoch = epoch
+	}
+	return lease, nil
+}
+
+func (s *APIKeyService) ValidateAuthEpochLease(lease APIKeyAuthEpochLease) bool {
+	if s == nil || lease.cacheKey == "" {
+		return false
+	}
+	counter := s.authCacheEpoch(lease.cacheKey)
+	return counter != nil && counter.Load() == lease.epoch
+}
+
+func (s *APIKeyService) ValidateAuthEpochLeaseContext(ctx context.Context, lease APIKeyAuthEpochLease) (bool, error) {
+	if !s.ValidateAuthEpochLease(lease) {
+		return false, nil
+	}
+	if !lease.distributed {
+		if _, requiresPersistentEpoch := s.cache.(APIKeyAuthEpochStore); requiresPersistentEpoch {
+			return false, errors.New("persistent API key auth epoch was not captured")
+		}
+		return true, nil
+	}
+	store, ok := s.cache.(APIKeyAuthEpochStore)
+	if !ok || store == nil {
+		return false, errors.New("persistent API key auth epoch store is unavailable")
+	}
+	epoch, err := store.GetAuthCacheEpoch(ctx, lease.cacheKey)
+	if err != nil {
+		return false, err
+	}
+	return epoch == lease.distributedEpoch, nil
 }
 
 // NewAPIKeyService 创建API Key服务实例
@@ -519,8 +613,86 @@ func (s *APIKeyService) GetByID(ctx context.Context, id int64) (*APIKey, error) 
 	return apiKey, nil
 }
 
-// GetByKey 根据Key字符串获取API Key（用于认证）
 func (s *APIKeyService) GetByKey(ctx context.Context, key string) (*APIKey, error) {
+	return s.getByKeyOnce(ctx, key)
+}
+
+// GetByKeyWithAuthEpochLease is the WS-only cold admission path. It fences a
+// fresh repository auth snapshot with the persistent Redis generation without
+// adding Redis RTTs to ordinary HTTP authentication.
+func (s *APIKeyService) GetByKeyWithAuthEpochLease(ctx context.Context, key string) (*APIKey, error) {
+	for range 2 {
+		lease, epochErr := s.captureAuthEpochLeaseContext(ctx, &APIKey{Key: key})
+		if epochErr != nil {
+			return nil, fmt.Errorf("capture persistent auth epoch: %w", epochErr)
+		}
+		apiKey, err := s.getByKeyForLongLivedLease(ctx, key)
+		if err != nil {
+			valid, validateErr := s.ValidateAuthEpochLeaseContext(ctx, lease)
+			if validateErr != nil {
+				return nil, fmt.Errorf("validate persistent auth epoch: %w", validateErr)
+			}
+			if !valid {
+				continue
+			}
+			return nil, err
+		}
+		valid, validateErr := s.ValidateAuthEpochLeaseContext(ctx, lease)
+		if validateErr != nil {
+			return nil, fmt.Errorf("validate persistent auth epoch: %w", validateErr)
+		}
+		if valid {
+			apiKey.AuthEpochLease = lease
+			return apiKey, nil
+		}
+	}
+	return nil, fmt.Errorf("get api key: authentication state changed during lookup")
+}
+
+func (s *APIKeyService) getByKeyForLongLivedLease(ctx context.Context, key string) (*APIKey, error) {
+	if s == nil || s.apiKeyRepo == nil {
+		return s.getByKeyOnce(ctx, key)
+	}
+	lookups := APIKeyLookupHashes(key, s.cfg)
+	if len(lookups) == 0 {
+		return nil, fmt.Errorf("get api key: %w", ErrAPIKeyNotFound)
+	}
+	apiKey, err := s.apiKeyRepo.GetByKeyForAuth(ctx, EncodeAPIKeyLookupToken(lookups))
+	if err != nil {
+		return nil, fmt.Errorf("get api key for websocket lease: %w", err)
+	}
+
+	// Build the same immutable snapshot as the normal auth cache path. Besides
+	// keeping the two auth surfaces field-identical, this resolves the user/group
+	// RPM override once so later WS turns remain DB-free.
+	apiKey.Key = key
+	snapshot := s.snapshotFromAPIKey(ctx, apiKey)
+	if snapshot == nil {
+		return nil, fmt.Errorf("get api key for websocket lease: %w", ErrAPIKeyNotFound)
+	}
+	if !snapshot.User.UserGroupRPMOverrideResolved {
+		return nil, errors.New("get api key for websocket lease: resolve user/group RPM override")
+	}
+	entry := &APIKeyAuthCacheEntry{Snapshot: snapshot}
+	hydrated, used, applyErr := s.applyAuthCacheEntry(key, entry)
+	if applyErr != nil {
+		return nil, fmt.Errorf("get api key for websocket lease: %w", applyErr)
+	}
+	if !used || hydrated == nil {
+		return nil, errors.New("get api key for websocket lease: invalid auth snapshot")
+	}
+	s.compileAPIKeyIPRules(hydrated)
+	return hydrated, nil
+}
+
+func (s *APIKeyService) AuthEpochLeaseForAuthenticatedKey(apiKey *APIKey) APIKeyAuthEpochLease {
+	if apiKey != nil && apiKey.AuthEpochLease.cacheKey != "" {
+		return apiKey.AuthEpochLease
+	}
+	return s.CaptureAuthEpochLease(apiKey)
+}
+
+func (s *APIKeyService) getByKeyOnce(ctx context.Context, key string) (*APIKey, error) {
 	lookups := APIKeyLookupHashes(key, s.cfg)
 	if len(lookups) == 0 {
 		return nil, fmt.Errorf("get api key: %w", ErrAPIKeyNotFound)

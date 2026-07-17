@@ -9,6 +9,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -328,6 +329,7 @@ type UpdateAccountInput struct {
 	Type                  string // Account type: oauth, setup-token, apikey
 	Credentials           map[string]any
 	Extra                 map[string]any
+	ExtraPatch            *AccountExtraPatch
 	ProxyID               *int64
 	Concurrency           *int     // 使用指针区分"未提供"和"设置为0"
 	Priority              *int     // 使用指针区分"未提供"和"设置为0"
@@ -338,6 +340,47 @@ type UpdateAccountInput struct {
 	ExpiresAt             *int64
 	AutoPauseOnExpired    *bool
 	SkipMixedChannelCheck bool // 跳过混合渠道检查（用户已确认风险）
+}
+
+// AccountExtraPatch updates account Extra without replacing runtime-owned keys.
+// Delete is applied before Set; Set wins when the same key appears in both.
+type AccountExtraPatch struct {
+	Set    map[string]any `json:"set"`
+	Delete []string       `json:"delete"`
+}
+
+// AccountColumnPatch carries only columns explicitly requested by an admin
+// update. Set flags distinguish omitted nullable values from explicit clears.
+type AccountColumnPatch struct {
+	Name               *string
+	NotesSet           bool
+	Notes              *string
+	Type               *string
+	Credentials        map[string]any
+	ProxyIDSet         bool
+	ProxyID            *int64
+	Concurrency        *int
+	Priority           *int
+	RateMultiplier     *float64
+	LoadFactorSet      bool
+	LoadFactor         *int
+	Status             *string
+	Schedulable        *bool
+	ExpiresAtSet       bool
+	ExpiresAt          *time.Time
+	AutoPauseOnExpired *bool
+}
+
+type accountExtraPatchRepository interface {
+	UpdateWithExtraPatch(ctx context.Context, id int64, columns AccountColumnPatch, set map[string]any, deleteKeys []string, groupIDs []int64) error
+}
+
+type accountBulkUpdateReturningRepository interface {
+	BulkUpdateReturningIDs(ctx context.Context, ids []int64, updates AccountBulkUpdate) ([]int64, error)
+}
+
+type accountBulkGroupBindingRepository interface {
+	BulkBindGroups(ctx context.Context, accountIDs, groupIDs []int64) error
 }
 
 // BulkUpdateAccountsInput describes the payload for bulk updating accounts.
@@ -582,6 +625,10 @@ type userGroupRateBatchReader interface {
 
 type customSubscriptionGroupIDLister interface {
 	ListCustomSubscriptionGroupIDsBySourceGroupID(ctx context.Context, sourceGroupID int64) ([]int64, error)
+}
+
+type groupAccountReplacementRepository interface {
+	ReplaceAccountsForGroup(ctx context.Context, groupID int64, accountIDs []int64) error
 }
 
 func appendUniqueInt64(base []int64, ids ...int64) []int64 {
@@ -2337,11 +2384,6 @@ func (s *adminServiceImpl) UpdateGroup(ctx context.Context, id int64, input *Upd
 			return nil, fmt.Errorf("failed to get accounts from source groups: %w", err)
 		}
 
-		// 先清空当前分组的所有账号绑定
-		if _, err := s.groupRepo.DeleteAccountGroupsByGroupID(ctx, id); err != nil {
-			return nil, fmt.Errorf("failed to clear existing account bindings: %w", err)
-		}
-
 		// require_oauth_only: 过滤掉 apikey 类型账号
 		if group.RequireOAuthOnly && (group.Platform == PlatformOpenAI || group.Platform == PlatformAntigravity || group.Platform == PlatformAnthropic || group.Platform == PlatformGemini || group.Platform == PlatformGrok) && len(accountIDsToCopy) > 0 {
 			accounts, err := s.accountRepo.GetByIDs(ctx, accountIDsToCopy)
@@ -2363,10 +2405,19 @@ func (s *adminServiceImpl) UpdateGroup(ctx context.Context, id int64, input *Upd
 			accountIDsToCopy = filtered
 		}
 
-		// 再绑定源分组的账号
-		if len(accountIDsToCopy) > 0 {
-			if err := s.groupRepo.BindAccountsToGroup(ctx, id, accountIDsToCopy); err != nil {
-				return nil, fmt.Errorf("failed to bind accounts to group: %w", err)
+		if replacer, ok := s.groupRepo.(groupAccountReplacementRepository); ok {
+			if err := replacer.ReplaceAccountsForGroup(ctx, id, accountIDsToCopy); err != nil {
+				return nil, fmt.Errorf("failed to replace account bindings: %w", err)
+			}
+		} else {
+			// Compatibility path for alternate repositories and lightweight tests.
+			if _, err := s.groupRepo.DeleteAccountGroupsByGroupID(ctx, id); err != nil {
+				return nil, fmt.Errorf("failed to clear existing account bindings: %w", err)
+			}
+			if len(accountIDsToCopy) > 0 {
+				if err := s.groupRepo.BindAccountsToGroup(ctx, id, accountIDsToCopy); err != nil {
+					return nil, fmt.Errorf("failed to bind accounts to group: %w", err)
+				}
 			}
 		}
 	}
@@ -2862,7 +2913,21 @@ func normalizeAccountConcurrency(platform, accountType string, concurrency int) 
 	return concurrency
 }
 
+func (s *adminServiceImpl) beginAdminAccountMutationTx(ctx context.Context, required bool) (context.Context, *dbent.Tx, error) {
+	if !required || s.entClient == nil {
+		return ctx, nil, nil
+	}
+	tx, err := s.entClient.Tx(ctx)
+	if err != nil {
+		return nil, nil, fmt.Errorf("begin account mutation transaction: %w", err)
+	}
+	return dbent.NewTxContext(ctx, tx), tx, nil
+}
+
 func (s *adminServiceImpl) CreateAccount(ctx context.Context, input *CreateAccountInput) (*Account, error) {
+	if err := ValidateAccountAetherWSExtra(input.Extra); err != nil {
+		return nil, err
+	}
 	// 绑定分组
 	groupIDs := input.GroupIDs
 	// 如果没有指定分组,自动绑定对应平台的默认分组
@@ -2928,14 +2993,27 @@ func (s *adminServiceImpl) CreateAccount(ctx context.Context, input *CreateAccou
 		}
 		account.LoadFactor = input.LoadFactor
 	}
-	if err := s.accountRepo.Create(ctx, account); err != nil {
+	opCtx, tx, err := s.beginAdminAccountMutationTx(ctx, len(groupIDs) > 0)
+	if err != nil {
+		return nil, err
+	}
+	if tx != nil {
+		defer func() { _ = tx.Rollback() }()
+	}
+	if err := s.accountRepo.Create(opCtx, account); err != nil {
 		return nil, err
 	}
 
 	// 绑定分组
 	if len(groupIDs) > 0 {
-		if err := s.accountRepo.BindGroups(ctx, account.ID, groupIDs); err != nil {
+		if err := s.accountRepo.BindGroups(opCtx, account.ID, groupIDs); err != nil {
 			return nil, err
+		}
+		account.GroupIDs = append([]int64(nil), groupIDs...)
+	}
+	if tx != nil {
+		if err := tx.Commit(); err != nil {
+			return nil, fmt.Errorf("commit account create transaction: %w", err)
 		}
 	}
 
@@ -2968,11 +3046,20 @@ func (s *adminServiceImpl) CreateAccount(ctx context.Context, input *CreateAccou
 }
 
 func (s *adminServiceImpl) UpdateAccount(ctx context.Context, id int64, input *UpdateAccountInput) (*Account, error) {
+	if err := ValidateAccountAetherWSExtra(input.Extra); err != nil {
+		return nil, err
+	}
+	if input.ExtraPatch != nil {
+		if err := ValidateAccountAetherWSExtra(input.ExtraPatch.Set); err != nil {
+			return nil, err
+		}
+	}
 	account, err := s.accountRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 	wasOveragesEnabled := account.IsOveragesEnabled()
+	storedExtra := cloneAccountExtraMap(account.Extra)
 
 	if input.Name != "" {
 		account.Name = input.Name
@@ -2988,16 +3075,23 @@ func (s *adminServiceImpl) UpdateAccount(ctx context.Context, id int64, input *U
 		// 全对象 PUT 编辑时不会再带回 token，避免覆盖时清空已有凭证。
 		account.Credentials = MergePreservingSensitiveCreds(account.Credentials, input.Credentials)
 	}
-	// Extra 使用 map：需要区分“未提供(nil)”与“显式清空({})”。
-	// 关闭配额限制时前端会删除 quota_* 键并提交 extra:{}，此时也必须落库。
-	if input.Extra != nil {
+	// Legacy Extra keeps replacement semantics. New callers should use ExtraPatch
+	// so runtime-owned keys written after the admin read are not overwritten.
+	if input.ExtraPatch != nil {
+		account.Extra, err = applyAccountExtraPatch(storedExtra, input.ExtraPatch)
+		if err != nil {
+			return nil, err
+		}
+	} else if input.Extra != nil {
+		account.Extra = input.Extra
+	}
+	if input.Extra != nil || input.ExtraPatch != nil {
 		// 保留配额用量字段，防止编辑账号时意外重置
 		for _, key := range []string{"quota_used", "quota_daily_used", "quota_daily_start", "quota_weekly_used", "quota_weekly_start"} {
-			if v, ok := account.Extra[key]; ok {
-				input.Extra[key] = v
+			if v, ok := storedExtra[key]; ok {
+				account.Extra[key] = v
 			}
 		}
-		account.Extra = input.Extra
 		if account.Platform == PlatformAntigravity && wasOveragesEnabled && !account.IsOveragesEnabled() {
 			delete(account.Extra, "antigravity_credits_overages") // 清理旧版 overages 运行态
 			// 清除 AICredits 限流 key
@@ -3077,14 +3171,43 @@ func (s *adminServiceImpl) UpdateAccount(ctx context.Context, id int64, input *U
 		}
 	}
 
-	if err := s.accountRepo.Update(ctx, account); err != nil {
+	columns := buildAccountColumnPatch(input, account)
+	opCtx, tx, err := s.beginAdminAccountMutationTx(ctx, input.GroupIDs != nil)
+	if err != nil {
 		return nil, err
+	}
+	if tx != nil {
+		defer func() { _ = tx.Rollback() }()
+	}
+	var updateErr error
+	if patcher, ok := s.accountRepo.(accountExtraPatchRepository); ok {
+		patch := &AccountExtraPatch{}
+		switch {
+		case input.ExtraPatch != nil:
+			patch = buildPersistedAccountExtraPatch(storedExtra, account.Extra, input.ExtraPatch)
+		case input.Extra != nil:
+			patch = diffAccountExtra(storedExtra, account.Extra)
+		}
+		updateErr = patcher.UpdateWithExtraPatch(opCtx, account.ID, columns, patch.Set, patch.Delete, account.GroupIDs)
+	} else if input.ExtraPatch != nil {
+		return nil, fmt.Errorf("account repository does not support atomic extra patch")
+	} else {
+		// Compatibility fallback for test/alternate repositories without patch support.
+		updateErr = s.accountRepo.Update(opCtx, account)
+	}
+	if updateErr != nil {
+		return nil, updateErr
 	}
 
 	// 绑定分组
 	if input.GroupIDs != nil {
-		if err := s.accountRepo.BindGroups(ctx, account.ID, *input.GroupIDs); err != nil {
+		if err := s.accountRepo.BindGroups(opCtx, account.ID, *input.GroupIDs); err != nil {
 			return nil, err
+		}
+	}
+	if tx != nil {
+		if err := tx.Commit(); err != nil {
+			return nil, fmt.Errorf("commit account update transaction: %w", err)
 		}
 	}
 
@@ -3094,6 +3217,198 @@ func (s *adminServiceImpl) UpdateAccount(ctx context.Context, id int64, input *U
 		return nil, err
 	}
 	return updated, nil
+}
+
+func cloneAccountExtraMap(in map[string]any) map[string]any {
+	if in == nil {
+		return map[string]any{}
+	}
+	out := make(map[string]any, len(in))
+	for key, value := range in {
+		out[key] = cloneAccountExtraValue(value)
+	}
+	return out
+}
+
+func cloneAccountExtraValue(value any) any {
+	switch typed := value.(type) {
+	case map[string]any:
+		return cloneAccountExtraMap(typed)
+	case []any:
+		out := make([]any, len(typed))
+		for i := range typed {
+			out[i] = cloneAccountExtraValue(typed[i])
+		}
+		return out
+	default:
+		return value
+	}
+}
+
+// ValidateAccountAetherWSExtra rejects ambiguous scalar/null account config.
+// Missing aether_ws is valid; present values must be JSON objects.
+func ValidateAccountAetherWSExtra(extra map[string]any) error {
+	if extra == nil {
+		return nil
+	}
+	raw, exists := extra[AetherWSAccountExtraKey]
+	if !exists {
+		return nil
+	}
+	if _, ok := raw.(map[string]any); !ok {
+		return infraerrors.BadRequest("INVALID_AETHER_WS_CONFIG", "aether_ws must be a JSON object")
+	}
+	return nil
+}
+
+func applyAccountExtraPatch(current map[string]any, patch *AccountExtraPatch) (map[string]any, error) {
+	out := cloneAccountExtraMap(current)
+	if patch == nil {
+		return out, nil
+	}
+	if err := ValidateAccountAetherWSExtra(patch.Set); err != nil {
+		return nil, err
+	}
+	for _, key := range patch.Delete {
+		if key != "" {
+			delete(out, key)
+		}
+	}
+	for key, value := range patch.Set {
+		if key == "aether_ws" {
+			currentObject, currentOK := out[key].(map[string]any)
+			incomingObject, incomingOK := value.(map[string]any)
+			if incomingOK {
+				merged := map[string]any{}
+				if currentOK {
+					merged = cloneAccountExtraMap(currentObject)
+				}
+				for nestedKey, nestedValue := range incomingObject {
+					merged[nestedKey] = cloneAccountExtraValue(nestedValue)
+				}
+				out[key] = merged
+				continue
+			}
+		}
+		out[key] = cloneAccountExtraValue(value)
+	}
+	return out, nil
+}
+
+func accountExtraPatchDeletesAndSetsKey(patch *AccountExtraPatch, key string) bool {
+	if patch == nil {
+		return false
+	}
+	if _, exists := patch.Set[key]; !exists {
+		return false
+	}
+	for _, deleteKey := range patch.Delete {
+		if deleteKey == key {
+			return true
+		}
+	}
+	return false
+}
+
+func appendUniqueString(values []string, value string) []string {
+	for _, existing := range values {
+		if existing == value {
+			return values
+		}
+	}
+	return append(values, value)
+}
+
+func buildAccountColumnPatch(input *UpdateAccountInput, account *Account) AccountColumnPatch {
+	patch := AccountColumnPatch{}
+	if input.Name != "" {
+		patch.Name = &account.Name
+	}
+	if input.Notes != nil {
+		patch.NotesSet = true
+		patch.Notes = account.Notes
+	}
+	if input.Type != "" {
+		patch.Type = &account.Type
+	}
+	if len(input.Credentials) > 0 {
+		patch.Credentials = account.Credentials
+	}
+	if input.ProxyID != nil {
+		patch.ProxyIDSet = true
+		patch.ProxyID = account.ProxyID
+	}
+	if input.Concurrency != nil {
+		patch.Concurrency = &account.Concurrency
+	}
+	if input.Priority != nil {
+		patch.Priority = &account.Priority
+	}
+	if input.RateMultiplier != nil {
+		patch.RateMultiplier = account.RateMultiplier
+	}
+	if input.LoadFactor != nil {
+		patch.LoadFactorSet = true
+		patch.LoadFactor = account.LoadFactor
+	}
+	if input.Status != "" {
+		patch.Status = &account.Status
+		if account.Status == StatusError {
+			schedulable := false
+			patch.Schedulable = &schedulable
+		}
+	}
+	if input.ExpiresAt != nil {
+		patch.ExpiresAtSet = true
+		patch.ExpiresAt = account.ExpiresAt
+	}
+	if input.AutoPauseOnExpired != nil {
+		patch.AutoPauseOnExpired = &account.AutoPauseOnExpired
+	}
+	return patch
+}
+
+func diffAccountExtra(before, after map[string]any) *AccountExtraPatch {
+	patch := &AccountExtraPatch{Set: make(map[string]any)}
+	for key, afterValue := range after {
+		beforeValue, exists := before[key]
+		if exists && key == "aether_ws" {
+			beforeObject, beforeOK := beforeValue.(map[string]any)
+			afterObject, afterOK := afterValue.(map[string]any)
+			if beforeOK && afterOK {
+				nestedSet := make(map[string]any)
+				for nestedKey, nestedAfterValue := range afterObject {
+					nestedBeforeValue, nestedExists := beforeObject[nestedKey]
+					if !nestedExists || !reflect.DeepEqual(nestedBeforeValue, nestedAfterValue) {
+						nestedSet[nestedKey] = cloneAccountExtraValue(nestedAfterValue)
+					}
+				}
+				if len(nestedSet) > 0 {
+					patch.Set[key] = nestedSet
+				}
+				continue
+			}
+		}
+		if !exists || !reflect.DeepEqual(beforeValue, afterValue) {
+			patch.Set[key] = cloneAccountExtraValue(afterValue)
+		}
+	}
+	for key := range before {
+		if _, exists := after[key]; !exists {
+			patch.Delete = append(patch.Delete, key)
+		}
+	}
+	sort.Strings(patch.Delete)
+	return patch
+}
+
+func buildPersistedAccountExtraPatch(before, after map[string]any, requested *AccountExtraPatch) *AccountExtraPatch {
+	patch := diffAccountExtra(before, after)
+	if accountExtraPatchDeletesAndSetsKey(requested, AetherWSAccountExtraKey) {
+		patch.Delete = appendUniqueString(patch.Delete, AetherWSAccountExtraKey)
+		patch.Set[AetherWSAccountExtraKey] = cloneAccountExtraValue(after[AetherWSAccountExtraKey])
+	}
+	return patch
 }
 
 // UpdateAccountExtra 仅对 Extra JSONB 做 key 级合并，避免覆盖其它运行态键
@@ -3108,6 +3423,9 @@ func (s *adminServiceImpl) UpdateAccountExtra(ctx context.Context, id int64, upd
 // BulkUpdateAccounts updates multiple accounts in one request.
 // It merges credentials/extra keys instead of overwriting the whole object.
 func (s *adminServiceImpl) BulkUpdateAccounts(ctx context.Context, input *BulkUpdateAccountsInput) (*BulkUpdateAccountsResult, error) {
+	if err := ValidateAccountAetherWSExtra(input.Extra); err != nil {
+		return nil, err
+	}
 	if len(input.AccountIDs) == 0 && input.Filters != nil {
 		accountIDs, err := s.resolveBulkUpdateTargetIDs(ctx, input.Filters)
 		if err != nil {
@@ -3125,6 +3443,7 @@ func (s *adminServiceImpl) BulkUpdateAccounts(ctx context.Context, input *BulkUp
 	if len(input.AccountIDs) == 0 {
 		return result, nil
 	}
+	input.AccountIDs = uniqueAccountIDs(input.AccountIDs)
 	if input.GroupIDs != nil {
 		if err := s.validateGroupIDsExist(ctx, *input.GroupIDs); err != nil {
 			return nil, err
@@ -3188,7 +3507,7 @@ func (s *adminServiceImpl) BulkUpdateAccounts(ctx context.Context, input *BulkUp
 	}
 	if input.LoadFactor != nil {
 		if *input.LoadFactor <= 0 {
-			repoUpdates.LoadFactor = nil // 0 或负数表示清除
+			repoUpdates.LoadFactor = input.LoadFactor // 0 或负数表示清除
 		} else if *input.LoadFactor > 10000 {
 			return nil, errors.New("load_factor must be <= 10000")
 		} else {
@@ -3201,18 +3520,83 @@ func (s *adminServiceImpl) BulkUpdateAccounts(ctx context.Context, input *BulkUp
 	if input.Schedulable != nil {
 		repoUpdates.Schedulable = input.Schedulable
 	}
-
-	// Run bulk update for column/jsonb fields first.
-	if _, err := s.accountRepo.BulkUpdate(ctx, input.AccountIDs, repoUpdates); err != nil {
+	opCtx, tx, err := s.beginAdminAccountMutationTx(ctx, input.GroupIDs != nil)
+	if err != nil {
 		return nil, err
+	}
+	if tx != nil {
+		defer func() { _ = tx.Rollback() }()
+	}
+
+	// Run bulk update and capture the exact rows changed. Missing/deleted IDs are
+	// failures, not optimistic successes. Repositories without RETURNING support
+	// use at most one batch read when the affected count is ambiguous.
+	updatedIDs := make([]int64, 0, len(input.AccountIDs))
+	if accountBulkUpdateHasFields(repoUpdates) {
+		if returningRepo, ok := s.accountRepo.(accountBulkUpdateReturningRepository); ok {
+			var err error
+			updatedIDs, err = returningRepo.BulkUpdateReturningIDs(opCtx, input.AccountIDs, repoUpdates)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			affected, err := s.accountRepo.BulkUpdate(opCtx, input.AccountIDs, repoUpdates)
+			if err != nil {
+				return nil, err
+			}
+			if affected == int64(len(input.AccountIDs)) {
+				updatedIDs = append(updatedIDs, input.AccountIDs...)
+			} else {
+				accounts, err := s.accountRepo.GetByIDs(opCtx, input.AccountIDs)
+				if err != nil {
+					return nil, err
+				}
+				for _, account := range accounts {
+					if account != nil {
+						updatedIDs = append(updatedIDs, account.ID)
+					}
+				}
+			}
+		}
+	} else {
+		accounts, err := s.accountRepo.GetByIDs(opCtx, input.AccountIDs)
+		if err != nil {
+			return nil, err
+		}
+		for _, account := range accounts {
+			if account != nil {
+				updatedIDs = append(updatedIDs, account.ID)
+			}
+		}
+	}
+	updatedSet := make(map[int64]struct{}, len(updatedIDs))
+	for _, accountID := range updatedIDs {
+		updatedSet[accountID] = struct{}{}
+	}
+	groupsBoundInBulk := false
+	if input.GroupIDs != nil {
+		if binder, ok := s.accountRepo.(accountBulkGroupBindingRepository); ok {
+			if err := binder.BulkBindGroups(opCtx, updatedIDs, *input.GroupIDs); err != nil {
+				return nil, err
+			}
+			groupsBoundInBulk = true
+		}
 	}
 
 	// Handle group bindings per account (requires individual operations).
 	for _, accountID := range input.AccountIDs {
 		entry := BulkUpdateAccountResult{AccountID: accountID}
+		if _, updated := updatedSet[accountID]; !updated {
+			entry.Success = false
+			entry.Error = "account not found"
+			result.Failed++
+			result.FailedIDs = append(result.FailedIDs, accountID)
+			result.Results = append(result.Results, entry)
+			continue
+		}
 
-		if input.GroupIDs != nil {
-			if err := s.accountRepo.BindGroups(ctx, accountID, *input.GroupIDs); err != nil {
+		if input.GroupIDs != nil && !groupsBoundInBulk {
+			if err := s.accountRepo.BindGroups(opCtx, accountID, *input.GroupIDs); err != nil {
 				entry.Success = false
 				entry.Error = err.Error()
 				result.Failed++
@@ -3227,8 +3611,39 @@ func (s *adminServiceImpl) BulkUpdateAccounts(ctx context.Context, input *BulkUp
 		result.SuccessIDs = append(result.SuccessIDs, accountID)
 		result.Results = append(result.Results, entry)
 	}
+	if tx != nil {
+		if err := tx.Commit(); err != nil {
+			return nil, fmt.Errorf("commit account bulk update transaction: %w", err)
+		}
+	}
 
 	return result, nil
+}
+
+func uniqueAccountIDs(ids []int64) []int64 {
+	unique := make([]int64, 0, len(ids))
+	seen := make(map[int64]struct{}, len(ids))
+	for _, id := range ids {
+		if _, exists := seen[id]; exists {
+			continue
+		}
+		seen[id] = struct{}{}
+		unique = append(unique, id)
+	}
+	return unique
+}
+
+func accountBulkUpdateHasFields(updates AccountBulkUpdate) bool {
+	return updates.Name != nil ||
+		updates.ProxyID != nil ||
+		updates.Concurrency != nil ||
+		updates.Priority != nil ||
+		updates.RateMultiplier != nil ||
+		updates.LoadFactor != nil ||
+		updates.Status != nil ||
+		updates.Schedulable != nil ||
+		len(updates.Credentials) > 0 ||
+		len(updates.Extra) > 0
 }
 
 func (s *adminServiceImpl) resolveBulkUpdateTargetIDs(ctx context.Context, filters *BulkUpdateAccountFilters) ([]int64, error) {

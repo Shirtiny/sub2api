@@ -6,8 +6,23 @@ import (
 	"testing"
 	"time"
 
+	coderws "github.com/coder/websocket"
 	"github.com/stretchr/testify/require"
 )
+
+func TestAetherLocalOpenAIWSDialerRequiresOptionsAndDisablesLocalHopOverhead(t *testing.T) {
+	dialer := newDefaultOpenAIWSClientDialer()
+	resolved, err := requireAetherLocalOpenAIWSDialer(dialer)
+	require.NoError(t, err)
+	require.Same(t, dialer, resolved)
+
+	_, err = requireAetherLocalOpenAIWSDialer(&openAIWSCaptureDialer{})
+	require.ErrorContains(t, err, "cannot guarantee direct no-proxy transport")
+
+	options := aetherLocalOpenAIWSDialOptions()
+	require.True(t, options.DirectNoProxy)
+	require.Equal(t, coderws.CompressionDisabled, options.CompressionMode)
+}
 
 func TestCoderOpenAIWSClientDialer_ProxyHTTPClientReuse(t *testing.T) {
 	dialer := newDefaultOpenAIWSClientDialer()

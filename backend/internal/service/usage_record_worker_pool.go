@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"sync"
@@ -18,6 +19,7 @@ const (
 	defaultUsageRecordWorkerCount          = 128
 	defaultUsageRecordQueueSize            = 16384
 	defaultUsageRecordTaskTimeoutSeconds   = 5
+	defaultUsageRecordRequiredReserveWait  = 100 * time.Millisecond
 	defaultUsageRecordOverflowPolicy       = config.UsageRecordOverflowPolicySample
 	defaultUsageRecordOverflowSampleRatio  = 10
 	defaultUsageRecordAutoScaleEnabled     = true
@@ -29,6 +31,7 @@ const (
 	defaultUsageRecordAutoScaleDownStep    = 16
 	defaultUsageRecordAutoScaleInterval    = 3 * time.Second
 	defaultUsageRecordAutoScaleCooldown    = 10 * time.Second
+	defaultUsageRecordStopTimeout          = 10 * time.Second
 	usageRecordDropLogInterval             = 5 * time.Second
 )
 
@@ -47,62 +50,108 @@ const (
 
 // UsageRecordWorkerPoolOptions 使用量记录池配置。
 type UsageRecordWorkerPoolOptions struct {
-	WorkerCount           int
-	QueueSize             int
-	TaskTimeout           time.Duration
-	OverflowPolicy        string
-	OverflowSamplePercent int
-	AutoScaleEnabled      bool
-	AutoScaleMinWorkers   int
-	AutoScaleMaxWorkers   int
-	AutoScaleUpPercent    int
-	AutoScaleDownPercent  int
-	AutoScaleUpStep       int
-	AutoScaleDownStep     int
-	AutoScaleInterval     time.Duration
-	AutoScaleCooldown     time.Duration
+	WorkerCount            int
+	QueueSize              int
+	TaskTimeout            time.Duration
+	RequiredReserveTimeout time.Duration
+	OverflowPolicy         string
+	OverflowSamplePercent  int
+	AutoScaleEnabled       bool
+	AutoScaleMinWorkers    int
+	AutoScaleMaxWorkers    int
+	AutoScaleUpPercent     int
+	AutoScaleDownPercent   int
+	AutoScaleUpStep        int
+	AutoScaleDownStep      int
+	AutoScaleInterval      time.Duration
+	AutoScaleCooldown      time.Duration
 }
 
 // UsageRecordWorkerPoolStats 使用量记录池运行时统计。
 type UsageRecordWorkerPoolStats struct {
-	MaxConcurrency     int
-	RunningWorkers     int64
-	WaitingTasks       uint64
-	SubmittedTasks     uint64
-	CompletedTasks     uint64
-	SuccessfulTasks    uint64
-	FailedTasks        uint64
-	DroppedTasks       uint64
-	DroppedQueueFull   uint64
-	DroppedPoolStopped uint64
-	SyncFallbackTasks  uint64
+	MaxConcurrency            int
+	RunningWorkers            int64
+	WaitingTasks              uint64
+	SubmittedTasks            uint64
+	CompletedTasks            uint64
+	SuccessfulTasks           uint64
+	FailedTasks               uint64
+	DroppedTasks              uint64
+	DroppedQueueFull          uint64
+	DroppedPoolStopped        uint64
+	SyncFallbackTasks         uint64
+	RequiredOutstanding       int
+	RequiredCapacity          int
+	RequiredFinalizerQueued   int
+	RequiredPersistenceQueued int
+	RequiredReserveWaits      uint64
+	RequiredReserveTimeouts   uint64
+	RequiredReserveWaitNanos  uint64
 }
 
 // UsageRecordWorkerPool 提供“有界队列 + 固定 worker”的异步执行器。
 // 用于替代请求路径里的直接 goroutine，避免高并发时无界堆积。
 type UsageRecordWorkerPool struct {
-	pool                  pond.Pool
-	taskTimeout           time.Duration
-	overflowPolicy        string
-	overflowSamplePercent int
-	overflowCounter       atomic.Uint64
-	droppedQueueFull      atomic.Uint64
-	droppedPoolStopped    atomic.Uint64
-	syncFallback          atomic.Uint64
-	lastDropLogNanos      atomic.Int64
-	autoScaleEnabled      bool
-	autoScaleMinWorkers   int
-	autoScaleMaxWorkers   int
-	autoScaleUpPercent    int
-	autoScaleDownPercent  int
-	autoScaleUpStep       int
-	autoScaleDownStep     int
-	autoScaleInterval     time.Duration
-	autoScaleCooldown     time.Duration
-	lastScaleNanos        atomic.Int64
-	autoScaleCancel       context.CancelFunc
-	lifecycleWg           sync.WaitGroup
-	stopOnce              sync.Once
+	pool                     pond.Pool
+	taskTimeout              time.Duration
+	requiredReserveTimeout   time.Duration
+	overflowPolicy           string
+	overflowSamplePercent    int
+	overflowCounter          atomic.Uint64
+	droppedQueueFull         atomic.Uint64
+	droppedPoolStopped       atomic.Uint64
+	syncFallback             atomic.Uint64
+	stopping                 atomic.Bool
+	lastDropLogNanos         atomic.Int64
+	autoScaleEnabled         bool
+	autoScaleMinWorkers      int
+	autoScaleMaxWorkers      int
+	autoScaleUpPercent       int
+	autoScaleDownPercent     int
+	autoScaleUpStep          int
+	autoScaleDownStep        int
+	autoScaleInterval        time.Duration
+	autoScaleCooldown        time.Duration
+	lastScaleNanos           atomic.Int64
+	autoScaleCancel          context.CancelFunc
+	lifecycleWg              sync.WaitGroup
+	stopOnce                 sync.Once
+	stopDone                 chan struct{}
+	requiredFinalizerQueue   chan usageRecordRequiredTask
+	requiredPersistenceQueue chan UsageRecordTask
+	requiredSlots            chan struct{}
+	requiredStop             chan struct{}
+	requiredMu               sync.Mutex
+	requiredStopping         bool
+	requiredOutstanding      sync.WaitGroup
+	requiredFinalizerWg      sync.WaitGroup
+	requiredPersistenceWg    sync.WaitGroup
+	requiredReserveWaits     atomic.Uint64
+	requiredReserveTimeouts  atomic.Uint64
+	requiredReserveWaitNanos atomic.Uint64
+}
+
+var ErrUsageRecordWorkerPoolStopped = errors.New("usage record worker pool stopped")
+var ErrUsageRecordRequiredCapacity = errors.New("required usage record capacity unavailable")
+
+const (
+	usageRecordReservationPending uint32 = iota
+	usageRecordReservationCommitted
+	usageRecordReservationAborted
+)
+
+// UsageRecordReservation reserves bounded finalizer capacity before an
+// upstream request can execute. Commit is an O(1) channel send and never waits
+// for the worker pool or database, so provider terminal processing stays off
+// the persistence backpressure path.
+type UsageRecordReservation struct {
+	pool  *UsageRecordWorkerPool
+	state atomic.Uint32
+}
+
+type usageRecordRequiredTask struct {
+	finalize    func()
+	persistence UsageRecordTask
 }
 
 // NewUsageRecordWorkerPool 从配置构建使用量记录池。
@@ -114,20 +163,27 @@ func NewUsageRecordWorkerPool(cfg *config.Config) *UsageRecordWorkerPool {
 // NewUsageRecordWorkerPoolWithOptions 根据给定参数构建使用量记录池。
 func NewUsageRecordWorkerPoolWithOptions(opts UsageRecordWorkerPoolOptions) *UsageRecordWorkerPool {
 	opts = normalizeUsageRecordPoolOptions(opts)
+	requiredCapacity := opts.WorkerCount + opts.QueueSize
 
 	p := &UsageRecordWorkerPool{
-		taskTimeout:           opts.TaskTimeout,
-		overflowPolicy:        opts.OverflowPolicy,
-		overflowSamplePercent: opts.OverflowSamplePercent,
-		autoScaleEnabled:      opts.AutoScaleEnabled,
-		autoScaleMinWorkers:   opts.AutoScaleMinWorkers,
-		autoScaleMaxWorkers:   opts.AutoScaleMaxWorkers,
-		autoScaleUpPercent:    opts.AutoScaleUpPercent,
-		autoScaleDownPercent:  opts.AutoScaleDownPercent,
-		autoScaleUpStep:       opts.AutoScaleUpStep,
-		autoScaleDownStep:     opts.AutoScaleDownStep,
-		autoScaleInterval:     opts.AutoScaleInterval,
-		autoScaleCooldown:     opts.AutoScaleCooldown,
+		taskTimeout:              opts.TaskTimeout,
+		requiredReserveTimeout:   opts.RequiredReserveTimeout,
+		overflowPolicy:           opts.OverflowPolicy,
+		overflowSamplePercent:    opts.OverflowSamplePercent,
+		autoScaleEnabled:         opts.AutoScaleEnabled,
+		autoScaleMinWorkers:      opts.AutoScaleMinWorkers,
+		autoScaleMaxWorkers:      opts.AutoScaleMaxWorkers,
+		autoScaleUpPercent:       opts.AutoScaleUpPercent,
+		autoScaleDownPercent:     opts.AutoScaleDownPercent,
+		autoScaleUpStep:          opts.AutoScaleUpStep,
+		autoScaleDownStep:        opts.AutoScaleDownStep,
+		autoScaleInterval:        opts.AutoScaleInterval,
+		autoScaleCooldown:        opts.AutoScaleCooldown,
+		requiredFinalizerQueue:   make(chan usageRecordRequiredTask, requiredCapacity),
+		requiredPersistenceQueue: make(chan UsageRecordTask, requiredCapacity),
+		requiredSlots:            make(chan struct{}, requiredCapacity),
+		requiredStop:             make(chan struct{}),
+		stopDone:                 make(chan struct{}),
 	}
 
 	p.pool = pond.NewPool(
@@ -137,6 +193,7 @@ func NewUsageRecordWorkerPoolWithOptions(opts UsageRecordWorkerPoolOptions) *Usa
 	if p.autoScaleEnabled {
 		p.startAutoScaler()
 	}
+	p.startRequiredWorkers(opts.WorkerCount)
 	return p
 }
 
@@ -146,7 +203,7 @@ func (p *UsageRecordWorkerPool) Submit(task UsageRecordTask) UsageRecordSubmitMo
 	if p == nil || task == nil {
 		return UsageRecordSubmitModeDropped
 	}
-	if p.pool == nil || p.pool.Stopped() {
+	if p.pool == nil || p.stopping.Load() || p.pool.Stopped() {
 		p.droppedPoolStopped.Add(1)
 		p.logDrop("stopped")
 		return UsageRecordSubmitModeDropped
@@ -159,7 +216,7 @@ func (p *UsageRecordWorkerPool) Submit(task UsageRecordTask) UsageRecordSubmitMo
 		return UsageRecordSubmitModeEnqueued
 	}
 
-	if p.pool.Stopped() {
+	if p.stopping.Load() || p.pool.Stopped() {
 		p.droppedPoolStopped.Add(1)
 		p.logDrop("stopped")
 		return UsageRecordSubmitModeDropped
@@ -183,38 +240,255 @@ func (p *UsageRecordWorkerPool) Submit(task UsageRecordTask) UsageRecordSubmitMo
 	return UsageRecordSubmitModeDropped
 }
 
+// SubmitRequired applies bounded queue backpressure instead of dropping or
+// executing the task synchronously. Long-lived relay protocols use this path
+// so usage finalization never runs on the frame-processing goroutine.
+func (p *UsageRecordWorkerPool) SubmitRequired(task UsageRecordTask) UsageRecordSubmitMode {
+	reservation, err := p.ReserveRequired(context.Background())
+	if err != nil {
+		if p != nil {
+			if errors.Is(err, ErrUsageRecordRequiredCapacity) {
+				p.droppedQueueFull.Add(1)
+				p.logDrop("required_full")
+			} else {
+				p.droppedPoolStopped.Add(1)
+				p.logDrop("stopped")
+			}
+		}
+		return UsageRecordSubmitModeDropped
+	}
+	if !reservation.Commit(task) {
+		p.droppedPoolStopped.Add(1)
+		p.logDrop("stopped")
+		return UsageRecordSubmitModeDropped
+	}
+	return UsageRecordSubmitModeEnqueued
+}
+
+// ReserveRequired applies bounded backpressure before provider execution. A
+// caller must eventually call Commit or Abort exactly once.
+func (p *UsageRecordWorkerPool) ReserveRequired(ctx context.Context) (*UsageRecordReservation, error) {
+	if p == nil || p.pool == nil || p.requiredSlots == nil || p.requiredStop == nil {
+		return nil, ErrUsageRecordWorkerPoolStopped
+	}
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	select {
+	case p.requiredSlots <- struct{}{}:
+		return p.finishRequiredReservation()
+	default:
+	}
+
+	p.requiredReserveWaits.Add(1)
+	waitStarted := time.Now()
+	timer := time.NewTimer(p.requiredReserveTimeout)
+	defer timer.Stop()
+	select {
+	case p.requiredSlots <- struct{}{}:
+		p.requiredReserveWaitNanos.Add(uint64(time.Since(waitStarted)))
+		return p.finishRequiredReservation()
+	case <-timer.C:
+		p.requiredReserveWaitNanos.Add(uint64(time.Since(waitStarted)))
+		p.requiredReserveTimeouts.Add(1)
+		return nil, ErrUsageRecordRequiredCapacity
+	case <-ctx.Done():
+		p.requiredReserveWaitNanos.Add(uint64(time.Since(waitStarted)))
+		return nil, ctx.Err()
+	case <-p.requiredStop:
+		p.requiredReserveWaitNanos.Add(uint64(time.Since(waitStarted)))
+		return nil, ErrUsageRecordWorkerPoolStopped
+	}
+}
+func (p *UsageRecordWorkerPool) finishRequiredReservation() (*UsageRecordReservation, error) {
+	p.requiredMu.Lock()
+	if p.requiredStopping || p.pool.Stopped() {
+		p.requiredMu.Unlock()
+		<-p.requiredSlots
+		return nil, ErrUsageRecordWorkerPoolStopped
+	}
+	p.requiredOutstanding.Add(1)
+	p.requiredMu.Unlock()
+	return &UsageRecordReservation{pool: p}, nil
+}
+
+// Commit transfers the reserved slot to the required persistence pipeline.
+// The reservation invariant guarantees that this buffered send has capacity.
+func (r *UsageRecordReservation) Commit(task UsageRecordTask) bool {
+	return r.CommitFinalizer(nil, task)
+}
+
+// CommitFinalizer transfers a two-phase required task to dedicated workers.
+// finalize runs first and independently of both optional usage work and
+// required persistence. Commit itself is O(1): it only changes reservation
+// ownership and sends to a pre-reserved buffered queue.
+func (r *UsageRecordReservation) CommitFinalizer(finalize func(), persistence UsageRecordTask) bool {
+	if r == nil || r.pool == nil || (finalize == nil && persistence == nil) {
+		if r != nil {
+			r.Abort()
+		}
+		return false
+	}
+	if !r.state.CompareAndSwap(usageRecordReservationPending, usageRecordReservationCommitted) {
+		return false
+	}
+	r.pool.requiredFinalizerQueue <- usageRecordRequiredTask{
+		finalize:    finalize,
+		persistence: persistence,
+	}
+	return true
+}
+
+// Abort releases unused capacity. It is safe to call from deferred cleanup and
+// is idempotent with Commit and other Abort calls.
+func (r *UsageRecordReservation) Abort() bool {
+	if r == nil || r.pool == nil || !r.state.CompareAndSwap(usageRecordReservationPending, usageRecordReservationAborted) {
+		return false
+	}
+	r.pool.releaseRequiredSlot()
+	return true
+}
+
 // Stats 返回当前池状态与计数器。
 func (p *UsageRecordWorkerPool) Stats() UsageRecordWorkerPoolStats {
 	if p == nil || p.pool == nil {
 		return UsageRecordWorkerPoolStats{}
 	}
 	return UsageRecordWorkerPoolStats{
-		MaxConcurrency:     p.pool.MaxConcurrency(),
-		RunningWorkers:     p.pool.RunningWorkers(),
-		WaitingTasks:       p.pool.WaitingTasks(),
-		SubmittedTasks:     p.pool.SubmittedTasks(),
-		CompletedTasks:     p.pool.CompletedTasks(),
-		SuccessfulTasks:    p.pool.SuccessfulTasks(),
-		FailedTasks:        p.pool.FailedTasks(),
-		DroppedTasks:       p.pool.DroppedTasks(),
-		DroppedQueueFull:   p.droppedQueueFull.Load(),
-		DroppedPoolStopped: p.droppedPoolStopped.Load(),
-		SyncFallbackTasks:  p.syncFallback.Load(),
+		MaxConcurrency:            p.pool.MaxConcurrency(),
+		RunningWorkers:            p.pool.RunningWorkers(),
+		WaitingTasks:              p.pool.WaitingTasks(),
+		SubmittedTasks:            p.pool.SubmittedTasks(),
+		CompletedTasks:            p.pool.CompletedTasks(),
+		SuccessfulTasks:           p.pool.SuccessfulTasks(),
+		FailedTasks:               p.pool.FailedTasks(),
+		DroppedTasks:              p.pool.DroppedTasks(),
+		DroppedQueueFull:          p.droppedQueueFull.Load(),
+		DroppedPoolStopped:        p.droppedPoolStopped.Load(),
+		SyncFallbackTasks:         p.syncFallback.Load(),
+		RequiredOutstanding:       len(p.requiredSlots),
+		RequiredCapacity:          cap(p.requiredSlots),
+		RequiredFinalizerQueued:   len(p.requiredFinalizerQueue),
+		RequiredPersistenceQueued: len(p.requiredPersistenceQueue),
+		RequiredReserveWaits:      p.requiredReserveWaits.Load(),
+		RequiredReserveTimeouts:   p.requiredReserveTimeouts.Load(),
+		RequiredReserveWaitNanos:  p.requiredReserveWaitNanos.Load(),
 	}
 }
 
-// Stop 停止池并等待队列任务完成。
+// Stop starts a graceful drain and waits for at most the default shutdown
+// budget. A timed-out drain continues in the background so channels that can
+// still receive a reserved task are never closed prematurely.
 func (p *UsageRecordWorkerPool) Stop() {
+	ctx, cancel := context.WithTimeout(context.Background(), defaultUsageRecordStopTimeout)
+	defer cancel()
+	if err := p.StopContext(ctx); err != nil && !errors.Is(err, context.Canceled) {
+		logger.L().With(
+			zap.String("component", "service.usage_record_worker_pool"),
+			zap.Error(err),
+		).Warn("usage_record.stop_timeout")
+	}
+}
+
+// StopContext prevents new required reservations, starts a graceful drain,
+// and waits until either the drain completes or ctx expires. On timeout it
+// deliberately leaves both required queues open: an existing reservation may
+// still Commit, and the background drain closes queues only after every
+// reservation has committed and persisted or aborted.
+func (p *UsageRecordWorkerPool) StopContext(ctx context.Context) error {
 	if p == nil || p.pool == nil {
-		return
+		return nil
+	}
+	if ctx == nil {
+		ctx = context.Background()
 	}
 	p.stopOnce.Do(func() {
 		if p.autoScaleCancel != nil {
 			p.autoScaleCancel()
 		}
-		p.lifecycleWg.Wait()
-		p.pool.StopAndWait()
+		p.stopping.Store(true)
+		optionalStop := p.pool.Stop()
+		p.requiredMu.Lock()
+		p.requiredStopping = true
+		close(p.requiredStop)
+		p.requiredMu.Unlock()
+		go p.finishStop(optionalStop)
 	})
+
+	select {
+	case <-p.stopDone:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+
+func (p *UsageRecordWorkerPool) finishStop(optionalStop pond.Task) {
+	p.lifecycleWg.Wait()
+	p.requiredOutstanding.Wait()
+	close(p.requiredFinalizerQueue)
+	p.requiredFinalizerWg.Wait()
+	close(p.requiredPersistenceQueue)
+	p.requiredPersistenceWg.Wait()
+	if optionalStop != nil {
+		_ = optionalStop.Wait()
+	}
+	close(p.stopDone)
+}
+
+func (p *UsageRecordWorkerPool) startRequiredWorkers(workerCount int) {
+	if p == nil || p.requiredFinalizerQueue == nil || p.requiredPersistenceQueue == nil || workerCount <= 0 {
+		return
+	}
+	for range workerCount {
+		p.requiredFinalizerWg.Add(1)
+		go func() {
+			defer p.requiredFinalizerWg.Done()
+			for task := range p.requiredFinalizerQueue {
+				p.executeRequiredFinalizer(task.finalize)
+				if task.persistence == nil {
+					p.releaseRequiredSlot()
+					continue
+				}
+				// A task keeps its reserved slot until persistence completes.
+				// Therefore at most cap(requiredSlots) tasks can reach this
+				// queue, and this send cannot wait for queue capacity.
+				p.requiredPersistenceQueue <- task.persistence
+			}
+		}()
+
+		p.requiredPersistenceWg.Add(1)
+		go func() {
+			defer p.requiredPersistenceWg.Done()
+			for task := range p.requiredPersistenceQueue {
+				p.execute(task)
+				p.releaseRequiredSlot()
+			}
+		}()
+	}
+}
+
+func (p *UsageRecordWorkerPool) executeRequiredFinalizer(finalize func()) {
+	if finalize == nil {
+		return
+	}
+	defer func() {
+		if recovered := recover(); recovered != nil {
+			logger.L().With(
+				zap.String("component", "service.usage_record_worker_pool"),
+				zap.Any("panic", recovered),
+			).Error("usage_record.required_finalizer_panic")
+		}
+	}()
+	finalize()
+}
+
+func (p *UsageRecordWorkerPool) releaseRequiredSlot() {
+	if p == nil || p.requiredSlots == nil {
+		return
+	}
+	<-p.requiredSlots
+	p.requiredOutstanding.Done()
 }
 
 func (p *UsageRecordWorkerPool) startAutoScaler() {
@@ -355,20 +629,21 @@ func (p *UsageRecordWorkerPool) logDrop(reason string) {
 
 func usageRecordPoolOptionsFromConfig(cfg *config.Config) UsageRecordWorkerPoolOptions {
 	opts := UsageRecordWorkerPoolOptions{
-		WorkerCount:           defaultUsageRecordWorkerCount,
-		QueueSize:             defaultUsageRecordQueueSize,
-		TaskTimeout:           time.Duration(defaultUsageRecordTaskTimeoutSeconds) * time.Second,
-		OverflowPolicy:        defaultUsageRecordOverflowPolicy,
-		OverflowSamplePercent: defaultUsageRecordOverflowSampleRatio,
-		AutoScaleEnabled:      defaultUsageRecordAutoScaleEnabled,
-		AutoScaleMinWorkers:   defaultUsageRecordAutoScaleMinWorkers,
-		AutoScaleMaxWorkers:   defaultUsageRecordAutoScaleMaxWorkers,
-		AutoScaleUpPercent:    defaultUsageRecordAutoScaleUpPercent,
-		AutoScaleDownPercent:  defaultUsageRecordAutoScaleDownPercent,
-		AutoScaleUpStep:       defaultUsageRecordAutoScaleUpStep,
-		AutoScaleDownStep:     defaultUsageRecordAutoScaleDownStep,
-		AutoScaleInterval:     defaultUsageRecordAutoScaleInterval,
-		AutoScaleCooldown:     defaultUsageRecordAutoScaleCooldown,
+		WorkerCount:            defaultUsageRecordWorkerCount,
+		QueueSize:              defaultUsageRecordQueueSize,
+		TaskTimeout:            time.Duration(defaultUsageRecordTaskTimeoutSeconds) * time.Second,
+		RequiredReserveTimeout: defaultUsageRecordRequiredReserveWait,
+		OverflowPolicy:         defaultUsageRecordOverflowPolicy,
+		OverflowSamplePercent:  defaultUsageRecordOverflowSampleRatio,
+		AutoScaleEnabled:       defaultUsageRecordAutoScaleEnabled,
+		AutoScaleMinWorkers:    defaultUsageRecordAutoScaleMinWorkers,
+		AutoScaleMaxWorkers:    defaultUsageRecordAutoScaleMaxWorkers,
+		AutoScaleUpPercent:     defaultUsageRecordAutoScaleUpPercent,
+		AutoScaleDownPercent:   defaultUsageRecordAutoScaleDownPercent,
+		AutoScaleUpStep:        defaultUsageRecordAutoScaleUpStep,
+		AutoScaleDownStep:      defaultUsageRecordAutoScaleDownStep,
+		AutoScaleInterval:      defaultUsageRecordAutoScaleInterval,
+		AutoScaleCooldown:      defaultUsageRecordAutoScaleCooldown,
 	}
 	if cfg == nil {
 		return opts
@@ -381,6 +656,9 @@ func usageRecordPoolOptionsFromConfig(cfg *config.Config) UsageRecordWorkerPoolO
 	}
 	if cfg.Gateway.UsageRecord.TaskTimeoutSeconds > 0 {
 		opts.TaskTimeout = time.Duration(cfg.Gateway.UsageRecord.TaskTimeoutSeconds) * time.Second
+	}
+	if cfg.Gateway.UsageRecord.RequiredReserveTimeoutMS > 0 {
+		opts.RequiredReserveTimeout = time.Duration(cfg.Gateway.UsageRecord.RequiredReserveTimeoutMS) * time.Millisecond
 	}
 	if policy := strings.TrimSpace(strings.ToLower(cfg.Gateway.UsageRecord.OverflowPolicy)); policy != "" {
 		opts.OverflowPolicy = policy
@@ -425,6 +703,9 @@ func normalizeUsageRecordPoolOptions(opts UsageRecordWorkerPoolOptions) UsageRec
 	}
 	if opts.TaskTimeout <= 0 {
 		opts.TaskTimeout = time.Duration(defaultUsageRecordTaskTimeoutSeconds) * time.Second
+	}
+	if opts.RequiredReserveTimeout <= 0 {
+		opts.RequiredReserveTimeout = defaultUsageRecordRequiredReserveWait
 	}
 	switch strings.ToLower(strings.TrimSpace(opts.OverflowPolicy)) {
 	case config.UsageRecordOverflowPolicyDrop,

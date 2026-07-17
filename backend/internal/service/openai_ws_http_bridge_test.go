@@ -29,6 +29,50 @@ func TestPrepareOpenAIWSHTTPBridgeBodyStripsWSFields(t *testing.T) {
 	require.Equal(t, "hi", gjson.GetBytes(body, "input").String())
 }
 
+func TestOpenAIWSHTTPBridgeFinalFenceFailureStopsDispatch(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	upstream := &httpUpstreamRecorder{}
+	svc := &OpenAIGatewayService{cfg: &config.Config{}, httpUpstream: upstream}
+	account := &Account{
+		ID:          701,
+		Platform:    PlatformOpenAI,
+		Type:        AccountTypeAPIKey,
+		Concurrency: 1,
+		Credentials: map[string]any{"api_key": "sk-upstream"},
+	}
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request = httptest.NewRequest(http.MethodPost, "/v1/responses", nil)
+	payload := []byte(`{"type":"response.create","model":"gpt-5","stream":true,"input":"hi"}`)
+	fenceErr := errors.New("authorization generation changed")
+
+	result, err := svc.proxyOpenAIWSHTTPBridgeTurn(
+		context.Background(),
+		c,
+		account,
+		"sk-upstream",
+		payload,
+		len(payload),
+		"gpt-5",
+		"",
+		"",
+		"",
+		2,
+		&OpenAIWSIngressHooks{BeforeProviderWrite: func(int, []byte, string) error {
+			return fenceErr
+		}},
+		func([]byte) error {
+			t.Fatal("a rejected provider turn must not write a downstream event")
+			return nil
+		},
+	)
+
+	require.Nil(t, result)
+	require.ErrorIs(t, err, fenceErr)
+	require.Empty(t, upstream.requests, "the final fence must fail before httpUpstream.Do")
+}
+
 func TestOpenAIWSHTTPBridgeDecisionKeepsSmallFramesOnWS(t *testing.T) {
 	svc := &OpenAIGatewayService{
 		cfg: &config.Config{
@@ -128,6 +172,7 @@ func TestOpenAIWSHTTPBridgeRelaysSSEFramesAsWebSocketMessages(t *testing.T) {
 			"",
 			"",
 			1,
+			nil,
 			writeClient,
 		)
 		resultCh <- bridgeResult{result: result, err: bridgeErr}
@@ -179,7 +224,7 @@ func TestOpenAIWSHTTPBridgeRelaysSSEFramesAsWebSocketMessages(t *testing.T) {
 func TestProxyResponsesWebSocketFromClientForGrokUsesXAIHTTPBridge(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	sseBody := strings.Join([]string{
+	firstSSEBody := strings.Join([]string{
 		`data: {"type":"response.created","response":{"id":"resp_grok_ws","model":"grok-4.3"}}`,
 		"",
 		`data: {"type":"response.output_text.delta","response":{"id":"resp_grok_ws"},"delta":"ok"}`,
@@ -187,13 +232,29 @@ func TestProxyResponsesWebSocketFromClientForGrokUsesXAIHTTPBridge(t *testing.T)
 		`data: {"type":"response.completed","response":{"id":"resp_grok_ws","model":"grok-4.3","usage":{"input_tokens":4,"output_tokens":2}}}`,
 		"",
 	}, "\n")
-	upstream := &httpUpstreamRecorder{resp: &http.Response{
-		StatusCode: http.StatusOK,
-		Header: http.Header{
-			"Content-Type":   []string{"text/event-stream"},
-			"Xai-Request-Id": []string{"xai-ws-req"},
+	secondSSEBody := strings.Join([]string{
+		`data: {"type":"response.created","response":{"id":"resp_grok_ws_2","model":"grok-4.3"}}`,
+		"",
+		`data: {"type":"response.completed","response":{"id":"resp_grok_ws_2","model":"grok-4.3","usage":{"input_tokens":2,"output_tokens":1}}}`,
+		"",
+	}, "\n")
+	upstream := &httpUpstreamRecorder{responses: []*http.Response{
+		{
+			StatusCode: http.StatusOK,
+			Header: http.Header{
+				"Content-Type":   []string{"text/event-stream"},
+				"Xai-Request-Id": []string{"xai-ws-req"},
+			},
+			Body: io.NopCloser(strings.NewReader(firstSSEBody)),
 		},
-		Body: io.NopCloser(strings.NewReader(sseBody)),
+		{
+			StatusCode: http.StatusOK,
+			Header: http.Header{
+				"Content-Type":   []string{"text/event-stream"},
+				"Xai-Request-Id": []string{"xai-ws-req-2"},
+			},
+			Body: io.NopCloser(strings.NewReader(secondSSEBody)),
+		},
 	}}
 	svc := &OpenAIGatewayService{
 		cfg: &config.Config{
@@ -212,6 +273,19 @@ func TestProxyResponsesWebSocketFromClientForGrokUsesXAIHTTPBridge(t *testing.T)
 		Status:      StatusActive,
 		Credentials: map[string]any{
 			"base_url": xai.DefaultCLIBaseURL,
+		},
+	}
+	providerFenceTurns := make([]int, 0, 2)
+	hooks := &OpenAIWSIngressHooks{
+		BeforeProviderWrite: func(turn int, providerPayload []byte, originalModel string) error {
+			if len(upstream.requests) != turn-1 {
+				return errors.New("Grok HTTP bridge final fence did not run immediately before dispatch")
+			}
+			if originalModel != "grok" || gjson.GetBytes(providerPayload, "type").Exists() || gjson.GetBytes(providerPayload, "model").String() != "grok-4.5" {
+				return errors.New("Grok HTTP bridge final fence did not receive the provider-bound payload")
+			}
+			providerFenceTurns = append(providerFenceTurns, turn)
+			return nil
 		},
 	}
 
@@ -242,7 +316,7 @@ func TestProxyResponsesWebSocketFromClientForGrokUsesXAIHTTPBridge(t *testing.T)
 		req.Header = req.Header.Clone()
 		ginCtx.Request = req
 
-		errCh <- svc.ProxyResponsesWebSocketFromClient(r.Context(), ginCtx, conn, account, "access-token", firstMessage, nil)
+		errCh <- svc.ProxyResponsesWebSocketFromClient(r.Context(), ginCtx, conn, account, "access-token", firstMessage, hooks)
 	}))
 	defer wsServer.Close()
 
@@ -251,10 +325,11 @@ func TestProxyResponsesWebSocketFromClientForGrokUsesXAIHTTPBridge(t *testing.T)
 	cancelDial()
 	require.NoError(t, err)
 
-	writeCtx, cancelWrite := context.WithTimeout(context.Background(), 3*time.Second)
-	err = clientConn.Write(writeCtx, coderws.MessageText, []byte(`{"type":"response.create","generate":true,"model":"grok","stream":true,"input":"hi","prompt_cache_retention":"24h"}`))
-	cancelWrite()
-	require.NoError(t, err)
+	writeMessage := func(payload string) {
+		writeCtx, cancelWrite := context.WithTimeout(context.Background(), 3*time.Second)
+		defer cancelWrite()
+		require.NoError(t, clientConn.Write(writeCtx, coderws.MessageText, []byte(payload)))
+	}
 
 	readEvent := func() []byte {
 		readCtx, cancelRead := context.WithTimeout(context.Background(), 3*time.Second)
@@ -265,12 +340,20 @@ func TestProxyResponsesWebSocketFromClientForGrokUsesXAIHTTPBridge(t *testing.T)
 		return event
 	}
 
+	writeMessage(`{"type":"response.create","generate":true,"model":"grok","stream":true,"input":"hi","prompt_cache_retention":"24h"}`)
 	created := readEvent()
 	delta := readEvent()
 	completed := readEvent()
 	require.Equal(t, "response.created", gjson.GetBytes(created, "type").String())
 	require.Equal(t, "response.output_text.delta", gjson.GetBytes(delta, "type").String())
 	require.Equal(t, "response.completed", gjson.GetBytes(completed, "type").String())
+
+	writeMessage(`{"type":"response.create","model":"grok","stream":true,"input":"again"}`)
+	secondCreated := readEvent()
+	secondCompleted := readEvent()
+	require.Equal(t, "response.created", gjson.GetBytes(secondCreated, "type").String())
+	require.Equal(t, "resp_grok_ws_2", gjson.GetBytes(secondCreated, "response.id").String())
+	require.Equal(t, "response.completed", gjson.GetBytes(secondCompleted, "type").String())
 
 	_ = clientConn.Close(coderws.StatusNormalClosure, "done")
 	select {
@@ -287,6 +370,9 @@ func TestProxyResponsesWebSocketFromClientForGrokUsesXAIHTTPBridge(t *testing.T)
 	require.False(t, gjson.GetBytes(upstream.lastBody, "type").Exists())
 	require.False(t, gjson.GetBytes(upstream.lastBody, "generate").Exists())
 	require.False(t, gjson.GetBytes(upstream.lastBody, "prompt_cache_retention").Exists())
+	require.Len(t, upstream.requests, 2)
+	require.False(t, gjson.GetBytes(upstream.bodies[0], "prompt_cache_retention").Exists())
+	require.Equal(t, []int{1, 2}, providerFenceTurns, "Grok bridge 后续 turn 也必须在 HTTP dispatch 前执行 final fence")
 }
 
 func TestGrokPoolResponsesWebSocketHTTPBridgeUsesAetherPassthrough(t *testing.T) {
@@ -340,6 +426,7 @@ func TestGrokPoolResponsesWebSocketHTTPBridgeUsesAetherPassthrough(t *testing.T)
 		"",
 		"",
 		1,
+		nil,
 		func(message []byte) error {
 			events = append(events, append([]byte(nil), message...))
 			return nil
@@ -413,6 +500,19 @@ func TestOpenAIWSHTTPBridgeAcceptsFirstFrameAboveLegacy16MiB(t *testing.T) {
 	payload := []byte(`{"type":"response.create","generate":true,"model":"gpt-5","stream":true,"input":"` + strings.Repeat("x", 17*1024*1024) + `"}`)
 	require.Greater(t, len(payload), 16*1024*1024)
 	require.Less(t, int64(len(payload)), ResolveOpenAIWSClientReadLimitBytes(cfg))
+	providerFenceTurns := make([]int, 0, 1)
+	hooks := &OpenAIWSIngressHooks{
+		BeforeProviderWrite: func(turn int, providerPayload []byte, _ string) error {
+			if turn != 1 || len(upstream.requests) != 0 {
+				return errors.New("oversized HTTP bridge final fence did not run before dispatch")
+			}
+			if len(providerPayload) <= 16*1024*1024 {
+				return errors.New("oversized HTTP bridge final fence did not receive provider payload")
+			}
+			providerFenceTurns = append(providerFenceTurns, turn)
+			return nil
+		},
+	}
 
 	errCh := make(chan error, 1)
 	wsServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -445,7 +545,7 @@ func TestOpenAIWSHTTPBridgeAcceptsFirstFrameAboveLegacy16MiB(t *testing.T) {
 
 		proxyCtx, cancelProxy := context.WithTimeout(r.Context(), 20*time.Second)
 		defer cancelProxy()
-		errCh <- svc.ProxyResponsesWebSocketFromClient(proxyCtx, ginCtx, conn, account, "sk-test", firstMessage, nil)
+		errCh <- svc.ProxyResponsesWebSocketFromClient(proxyCtx, ginCtx, conn, account, "sk-test", firstMessage, hooks)
 	}))
 	defer wsServer.Close()
 
@@ -492,6 +592,7 @@ func TestOpenAIWSHTTPBridgeAcceptsFirstFrameAboveLegacy16MiB(t *testing.T) {
 	require.False(t, gjson.GetBytes(upstream.lastBody, "generate").Exists())
 	require.True(t, gjson.GetBytes(upstream.lastBody, "stream").Bool())
 	require.Equal(t, "gpt-5", gjson.GetBytes(upstream.lastBody, "model").String())
+	require.Equal(t, []int{1}, providerFenceTurns)
 }
 
 func TestOpenAIWSHTTPBridgeKeepsContinuationFramesOnHTTPWithoutPreviousResponseID(t *testing.T) {
@@ -564,6 +665,19 @@ func TestOpenAIWSHTTPBridgeKeepsContinuationFramesOnHTTPWithoutPreviousResponseI
 		Status:      StatusActive,
 		Schedulable: true,
 	}
+	providerFenceTurns := make([]int, 0, 2)
+	hooks := &OpenAIWSIngressHooks{
+		BeforeProviderWrite: func(turn int, providerPayload []byte, originalModel string) error {
+			if len(upstream.requests) != turn-1 {
+				return errors.New("HTTP bridge final fence did not run immediately before dispatch")
+			}
+			if gjson.GetBytes(providerPayload, "type").Exists() || originalModel != "gpt-5.1" {
+				return errors.New("HTTP bridge final fence did not receive the provider-bound payload")
+			}
+			providerFenceTurns = append(providerFenceTurns, turn)
+			return nil
+		},
+	}
 
 	errCh := make(chan error, 1)
 	wsServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -593,7 +707,7 @@ func TestOpenAIWSHTTPBridgeKeepsContinuationFramesOnHTTPWithoutPreviousResponseI
 		req.Header.Set("User-Agent", "codex_cli_rs/0.135.0")
 		ginCtx.Request = req
 
-		errCh <- svc.ProxyResponsesWebSocketFromClient(r.Context(), ginCtx, conn, account, "sk-test", firstMessage, nil)
+		errCh <- svc.ProxyResponsesWebSocketFromClient(r.Context(), ginCtx, conn, account, "sk-test", firstMessage, hooks)
 	}))
 	defer wsServer.Close()
 
@@ -647,4 +761,5 @@ func TestOpenAIWSHTTPBridgeKeepsContinuationFramesOnHTTPWithoutPreviousResponseI
 	require.Equal(t, "call_bridge_1", secondInput[2].Get("call_id").String())
 	require.Equal(t, 0, captureDialer.DialCount())
 	require.Empty(t, captureConn.writes)
+	require.Equal(t, []int{1, 2}, providerFenceTurns, "HTTP bridge 每个 logical turn 必须在 Do 前执行一次 final fence")
 }

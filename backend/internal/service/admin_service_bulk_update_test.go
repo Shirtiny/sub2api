@@ -16,6 +16,8 @@ type accountRepoStubForBulkUpdate struct {
 	accountRepoStub
 	bulkUpdateErr    error
 	bulkUpdateIDs    []int64
+	returningIDs     []int64
+	returningIDsSet  bool
 	bindGroupErrByID map[int64]error
 	bindGroupsCalls  []int64
 	getByIDsAccounts []*Account
@@ -48,6 +50,17 @@ func (s *accountRepoStubForBulkUpdate) BulkUpdate(_ context.Context, ids []int64
 		return 0, s.bulkUpdateErr
 	}
 	return int64(len(ids)), nil
+}
+
+func (s *accountRepoStubForBulkUpdate) BulkUpdateReturningIDs(_ context.Context, ids []int64, _ AccountBulkUpdate) ([]int64, error) {
+	s.bulkUpdateIDs = append([]int64{}, ids...)
+	if s.bulkUpdateErr != nil {
+		return nil, s.bulkUpdateErr
+	}
+	if s.returningIDsSet {
+		return append([]int64{}, s.returningIDs...), nil
+	}
+	return append([]int64{}, ids...), nil
 }
 
 func (s *accountRepoStubForBulkUpdate) BindGroups(_ context.Context, accountID int64, _ []int64) error {
@@ -124,6 +137,26 @@ func TestAdminService_BulkUpdateAccounts_AllSuccessIDs(t *testing.T) {
 	require.ElementsMatch(t, []int64{1, 2, 3}, result.SuccessIDs)
 	require.Empty(t, result.FailedIDs)
 	require.Len(t, result.Results, 3)
+}
+
+func TestAdminService_BulkUpdateAccounts_ReportsMissingIDsFromReturning(t *testing.T) {
+	repo := &accountRepoStubForBulkUpdate{
+		returningIDsSet: true,
+		returningIDs:    []int64{1, 3},
+	}
+	svc := &adminServiceImpl{accountRepo: repo}
+	schedulable := true
+
+	result, err := svc.BulkUpdateAccounts(context.Background(), &BulkUpdateAccountsInput{
+		AccountIDs:  []int64{1, 2, 3},
+		Schedulable: &schedulable,
+	})
+
+	require.NoError(t, err)
+	require.Equal(t, []int64{1, 3}, result.SuccessIDs)
+	require.Equal(t, []int64{2}, result.FailedIDs)
+	require.Equal(t, "account not found", result.Results[1].Error)
+	require.Empty(t, repo.bindGroupsCalls)
 }
 
 // TestAdminService_BulkUpdateAccounts_PartialFailureIDs 验证部分失败时 success_ids/failed_ids 正确。

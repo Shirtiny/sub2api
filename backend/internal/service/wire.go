@@ -605,7 +605,7 @@ var ProviderSet = wire.NewSet(
 	NewGroupCapacityService,
 	NewChannelService,
 	NewModelPricingResolver,
-	NewContentModerationService,
+	ProvideContentModerationService,
 	NewAffiliateService,
 	ProvidePaymentConfigService,
 	ProvidePaymentService,
@@ -616,6 +616,34 @@ var ProviderSet = wire.NewSet(
 	NewChannelMonitorRequestTemplateService,
 	ProvideUserPlatformQuotaUsageFlusher,
 )
+
+// ProvideContentModerationService connects settings invalidation to the
+// retained-connection runtime snapshot without adding a per-turn repository
+// read.
+func ProvideContentModerationService(
+	settingRepo SettingRepository,
+	repo ContentModerationRepository,
+	hashCache ContentModerationHashCache,
+	groupRepo GroupRepository,
+	userRepo UserRepository,
+	authCacheInvalidator APIKeyAuthCacheInvalidator,
+	emailService *EmailService,
+	settingService *SettingService,
+) *ContentModerationService {
+	svc := NewContentModerationService(
+		settingRepo,
+		repo,
+		hashCache,
+		groupRepo,
+		userRepo,
+		authCacheInvalidator,
+		emailService,
+	)
+	if settingService != nil {
+		settingService.SetRiskControlUpdateCallback(svc.UpdateRiskControlEnabled)
+	}
+	return svc
+}
 
 // ProvideUserPlatformQuotaUsageFlusher 创建并启动 UserPlatformQuotaUsageFlusher。
 func ProvideUserPlatformQuotaUsageFlusher(cfg *config.Config, cache BillingCache, quotaRepo UserPlatformQuotaRepository, tw *TimingWheelService) *UserPlatformQuotaUsageFlusher {

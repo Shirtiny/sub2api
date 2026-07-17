@@ -57,6 +57,8 @@ var (
 	requestIDCounter atomic.Uint64
 )
 
+const concurrencySlotReleaseTimeout = 500 * time.Millisecond
+
 func initRequestIDPrefix() string {
 	b := make([]byte, 8)
 	if _, err := rand.Read(b); err == nil {
@@ -183,7 +185,7 @@ func (s *ConcurrencyService) AcquireAccountSlot(ctx context.Context, accountID i
 		return &AcquireResult{
 			Acquired: true,
 			ReleaseFunc: func() {
-				bgCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+				bgCtx, cancel := context.WithTimeout(context.Background(), concurrencySlotReleaseTimeout)
 				defer cancel()
 				if err := s.cache.ReleaseAccountSlot(bgCtx, accountID, requestID); err != nil {
 					logger.LegacyPrintf("service.concurrency", "Warning: failed to release account slot for %d (req=%s): %v", accountID, requestID, err)
@@ -222,7 +224,7 @@ func (s *ConcurrencyService) AcquireUserSlot(ctx context.Context, userID int64, 
 		return &AcquireResult{
 			Acquired: true,
 			ReleaseFunc: func() {
-				bgCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+				bgCtx, cancel := context.WithTimeout(context.Background(), concurrencySlotReleaseTimeout)
 				defer cancel()
 				if err := s.cache.ReleaseUserSlot(bgCtx, userID, requestID); err != nil {
 					logger.LegacyPrintf("service.concurrency", "Warning: failed to release user slot for %d (req=%s): %v", userID, requestID, err)

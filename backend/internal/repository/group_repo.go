@@ -24,16 +24,28 @@ type sqlExecutor interface {
 }
 
 type groupRepository struct {
-	client *dbent.Client
-	sql    sqlExecutor
+	client              *dbent.Client
+	sql                 sqlExecutor
+	accountGroupMutator accountGroupFenceMutator
 }
 
-func NewGroupRepository(client *dbent.Client, sqlDB *sql.DB) service.GroupRepository {
-	return newGroupRepositoryWithSQL(client, sqlDB)
+type accountGroupFenceMutator interface {
+	BulkAddAccountsToGroup(ctx context.Context, groupID int64, accountIDs []int64) error
+	RemoveAllAccountsFromGroups(ctx context.Context, groupIDs []int64) (int64, error)
+	ReplaceAccountsForGroup(ctx context.Context, groupID int64, accountIDs []int64) error
 }
 
-func newGroupRepositoryWithSQL(client *dbent.Client, sqlq sqlExecutor) *groupRepository {
-	return &groupRepository{client: client, sql: sqlq}
+func NewGroupRepository(client *dbent.Client, sqlDB *sql.DB, schedulerCache service.SchedulerCache) service.GroupRepository {
+	accountMutator := newAccountRepositoryWithSQL(client, sqlDB, schedulerCache)
+	return newGroupRepositoryWithSQL(client, sqlDB, accountMutator)
+}
+
+func newGroupRepositoryWithSQL(client *dbent.Client, sqlq sqlExecutor, accountMutators ...accountGroupFenceMutator) *groupRepository {
+	var accountMutator accountGroupFenceMutator
+	if len(accountMutators) > 0 {
+		accountMutator = accountMutators[0]
+	}
+	return &groupRepository{client: client, sql: sqlq, accountGroupMutator: accountMutator}
 }
 
 func (r *groupRepository) Create(ctx context.Context, groupIn *service.Group) error {
@@ -608,6 +620,9 @@ func (r *groupRepository) GetAccountCount(ctx context.Context, groupID int64) (t
 }
 
 func (r *groupRepository) DeleteAccountGroupsByGroupID(ctx context.Context, groupID int64) (int64, error) {
+	if r.accountGroupMutator != nil {
+		return r.accountGroupMutator.RemoveAllAccountsFromGroups(ctx, []int64{groupID})
+	}
 	res, err := r.sql.ExecContext(ctx, "DELETE FROM account_groups WHERE group_id = $1", groupID)
 	if err != nil {
 		return 0, err
@@ -656,12 +671,21 @@ func (r *groupRepository) DeleteCascade(ctx context.Context, id int64) ([]int64,
 	}
 	exec := r.client
 	txClient := r.client
+	opCtx := ctx
 	if err == nil {
 		defer func() { _ = tx.Rollback() }()
 		exec = tx.Client()
 		txClient = exec
+		opCtx = dbent.NewTxContext(ctx, tx)
 	}
 	// If dbent.ErrTxStarted is returned, reuse the ambient transactional client.
+	accountGroupsRemovedByMutator := false
+	if r.accountGroupMutator != nil {
+		if _, err := r.accountGroupMutator.RemoveAllAccountsFromGroups(opCtx, cascadeGroupIDs); err != nil {
+			return nil, err
+		}
+		accountGroupsRemovedByMutator = true
+	}
 
 	affectedUserSet := make(map[int64]struct{})
 	for _, groupID := range cascadeGroupIDs {
@@ -725,9 +749,12 @@ func (r *groupRepository) DeleteCascade(ctx context.Context, id int64) ([]int64,
 			return nil, err
 		}
 
-		// 3. Delete account_groups join rows.
-		if _, err := exec.ExecContext(ctx, "DELETE FROM account_groups WHERE group_id = $1", groupID); err != nil {
-			return nil, err
+		// 3. Delete account_groups join rows. Production routes this through the
+		// account mutation fence once for the full cascade before this loop.
+		if !accountGroupsRemovedByMutator {
+			if _, err := exec.ExecContext(ctx, "DELETE FROM account_groups WHERE group_id = $1", groupID); err != nil {
+				return nil, err
+			}
 		}
 
 		// 4. Soft-delete group itself.
@@ -872,6 +899,9 @@ func (r *groupRepository) BindAccountsToGroup(ctx context.Context, groupID int64
 	if len(accountIDs) == 0 {
 		return nil
 	}
+	if r.accountGroupMutator != nil {
+		return r.accountGroupMutator.BulkAddAccountsToGroup(ctx, groupID, accountIDs)
+	}
 
 	// 使用 INSERT ... ON CONFLICT DO NOTHING 忽略已存在的绑定
 	_, err := r.sql.ExecContext(
@@ -892,6 +922,18 @@ func (r *groupRepository) BindAccountsToGroup(ctx context.Context, groupID int64
 	}
 
 	return nil
+}
+
+// ReplaceAccountsForGroup atomically replaces a group's account membership in
+// production. The account repository owns the scheduler mutation fence.
+func (r *groupRepository) ReplaceAccountsForGroup(ctx context.Context, groupID int64, accountIDs []int64) error {
+	if r.accountGroupMutator != nil {
+		return r.accountGroupMutator.ReplaceAccountsForGroup(ctx, groupID, accountIDs)
+	}
+	if _, err := r.DeleteAccountGroupsByGroupID(ctx, groupID); err != nil {
+		return err
+	}
+	return r.BindAccountsToGroup(ctx, groupID, accountIDs)
 }
 
 func (r *groupRepository) NotifyGroupChanged(ctx context.Context, groupID int64) error {

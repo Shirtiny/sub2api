@@ -2832,7 +2832,7 @@ export default {
       recordNonHits: 'Record Non-Hits',
       recordNonHitsHint: 'When enabled, sampled non-hit request summaries are redacted before storage.',
       preHashCheck: 'Enable Pre-Hash Check',
-      preHashCheckHint: 'Hashes from async hits are blocked before moderation; this does not send email or increment ban counters.',
+      preHashCheckHint: 'Hashes from previous hits (keyword and moderation API) notify only once: an identical repeat is still blocked, but sends no email and increments no ban counter. In pre-block mode it also skips the moderation API call.',
       flaggedHashCount: 'Current hash collection size: {count}',
       flaggedHashHint: 'Hashes are stored permanently in Redis; paste a full 64-character hash to remove a false block, or clear all stored hashes.',
       flaggedHashPlaceholder: 'Paste full 64-character input hash',
@@ -3665,6 +3665,10 @@ export default {
         wsModeConcurrencyHint:
           'When WS mode is enabled, account concurrency becomes the WS connection pool limit for this account.',
         wsModePassthroughHint: 'Passthrough mode does not use the WS connection pool.',
+        aetherWSAccount: 'Use as Aether WS account',
+        aetherWSAccountDesc:
+          'Use the direct sub2api-to-Aether WebSocket path. This pins the account WS mode to passthrough.',
+        aetherWSModeManagedHint: 'Aether manages this account mode; use the Aether WS switch to change it.',
         oauthResponsesWebsocketsV2: 'OAuth WebSocket Mode',
         oauthResponsesWebsocketsV2Desc:
           'Only applies to OpenAI OAuth. This account can use OpenAI WebSocket Mode only when enabled.',

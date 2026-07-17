@@ -103,11 +103,12 @@ func enqueueSchedulerOutbox(ctx context.Context, exec sqlExecutor, eventType str
 			WHERE NOT EXISTS (
 				SELECT 1
 				FROM scheduler_outbox
-				WHERE event_type = $1
-					AND account_id IS NOT DISTINCT FROM $2
-					AND group_id IS NOT DISTINCT FROM $3
-					AND created_at >= NOW() - make_interval(secs => $5)
-			)
+					WHERE event_type = $1
+						AND account_id IS NOT DISTINCT FROM $2
+						AND group_id IS NOT DISTINCT FROM $3
+						AND payload IS NOT DISTINCT FROM $4::jsonb
+						AND created_at >= NOW() - make_interval(secs => $5)
+				)
 		`
 		args = append(args, schedulerOutboxDedupWindow.Seconds())
 	}

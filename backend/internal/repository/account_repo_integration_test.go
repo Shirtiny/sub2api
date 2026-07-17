@@ -4,6 +4,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/accountgroup"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
 	"github.com/Wei-Shaw/sub2api/internal/service"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -25,6 +27,78 @@ type schedulerCacheRecorder struct {
 	setAccounts []*service.Account
 	deleteIDs   []int64
 	accounts    map[int64]*service.Account
+}
+
+type schedulerMutationCacheRecorder struct {
+	schedulerCacheRecorder
+	nextEpoch       int64
+	beginErr        error
+	publishErr      error
+	onBegin         func()
+	beginCalls      [][]int64
+	publishCalls    map[int64]int64
+	publishAttempts map[int64]int
+	completeCalls   map[int64]int64
+}
+
+func (s *schedulerMutationCacheRecorder) BeginAccountMutations(_ context.Context, accountIDs []int64, _ time.Duration) (map[int64]int64, error) {
+	ids := append([]int64(nil), accountIDs...)
+	s.beginCalls = append(s.beginCalls, ids)
+	if s.onBegin != nil {
+		s.onBegin()
+	}
+	if s.beginErr != nil {
+		return nil, s.beginErr
+	}
+	if s.nextEpoch <= 0 {
+		s.nextEpoch = 100
+	}
+	tokens := make(map[int64]int64, len(ids))
+	for _, accountID := range ids {
+		s.nextEpoch++
+		tokens[accountID] = s.nextEpoch
+		if s.accounts != nil {
+			delete(s.accounts, accountID)
+		}
+	}
+	return tokens, nil
+}
+
+func (s *schedulerMutationCacheRecorder) PublishAccountMutation(_ context.Context, account *service.Account, epoch int64) (bool, error) {
+	if account == nil {
+		return false, nil
+	}
+	if s.publishAttempts == nil {
+		s.publishAttempts = make(map[int64]int)
+	}
+	s.publishAttempts[account.ID]++
+	if s.publishCalls == nil {
+		s.publishCalls = make(map[int64]int64)
+	}
+	s.publishCalls[account.ID] = epoch
+	if s.publishErr != nil {
+		return false, s.publishErr
+	}
+	if s.accounts == nil {
+		s.accounts = make(map[int64]*service.Account)
+	}
+	cloned := *account
+	s.accounts[account.ID] = &cloned
+	return true, nil
+}
+
+func (s *schedulerMutationCacheRecorder) CompleteAccountDeletion(_ context.Context, accountID, epoch int64) (bool, error) {
+	if s.completeCalls == nil {
+		s.completeCalls = make(map[int64]int64)
+	}
+	s.completeCalls[accountID] = epoch
+	if s.publishErr != nil {
+		return false, s.publishErr
+	}
+	if s.accounts != nil {
+		delete(s.accounts, accountID)
+	}
+	return true, nil
 }
 
 func (s *schedulerCacheRecorder) GetSnapshot(ctx context.Context, bucket service.SchedulerBucket) ([]*service.Account, bool, error) {
@@ -94,6 +168,343 @@ func (s *AccountRepoSuite) SetupTest() {
 
 func TestAccountRepoSuite(t *testing.T) {
 	suite.Run(t, new(AccountRepoSuite))
+}
+
+func TestAccountRepositoryUpdateWithExtraPatchAmbientRollbackKeepsDBAndCacheClean(t *testing.T) {
+	ctx := context.Background()
+	account := mustCreateAccount(t, integrationEntClient, &service.Account{
+		Name:  "ambient-extra-rollback",
+		Extra: map[string]any{"keep": true},
+	})
+	tx, err := integrationEntClient.Tx(ctx)
+	require.NoError(t, err)
+
+	txCtx := dbent.NewTxContext(ctx, tx)
+	cache := &schedulerCacheRecorder{}
+	repo := newAccountRepositoryWithSQL(integrationEntClient, integrationEntClient, cache)
+	name := "ambient-extra-rolled-back"
+	require.NoError(t, repo.UpdateWithExtraPatch(txCtx, account.ID, service.AccountColumnPatch{Name: &name}, map[string]any{"mode": "passthrough"}, nil, nil))
+	got, err := tx.Client().Account.Get(txCtx, account.ID)
+	require.NoError(t, err)
+	require.Equal(t, name, got.Name)
+	require.Equal(t, true, got.Extra["keep"])
+	require.Equal(t, "passthrough", got.Extra["mode"])
+	require.Empty(t, cache.setAccounts, "ambient transaction must not publish cache before commit")
+	var inTxOutbox int
+	require.NoError(t, scanSingleRow(txCtx, tx.Client(), "SELECT COUNT(*) FROM scheduler_outbox WHERE account_id = $1", []any{account.ID}, &inTxOutbox))
+	require.Equal(t, 1, inTxOutbox)
+	require.NoError(t, tx.Rollback())
+
+	gotAfterRollback, err := integrationEntClient.Account.Get(ctx, account.ID)
+	require.NoError(t, err)
+	require.Equal(t, "ambient-extra-rollback", gotAfterRollback.Name)
+	require.NotContains(t, gotAfterRollback.Extra, "mode")
+	var committedOutbox int
+	require.NoError(t, scanSingleRow(ctx, integrationEntClient, "SELECT COUNT(*) FROM scheduler_outbox WHERE account_id = $1", []any{account.ID}, &committedOutbox))
+	require.Zero(t, committedOutbox)
+}
+
+func TestAccountRepositoryUpdateWithExtraPatchAmbientCommitPersistsOutboxWithoutDirectCache(t *testing.T) {
+	ctx := context.Background()
+	account := mustCreateAccount(t, integrationEntClient, &service.Account{
+		Name:  "ambient-extra-commit",
+		Extra: map[string]any{"keep": true},
+	})
+	tx, err := integrationEntClient.Tx(ctx)
+	require.NoError(t, err)
+	txCtx := dbent.NewTxContext(ctx, tx)
+	cache := &schedulerCacheRecorder{}
+	repo := newAccountRepositoryWithSQL(integrationEntClient, integrationEntClient, cache)
+	name := "ambient-extra-committed"
+
+	require.NoError(t, repo.UpdateWithExtraPatch(txCtx, account.ID, service.AccountColumnPatch{Name: &name}, map[string]any{"mode": "passthrough"}, nil, nil))
+	require.Empty(t, cache.setAccounts)
+	require.NoError(t, tx.Commit())
+
+	got, err := integrationEntClient.Account.Get(ctx, account.ID)
+	require.NoError(t, err)
+	require.Equal(t, name, got.Name)
+	require.Equal(t, "passthrough", got.Extra["mode"])
+	var committedOutbox int
+	require.NoError(t, scanSingleRow(ctx, integrationEntClient, "SELECT COUNT(*) FROM scheduler_outbox WHERE account_id = $1", []any{account.ID}, &committedOutbox))
+	require.Equal(t, 1, committedOutbox)
+	require.Empty(t, cache.setAccounts, "ambient commit converges through outbox, not an early direct cache write")
+}
+
+func TestAccountRepositoryMutationFenceBeginFailurePreventsDBWrite(t *testing.T) {
+	ctx := context.Background()
+	account := mustCreateAccount(t, integrationEntClient, &service.Account{Name: "fence-begin-old"})
+	beginErr := errors.New("redis unavailable")
+	cache := &schedulerMutationCacheRecorder{
+		schedulerCacheRecorder: schedulerCacheRecorder{accounts: map[int64]*service.Account{account.ID: account}},
+		beginErr:               beginErr,
+	}
+	repo := newAccountRepositoryWithSQL(integrationEntClient, integrationEntClient, cache)
+	name := "fence-begin-new"
+
+	err := repo.UpdateWithExtraPatch(ctx, account.ID, service.AccountColumnPatch{Name: &name}, nil, nil, nil)
+	require.ErrorIs(t, err, beginErr)
+	require.Len(t, cache.beginCalls, 1)
+	require.Empty(t, cache.publishCalls)
+	got, getErr := integrationEntClient.Account.Get(ctx, account.ID)
+	require.NoError(t, getErr)
+	require.Equal(t, "fence-begin-old", got.Name)
+	var outboxCount int
+	require.NoError(t, scanSingleRow(ctx, integrationEntClient,
+		"SELECT COUNT(*) FROM scheduler_outbox WHERE account_id = $1", []any{account.ID}, &outboxCount))
+	require.Zero(t, outboxCount)
+}
+
+func TestAccountRepositoryMutationFenceAmbientRollbackRestoresOldSnapshot(t *testing.T) {
+	ctx := context.Background()
+	account := mustCreateAccount(t, integrationEntClient, &service.Account{Name: "fence-rollback-old"})
+	cache := &schedulerMutationCacheRecorder{
+		schedulerCacheRecorder: schedulerCacheRecorder{accounts: map[int64]*service.Account{account.ID: account}},
+	}
+	repo := newAccountRepositoryWithSQL(integrationEntClient, integrationEntClient, cache)
+	tx, err := integrationEntClient.Tx(ctx)
+	require.NoError(t, err)
+	txCtx := dbent.NewTxContext(ctx, tx)
+	name := "fence-rollback-new"
+
+	require.NoError(t, repo.UpdateWithExtraPatch(txCtx, account.ID, service.AccountColumnPatch{Name: &name}, nil, nil, nil))
+	require.NotContains(t, cache.accounts, account.ID, "full snapshot must stay missing before outer transaction resolves")
+	require.NoError(t, tx.Rollback())
+	restored := cache.accounts[account.ID]
+	require.NotNil(t, restored)
+	require.Equal(t, "fence-rollback-old", restored.Name)
+}
+
+func TestAccountRepositoryMutationFenceAmbientCommitPublishesFreshSnapshot(t *testing.T) {
+	ctx := context.Background()
+	account := mustCreateAccount(t, integrationEntClient, &service.Account{Name: "fence-commit-old"})
+	cache := &schedulerMutationCacheRecorder{
+		schedulerCacheRecorder: schedulerCacheRecorder{accounts: map[int64]*service.Account{account.ID: account}},
+	}
+	repo := newAccountRepositoryWithSQL(integrationEntClient, integrationEntClient, cache)
+	tx, err := integrationEntClient.Tx(ctx)
+	require.NoError(t, err)
+	txCtx := dbent.NewTxContext(ctx, tx)
+	name := "fence-commit-new"
+
+	require.NoError(t, repo.UpdateWithExtraPatch(txCtx, account.ID, service.AccountColumnPatch{Name: &name}, nil, nil, nil))
+	require.NotContains(t, cache.accounts, account.ID)
+	require.NoError(t, tx.Commit())
+	published := cache.accounts[account.ID]
+	require.NotNil(t, published)
+	require.Equal(t, "fence-commit-new", published.Name)
+	require.Positive(t, cache.publishCalls[account.ID])
+}
+
+func TestAccountRepositoryMutationFenceReusesTokenAcrossAmbientAccountAndGroupWrites(t *testing.T) {
+	ctx := context.Background()
+	account := mustCreateAccount(t, integrationEntClient, &service.Account{Name: "fence-combined-old"})
+	group := mustCreateGroup(t, integrationEntClient, &service.Group{Name: "fence-combined-group"})
+	cache := &schedulerMutationCacheRecorder{
+		schedulerCacheRecorder: schedulerCacheRecorder{accounts: map[int64]*service.Account{account.ID: account}},
+	}
+	repo := newAccountRepositoryWithSQL(integrationEntClient, integrationEntClient, cache)
+	tx, err := integrationEntClient.Tx(ctx)
+	require.NoError(t, err)
+	txCtx := dbent.NewTxContext(ctx, tx)
+	name := "fence-combined-new"
+
+	require.NoError(t, repo.UpdateWithExtraPatch(txCtx, account.ID, service.AccountColumnPatch{Name: &name}, nil, nil, nil))
+	require.NoError(t, repo.BindGroups(txCtx, account.ID, []int64{group.ID}))
+	require.Len(t, cache.beginCalls, 1, "one outer transaction must reuse the same account token")
+	require.NotContains(t, cache.accounts, account.ID)
+	require.NoError(t, tx.Commit())
+
+	published := cache.accounts[account.ID]
+	require.NotNil(t, published)
+	require.Equal(t, name, published.Name)
+	require.Equal(t, []int64{group.ID}, published.GroupIDs)
+}
+
+func TestAccountRepositoryCreateAndBindGroupsAmbientCommitPublishesOnlyFinalSnapshot(t *testing.T) {
+	ctx := context.Background()
+	group := mustCreateGroup(t, integrationEntClient, &service.Group{Name: "fence-create-group"})
+	cache := &schedulerMutationCacheRecorder{schedulerCacheRecorder: schedulerCacheRecorder{accounts: make(map[int64]*service.Account)}}
+	repo := newAccountRepositoryWithSQL(integrationEntClient, integrationEntClient, cache)
+	tx, err := integrationEntClient.Tx(ctx)
+	require.NoError(t, err)
+	txCtx := dbent.NewTxContext(ctx, tx)
+	account := &service.Account{
+		Name:        "fence-create-account",
+		Platform:    service.PlatformOpenAI,
+		Type:        service.AccountTypeAPIKey,
+		Credentials: map[string]any{},
+		Extra:       map[string]any{},
+		Concurrency: 1,
+		Priority:    50,
+		Status:      service.StatusActive,
+		Schedulable: true,
+		GroupIDs:    []int64{group.ID},
+	}
+
+	require.NoError(t, repo.Create(txCtx, account))
+	require.NoError(t, repo.BindGroups(txCtx, account.ID, []int64{group.ID}))
+	require.Len(t, cache.beginCalls, 1)
+	require.NotContains(t, cache.accounts, account.ID)
+	require.NoError(t, tx.Commit())
+
+	published := cache.accounts[account.ID]
+	require.NotNil(t, published)
+	require.Equal(t, []int64{group.ID}, published.GroupIDs)
+	require.Equal(t, 1, cache.publishAttempts[account.ID], "one outer transaction must publish one final snapshot")
+}
+
+func TestAccountRepositoryBulkUpdateAndBindGroupsReuseFenceAndPublishFinalSnapshots(t *testing.T) {
+	ctx := context.Background()
+	group := mustCreateGroup(t, integrationEntClient, &service.Group{Name: "fence-bulk-group"})
+	account1 := mustCreateAccount(t, integrationEntClient, &service.Account{Name: "fence-bulk-one"})
+	account2 := mustCreateAccount(t, integrationEntClient, &service.Account{Name: "fence-bulk-two"})
+	cache := &schedulerMutationCacheRecorder{schedulerCacheRecorder: schedulerCacheRecorder{accounts: map[int64]*service.Account{
+		account1.ID: account1,
+		account2.ID: account2,
+	}}}
+	repo := newAccountRepositoryWithSQL(integrationEntClient, integrationEntClient, cache)
+	tx, err := integrationEntClient.Tx(ctx)
+	require.NoError(t, err)
+	txCtx := dbent.NewTxContext(ctx, tx)
+	schedulable := false
+
+	updatedIDs, err := repo.BulkUpdateReturningIDs(txCtx, []int64{account1.ID, account2.ID}, service.AccountBulkUpdate{Schedulable: &schedulable})
+	require.NoError(t, err)
+	require.ElementsMatch(t, []int64{account1.ID, account2.ID}, updatedIDs)
+	require.NoError(t, repo.BulkBindGroups(txCtx, updatedIDs, []int64{group.ID}))
+	require.Len(t, cache.beginCalls, 1, "bulk fields and groups must reuse one epoch allocation")
+	require.NotContains(t, cache.accounts, account1.ID)
+	require.NotContains(t, cache.accounts, account2.ID)
+	require.NoError(t, tx.Commit())
+
+	for _, accountID := range []int64{account1.ID, account2.ID} {
+		published := cache.accounts[accountID]
+		require.NotNil(t, published)
+		require.False(t, published.Schedulable)
+		require.Equal(t, []int64{group.ID}, published.GroupIDs)
+		require.Equal(t, 1, cache.publishAttempts[accountID], "each account must publish only its final committed snapshot")
+	}
+}
+
+func TestGroupRepositoryDirectMembershipWritesUseAccountMutationFence(t *testing.T) {
+	ctx := context.Background()
+	group := mustCreateGroup(t, integrationEntClient, &service.Group{Name: "group-repo-fence"})
+	account := mustCreateAccount(t, integrationEntClient, &service.Account{Name: "group-repo-fenced-account"})
+	cache := &schedulerMutationCacheRecorder{schedulerCacheRecorder: schedulerCacheRecorder{accounts: map[int64]*service.Account{
+		account.ID: account,
+	}}}
+	accountMutator := newAccountRepositoryWithSQL(integrationEntClient, integrationEntClient, cache)
+	groupRepo := newGroupRepositoryWithSQL(integrationEntClient, integrationEntClient, accountMutator)
+
+	require.NoError(t, groupRepo.BindAccountsToGroup(ctx, group.ID, []int64{account.ID}))
+	require.Len(t, cache.beginCalls, 1)
+	require.Equal(t, []int64{group.ID}, cache.accounts[account.ID].GroupIDs)
+
+	affected, err := groupRepo.DeleteAccountGroupsByGroupID(ctx, group.ID)
+	require.NoError(t, err)
+	require.Equal(t, int64(1), affected)
+	require.Len(t, cache.beginCalls, 2)
+	require.Empty(t, cache.accounts[account.ID].GroupIDs)
+	require.Equal(t, 2, cache.publishAttempts[account.ID])
+}
+
+func TestAccountGroupBatchMutationsSerializeOnGroupRow(t *testing.T) {
+	ctx := context.Background()
+	group := mustCreateGroup(t, integrationEntClient, &service.Group{Name: "group-membership-lock"})
+	account := mustCreateAccount(t, integrationEntClient, &service.Account{Name: "group-membership-lock-account"})
+	repo := newAccountRepositoryWithSQL(integrationEntClient, integrationEntClient, nil)
+
+	assertWaitsForGroupLock := func(t *testing.T, mutate func() error) {
+		t.Helper()
+		locker, err := integrationEntClient.Tx(ctx)
+		require.NoError(t, err)
+		require.NoError(t, lockAccountGroupsForMutation(ctx, locker.Client(), []int64{group.ID}))
+		done := make(chan error, 1)
+		go func() { done <- mutate() }()
+		select {
+		case err := <-done:
+			_ = locker.Rollback()
+			require.Failf(t, "mutation bypassed group lock", "returned early: %v", err)
+		case <-time.After(100 * time.Millisecond):
+		}
+		require.NoError(t, locker.Commit())
+		select {
+		case err := <-done:
+			require.NoError(t, err)
+		case <-time.After(3 * time.Second):
+			require.Fail(t, "mutation did not resume after group lock release")
+		}
+	}
+
+	assertWaitsForGroupLock(t, func() error {
+		return repo.BulkAddAccountsToGroup(ctx, group.ID, []int64{account.ID})
+	})
+	assertWaitsForGroupLock(t, func() error {
+		return repo.ReplaceAccountsForGroup(ctx, group.ID, []int64{account.ID})
+	})
+}
+
+func TestAccountRepositoryMutationFencePublishFailureKeepsCommittedCacheMiss(t *testing.T) {
+	ctx := context.Background()
+	account := mustCreateAccount(t, integrationEntClient, &service.Account{Name: "fence-publish-old"})
+	cache := &schedulerMutationCacheRecorder{
+		schedulerCacheRecorder: schedulerCacheRecorder{accounts: map[int64]*service.Account{account.ID: account}},
+		publishErr:             errors.New("redis set failed"),
+	}
+	repo := newAccountRepositoryWithSQL(integrationEntClient, integrationEntClient, cache)
+	name := "fence-publish-new"
+
+	require.NoError(t, repo.UpdateWithExtraPatch(ctx, account.ID, service.AccountColumnPatch{Name: &name}, nil, nil, nil),
+		"post-commit cache failure must not make a committed mutation look retryable")
+	got, err := integrationEntClient.Account.Get(ctx, account.ID)
+	require.NoError(t, err)
+	require.Equal(t, name, got.Name)
+	require.NotContains(t, cache.accounts, account.ID, "failed publish must remain fail-closed")
+	var outboxEpoch string
+	require.NoError(t, scanSingleRow(ctx, integrationEntClient, `
+		SELECT payload->>'scheduler_epoch'
+		FROM scheduler_outbox
+		WHERE account_id = $1
+		ORDER BY id DESC
+		LIMIT 1
+	`, []any{account.ID}, &outboxEpoch))
+	require.NotEmpty(t, outboxEpoch, "transactional outbox must retain the repair token")
+}
+
+func TestAccountRepositoryMutationFenceContextCancelRollsBackAndRestores(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	account := mustCreateAccount(t, integrationEntClient, &service.Account{Name: "fence-cancel-old"})
+	cache := &schedulerMutationCacheRecorder{
+		schedulerCacheRecorder: schedulerCacheRecorder{accounts: map[int64]*service.Account{account.ID: account}},
+		onBegin:                cancel,
+	}
+	repo := newAccountRepositoryWithSQL(integrationEntClient, integrationEntClient, cache)
+	name := "fence-cancel-new"
+
+	err := repo.UpdateWithExtraPatch(ctx, account.ID, service.AccountColumnPatch{Name: &name}, nil, nil, nil)
+	require.Error(t, err)
+	restored := cache.accounts[account.ID]
+	require.NotNil(t, restored)
+	require.Equal(t, "fence-cancel-old", restored.Name)
+}
+
+func TestAccountRepositoryMutationFenceRejectsImplicitTransactionalClient(t *testing.T) {
+	ctx := context.Background()
+	account := mustCreateAccount(t, integrationEntClient, &service.Account{Name: "fence-implicit-old"})
+	tx, err := integrationEntClient.Tx(ctx)
+	require.NoError(t, err)
+	defer func() { _ = tx.Rollback() }()
+	cache := &schedulerMutationCacheRecorder{}
+	repo := newAccountRepositoryWithSQL(tx.Client(), tx, cache)
+	name := "fence-implicit-new"
+
+	err = repo.UpdateWithExtraPatch(ctx, account.ID, service.AccountColumnPatch{Name: &name}, nil, nil, nil)
+	require.ErrorIs(t, err, errSchedulerMutationTxContextRequired)
+	require.Empty(t, cache.beginCalls, "write must be rejected before Redis or DB mutation")
+	got, getErr := tx.Client().Account.Get(ctx, account.ID)
+	require.NoError(t, getErr)
+	require.Equal(t, "fence-implicit-old", got.Name)
 }
 
 // --- Create / GetByID / Update / Delete ---
@@ -599,12 +1010,17 @@ func (s *AccountRepoSuite) TestBindGroups_EmptyList() {
 	account := mustCreateAccount(s.T(), s.client, &service.Account{Name: "acc-empty"})
 	group := mustCreateGroup(s.T(), s.client, &service.Group{Name: "g-empty"})
 	mustBindAccountToGroup(s.T(), s.client, account.ID, group.ID, 1)
+	cacheRecorder := &schedulerCacheRecorder{}
+	s.repo.schedulerCache = cacheRecorder
 
 	s.Require().NoError(s.repo.BindGroups(s.ctx, account.ID, []int64{}), "BindGroups empty")
 
 	groups, err := s.repo.GetGroups(s.ctx, account.ID)
 	s.Require().NoError(err)
 	s.Require().Empty(groups, "expected 0 groups after binding empty list")
+	s.Require().Len(cacheRecorder.setAccounts, 1)
+	s.Require().Equal(account.ID, cacheRecorder.setAccounts[0].ID)
+	s.Require().Empty(cacheRecorder.setAccounts[0].GroupIDs)
 }
 
 // --- Schedulable ---
@@ -853,6 +1269,21 @@ func (s *AccountRepoSuite) TestBulkUpdate_SyncSchedulerSnapshotOnDisabled() {
 	s.Require().Contains(ids, account2.ID)
 }
 
+func (s *AccountRepoSuite) TestBulkUpdate_SyncSchedulerSnapshotOnRoutingChange() {
+	account := mustCreateAccount(s.T(), s.client, &service.Account{Name: "bulk-routing", Status: service.StatusActive, Schedulable: true})
+	cacheRecorder := &schedulerCacheRecorder{}
+	s.repo.schedulerCache = cacheRecorder
+
+	rows, err := s.repo.BulkUpdate(s.ctx, []int64{account.ID}, service.AccountBulkUpdate{
+		Credentials: map[string]any{"model_mapping": map[string]any{"gpt-5": "gpt-5-codex"}},
+	})
+	s.Require().NoError(err)
+	s.Require().Equal(int64(1), rows)
+	s.Require().Len(cacheRecorder.setAccounts, 1)
+	s.Require().Equal(account.ID, cacheRecorder.setAccounts[0].ID)
+	s.Require().Equal("gpt-5-codex", cacheRecorder.setAccounts[0].GetMappedModel("gpt-5"))
+}
+
 // --- SetOverloaded / SetRateLimited / ClearRateLimit ---
 
 func (s *AccountRepoSuite) TestSetOverloaded() {
@@ -1071,6 +1502,88 @@ func (s *AccountRepoSuite) TestUpdateExtra_NilExtra() {
 	s.Require().Equal("val", got.Extra["key"])
 }
 
+func (s *AccountRepoSuite) TestUpdateWithExtraPatchPreservesConcurrentRuntimeAndNestedFields() {
+	account := mustCreateAccount(s.T(), s.client, &service.Account{
+		Name: "acc-extra-patch",
+		Extra: map[string]any{
+			"legacy": "remove",
+			"aether_ws": map[string]any{
+				"schema_version": 1,
+				"enabled":        false,
+				"future_field":   "preserve",
+			},
+		},
+	})
+	stale, err := s.repo.GetByID(s.ctx, account.ID)
+	s.Require().NoError(err)
+
+	// Simulates runtime state arriving after the admin loaded the form. An
+	// Aether-only patch must not write any of this stale account snapshot back.
+	s.Require().NoError(s.repo.UpdateExtra(s.ctx, account.ID, map[string]any{
+		"passive_usage_sampled_at": "2026-07-15T00:00:00Z",
+	}))
+	lastUsedAt := time.Date(2026, 7, 15, 1, 2, 3, 0, time.UTC)
+	rateLimitResetAt := lastUsedAt.Add(time.Hour)
+	_, err = s.client.Account.UpdateOneID(account.ID).
+		SetCredentials(map[string]any{"runtime_token": "new-token"}).
+		SetStatus(service.StatusError).
+		SetSchedulable(false).
+		SetLastUsedAt(lastUsedAt).
+		SetRateLimitResetAt(rateLimitResetAt).
+		Save(s.ctx)
+	s.Require().NoError(err)
+	name := "patched-name"
+	s.Require().NoError(s.repo.UpdateWithExtraPatch(s.ctx, stale.ID, service.AccountColumnPatch{Name: &name}, map[string]any{
+		"aether_ws": map[string]any{
+			"enabled":                   true,
+			"required_control_protocol": "route-v1",
+		},
+	}, []string{"legacy"}, stale.GroupIDs))
+
+	got, err := s.repo.GetByID(s.ctx, account.ID)
+	s.Require().NoError(err)
+	s.Require().Equal("patched-name", got.Name)
+	s.Require().Equal("new-token", got.Credentials["runtime_token"])
+	s.Require().Equal(service.StatusError, got.Status)
+	s.Require().False(got.Schedulable)
+	s.Require().NotNil(got.LastUsedAt)
+	s.Require().Equal(lastUsedAt, got.LastUsedAt.UTC())
+	s.Require().NotNil(got.RateLimitResetAt)
+	s.Require().Equal(rateLimitResetAt, got.RateLimitResetAt.UTC())
+	s.Require().Equal("2026-07-15T00:00:00Z", got.Extra["passive_usage_sampled_at"])
+	s.Require().NotContains(got.Extra, "legacy")
+	aetherWS, ok := got.Extra["aether_ws"].(map[string]any)
+	s.Require().True(ok)
+	s.Require().Equal("preserve", aetherWS["future_field"])
+	s.Require().Equal(true, aetherWS["enabled"])
+	s.Require().Equal("route-v1", aetherWS["required_control_protocol"])
+}
+
+func (s *AccountRepoSuite) TestUpdateWithExtraPatchDeleteThenSetReplacesAetherWS() {
+	account := mustCreateAccount(s.T(), s.client, &service.Account{
+		Name: "replace-aether-ws-extra",
+		Extra: map[string]any{
+			"aether_ws": map[string]any{
+				"enabled":      false,
+				"future_field": "remove-me",
+			},
+		},
+	})
+
+	s.Require().NoError(s.repo.UpdateWithExtraPatch(
+		s.ctx,
+		account.ID,
+		service.AccountColumnPatch{},
+		map[string]any{"aether_ws": map[string]any{"enabled": true}},
+		[]string{"aether_ws"},
+		nil,
+	))
+
+	got, err := s.repo.GetByID(s.ctx, account.ID)
+	s.Require().NoError(err)
+	s.Require().Equal(map[string]any{"enabled": true}, got.Extra["aether_ws"])
+}
+
 func (s *AccountRepoSuite) TestUpdateExtra_SchedulerNeutralSkipsOutboxAndSyncsFreshSnapshot() {
 	account := mustCreateAccount(s.T(), s.client, &service.Account{
 		Name:     "acc-extra-neutral",
@@ -1207,6 +1720,18 @@ func (s *AccountRepoSuite) TestBulkUpdate() {
 	s.Require().Equal(99, got2.Priority)
 }
 
+func (s *AccountRepoSuite) TestBulkUpdateReturningIDsExcludesMissingAccounts() {
+	a1 := mustCreateAccount(s.T(), s.client, &service.Account{Name: "bulk-returning", Priority: 1})
+	priority := 77
+
+	updatedIDs, err := s.repo.BulkUpdateReturningIDs(s.ctx, []int64{a1.ID, 999999999}, service.AccountBulkUpdate{
+		Priority: &priority,
+	})
+
+	s.Require().NoError(err)
+	s.Require().Equal([]int64{a1.ID}, updatedIDs)
+}
+
 func (s *AccountRepoSuite) TestBulkUpdate_MergeCredentials() {
 	a1 := mustCreateAccount(s.T(), s.client, &service.Account{
 		Name:        "bulk-cred",
@@ -1237,6 +1762,85 @@ func (s *AccountRepoSuite) TestBulkUpdate_MergeExtra() {
 	got, _ := s.repo.GetByID(s.ctx, a1.ID)
 	s.Require().Equal("val", got.Extra["existing"])
 	s.Require().Equal("new_val", got.Extra["new_key"])
+}
+
+func (s *AccountRepoSuite) TestBulkUpdate_DeepMergesAetherWSExtra() {
+	a1 := mustCreateAccount(s.T(), s.client, &service.Account{
+		Name: "bulk-aether-ws-extra",
+		Extra: map[string]any{
+			"existing": "val",
+			"aether_ws": map[string]any{
+				"schema_version":            1,
+				"enabled":                   true,
+				"required_control_protocol": "route-v1",
+				"future_field":              "preserve-me",
+			},
+		},
+	})
+
+	_, err := s.repo.BulkUpdate(s.ctx, []int64{a1.ID}, service.AccountBulkUpdate{
+		Extra: map[string]any{
+			"new_top_level": "new-value",
+			"aether_ws": map[string]any{
+				"enabled":          false,
+				"new_future_field": true,
+			},
+		},
+	})
+	s.Require().NoError(err)
+
+	got, err := s.repo.GetByID(s.ctx, a1.ID)
+	s.Require().NoError(err)
+	s.Require().Equal("val", got.Extra["existing"])
+	s.Require().Equal("new-value", got.Extra["new_top_level"])
+	aetherWS, ok := got.Extra["aether_ws"].(map[string]any)
+	s.Require().True(ok)
+	s.Require().Equal("preserve-me", aetherWS["future_field"])
+	s.Require().Equal("route-v1", aetherWS["required_control_protocol"])
+	s.Require().Equal(false, aetherWS["enabled"])
+	s.Require().Equal(true, aetherWS["new_future_field"])
+}
+
+func (s *AccountRepoSuite) TestBulkUpdate_RepairsMalformedAetherWSExtra() {
+	a1 := mustCreateAccount(s.T(), s.client, &service.Account{
+		Name: "bulk-malformed-aether-ws-extra",
+		Extra: map[string]any{
+			"existing":  "val",
+			"aether_ws": "legacy-invalid-value",
+		},
+	})
+
+	_, err := s.repo.BulkUpdate(s.ctx, []int64{a1.ID}, service.AccountBulkUpdate{
+		Extra: map[string]any{
+			"aether_ws": map[string]any{
+				"schema_version":            1,
+				"enabled":                   true,
+				"required_control_protocol": "route-v1",
+			},
+		},
+	})
+	s.Require().NoError(err)
+
+	got, err := s.repo.GetByID(s.ctx, a1.ID)
+	s.Require().NoError(err)
+	s.Require().Equal("val", got.Extra["existing"])
+	aetherWS, ok := got.Extra["aether_ws"].(map[string]any)
+	s.Require().True(ok)
+	s.Require().Equal(true, aetherWS["enabled"])
+	s.Require().Equal("route-v1", aetherWS["required_control_protocol"])
+}
+
+func (s *AccountRepoSuite) TestBulkUpdate_RejectsNonObjectAetherWSInput() {
+	a1 := mustCreateAccount(s.T(), s.client, &service.Account{Name: "bulk-invalid-aether-ws"})
+
+	_, err := s.repo.BulkUpdate(s.ctx, []int64{a1.ID}, service.AccountBulkUpdate{
+		Extra: map[string]any{"aether_ws": "invalid"},
+	})
+
+	s.Require().Error(err)
+	got, getErr := s.repo.GetByID(s.ctx, a1.ID)
+	s.Require().NoError(getErr)
+	s.Require().NotContains(got.Extra, "aether_ws")
 }
 
 func (s *AccountRepoSuite) TestBulkUpdate_EmptyIDs() {

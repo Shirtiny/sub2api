@@ -187,6 +187,7 @@ type SettingService struct {
 	openAICodexUASF             singleflight.Group
 	openAIAllowCodexPluginCache atomic.Value // *cachedOpenAIAllowCodexPlugin
 	openAIAllowCodexPluginSF    singleflight.Group
+	riskControlUpdate           atomic.Pointer[riskControlUpdateCallback]
 
 	// openAIQuotaAutoPauseSettingsCache holds the most recently observed quota auto-pause
 	// settings. GetOpenAIQuotaAutoPauseSettings reads this atomic.Value on the request hot
@@ -197,6 +198,8 @@ type SettingService struct {
 	openAIQuotaAutoPauseSettingsCache atomic.Value // *cachedOpenAIQuotaAutoPauseSettings
 	openAIQuotaAutoPauseSettingsSF    singleflight.Group
 }
+
+type riskControlUpdateCallback func(bool)
 
 // DefaultPlatformQuotaSetting 单 platform 三档限额（nil = 沿用上层；0 = 显式禁用；>0 = 上限）
 type DefaultPlatformQuotaSetting struct {
@@ -1157,6 +1160,17 @@ func (s *SettingService) IsOpenAIAllowClaudeCodeCodexPluginEnabled(ctx context.C
 // This is used for cache invalidation (e.g., HTML cache in frontend server)
 func (s *SettingService) SetOnUpdateCallback(callback func()) {
 	s.onUpdate = callback
+}
+
+// SetRiskControlUpdateCallback installs the in-process invalidation hook used
+// by retained connections. The callback is published atomically because
+// settings updates may race with startup wiring in tests.
+func (s *SettingService) SetRiskControlUpdateCallback(callback func(bool)) {
+	if s == nil || callback == nil {
+		return
+	}
+	typedCallback := riskControlUpdateCallback(callback)
+	s.riskControlUpdate.Store(&typedCallback)
 }
 
 // SetVersion sets the application version for injection into public settings
@@ -2182,6 +2196,9 @@ func (s *SettingService) refreshCachedSettings(settings *SystemSettings) {
 		value:     settings.OpenAIAllowClaudeCodeCodexPlugin,
 		expiresAt: time.Now().Add(openAIAllowCodexPluginCacheTTL).UnixNano(),
 	})
+	if callback := s.riskControlUpdate.Load(); callback != nil {
+		(*callback)(settings.RiskControlEnabled)
+	}
 	if s.onUpdate != nil {
 		s.onUpdate() // Invalidate cache after settings update
 	}

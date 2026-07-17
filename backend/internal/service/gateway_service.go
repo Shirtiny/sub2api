@@ -531,10 +531,11 @@ type AccountWaitPlan struct {
 }
 
 type AccountSelectionResult struct {
-	Account     *Account
-	Acquired    bool
-	ReleaseFunc func()
-	WaitPlan    *AccountWaitPlan // nil means no wait allowed
+	Account              *Account
+	Acquired             bool
+	ReleaseFunc          func()
+	WaitPlan             *AccountWaitPlan // nil means no wait allowed
+	StickyBindingWritten bool
 }
 
 // ClaudeUsage 表示Claude API返回的usage信息
@@ -579,6 +580,11 @@ type UpstreamFailoverError struct {
 	ResponseHeaders        http.Header // 上游响应头，用于透传 cf-ray/cf-mitigated/content-type 等诊断信息
 	ForceCacheBilling      bool        // Antigravity 粘性会话切换时设为 true
 	RetryableOnSameAccount bool        // 临时性错误（如 Google 间歇性 400、空响应），应在同一账号上重试 N 次再切换
+	DoNotPenalizeAccount   bool        // 本地 pre-dispatch 配置变化可安全切换，但不代表账号健康失败
+	RetryAfterMS           int         // trusted middle-hop pre-dispatch retry hint; handler applies a bounded wait
+	// MiddleRouteDisposition is set only by the trusted Aether route-v1
+	// control path. The zero value keeps legacy failover behavior (exclude).
+	MiddleRouteDisposition OpenAIWSMiddleRouteDisposition
 }
 
 func (e *UpstreamFailoverError) Error() string {
@@ -8729,7 +8735,13 @@ func detachedBillingContext(ctx context.Context) (context.Context, context.Cance
 	if ctx != nil {
 		base = context.WithoutCancel(ctx)
 	}
-	return context.WithTimeout(base, postUsageBillingTimeout)
+	deadline := time.Now().Add(postUsageBillingTimeout)
+	if ctx != nil {
+		if parentDeadline, ok := ctx.Deadline(); ok && parentDeadline.Before(deadline) {
+			deadline = parentDeadline
+		}
+	}
+	return context.WithDeadline(base, deadline)
 }
 
 func detachStreamUpstreamContext(ctx context.Context, stream bool) (context.Context, context.CancelFunc) {

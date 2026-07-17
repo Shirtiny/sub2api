@@ -62,6 +62,28 @@ func TestIsOpenAIWSIngressPreviousResponseNotFound(t *testing.T) {
 	))
 }
 
+func TestShouldPenalizeOpenAIWSAccount(t *testing.T) {
+	tests := []struct {
+		name string
+		err  error
+		want bool
+	}{
+		{name: "upstream read", err: wrapOpenAIWSIngressTurnError("read_upstream", errors.New("upstream reset"), true), want: true},
+		{name: "protocol error", err: wrapOpenAIWSIngressTurnError("upstream_control", errors.New("invalid route proof"), false), want: true},
+		{name: "client disconnect", err: wrapOpenAIWSIngressTurnError("client_disconnected", io.EOF, true), want: false},
+		{name: "downstream write", err: wrapOpenAIWSIngressTurnError("write_client", errors.New("broken pipe"), true), want: false},
+		{name: "idle timeout", err: wrapOpenAIWSIngressTurnError("idle_timeout", context.DeadlineExceeded, true), want: false},
+		{name: "controlled reconnect", err: wrapOpenAIWSIngressTurnError("upstream_control", ErrOpenAIWSReconnectMigrationRequested, false), want: false},
+		{name: "local admission", err: wrapOpenAIWSIngressTurnError("write_upstream", NewOpenAIWSClientCloseError(coderws.StatusTryAgainLater, "account busy", nil), false), want: false},
+		{name: "upstream write", err: wrapOpenAIWSIngressTurnError("write_upstream", errors.New("upstream write failed"), false), want: true},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			require.Equal(t, test.want, ShouldPenalizeOpenAIWSAccount(test.err))
+		})
+	}
+}
+
 func TestOpenAIWSIngressPreviousResponseRecoveryEnabled(t *testing.T) {
 	t.Parallel()
 

@@ -54,6 +54,7 @@
           class="input"
           :placeholder="t('admin.accounts.enterAccountName')"
           data-tour="account-form-name"
+          data-testid="create-account-name"
         />
       </div>
       <div>
@@ -87,6 +88,7 @@
           <button
             type="button"
             @click="form.platform = 'openai'"
+            data-testid="create-openai-platform"
             :class="[
               'flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-all',
               form.platform === 'openai'
@@ -326,6 +328,7 @@
           <button
             type="button"
             @click="accountCategory = 'apikey'"
+            data-testid="create-openai-apikey-type"
             :class="[
               'flex items-center gap-3 rounded-lg border-2 p-3 text-left transition-all',
               accountCategory === 'apikey'
@@ -1108,6 +1111,7 @@
             type="password"
             required
             class="input font-mono"
+            data-testid="create-api-key"
             :placeholder="
               form.platform === 'openai'
                 ? 'sk-proj-...'
@@ -2642,6 +2646,42 @@
         </div>
       </div>
 
+      <!-- OpenAI API Key Aether WS account -->
+      <div
+        v-if="form.platform === 'openai' && accountCategory === 'apikey'"
+        class="space-y-3 border-t border-gray-200 pt-4 dark:border-dark-600"
+      >
+        <div class="flex items-center justify-between gap-4">
+          <div>
+            <label class="input-label mb-0" for="create-aether-ws-account-toggle">
+              {{ t('admin.accounts.openai.aetherWSAccount') }}
+            </label>
+            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              {{ t('admin.accounts.openai.aetherWSAccountDesc') }}
+            </p>
+          </div>
+          <button
+            id="create-aether-ws-account-toggle"
+            type="button"
+            role="switch"
+            :aria-checked="aetherWSAccountEnabled"
+            data-testid="create-aether-ws-account-toggle"
+            @click="toggleAetherWSAccount"
+            :class="[
+              'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
+              aetherWSAccountEnabled ? 'bg-primary-600' : 'bg-gray-200 dark:bg-dark-600'
+            ]"
+          >
+            <span
+              :class="[
+                'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
+                aetherWSAccountEnabled ? 'translate-x-5' : 'translate-x-0'
+              ]"
+            />
+          </button>
+        </div>
+      </div>
+
       <!-- OpenAI WS Mode 三态（off/ctx_pool/passthrough） -->
       <div
         v-if="form.platform === 'openai' && (accountCategory === 'oauth-based' || accountCategory === 'apikey')"
@@ -2658,9 +2698,19 @@
             </p>
           </div>
           <div class="w-52">
-            <Select v-model="openaiResponsesWebSocketV2Mode" :options="openAIWSModeOptions" />
+            <Select
+              v-model="openaiResponsesWebSocketV2Mode"
+              :options="openAIWSModeOptions"
+              :disabled="aetherWSAccountConfigured"
+            />
           </div>
         </div>
+        <p
+          v-if="aetherWSAccountConfigured"
+          class="mt-2 text-xs text-gray-500 dark:text-gray-400"
+        >
+          {{ t('admin.accounts.openai.aetherWSModeManagedHint') }}
+        </p>
       </div>
 
       <!-- Anthropic API Key 自动透传开关 -->
@@ -3358,6 +3408,10 @@ import {
   resolveOpenAIWSModeConcurrencyHintKey,
   type OpenAIWSMode
 } from '@/utils/openaiWsMode'
+import {
+  aetherWSManagedMode,
+  applyAetherWSAccountConfig
+} from '@/utils/aetherWsAccount'
 import OAuthAuthorizationFlow from './OAuthAuthorizationFlow.vue'
 
 // Type for exposed OAuthAuthorizationFlow component
@@ -3535,6 +3589,8 @@ const openAIResponsesMode = ref<OpenAIResponsesMode>('auto')
 const openAIEndpointCapabilities = ref<OpenAIEndpointCapability[]>(['chat_completions', 'embeddings'])
 const openaiOAuthResponsesWebSocketV2Mode = ref<OpenAIWSMode>(OPENAI_WS_MODE_OFF)
 const openaiAPIKeyResponsesWebSocketV2Mode = ref<OpenAIWSMode>(OPENAI_WS_MODE_OFF)
+const aetherWSAccountConfigured = ref(false)
+const aetherWSAccountEnabled = ref(false)
 const cafecodeIdentityHeadersEnabled = ref(false)
 const codexCLIOnlyEnabled = ref(false)
 const codexCLIOnlyAllowClaudeCodeEnabled = ref(false)
@@ -3724,11 +3780,25 @@ const geminiSelectedTier = computed(() => {
   }
 })
 
-const openAIWSModeOptions = computed(() => [
-  { value: OPENAI_WS_MODE_OFF, label: t('admin.accounts.openai.wsModeOff') },
-  { value: OPENAI_WS_MODE_CTX_POOL, label: t('admin.accounts.openai.wsModeCtxPool') },
-  { value: OPENAI_WS_MODE_PASSTHROUGH, label: t('admin.accounts.openai.wsModePassthrough') }
-])
+const openAIWSModeOptions = computed<Array<{ value: OpenAIWSMode; label: string }>>(() => {
+  const options: Array<{ value: OpenAIWSMode; label: string }> = [
+    { value: OPENAI_WS_MODE_OFF, label: t('admin.accounts.openai.wsModeOff') },
+    { value: OPENAI_WS_MODE_PASSTHROUGH, label: t('admin.accounts.openai.wsModePassthrough') }
+  ]
+  if (!aetherWSAccountConfigured.value) {
+    options.splice(1, 0, {
+      value: OPENAI_WS_MODE_CTX_POOL,
+      label: t('admin.accounts.openai.wsModeCtxPool')
+    })
+  }
+  return options
+})
+
+const toggleAetherWSAccount = () => {
+  aetherWSAccountConfigured.value = true
+  aetherWSAccountEnabled.value = !aetherWSAccountEnabled.value
+  openaiAPIKeyResponsesWebSocketV2Mode.value = aetherWSManagedMode(aetherWSAccountEnabled.value)
+}
 
 const openaiResponsesWebSocketV2Mode = computed({
   get: () => {
@@ -3983,6 +4053,8 @@ watch(
       openAIEndpointCapabilities.value = ['chat_completions', 'embeddings']
       openaiOAuthResponsesWebSocketV2Mode.value = OPENAI_WS_MODE_OFF
       openaiAPIKeyResponsesWebSocketV2Mode.value = OPENAI_WS_MODE_OFF
+      aetherWSAccountConfigured.value = false
+      aetherWSAccountEnabled.value = false
       codexCLIOnlyEnabled.value = false
       codexCLIOnlyAllowClaudeCodeEnabled.value = false
     }
@@ -4007,6 +4079,10 @@ watch(
     if (platform === 'openai' && category !== 'oauth-based') {
       codexCLIOnlyEnabled.value = false
       codexCLIOnlyAllowClaudeCodeEnabled.value = false
+    }
+    if (platform === 'openai' && category !== 'apikey') {
+      aetherWSAccountConfigured.value = false
+      aetherWSAccountEnabled.value = false
     }
     if (platform !== 'anthropic' || category !== 'apikey') {
       anthropicPassthroughEnabled.value = false
@@ -4386,6 +4462,8 @@ const resetForm = () => {
   openAIEndpointCapabilities.value = ['chat_completions', 'embeddings']
   openaiOAuthResponsesWebSocketV2Mode.value = OPENAI_WS_MODE_OFF
   openaiAPIKeyResponsesWebSocketV2Mode.value = OPENAI_WS_MODE_OFF
+  aetherWSAccountConfigured.value = false
+  aetherWSAccountEnabled.value = false
   cafecodeIdentityHeadersEnabled.value = false
   codexCLIOnlyEnabled.value = false
   codexCLIOnlyAllowClaudeCodeEnabled.value = false
@@ -4446,7 +4524,7 @@ const buildOpenAIExtra = (base?: Record<string, unknown>): Record<string, unknow
     return base
   }
 
-  const extra: Record<string, unknown> = { ...(base || {}) }
+  let extra: Record<string, unknown> = { ...(base || {}) }
   if (accountCategory.value === 'oauth-based') {
     extra.openai_oauth_responses_websockets_v2_mode = openaiOAuthResponsesWebSocketV2Mode.value
     extra.openai_oauth_responses_websockets_v2_enabled = isOpenAIWSModeEnabled(openaiOAuthResponsesWebSocketV2Mode.value)
@@ -4491,6 +4569,13 @@ const buildOpenAIExtra = (base?: Record<string, unknown>): Record<string, unknow
     extra.openai_responses_mode = openAIResponsesMode.value
   } else {
     delete extra.openai_responses_mode
+  }
+
+  if (accountCategory.value === 'apikey' && aetherWSAccountConfigured.value) {
+    extra = applyAetherWSAccountConfig(
+      extra,
+      aetherWSAccountEnabled.value
+    )
   }
 
   return Object.keys(extra).length > 0 ? extra : undefined

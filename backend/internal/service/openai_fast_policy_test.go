@@ -12,7 +12,9 @@ import (
 )
 
 type openAIFastPolicyRepoStub struct {
-	values map[string]string
+	values        map[string]string
+	getValueErr   error
+	getValueCalls int
 }
 
 func (s *openAIFastPolicyRepoStub) Get(ctx context.Context, key string) (*Setting, error) {
@@ -20,10 +22,36 @@ func (s *openAIFastPolicyRepoStub) Get(ctx context.Context, key string) (*Settin
 }
 
 func (s *openAIFastPolicyRepoStub) GetValue(ctx context.Context, key string) (string, error) {
+	s.getValueCalls++
+	if s.getValueErr != nil {
+		return "", s.getValueErr
+	}
 	if v, ok := s.values[key]; ok {
 		return v, nil
 	}
 	return "", ErrSettingNotFound
+}
+
+func TestSnapshotOpenAIWSFastPolicySettingsFailsClosedOnRepositoryError(t *testing.T) {
+	repo := &openAIFastPolicyRepoStub{getValueErr: errors.New("settings unavailable")}
+	svc := &OpenAIGatewayService{settingService: NewSettingService(repo, &config.Config{})}
+
+	settings, err := svc.SnapshotOpenAIWSFastPolicySettings(context.Background())
+	require.Error(t, err)
+	require.Nil(t, settings)
+	require.Equal(t, 1, repo.getValueCalls)
+}
+
+func TestOpenAIWSFastPolicyHookSnapshotAvoidsRepositoryRead(t *testing.T) {
+	repo := &openAIFastPolicyRepoStub{getValueErr: errors.New("must not be called")}
+	svc := &OpenAIGatewayService{settingService: NewSettingService(repo, &config.Config{})}
+	hooks := &OpenAIWSIngressHooks{FastPolicySettings: DefaultOpenAIFastPolicySettings()}
+
+	ctx := withOpenAIFastPolicyContext(context.Background(), hooks.FastPolicySettings)
+	action, message := svc.evaluateOpenAIFastPolicy(ctx, &Account{}, "gpt-5", "priority")
+	require.Equal(t, BetaPolicyActionPass, action)
+	require.Empty(t, message)
+	require.Zero(t, repo.getValueCalls)
 }
 
 func (s *openAIFastPolicyRepoStub) Set(ctx context.Context, key, value string) error {

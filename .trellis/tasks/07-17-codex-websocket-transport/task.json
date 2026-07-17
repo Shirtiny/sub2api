@@ -1,0 +1,50 @@
+{
+  "id": "codex-websocket-transport",
+  "name": "codex-websocket-transport",
+  "title": "Add end-to-end Codex WebSocket transport",
+  "description": "Add account-controlled Codex WebSocket ingress in sub2api and native official-Codex WebSocket egress in Aether, including TLS fingerprint parity, scheduling and migration fences, bounded backpressure, billing and authorization enforcement, administration UI, performance gates, and production rollout documentation.",
+  "status": "in_progress",
+  "dev_type": "feature",
+  "scope": "fullstack",
+  "package": "sub2api+aether",
+  "priority": "P1",
+  "creator": "codex-agent",
+  "assignee": "codex-agent",
+  "createdAt": "2026-07-17",
+  "completedAt": null,
+  "branch": "custom-prod",
+  "base_branch": "custom-prod",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [
+    "sub2api client WebSocket ingress and account-level transport controls",
+    "sub2api to local Aether direct WebSocket route-v1 transport",
+    "Aether official-Codex-only native WebSocket connector with TLS fingerprint profile parity",
+    "cross-account and cross-provider scheduling, failover, reconnect migration, and generation fencing",
+    "bounded concurrency, usage settlement, moderation, authorization, billing, and quota enforcement",
+    "frontend administration controls and compatibility-safe extra patches",
+    "performance, race, regression, and production-readiness review"
+  ],
+  "children": [],
+  "parent": null,
+  "relatedFiles": [
+    "docs/CODEX_WEBSOCKET_TRANSPORT_AND_SCHEDULING_PLAN.md",
+    "backend/internal/handler/openai_gateway_handler.go",
+    "backend/internal/service/openai_ws_forwarder.go",
+    "backend/internal/service/openai_ws_v2/",
+    "backend/internal/service/openai_aether_ws.go",
+    "backend/internal/repository/scheduler_cache.go",
+    "frontend/src/components/account/",
+    "/opt/stacks/aether/apps/aether-gateway/src/codex_ws/",
+    "/opt/stacks/aether/crates/aether-codex-ws-connector/",
+    "/opt/stacks/aether/crates/aether-provider-transport/src/codex_ws.rs"
+  ],
+  "notes": "Code-level review and local test gates passed. Production enablement remains blocked on the documented pre-v2 drain/final v2 scheduler rebuild and readiness checks, real official credentials and TLS capture, shared-Redis multi-instance validation, real MySQL/PostgreSQL integration, staging proxy checks, and load evidence. No production deployment was performed.",
+  "meta": {
+    "aether_branch": "custom",
+    "aether_commit": "dbf4bd82e7d91dfdfa55564da25931dfe700efe3",
+    "design_document": "docs/CODEX_WEBSOCKET_TRANSPORT_AND_SCHEDULING_PLAN.md",
+    "review_goal_thread": "019f663c-b498-7571-9aa0-38925c4d957a"
+  }
+}

@@ -205,6 +205,31 @@ func TestLoadDefaultOpenAIWSConfig(t *testing.T) {
 	if cfg.Gateway.OpenAIWS.IngressModeDefault != "ctx_pool" {
 		t.Fatalf("Gateway.OpenAIWS.IngressModeDefault = %q, want %q", cfg.Gateway.OpenAIWS.IngressModeDefault, "ctx_pool")
 	}
+	if cfg.Gateway.OpenAIWS.AetherRouteControlEnabled {
+		t.Fatalf("Gateway.OpenAIWS.AetherRouteControlEnabled = true, want false")
+	}
+	if cfg.Gateway.OpenAIWS.ReconnectMigrationEnabled {
+		t.Fatalf("Gateway.OpenAIWS.ReconnectMigrationEnabled = true, want false")
+	}
+	if cfg.Gateway.OpenAIWS.ReconnectSignalMode != "unset" {
+		t.Fatalf("Gateway.OpenAIWS.ReconnectSignalMode = %q, want unset", cfg.Gateway.OpenAIWS.ReconnectSignalMode)
+	}
+	if cfg.Gateway.OpenAIWS.MaxMigrationsPerSession != 3 ||
+		cfg.Gateway.OpenAIWS.MigrationWindowSeconds != 600 ||
+		cfg.Gateway.OpenAIWS.RouteMinDwellSeconds != 30 {
+		t.Fatalf("unexpected default OpenAI WS migration limits: max=%d window=%d dwell=%d",
+			cfg.Gateway.OpenAIWS.MaxMigrationsPerSession,
+			cfg.Gateway.OpenAIWS.MigrationWindowSeconds,
+			cfg.Gateway.OpenAIWS.RouteMinDwellSeconds)
+	}
+	if cfg.Gateway.OpenAIWS.MaxIngressConnections != 10000 ||
+		cfg.Gateway.OpenAIWS.MaxIngressConnectionsPerUser != 64 ||
+		cfg.Gateway.OpenAIWS.MaxIngressConnectionsPerAPIKey != 32 {
+		t.Fatalf("unexpected default OpenAI WS ingress limits: total=%d user=%d api_key=%d",
+			cfg.Gateway.OpenAIWS.MaxIngressConnections,
+			cfg.Gateway.OpenAIWS.MaxIngressConnectionsPerUser,
+			cfg.Gateway.OpenAIWS.MaxIngressConnectionsPerAPIKey)
+	}
 }
 
 func TestLoadDefaultOpenAIHTTP2Enabled(t *testing.T) {
@@ -1638,6 +1663,16 @@ func TestValidateConfig_OpenAIWSRules(t *testing.T) {
 		require.Equal(t, 7200, cfg.Gateway.OpenAIWS.StickyResponseIDTTLSeconds)
 	})
 
+	t.Run("aether route control dependencies can be enabled coherently", func(t *testing.T) {
+		cfg := buildValid(t)
+		cfg.Gateway.OpenAIWS.ModeRouterV2Enabled = true
+		cfg.Gateway.OpenAIWS.AetherRouteControlEnabled = true
+		cfg.Gateway.OpenAIWS.ReconnectMigrationEnabled = true
+		cfg.Gateway.OpenAIWS.ReconnectSignalMode = "websocket_connection_limit_reached"
+
+		require.NoError(t, cfg.Validate())
+	})
+
 	cases := []struct {
 		name    string
 		mutate  func(*Config)
@@ -1706,6 +1741,11 @@ func TestValidateConfig_OpenAIWSRules(t *testing.T) {
 			wantErr: "gateway.openai_ws.fallback_cooldown_seconds",
 		},
 		{
+			name:    "ingress connection limits 不能为负数",
+			mutate:  func(c *Config) { c.Gateway.OpenAIWS.MaxIngressConnectionsPerAPIKey = -1 },
+			wantErr: "gateway.openai_ws ingress connection limits",
+		},
+		{
 			name:    "store_disabled_conn_mode 必须为 strict|adaptive|off",
 			mutate:  func(c *Config) { c.Gateway.OpenAIWS.StoreDisabledConnMode = "invalid" },
 			wantErr: "gateway.openai_ws.store_disabled_conn_mode",
@@ -1714,6 +1754,20 @@ func TestValidateConfig_OpenAIWSRules(t *testing.T) {
 			name:    "ingress_mode_default 必须为 off|ctx_pool|passthrough",
 			mutate:  func(c *Config) { c.Gateway.OpenAIWS.IngressModeDefault = "invalid" },
 			wantErr: "gateway.openai_ws.ingress_mode_default",
+		},
+		{
+			name:    "aether route control 依赖 router v2",
+			mutate:  func(c *Config) { c.Gateway.OpenAIWS.AetherRouteControlEnabled = true },
+			wantErr: "gateway.openai_ws.aether_route_control_enabled",
+		},
+		{
+			name: "reconnect migration 依赖 pinned signal",
+			mutate: func(c *Config) {
+				c.Gateway.OpenAIWS.ModeRouterV2Enabled = true
+				c.Gateway.OpenAIWS.AetherRouteControlEnabled = true
+				c.Gateway.OpenAIWS.ReconnectMigrationEnabled = true
+			},
+			wantErr: "gateway.openai_ws.reconnect_migration_enabled requires a pinned reconnect_signal_mode",
 		},
 		{
 			name:    "payload_log_sample_rate 必须在 [0,1] 范围内",
@@ -1901,6 +1955,9 @@ func TestLoad_DefaultGatewayUsageRecordConfig(t *testing.T) {
 	}
 	if cfg.Gateway.UsageRecord.TaskTimeoutSeconds != 5 {
 		t.Fatalf("task_timeout_seconds = %d, want 5", cfg.Gateway.UsageRecord.TaskTimeoutSeconds)
+	}
+	if cfg.Gateway.UsageRecord.RequiredReserveTimeoutMS != 100 {
+		t.Fatalf("required_reserve_timeout_ms = %d, want 100", cfg.Gateway.UsageRecord.RequiredReserveTimeoutMS)
 	}
 	if cfg.Gateway.UsageRecord.OverflowPolicy != UsageRecordOverflowPolicySample {
 		t.Fatalf("overflow_policy = %s, want %s", cfg.Gateway.UsageRecord.OverflowPolicy, UsageRecordOverflowPolicySample)

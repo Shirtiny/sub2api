@@ -16,8 +16,37 @@ const (
 	apiKeyRateLimitKeyPrefix   = "apikey:ratelimit:"
 	apiKeyRateLimitDuration    = 24 * time.Hour
 	apiKeyAuthCachePrefix      = "apikey:auth:"
+	apiKeyAuthEpochPrefix      = "apikey:auth:epoch:{generation}:"
+	apiKeyAuthEpochSequenceKey = apiKeyAuthEpochPrefix + "sequence"
+	apiKeyAuthEpochTTL         = 30 * 24 * time.Hour
 	authCacheInvalidateChannel = "auth:cache:invalidate"
 )
+
+var incrementAuthCacheEpochScript = redis.NewScript(`
+if redis.call('EXISTS', KEYS[2]) == 0 then
+  local now = redis.call('TIME')
+  local seed = now[1] .. string.format('%06d', now[2])
+  redis.call('SET', KEYS[2], seed, 'NX')
+end
+local epoch = redis.call('INCR', KEYS[2])
+redis.call('SET', KEYS[1], epoch, 'PX', ARGV[1])
+return epoch
+`)
+
+var initializeAuthCacheEpochScript = redis.NewScript(`
+local epoch = redis.call('GET', KEYS[1])
+if epoch then
+  return epoch
+end
+if redis.call('EXISTS', KEYS[2]) == 0 then
+  local now = redis.call('TIME')
+  local seed = now[1] .. string.format('%06d', now[2])
+  redis.call('SET', KEYS[2], seed, 'NX')
+end
+epoch = redis.call('INCR', KEYS[2])
+redis.call('SET', KEYS[1], epoch, 'PX', ARGV[1])
+return epoch
+`)
 
 // apiKeyRateLimitKey generates the Redis key for API key creation rate limiting.
 func apiKeyRateLimitKey(userID int64) string {
@@ -92,6 +121,37 @@ func (c *apiKeyCache) SetAuthCache(ctx context.Context, key string, entry *servi
 
 func (c *apiKeyCache) DeleteAuthCache(ctx context.Context, key string) error {
 	return c.rdb.Del(ctx, apiKeyAuthCacheKey(key)).Err()
+}
+
+func (c *apiKeyCache) GetAuthCacheEpoch(ctx context.Context, cacheKey string) (uint64, error) {
+	key := apiKeyAuthEpochPrefix + cacheKey
+	value, err := c.rdb.Get(ctx, key).Uint64()
+	if err == nil {
+		return value, nil
+	}
+	if !errors.Is(err, redis.Nil) {
+		return 0, err
+	}
+
+	// A missing per-key generation must not map back to zero: doing so would
+	// allow an old zero-valued lease to validate after an invalidation key's TTL
+	// elapsed. Allocate from one permanent global sequence instead. The hash tag
+	// keeps both keys in the same Redis Cluster slot.
+	return initializeAuthCacheEpochScript.Run(
+		ctx,
+		c.rdb,
+		[]string{key, apiKeyAuthEpochSequenceKey},
+		apiKeyAuthEpochTTL.Milliseconds(),
+	).Uint64()
+}
+
+func (c *apiKeyCache) IncrementAuthCacheEpoch(ctx context.Context, cacheKey string) error {
+	return incrementAuthCacheEpochScript.Run(
+		ctx,
+		c.rdb,
+		[]string{apiKeyAuthEpochPrefix + cacheKey, apiKeyAuthEpochSequenceKey},
+		apiKeyAuthEpochTTL.Milliseconds(),
+	).Err()
 }
 
 // PublishAuthCacheInvalidation publishes a cache invalidation message to all instances

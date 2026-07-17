@@ -134,6 +134,63 @@ type authCacheStub struct {
 	deleteAuthKeys []string
 }
 
+type epochAwareAuthCacheStub struct {
+	*authCacheStub
+	epoch        uint64
+	epochGets    int32
+	incrementErr error
+	mu           sync.Mutex
+	operations   []string
+}
+
+func (s *epochAwareAuthCacheStub) GetAuthCacheEpoch(context.Context, string) (uint64, error) {
+	atomic.AddInt32(&s.epochGets, 1)
+	return atomic.LoadUint64(&s.epoch), nil
+}
+
+func (s *epochAwareAuthCacheStub) IncrementAuthCacheEpoch(context.Context, string) error {
+	s.recordOperation("epoch")
+	if s.incrementErr != nil {
+		return s.incrementErr
+	}
+	atomic.AddUint64(&s.epoch, 1)
+	return nil
+}
+
+func (s *epochAwareAuthCacheStub) DeleteAuthCache(ctx context.Context, key string) error {
+	s.recordOperation("delete")
+	return s.authCacheStub.DeleteAuthCache(ctx, key)
+}
+
+func (s *epochAwareAuthCacheStub) PublishAuthCacheInvalidation(context.Context, string) error {
+	s.recordOperation("publish")
+	return nil
+}
+
+func (s *epochAwareAuthCacheStub) recordOperation(operation string) {
+	s.mu.Lock()
+	s.operations = append(s.operations, operation)
+	s.mu.Unlock()
+}
+
+func (s *epochAwareAuthCacheStub) recordedOperations() []string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return append([]string(nil), s.operations...)
+}
+
+type wsAuthLeaseRateRepoStub struct {
+	UserGroupRateRepository
+	override *int
+	err      error
+	calls    int32
+}
+
+func (s *wsAuthLeaseRateRepoStub) GetRPMOverrideByUserAndGroup(context.Context, int64, int64) (*int, error) {
+	atomic.AddInt32(&s.calls, 1)
+	return s.override, s.err
+}
+
 func (s *authCacheStub) GetCreateAttemptCount(ctx context.Context, userID int64) (int, error) {
 	return 0, nil
 }
@@ -191,6 +248,125 @@ func expectedPlaintextAuthCacheKeys(key string, cfg *config.Config) []string {
 		out = append(out, legacyCacheKey)
 	}
 	return out
+}
+
+func TestAPIKeyService_GetByKey_DoesNotReadPersistentEpoch(t *testing.T) {
+	baseCache := &authCacheStub{}
+	cache := &epochAwareAuthCacheStub{authCacheStub: baseCache}
+	baseCache.getAuthCache = func(context.Context, string) (*APIKeyAuthCacheEntry, error) {
+		return &APIKeyAuthCacheEntry{Snapshot: &APIKeyAuthSnapshot{
+			Version:  apiKeyAuthSnapshotVersion,
+			APIKeyID: 1,
+			UserID:   2,
+			Status:   StatusActive,
+			User: APIKeyAuthUserSnapshot{
+				ID:     2,
+				Status: StatusActive,
+			},
+		}}, nil
+	}
+	svc := NewAPIKeyService(
+		&authRepoStub{getByKeyForAuth: func(context.Context, string) (*APIKey, error) {
+			return nil, errors.New("unexpected repository call")
+		}},
+		nil, nil, nil, nil, cache,
+		&config.Config{APIKeyAuth: config.APIKeyAuthCacheConfig{L2TTLSeconds: 60}},
+	)
+
+	key, err := svc.GetByKey(context.Background(), "ordinary-http-key")
+	require.NoError(t, err)
+	require.Equal(t, int64(1), key.ID)
+	require.Zero(t, atomic.LoadInt32(&cache.epochGets), "ordinary HTTP auth must not add a Redis generation RTT")
+}
+
+func TestAPIKeyService_GetByKeyWithAuthEpochLease_HydratesCompleteSnapshot(t *testing.T) {
+	plaintext := "ws-complete-auth-snapshot"
+	groupID := int64(8)
+	override := 17
+	rateRepo := &wsAuthLeaseRateRepoStub{override: &override}
+	cache := &epochAwareAuthCacheStub{authCacheStub: &authCacheStub{}}
+	repo := &authRepoStub{getByKeyForAuth: func(_ context.Context, token string) (*APIKey, error) {
+		lookups, ok := DecodeAPIKeyLookupToken(token)
+		require.True(t, ok)
+		require.NotEmpty(t, lookups)
+		return &APIKey{
+			ID:            11,
+			UserID:        22,
+			KeyLookupHash: APIKeyLookupHashValue(plaintext),
+			GroupID:       &groupID,
+			Status:        StatusActive,
+			IPWhitelist:   []string{"127.0.0.1", "10.0.0.0/8"},
+			IPBlacklist:   []string{"192.0.2.1"},
+			User: &User{
+				ID:          22,
+				Status:      StatusActive,
+				Concurrency: 4,
+				RPMLimit:    100,
+			},
+			Group: &Group{
+				ID:               groupID,
+				Name:             "openai",
+				Platform:         PlatformOpenAI,
+				Status:           StatusActive,
+				SubscriptionType: SubscriptionTypeStandard,
+				RateMultiplier:   1,
+				RPMLimit:         50,
+			},
+		}, nil
+	}}
+	svc := NewAPIKeyService(repo, nil, nil, nil, rateRepo, cache, &config.Config{})
+
+	key, err := svc.GetByKeyWithAuthEpochLease(context.Background(), plaintext)
+	require.NoError(t, err)
+	require.Equal(t, plaintext, key.Key)
+	require.NotNil(t, key.User)
+	require.True(t, key.User.UserGroupRPMOverrideResolved)
+	require.Equal(t, override, *key.User.UserGroupRPMOverride)
+	require.NotNil(t, key.Group)
+	require.True(t, key.Group.Hydrated)
+	require.Equal(t, 50, key.Group.RPMLimit)
+	require.NotNil(t, key.CompiledIPWhitelist)
+	require.NotNil(t, key.CompiledIPBlacklist)
+	require.EqualValues(t, 1, atomic.LoadInt32(&rateRepo.calls), "RPM override must be resolved once at admission")
+	require.EqualValues(t, 2, atomic.LoadInt32(&cache.epochGets), "WS admission fences both sides of the repository snapshot")
+}
+
+func TestAPIKeyService_GetByKeyWithAuthEpochLease_RejectsUnresolvedRPMOverride(t *testing.T) {
+	groupID := int64(8)
+	rateRepo := &wsAuthLeaseRateRepoStub{err: errors.New("database unavailable")}
+	cache := &epochAwareAuthCacheStub{authCacheStub: &authCacheStub{}}
+	repo := &authRepoStub{getByKeyForAuth: func(context.Context, string) (*APIKey, error) {
+		return &APIKey{
+			ID:      11,
+			UserID:  22,
+			GroupID: &groupID,
+			Status:  StatusActive,
+			User:    &User{ID: 22, Status: StatusActive},
+			Group:   &Group{ID: groupID, Status: StatusActive},
+		}, nil
+	}}
+	svc := NewAPIKeyService(repo, nil, nil, nil, rateRepo, cache, &config.Config{})
+
+	_, err := svc.GetByKeyWithAuthEpochLease(context.Background(), "ws-unresolved-rpm")
+	require.ErrorContains(t, err, "resolve user/group RPM override")
+	require.EqualValues(t, 1, atomic.LoadInt32(&rateRepo.calls))
+}
+
+func TestAPIKeyService_InvalidateAuthCache_AdvancesEpochBeforeEviction(t *testing.T) {
+	cache := &epochAwareAuthCacheStub{
+		authCacheStub: &authCacheStub{},
+		incrementErr:  errors.New("redis unavailable"),
+	}
+	svc := NewAPIKeyService(nil, nil, nil, nil, nil, cache, &config.Config{})
+	hash := APIKeyLookupHash{Alg: APIKeyHashAlgLookupSHA256, Hash: strings.Repeat("a", 64)}
+	cacheKey := APIKeyAuthCacheKeyFromHash(hash)
+	localLease := APIKeyAuthEpochLease{cacheKey: cacheKey, epoch: 0}
+	require.True(t, svc.ValidateAuthEpochLease(localLease))
+
+	svc.InvalidateAuthCacheByHash(context.Background(), hash.Alg, hash.Hash)
+
+	require.Equal(t, []string{"epoch", "delete", "publish"}, cache.recordedOperations())
+	require.False(t, svc.ValidateAuthEpochLease(localLease), "a Redis failure must still fail closed for leases in this process")
 }
 
 func TestAPIKeyService_GetByKey_UsesL2Cache(t *testing.T) {

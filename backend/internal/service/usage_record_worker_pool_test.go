@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -276,6 +277,380 @@ func TestUsageRecordWorkerPool_SubmitNilReceiverAndNilTask(t *testing.T) {
 	require.Equal(t, UsageRecordSubmitModeDropped, pool.Submit(nil))
 }
 
+func TestUsageRecordWorkerPool_SubmitRequiredBackpressuresWithoutDropping(t *testing.T) {
+	pool := NewUsageRecordWorkerPoolWithOptions(UsageRecordWorkerPoolOptions{
+		WorkerCount:           1,
+		QueueSize:             1,
+		TaskTimeout:           time.Second,
+		OverflowPolicy:        config.UsageRecordOverflowPolicyDrop,
+		OverflowSamplePercent: 0,
+		AutoScaleEnabled:      false,
+	})
+	t.Cleanup(pool.Stop)
+
+	first, err := pool.ReserveRequired(context.Background())
+	require.NoError(t, err)
+	second, err := pool.ReserveRequired(context.Background())
+	require.NoError(t, err)
+	require.Equal(t, 2, pool.Stats().RequiredCapacity)
+
+	result := make(chan UsageRecordSubmitMode, 1)
+	go func() {
+		result <- pool.SubmitRequired(func(context.Context) {})
+	}()
+	select {
+	case <-result:
+		t.Fatal("required submit must wait while the bounded queue is full")
+	case <-time.After(20 * time.Millisecond):
+	}
+	require.True(t, first.Abort())
+	require.Equal(t, UsageRecordSubmitModeEnqueued, <-result)
+	require.True(t, second.Abort())
+	require.Zero(t, pool.Stats().DroppedQueueFull)
+}
+
+func TestUsageRecordWorkerPool_RequiredReservationFailsWithinBoundWhenFull(t *testing.T) {
+	const reserveTimeout = 25 * time.Millisecond
+	pool := NewUsageRecordWorkerPoolWithOptions(UsageRecordWorkerPoolOptions{
+		WorkerCount:            1,
+		QueueSize:              1,
+		TaskTimeout:            time.Second,
+		RequiredReserveTimeout: reserveTimeout,
+		OverflowPolicy:         config.UsageRecordOverflowPolicyDrop,
+		AutoScaleEnabled:       false,
+	})
+	t.Cleanup(pool.Stop)
+
+	first, err := pool.ReserveRequired(context.Background())
+	require.NoError(t, err)
+	second, err := pool.ReserveRequired(context.Background())
+	require.NoError(t, err)
+	defer first.Abort()
+	defer second.Abort()
+
+	started := time.Now()
+	_, err = pool.ReserveRequired(context.Background())
+	require.ErrorIs(t, err, ErrUsageRecordRequiredCapacity)
+	require.GreaterOrEqual(t, time.Since(started), reserveTimeout-5*time.Millisecond)
+	require.Less(t, time.Since(started), 250*time.Millisecond)
+	stats := pool.Stats()
+	require.Equal(t, uint64(1), stats.RequiredReserveWaits)
+	require.Equal(t, uint64(1), stats.RequiredReserveTimeouts)
+	require.GreaterOrEqual(t, stats.RequiredReserveWaitNanos, uint64(reserveTimeout-5*time.Millisecond))
+}
+
+func TestUsageRecordReservationCommitAndAbortAreIdempotent(t *testing.T) {
+	pool := NewUsageRecordWorkerPoolWithOptions(UsageRecordWorkerPoolOptions{
+		WorkerCount:      1,
+		QueueSize:        1,
+		TaskTimeout:      time.Second,
+		OverflowPolicy:   config.UsageRecordOverflowPolicyDrop,
+		AutoScaleEnabled: false,
+	})
+	t.Cleanup(pool.Stop)
+
+	done := make(chan struct{})
+	reservation, err := pool.ReserveRequired(context.Background())
+	require.NoError(t, err)
+	require.True(t, reservation.Commit(func(context.Context) { close(done) }))
+	require.False(t, reservation.Commit(func(context.Context) {}))
+	require.False(t, reservation.Abort())
+	require.Eventually(t, func() bool { return pool.Stats().RequiredOutstanding == 0 }, time.Second, time.Millisecond)
+	<-done
+
+	aborted, err := pool.ReserveRequired(context.Background())
+	require.NoError(t, err)
+	require.True(t, aborted.Abort())
+	require.False(t, aborted.Abort())
+	require.False(t, aborted.Commit(func(context.Context) {}))
+}
+
+func TestUsageRecordReservationRequiredPipelineIsolatedFromOptionalQueue(t *testing.T) {
+	pool := NewUsageRecordWorkerPoolWithOptions(UsageRecordWorkerPoolOptions{
+		WorkerCount:      1,
+		QueueSize:        1,
+		TaskTimeout:      time.Second,
+		OverflowPolicy:   config.UsageRecordOverflowPolicyDrop,
+		AutoScaleEnabled: false,
+	})
+	t.Cleanup(pool.Stop)
+
+	running := make(chan struct{})
+	release := make(chan struct{})
+	require.Equal(t, UsageRecordSubmitModeEnqueued, pool.Submit(func(context.Context) {
+		close(running)
+		<-release
+	}))
+	<-running
+	require.Equal(t, UsageRecordSubmitModeEnqueued, pool.Submit(func(context.Context) {}))
+
+	reservation, err := pool.ReserveRequired(context.Background())
+	require.NoError(t, err)
+	requiredDone := make(chan struct{})
+	started := time.Now()
+	require.True(t, reservation.Commit(func(context.Context) { close(requiredDone) }))
+	require.Less(t, time.Since(started), 10*time.Millisecond)
+	select {
+	case <-requiredDone:
+	case <-time.After(250 * time.Millisecond):
+		t.Fatal("required persistence waited for the saturated optional queue")
+	}
+	require.Eventually(t, func() bool { return pool.Stats().RequiredOutstanding == 0 }, time.Second, time.Millisecond)
+	close(release)
+}
+
+func TestUsageRecordReservationFinalizersRunWhileBothPersistenceQueuesAreBlocked(t *testing.T) {
+	const taskCount = 32
+	pool := NewUsageRecordWorkerPoolWithOptions(UsageRecordWorkerPoolOptions{
+		WorkerCount:      1,
+		QueueSize:        taskCount,
+		TaskTimeout:      time.Second,
+		OverflowPolicy:   config.UsageRecordOverflowPolicyDrop,
+		AutoScaleEnabled: false,
+	})
+	t.Cleanup(pool.Stop)
+
+	optionalGate := make(chan struct{})
+	var optionalGateOnce atomic.Bool
+	closeOptionalGate := func() {
+		if optionalGateOnce.CompareAndSwap(false, true) {
+			close(optionalGate)
+		}
+	}
+	t.Cleanup(closeOptionalGate)
+	optionalStarted := make(chan struct{})
+	require.Equal(t, UsageRecordSubmitModeEnqueued, pool.Submit(func(context.Context) {
+		close(optionalStarted)
+		<-optionalGate
+	}))
+	<-optionalStarted
+	for i := 0; i < taskCount; i++ {
+		require.Equal(t, UsageRecordSubmitModeEnqueued, pool.Submit(func(context.Context) {
+			<-optionalGate
+		}))
+	}
+	require.Equal(t, UsageRecordSubmitModeDropped, pool.Submit(func(context.Context) {}), "optional queue must be saturated")
+
+	persistenceGate := make(chan struct{})
+	var persistenceGateOnce atomic.Bool
+	closePersistenceGate := func() {
+		if persistenceGateOnce.CompareAndSwap(false, true) {
+			close(persistenceGate)
+		}
+	}
+	t.Cleanup(closePersistenceGate)
+
+	reservations := make([]*UsageRecordReservation, 0, taskCount)
+	for i := 0; i < taskCount; i++ {
+		reservation, err := pool.ReserveRequired(context.Background())
+		require.NoError(t, err)
+		reservations = append(reservations, reservation)
+	}
+
+	allFinalized := make(chan struct{})
+	persistenceStarted := make(chan struct{})
+	var finalized atomic.Int32
+	var startedPersistence atomic.Bool
+	for _, reservation := range reservations {
+		commitStarted := time.Now()
+		require.True(t, reservation.CommitFinalizer(func() {
+			if finalized.Add(1) == taskCount {
+				close(allFinalized)
+			}
+		}, func(context.Context) {
+			if startedPersistence.CompareAndSwap(false, true) {
+				close(persistenceStarted)
+			}
+			<-persistenceGate
+		}))
+		require.Less(t, time.Since(commitStarted), 10*time.Millisecond)
+	}
+
+	select {
+	case <-persistenceStarted:
+	case <-time.After(250 * time.Millisecond):
+		t.Fatal("required persistence worker did not start")
+	}
+	select {
+	case <-allFinalized:
+	case <-time.After(500 * time.Millisecond):
+		t.Fatal("required finalizers waited for optional or required persistence")
+	}
+	require.Equal(t, int32(taskCount), finalized.Load())
+	require.Equal(t, taskCount, pool.Stats().RequiredOutstanding)
+
+	closePersistenceGate()
+	require.Eventually(t, func() bool { return pool.Stats().RequiredOutstanding == 0 }, 2*time.Second, time.Millisecond)
+	closeOptionalGate()
+}
+
+func TestUsageRecordWorkerPoolStopDrainsRequiredFinalizerAndPersistence(t *testing.T) {
+	pool := NewUsageRecordWorkerPoolWithOptions(UsageRecordWorkerPoolOptions{
+		WorkerCount:      1,
+		QueueSize:        1,
+		TaskTimeout:      time.Second,
+		OverflowPolicy:   config.UsageRecordOverflowPolicyDrop,
+		AutoScaleEnabled: false,
+	})
+
+	reservation, err := pool.ReserveRequired(context.Background())
+	require.NoError(t, err)
+	finalized := make(chan struct{})
+	persistenceStarted := make(chan struct{})
+	persistenceGate := make(chan struct{})
+	persistenceDone := make(chan struct{})
+	require.True(t, reservation.CommitFinalizer(func() {
+		close(finalized)
+	}, func(context.Context) {
+		close(persistenceStarted)
+		<-persistenceGate
+		close(persistenceDone)
+	}))
+
+	stopDone := make(chan struct{})
+	go func() {
+		pool.Stop()
+		close(stopDone)
+	}()
+	select {
+	case <-finalized:
+	case <-time.After(time.Second):
+		t.Fatal("required finalizer was not drained during stop")
+	}
+	select {
+	case <-persistenceStarted:
+	case <-time.After(time.Second):
+		t.Fatal("required persistence was not started during stop")
+	}
+	select {
+	case <-stopDone:
+		t.Fatal("stop returned before required persistence completed")
+	case <-time.After(20 * time.Millisecond):
+	}
+
+	close(persistenceGate)
+	select {
+	case <-persistenceDone:
+	case <-time.After(time.Second):
+		t.Fatal("required persistence was dropped during stop")
+	}
+	select {
+	case <-stopDone:
+	case <-time.After(time.Second):
+		t.Fatal("stop did not finish after required persistence completed")
+	}
+
+	_, err = pool.ReserveRequired(context.Background())
+	require.ErrorIs(t, err, ErrUsageRecordWorkerPoolStopped)
+}
+
+func TestUsageRecordWorkerPoolStopContextTimesOutWithoutClosingRequiredQueues(t *testing.T) {
+	pool := NewUsageRecordWorkerPoolWithOptions(UsageRecordWorkerPoolOptions{
+		WorkerCount:      1,
+		QueueSize:        1,
+		TaskTimeout:      time.Second,
+		OverflowPolicy:   config.UsageRecordOverflowPolicyDrop,
+		AutoScaleEnabled: false,
+	})
+
+	reservation, err := pool.ReserveRequired(context.Background())
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		reservation.Abort()
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		defer cancel()
+		_ = pool.StopContext(ctx)
+	})
+
+	stopCtx, cancelStop := context.WithTimeout(context.Background(), 40*time.Millisecond)
+	started := time.Now()
+	err = pool.StopContext(stopCtx)
+	cancelStop()
+	require.ErrorIs(t, err, context.DeadlineExceeded)
+	require.Less(t, time.Since(started), 500*time.Millisecond)
+
+	_, err = pool.ReserveRequired(context.Background())
+	require.ErrorIs(t, err, ErrUsageRecordWorkerPoolStopped)
+	require.Equal(t, UsageRecordSubmitModeDropped, pool.Submit(func(context.Context) {}))
+
+	persisted := make(chan struct{})
+	require.NotPanics(t, func() {
+		require.True(t, reservation.Commit(func(context.Context) {
+			close(persisted)
+		}))
+	})
+	select {
+	case <-persisted:
+	case <-time.After(time.Second):
+		t.Fatal("reservation committed after stop timeout was not persisted")
+	}
+
+	drainCtx, cancelDrain := context.WithTimeout(context.Background(), time.Second)
+	defer cancelDrain()
+	require.NoError(t, pool.StopContext(drainCtx))
+}
+
+func TestUsageRecordWorkerPoolRequiredTaskSharesDeadlineAcrossDetachedBillingContexts(t *testing.T) {
+	const taskTimeout = 120 * time.Millisecond
+	pool := NewUsageRecordWorkerPoolWithOptions(UsageRecordWorkerPoolOptions{
+		WorkerCount:      1,
+		QueueSize:        1,
+		TaskTimeout:      taskTimeout,
+		OverflowPolicy:   config.UsageRecordOverflowPolicyDrop,
+		AutoScaleEnabled: false,
+	})
+	t.Cleanup(pool.Stop)
+
+	reservation, err := pool.ReserveRequired(context.Background())
+	require.NoError(t, err)
+
+	deadlines := make(chan time.Time, 3)
+	nestedErr := make(chan error, 1)
+	started := time.Now()
+	require.True(t, reservation.Commit(func(workerCtx context.Context) {
+		for attempt := 0; attempt < 3; attempt++ {
+			billingCtx, cancel := detachedBillingContext(workerCtx)
+			deadline, ok := billingCtx.Deadline()
+			if !ok {
+				cancel()
+				nestedErr <- errors.New("detached billing context has no deadline")
+				return
+			}
+			deadlines <- deadline
+			if attempt < 2 {
+				timer := time.NewTimer(10 * time.Millisecond)
+				select {
+				case <-timer.C:
+				case <-billingCtx.Done():
+					if !timer.Stop() {
+						select {
+						case <-timer.C:
+						default:
+						}
+					}
+					cancel()
+					nestedErr <- billingCtx.Err()
+					return
+				}
+				cancel()
+				continue
+			}
+			<-billingCtx.Done()
+			nestedErr <- billingCtx.Err()
+			cancel()
+		}
+	}))
+
+	first := <-deadlines
+	second := <-deadlines
+	third := <-deadlines
+	require.WithinDuration(t, first, second, 2*time.Millisecond)
+	require.WithinDuration(t, first, third, 2*time.Millisecond)
+	require.ErrorIs(t, <-nestedErr, context.DeadlineExceeded)
+	require.GreaterOrEqual(t, time.Since(started), taskTimeout-25*time.Millisecond)
+	require.Less(t, time.Since(started), 500*time.Millisecond)
+}
+
 func TestUsageRecordWorkerPool_AutoScaleDisabledKeepsFixedConcurrency(t *testing.T) {
 	pool := NewUsageRecordWorkerPoolWithOptions(UsageRecordWorkerPoolOptions{
 		WorkerCount:           2,
@@ -439,10 +814,12 @@ func TestUsageRecordWorkerPool_StatsAndStop_NilBranches(t *testing.T) {
 	var nilPool *UsageRecordWorkerPool
 	require.Equal(t, UsageRecordWorkerPoolStats{}, nilPool.Stats())
 	require.NotPanics(t, func() { nilPool.Stop() })
+	require.NoError(t, nilPool.StopContext(context.Background()))
 
 	emptyPool := &UsageRecordWorkerPool{}
 	require.Equal(t, UsageRecordWorkerPoolStats{}, emptyPool.Stats())
 	require.NotPanics(t, func() { emptyPool.Stop() })
+	require.NoError(t, emptyPool.StopContext(context.Background()))
 }
 
 func TestUsageRecordWorkerPool_Execute_PanicAndTimeout(t *testing.T) {

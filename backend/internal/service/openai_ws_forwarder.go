@@ -136,6 +136,37 @@ func wrapOpenAIWSIngressTurnError(stage string, cause error, wroteDownstream boo
 	}
 }
 
+// ShouldPenalizeOpenAIWSAccount separates provider failures from downstream
+// connection lifecycle and local admission failures. Client disconnects,
+// idle timeouts, controlled reconnects, and local hook rejections provide no
+// evidence that the selected account is unhealthy.
+func ShouldPenalizeOpenAIWSAccount(err error) bool {
+	if err == nil || errors.Is(err, context.Canceled) || errors.Is(err, ErrOpenAIWSReconnectMigrationRequested) || errors.Is(err, ErrOpenAIWSLocalAdmission) || isOpenAIWSClientDisconnectError(err) {
+		return false
+	}
+	var turnErr *openAIWSIngressTurnError
+	if !errors.As(err, &turnErr) || turnErr == nil {
+		var closeErr *OpenAIWSClientCloseError
+		if errors.As(err, &closeErr) {
+			return false
+		}
+		return true
+	}
+	switch turnErr.stage {
+	case "read_client", "client_disconnected", "write_client", "idle_timeout":
+		return false
+	case "write_upstream":
+		// A close error returned before the socket write is a local
+		// validation/admission decision. Actual upstream write failures are
+		// ordinary transport errors and remain account-health failures.
+		var closeErr *OpenAIWSClientCloseError
+		if errors.As(turnErr.cause, &closeErr) {
+			return false
+		}
+	}
+	return true
+}
+
 func isOpenAIWSIngressTurnRetryable(err error) bool {
 	var turnErr *openAIWSIngressTurnError
 	if !errors.As(err, &turnErr) || turnErr == nil {
@@ -217,14 +248,62 @@ func (e *OpenAIWSClientCloseError) Reason() string {
 	return strings.TrimSpace(e.reason)
 }
 
+type OpenAIWSMiddleRouteDisposition string
+
+const (
+	OpenAIWSMiddleRouteDispositionRetain  OpenAIWSMiddleRouteDisposition = "retain"
+	OpenAIWSMiddleRouteDispositionExclude OpenAIWSMiddleRouteDisposition = "exclude"
+)
+
+func (d OpenAIWSMiddleRouteDisposition) Valid() bool {
+	return d == OpenAIWSMiddleRouteDispositionRetain || d == OpenAIWSMiddleRouteDispositionExclude
+}
+
 // OpenAIWSIngressHooks 定义入站 WS 每个 turn 的生命周期回调。
+type OpenAIWSReconnectControl struct {
+	ControlID              string
+	BindingGeneration      uint64
+	MiddleRouteDisposition OpenAIWSMiddleRouteDisposition
+}
+
 type OpenAIWSIngressHooks struct {
 	// InitialRequestModel 是首帧渠道映射前的请求模型，只用于 usage metadata
 	// 的 reasoning effort 后缀推导，禁止用于上游请求或计费模型。
 	InitialRequestModel string
-	BeforeTurn          func(turn int) error
-	BeforeRequest       func(turn int, payload []byte, originalModel string) error
-	AfterTurn           func(turn int, result *OpenAIForwardResult, turnErr error)
+	// RoutedRequestModel is the group/channel-mapped model. The passthrough
+	// adapter applies the selected account's model mapping after this layer and
+	// freezes that final physical model for the retained connection.
+	RoutedRequestModel        string
+	ValidatedFirstEnvelope    OpenAIWSClientEnvelope
+	HasValidatedFirstEnvelope bool
+	// FastPolicySettings is a connection-scoped immutable snapshot. The caller
+	// reuses it across initial account failover so no turn or retry reads the
+	// settings repository.
+	FastPolicySettings *OpenAIFastPolicySettings
+	// ReadClientFrame is connection-scoped and survives safe initial account
+	// failover. A per-attempt read context must not own the physical WS read.
+	ReadClientFrame  func(ctx context.Context) (coderws.MessageType, []byte, error)
+	BeforeTurn       func(turn int) error
+	BeforeRequest    func(turn int, payload []byte, originalModel string) error
+	TransformRequest func(turn int, payload []byte) ([]byte, error)
+	// BeforeProviderWrite is the final persistent auth/account fence. It runs
+	// after every asynchronous admission and transform, immediately before the
+	// provider-bound write. A logical response.create performs exactly one
+	// persistent auth-generation read here, even when the transport retries it.
+	BeforeProviderWrite func(turn int, payload []byte, originalModel string) error
+	// BeforeReconnectSignal runs after route-v1 proof validation and before
+	// the synthetic Codex reconnect payload is written. Returning an error is
+	// fail-closed: no reconnect payload may be emitted.
+	BeforeReconnectSignal         func(control OpenAIWSReconnectControl) error
+	RouteControlBindingGeneration uint64
+	AfterTurn                     func(turn int, result *OpenAIForwardResult, turnErr error)
+}
+
+func runOpenAIWSBeforeProviderWrite(hooks *OpenAIWSIngressHooks, turn int, payload []byte, originalModel string) error {
+	if hooks == nil || hooks.BeforeProviderWrite == nil {
+		return nil
+	}
+	return hooks.BeforeProviderWrite(turn, payload, originalModel)
 }
 
 func normalizeOpenAIWSLogValue(value string) string {
@@ -1069,7 +1148,10 @@ func (s *OpenAIGatewayService) openAIWSAcquireTimeout() time.Duration {
 	return dial + 2*time.Second
 }
 
-func (s *OpenAIGatewayService) buildOpenAIResponsesWSURL(account *Account) (string, error) {
+func (s *OpenAIGatewayService) buildOpenAIResponsesWSURL(
+	account *Account,
+	decision OpenAIWSProtocolDecision,
+) (string, error) {
 	if account == nil {
 		return "", errors.New("account is nil")
 	}
@@ -1082,11 +1164,27 @@ func (s *OpenAIGatewayService) buildOpenAIResponsesWSURL(account *Account) (stri
 		if baseURL == "" {
 			targetURL = openaiPlatformAPIURL
 		} else {
-			validatedURL, err := s.validateUpstreamBaseURL(baseURL)
-			if err != nil {
-				return "", err
+			if decision.AetherManaged && decision.AetherCapability.Effective {
+				// Administrator-managed Aether accounts are allowed to use the
+				// local ws:// fast path. Only reject unusable URL syntax here;
+				// ordinary custom upstreams still use the global URL policy.
+				parsedBaseURL, err := url.Parse(strings.TrimSpace(baseURL))
+				if err != nil || parsedBaseURL == nil || strings.TrimSpace(parsedBaseURL.Host) == "" {
+					return "", fmt.Errorf("invalid aether base_url")
+				}
+				switch strings.ToLower(strings.TrimSpace(parsedBaseURL.Scheme)) {
+				case "http", "https", "ws", "wss":
+				default:
+					return "", fmt.Errorf("unsupported scheme for aether ws: %s", parsedBaseURL.Scheme)
+				}
+				targetURL = buildOpenAIResponsesURL(parsedBaseURL.String())
+			} else {
+				validatedURL, err := s.validateUpstreamBaseURL(baseURL)
+				if err != nil {
+					return "", err
+				}
+				targetURL = buildOpenAIResponsesURL(validatedURL)
 			}
-			targetURL = buildOpenAIResponsesURL(validatedURL)
 		}
 	default:
 		targetURL = openaiPlatformAPIURL
@@ -1126,6 +1224,14 @@ func (s *OpenAIGatewayService) buildOpenAIWSHeaders(
 	if c != nil && c.Request != nil {
 		if v := strings.TrimSpace(c.Request.Header.Get("accept-language")); v != "" {
 			headers.Set("accept-language", v)
+		}
+		// Preserve the canonical Codex Responses identity on the Aether hop.
+		// ResolveOpenAIWSRouteSessionIdentity has already validated/projected
+		// these values for route-v1; this copy performs no identity fallback.
+		for _, name := range []string{"session-id", "thread-id", "x-client-request-id"} {
+			if value := strings.TrimSpace(c.Request.Header.Get(name)); value != "" {
+				headers.Set(name, value)
+			}
 		}
 	}
 	// OAuth 账号：将 apiKeyID 混入 session 标识符，防止跨用户会话碰撞。
@@ -1771,7 +1877,7 @@ func (s *OpenAIGatewayService) forwardOpenAIWSV2(
 		return nil, wrapOpenAIWSFallback("invalid_state", errors.New("service or account is nil"))
 	}
 
-	wsURL, err := s.buildOpenAIResponsesWSURL(account)
+	wsURL, err := s.buildOpenAIResponsesWSURL(account, decision)
 	if err != nil {
 		return nil, wrapOpenAIWSFallback("build_ws_url", err)
 	}
@@ -2448,14 +2554,22 @@ func (s *OpenAIGatewayService) ProxyResponsesWebSocketFromClient(
 		return errors.New("token is empty")
 	}
 
-	// 预取一次 OpenAI Fast Policy settings，绑定到 ctx，让该 WS session
-	// 内所有帧的 evaluateOpenAIFastPolicy 调用复用同一份快照，避免每帧
-	// 进入 DB / settingRepo。Trade-off 见 withOpenAIFastPolicyContext 注释。
-	if s.settingService != nil {
-		if settings, err := s.settingService.GetOpenAIFastPolicySettings(ctx); err == nil && settings != nil {
-			ctx = withOpenAIFastPolicyContext(ctx, settings)
+	fastPolicySettings := (*OpenAIFastPolicySettings)(nil)
+	if hooks != nil {
+		fastPolicySettings = hooks.FastPolicySettings
+	}
+	if fastPolicySettings == nil {
+		var fastPolicyErr error
+		fastPolicySettings, fastPolicyErr = s.SnapshotOpenAIWSFastPolicySettings(ctx)
+		if fastPolicyErr != nil {
+			return NewOpenAIWSClientCloseError(
+				coderws.StatusTryAgainLater,
+				"websocket policy snapshot is unavailable; reconnect",
+				fastPolicyErr,
+			)
 		}
 	}
+	ctx = withOpenAIFastPolicyContext(ctx, fastPolicySettings)
 
 	wsDecision := s.getOpenAIWSProtocolResolver().Resolve(account)
 	forceHTTPBridge := account.Platform == PlatformGrok
@@ -2508,7 +2622,7 @@ func (s *OpenAIGatewayService) ProxyResponsesWebSocketFromClient(
 		wsPath = "/v1/responses"
 	} else {
 		var err error
-		wsURL, err = s.buildOpenAIResponsesWSURL(account)
+		wsURL, err = s.buildOpenAIResponsesWSURL(account, wsDecision)
 		if err != nil {
 			return fmt.Errorf("build ws url: %w", err)
 		}
@@ -2862,13 +2976,14 @@ func (s *OpenAIGatewayService) ProxyResponsesWebSocketFromClient(
 				currentBridgePayload.imageSizeTier,
 				currentBridgePayload.imageInputSize,
 				turn,
+				hooks,
 				writeClientMessage,
 			)
 			if hooks != nil && hooks.AfterTurn != nil {
 				hooks.AfterTurn(turn, result, bridgeErr)
 			}
 			if bridgeErr != nil {
-				return bridgeErr
+				return fenceOpenAIWSFailoverByStep(turn, bridgeErr)
 			}
 			if result == nil {
 				return errors.New("websocket http bridge turn result is nil")
@@ -3382,6 +3497,7 @@ func (s *OpenAIGatewayService) ProxyResponsesWebSocketFromClient(
 	currentTurnReplayInput := []json.RawMessage(nil)
 	currentTurnReplayInputExists := false
 	skipBeforeTurn := false
+	providerFencePassedTurn := 0
 	hasCurrentOrReplayFunctionCallOutput := func(payload []byte) bool {
 		if openAIWSRawPayloadHasToolCallOutput(payload) {
 			return true
@@ -3661,7 +3777,7 @@ func (s *OpenAIGatewayService) ProxyResponsesWebSocketFromClient(
 		if sessionLease == nil {
 			acquiredLease, acquireErr := acquireTurnLease(turn, preferredConnID, forcePreferredConn)
 			if acquireErr != nil {
-				return fmt.Errorf("acquire upstream websocket: %w", acquireErr)
+				return fenceOpenAIWSFailoverByStep(turn, fmt.Errorf("acquire upstream websocket: %w", acquireErr))
 			}
 			sessionLease = acquiredLease
 			sessionConnID = strings.TrimSpace(sessionLease.ConnID())
@@ -3801,6 +3917,16 @@ func (s *OpenAIGatewayService) ProxyResponsesWebSocketFromClient(
 			)
 		}
 
+		// Run the persistent authorization/account fence after every payload
+		// mutation and connection admission, immediately before the provider
+		// dispatch. Internal transport retries reuse the same logical client turn,
+		// so they must not repeat admission or future charge/consume side effects.
+		if providerFencePassedTurn != turn {
+			if fenceErr := runOpenAIWSBeforeProviderWrite(hooks, turn, currentPayload, currentOriginalModel); fenceErr != nil {
+				return fenceErr
+			}
+			providerFencePassedTurn = turn
+		}
 		result, relayErr := sendAndRelay(turn, sessionLease, currentPayload, currentPayloadBytes, currentOriginalModel, currentImageBillingModel, currentImageSizeTier, currentImageInputSize)
 		if relayErr != nil {
 			lastTurnClean = false
@@ -3818,7 +3944,7 @@ func (s *OpenAIGatewayService) ProxyResponsesWebSocketFromClient(
 				hooks.AfterTurn(turn, nil, finalErr)
 			}
 			sessionLease.MarkBroken()
-			return finalErr
+			return fenceOpenAIWSFailoverByStep(turn, finalErr)
 		}
 		turnRetry = 0
 		turnPrevRecoveryTried = false

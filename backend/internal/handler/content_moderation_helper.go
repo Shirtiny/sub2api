@@ -37,6 +37,21 @@ func (h *OpenAIGatewayHandler) checkContentModeration(c *gin.Context, reqLog *za
 	return runContentModeration(c, reqLog, h.contentModerationService, apiKey, subject, protocol, model, body)
 }
 
+func (h *OpenAIGatewayHandler) checkContentModerationCacheOnly(
+	c *gin.Context,
+	apiKey *service.APIKey,
+	subject middleware2.AuthSubject,
+	protocol string,
+	model string,
+	body []byte,
+) (*service.ContentModerationDecision, error) {
+	if h == nil || h.contentModerationService == nil || c == nil || c.Request == nil {
+		return nil, nil
+	}
+	input := buildContentModerationInput(c, apiKey, subject, protocol, model, body)
+	return h.contentModerationService.CheckCacheOnly(c.Request.Context(), input)
+}
+
 func runContentModeration(c *gin.Context, reqLog *zap.Logger, svc *service.ContentModerationService, apiKey *service.APIKey, subject middleware2.AuthSubject, protocol string, model string, body []byte) *service.ContentModerationDecision {
 	if svc == nil || c == nil || c.Request == nil {
 		return nil

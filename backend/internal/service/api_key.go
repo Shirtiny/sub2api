@@ -46,6 +46,7 @@ type APIKey struct {
 	LastUsedAt          *time.Time
 	CreatedAt           time.Time
 	UpdatedAt           time.Time
+	AuthEpochLease      APIKeyAuthEpochLease `json:"-"`
 	User                *User
 	Group               *Group
 

@@ -2822,7 +2822,7 @@ export default {
       recordNonHits: '记录未命中输入',
       recordNonHitsHint: '开启后会记录抽样但未命中的请求摘要，摘要会先脱敏再入库。',
       preHashCheck: '启用前置哈希比对',
-      preHashCheckHint: '异步审核命中过的输入哈希会被前置拦截；该拦截不发送邮件，也不累计封禁次数。',
+      preHashCheckHint: '命中过的输入哈希（含关键词命中与审核 API 命中）只在首次通知；重复的相同输入照常拦截，但不再发送邮件，也不累计封禁次数。拦截模式下还会跳过审核 API 调用。',
       flaggedHashCount: '当前哈希集合数量：{count} 个',
       flaggedHashHint: '哈希永久保存在 Redis 集合中；可粘贴完整 64 位哈希删除误拦截项，或一键清空全部风险哈希。',
       flaggedHashPlaceholder: '粘贴完整 64 位输入哈希',
@@ -3737,6 +3737,9 @@ export default {
         wsModeDedicated: '独享（dedicated）',
         wsModeConcurrencyHint: '启用 WS mode 后，该账号并发数将作为该账号 WS 连接池上限。',
         wsModePassthroughHint: 'passthrough 模式不使用 WS 连接池。',
+        aetherWSAccount: '作为 Aether WS 账号',
+        aetherWSAccountDesc: '使用 sub2api 到 Aether 的直连 WebSocket 链路，并将该账号 WS mode 固定为 passthrough。',
+        aetherWSModeManagedHint: '该账号模式由 Aether WS 开关管理，请通过上方开关调整。',
         oauthResponsesWebsocketsV2: 'OAuth WebSocket Mode',
         oauthResponsesWebsocketsV2Desc:
           '仅对 OpenAI OAuth 生效。开启后该账号才允许使用 OpenAI WebSocket Mode 协议。',

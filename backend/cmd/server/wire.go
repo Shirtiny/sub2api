@@ -198,7 +198,7 @@ func provideCleanup(
 			}},
 			{"UsageRecordWorkerPool", func() error {
 				if usageRecordWorkerPool != nil {
-					usageRecordWorkerPool.Stop()
+					return usageRecordWorkerPool.StopContext(ctx)
 				}
 				return nil
 			}},

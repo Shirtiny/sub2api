@@ -1224,9 +1224,55 @@ func TestOpenAIGatewayService_SelectAccountWithScheduler_PreviousResponseSticky(
 	require.Equal(t, account.ID, selection.Account.ID)
 	require.Equal(t, openAIAccountScheduleLayerPreviousResponse, decision.Layer)
 	require.True(t, decision.StickyPreviousHit)
+	require.True(t, selection.StickyBindingWritten)
 	require.Equal(t, account.ID, cache.sessionBindings["openai:session_hash_001"])
 	if selection.ReleaseFunc != nil {
 		selection.ReleaseFunc()
+	}
+}
+
+func TestOpenAIGatewayService_SelectAccountWithSchedulerUsesAccountRoutingModel(t *testing.T) {
+	for _, advanced := range []bool{false, true} {
+		t.Run(fmt.Sprintf("advanced_%t", advanced), func(t *testing.T) {
+			resetOpenAIAdvancedSchedulerSettingCacheForTest()
+			groupID := int64(901)
+			accounts := []Account{
+				{
+					ID: 41001, Platform: PlatformOpenAI, Type: AccountTypeAPIKey,
+					Status: StatusActive, Schedulable: true, Concurrency: 1, Priority: 0,
+					Credentials: map[string]any{"model_mapping": map[string]any{"client-model": "wrong-provider-model"}},
+				},
+				{
+					ID: 41002, Platform: PlatformOpenAI, Type: AccountTypeAPIKey,
+					Status: StatusActive, Schedulable: true, Concurrency: 1, Priority: 1,
+					Credentials: map[string]any{"model_mapping": map[string]any{"channel-model": "provider-model"}},
+				},
+			}
+			cfg := &config.Config{}
+			cfg.Gateway.Scheduling.LoadBatchEnabled = false
+			svc := &OpenAIGatewayService{
+				accountRepo:        schedulerTestOpenAIAccountRepo{accounts: accounts, defaultGroupID: groupID},
+				cache:              &schedulerTestGatewayCache{},
+				cfg:                cfg,
+				concurrencyService: NewConcurrencyService(schedulerTestConcurrencyCache{}),
+			}
+			if advanced {
+				svc.rateLimitService = newOpenAIAdvancedSchedulerRateLimitService("true")
+			}
+
+			selection, _, err := svc.SelectAccountWithSchedulerForCapabilityAndRoutingModel(
+				context.Background(), &groupID, "", "routing-model-session",
+				"client-model", "channel-model", nil,
+				OpenAIUpstreamTransportAny, OpenAIEndpointCapabilityChatCompletions, false,
+			)
+			require.NoError(t, err)
+			require.NotNil(t, selection)
+			require.NotNil(t, selection.Account)
+			require.Equal(t, int64(41002), selection.Account.ID)
+			if selection.ReleaseFunc != nil {
+				selection.ReleaseFunc()
+			}
+		})
 	}
 }
 
@@ -1271,6 +1317,7 @@ func TestOpenAIGatewayService_SelectAccountWithScheduler_SessionSticky(t *testin
 	require.Equal(t, account.ID, selection.Account.ID)
 	require.Equal(t, openAIAccountScheduleLayerSessionSticky, decision.Layer)
 	require.True(t, decision.StickySessionHit)
+	require.True(t, selection.StickyBindingWritten)
 	if selection.ReleaseFunc != nil {
 		selection.ReleaseFunc()
 	}

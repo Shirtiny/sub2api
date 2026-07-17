@@ -14,8 +14,10 @@ const (
 
 // OpenAIWSProtocolDecision 表示协议决策结果。
 type OpenAIWSProtocolDecision struct {
-	Transport OpenAIUpstreamTransport
-	Reason    string
+	Transport        OpenAIUpstreamTransport
+	Reason           string
+	AetherManaged    bool
+	AetherCapability AetherWSAccountCapability
 }
 
 // OpenAIWSProtocolResolver 定义 OpenAI 上游协议决策。
@@ -63,6 +65,18 @@ func (r *defaultOpenAIWSProtocolResolver) Resolve(account *Account) OpenAIWSProt
 		}
 	} else {
 		return openAIWSHTTPDecision("unknown_auth_type")
+	}
+	if account.IsAetherWSManaged() {
+		capability := account.ResolveAetherWSAccountCapability(r.cfg)
+		if !capability.Effective {
+			return openAIWSHTTPDecision(capability.Reason)
+		}
+		return OpenAIWSProtocolDecision{
+			Transport:        OpenAIUpstreamTransportResponsesWebsocketV2,
+			Reason:           "aether_route_v1_passthrough",
+			AetherManaged:    true,
+			AetherCapability: capability,
+		}
 	}
 	if wsCfg.ModeRouterV2Enabled {
 		mode := account.ResolveOpenAIResponsesWebSocketV2Mode(wsCfg.IngressModeDefault)

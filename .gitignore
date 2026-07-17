@@ -130,6 +130,7 @@ docs/*
 !docs/PAYMENT_CN.md
 !docs/ADMIN_PAYMENT_INTEGRATION_API.md
 !docs/MIGRATION_CHECKSUM_PLAYBOOK.md
+!docs/CODEX_WEBSOCKET_TRANSPORT_AND_SCHEDULING_PLAN.md
 .serena/
 .codex/
 frontend/coverage/

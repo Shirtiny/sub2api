@@ -1,10 +1,13 @@
 package openai_ws_v2
 
 import (
+	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"net"
+	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -19,6 +22,10 @@ func TestRunEntry_DelegatesRelay(t *testing.T) {
 
 	clientConn := newPassthroughTestFrameConn(nil, false)
 	upstreamConn := newPassthroughTestFrameConn([]passthroughTestFrame{
+		{
+			msgType: coderws.MessageText,
+			payload: []byte(`{"type":"response.created","response":{"id":"resp_entry"}}`),
+		},
 		{
 			msgType: coderws.MessageText,
 			payload: []byte(`{"type":"response.completed","response":{"id":"resp_entry","usage":{"input_tokens":1,"output_tokens":1}}}`),
@@ -130,6 +137,7 @@ func TestRunUpstreamToClient_ErrorAndDropPaths(t *testing.T) {
 			nil,
 			func() {},
 			nil,
+			nil,
 			exitCh,
 		)
 		sig := <-exitCh
@@ -161,6 +169,7 @@ func TestRunUpstreamToClient_ErrorAndDropPaths(t *testing.T) {
 			nil,
 			func() {},
 			nil,
+			nil,
 			exitCh,
 		)
 		sig := <-exitCh
@@ -179,6 +188,10 @@ func TestRunUpstreamToClient_ErrorAndDropPaths(t *testing.T) {
 			newPassthroughTestFrameConn([]passthroughTestFrame{
 				{
 					msgType: coderws.MessageText,
+					payload: []byte(`{"type":"response.created","response":{"id":"resp_drop"}}`),
+				},
+				{
+					msgType: coderws.MessageText,
 					payload: []byte(`{"type":"response.completed","response":{"id":"resp_drop","usage":{"input_tokens":1,"output_tokens":1}}}`),
 				},
 			}, true),
@@ -195,13 +208,308 @@ func TestRunUpstreamToClient_ErrorAndDropPaths(t *testing.T) {
 			dropped,
 			func() {},
 			nil,
+			newResponseStepGate([]byte(`{"type":"response.create","model":"gpt-5"}`)),
 			exitCh,
 		)
 		sig := <-exitCh
 		require.Equal(t, "drain_terminal", sig.stage)
 		require.True(t, sig.graceful)
-		require.Equal(t, int64(1), dropped.Load())
+		require.Equal(t, int64(2), dropped.Load())
 	})
+}
+
+func TestRunUpstreamToClient_TerminalWriteFailureStillCommitsExactlyOnce(t *testing.T) {
+	t.Parallel()
+
+	upstreamConn := newPassthroughTestFrameConn([]passthroughTestFrame{
+		{msgType: coderws.MessageText, payload: []byte(`{"type":"response.created","response":{"id":"resp_write_fail"}}`)},
+		{msgType: coderws.MessageText, payload: []byte(`{"type":"response.completed","response":{"id":"resp_write_fail","usage":{"input_tokens":4,"output_tokens":2}}}`)},
+	}, true)
+	gate := newResponseStepGate([]byte(`{"type":"response.create","model":"gpt-write"}`))
+	state := &relayState{}
+	drop := &atomic.Bool{}
+	exitCh := make(chan relayExitSignal, 1)
+	writeCalls := 0
+	mutexFreeDuringWrite := false
+	mutexFreeDuringCallback := false
+	callbackCalls := 0
+	var turn RelayTurnResult
+
+	runUpstreamToClient(
+		context.Background(),
+		upstreamConn,
+		func(_ coderws.MessageType, _ []byte) error {
+			writeCalls++
+			if writeCalls != 2 {
+				return nil
+			}
+			mutexFreeDuringWrite = gate.mu.TryLock()
+			if mutexFreeDuringWrite {
+				gate.mu.Unlock()
+			}
+			return errors.New("terminal write failed")
+		},
+		time.Now(),
+		time.Now,
+		state,
+		nil,
+		func(current RelayTurnResult) {
+			callbackCalls++
+			turn = current
+			mutexFreeDuringCallback = gate.mu.TryLock()
+			if mutexFreeDuringCallback {
+				gate.mu.Unlock()
+			}
+		},
+		nil,
+		nil,
+		drop,
+		nil,
+		nil,
+		func() {},
+		nil,
+		gate,
+		exitCh,
+	)
+
+	exit := <-exitCh
+	require.Equal(t, "write_client", exit.stage)
+	require.Equal(t, 2, writeCalls)
+	require.Equal(t, 1, callbackCalls)
+	require.True(t, mutexFreeDuringWrite, "gate mutex must not span downstream writes")
+	require.True(t, mutexFreeDuringCallback, "gate mutex must not span terminal callbacks")
+	require.Equal(t, "resp_write_fail", turn.RequestID)
+	require.Equal(t, "gpt-write", turn.RequestModel)
+	require.Equal(t, 4, turn.Usage.InputTokens)
+	require.Equal(t, 4, state.usage.InputTokens)
+	started, err := gate.begin(coderws.MessageText, []byte(`{"type":"response.create"}`))
+	require.False(t, started)
+	require.ErrorIs(t, err, errResponseStepClosed)
+}
+
+func TestRunUpstreamToClient_RejectedTopLevelErrorDoesNotDoubleFinalize(t *testing.T) {
+	t.Parallel()
+
+	upstreamConn := newPassthroughTestFrameConn([]passthroughTestFrame{
+		{msgType: coderws.MessageText, payload: []byte(`{"type":"error","error":{"code":"rate_limit_exceeded"}}`)},
+	}, true)
+	gate := newResponseStepGate([]byte(`{"type":"response.create","model":"gpt-error"}`))
+	state := &relayState{}
+	drop := &atomic.Bool{}
+	exitCh := make(chan relayExitSignal, 1)
+	rejectedErr := errors.New("safe failover")
+	beforeCalls := 0
+	callbackCalls := 0
+
+	runUpstreamToClient(
+		context.Background(),
+		upstreamConn,
+		func(_ coderws.MessageType, _ []byte) error { return nil },
+		time.Now(),
+		time.Now,
+		state,
+		nil,
+		func(RelayTurnResult) { callbackCalls++ },
+		func(_ coderws.MessageType, _ []byte, _ bool) error {
+			beforeCalls++
+			return rejectedErr
+		},
+		nil,
+		drop,
+		nil,
+		nil,
+		func() {},
+		nil,
+		gate,
+		exitCh,
+	)
+
+	exit := <-exitCh
+	require.Equal(t, "upstream_message", exit.stage)
+	require.ErrorIs(t, exit.err, rejectedErr)
+	require.Equal(t, 1, beforeCalls)
+	require.Zero(t, callbackCalls, "adapter error finalization and relay terminal callback must be mutually exclusive")
+	require.Empty(t, state.terminalEventType)
+	started, err := gate.begin(coderws.MessageText, []byte(`{"type":"response.create"}`))
+	require.False(t, started)
+	require.ErrorIs(t, err, errResponseStepClosed)
+}
+
+func TestResponseStepGate_CompletedRequiresCreatedProvenance(t *testing.T) {
+	t.Parallel()
+
+	gate := newResponseStepGate([]byte(`{"type":"response.create","model":"model-a"}`))
+	completedA := observedUpstreamEvent{terminal: true, eventType: "response.completed", responseID: "resp_a"}
+	decision := gate.observe(completedA)
+	require.ErrorIs(t, decision.err, errResponseCompletedWithoutCreated)
+	decision = gate.observe(observedUpstreamEvent{eventType: "response.in_progress", responseID: "resp_a"})
+	require.ErrorIs(t, decision.err, errResponseEventWithoutCreated)
+	decision = gate.observe(observedUpstreamEvent{eventType: "response.output_text.delta", responseID: "resp_a"})
+	require.ErrorIs(t, decision.err, errResponseEventWithoutCreated)
+
+	decision = gate.observe(observedUpstreamEvent{eventType: "response.created"})
+	require.ErrorIs(t, decision.err, errResponseCreatedMissingID)
+
+	decision = gate.observe(observedUpstreamEvent{eventType: "response.created", responseID: "resp_a"})
+	require.NoError(t, decision.err)
+	require.False(t, decision.consume)
+	require.NoError(t, gate.observe(observedUpstreamEvent{eventType: "response.output_text.delta", responseID: "resp_a"}).err)
+	require.ErrorIs(t,
+		gate.observe(observedUpstreamEvent{eventType: "response.output_text.delta", responseID: "resp_b"}).err,
+		errResponseStepIDMismatch,
+	)
+	require.ErrorIs(t,
+		gate.observe(observedUpstreamEvent{eventType: "response.output_item.added", responseID: "resp_b"}).err,
+		errResponseStepIDMismatch,
+	)
+	duplicateCreated := gate.observe(observedUpstreamEvent{eventType: "response.created", responseID: "resp_a"})
+	require.True(t, duplicateCreated.consume)
+
+	mismatch := gate.observe(observedUpstreamEvent{terminal: true, eventType: "response.completed", responseID: "resp_b"})
+	require.ErrorIs(t, mismatch.err, errResponseStepIDMismatch)
+	decision = gate.observe(completedA)
+	require.True(t, decision.terminalClaimed)
+	require.Equal(t, uint64(1), decision.generation)
+	require.Equal(t, "model-a", decision.requestModel)
+	gate.finishTerminal(false)
+
+	require.True(t, gate.observe(completedA).consume, "settled terminal must be consumed")
+	require.True(t, gate.observe(observedUpstreamEvent{eventType: "response.created", responseID: "resp_a"}).consume)
+	require.True(t, gate.observe(observedUpstreamEvent{eventType: "response.output_text.delta", responseID: "resp_a"}).consume)
+
+	started, err := gate.begin(coderws.MessageText, []byte(`{"type":"response.create","model":"model-b"}`))
+	require.True(t, started)
+	require.NoError(t, err)
+	require.NoError(t, gate.dispatchPrepared(time.Now()))
+	require.False(t, gate.observe(observedUpstreamEvent{eventType: "response.created", responseID: "resp_b"}).consume)
+	decision = gate.observe(observedUpstreamEvent{terminal: true, eventType: "response.completed", responseID: "resp_b"})
+	require.True(t, decision.terminalClaimed)
+	require.Equal(t, uint64(2), decision.generation)
+	require.Equal(t, "model-b", decision.requestModel)
+	gate.finishTerminal(false)
+
+	started, err = gate.begin(coderws.MessageText, []byte(`{"type":"response.create"}`))
+	require.True(t, started)
+	require.NoError(t, err)
+	require.NoError(t, gate.dispatchPrepared(time.Now()))
+	gate.observe(observedUpstreamEvent{eventType: "response.created", responseID: "resp_c"})
+	decision = gate.observe(observedUpstreamEvent{terminal: true, eventType: "response.completed", responseID: "resp_c"})
+	require.True(t, decision.terminalClaimed)
+	require.Equal(t, uint64(3), decision.generation)
+	require.Equal(t, "model-b", decision.requestModel, "missing model must inherit the session model")
+	gate.finishTerminal(false)
+}
+
+func TestResponseStepGateRejectsOversizedOrNonASCIIResponseIDs(t *testing.T) {
+	t.Parallel()
+
+	gate := newResponseStepGate([]byte(`{"type":"response.create","model":"model-a"}`))
+	oversized := "resp_" + strings.Repeat("x", responseStepIDMaxBytes)
+	decision := gate.observe(observedUpstreamEvent{eventType: "response.created", responseID: oversized})
+	require.ErrorIs(t, decision.err, errResponseProtocolIdentifierInvalid)
+
+	decision = gate.observe(observedUpstreamEvent{eventType: "response.created", responseID: "resp_非ascii"})
+	require.ErrorIs(t, decision.err, errResponseProtocolIdentifierInvalid)
+}
+
+func TestObserveUpstreamMessageRejectsLargeIdentifiersBeforeRetention(t *testing.T) {
+	t.Parallel()
+
+	oversized := "resp_" + strings.Repeat("x", responseStepIDMaxBytes)
+	message := []byte(`{"type":"response.created","response":{"id":"` + oversized + `"}}`)
+	observed := observeUpstreamMessage(nil, message, time.Time{}, time.Now, nil)
+	require.ErrorIs(t, observed.protocolErr, errResponseProtocolIdentifierInvalid)
+	require.Empty(t, observed.responseID)
+
+	valid := observeUpstreamMessage(nil, []byte(`{"type":"response.created","response":{"id":"resp_ok"}}`), time.Time{}, time.Now, nil)
+	require.NoError(t, valid.protocolErr)
+	require.Equal(t, "resp_ok", valid.responseID)
+}
+
+func BenchmarkObserveUpstreamMessageDelta(b *testing.B) {
+	benchmarkObserveUpstreamMessageDelta(b, "response.output_text.delta")
+}
+
+func BenchmarkObserveUpstreamMessageReasoningTextDelta(b *testing.B) {
+	benchmarkObserveUpstreamMessageDelta(b, "response.reasoning_text.delta")
+}
+
+func BenchmarkObserveUpstreamMessageCustomToolCallInputDelta(b *testing.B) {
+	benchmarkObserveUpstreamMessageDelta(b, "response.custom_tool_call_input.delta")
+}
+
+func benchmarkObserveUpstreamMessageDelta(b *testing.B, eventType string) {
+	for _, size := range []int{128, 4 * 1024} {
+		b.Run(fmt.Sprintf("%dB", size), func(b *testing.B) {
+			prefix := []byte(`{"type":"` + eventType + `","response_id":"resp_bench","delta":"`)
+			suffix := []byte(`"}`)
+			payload := make([]byte, 0, size)
+			payload = append(payload, prefix...)
+			payload = append(payload, bytes.Repeat([]byte{'x'}, size-len(prefix)-len(suffix))...)
+			payload = append(payload, suffix...)
+			now := time.Unix(100, 0)
+			nowFn := func() time.Time { return now }
+			b.SetBytes(int64(len(payload)))
+			b.ReportAllocs()
+			b.ResetTimer()
+			for index := 0; index < b.N; index++ {
+				observed := observeUpstreamMessage(nil, payload, time.Time{}, nowFn, nil)
+				if observed.eventType != eventType || len(observed.responseIDRaw) == 0 {
+					b.Fatal("unexpected delta envelope")
+				}
+			}
+		})
+	}
+}
+
+func TestResponseStepGate_PreparingConsumesDelayedTerminal(t *testing.T) {
+	t.Parallel()
+
+	gate := newResponseStepGate([]byte(`{"type":"response.create","model":"model-a"}`))
+	require.NoError(t, gate.observe(observedUpstreamEvent{eventType: "response.created", responseID: "resp_a"}).err)
+	completed := gate.observe(observedUpstreamEvent{terminal: true, eventType: "response.completed", responseID: "resp_a"})
+	require.True(t, completed.terminalClaimed)
+	gate.finishTerminal(false)
+
+	started, err := gate.begin(coderws.MessageText, []byte(`{"type":"response.create","model":"model-a"}`))
+	require.True(t, started)
+	require.NoError(t, err)
+
+	for _, event := range []observedUpstreamEvent{
+		{eventType: "response.created", responseID: "resp_late"},
+		{terminal: true, eventType: "response.failed"},
+		{terminal: true, eventType: "error"},
+	} {
+		decision := gate.observe(event)
+		require.True(t, decision.consume)
+		require.False(t, decision.terminalClaimed)
+		require.NoError(t, decision.err)
+	}
+
+	require.NoError(t, gate.dispatchPrepared(time.Now()))
+	created := gate.observe(observedUpstreamEvent{eventType: "response.created", responseID: "resp_b"})
+	require.False(t, created.consume)
+	require.NoError(t, created.err)
+}
+
+func TestResponseStepGate_IDLessFailureClosesGate(t *testing.T) {
+	t.Parallel()
+
+	for _, eventType := range []string{"response.failed", "response.incomplete"} {
+		t.Run(eventType, func(t *testing.T) {
+			gate := newResponseStepGate([]byte(`{"type":"response.create","model":"gpt-failure"}`))
+			decision := gate.observe(observedUpstreamEvent{terminal: true, eventType: eventType})
+			require.NoError(t, decision.err)
+			require.True(t, decision.terminalClaimed)
+			require.True(t, decision.closeGate)
+			require.Equal(t, "gpt-failure", decision.requestModel)
+			gate.finishTerminal(decision.closeGate)
+
+			started, err := gate.begin(coderws.MessageText, []byte(`{"type":"response.create"}`))
+			require.False(t, started)
+			require.ErrorIs(t, err, errResponseStepClosed)
+		})
+	}
 }
 
 func TestRunIdleWatchdog_NoTimeoutWhenDisabled(t *testing.T) {
@@ -318,7 +626,7 @@ func TestParseUsageAndEnrichCoverage(t *testing.T) {
 	enrichResult(nil, state, 0)
 }
 
-func TestParseUsageAndAccumulateAcceptsChatUsageAliases(t *testing.T) {
+func TestParseUsageAndAccumulateIgnoresUnpinnedTerminalAlias(t *testing.T) {
 	t.Parallel()
 
 	state := &relayState{}
@@ -328,10 +636,10 @@ func TestParseUsageAndAccumulateAcceptsChatUsageAliases(t *testing.T) {
 		"response.done",
 		nil,
 	)
-	require.Equal(t, 12, got.InputTokens)
-	require.Equal(t, 6, got.OutputTokens)
-	require.Equal(t, 4, got.CacheReadInputTokens)
-	require.Equal(t, 2, got.ImageOutputTokens)
+	require.Zero(t, got.InputTokens)
+	require.Zero(t, got.OutputTokens)
+	require.Zero(t, got.CacheReadInputTokens)
+	require.Zero(t, got.ImageOutputTokens)
 	require.Equal(t, got, state.usage)
 }
 
@@ -383,6 +691,19 @@ func TestEmitTurnCompleteCoverage(t *testing.T) {
 	require.Equal(t, 2, got.Usage.InputTokens)
 	require.Equal(t, 3, got.Usage.OutputTokens)
 	require.Equal(t, "", got.RequestModel)
+
+	emitTurnComplete(func(turn RelayTurnResult) {
+		called++
+		got = turn
+	}, &relayState{requestModel: "gpt-5"}, observedUpstreamEvent{
+		terminal:  true,
+		eventType: "response.failed",
+		usage:     Usage{InputTokens: 1},
+	})
+	require.Equal(t, 2, called)
+	require.Empty(t, got.RequestID)
+	require.Equal(t, "response.failed", got.TerminalEventType)
+	require.Equal(t, "gpt-5", got.RequestModel)
 }
 
 func TestIsDisconnectErrorCoverage_CloseStatusesAndMessageBranches(t *testing.T) {
@@ -402,7 +723,7 @@ func TestIsTokenEventCoverageBranches(t *testing.T) {
 	require.False(t, isTokenEvent("response.output_item.added"))
 	require.True(t, isTokenEvent("response.output_audio.delta"))
 	require.True(t, isTokenEvent("response.output"))
-	require.True(t, isTokenEvent("response.done"))
+	require.False(t, isTokenEvent("response.done"))
 }
 
 func TestShouldParseUsageTerminalEvents(t *testing.T) {
@@ -410,13 +731,17 @@ func TestShouldParseUsageTerminalEvents(t *testing.T) {
 
 	for _, eventType := range []string{
 		"response.completed",
-		"response.done",
 		"response.failed",
 		"response.incomplete",
-		"response.cancelled",
-		"response.canceled",
 	} {
 		require.True(t, shouldParseUsage(eventType), eventType)
+	}
+	require.True(t, isTerminalEvent("error"))
+	require.True(t, isFailureTerminalEvent("error"))
+	require.False(t, shouldParseUsage("error"))
+	for _, eventType := range []string{"response.done", "response.cancelled", "response.canceled"} {
+		require.False(t, shouldParseUsage(eventType), eventType)
+		require.False(t, isTerminalEvent(eventType), eventType)
 	}
 	require.False(t, shouldParseUsage("response.output_text.delta"))
 	require.False(t, shouldParseUsage(""))

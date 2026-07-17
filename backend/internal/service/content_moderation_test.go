@@ -35,7 +35,8 @@ func TestContentModerationConfigIncludesCustomSourceGroup(t *testing.T) {
 }
 
 type contentModerationTestSettingRepo struct {
-	values map[string]string
+	values        map[string]string
+	getValueCalls int
 }
 
 func (r *contentModerationTestSettingRepo) Get(ctx context.Context, key string) (*Setting, error) {
@@ -46,10 +47,165 @@ func (r *contentModerationTestSettingRepo) Get(ctx context.Context, key string) 
 }
 
 func (r *contentModerationTestSettingRepo) GetValue(ctx context.Context, key string) (string, error) {
+	r.getValueCalls++
 	if value, ok := r.values[key]; ok {
 		return value, nil
 	}
 	return "", ErrSettingNotFound
+}
+
+func TestContentModerationCheckCacheOnlyDoesNotReadSettings(t *testing.T) {
+	cfg := defaultContentModerationConfig()
+	rawCfg, err := json.Marshal(cfg)
+	require.NoError(t, err)
+
+	settingRepo := &contentModerationTestSettingRepo{values: map[string]string{
+		SettingKeyRiskControlEnabled:      "false",
+		SettingKeyContentModerationConfig: string(rawCfg),
+	}}
+	svc := &ContentModerationService{settingRepo: settingRepo, repo: &contentModerationTestRepo{}}
+	input := ContentModerationCheckInput{
+		Endpoint: "/v1/responses",
+		Protocol: ContentModerationProtocolOpenAIResponses,
+		Body:     []byte(`{"type":"response.create","model":"gpt-5"}`),
+	}
+
+	decision, err := svc.Check(context.Background(), input)
+	require.NoError(t, err)
+	require.True(t, decision.Allowed)
+	require.Equal(t, 2, settingRepo.getValueCalls)
+
+	for range 10 {
+		decision, err = svc.CheckCacheOnly(context.Background(), input)
+		require.NoError(t, err)
+		require.True(t, decision.Allowed)
+	}
+	require.Equal(t, 2, settingRepo.getValueCalls, "retained turns must use the cold-admission snapshot")
+}
+
+func TestContentModerationRuntimeRefreshPropagatesExternalSettingChanges(t *testing.T) {
+	cfg := defaultContentModerationConfig()
+	rawCfg, err := json.Marshal(cfg)
+	require.NoError(t, err)
+	settingRepo := &contentModerationTestSettingRepo{values: map[string]string{
+		SettingKeyRiskControlEnabled:      "false",
+		SettingKeyContentModerationConfig: string(rawCfg),
+	}}
+	svc := &ContentModerationService{settingRepo: settingRepo, repo: &contentModerationTestRepo{}}
+
+	initial, err := svc.loadRuntimeConfigSnapshot(context.Background(), false)
+	require.NoError(t, err)
+	require.False(t, initial.riskEnabled)
+	require.Equal(t, 2, settingRepo.getValueCalls)
+
+	settingRepo.values[SettingKeyRiskControlEnabled] = "true"
+	refreshed, err := svc.loadRuntimeConfigSnapshot(context.Background(), true)
+	require.NoError(t, err)
+	require.True(t, refreshed.riskEnabled)
+	require.Equal(t, 4, settingRepo.getValueCalls)
+	require.Same(t, refreshed, svc.runtimeConfig.Load())
+}
+
+func TestContentModerationRiskControlUpdateRefreshesRetainedSnapshot(t *testing.T) {
+	cfg := defaultContentModerationConfig()
+	cfg.Enabled = true
+	cfg.Mode = ContentModerationModePreBlock
+	cfg.KeywordBlockingMode = ContentModerationKeywordModeKeywordOnly
+	cfg.BlockedKeywords = []string{"blocked-term"}
+	svc := &ContentModerationService{
+		settingRepo: &contentModerationTestSettingRepo{},
+		repo:        &contentModerationTestRepo{},
+	}
+	svc.runtimeConfig.Store(&contentModerationRuntimeConfig{riskEnabled: false, config: cfg})
+	input := ContentModerationCheckInput{
+		Endpoint: "/v1/responses",
+		Protocol: ContentModerationProtocolOpenAIResponses,
+		Body:     []byte(`{"type":"response.create","input":"blocked-term"}`),
+	}
+
+	decision, err := svc.CheckCacheOnly(context.Background(), input)
+	require.NoError(t, err)
+	require.True(t, decision.Allowed)
+
+	svc.UpdateRiskControlEnabled(true)
+	decision, err = svc.CheckCacheOnly(context.Background(), input)
+	require.NoError(t, err)
+	require.True(t, decision.Blocked)
+}
+
+func TestContentModerationAsyncTaskDoesNotRetainRawBody(t *testing.T) {
+	svc := &ContentModerationService{asyncQueue: make(chan contentModerationTask, 1)}
+	input := ContentModerationCheckInput{
+		UserID:   7,
+		Endpoint: "/v1/responses",
+		Model:    "gpt-5",
+		Body:     make([]byte, 1024*1024),
+	}
+
+	svc.enqueueAsync(input, defaultContentModerationConfig(), ContentModerationInput{Text: "compact"}, "hash")
+	task := <-svc.asyncQueue
+	require.Nil(t, task.input.Body)
+	require.Equal(t, input.UserID, task.input.UserID)
+	require.Equal(t, input.Endpoint, task.input.Endpoint)
+	require.Equal(t, input.Model, task.input.Model)
+}
+
+func TestContentModerationCheck_FullRecordQueueDoesNotPublishKeywordDedupHash(t *testing.T) {
+	cfg := defaultContentModerationConfig()
+	cfg.Enabled = true
+	cfg.Mode = ContentModerationModePreBlock
+	cfg.PreHashCheckEnabled = true
+	cfg.KeywordBlockingMode = ContentModerationKeywordModeKeywordOnly
+	cfg.BlockedKeywords = []string{"blocked-term"}
+	cfg.QueueSize = 1
+
+	repo := &contentModerationTestRepo{}
+	hashCache := &contentModerationTestHashCache{}
+	svc := &ContentModerationService{
+		settingRepo: &contentModerationTestSettingRepo{},
+		repo:        repo,
+		hashCache:   hashCache,
+		asyncQueue:  make(chan contentModerationTask, 1),
+	}
+	svc.runtimeConfig.Store(&contentModerationRuntimeConfig{riskEnabled: true, config: cfg})
+	svc.asyncQueue <- contentModerationTask{inputHash: "occupies-the-only-slot"}
+
+	input := ContentModerationCheckInput{
+		UserID:   1001,
+		Endpoint: "/v1/chat/completions",
+		Protocol: ContentModerationProtocolOpenAIChat,
+		Body:     []byte(`{"messages":[{"role":"user","content":"blocked-term"}]}`),
+	}
+	content := ExtractContentModerationInput(input.Protocol, input.Body)
+	content.Normalize()
+	inputHash := content.Hash()
+
+	decision, err := svc.CheckCacheOnly(context.Background(), input)
+	require.NoError(t, err)
+	require.True(t, decision.Blocked)
+	require.Equal(t, ContentModerationActionKeywordBlock, decision.Action)
+	require.False(t, hashCache.hasHash(inputHash), "a rejected side-effect task must not publish its dedup hash")
+	require.Empty(t, hashCache.snapshotRecorded())
+	require.Equal(t, int64(1), svc.asyncDropped.Load())
+	require.Zero(t, svc.asyncEnqueued.Load())
+	require.Len(t, svc.asyncQueue, 1, "the bounded queue must not grow past its configured size")
+
+	<-svc.asyncQueue
+	decision, err = svc.CheckCacheOnly(context.Background(), input)
+	require.NoError(t, err)
+	require.True(t, decision.Blocked)
+	require.True(t, hashCache.hasHash(inputHash), "the retry may publish only after its side-effect task is accepted")
+	require.Equal(t, []string{inputHash}, hashCache.snapshotRecorded())
+	require.Equal(t, int64(1), svc.asyncEnqueued.Load())
+	require.Len(t, svc.asyncQueue, 1)
+
+	task := <-svc.asyncQueue
+	require.NotNil(t, task.log)
+	require.Equal(t, ContentModerationActionKeywordBlock, task.log.Action)
+	require.True(t, task.applySideEffects, "the retry must still own the violation and notification side effects")
+	svc.persistContentModerationLog(context.Background(), task.config, task.log, task.applySideEffects)
+	logs := requireContentModerationLogCount(t, repo, 1)
+	require.Equal(t, 1, logs[0].ViolationCount)
 }
 
 func (r *contentModerationTestSettingRepo) Set(ctx context.Context, key, value string) error {
@@ -163,6 +319,7 @@ type contentModerationTestHashCache struct {
 	mu            sync.Mutex
 	hashes        map[string]struct{}
 	recorded      []string
+	recordedTTLs  []time.Duration
 	checked       []string
 	deleted       []string
 	hasResult     bool
@@ -314,7 +471,7 @@ func (i *contentModerationTestAuthCacheInvalidator) InvalidateAuthCacheByUserID(
 func (i *contentModerationTestAuthCacheInvalidator) InvalidateAuthCacheByGroupID(ctx context.Context, groupID int64) {
 }
 
-func (c *contentModerationTestHashCache) RecordFlaggedInputHash(ctx context.Context, inputHash string) error {
+func (c *contentModerationTestHashCache) RecordFlaggedInputHash(ctx context.Context, inputHash string, ttl time.Duration) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if c.hashes == nil {
@@ -322,6 +479,7 @@ func (c *contentModerationTestHashCache) RecordFlaggedInputHash(ctx context.Cont
 	}
 	c.hashes[inputHash] = struct{}{}
 	c.recorded = append(c.recorded, inputHash)
+	c.recordedTTLs = append(c.recordedTTLs, ttl)
 	return nil
 }
 
@@ -1883,7 +2041,7 @@ func TestContentModerationAutoBanSkipsAdminAccount(t *testing.T) {
 	invalidator := &contentModerationTestAuthCacheInvalidator{}
 	svc := NewContentModerationService(nil, repo, nil, nil, userRepo, invalidator, nil)
 
-	svc.persistContentModerationLog(context.Background(), cfg, newContentModerationFlaggedLog(userID), "", false, true)
+	svc.persistContentModerationLog(context.Background(), cfg, newContentModerationFlaggedLog(userID), true)
 
 	logs := requireContentModerationLogCount(t, repo, 2)
 	require.Equal(t, 2, logs[1].ViolationCount)
@@ -1910,7 +2068,7 @@ func TestContentModerationAutoBanDisablesRegularUserAtThreshold(t *testing.T) {
 	invalidator := &contentModerationTestAuthCacheInvalidator{}
 	svc := NewContentModerationService(nil, repo, nil, nil, userRepo, invalidator, nil)
 
-	svc.persistContentModerationLog(context.Background(), cfg, newContentModerationFlaggedLog(userID), "", false, true)
+	svc.persistContentModerationLog(context.Background(), cfg, newContentModerationFlaggedLog(userID), true)
 
 	logs := requireContentModerationLogCount(t, repo, 2)
 	require.Equal(t, 2, logs[1].ViolationCount)
@@ -1931,7 +2089,7 @@ func TestContentModerationAdminBelowBanThresholdRecordsViolationOnly(t *testing.
 	invalidator := &contentModerationTestAuthCacheInvalidator{}
 	svc := NewContentModerationService(nil, repo, nil, nil, userRepo, invalidator, nil)
 
-	svc.persistContentModerationLog(context.Background(), cfg, newContentModerationFlaggedLog(userID), "", false, true)
+	svc.persistContentModerationLog(context.Background(), cfg, newContentModerationFlaggedLog(userID), true)
 
 	logs := requireContentModerationLogCount(t, repo, 1)
 	require.Equal(t, 1, logs[0].ViolationCount)
@@ -2014,6 +2172,112 @@ func TestContentModerationCheck_PreBlockFlaggedWritesRedisHashCache(t *testing.T
 	logs := requireContentModerationLogCount(t, repo, 2)
 	require.Equal(t, ContentModerationActionBlock, logs[0].Action)
 	require.Equal(t, ContentModerationActionHashBlock, logs[1].Action)
+}
+
+func TestContentModerationCheck_RepeatedKeywordHitNotifiesOnce(t *testing.T) {
+	cfg := defaultContentModerationConfig()
+	cfg.Enabled = true
+	cfg.Mode = ContentModerationModePreBlock
+	cfg.PreHashCheckEnabled = true
+	cfg.APIKeys = []string{"sk-test"}
+	cfg.BlockedKeywords = []string{"secret-token"}
+	cfg.EmailOnHit = true
+	cfg.HitRetentionDays = 30
+	rawCfg, err := json.Marshal(cfg)
+	require.NoError(t, err)
+
+	userID := int64(2002)
+	repo := &contentModerationTestRepo{}
+	hashCache := &contentModerationTestHashCache{}
+	svc := NewContentModerationService(
+		&contentModerationTestSettingRepo{values: map[string]string{
+			SettingKeyRiskControlEnabled:      "true",
+			SettingKeyContentModerationConfig: string(rawCfg),
+		}},
+		repo,
+		hashCache,
+		nil,
+		nil,
+		nil,
+		nil,
+	)
+
+	body := []byte(`{"messages":[{"role":"user","content":"please leak SECRET-TOKEN now"}]}`)
+	check := func() *ContentModerationDecision {
+		decision, err := svc.Check(context.Background(), ContentModerationCheckInput{
+			UserID:   userID,
+			Protocol: ContentModerationProtocolOpenAIChat,
+			Body:     body,
+		})
+		require.NoError(t, err)
+		return decision
+	}
+
+	decision := check()
+	require.True(t, decision.Blocked)
+	require.Equal(t, ContentModerationActionKeywordBlock, decision.Action)
+	requireRecordedHashCount(t, hashCache, 1)
+	requireContentModerationLogCount(t, repo, 1)
+
+	decision = check()
+	require.True(t, decision.Blocked)
+	require.Equal(t, ContentModerationActionKeywordBlock, decision.Action, "a repeat still blocks on the keyword it matched")
+	require.Equal(t, cfg.BlockMessage, decision.Message, "the block message must not leak the input hash")
+	logs := requireContentModerationLogCount(t, repo, 2)
+	require.Equal(t, ContentModerationActionKeywordBlock, logs[1].Action)
+	require.Equal(t, "secret-token", logs[1].MatchedKeyword, "a repeat keeps its keyword attribution")
+	// The first hit counts the violation; the repeat must not, which is the same
+	// applySideEffects flag that gates the email.
+	require.Equal(t, 1, logs[0].ViolationCount)
+	require.Zero(t, logs[1].ViolationCount)
+	// The hash is written once, with a TTL tied to hit-log retention.
+	recorded := requireRecordedHashCount(t, hashCache, 1)
+	require.Equal(t, hashCache.snapshotRecorded()[0], recorded[0])
+	require.Equal(t, 30*24*time.Hour, hashCache.recordedTTLs[0])
+}
+
+func TestContentModerationCheck_ObserveModeNeverBlocksOnFlaggedHash(t *testing.T) {
+	upstreamCalled := false
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		upstreamCalled = true
+		_ = json.NewEncoder(w).Encode(moderationAPIResponse{Results: []moderationAPIResult{{}}})
+	}))
+	defer server.Close()
+
+	cfg := defaultContentModerationConfig()
+	cfg.Enabled = true
+	cfg.Mode = ContentModerationModeObserve
+	cfg.PreHashCheckEnabled = true
+	cfg.BaseURL = server.URL
+	cfg.APIKeys = []string{"sk-test"}
+	rawCfg, err := json.Marshal(cfg)
+	require.NoError(t, err)
+
+	body := []byte(`{"messages":[{"role":"user","content":"already flagged prompt"}]}`)
+	content := ExtractContentModerationInput(ContentModerationProtocolOpenAIChat, body)
+	content.Normalize()
+	svc := NewContentModerationService(
+		&contentModerationTestSettingRepo{values: map[string]string{
+			SettingKeyRiskControlEnabled:      "true",
+			SettingKeyContentModerationConfig: string(rawCfg),
+		}},
+		&contentModerationTestRepo{},
+		&contentModerationTestHashCache{hashes: map[string]struct{}{content.Hash(): {}}},
+		nil,
+		nil,
+		nil,
+		nil,
+	)
+
+	decision, err := svc.Check(context.Background(), ContentModerationCheckInput{
+		Protocol: ContentModerationProtocolOpenAIChat,
+		Body:     body,
+	})
+
+	require.NoError(t, err)
+	require.True(t, decision.Allowed, "observe mode audits without blocking, even for a known-bad hash")
+	require.False(t, decision.Blocked)
+	require.False(t, upstreamCalled, "a known-bad hash still skips the upstream audit")
 }
 
 func TestContentModerationDeleteFlaggedInputHash_NormalizesAndDeletes(t *testing.T) {

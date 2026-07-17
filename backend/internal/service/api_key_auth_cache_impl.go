@@ -92,11 +92,14 @@ func (s *APIKeyService) initAuthCache(cfg *config.Config) {
 // StartAuthCacheInvalidationSubscriber starts the Pub/Sub subscriber for L1 cache invalidation.
 // This should be called after the service is fully initialized.
 func (s *APIKeyService) StartAuthCacheInvalidationSubscriber(ctx context.Context) {
-	if s.cache == nil || s.authCacheL1 == nil {
+	if s.cache == nil {
 		return
 	}
 	if err := s.cache.SubscribeAuthCacheInvalidation(ctx, func(cacheKey string) {
-		s.authCacheL1.Del(cacheKey)
+		s.bumpAuthCacheEpoch(cacheKey)
+		if s.authCacheL1 != nil {
+			s.authCacheL1.Del(cacheKey)
+		}
 	}); err != nil {
 		// Log but don't fail - L1 cache will still work, just without cross-instance invalidation
 		slog.Warn("failed to start auth cache invalidation subscriber", "error", err)
@@ -146,15 +149,31 @@ func (s *APIKeyService) setAuthCacheEntry(ctx context.Context, cacheKey string, 
 }
 
 func (s *APIKeyService) deleteAuthCache(ctx context.Context, cacheKey string) {
+	if s.cache == nil {
+		s.bumpAuthCacheEpoch(cacheKey)
+		if s.authCacheL1 != nil {
+			s.authCacheL1.Del(cacheKey)
+		}
+		return
+	}
+	// Advance the persistent generation before evicting cache entries. Once the
+	// increment completes, no previously captured long-lived lease can validate.
+	if epochStore, ok := s.cache.(APIKeyAuthEpochStore); ok && epochStore != nil {
+		if err := epochStore.IncrementAuthCacheEpoch(ctx, cacheKey); err != nil {
+			slog.Error("failed to increment API key auth cache epoch", "cache_key", cacheKey, "error", err)
+		}
+	}
+	s.bumpAuthCacheEpoch(cacheKey)
 	if s.authCacheL1 != nil {
 		s.authCacheL1.Del(cacheKey)
 	}
-	if s.cache == nil {
-		return
+	if err := s.cache.DeleteAuthCache(ctx, cacheKey); err != nil {
+		slog.Error("failed to delete API key auth cache", "cache_key", cacheKey, "error", err)
 	}
-	_ = s.cache.DeleteAuthCache(ctx, cacheKey)
 	// Publish invalidation message to other instances
-	_ = s.cache.PublishAuthCacheInvalidation(ctx, cacheKey)
+	if err := s.cache.PublishAuthCacheInvalidation(ctx, cacheKey); err != nil {
+		slog.Error("failed to publish API key auth cache invalidation", "cache_key", cacheKey, "error", err)
+	}
 }
 
 func (s *APIKeyService) loadAuthCacheEntry(ctx context.Context, key string, lookup APIKeyLookupHash) (*APIKeyAuthCacheEntry, error) {
@@ -268,10 +287,14 @@ func (s *APIKeyService) snapshotFromAPIKey(ctx context.Context, apiKey *APIKey) 
 	// 填充 (user, group) RPM override —— snapshot 构建时查一次 DB，后续请求零 DB 往返。
 	if apiKey.GroupID != nil && *apiKey.GroupID > 0 && s.userGroupRateRepo != nil {
 		override, err := s.userGroupRateRepo.GetRPMOverrideByUserAndGroup(ctx, apiKey.UserID, *apiKey.GroupID)
-		if err == nil && override != nil {
+		if err == nil {
 			snapshot.User.UserGroupRPMOverride = override
+			snapshot.User.UserGroupRPMOverrideResolved = true
 		}
-		// 查询失败或无 override 时留 nil，checkRPM 会回退到 DB 查询
+		// 查询失败时保留 unresolved，允许旧路径回退；成功确认“无 override”
+		// 也必须标记 resolved，避免长连接每个 response step 重复查库。
+	} else {
+		snapshot.User.UserGroupRPMOverrideResolved = true
 	}
 	if apiKey.Group != nil {
 		snapshot.Group = &APIKeyAuthGroupSnapshot{
@@ -332,20 +355,21 @@ func (s *APIKeyService) snapshotToAPIKey(key string, snapshot *APIKeyAuthSnapsho
 		RateLimit1d: snapshot.RateLimit1d,
 		RateLimit7d: snapshot.RateLimit7d,
 		User: &User{
-			ID:                         snapshot.User.ID,
-			Status:                     snapshot.User.Status,
-			Role:                       snapshot.User.Role,
-			Balance:                    snapshot.User.Balance,
-			Concurrency:                snapshot.User.Concurrency,
-			Email:                      snapshot.User.Email,
-			Username:                   snapshot.User.Username,
-			BalanceNotifyEnabled:       snapshot.User.BalanceNotifyEnabled,
-			BalanceNotifyThresholdType: snapshot.User.BalanceNotifyThresholdType,
-			BalanceNotifyThreshold:     snapshot.User.BalanceNotifyThreshold,
-			BalanceNotifyExtraEmails:   snapshot.User.BalanceNotifyExtraEmails,
-			TotalRecharged:             snapshot.User.TotalRecharged,
-			RPMLimit:                   snapshot.User.RPMLimit,
-			UserGroupRPMOverride:       snapshot.User.UserGroupRPMOverride,
+			ID:                           snapshot.User.ID,
+			Status:                       snapshot.User.Status,
+			Role:                         snapshot.User.Role,
+			Balance:                      snapshot.User.Balance,
+			Concurrency:                  snapshot.User.Concurrency,
+			Email:                        snapshot.User.Email,
+			Username:                     snapshot.User.Username,
+			BalanceNotifyEnabled:         snapshot.User.BalanceNotifyEnabled,
+			BalanceNotifyThresholdType:   snapshot.User.BalanceNotifyThresholdType,
+			BalanceNotifyThreshold:       snapshot.User.BalanceNotifyThreshold,
+			BalanceNotifyExtraEmails:     snapshot.User.BalanceNotifyExtraEmails,
+			TotalRecharged:               snapshot.User.TotalRecharged,
+			RPMLimit:                     snapshot.User.RPMLimit,
+			UserGroupRPMOverride:         snapshot.User.UserGroupRPMOverride,
+			UserGroupRPMOverrideResolved: snapshot.User.UserGroupRPMOverrideResolved,
 		},
 	}
 	if snapshot.Group != nil {

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"log/slog"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -139,6 +140,27 @@ func (s *SchedulerSnapshotService) ListSchedulableAccounts(ctx context.Context, 
 	return accounts, useMixed, nil
 }
 
+// ListCachedSchedulableAccounts is the no-DB preflight variant used before a
+// WebSocket upgrade. A cache miss is reported as hit=false so callers can fail
+// closed without turning reconnect storms into database load.
+func (s *SchedulerSnapshotService) ListCachedSchedulableAccounts(
+	ctx context.Context,
+	groupID *int64,
+	platform string,
+	hasForcePlatform bool,
+) ([]Account, bool, error) {
+	if s == nil || s.cache == nil {
+		return nil, false, nil
+	}
+	mode := s.resolveMode(platform, hasForcePlatform)
+	bucket := s.bucketFor(groupID, platform, mode)
+	cached, hit, err := s.cache.GetSnapshot(ctx, bucket)
+	if err != nil || !hit {
+		return nil, hit, err
+	}
+	return derefAccounts(cached), true, nil
+}
+
 func (s *SchedulerSnapshotService) GetAccount(ctx context.Context, accountID int64) (*Account, error) {
 	if accountID <= 0 {
 		return nil, nil
@@ -158,6 +180,20 @@ func (s *SchedulerSnapshotService) GetAccount(ctx context.Context, accountID int
 	fallbackCtx, cancel := s.withFallbackTimeout(ctx)
 	defer cancel()
 	return s.accountRepo.GetByID(fallbackCtx, accountID)
+}
+
+// GetCachedAccount is the no-DB lease check used at long-lived protocol turn
+// boundaries. A miss or cache error is returned to the caller to fail closed;
+// it never hydrates from the repository.
+func (s *SchedulerSnapshotService) GetCachedAccount(ctx context.Context, accountID int64) (*Account, bool, error) {
+	if s == nil || s.cache == nil || accountID <= 0 {
+		return nil, false, nil
+	}
+	account, err := s.cache.GetAccount(ctx, accountID)
+	if err != nil {
+		return nil, false, err
+	}
+	return account, account != nil, nil
 }
 
 // GetGroupByID 获取分组信息（供调度器使用）
@@ -360,12 +396,14 @@ func (s *SchedulerSnapshotService) handleBulkAccountEvent(ctx context.Context, p
 	}
 
 	preloadGroupIDs := parseInt64Slice(payload["group_ids"])
+	epochs := parseSchedulerAccountEpochs(payload["scheduler_epochs"])
 	accounts, err := s.accountRepo.GetByIDs(ctx, ids)
 	if err != nil {
 		return err
 	}
 
 	found := make(map[int64]struct{}, len(accounts))
+	accountByID := make(map[int64]*Account, len(accounts))
 	rebuildGroupSet := make(map[int64]struct{}, len(preloadGroupIDs))
 	for _, gid := range preloadGroupIDs {
 		if gid > 0 {
@@ -378,8 +416,24 @@ func (s *SchedulerSnapshotService) handleBulkAccountEvent(ctx context.Context, p
 			continue
 		}
 		found[account.ID] = struct{}{}
-		if s.cache != nil {
-			if err := s.cache.SetAccount(ctx, account); err != nil {
+		accountByID[account.ID] = account
+	}
+	batchedEpochs := false
+	if len(epochs) > 0 && s.cache != nil {
+		if batchCache, ok := s.cache.(SchedulerAccountMutationBatchCache); ok {
+			if _, err := batchCache.ReconcileAccountMutations(ctx, accountByID, epochs); err != nil {
+				return err
+			}
+			batchedEpochs = true
+		}
+	}
+
+	for _, account := range accounts {
+		if account == nil || account.ID <= 0 {
+			continue
+		}
+		if !(batchedEpochs && epochs[account.ID] > 0) {
+			if err := s.publishAccountSnapshot(ctx, account, epochs[account.ID]); err != nil {
 				return err
 			}
 		}
@@ -390,14 +444,15 @@ func (s *SchedulerSnapshotService) handleBulkAccountEvent(ctx context.Context, p
 		}
 	}
 
-	if s.cache != nil {
-		for _, id := range ids {
-			if _, ok := found[id]; ok {
-				continue
-			}
-			if err := s.cache.DeleteAccount(ctx, id); err != nil {
-				return err
-			}
+	for _, id := range ids {
+		if _, ok := found[id]; ok {
+			continue
+		}
+		if batchedEpochs && epochs[id] > 0 {
+			continue
+		}
+		if err := s.deleteAccountSnapshot(ctx, id, epochs[id]); err != nil {
+			return err
 		}
 	}
 
@@ -417,31 +472,93 @@ func (s *SchedulerSnapshotService) handleAccountEvent(ctx context.Context, accou
 	}
 
 	var groupIDs []int64
+	var epoch int64
 	if payload != nil {
 		groupIDs = parseInt64Slice(payload["group_ids"])
+		epoch = parseSchedulerEpoch(payload["scheduler_epoch"])
 	}
 
 	account, err := s.accountRepo.GetByID(ctx, *accountID)
 	if err != nil {
 		if errors.Is(err, ErrAccountNotFound) {
-			if s.cache != nil {
-				if err := s.cache.DeleteAccount(ctx, *accountID); err != nil {
-					return err
-				}
+			if err := s.deleteAccountSnapshot(ctx, *accountID, epoch); err != nil {
+				return err
 			}
 			return s.rebuildByGroupIDs(ctx, groupIDs, "account_miss", seen)
 		}
 		return err
 	}
-	if s.cache != nil {
-		if err := s.cache.SetAccount(ctx, account); err != nil {
-			return err
-		}
+	if err := s.publishAccountSnapshot(ctx, account, epoch); err != nil {
+		return err
 	}
 	if len(groupIDs) == 0 {
 		groupIDs = account.GroupIDs
 	}
 	return s.rebuildByAccount(ctx, account, groupIDs, "account_change", seen)
+}
+
+func (s *SchedulerSnapshotService) publishAccountSnapshot(ctx context.Context, account *Account, epoch int64) error {
+	if s == nil || s.cache == nil || account == nil {
+		return nil
+	}
+	if epoch > 0 {
+		if mutationCache, ok := s.cache.(SchedulerAccountMutationCache); ok {
+			_, err := mutationCache.PublishAccountMutation(ctx, account, epoch)
+			return err
+		}
+	}
+	return s.cache.SetAccount(ctx, account)
+}
+
+func (s *SchedulerSnapshotService) deleteAccountSnapshot(ctx context.Context, accountID, epoch int64) error {
+	if s == nil || s.cache == nil || accountID <= 0 {
+		return nil
+	}
+	if epoch > 0 {
+		if mutationCache, ok := s.cache.(SchedulerAccountMutationCache); ok {
+			_, err := mutationCache.CompleteAccountDeletion(ctx, accountID, epoch)
+			return err
+		}
+	}
+	return s.cache.DeleteAccount(ctx, accountID)
+}
+
+func parseSchedulerEpoch(value any) int64 {
+	switch typed := value.(type) {
+	case string:
+		epoch, _ := strconv.ParseInt(strings.TrimSpace(typed), 10, 64)
+		if epoch > 0 {
+			return epoch
+		}
+	case json.Number:
+		epoch, _ := typed.Int64()
+		if epoch > 0 {
+			return epoch
+		}
+	case float64:
+		if typed > 0 && typed <= float64(^uint64(0)>>1) {
+			return int64(typed)
+		}
+	}
+	return 0
+}
+
+func parseSchedulerAccountEpochs(value any) map[int64]int64 {
+	result := make(map[int64]int64)
+	raw, ok := value.(map[string]any)
+	if !ok {
+		return result
+	}
+	for accountIDRaw, epochRaw := range raw {
+		accountID, err := strconv.ParseInt(strings.TrimSpace(accountIDRaw), 10, 64)
+		if err != nil || accountID <= 0 {
+			continue
+		}
+		if epoch := parseSchedulerEpoch(epochRaw); epoch > 0 {
+			result[accountID] = epoch
+		}
+	}
+	return result
 }
 
 func (s *SchedulerSnapshotService) handleGroupEvent(ctx context.Context, groupID *int64, seen map[batchSeenKey]struct{}) error {

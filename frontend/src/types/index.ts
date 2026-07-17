@@ -1139,6 +1139,10 @@ export interface UpdateAccountRequest {
   type?: AccountType
   credentials?: Record<string, unknown>
   extra?: Record<string, unknown>
+  extra_patch?: {
+    set: Record<string, unknown>
+    delete: string[]
+  }
   proxy_id?: number | null
   concurrency?: number
   load_factor?: number | null

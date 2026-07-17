@@ -98,6 +98,9 @@ const (
 	contentModerationCleanupInterval = 24 * time.Hour
 	contentModerationCleanupTimeout  = 30 * time.Minute
 	contentModerationCleanupDelay    = 5 * time.Minute
+
+	contentModerationRuntimeRefreshInterval = 30 * time.Second
+	contentModerationRuntimeRefreshTimeout  = 5 * time.Second
 )
 
 var contentModerationCategoryOrder = []string{
@@ -699,7 +702,7 @@ type ContentModerationRepository interface {
 }
 
 type ContentModerationHashCache interface {
-	RecordFlaggedInputHash(ctx context.Context, inputHash string) error
+	RecordFlaggedInputHash(ctx context.Context, inputHash string, ttl time.Duration) error
 	HasFlaggedInputHash(ctx context.Context, inputHash string) (bool, error)
 	DeleteFlaggedInputHash(ctx context.Context, inputHash string) (bool, error)
 	ClearFlaggedInputHashes(ctx context.Context) (int64, error)
@@ -737,6 +740,13 @@ type ContentModerationService struct {
 	builtInFilterOnce        sync.Once
 	builtInFilter            *gosensitive.Detector
 	builtInFilterErr         error
+	runtimeConfigMu          sync.Mutex
+	runtimeConfig            atomic.Pointer[contentModerationRuntimeConfig]
+}
+
+type contentModerationRuntimeConfig struct {
+	riskEnabled bool
+	config      *ContentModerationConfig
 }
 
 type contentModerationTask struct {
@@ -745,7 +755,6 @@ type contentModerationTask struct {
 	inputHash        string
 	log              *ContentModerationLog
 	config           *ContentModerationConfig
-	recordHash       bool
 	applySideEffects bool
 	enqueuedAt       time.Time
 }
@@ -791,6 +800,12 @@ func NewContentModerationService(
 		keyHealth:            make(map[string]*contentModerationKeyHealth),
 	}
 	if settingRepo != nil && repo != nil {
+		warmCtx, warmCancel := context.WithTimeout(context.Background(), contentModerationRuntimeRefreshTimeout)
+		if _, err := svc.loadRuntimeConfigSnapshot(warmCtx, true); err != nil {
+			slog.Warn("content_moderation.runtime_warmup_failed", "error", err)
+		}
+		warmCancel()
+		go svc.runtimeConfigWorker()
 		for i := 0; i < svc.workerCount; i++ {
 			go svc.worker(i)
 		}
@@ -932,7 +947,26 @@ func (s *ContentModerationService) UpdateConfig(ctx context.Context, input Updat
 	if err := s.settingRepo.Set(ctx, SettingKeyContentModerationConfig, string(raw)); err != nil {
 		return nil, fmt.Errorf("save content moderation config: %w", err)
 	}
+	s.runtimeConfigMu.Lock()
+	if current := s.runtimeConfig.Load(); current != nil {
+		s.runtimeConfig.Store(&contentModerationRuntimeConfig{riskEnabled: current.riskEnabled, config: cfg})
+	}
+	s.runtimeConfigMu.Unlock()
 	return s.configView(cfg), nil
+}
+
+// UpdateRiskControlEnabled refreshes the process-local snapshot after the
+// settings transaction commits. Retained turns observe the new switch through
+// one atomic load and never need to query the settings repository.
+func (s *ContentModerationService) UpdateRiskControlEnabled(enabled bool) {
+	if s == nil {
+		return
+	}
+	s.runtimeConfigMu.Lock()
+	if current := s.runtimeConfig.Load(); current != nil && current.config != nil {
+		s.runtimeConfig.Store(&contentModerationRuntimeConfig{riskEnabled: enabled, config: current.config})
+	}
+	s.runtimeConfigMu.Unlock()
 }
 
 func (s *ContentModerationService) TestAPIKeys(ctx context.Context, input TestContentModerationAPIKeysInput) (*TestContentModerationAPIKeysResult, error) {
@@ -998,6 +1032,16 @@ func (s *ContentModerationService) TestAPIKeys(ctx context.Context, input TestCo
 }
 
 func (s *ContentModerationService) Check(ctx context.Context, input ContentModerationCheckInput) (*ContentModerationDecision, error) {
+	return s.check(ctx, input, false)
+}
+
+// CheckCacheOnly is for retained-connection turns. A missing cold-admission
+// snapshot is an error; callers must reconnect instead of querying settings.
+func (s *ContentModerationService) CheckCacheOnly(ctx context.Context, input ContentModerationCheckInput) (*ContentModerationDecision, error) {
+	return s.check(ctx, input, true)
+}
+
+func (s *ContentModerationService) check(ctx context.Context, input ContentModerationCheckInput, cacheOnly bool) (*ContentModerationDecision, error) {
 	allow := &ContentModerationDecision{Allowed: true, Action: ContentModerationActionAllow}
 	if s == nil || s.settingRepo == nil || s.repo == nil {
 		slog.Info("content_moderation.skip_unavailable",
@@ -1008,114 +1052,151 @@ func (s *ContentModerationService) Check(ctx context.Context, input ContentModer
 			"protocol", input.Protocol)
 		return allow, nil
 	}
-	if !s.isRiskControlEnabled(ctx) {
-		slog.Info("content_moderation.skip_feature_disabled",
-			"user_id", input.UserID,
-			"api_key_id", input.APIKeyID,
-			"group_id", contentModerationLogGroupID(input.GroupID),
-			"endpoint", input.Endpoint,
-			"protocol", input.Protocol)
+	var runtimeConfig *contentModerationRuntimeConfig
+	if cacheOnly {
+		runtimeConfig = s.runtimeConfig.Load()
+		if runtimeConfig == nil || runtimeConfig.config == nil {
+			return nil, errors.New("content moderation runtime snapshot is unavailable")
+		}
+	} else {
+		var err error
+		runtimeConfig, err = s.loadRuntimeConfigSnapshot(ctx, false)
+		if err != nil {
+			slog.Warn("content_moderation.skip_config_load_failed",
+				"user_id", input.UserID,
+				"api_key_id", input.APIKeyID,
+				"group_id", contentModerationLogGroupID(input.GroupID),
+				"endpoint", input.Endpoint,
+				"protocol", input.Protocol,
+				"error", err)
+			return allow, nil
+		}
+	}
+	if !runtimeConfig.riskEnabled {
+		if !cacheOnly {
+			slog.Info("content_moderation.skip_feature_disabled",
+				"user_id", input.UserID,
+				"api_key_id", input.APIKeyID,
+				"group_id", contentModerationLogGroupID(input.GroupID),
+				"endpoint", input.Endpoint,
+				"protocol", input.Protocol)
+		}
 		return allow, nil
 	}
-	cfg, err := s.loadConfig(ctx)
-	if err != nil {
-		slog.Warn("content_moderation.skip_config_load_failed",
-			"user_id", input.UserID,
-			"api_key_id", input.APIKeyID,
-			"group_id", contentModerationLogGroupID(input.GroupID),
-			"endpoint", input.Endpoint,
-			"protocol", input.Protocol,
-			"error", err)
-		return allow, nil
-	}
+	cfg := runtimeConfig.config
 	inGroupScope := cfg.includesGroupScope(input)
 	inModelScope := cfg.includesModel(input.Model)
-	slog.Info("content_moderation.config_loaded",
-		"user_id", input.UserID,
-		"api_key_id", input.APIKeyID,
-		"group_id", contentModerationLogGroupID(input.GroupID),
-		"group_name", input.GroupName,
-		"endpoint", input.Endpoint,
-		"provider", input.Provider,
-		"protocol", input.Protocol,
-		"model", input.Model,
-		"enabled", cfg.Enabled,
-		"mode", cfg.Mode,
-		"all_groups", cfg.AllGroups,
-		"configured_group_ids", cfg.GroupIDs,
-		"effective_group_ids", input.EffectiveGroupIDs,
-		"in_group_scope", inGroupScope,
-		"model_filter_type", cfg.ModelFilter.Type,
-		"configured_models", cfg.ModelFilter.Models,
-		"in_model_scope", inModelScope,
-		"sample_rate", cfg.SampleRate,
-		"api_key_count", len(cfg.apiKeys()),
-		"pre_hash_check_enabled", cfg.PreHashCheckEnabled,
-		"record_non_hits", cfg.RecordNonHits)
-	if !cfg.Enabled {
-		slog.Info("content_moderation.skip_config_disabled",
+	if !cacheOnly {
+		slog.Info("content_moderation.config_loaded",
 			"user_id", input.UserID,
 			"api_key_id", input.APIKeyID,
 			"group_id", contentModerationLogGroupID(input.GroupID),
+			"group_name", input.GroupName,
 			"endpoint", input.Endpoint,
-			"protocol", input.Protocol)
+			"provider", input.Provider,
+			"protocol", input.Protocol,
+			"model", input.Model,
+			"enabled", cfg.Enabled,
+			"mode", cfg.Mode,
+			"all_groups", cfg.AllGroups,
+			"configured_group_ids", cfg.GroupIDs,
+			"effective_group_ids", input.EffectiveGroupIDs,
+			"in_group_scope", inGroupScope,
+			"model_filter_type", cfg.ModelFilter.Type,
+			"configured_models", cfg.ModelFilter.Models,
+			"in_model_scope", inModelScope,
+			"sample_rate", cfg.SampleRate,
+			"api_key_count", len(cfg.apiKeys()),
+			"pre_hash_check_enabled", cfg.PreHashCheckEnabled,
+			"record_non_hits", cfg.RecordNonHits)
+	}
+	if !cfg.Enabled {
+		if !cacheOnly {
+			slog.Info("content_moderation.skip_config_disabled",
+				"user_id", input.UserID,
+				"api_key_id", input.APIKeyID,
+				"group_id", contentModerationLogGroupID(input.GroupID),
+				"endpoint", input.Endpoint,
+				"protocol", input.Protocol)
+		}
 		return allow, nil
 	}
 	if cfg.Mode == ContentModerationModeOff {
-		slog.Info("content_moderation.skip_mode_off",
-			"user_id", input.UserID,
-			"api_key_id", input.APIKeyID,
-			"group_id", contentModerationLogGroupID(input.GroupID),
-			"endpoint", input.Endpoint,
-			"protocol", input.Protocol)
+		if !cacheOnly {
+			slog.Info("content_moderation.skip_mode_off",
+				"user_id", input.UserID,
+				"api_key_id", input.APIKeyID,
+				"group_id", contentModerationLogGroupID(input.GroupID),
+				"endpoint", input.Endpoint,
+				"protocol", input.Protocol)
+		}
 		return allow, nil
 	}
 	if !inGroupScope {
-		slog.Info("content_moderation.skip_group_out_of_scope",
-			"user_id", input.UserID,
-			"api_key_id", input.APIKeyID,
-			"group_id", contentModerationLogGroupID(input.GroupID),
-			"group_name", input.GroupName,
-			"endpoint", input.Endpoint,
-			"protocol", input.Protocol,
-			"all_groups", cfg.AllGroups,
-			"configured_group_ids", cfg.GroupIDs)
+		if !cacheOnly {
+			slog.Info("content_moderation.skip_group_out_of_scope",
+				"user_id", input.UserID,
+				"api_key_id", input.APIKeyID,
+				"group_id", contentModerationLogGroupID(input.GroupID),
+				"group_name", input.GroupName,
+				"endpoint", input.Endpoint,
+				"protocol", input.Protocol,
+				"all_groups", cfg.AllGroups,
+				"configured_group_ids", cfg.GroupIDs)
+		}
 		return allow, nil
 	}
 	if !inModelScope {
-		slog.Info("content_moderation.skip_model_out_of_scope",
-			"user_id", input.UserID,
-			"api_key_id", input.APIKeyID,
-			"group_id", contentModerationLogGroupID(input.GroupID),
-			"group_name", input.GroupName,
-			"endpoint", input.Endpoint,
-			"protocol", input.Protocol,
-			"model", input.Model,
-			"model_filter_type", cfg.ModelFilter.Type,
-			"configured_models", cfg.ModelFilter.Models)
+		if !cacheOnly {
+			slog.Info("content_moderation.skip_model_out_of_scope",
+				"user_id", input.UserID,
+				"api_key_id", input.APIKeyID,
+				"group_id", contentModerationLogGroupID(input.GroupID),
+				"group_name", input.GroupName,
+				"endpoint", input.Endpoint,
+				"protocol", input.Protocol,
+				"model", input.Model,
+				"model_filter_type", cfg.ModelFilter.Type,
+				"configured_models", cfg.ModelFilter.Models)
+		}
 		return allow, nil
 	}
 	content := ExtractContentModerationInput(input.Protocol, input.Body)
 	if content.IsEmpty() {
-		slog.Info("content_moderation.skip_empty_input",
+		if !cacheOnly {
+			slog.Info("content_moderation.skip_empty_input",
+				"user_id", input.UserID,
+				"api_key_id", input.APIKeyID,
+				"group_id", contentModerationLogGroupID(input.GroupID),
+				"endpoint", input.Endpoint,
+				"protocol", input.Protocol,
+				"body_bytes", len(input.Body))
+		}
+		return allow, nil
+	}
+	content.Normalize()
+	if !cacheOnly {
+		slog.Info("content_moderation.input_extracted",
 			"user_id", input.UserID,
 			"api_key_id", input.APIKeyID,
 			"group_id", contentModerationLogGroupID(input.GroupID),
 			"endpoint", input.Endpoint,
 			"protocol", input.Protocol,
-			"body_bytes", len(input.Body))
-		return allow, nil
+			"text_runes", len([]rune(content.Text)),
+			"image_count", len(content.Images))
 	}
-	content.Normalize()
-	slog.Info("content_moderation.input_extracted",
-		"user_id", input.UserID,
-		"api_key_id", input.APIKeyID,
-		"group_id", contentModerationLogGroupID(input.GroupID),
-		"endpoint", input.Endpoint,
-		"protocol", input.Protocol,
-		"text_runes", len([]rune(content.Text)),
-		"image_count", len(content.Images))
 	hashText := content.Hash()
+	// A hash only enters the flagged set once the work that owns the hit's log and
+	// side effects has been accepted. In particular, a full record queue must not
+	// publish a dedup marker that would suppress every later retry.
+	alreadyFlagged := false
+	if cfg.PreHashCheckEnabled && s.hashCache != nil {
+		matched, err := s.hashCache.HasFlaggedInputHash(ctx, hashText)
+		if err != nil {
+			slog.Warn("content_moderation.hash_check_failed", "user_id", input.UserID, "endpoint", input.Endpoint, "error", err)
+		}
+		alreadyFlagged = matched
+	}
 	if cfg.Mode == ContentModerationModePreBlock {
 		if cfg.KeywordBlockingMode != ContentModerationKeywordModeAPIOnly && (len(cfg.BlockedKeywords) > 0 || cfg.BuiltInFilterEnabled) {
 			if match := s.matchBlockedKeyword(content.Text, cfg); match.Hit {
@@ -1130,7 +1211,8 @@ func (s *ContentModerationService) Check(ctx context.Context, input ContentModer
 					"keyword_source", match.Source,
 					"keyword_category", match.Category,
 					"keyword_level", match.Level,
-					"built_in_filter_enabled", cfg.BuiltInFilterEnabled)
+					"built_in_filter_enabled", cfg.BuiltInFilterEnabled,
+					"repeat_of_flagged_hash", alreadyFlagged)
 				category := strings.TrimSpace(match.Category)
 				if category == "" {
 					category = contentModerationKeywordCategory
@@ -1139,7 +1221,13 @@ func (s *ContentModerationService) Check(ctx context.Context, input ContentModer
 				log := s.buildLog(input, cfg, ContentModerationActionKeywordBlock, true, category, 1.0, scores, content.ExcerptText(), nil, nil, "")
 				log.MatchedKeyword = match.Keyword
 				log.InputExcerpt = buildKeywordContextExcerptForMatch(content.Text, match)
-				s.enqueueRecord(input, cfg, log, hashText, false, true)
+				// Keyword matching is local, so a repeat still blocks on its own
+				// merits and keeps its attribution; only the notification and the
+				// violation count are deduplicated by hash.
+				recordAccepted := s.enqueueRecord(input, cfg, log, !alreadyFlagged)
+				if !alreadyFlagged && recordAccepted {
+					s.recordFlaggedInputHash(ctx, cfg, input, hashText)
+				}
 				return &ContentModerationDecision{
 					Allowed:         false,
 					Blocked:         true,
@@ -1164,39 +1252,44 @@ func (s *ContentModerationService) Check(ctx context.Context, input ContentModer
 			return allow, nil
 		}
 	}
-	if cfg.PreHashCheckEnabled && s.hashCache != nil {
-		matched, err := s.hashCache.HasFlaggedInputHash(ctx, hashText)
-		if err != nil {
-			slog.Warn("content_moderation.hash_check_failed", "user_id", input.UserID, "endpoint", input.Endpoint, "error", err)
-		}
-		if matched {
-			if cfg.Mode == ContentModerationModePreBlock {
-				s.recordPreBlockSyncMetric(0, ContentModerationActionHashBlock)
-			}
-			slog.Info("content_moderation.hash_block",
+	if alreadyFlagged {
+		// Observe mode audits without blocking, so a known-bad input only skips
+		// the upstream call here — turning it away would defeat the mode.
+		if cfg.Mode != ContentModerationModePreBlock {
+			slog.Info("content_moderation.hash_skip_audit",
 				"user_id", input.UserID,
 				"api_key_id", input.APIKeyID,
 				"group_id", contentModerationLogGroupID(input.GroupID),
 				"endpoint", input.Endpoint,
 				"protocol", input.Protocol,
+				"mode", cfg.Mode,
 				"input_hash", hashText)
-			message := cfg.BlockMessage
-			if message != "" {
-				message = fmt.Sprintf("%s（hash: %s）", message, hashText)
-			}
-			scores := map[string]float64{"hash": 1.0}
-			log := s.buildLog(input, cfg, ContentModerationActionHashBlock, true, "hash", 1.0, scores, content.ExcerptText(), nil, nil, "")
-			s.enqueueRecord(input, cfg, log, hashText, false, false)
-			return &ContentModerationDecision{
-				Allowed:    false,
-				Blocked:    true,
-				Flagged:    true,
-				Message:    message,
-				StatusCode: cfg.BlockStatus,
-				InputHash:  hashText,
-				Action:     ContentModerationActionHashBlock,
-			}, nil
+			return allow, nil
 		}
+		s.recordPreBlockSyncMetric(0, ContentModerationActionHashBlock)
+		slog.Info("content_moderation.hash_block",
+			"user_id", input.UserID,
+			"api_key_id", input.APIKeyID,
+			"group_id", contentModerationLogGroupID(input.GroupID),
+			"endpoint", input.Endpoint,
+			"protocol", input.Protocol,
+			"input_hash", hashText)
+		message := cfg.BlockMessage
+		if message != "" {
+			message = fmt.Sprintf("%s（hash: %s）", message, hashText)
+		}
+		scores := map[string]float64{"hash": 1.0}
+		log := s.buildLog(input, cfg, ContentModerationActionHashBlock, true, "hash", 1.0, scores, content.ExcerptText(), nil, nil, "")
+		s.enqueueRecord(input, cfg, log, false)
+		return &ContentModerationDecision{
+			Allowed:    false,
+			Blocked:    true,
+			Flagged:    true,
+			Message:    message,
+			StatusCode: cfg.BlockStatus,
+			InputHash:  hashText,
+			Action:     ContentModerationActionHashBlock,
+		}, nil
 	}
 	if !cfg.shouldSample(hashText) {
 		if cfg.Mode == ContentModerationModePreBlock {
@@ -1299,12 +1392,18 @@ func (s *ContentModerationService) checkSync(ctx context.Context, input ContentM
 		"highest_score", highestScore,
 		"latency_ms", latency,
 		"queue_delay_ms", queueDelay)
+	queueRecord := queueDelay == nil && cfg.Mode == ContentModerationModePreBlock
+	if flagged && !queueRecord {
+		s.recordFlaggedInputHash(ctx, cfg, input, hashText)
+	}
 	if flagged || cfg.RecordNonHits {
 		log := s.buildLog(input, cfg, action, flagged, highestCategory, highestScore, result.CategoryScores, content.ExcerptText(), &latency, queueDelay, "")
-		if queueDelay == nil && cfg.Mode == ContentModerationModePreBlock {
-			s.enqueueRecord(input, cfg, log, hashText, flagged, flagged)
+		if queueRecord {
+			if s.enqueueRecord(input, cfg, log, flagged) && flagged {
+				s.recordFlaggedInputHash(ctx, cfg, input, hashText)
+			}
 		} else {
-			s.persistContentModerationLog(ctx, cfg, log, hashText, flagged, flagged)
+			s.persistContentModerationLog(ctx, cfg, log, flagged)
 		}
 	}
 	if blocked {
@@ -1363,6 +1462,7 @@ func (s *ContentModerationService) enqueueAsync(input ContentModerationCheckInpu
 		s.asyncDropped.Add(1)
 		return
 	}
+	input.Body = nil
 	task := contentModerationTask{
 		input:      input,
 		content:    content,
@@ -1378,9 +1478,9 @@ func (s *ContentModerationService) enqueueAsync(input ContentModerationCheckInpu
 	}
 }
 
-func (s *ContentModerationService) enqueueRecord(input ContentModerationCheckInput, cfg *ContentModerationConfig, log *ContentModerationLog, inputHash string, recordHash bool, applySideEffects bool) {
+func (s *ContentModerationService) enqueueRecord(input ContentModerationCheckInput, cfg *ContentModerationConfig, log *ContentModerationLog, applySideEffects bool) bool {
 	if s == nil || s.asyncQueue == nil || log == nil {
-		return
+		return false
 	}
 	queueSize := defaultContentModerationQueueSize
 	if cfg != nil && cfg.QueueSize > 0 {
@@ -1393,43 +1493,43 @@ func (s *ContentModerationService) enqueueRecord(input ContentModerationCheckInp
 			"action", log.Action,
 			"queue_size", queueSize)
 		s.asyncDropped.Add(1)
-		return
+		return false
 	}
+	input.Body = nil
 	task := contentModerationTask{
 		input:            input,
-		inputHash:        inputHash,
 		log:              log,
 		config:           cloneContentModerationConfig(cfg),
-		recordHash:       recordHash,
 		applySideEffects: applySideEffects,
 		enqueuedAt:       time.Now(),
 	}
 	select {
 	case s.asyncQueue <- task:
 		s.asyncEnqueued.Add(1)
+		return true
 	default:
 		slog.Warn("content_moderation.record_queue_full",
 			"user_id", input.UserID,
 			"endpoint", input.Endpoint,
 			"action", log.Action)
 		s.asyncDropped.Add(1)
+		return false
 	}
 }
 
 func (s *ContentModerationService) worker(id int) {
 	for {
-		ctx, cancel := context.WithTimeout(context.Background(), maxContentModerationTimeoutMS*time.Millisecond+10*time.Second)
-		cfg, err := s.loadConfig(ctx)
-		if err != nil || id >= cfg.WorkerCount {
-			cancel()
+		runtimeConfig := s.runtimeConfig.Load()
+		if runtimeConfig == nil || runtimeConfig.config == nil || id >= runtimeConfig.config.WorkerCount {
 			time.Sleep(time.Second)
 			continue
 		}
-		task, ok := s.dequeueAsyncTask(ctx, time.Second)
+		task, ok := s.dequeueAsyncTask(context.Background(), time.Second)
 		if !ok {
-			cancel()
 			continue
 		}
+		ctx, cancel := context.WithTimeout(context.Background(), maxContentModerationTimeoutMS*time.Millisecond+10*time.Second)
+		cfg := runtimeConfig.config
 		func() {
 			defer cancel()
 			defer func() {
@@ -1446,7 +1546,7 @@ func (s *ContentModerationService) worker(id int) {
 				if taskCfg == nil {
 					taskCfg = cfg
 				}
-				s.persistContentModerationLog(ctx, taskCfg, task.log, task.inputHash, task.recordHash, task.applySideEffects)
+				s.persistContentModerationLog(ctx, taskCfg, task.log, task.applySideEffects)
 				s.asyncProcessed.Add(1)
 				return
 			}
@@ -1678,6 +1778,53 @@ func (s *ContentModerationService) runCleanupOnce() {
 	s.lastCleanupDeletedNonHit.Store(result.DeletedNonHit)
 }
 
+func (s *ContentModerationService) runtimeConfigWorker() {
+	if s == nil {
+		return
+	}
+	timer := time.NewTimer(contentModerationRuntimeRefreshInterval)
+	defer timer.Stop()
+	for {
+		<-timer.C
+		ctx, cancel := context.WithTimeout(context.Background(), contentModerationRuntimeRefreshTimeout)
+		_, err := s.loadRuntimeConfigSnapshot(ctx, true)
+		cancel()
+		if err != nil {
+			slog.Warn("content_moderation.runtime_refresh_failed", "error", err)
+		}
+		timer.Reset(contentModerationRuntimeRefreshInterval)
+	}
+}
+
+func (s *ContentModerationService) loadRuntimeConfigSnapshot(ctx context.Context, force bool) (*contentModerationRuntimeConfig, error) {
+	if s == nil || s.settingRepo == nil {
+		return nil, errors.New("content moderation settings are unavailable")
+	}
+	if !force {
+		if current := s.runtimeConfig.Load(); current != nil && current.config != nil {
+			return current, nil
+		}
+	}
+	s.runtimeConfigMu.Lock()
+	defer s.runtimeConfigMu.Unlock()
+	if !force {
+		if current := s.runtimeConfig.Load(); current != nil && current.config != nil {
+			return current, nil
+		}
+	}
+	cfg, err := s.loadConfig(ctx)
+	if err != nil {
+		return nil, err
+	}
+	riskEnabled, err := s.loadRiskControlEnabled(ctx)
+	if err != nil {
+		return nil, err
+	}
+	next := &contentModerationRuntimeConfig{riskEnabled: riskEnabled, config: cfg}
+	s.runtimeConfig.Store(next)
+	return next, nil
+}
+
 func (s *ContentModerationService) loadConfig(ctx context.Context) (*ContentModerationConfig, error) {
 	cfg := defaultContentModerationConfig()
 	raw, err := s.settingRepo.GetValue(ctx, SettingKeyContentModerationConfig)
@@ -1700,11 +1847,19 @@ func (s *ContentModerationService) loadConfig(ctx context.Context) (*ContentMode
 }
 
 func (s *ContentModerationService) isRiskControlEnabled(ctx context.Context) bool {
+	enabled, err := s.loadRiskControlEnabled(ctx)
+	return err == nil && enabled
+}
+
+func (s *ContentModerationService) loadRiskControlEnabled(ctx context.Context) (bool, error) {
 	raw, err := s.settingRepo.GetValue(ctx, SettingKeyRiskControlEnabled)
 	if err != nil {
-		return false
+		if errors.Is(err, ErrSettingNotFound) {
+			return false, nil
+		}
+		return false, fmt.Errorf("get risk control setting: %w", err)
 	}
-	return raw == "true"
+	return raw == "true", nil
 }
 
 func (s *ContentModerationService) validateConfig(ctx context.Context, cfg *ContentModerationConfig) error {
@@ -1873,14 +2028,26 @@ func (s *ContentModerationService) buildLog(input ContentModerationCheckInput, c
 	}
 }
 
-func (s *ContentModerationService) persistContentModerationLog(ctx context.Context, cfg *ContentModerationConfig, log *ContentModerationLog, hashText string, recordHash bool, applySideEffects bool) {
-	if s == nil || log == nil {
+// recordFlaggedInputHash writes through synchronously. Callers that delegate
+// logging and side effects to the bounded record queue must reserve that work
+// before publishing the hash; once accepted, writing here avoids waiting on
+// workers that may block on SMTP.
+func (s *ContentModerationService) recordFlaggedInputHash(ctx context.Context, cfg *ContentModerationConfig, input ContentModerationCheckInput, hashText string) {
+	if s == nil || s.hashCache == nil || cfg == nil || hashText == "" {
 		return
 	}
-	if recordHash && s.hashCache != nil {
-		if err := s.hashCache.RecordFlaggedInputHash(ctx, hashText); err != nil {
-			slog.Warn("content_moderation.record_hash_failed", "user_id", contentModerationEmailUserID(log), "endpoint", log.Endpoint, "error", err)
-		}
+	ttl := time.Duration(cfg.HitRetentionDays) * 24 * time.Hour
+	if ttl <= 0 {
+		ttl = defaultContentModerationHitRetentionDays * 24 * time.Hour
+	}
+	if err := s.hashCache.RecordFlaggedInputHash(ctx, hashText, ttl); err != nil {
+		slog.Warn("content_moderation.record_hash_failed", "user_id", input.UserID, "endpoint", input.Endpoint, "error", err)
+	}
+}
+
+func (s *ContentModerationService) persistContentModerationLog(ctx context.Context, cfg *ContentModerationConfig, log *ContentModerationLog, applySideEffects bool) {
+	if s == nil || log == nil {
+		return
 	}
 	autoBanJustApplied := false
 	if applySideEffects {

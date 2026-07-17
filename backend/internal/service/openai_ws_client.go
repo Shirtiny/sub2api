@@ -44,6 +44,30 @@ type openAIWSClientDialer interface {
 	Dial(ctx context.Context, wsURL string, headers http.Header, proxyURL string) (openAIWSClientConn, int, http.Header, error)
 }
 
+type openAIWSClientDialOptions struct {
+	CompressionMode coderws.CompressionMode
+	DirectNoProxy   bool
+}
+
+type openAIWSClientOptionsDialer interface {
+	DialWithOptions(ctx context.Context, wsURL string, headers http.Header, proxyURL string, options openAIWSClientDialOptions) (openAIWSClientConn, int, http.Header, error)
+}
+
+func requireAetherLocalOpenAIWSDialer(dialer openAIWSClientDialer) (openAIWSClientOptionsDialer, error) {
+	optionsDialer, ok := dialer.(openAIWSClientOptionsDialer)
+	if !ok {
+		return nil, errors.New("aether websocket dialer cannot guarantee direct no-proxy transport")
+	}
+	return optionsDialer, nil
+}
+
+func aetherLocalOpenAIWSDialOptions() openAIWSClientDialOptions {
+	return openAIWSClientDialOptions{
+		CompressionMode: coderws.CompressionDisabled,
+		DirectNoProxy:   true,
+	}
+}
+
 type openAIWSTransportMetricsDialer interface {
 	SnapshotTransportMetrics() OpenAIWSTransportMetricsSnapshot
 }
@@ -51,12 +75,21 @@ type openAIWSTransportMetricsDialer interface {
 func newDefaultOpenAIWSClientDialer() openAIWSClientDialer {
 	return &coderOpenAIWSClientDialer{
 		proxyClients: make(map[string]*openAIWSProxyClientEntry),
+		directClient: &http.Client{Transport: &http.Transport{
+			Proxy:               nil,
+			MaxIdleConns:        openAIWSProxyTransportMaxIdleConns,
+			MaxIdleConnsPerHost: openAIWSProxyTransportMaxIdleConnsPerHost,
+			IdleConnTimeout:     openAIWSProxyTransportIdleConnTimeout,
+			TLSHandshakeTimeout: 10 * time.Second,
+			ForceAttemptHTTP2:   false,
+		}},
 	}
 }
 
 type coderOpenAIWSClientDialer struct {
 	proxyMu      sync.Mutex
 	proxyClients map[string]*openAIWSProxyClientEntry
+	directClient *http.Client
 	proxyHits    atomic.Int64
 	proxyMisses  atomic.Int64
 }
@@ -72,6 +105,18 @@ func (d *coderOpenAIWSClientDialer) Dial(
 	headers http.Header,
 	proxyURL string,
 ) (openAIWSClientConn, int, http.Header, error) {
+	return d.DialWithOptions(ctx, wsURL, headers, proxyURL, openAIWSClientDialOptions{
+		CompressionMode: coderws.CompressionContextTakeover,
+	})
+}
+
+func (d *coderOpenAIWSClientDialer) DialWithOptions(
+	ctx context.Context,
+	wsURL string,
+	headers http.Header,
+	proxyURL string,
+	options openAIWSClientDialOptions,
+) (openAIWSClientConn, int, http.Header, error) {
 	targetURL := strings.TrimSpace(wsURL)
 	if targetURL == "" {
 		return nil, 0, nil, errors.New("ws url is empty")
@@ -79,9 +124,11 @@ func (d *coderOpenAIWSClientDialer) Dial(
 
 	opts := &coderws.DialOptions{
 		HTTPHeader:      cloneHeader(headers),
-		CompressionMode: coderws.CompressionContextTakeover,
+		CompressionMode: options.CompressionMode,
 	}
-	if proxy := strings.TrimSpace(proxyURL); proxy != "" {
+	if options.DirectNoProxy {
+		opts.HTTPClient = d.directClient
+	} else if proxy := strings.TrimSpace(proxyURL); proxy != "" {
 		proxyClient, err := d.proxyHTTPClient(proxy)
 		if err != nil {
 			return nil, 0, nil, err

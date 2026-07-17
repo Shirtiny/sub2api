@@ -157,6 +157,7 @@ func (s *OpenAIGatewayService) proxyOpenAIWSHTTPBridgeTurn(
 	imageSizeTier string,
 	imageInputSize string,
 	turn int,
+	hooks *OpenAIWSIngressHooks,
 	writeClientMessage func([]byte) error,
 ) (*OpenAIForwardResult, error) {
 	if s == nil {
@@ -231,6 +232,9 @@ func (s *OpenAIGatewayService) proxyOpenAIWSHTTPBridgeTurn(
 	}
 
 	turnStart := time.Now()
+	if fenceErr := runOpenAIWSBeforeProviderWrite(hooks, turn, body, originalModel); fenceErr != nil {
+		return nil, fenceErr
+	}
 	resp, err := s.httpUpstream.Do(upstreamReq, proxyURL, account.ID, account.Concurrency)
 	if err != nil {
 		safeErr := sanitizeUpstreamErrorMessage(err.Error())

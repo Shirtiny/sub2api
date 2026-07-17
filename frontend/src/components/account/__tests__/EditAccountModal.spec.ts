@@ -53,6 +53,12 @@ vi.mock('vue-i18n', async () => {
 
 import EditAccountModal from '../EditAccountModal.vue'
 
+const submittedExtraSet = (): Record<string, unknown> =>
+  updateAccountMock.mock.calls[0]?.[1]?.extra_patch?.set ?? {}
+
+const submittedExtraDeletes = (): string[] =>
+  updateAccountMock.mock.calls[0]?.[1]?.extra_patch?.delete ?? []
+
 const BaseDialogStub = defineComponent({
   name: 'BaseDialog',
   props: {
@@ -317,7 +323,8 @@ describe('EditAccountModal', () => {
     await wrapper.get('form#edit-account-form').trigger('submit.prevent')
 
     expect(updateAccountMock).toHaveBeenCalledTimes(1)
-    expect(updateAccountMock.mock.calls[0]?.[1]?.extra?.openai_compact_mode).toBe('force_on')
+    expect(submittedExtraSet()).not.toHaveProperty('openai_compact_mode')
+    expect(submittedExtraDeletes()).not.toContain('openai_compact_mode')
     expect(updateAccountMock.mock.calls[0]?.[1]?.credentials?.compact_model_mapping).toEqual({
       'gpt-5.4': 'gpt-5.4-openai-compact'
     })
@@ -336,7 +343,71 @@ describe('EditAccountModal', () => {
     await wrapper.get('form#edit-account-form').trigger('submit.prevent')
 
     expect(updateAccountMock).toHaveBeenCalledTimes(1)
-    expect(updateAccountMock.mock.calls[0]?.[1]?.extra?.openai_passthrough).toBe(true)
+    expect(submittedExtraSet().openai_passthrough).toBe(true)
+  })
+
+  it('atomically enables an Aether WS account and preserves unknown extra fields', async () => {
+    const account = buildAccount()
+    account.extra = {
+      unrelated: 'keep',
+      aether_ws: {
+        schema_version: 1,
+        enabled: false,
+        required_control_protocol: 'route-v1',
+        future_option: 'keep'
+      }
+    }
+    updateAccountMock.mockReset()
+    checkMixedChannelRiskMock.mockReset()
+    checkMixedChannelRiskMock.mockResolvedValue({ has_risk: false })
+    updateAccountMock.mockResolvedValue(account)
+
+    const wrapper = mountModal(account)
+    await wrapper.get('[data-testid="edit-aether-ws-account-toggle"]').trigger('click')
+    expect(wrapper.find('[data-testid="edit-aether-ws-provider-fallback"]').exists()).toBe(false)
+    await wrapper.get('form#edit-account-form').trigger('submit.prevent')
+
+    const extraSet = submittedExtraSet()
+    expect(updateAccountMock.mock.calls[0]?.[1]).not.toHaveProperty('extra')
+    expect(extraSet).not.toHaveProperty('unrelated')
+    expect(submittedExtraDeletes()).not.toContain('unrelated')
+    expect(extraSet).toMatchObject({
+      openai_apikey_responses_websockets_v2_mode: 'passthrough',
+      openai_apikey_responses_websockets_v2_enabled: true,
+      aether_ws: {
+        enabled: true
+      }
+    })
+  })
+
+  it('disables an Aether WS account without removing nested future fields', async () => {
+    const account = buildAccount()
+    account.extra = {
+      openai_apikey_responses_websockets_v2_mode: 'passthrough',
+      openai_apikey_responses_websockets_v2_enabled: true,
+      aether_ws: {
+        schema_version: 1,
+        enabled: true,
+        required_control_protocol: 'route-v1',
+        future_option: 42
+      }
+    }
+    updateAccountMock.mockReset()
+    checkMixedChannelRiskMock.mockReset()
+    checkMixedChannelRiskMock.mockResolvedValue({ has_risk: false })
+    updateAccountMock.mockResolvedValue(account)
+
+    const wrapper = mountModal(account)
+    await wrapper.get('[data-testid="edit-aether-ws-account-toggle"]').trigger('click')
+    await wrapper.get('form#edit-account-form').trigger('submit.prevent')
+
+    expect(submittedExtraSet()).toMatchObject({
+      openai_apikey_responses_websockets_v2_mode: 'off',
+      openai_apikey_responses_websockets_v2_enabled: false,
+      aether_ws: {
+        enabled: false
+      }
+    })
   })
 
   it('submits OpenAI APIKey Responses support override mode', async () => {
@@ -356,8 +427,9 @@ describe('EditAccountModal', () => {
     await wrapper.get('form#edit-account-form').trigger('submit.prevent')
 
     expect(updateAccountMock).toHaveBeenCalledTimes(1)
-    expect(updateAccountMock.mock.calls[0]?.[1]?.extra?.openai_responses_mode).toBe('force_responses')
-    expect(updateAccountMock.mock.calls[0]?.[1]?.extra?.openai_responses_supported).toBe(false)
+    expect(submittedExtraSet().openai_responses_mode).toBe('force_responses')
+    expect(submittedExtraSet()).not.toHaveProperty('openai_responses_supported')
+    expect(submittedExtraDeletes()).not.toContain('openai_responses_supported')
   })
 
   it('clears OpenAI APIKey Responses override when set back to auto', async () => {
@@ -377,8 +449,9 @@ describe('EditAccountModal', () => {
     await wrapper.get('form#edit-account-form').trigger('submit.prevent')
 
     expect(updateAccountMock).toHaveBeenCalledTimes(1)
-    expect(updateAccountMock.mock.calls[0]?.[1]?.extra).not.toHaveProperty('openai_responses_mode')
-    expect(updateAccountMock.mock.calls[0]?.[1]?.extra?.openai_responses_supported).toBe(true)
+    expect(submittedExtraDeletes()).toContain('openai_responses_mode')
+    expect(submittedExtraSet()).not.toHaveProperty('openai_responses_supported')
+    expect(submittedExtraDeletes()).not.toContain('openai_responses_supported')
   })
 
   it('submits OpenAI APIKey endpoint capabilities from credentials', async () => {
@@ -419,8 +492,8 @@ describe('EditAccountModal', () => {
     await wrapper.get('form#edit-account-form').trigger('submit.prevent')
 
     expect(updateAccountMock).toHaveBeenCalledTimes(1)
-    expect(updateAccountMock.mock.calls[0]?.[1]?.extra?.auto_pause_5h_threshold).toBe(0.95)
-    expect(updateAccountMock.mock.calls[0]?.[1]?.extra?.auto_pause_7d_threshold).toBe(0.96)
+    expect(submittedExtraSet().auto_pause_5h_threshold).toBe(0.95)
+    expect(submittedExtraSet().auto_pause_7d_threshold).toBe(0.96)
   })
 
   it('submits OpenAI quota auto-pause disable flag in extra', async () => {
@@ -436,8 +509,8 @@ describe('EditAccountModal', () => {
     await wrapper.get('form#edit-account-form').trigger('submit.prevent')
 
     expect(updateAccountMock).toHaveBeenCalledTimes(1)
-    expect(updateAccountMock.mock.calls[0]?.[1]?.extra?.auto_pause_5h_disabled).toBe(true)
-    expect(updateAccountMock.mock.calls[0]?.[1]?.extra?.auto_pause_7d_disabled).toBeUndefined()
+    expect(submittedExtraSet().auto_pause_5h_disabled).toBe(true)
+    expect(submittedExtraSet().auto_pause_7d_disabled).toBeUndefined()
   })
 
   it('keeps at least one OpenAI APIKey endpoint capability selected', async () => {
@@ -504,8 +577,9 @@ describe('EditAccountModal', () => {
     expect(updateAccountMock.mock.calls[0]?.[1]?.credentials?.openai_capabilities).toEqual([
       'embeddings'
     ])
-    expect(updateAccountMock.mock.calls[0]?.[1]?.extra).not.toHaveProperty('openai_responses_mode')
-    expect(updateAccountMock.mock.calls[0]?.[1]?.extra?.openai_responses_supported).toBe(true)
+    expect(submittedExtraDeletes()).toContain('openai_responses_mode')
+    expect(submittedExtraSet()).not.toHaveProperty('openai_responses_supported')
+    expect(submittedExtraDeletes()).not.toContain('openai_responses_supported')
   })
 
   it('submits account-level Codex image generation bridge override', async () => {
@@ -525,8 +599,8 @@ describe('EditAccountModal', () => {
     await wrapper.get('form#edit-account-form').trigger('submit.prevent')
 
     expect(updateAccountMock).toHaveBeenCalledTimes(1)
-    expect(updateAccountMock.mock.calls[0]?.[1]?.extra?.codex_image_generation_bridge).toBe(true)
-    expect(updateAccountMock.mock.calls[0]?.[1]?.extra).not.toHaveProperty('codex_image_generation_bridge_enabled')
+    expect(submittedExtraSet().codex_image_generation_bridge).toBe(true)
+    expect(submittedExtraDeletes()).toContain('codex_image_generation_bridge_enabled')
   })
 
   it('allows saving apikey account when backend redacted api_key but credentials_status reports it exists', async () => {
