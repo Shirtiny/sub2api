@@ -862,7 +862,7 @@ func (c *UserMessageQueueConfig) GetEffectiveMode() string {
 // GatewayOpenAIWSConfig OpenAI Responses WebSocket 配置。
 // 注意：默认全局开启；如需回滚可使用 force_http 或关闭 enabled。
 type GatewayOpenAIWSConfig struct {
-	// ModeRouterV2Enabled: 新版 WS mode 路由开关（默认 false；关闭时保持 legacy 行为）
+	// ModeRouterV2Enabled: 新版 WS mode 路由开关（默认 true；可显式关闭熔断）
 	ModeRouterV2Enabled bool `mapstructure:"mode_router_v2_enabled"`
 	// IngressModeDefault: ingress 默认模式（off/ctx_pool/passthrough）
 	IngressModeDefault string `mapstructure:"ingress_mode_default"`
@@ -1858,9 +1858,9 @@ func setDefaults() {
 	viper.SetDefault("gateway.openai_passthrough_allow_timeout_headers", false)
 	// OpenAI Responses WebSocket（默认开启；可通过 force_http 紧急回滚）
 	viper.SetDefault("gateway.openai_ws.enabled", true)
-	viper.SetDefault("gateway.openai_ws.mode_router_v2_enabled", false)
+	viper.SetDefault("gateway.openai_ws.mode_router_v2_enabled", true)
 	viper.SetDefault("gateway.openai_ws.ingress_mode_default", "ctx_pool")
-	viper.SetDefault("gateway.openai_ws.aether_route_control_enabled", false)
+	viper.SetDefault("gateway.openai_ws.aether_route_control_enabled", true)
 	viper.SetDefault("gateway.openai_ws.reconnect_migration_enabled", false)
 	viper.SetDefault("gateway.openai_ws.reconnect_signal_mode", "unset")
 	viper.SetDefault("gateway.openai_ws.max_migrations_per_session", 3)
@@ -2679,12 +2679,12 @@ func (c *Config) Validate() error {
 	if c.Gateway.OpenAIWS.RouteMinDwellSeconds < 0 {
 		return fmt.Errorf("gateway.openai_ws.route_min_dwell_seconds must be non-negative")
 	}
-	if c.Gateway.OpenAIWS.AetherRouteControlEnabled {
+	if c.Gateway.OpenAIWS.ReconnectMigrationEnabled {
 		if !c.Gateway.OpenAIWS.Enabled || c.Gateway.OpenAIWS.ForceHTTP {
-			return fmt.Errorf("gateway.openai_ws.aether_route_control_enabled requires enabled=true and force_http=false")
+			return fmt.Errorf("gateway.openai_ws.reconnect_migration_enabled requires enabled=true and force_http=false")
 		}
 		if !c.Gateway.OpenAIWS.ModeRouterV2Enabled || !c.Gateway.OpenAIWS.ResponsesWebsocketsV2 || !c.Gateway.OpenAIWS.APIKeyEnabled {
-			return fmt.Errorf("gateway.openai_ws.aether_route_control_enabled requires mode_router_v2_enabled, responses_websockets_v2, and apikey_enabled")
+			return fmt.Errorf("gateway.openai_ws.reconnect_migration_enabled requires mode_router_v2_enabled, responses_websockets_v2, and apikey_enabled")
 		}
 	}
 	reconnectSignalMode := strings.ToLower(strings.TrimSpace(c.Gateway.OpenAIWS.ReconnectSignalMode))

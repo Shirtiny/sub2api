@@ -674,9 +674,6 @@ func (c *aetherWSRouteControlConsumer) validateCloseAfterTerminalLocked(frame ae
 		frame.AdapterProofVersion != nil || frame.MiddleRouteDisposition != nil {
 		return aetherWSRouteControlDecision{}, identity, errors.New("aether close-after-terminal proof is invalid")
 	}
-	if c.terminalWritten.Load() {
-		return aetherWSRouteControlDecision{}, identity, errors.New("aether close-after-terminal control arrived after terminal commit")
-	}
 	return aetherWSRouteControlDecision{
 		Action:             frame.Action,
 		CloseAfterTerminal: true,

@@ -199,14 +199,14 @@ func TestLoadDefaultOpenAIWSConfig(t *testing.T) {
 	if cfg.Gateway.OpenAIWS.StoreDisabledConnMode != "strict" {
 		t.Fatalf("Gateway.OpenAIWS.StoreDisabledConnMode = %q, want %q", cfg.Gateway.OpenAIWS.StoreDisabledConnMode, "strict")
 	}
-	if cfg.Gateway.OpenAIWS.ModeRouterV2Enabled {
-		t.Fatalf("Gateway.OpenAIWS.ModeRouterV2Enabled = true, want false")
+	if !cfg.Gateway.OpenAIWS.ModeRouterV2Enabled {
+		t.Fatalf("Gateway.OpenAIWS.ModeRouterV2Enabled = false, want true")
 	}
 	if cfg.Gateway.OpenAIWS.IngressModeDefault != "ctx_pool" {
 		t.Fatalf("Gateway.OpenAIWS.IngressModeDefault = %q, want %q", cfg.Gateway.OpenAIWS.IngressModeDefault, "ctx_pool")
 	}
-	if cfg.Gateway.OpenAIWS.AetherRouteControlEnabled {
-		t.Fatalf("Gateway.OpenAIWS.AetherRouteControlEnabled = true, want false")
+	if !cfg.Gateway.OpenAIWS.AetherRouteControlEnabled {
+		t.Fatalf("Gateway.OpenAIWS.AetherRouteControlEnabled = false, want true")
 	}
 	if cfg.Gateway.OpenAIWS.ReconnectMigrationEnabled {
 		t.Fatalf("Gateway.OpenAIWS.ReconnectMigrationEnabled = true, want false")
@@ -230,6 +230,17 @@ func TestLoadDefaultOpenAIWSConfig(t *testing.T) {
 			cfg.Gateway.OpenAIWS.MaxIngressConnectionsPerUser,
 			cfg.Gateway.OpenAIWS.MaxIngressConnectionsPerAPIKey)
 	}
+}
+
+func TestLoadOpenAIWSGlobalBreakerOverrides(t *testing.T) {
+	resetViperWithJWTSecret(t)
+	t.Setenv("GATEWAY_OPENAI_WS_AETHER_ROUTE_CONTROL_ENABLED", "false")
+	t.Setenv("GATEWAY_OPENAI_WS_MODE_ROUTER_V2_ENABLED", "false")
+
+	cfg, err := Load()
+	require.NoError(t, err)
+	require.False(t, cfg.Gateway.OpenAIWS.AetherRouteControlEnabled)
+	require.False(t, cfg.Gateway.OpenAIWS.ModeRouterV2Enabled)
 }
 
 func TestLoadDefaultOpenAIHTTP2Enabled(t *testing.T) {
@@ -1756,9 +1767,12 @@ func TestValidateConfig_OpenAIWSRules(t *testing.T) {
 			wantErr: "gateway.openai_ws.ingress_mode_default",
 		},
 		{
-			name:    "aether route control 依赖 router v2",
-			mutate:  func(c *Config) { c.Gateway.OpenAIWS.AetherRouteControlEnabled = true },
-			wantErr: "gateway.openai_ws.aether_route_control_enabled",
+			name: "reconnect migration 依赖 router v2",
+			mutate: func(c *Config) {
+				c.Gateway.OpenAIWS.ModeRouterV2Enabled = false
+				c.Gateway.OpenAIWS.ReconnectMigrationEnabled = true
+			},
+			wantErr: "gateway.openai_ws.reconnect_migration_enabled requires mode_router_v2_enabled",
 		},
 		{
 			name: "reconnect migration 依赖 pinned signal",

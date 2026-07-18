@@ -324,9 +324,15 @@ func TestAetherWSRouteControl_CloseAfterTerminalAndLateControl(t *testing.T) {
 	_, lateFence := prepareAetherWSRouteControlTestStep(t, lateConsumer)
 	lateConsumer.markProviderFrameWritten(true)
 	lateFrame := aetherWSRouteControlTestFrame(lateFence, aetherWSRouteActionCloseAfterTerminal)
-	consumed, _, err = lateConsumer.consumeUpstreamFrame(marshalAetherWSRouteControlTestFrame(t, lateFrame))
+	consumed, decision, err = lateConsumer.consumeUpstreamFrame(marshalAetherWSRouteControlTestFrame(t, lateFrame))
+	require.NoError(t, err)
 	require.True(t, consumed)
-	require.ErrorContains(t, err, "after terminal commit")
+	require.True(t, decision.CloseAfterTerminal)
+
+	reconnectFrame := aetherWSRouteControlTestFrame(lateFence, aetherWSRouteActionClientReconnect)
+	consumed, _, err = lateConsumer.consumeUpstreamFrame(marshalAetherWSRouteControlTestFrame(t, reconnectFrame))
+	require.True(t, consumed)
+	require.ErrorContains(t, err, "after provider output commit")
 }
 
 func TestAetherWSRouteControl_RejectsProviderFallback(t *testing.T) {

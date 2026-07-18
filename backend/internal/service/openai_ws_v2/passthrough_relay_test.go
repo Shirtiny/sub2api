@@ -46,6 +46,11 @@ type readCountingFrameConn struct {
 	readCalls atomic.Int32
 }
 
+type closeAfterWriteFrameConn struct {
+	*passthroughTestFrameConn
+	closeAfter []byte
+}
+
 func newPassthroughTestFrameConn(frames []passthroughTestFrame, autoClose bool) *passthroughTestFrameConn {
 	c := &passthroughTestFrameConn{
 		readCh: make(chan passthroughTestFrame, len(frames)+1),
@@ -185,6 +190,16 @@ func (c *closeTrackingFrameConn) Close() error {
 func (c *readCountingFrameConn) ReadFrame(ctx context.Context) (coderws.MessageType, []byte, error) {
 	c.readCalls.Add(1)
 	return c.FrameConn.ReadFrame(ctx)
+}
+
+func (c *closeAfterWriteFrameConn) WriteFrame(ctx context.Context, msgType coderws.MessageType, payload []byte) error {
+	if err := c.passthroughTestFrameConn.WriteFrame(ctx, msgType, payload); err != nil {
+		return err
+	}
+	if string(payload) == string(c.closeAfter) {
+		return c.Close()
+	}
+	return nil
 }
 
 func TestRelay_BasicRelayAndUsage(t *testing.T) {
@@ -365,6 +380,137 @@ func TestRelay_ConsumesControlAndClosesOnlyAfterTerminalWrite(t *testing.T) {
 	providerWritesMu.Lock()
 	require.Equal(t, []bool{false, false, true}, providerWrites)
 	providerWritesMu.Unlock()
+}
+
+func TestRelay_ConsumesCloseControlAfterTerminalWrite(t *testing.T) {
+	t.Parallel()
+
+	controlPayload := []byte(`{"type":"aether.route_control","action":"close_after_terminal"}`)
+	terminalPayload := []byte(`{"type":"response.completed","response":{"id":"resp_late_control","usage":{"input_tokens":1,"output_tokens":1}}}`)
+	clientConn := newPassthroughTestFrameConn(nil, false)
+	upstreamConn := newPassthroughTestFrameConn([]passthroughTestFrame{
+		{msgType: coderws.MessageText, payload: []byte(`{"type":"response.created","response":{"id":"resp_late_control"}}`)},
+		{msgType: coderws.MessageText, payload: terminalPayload},
+		{msgType: coderws.MessageText, payload: controlPayload},
+	}, true)
+
+	turnCompleted := atomic.Bool{}
+	result, relayExit := Relay(
+		context.Background(),
+		clientConn,
+		upstreamConn,
+		[]byte(`{"type":"response.create","model":"gpt-5"}`),
+		RelayOptions{
+			InterceptUpstreamFrame: func(_ coderws.MessageType, payload []byte) UpstreamFrameDirective {
+				if string(payload) != string(controlPayload) {
+					return UpstreamFrameDirective{}
+				}
+				return UpstreamFrameDirective{
+					Consume:                          true,
+					CloseAfterTerminal:               true,
+					CloseAfterTerminalAlreadyWritten: true,
+				}
+			},
+			OnTurnComplete: func(RelayTurnResult) {
+				turnCompleted.Store(true)
+			},
+		},
+	)
+
+	require.Nil(t, relayExit)
+	require.True(t, turnCompleted.Load())
+	require.Equal(t, int64(2), result.UpstreamToClientFrames)
+	clientWrites := clientConn.Writes()
+	require.Len(t, clientWrites, 2)
+	require.Equal(t, terminalPayload, clientWrites[1].payload)
+	for _, write := range clientWrites {
+		require.NotContains(t, string(write.payload), "aether.route_control")
+	}
+}
+
+func TestRelay_CloseControlForSecondTurnWaitsForSecondTerminal(t *testing.T) {
+	t.Parallel()
+
+	controlPayload := []byte(`{"type":"aether.route_control","action":"close_after_terminal"}`)
+	firstTerminal := []byte(`{"type":"response.completed","response":{"id":"resp_first","usage":{"input_tokens":1,"output_tokens":1}}}`)
+	secondTerminal := []byte(`{"type":"response.completed","response":{"id":"resp_second","usage":{"input_tokens":2,"output_tokens":1}}}`)
+	clientConn := newPassthroughTestFrameConn(nil, false)
+	upstreamConn := newPassthroughTestFrameConn(nil, false)
+	secondDispatched := make(chan struct{})
+	feederDone := make(chan struct{})
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	go func() {
+		defer close(feederDone)
+		defer func() { _ = upstreamConn.Close() }()
+		send := func(frame passthroughTestFrame) bool {
+			select {
+			case upstreamConn.readCh <- frame:
+				return true
+			case <-ctx.Done():
+				return false
+			}
+		}
+		if !send(passthroughTestFrame{msgType: coderws.MessageText, payload: []byte(`{"type":"response.created","response":{"id":"resp_first"}}`)}) ||
+			!send(passthroughTestFrame{msgType: coderws.MessageText, payload: firstTerminal}) {
+			return
+		}
+		select {
+		case <-secondDispatched:
+		case <-ctx.Done():
+			return
+		}
+		for _, frame := range []passthroughTestFrame{
+			{msgType: coderws.MessageText, payload: []byte(`{"type":"response.created","response":{"id":"resp_second"}}`)},
+			{msgType: coderws.MessageText, payload: controlPayload},
+			{msgType: coderws.MessageText, payload: secondTerminal},
+		} {
+			if !send(frame) {
+				return
+			}
+		}
+	}()
+
+	result, relayExit := Relay(
+		ctx,
+		clientConn,
+		upstreamConn,
+		[]byte(`{"type":"response.create","model":"gpt-5","input":"first"}`),
+		RelayOptions{
+			BeforeDispatchResponseCreate: func(_ coderws.MessageType, _ []byte, _ string) error {
+				close(secondDispatched)
+				return nil
+			},
+			InterceptUpstreamFrame: func(_ coderws.MessageType, payload []byte) UpstreamFrameDirective {
+				if string(payload) != string(controlPayload) {
+					return UpstreamFrameDirective{}
+				}
+				return UpstreamFrameDirective{Consume: true, CloseAfterTerminal: true}
+			},
+			OnTurnComplete: func(turn RelayTurnResult) {
+				if turn.RequestID != "resp_first" {
+					return
+				}
+				select {
+				case clientConn.readCh <- passthroughTestFrame{msgType: coderws.MessageText, payload: []byte(`{"type":"response.create","model":"gpt-5","input":"second"}`)}:
+				case <-ctx.Done():
+				}
+			},
+		},
+	)
+	<-feederDone
+
+	require.Nil(t, relayExit)
+	require.Equal(t, "response.completed", result.TerminalEventType)
+	require.Equal(t, "resp_second", result.RequestID)
+	require.Equal(t, int64(4), result.UpstreamToClientFrames)
+	clientWrites := clientConn.Writes()
+	require.Len(t, clientWrites, 4)
+	require.Equal(t, firstTerminal, clientWrites[1].payload)
+	require.Equal(t, secondTerminal, clientWrites[3].payload)
+	for _, write := range clientWrites {
+		require.NotContains(t, string(write.payload), "aether.route_control")
+	}
 }
 
 func TestRelay_ControlReconnectWritesReplacementAndNeverForwardsControl(t *testing.T) {
@@ -588,8 +734,9 @@ func TestRelay_UpstreamDisconnect(t *testing.T) {
 	defer cancel()
 
 	result, relayExit := Relay(ctx, clientConn, upstreamConn, firstPayload, RelayOptions{})
-	// 上游 EOF 属于 disconnect，标记为 graceful
-	require.Nil(t, relayExit, "上游 EOF 应被视为 graceful disconnect")
+	require.NotNil(t, relayExit, "上游未发送终态事件前断开必须返回错误")
+	require.Equal(t, "read_upstream", relayExit.Stage)
+	require.ErrorIs(t, relayExit.Err, io.EOF)
 	require.Equal(t, "gpt-4o", result.RequestModel)
 }
 
@@ -624,6 +771,35 @@ func TestRelay_FirstMessageAlreadySentStillObservesClientDisconnectBeforeTTFT(t 
 	})
 	require.NotNil(t, relayExit)
 	require.Equal(t, "client_disconnected", relayExit.Stage)
+}
+
+func TestRelay_ClientDisconnectAfterTerminalWriteCompletes(t *testing.T) {
+	t.Parallel()
+
+	terminalPayload := []byte(`{"type":"response.completed","response":{"id":"resp_done","usage":{"input_tokens":2,"output_tokens":1}}}`)
+	clientConn := &closeAfterWriteFrameConn{
+		passthroughTestFrameConn: newPassthroughTestFrameConn(nil, false),
+		closeAfter:               terminalPayload,
+	}
+	upstreamConn := newPassthroughTestFrameConn([]passthroughTestFrame{
+		{msgType: coderws.MessageText, payload: []byte(`{"type":"response.created","response":{"id":"resp_done"}}`)},
+		{msgType: coderws.MessageText, payload: terminalPayload},
+	}, false)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	result, relayExit := Relay(
+		ctx,
+		clientConn,
+		upstreamConn,
+		[]byte(`{"type":"response.create","model":"gpt-4o","input":[]}`),
+		RelayOptions{UpstreamDrainTimeout: 100 * time.Millisecond},
+	)
+
+	require.Nil(t, relayExit)
+	require.Equal(t, "response.completed", result.TerminalEventType)
+	require.Equal(t, int64(2), result.UpstreamToClientFrames)
+	require.Zero(t, result.DroppedDownstreamFrames)
 }
 
 func TestRelay_ClientDisconnect_DrainCapturesLateUsage(t *testing.T) {
@@ -1100,13 +1276,22 @@ func TestRelay_OnTurnComplete_ProvidesTurnMetrics(t *testing.T) {
 func TestRelay_BinaryFramePassthrough(t *testing.T) {
 	t.Parallel()
 
-	// 验证 binary frame 被透传但不进行 usage 解析
 	binaryPayload := []byte{0x00, 0x01, 0x02, 0x03}
+	createdPayload := []byte(`{"type":"response.created","response":{"id":"resp_binary"}}`)
+	terminalPayload := []byte(`{"type":"response.completed","response":{"id":"resp_binary"}}`)
 	clientConn := newPassthroughTestFrameConn(nil, false)
 	upstreamConn := newPassthroughTestFrameConn([]passthroughTestFrame{
 		{
+			msgType: coderws.MessageText,
+			payload: createdPayload,
+		},
+		{
 			msgType: coderws.MessageBinary,
 			payload: binaryPayload,
+		},
+		{
+			msgType: coderws.MessageText,
+			payload: terminalPayload,
 		},
 	}, true)
 
@@ -1116,13 +1301,14 @@ func TestRelay_BinaryFramePassthrough(t *testing.T) {
 
 	result, relayExit := Relay(ctx, clientConn, upstreamConn, firstPayload, RelayOptions{})
 	require.Nil(t, relayExit)
-	// binary frame 不解析 usage
 	require.Equal(t, 0, result.Usage.InputTokens)
 
 	clientWrites := clientConn.Writes()
-	require.Len(t, clientWrites, 1)
-	require.Equal(t, coderws.MessageBinary, clientWrites[0].msgType)
-	require.Equal(t, binaryPayload, clientWrites[0].payload)
+	require.Len(t, clientWrites, 3)
+	require.Equal(t, createdPayload, clientWrites[0].payload)
+	require.Equal(t, coderws.MessageBinary, clientWrites[1].msgType)
+	require.Equal(t, binaryPayload, clientWrites[1].payload)
+	require.Equal(t, terminalPayload, clientWrites[2].payload)
 }
 
 func TestRelay_BinaryJSONFrameSkipsObservation(t *testing.T) {
@@ -1141,7 +1327,8 @@ func TestRelay_BinaryJSONFrameSkipsObservation(t *testing.T) {
 	defer cancel()
 
 	result, relayExit := Relay(ctx, clientConn, upstreamConn, firstPayload, RelayOptions{})
-	require.Nil(t, relayExit)
+	require.NotNil(t, relayExit)
+	require.Equal(t, "read_upstream", relayExit.Stage)
 	require.Equal(t, 0, result.Usage.InputTokens)
 	require.Equal(t, "", result.RequestID)
 	require.Equal(t, "", result.TerminalEventType)
@@ -1189,7 +1376,8 @@ func TestRelay_PreservesFirstMessageType(t *testing.T) {
 	_, relayExit := Relay(ctx, clientConn, upstreamConn, firstPayload, RelayOptions{
 		FirstMessageType: coderws.MessageBinary,
 	})
-	require.Nil(t, relayExit)
+	require.NotNil(t, relayExit)
+	require.Equal(t, "read_upstream", relayExit.Stage)
 
 	upstreamWrites := upstreamConn.Writes()
 	require.Len(t, upstreamWrites, 1)

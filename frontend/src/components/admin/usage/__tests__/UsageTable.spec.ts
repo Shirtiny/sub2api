@@ -18,6 +18,7 @@ const messages: Record<string, string> = {
   'usage.serviceTierPriority': 'Fast',
   'usage.serviceTierFlex': 'Flex',
   'usage.serviceTierStandard': 'Standard',
+  'usage.ws': 'WS',
   'usage.rate': 'Rate',
   'usage.accountMultiplier': 'Account rate',
   'usage.original': 'Original',
@@ -61,6 +62,7 @@ const DataTableStub = {
     <div>
       <div v-for="row in data" :key="row.request_id">
         <slot name="cell-model" :row="row" :value="row.model" />
+        <slot name="cell-stream" :row="row" />
         <slot name="cell-billing_mode" :row="row" />
         <slot name="cell-tokens" :row="row" />
         <slot name="cell-cost" :row="row" />
@@ -160,6 +162,43 @@ describe('admin UsageTable tooltip', () => {
     expect(text).toContain('$5.0000 / 1M tokens')
     expect(text).toContain('$30.0000 / 1M tokens')
     expect(text).toContain('$0.069568')
+  })
+
+  it('shows WS for WebSocket usage rows', () => {
+    const wrapper = mount(UsageTable, {
+      props: {
+        data: [
+          {
+            request_id: 'req-admin-ws',
+            model: 'gpt-5',
+            stream: true,
+            openai_ws_mode: true,
+            actual_cost: 0,
+            total_cost: 0,
+            account_rate_multiplier: 1,
+            rate_multiplier: 1,
+            input_cost: 0,
+            output_cost: 0,
+            cache_creation_cost: 0,
+            cache_read_cost: 0,
+            input_tokens: 0,
+            output_tokens: 0,
+          },
+        ],
+        loading: false,
+        columns: [],
+      },
+      global: {
+        stubs: {
+          DataTable: DataTableStub,
+          EmptyState: true,
+          Icon: true,
+          Teleport: true,
+        },
+      },
+    })
+
+    expect(wrapper.text()).toContain('WS')
   })
 
   it('shows requested and upstream models separately for admin rows', () => {

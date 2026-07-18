@@ -780,6 +780,8 @@ func TestOpenAIGatewayServiceRecordUsage_WSModePrefersUpstreamRequestIDOverClien
 	require.Equal(t, "resp_openai_ws_turn_456", billingRepo.lastCmd.RequestID)
 	require.NotNil(t, usageRepo.lastLog)
 	require.Equal(t, "resp_openai_ws_turn_456", usageRepo.lastLog.RequestID)
+	require.True(t, usageRepo.lastLog.OpenAIWSMode)
+	require.Equal(t, RequestTypeWSV2, usageRepo.lastLog.EffectiveRequestType())
 }
 
 func TestOpenAIGatewayServiceRecordUsage_GeneratesRequestIDWhenAllSourcesMissing(t *testing.T) {

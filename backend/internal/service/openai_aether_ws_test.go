@@ -64,6 +64,7 @@ func TestResolveAetherWSAccountCapabilityRequiresExplicitEffectiveConfiguration(
 		{name: "zero concurrency", mutate: func(a *Account, _ *config.Config) { a.Concurrency = 0 }, reason: "account_concurrency_invalid"},
 		{name: "wrong mode", mutate: func(a *Account, _ *config.Config) { a.Extra["openai_apikey_responses_websockets_v2_mode"] = "ctx_pool" }, reason: "account_ws_field_conflict"},
 		{name: "not schedulable", mutate: func(a *Account, _ *config.Config) { a.Schedulable = false }, reason: "account_not_schedulable"},
+		{name: "router v2 disabled", mutate: func(_ *Account, cfg *config.Config) { cfg.Gateway.OpenAIWS.ModeRouterV2Enabled = false }, reason: "mode_router_v2_disabled"},
 		{name: "global route disabled", mutate: func(_ *Account, cfg *config.Config) { cfg.Gateway.OpenAIWS.AetherRouteControlEnabled = false }, reason: "aether_route_control_disabled"},
 	}
 	for _, test := range tests {

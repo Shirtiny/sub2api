@@ -144,8 +144,8 @@ sub2api never receives the real Aether provider credential, provider key ID, pro
     is required to make the next step safe (target <= 100 ms).
 12. Usage capacity is reserved before provider execution and is bounded.
 13. The normal delta path performs no database query, Redis operation, scheduling, task spawn, or full JSON decode.
-14. All new global route/migration switches default off.
-15. Existing HTTP/SSE behavior is unchanged while the new switches or either account-level switch are off.
+14. Base router v2 and route-v1 breakers default on; reconnect migration defaults off.
+15. Existing HTTP/SSE behavior is unchanged when a base breaker or either account-level switch is off.
 16. Every `response.create`, including step 1, revalidates the sub2api
     authentication generation and Aether's shared global/catalog/key generations
     immediately before provider write.
@@ -223,7 +223,7 @@ Aether must echo the exact fence in an internal typed route-control frame. Clien
 
 Every `client_reconnect` frame also includes exactly one `middle_route_disposition`:
 
-- `retain`: keep the selected sub2api Aether account and sticky binding, then reconnect so that Aether can select another official Codex key;
+- `retain`: keep the selected sub2api Aether account healthy and preserve its sticky binding. A reconnect may select another internal Codex key, but the current client step never redials the same middle-route account;
 - `exclude`: exclude the selected sub2api Aether account for the migration dwell window and delete its sticky binding.
 
 `close_after_terminal` omits `middle_route_disposition` entirely. The disposition is part of the `control_id` identity and Redis idempotency identity; missing, unknown, changed-on-replay, or action-incompatible values fail closed.
@@ -256,8 +256,8 @@ gateway:
     mode_router_v2_enabled: true
 
     aether_route_control_enabled: true
-    reconnect_migration_enabled: true
-    reconnect_signal_mode: websocket_connection_limit_reached
+    reconnect_migration_enabled: false
+    reconnect_signal_mode: unset
     max_migrations_per_session: 3
     migration_window_seconds: 600
     route_min_dwell_seconds: 30
@@ -268,12 +268,15 @@ gateway:
     max_ingress_connections_per_api_key: 32
 ```
 
-`enabled` and `responses_websockets_v2` already default true in the reviewed code, but they are shown to make the activation contract explicit. The new route and migration switches default false.
+`enabled`, `apikey_enabled`, `responses_websockets_v2`, `mode_router_v2_enabled`, and
+`aether_route_control_enabled` default true. They remain hidden global breakers: an
+operator may explicitly set any of them false, and runtime eligibility then fails
+closed. `force_http` and `reconnect_migration_enabled` default false;
+`reconnect_signal_mode` defaults `unset`.
 
 Configuration validation requires:
 
-- Aether route control requires router v2 and Responses WebSocket v2.
-- Reconnect migration requires route control.
+- Reconnect migration requires the base WebSocket route, router v2, Responses WebSocket v2, API Key WebSocket, and Aether route control.
 - Reconnect migration requires the pinned `websocket_connection_limit_reached` signal mode.
 - Migration count/window must be positive.
 - Connection limits are non-negative; zero disables only that dimension.
@@ -322,7 +325,7 @@ Disable only this account route with:
 }
 ```
 
-The admin UI exposes one Aether WS account switch and manages the mode mirror. It does not expose a provider-fallback switch.
+The admin UI exposes one Aether WS account switch and manages the mode mirror. It does not expose the hidden global breakers or a provider-fallback switch.
 
 Operator path: in sub2api Admin -> Accounts, create or edit an `OpenAI / API Key` account and enable `作为 Aether WS 账号`. The same switch is available in bulk edit. The account's base URL remains the local Aether HTTP base such as `http://aether:8080/v1`; sub2api derives `ws://aether:8080/v1/responses` for the WebSocket upgrade. Do not enter the `/responses` suffix in the account base URL.
 
@@ -409,7 +412,7 @@ Content-Type: application/json
 }
 ```
 
-Both booleans default false. The process reads an atomic snapshot after initialization; a successful admin write refreshes it immediately. A frame/step loop must not read this configuration from the database.
+Both booleans default true when the `codex_ws` record or an individual field is absent. An explicit false is the emergency breaker; a malformed top-level value or present-but-malformed field fails closed. Deleting the record restores the on-by-default state. The admin UI does not expose this breaker. The process reads an atomic snapshot after initialization; a successful admin write or delete refreshes it immediately. A frame/step loop must not read this configuration from the database.
 
 Aether uses process-wide bounded reporters, not one queue or worker per
 connection. All queue/worker/timeout tuning variables and their implemented
@@ -539,18 +542,17 @@ deployment/restart action and is not performed by this implementation task.
 
 Use this order in staging, then production only after explicit operator authorization:
 
-1. Deploy code with all new route/migration and Aether global switches off.
-2. Enable Aether global `codex_ws` flags.
-3. For every account previously enabled with schema 2, disable then re-enable
+1. Deploy code with both account switches and reconnect migration off; verify no stale explicit-off or malformed hidden global breaker remains.
+2. For every account previously enabled with schema 2, disable then re-enable
    `启用账号级 Codex WS`; merely leaving the old switch on does not upgrade its
    immutable manifest.
-4. Enable one Aether official Codex OAuth key and verify
+3. Enable one Aether official Codex OAuth key and verify
    `configured=true`, `profile_effective=true`, `runtime_eligible=null`, and
    `runtime_state=request_scoped`.
-5. Enable one sub2api Aether account.
-6. Enable sub2api route-v1 without migration; run one-step and multi-step tests.
-7. Enable reconnect migration only after the real Codex reconnect fixture passes.
-8. Expand accounts gradually while watching CPU admission, connection latency,
+4. Enable one sub2api Aether account.
+5. Keep the default-on base route-v1 breakers on and migration off; run one-step and multi-step tests.
+6. Enable reconnect migration only after the real Codex reconnect fixture passes.
+7. Expand accounts gradually while watching CPU admission, connection latency,
    write-buffer retention, queue depth, and settlement lag.
 
 For a guaranteed Aether chain, verify the client API key resolves to an
@@ -1222,7 +1224,7 @@ No schema migration is required: both implementations use existing JSON capabili
 
 ### 14.1 sub2api correctness
 
-- new switches default off and dependency validation fails closed;
+- base router v2/route-v1 switches default on, explicit false overrides fail closed, and reconnect migration defaults off with strict dependency validation;
 - no pre-101 whole-group candidate scan or duplicate scheduling read;
 - explicit account capability and local-address fast path with no address/DNS
   validation;

@@ -247,13 +247,13 @@ gateway:
   openai_passthrough_allow_timeout_headers: false
   # OpenAI Responses WebSocket 配置（默认开启，可按需回滚到 HTTP）
   openai_ws:
-    # 新版 WS mode 路由（默认关闭）。关闭时保持当前 legacy 实现行为。
-    mode_router_v2_enabled: false
+    # 新版 WS mode 路由默认开启；显式关闭可熔断 route-v1 基础链路。
+    mode_router_v2_enabled: true
     # ingress 默认模式：off|ctx_pool|passthrough（仅 mode_router_v2_enabled=true 生效）
     # 兼容旧值：shared/dedicated 会按 ctx_pool 处理。
     ingress_mode_default: ctx_pool
-    # Aether route-v1 中间跳控制协议。仅管理员显式标记的 Aether API Key 账号可使用。
-    aether_route_control_enabled: false
+    # Aether route-v1 默认可用；实际路由仍要求管理员显式标记 Aether WS 账号。
+    aether_route_control_enabled: true
     # 允许 Aether 在“官方未执行当前 step”的证明落入调度状态后，通知 Codex 重连迁移。
     reconnect_migration_enabled: false
     # unset | websocket_connection_limit_reached。只有 pinned Codex 兼容信号可启用迁移。

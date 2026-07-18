@@ -874,6 +874,7 @@ func (s *OpenAIGatewayService) proxyResponsesWebSocketV2Passthrough(
 				}
 				if decision.CloseAfterTerminal {
 					directive.CloseAfterTerminal = true
+					directive.CloseAfterTerminalAlreadyWritten = aetherRouteControl.terminalWritten.Load()
 					return directive
 				}
 				if !decision.SignalReconnect {

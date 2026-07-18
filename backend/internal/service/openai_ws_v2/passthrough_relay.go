@@ -90,13 +90,14 @@ type RelayOptions struct {
 // It is used by trusted middle-hop protocols; ordinary provider frames leave
 // Consume false and continue through the existing relay path unchanged.
 type UpstreamFrameDirective struct {
-	Consume            bool
-	CloseAfterTerminal bool
-	ClientMessageType  coderws.MessageType
-	ClientPayload      []byte
-	Exit               bool
-	Graceful           bool
-	Err                error
+	Consume                          bool
+	CloseAfterTerminal               bool
+	CloseAfterTerminalAlreadyWritten bool
+	ClientMessageType                coderws.MessageType
+	ClientPayload                    []byte
+	Exit                             bool
+	Graceful                         bool
+	Err                              error
 }
 
 var errResponseCreateInFlight = errors.New("response.create received before previous response terminal")
@@ -478,15 +479,16 @@ type RelayTraceEvent struct {
 }
 
 type relayState struct {
-	usage             Usage
-	requestModel      string
-	lastResponseID    string
-	terminalEventType string
-	firstTokenMs      *int
-	turnTimingByID    map[string]*relayTurnTiming
-	activeTurn        *relayTurnTiming
-	interceptUpstream func(msgType coderws.MessageType, payload []byte) UpstreamFrameDirective
-	onProviderWritten func(terminal bool)
+	usage                   Usage
+	requestModel            string
+	lastResponseID          string
+	terminalEventType       string
+	firstTokenMs            *int
+	turnTimingByID          map[string]*relayTurnTiming
+	activeTurn              *relayTurnTiming
+	terminalWrittenToClient atomic.Bool
+	interceptUpstream       func(msgType coderws.MessageType, payload []byte) UpstreamFrameDirective
+	onProviderWritten       func(terminal bool)
 }
 
 type relayExitSignal struct {
@@ -794,6 +796,14 @@ func Relay(
 	result.UpstreamToClientFrames = upstreamToClientFrames.Load()
 	result.DroppedDownstreamFrames = droppedDownstreamFrames.Load()
 	if firstExit.stage == "read_client" && firstExit.graceful {
+		if state.terminalWrittenToClient.Load() && (!hasSecondExit || secondExit.graceful) {
+			emitRelayTrace(onTrace, RelayTraceEvent{
+				Stage:           "relay_complete",
+				Graceful:        true,
+				WroteDownstream: combinedWroteDownstream,
+			})
+			return result, nil
+		}
 		stage := "client_disconnected"
 		exitErr := firstExit.err
 		if hasSecondExit && !secondExit.graceful {
@@ -817,6 +827,24 @@ func Relay(
 		}
 	}
 	if firstExit.graceful && (!hasSecondExit || secondExit.graceful) {
+		if result.TerminalEventType == "" {
+			exitErr := firstExit.err
+			if exitErr == nil {
+				exitErr = io.EOF
+			}
+			emitRelayTrace(onTrace, RelayTraceEvent{
+				Stage:           "relay_exit",
+				Direction:       relayDirectionFromStage(firstExit.stage),
+				Graceful:        false,
+				WroteDownstream: combinedWroteDownstream,
+				Error:           relayErrorString(exitErr),
+			})
+			return result, &RelayExit{
+				Stage:           firstExit.stage,
+				Err:             exitErr,
+				WroteDownstream: combinedWroteDownstream,
+			}
+		}
 		emitRelayTrace(onTrace, RelayTraceEvent{
 			Stage:           "relay_complete",
 			Graceful:        true,
@@ -994,6 +1022,14 @@ func runUpstreamToClient(
 					}
 					return
 				}
+				if directive.CloseAfterTerminal && directive.CloseAfterTerminalAlreadyWritten {
+					exitCh <- relayExitSignal{
+						stage:           "route_control_close_after_terminal",
+						graceful:        true,
+						wroteDownstream: wroteDownstream,
+					}
+					return
+				}
 				continue
 			}
 		}
@@ -1113,6 +1149,9 @@ func runUpstreamToClient(
 		if decision.terminalClaimed {
 			emitTurnComplete(onTurnComplete, state, observedEvent)
 			stepGate.finishTerminal(decision.closeGate || closeAfterTerminal)
+			if state != nil {
+				state.terminalWrittenToClient.Store(true)
+			}
 		}
 		if observedEvent.terminal {
 			stepWroteDownstream = false
@@ -1617,7 +1656,7 @@ func isDisconnectError(err error) bool {
 
 func isTerminalEvent(eventType string) bool {
 	switch eventType {
-	case "response.completed", "response.failed", "response.incomplete", "error":
+	case "response.completed", "response.done", "response.failed", "response.incomplete", "response.cancelled", "response.canceled", "error":
 		return true
 	default:
 		return false

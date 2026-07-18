@@ -1026,6 +1026,7 @@ func TestOpenAIResponsesWebSocket_PassthroughUsageLogPersistsUserAgentAndReasoni
 	require.NotNil(t, got.log.ReasoningEffort)
 	require.Equal(t, "high", *got.log.ReasoningEffort)
 	require.True(t, got.log.OpenAIWSMode)
+	require.Equal(t, service.RequestTypeWSV2, got.log.EffectiveRequestType())
 }
 
 func TestOpenAIResponsesWebSocket_PassthroughUsageLogInfersReasoningFromInitialRequestModel(t *testing.T) {
