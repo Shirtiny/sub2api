@@ -2,7 +2,7 @@
   "id": "codex-websocket-transport",
   "name": "codex-websocket-transport",
   "title": "Add end-to-end Codex WebSocket transport",
-  "description": "Add account-controlled Codex WebSocket ingress in sub2api and native official-Codex WebSocket egress in Aether, including TLS fingerprint parity, scheduling and migration fences, bounded backpressure, billing and authorization enforcement, administration UI, performance gates, and production rollout documentation.",
+  "description": "Add Codex WebSocket ingress and route-v1 relay in sub2api plus native official-Codex WebSocket egress and account scheduling in Aether, including TLS fingerprint parity, generation fences, bounded backpressure, billing and authorization enforcement, usage observability, performance gates, and production rollout documentation.",
   "status": "completed",
   "dev_type": "feature",
   "scope": "fullstack",
@@ -11,24 +11,26 @@
   "creator": "codex-agent",
   "assignee": "codex-agent",
   "createdAt": "2026-07-17",
-  "completedAt": "2026-07-17",
+  "completedAt": "2026-07-18",
   "branch": "custom-prod",
   "base_branch": "custom-prod",
   "worktree_path": null,
-  "commit": "f4a25381b9ad6f7ede39ea60f8b990bba1da240f",
+  "commit": "01d142e94b097674c5ed7755062c942c193653c6",
   "pr_url": null,
   "subtasks": [
     "sub2api client WebSocket ingress and account-level transport controls",
-    "sub2api to local Aether direct WebSocket route-v1 transport",
+    "sub2api to Aether direct WebSocket route-v1 relay without account scheduling ownership",
     "Aether official-Codex-only native WebSocket connector with TLS fingerprint profile parity",
-    "cross-account and cross-provider scheduling, failover, reconnect migration, and generation fencing",
+    "Aether account scheduling, handshake failover, generation fencing, and post-write replay prevention",
     "bounded concurrency, usage settlement, moderation, authorization, billing, and quota enforcement",
-    "frontend administration controls and compatibility-safe extra patches",
-    "performance, race, regression, and production-readiness review"
+    "WebSocket usage observability and compatibility-safe administration controls",
+    "performance, concurrency, regression, real Codex chain, and production-readiness review"
   ],
   "children": [],
   "parent": null,
   "relatedFiles": [
+    ".trellis/tasks/07-17-codex-websocket-transport/prd.md",
+    "docs/CODEX_WEBSOCKET_LOCAL_CHAIN.md",
     "docs/CODEX_WEBSOCKET_TRANSPORT_AND_SCHEDULING_PLAN.md",
     "backend/internal/handler/openai_gateway_handler.go",
     "backend/internal/service/openai_ws_forwarder.go",
@@ -40,12 +42,15 @@
     "/opt/stacks/aether/crates/aether-codex-ws-connector/",
     "/opt/stacks/aether/crates/aether-provider-transport/src/codex_ws.rs"
   ],
-  "notes": "Code-level review and local test gates passed. Production enablement remains blocked on the documented pre-v2 drain/final v2 scheduler rebuild and readiness checks, real official credentials and TLS capture, shared-Redis multi-instance validation, real MySQL/PostgreSQL integration, staging proxy checks, and load evidence. No production deployment was performed.",
+  "notes": "2026-07-18 local Codex WebSocket chain completed. Both Vite WebSocket proxy hops, Aether route-v1 routing and authentication, Relay multi-turn terminal/control/close semantics, Aether account scheduling fences, and quota concurrency were verified. Three real codex-cli requests through http://localhost:7301/v1 returned WS_LIVE_1, WS_LIVE_2, and WS_LIVE_3 without HTTPS fallback, 1011, relay, proxy, or settlement errors. Aether codex_ws passed 107/107, quota concurrency 10/10, and orchestration 117/117 with isolated Redis 8.2.0. Release workflows completed successfully. No production deployment was performed.",
   "meta": {
     "aether_branch": "custom",
-    "aether_commit": "dbf4bd82e7d91dfdfa55564da25931dfe700efe3",
-    "sub2api_commit": "f4a25381b9ad6f7ede39ea60f8b990bba1da240f",
+    "aether_commit": "66509b5a6ab2f108d54baecc3db6938f6e4ef6aa",
+    "aether_tag": "backend-v0.7.35",
+    "sub2api_commit": "01d142e94b097674c5ed7755062c942c193653c6",
+    "sub2api_tag": "cafecode-v0.0.28",
     "design_document": "docs/CODEX_WEBSOCKET_TRANSPORT_AND_SCHEDULING_PLAN.md",
+    "local_chain_document": "docs/CODEX_WEBSOCKET_LOCAL_CHAIN.md",
     "review_goal_thread": "019f663c-b498-7571-9aa0-38925c4d957a"
   }
 }
