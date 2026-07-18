@@ -4,6 +4,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"testing"
 	"time"
@@ -39,25 +40,30 @@ func TestContentModerationHashCacheRecordAndHas(t *testing.T) {
 	require.Equal(t, int64(1), count)
 }
 
-func TestContentModerationHashCacheClaimsSideEffectsPerSubject(t *testing.T) {
+func TestContentModerationHashCacheReservesAndFinalizesSideEffectsPerSubject(t *testing.T) {
 	_, cache := newContentModerationHashCacheForTest(t)
 	ctx := context.Background()
+	const reservationTTL = time.Minute
+	const retentionTTL = time.Hour
 
-	claimed, err := cache.ClaimFlaggedInputSideEffects(ctx, "user:1001", "input-hash", time.Hour)
+	reserved, err := cache.ReserveFlaggedInputSideEffect(ctx, "user:1001", "violation", "input-hash", "token-1", reservationTTL, retentionTTL)
 	require.NoError(t, err)
-	require.True(t, claimed)
+	require.True(t, reserved)
+	finalized, err := cache.FinalizeFlaggedInputSideEffect(ctx, "user:1001", "violation", "input-hash", "token-1", retentionTTL)
+	require.NoError(t, err)
+	require.True(t, finalized)
 
-	claimed, err = cache.ClaimFlaggedInputSideEffects(ctx, "user:1001", "input-hash", time.Hour)
+	reserved, err = cache.ReserveFlaggedInputSideEffect(ctx, "user:1001", "violation", "input-hash", "token-2", reservationTTL, retentionTTL)
 	require.NoError(t, err)
-	require.False(t, claimed, "one subject must not repeat notification or violation side effects")
+	require.False(t, reserved, "one subject must not repeat finalized violation side effects")
 
-	claimed, err = cache.ClaimFlaggedInputSideEffects(ctx, "user:1002", "input-hash", time.Hour)
+	reserved, err = cache.ReserveFlaggedInputSideEffect(ctx, "user:1002", "violation", "input-hash", "token-3", reservationTTL, retentionTTL)
 	require.NoError(t, err)
-	require.True(t, claimed, "a global risk hash must not suppress a different subject")
+	require.True(t, reserved, "a global risk hash must not suppress a different subject")
 
-	claimed, err = cache.ClaimFlaggedInputSideEffects(ctx, "user:1001", "other-input-hash", time.Hour)
+	reserved, err = cache.ReserveFlaggedInputSideEffect(ctx, "user:1001", "violation", "other-input-hash", "token-4", reservationTTL, retentionTTL)
 	require.NoError(t, err)
-	require.True(t, claimed, "the same subject may own side effects for a different input")
+	require.True(t, reserved, "the same subject may own side effects for a different input")
 }
 
 func TestContentModerationHashCacheSideEffectClaimIsAtomic(t *testing.T) {
@@ -71,12 +77,13 @@ func TestContentModerationHashCacheSideEffectClaimIsAtomic(t *testing.T) {
 	}
 	results := make(chan claimResult, attempts)
 	var wg sync.WaitGroup
-	for range attempts {
+	for index := range attempts {
+		index := index
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			claimed, err := cache.ClaimFlaggedInputSideEffects(ctx, "user:1001", "input-hash", time.Hour)
-			results <- claimResult{claimed: claimed, err: err}
+			reserved, err := cache.ReserveFlaggedInputSideEffect(ctx, "user:1001", "violation", "input-hash", fmt.Sprintf("token-%d", index), time.Minute, time.Hour)
+			results <- claimResult{claimed: reserved, err: err}
 		}()
 	}
 	wg.Wait()
@@ -92,22 +99,74 @@ func TestContentModerationHashCacheSideEffectClaimIsAtomic(t *testing.T) {
 	require.Equal(t, 1, claimedCount)
 }
 
+func TestContentModerationHashCacheSideEffectReservationOwnershipAndRelease(t *testing.T) {
+	_, cache := newContentModerationHashCacheForTest(t)
+	ctx := context.Background()
+
+	reserved, err := cache.ReserveFlaggedInputSideEffect(ctx, "user:1001", "violation_email", "input-hash", "owner", time.Minute, time.Hour)
+	require.NoError(t, err)
+	require.True(t, reserved)
+
+	finalized, err := cache.FinalizeFlaggedInputSideEffect(ctx, "user:1001", "violation_email", "input-hash", "other", time.Hour)
+	require.NoError(t, err)
+	require.False(t, finalized, "a different worker must not finalize the reservation")
+
+	released, err := cache.ReleaseFlaggedInputSideEffect(ctx, "user:1001", "violation_email", "input-hash", "other")
+	require.NoError(t, err)
+	require.False(t, released, "a different worker must not release the reservation")
+
+	released, err = cache.ReleaseFlaggedInputSideEffect(ctx, "user:1001", "violation_email", "input-hash", "owner")
+	require.NoError(t, err)
+	require.True(t, released)
+
+	reserved, err = cache.ReserveFlaggedInputSideEffect(ctx, "user:1001", "violation_email", "input-hash", "retry", time.Minute, time.Hour)
+	require.NoError(t, err)
+	require.True(t, reserved, "releasing a failed effect must permit a retry")
+}
+
+func TestContentModerationHashCacheSideEffectTypesAreIndependent(t *testing.T) {
+	_, cache := newContentModerationHashCacheForTest(t)
+	ctx := context.Background()
+
+	for _, effectType := range []string{"violation", "violation_email", "disabled_email"} {
+		reserved, err := cache.ReserveFlaggedInputSideEffect(ctx, "user:1001", effectType, "input-hash", effectType+"-token", time.Minute, time.Hour)
+		require.NoError(t, err)
+		require.True(t, reserved, effectType)
+	}
+}
+
+func TestContentModerationHashCacheDoesNotShortenExistingSideEffectRetention(t *testing.T) {
+	mr, cache := newContentModerationHashCacheForTest(t)
+	ctx := context.Background()
+	const longRetention = 48 * time.Hour
+
+	reserved, err := cache.ReserveFlaggedInputSideEffect(ctx, "user:1001", "violation", "input-hash", "token-1", time.Minute, longRetention)
+	require.NoError(t, err)
+	require.True(t, reserved)
+	finalized, err := cache.FinalizeFlaggedInputSideEffect(ctx, "user:1001", "violation", "input-hash", "token-1", longRetention)
+	require.NoError(t, err)
+	require.True(t, finalized)
+
+	reserved, err = cache.ReserveFlaggedInputSideEffect(ctx, "user:1002", "violation", "input-hash", "token-2", time.Minute, time.Hour)
+	require.NoError(t, err)
+	require.True(t, reserved)
+	require.Greater(t, mr.TTL(contentModerationSideEffectKey("input-hash")), 47*time.Hour)
+}
+
 func TestContentModerationHashCacheExpiredSideEffectClaimCanBeReclaimed(t *testing.T) {
 	_, cache := newContentModerationHashCacheForTest(t)
 	ctx := context.Background()
-	member := contentModerationSideEffectMember("user:1001", "input-hash")
-	require.NoError(t, cache.rdb.ZAdd(ctx, contentModerationSideEffectDedupKey, redis.Z{
-		Score:  float64(time.Now().Add(-time.Hour).Unix()),
-		Member: member,
-	}).Err())
+	key := contentModerationSideEffectKey("input-hash")
+	field := contentModerationSideEffectField("user:1001", "violation")
+	require.NoError(t, cache.rdb.HSet(ctx, key, field, contentModerationSideEffectReservationValue("expired-token", time.Now().Add(-time.Hour))).Err())
 
-	claimed, err := cache.ClaimFlaggedInputSideEffects(ctx, "user:1001", "input-hash", time.Hour)
+	reserved, err := cache.ReserveFlaggedInputSideEffect(ctx, "user:1001", "violation", "input-hash", "fresh-token", time.Minute, time.Hour)
 	require.NoError(t, err)
-	require.True(t, claimed)
+	require.True(t, reserved)
 
-	expiresAt, err := cache.rdb.ZScore(ctx, contentModerationSideEffectDedupKey, member).Result()
+	value, err := cache.rdb.HGet(ctx, key, field).Result()
 	require.NoError(t, err)
-	require.Greater(t, int64(expiresAt), time.Now().Unix())
+	require.Contains(t, value, "r:fresh-token:")
 }
 
 // expireAt back-dates a member's score. Entries expire against the wall clock in
@@ -168,15 +227,18 @@ func TestContentModerationHashCacheDeleteAndClear(t *testing.T) {
 	ctx := context.Background()
 
 	require.NoError(t, cache.RecordFlaggedInputHash(ctx, "abc", time.Hour))
-	claimed, err := cache.ClaimFlaggedInputSideEffects(ctx, "user:1001", "abc", time.Hour)
+	reserved, err := cache.ReserveFlaggedInputSideEffect(ctx, "user:1001", "violation", "abc", "token-1", time.Minute, time.Hour)
 	require.NoError(t, err)
-	require.True(t, claimed)
+	require.True(t, reserved)
+	finalized, err := cache.FinalizeFlaggedInputSideEffect(ctx, "user:1001", "violation", "abc", "token-1", time.Hour)
+	require.NoError(t, err)
+	require.True(t, finalized)
 	deleted, err := cache.DeleteFlaggedInputHash(ctx, "abc")
 	require.NoError(t, err)
 	require.True(t, deleted)
-	claimed, err = cache.ClaimFlaggedInputSideEffects(ctx, "user:1001", "abc", time.Hour)
+	reserved, err = cache.ReserveFlaggedInputSideEffect(ctx, "user:1001", "violation", "abc", "token-2", time.Minute, time.Hour)
 	require.NoError(t, err)
-	require.True(t, claimed, "deleting a false-positive hash must also reset its subject claims")
+	require.True(t, reserved, "deleting a false-positive hash must also reset its subject claims")
 
 	deleted, err = cache.DeleteFlaggedInputHash(ctx, "abc")
 	require.NoError(t, err)
@@ -184,15 +246,20 @@ func TestContentModerationHashCacheDeleteAndClear(t *testing.T) {
 
 	require.NoError(t, cache.RecordFlaggedInputHash(ctx, "one", time.Hour))
 	require.NoError(t, cache.RecordFlaggedInputHash(ctx, "two", time.Hour))
-	claimed, err = cache.ClaimFlaggedInputSideEffects(ctx, "user:1001", "one", time.Hour)
+	reserved, err = cache.ReserveFlaggedInputSideEffect(ctx, "user:1001", "violation", "one", "token-3", time.Minute, time.Hour)
 	require.NoError(t, err)
-	require.True(t, claimed)
+	require.True(t, reserved)
+	finalized, err = cache.FinalizeFlaggedInputSideEffect(ctx, "user:1001", "violation", "one", "token-3", time.Hour)
+	require.NoError(t, err)
+	require.True(t, finalized)
 	require.NoError(t, mr.Set(contentModerationLegacyFlaggedHashKey, "legacy"))
+	require.NoError(t, mr.Set(contentModerationLegacySideEffectDedupKey, "legacy-side-effect"))
 
 	cleared, err := cache.ClearFlaggedInputHashes(ctx)
 	require.NoError(t, err)
 	require.Equal(t, int64(2), cleared)
 	require.False(t, mr.Exists(contentModerationFlaggedHashKey))
-	require.False(t, mr.Exists(contentModerationSideEffectDedupKey))
+	require.False(t, mr.Exists(contentModerationSideEffectKey("one")))
+	require.False(t, mr.Exists(contentModerationLegacySideEffectDedupKey))
 	require.False(t, mr.Exists(contentModerationLegacyFlaggedHashKey), "clearing also drops the pre-TTL key")
 }

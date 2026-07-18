@@ -17,16 +17,62 @@ const (
 	// Flagged hashes live in a sorted set scored by expiry unix seconds. The
 	// legacy key held the same members in a plain set with no expiry, so it is
 	// a different Redis type and can only be dropped, never read.
-	contentModerationFlaggedHashKey          = "content_moderation:flagged_hashes:v2"
-	contentModerationSideEffectDedupKey      = "content_moderation:side_effect_dedup:v1"
-	contentModerationLegacyFlaggedHashKey    = "content_moderation:flagged_hashes"
-	contentModerationSideEffectScanBatchSize = 256
+	contentModerationFlaggedHashKey           = "content_moderation:flagged_hashes:v2"
+	contentModerationSideEffectDedupKeyPrefix = "content_moderation:side_effect_dedup:v2:"
+	contentModerationLegacySideEffectDedupKey = "content_moderation:side_effect_dedup:v1"
+	contentModerationLegacyFlaggedHashKey     = "content_moderation:flagged_hashes"
 )
 
-var claimContentModerationSideEffectScript = redis.NewScript(`
-redis.call('ZREMRANGEBYSCORE', KEYS[1], '-inf', ARGV[1])
-return redis.call('ZADD', KEYS[1], 'NX', ARGV[2], ARGV[3])
+var (
+	reserveContentModerationSideEffectScript = redis.NewScript(`
+local current = redis.call('HGET', KEYS[1], ARGV[1])
+if current then
+  local expires_at = tonumber(string.match(current, ':(%d+)$'))
+  if expires_at and expires_at > tonumber(ARGV[2]) then
+    return 0
+  end
+end
+redis.call('HSET', KEYS[1], ARGV[1], ARGV[3])
+local current_ttl = redis.call('PTTL', KEYS[1])
+if current_ttl < tonumber(ARGV[4]) then
+  redis.call('PEXPIRE', KEYS[1], ARGV[4])
+end
+return 1
 `)
+	finalizeContentModerationSideEffectScript = redis.NewScript(`
+local current = redis.call('HGET', KEYS[1], ARGV[1])
+if not current or string.sub(current, 1, string.len(ARGV[2])) ~= ARGV[2] then
+  return 0
+end
+redis.call('HSET', KEYS[1], ARGV[1], ARGV[3])
+local current_ttl = redis.call('PTTL', KEYS[1])
+if current_ttl < tonumber(ARGV[4]) then
+  redis.call('PEXPIRE', KEYS[1], ARGV[4])
+end
+return 1
+`)
+	releaseContentModerationSideEffectScript = redis.NewScript(`
+local current = redis.call('HGET', KEYS[1], ARGV[1])
+if not current or string.sub(current, 1, string.len(ARGV[2])) ~= ARGV[2] then
+  return 0
+end
+return redis.call('HDEL', KEYS[1], ARGV[1])
+`)
+	deleteContentModerationHashScript = redis.NewScript(`
+local deleted = redis.call('ZREM', KEYS[1], ARGV[1])
+redis.call('DEL', KEYS[2])
+return deleted
+`)
+	clearContentModerationHashesScript = redis.NewScript(`
+local members = redis.call('ZRANGE', KEYS[1], 0, -1)
+for _, member in ipairs(members) do
+  redis.call('DEL', ARGV[1] .. member)
+end
+local count = redis.call('ZCARD', KEYS[1])
+redis.call('DEL', KEYS[1], KEYS[2], KEYS[3])
+return count
+`)
+)
 
 type contentModerationHashCache struct {
 	rdb *redis.Client
@@ -67,31 +113,78 @@ func (c *contentModerationHashCache) HasFlaggedInputHash(ctx context.Context, in
 	return int64(expiresAt) > time.Now().Unix(), nil
 }
 
-// ClaimFlaggedInputSideEffects atomically claims the notification and violation
-// side effects for one authenticated subject and one globally flagged input.
-// The global input hash remains shared so known-bad content can still skip the
-// moderation API, while the subject-scoped claim prevents one user from
-// suppressing another user's notification and violation count.
-func (c *contentModerationHashCache) ClaimFlaggedInputSideEffects(ctx context.Context, subjectKey string, inputHash string, ttl time.Duration) (bool, error) {
+// ReserveFlaggedInputSideEffect creates a short-lived, token-owned reservation.
+// Callers must finalize it after the effect succeeds or release it on failure.
+func (c *contentModerationHashCache) ReserveFlaggedInputSideEffect(ctx context.Context, subjectKey string, effectType string, inputHash string, token string, reservationTTL time.Duration, retentionTTL time.Duration) (bool, error) {
 	subjectKey = strings.TrimSpace(subjectKey)
+	effectType = strings.TrimSpace(effectType)
 	inputHash = strings.TrimSpace(inputHash)
-	if c == nil || c.rdb == nil || subjectKey == "" || inputHash == "" || ttl <= 0 {
+	token = strings.TrimSpace(token)
+	if c == nil || c.rdb == nil || subjectKey == "" || effectType == "" || inputHash == "" || token == "" || reservationTTL <= 0 || retentionTTL <= 0 {
 		return false, nil
 	}
 
 	now := time.Now()
-	claimed, err := claimContentModerationSideEffectScript.Run(
+	reservedValue := contentModerationSideEffectReservationValue(token, now.Add(reservationTTL))
+	keyTTL := max(retentionTTL, reservationTTL)
+	reserved, err := reserveContentModerationSideEffectScript.Run(
 		ctx,
 		c.rdb,
-		[]string{contentModerationSideEffectDedupKey},
-		now.Unix(),
-		now.Add(ttl).Unix(),
-		contentModerationSideEffectMember(subjectKey, inputHash),
+		[]string{contentModerationSideEffectKey(inputHash)},
+		contentModerationSideEffectField(subjectKey, effectType),
+		now.UnixMilli(),
+		reservedValue,
+		keyTTL.Milliseconds(),
 	).Int64()
 	if err != nil {
 		return false, err
 	}
-	return claimed > 0, nil
+	return reserved > 0, nil
+}
+
+func (c *contentModerationHashCache) FinalizeFlaggedInputSideEffect(ctx context.Context, subjectKey string, effectType string, inputHash string, token string, retentionTTL time.Duration) (bool, error) {
+	subjectKey = strings.TrimSpace(subjectKey)
+	effectType = strings.TrimSpace(effectType)
+	inputHash = strings.TrimSpace(inputHash)
+	token = strings.TrimSpace(token)
+	if c == nil || c.rdb == nil || subjectKey == "" || effectType == "" || inputHash == "" || token == "" || retentionTTL <= 0 {
+		return false, nil
+	}
+	now := time.Now()
+	finalized, err := finalizeContentModerationSideEffectScript.Run(
+		ctx,
+		c.rdb,
+		[]string{contentModerationSideEffectKey(inputHash)},
+		contentModerationSideEffectField(subjectKey, effectType),
+		contentModerationSideEffectReservationValue(token, time.Time{}),
+		contentModerationSideEffectFinalValue(now.Add(retentionTTL)),
+		retentionTTL.Milliseconds(),
+	).Int64()
+	if err != nil {
+		return false, err
+	}
+	return finalized > 0, nil
+}
+
+func (c *contentModerationHashCache) ReleaseFlaggedInputSideEffect(ctx context.Context, subjectKey string, effectType string, inputHash string, token string) (bool, error) {
+	subjectKey = strings.TrimSpace(subjectKey)
+	effectType = strings.TrimSpace(effectType)
+	inputHash = strings.TrimSpace(inputHash)
+	token = strings.TrimSpace(token)
+	if c == nil || c.rdb == nil || subjectKey == "" || effectType == "" || inputHash == "" || token == "" {
+		return false, nil
+	}
+	released, err := releaseContentModerationSideEffectScript.Run(
+		ctx,
+		c.rdb,
+		[]string{contentModerationSideEffectKey(inputHash)},
+		contentModerationSideEffectField(subjectKey, effectType),
+		contentModerationSideEffectReservationValue(token, time.Time{}),
+	).Int64()
+	if err != nil {
+		return false, err
+	}
+	return released > 0, nil
 }
 
 func (c *contentModerationHashCache) DeleteFlaggedInputHash(ctx context.Context, inputHash string) (bool, error) {
@@ -99,11 +192,13 @@ func (c *contentModerationHashCache) DeleteFlaggedInputHash(ctx context.Context,
 	if c == nil || c.rdb == nil || inputHash == "" {
 		return false, nil
 	}
-	deleted, err := c.rdb.ZRem(ctx, contentModerationFlaggedHashKey, inputHash).Result()
+	deleted, err := deleteContentModerationHashScript.Run(
+		ctx,
+		c.rdb,
+		[]string{contentModerationFlaggedHashKey, contentModerationSideEffectKey(inputHash)},
+		inputHash,
+	).Int64()
 	if err != nil {
-		return false, err
-	}
-	if err := c.deleteSideEffectClaimsForInputHash(ctx, inputHash); err != nil {
 		return false, err
 	}
 	return deleted > 0, nil
@@ -113,16 +208,17 @@ func (c *contentModerationHashCache) ClearFlaggedInputHashes(ctx context.Context
 	if c == nil || c.rdb == nil {
 		return 0, nil
 	}
-	deleted, err := c.rdb.ZCard(ctx, contentModerationFlaggedHashKey).Result()
-	if err != nil {
-		return 0, err
-	}
-	if err := c.rdb.Del(
+	deleted, err := clearContentModerationHashesScript.Run(
 		ctx,
-		contentModerationFlaggedHashKey,
-		contentModerationSideEffectDedupKey,
-		contentModerationLegacyFlaggedHashKey,
-	).Err(); err != nil {
+		c.rdb,
+		[]string{
+			contentModerationFlaggedHashKey,
+			contentModerationLegacySideEffectDedupKey,
+			contentModerationLegacyFlaggedHashKey,
+		},
+		contentModerationSideEffectDedupKeyPrefix,
+	).Int64()
+	if err != nil {
 		return 0, err
 	}
 	return deleted, nil
@@ -135,40 +231,22 @@ func (c *contentModerationHashCache) CountFlaggedInputHashes(ctx context.Context
 	return c.rdb.ZCount(ctx, contentModerationFlaggedHashKey, "("+strconv.FormatInt(time.Now().Unix(), 10), "+inf").Result()
 }
 
-func contentModerationSideEffectMember(subjectKey string, inputHash string) string {
-	subjectDigest := sha256.Sum256([]byte(strings.TrimSpace(subjectKey)))
-	return strings.TrimSpace(inputHash) + ":" + hex.EncodeToString(subjectDigest[:])
+func contentModerationSideEffectKey(inputHash string) string {
+	return contentModerationSideEffectDedupKeyPrefix + strings.TrimSpace(inputHash)
 }
 
-func (c *contentModerationHashCache) deleteSideEffectClaimsForInputHash(ctx context.Context, inputHash string) error {
-	if c == nil || c.rdb == nil {
-		return nil
+func contentModerationSideEffectField(subjectKey string, effectType string) string {
+	digest := sha256.Sum256([]byte(strings.TrimSpace(subjectKey) + "\x00" + strings.TrimSpace(effectType)))
+	return hex.EncodeToString(digest[:])
+}
+
+func contentModerationSideEffectReservationValue(token string, expiresAt time.Time) string {
+	if expiresAt.IsZero() {
+		return "r:" + strings.TrimSpace(token) + ":"
 	}
-	pattern := strings.TrimSpace(inputHash) + ":*"
-	var cursor uint64
-	for {
-		items, next, err := c.rdb.ZScan(
-			ctx,
-			contentModerationSideEffectDedupKey,
-			cursor,
-			pattern,
-			contentModerationSideEffectScanBatchSize,
-		).Result()
-		if err != nil {
-			return err
-		}
-		members := make([]any, 0, (len(items)+1)/2)
-		for index := 0; index < len(items); index += 2 {
-			members = append(members, items[index])
-		}
-		if len(members) > 0 {
-			if err := c.rdb.ZRem(ctx, contentModerationSideEffectDedupKey, members...).Err(); err != nil {
-				return err
-			}
-		}
-		cursor = next
-		if cursor == 0 {
-			return nil
-		}
-	}
+	return "r:" + strings.TrimSpace(token) + ":" + strconv.FormatInt(expiresAt.UnixMilli(), 10)
+}
+
+func contentModerationSideEffectFinalValue(expiresAt time.Time) string {
+	return "f:" + strconv.FormatInt(expiresAt.UnixMilli(), 10)
 }

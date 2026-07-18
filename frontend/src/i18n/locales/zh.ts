@@ -2822,7 +2822,7 @@ export default {
       recordNonHits: '记录未命中输入',
       recordNonHitsHint: '开启后会记录抽样但未命中的请求摘要，摘要会先脱敏再入库。',
       preHashCheck: '启用前置哈希比对',
-      preHashCheckHint: '命中过的输入哈希（含关键词命中与审核 API 命中）会全局复用风险判定；每个用户首次命中仍独立通知并累计违规，同一用户重复相同输入不再发信或重复计数。拦截模式下还会跳过审核 API 调用。',
+      preHashCheckHint: '命中过的完整输入哈希会全局复用风险判定；前置哈希命中只拦截或跳过审核 API，不发邮件、不累计封禁次数。关键词仍会先由本地词库确认，同一用户重复相同完整输入不再发信或重复计数。',
       flaggedHashCount: '当前哈希集合数量：{count} 个',
       flaggedHashHint: '哈希按命中记录保留天数存入 Redis；可粘贴完整 64 位哈希删除误拦截项，或一键清空全部风险哈希。',
       flaggedHashPlaceholder: '粘贴完整 64 位输入哈希',

@@ -2832,7 +2832,7 @@ export default {
       recordNonHits: 'Record Non-Hits',
       recordNonHitsHint: 'When enabled, sampled non-hit request summaries are redacted before storage.',
       preHashCheck: 'Enable Pre-Hash Check',
-      preHashCheckHint: 'Risk verdicts for prior keyword and moderation API hits are reused globally. Each user is still notified and counted on their first hit; identical repeats by that user send no further email or violation count. Pre-block mode also skips the moderation API call.',
+      preHashCheckHint: 'Full input hashes from prior hits are reused globally. A pre-hash hit only blocks or skips the moderation API; it sends no email and adds no violation. Keywords are still confirmed locally first, and an identical full input is notified and counted only once per user.',
       flaggedHashCount: 'Current hash collection size: {count}',
       flaggedHashHint: 'Hashes remain in Redis for the configured hit-retention period; paste a full 64-character hash to remove a false block, or clear all stored hashes.',
       flaggedHashPlaceholder: 'Paste full 64-character input hash',

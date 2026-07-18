@@ -26,6 +26,7 @@ import (
 	"github.com/Karrecy/sensitive-go/dict"
 	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
+	"github.com/google/uuid"
 	"golang.org/x/text/unicode/norm"
 )
 
@@ -99,8 +100,14 @@ const (
 	contentModerationCleanupTimeout  = 30 * time.Minute
 	contentModerationCleanupDelay    = 5 * time.Minute
 
-	contentModerationRuntimeRefreshInterval = 30 * time.Second
-	contentModerationRuntimeRefreshTimeout  = 5 * time.Second
+	contentModerationRuntimeRefreshInterval    = 30 * time.Second
+	contentModerationRuntimeRefreshTimeout     = 5 * time.Second
+	contentModerationSideEffectReservationTTL  = 5 * time.Minute
+	contentModerationLocalSideEffectMaxEntries = 100000
+
+	contentModerationEffectViolation     = "violation"
+	contentModerationEffectViolationMail = "violation_email"
+	contentModerationEffectDisabledMail  = "disabled_email"
 )
 
 var contentModerationCategoryOrder = []string{
@@ -602,34 +609,36 @@ type ContentModerationDecision struct {
 }
 
 type ContentModerationLog struct {
-	ID                int64              `json:"id"`
-	RequestID         string             `json:"request_id"`
-	UserID            *int64             `json:"user_id,omitempty"`
-	UserEmail         string             `json:"user_email"`
-	APIKeyID          *int64             `json:"api_key_id,omitempty"`
-	APIKeyName        string             `json:"api_key_name"`
-	GroupID           *int64             `json:"group_id,omitempty"`
-	GroupName         string             `json:"group_name"`
-	Endpoint          string             `json:"endpoint"`
-	Provider          string             `json:"provider"`
-	Model             string             `json:"model"`
-	Mode              string             `json:"mode"`
-	Action            string             `json:"action"`
-	Flagged           bool               `json:"flagged"`
-	HighestCategory   string             `json:"highest_category"`
-	HighestScore      float64            `json:"highest_score"`
-	CategoryScores    map[string]float64 `json:"category_scores"`
-	ThresholdSnapshot map[string]float64 `json:"threshold_snapshot"`
-	InputExcerpt      string             `json:"input_excerpt"`
-	MatchedKeyword    string             `json:"matched_keyword"`
-	UpstreamLatencyMS *int               `json:"upstream_latency_ms,omitempty"`
-	Error             string             `json:"error"`
-	ViolationCount    int                `json:"violation_count"`
-	AutoBanned        bool               `json:"auto_banned"`
-	EmailSent         bool               `json:"email_sent"`
-	UserStatus        string             `json:"user_status"`
-	QueueDelayMS      *int               `json:"queue_delay_ms,omitempty"`
-	CreatedAt         time.Time          `json:"created_at"`
+	ID                 int64              `json:"id"`
+	RequestID          string             `json:"request_id"`
+	UserID             *int64             `json:"user_id,omitempty"`
+	UserEmail          string             `json:"user_email"`
+	APIKeyID           *int64             `json:"api_key_id,omitempty"`
+	APIKeyName         string             `json:"api_key_name"`
+	GroupID            *int64             `json:"group_id,omitempty"`
+	GroupName          string             `json:"group_name"`
+	Endpoint           string             `json:"endpoint"`
+	Provider           string             `json:"provider"`
+	Model              string             `json:"model"`
+	Mode               string             `json:"mode"`
+	Action             string             `json:"action"`
+	Flagged            bool               `json:"flagged"`
+	HighestCategory    string             `json:"highest_category"`
+	HighestScore       float64            `json:"highest_score"`
+	CategoryScores     map[string]float64 `json:"category_scores"`
+	ThresholdSnapshot  map[string]float64 `json:"threshold_snapshot"`
+	InputExcerpt       string             `json:"input_excerpt"`
+	InputHash          string             `json:"input_hash,omitempty"`
+	MatchedKeyword     string             `json:"matched_keyword"`
+	UpstreamLatencyMS  *int               `json:"upstream_latency_ms,omitempty"`
+	Error              string             `json:"error"`
+	ViolationCount     int                `json:"violation_count"`
+	SideEffectsApplied bool               `json:"side_effects_applied"`
+	AutoBanned         bool               `json:"auto_banned"`
+	EmailSent          bool               `json:"email_sent"`
+	UserStatus         string             `json:"user_status"`
+	QueueDelayMS       *int               `json:"queue_delay_ms,omitempty"`
+	CreatedAt          time.Time          `json:"created_at"`
 }
 
 type ContentModerationLogFilter struct {
@@ -704,7 +713,9 @@ type ContentModerationRepository interface {
 type ContentModerationHashCache interface {
 	RecordFlaggedInputHash(ctx context.Context, inputHash string, ttl time.Duration) error
 	HasFlaggedInputHash(ctx context.Context, inputHash string) (bool, error)
-	ClaimFlaggedInputSideEffects(ctx context.Context, subjectKey string, inputHash string, ttl time.Duration) (bool, error)
+	ReserveFlaggedInputSideEffect(ctx context.Context, subjectKey string, effectType string, inputHash string, token string, reservationTTL time.Duration, retentionTTL time.Duration) (bool, error)
+	FinalizeFlaggedInputSideEffect(ctx context.Context, subjectKey string, effectType string, inputHash string, token string, retentionTTL time.Duration) (bool, error)
+	ReleaseFlaggedInputSideEffect(ctx context.Context, subjectKey string, effectType string, inputHash string, token string) (bool, error)
 	DeleteFlaggedInputHash(ctx context.Context, inputHash string) (bool, error)
 	ClearFlaggedInputHashes(ctx context.Context) (int64, error)
 	CountFlaggedInputHashes(ctx context.Context) (int64, error)
@@ -743,6 +754,22 @@ type ContentModerationService struct {
 	builtInFilterErr         error
 	runtimeConfigMu          sync.Mutex
 	runtimeConfig            atomic.Pointer[contentModerationRuntimeConfig]
+	sideEffectMu             sync.Mutex
+	sideEffectLocal          map[string]contentModerationLocalSideEffect
+}
+
+type contentModerationLocalSideEffect struct {
+	token     string
+	finalized bool
+	expiresAt time.Time
+}
+
+type contentModerationSideEffectReservation struct {
+	subjectKey    string
+	effectType    string
+	inputHash     string
+	token         string
+	redisReserved bool
 }
 
 type contentModerationRuntimeConfig struct {
@@ -799,6 +826,7 @@ func NewContentModerationService(
 		workerCount:          maxContentModerationWorkerCount,
 		asyncQueue:           make(chan contentModerationTask, maxContentModerationQueueSize),
 		keyHealth:            make(map[string]*contentModerationKeyHealth),
+		sideEffectLocal:      make(map[string]contentModerationLocalSideEffect),
 	}
 	if settingRepo != nil && repo != nil {
 		warmCtx, warmCancel := context.WithTimeout(context.Background(), contentModerationRuntimeRefreshTimeout)
@@ -1254,10 +1282,10 @@ func (s *ContentModerationService) check(ctx context.Context, input ContentModer
 		}
 	}
 	if alreadyFlagged {
-		// Observe mode audits without blocking, so a known-bad input only skips
-		// the upstream call here — turning it away would defeat the mode. It still
-		// records a flagged observation so each authenticated subject receives its
-		// own first-hit notification and violation count.
+		// A cached hash is only inherited evidence: it can skip the upstream audit
+		// or block the request, but must not send mail or increment violations.
+		// Keyword matching runs above this branch, so a locally confirmed keyword
+		// hit still owns its per-subject side effects.
 		if cfg.Mode != ContentModerationModePreBlock {
 			slog.Info("content_moderation.hash_skip_audit",
 				"user_id", input.UserID,
@@ -1269,7 +1297,7 @@ func (s *ContentModerationService) check(ctx context.Context, input ContentModer
 				"input_hash", hashText)
 			scores := map[string]float64{"hash": 1.0}
 			log := s.buildLog(input, cfg, ContentModerationActionAllow, true, "hash", 1.0, scores, content.ExcerptText(), nil, nil, "")
-			s.enqueueRecord(input, cfg, log, hashText, true)
+			s.enqueueRecord(input, cfg, log, hashText, false)
 			return allow, nil
 		}
 		s.recordPreBlockSyncMetric(0, ContentModerationActionHashBlock)
@@ -1286,7 +1314,7 @@ func (s *ContentModerationService) check(ctx context.Context, input ContentModer
 		}
 		scores := map[string]float64{"hash": 1.0}
 		log := s.buildLog(input, cfg, ContentModerationActionHashBlock, true, "hash", 1.0, scores, content.ExcerptText(), nil, nil, "")
-		s.enqueueRecord(input, cfg, log, hashText, true)
+		s.enqueueRecord(input, cfg, log, hashText, false)
 		return &ContentModerationDecision{
 			Allowed:    false,
 			Blocked:    true,
@@ -1652,6 +1680,7 @@ func (s *ContentModerationService) DeleteFlaggedInputHash(ctx context.Context, i
 	if err != nil {
 		return nil, fmt.Errorf("delete content moderation flagged hash: %w", err)
 	}
+	s.clearLocalSideEffectsForInputHash(inputHash)
 	return &ContentModerationDeleteHashResult{
 		InputHash: inputHash,
 		Deleted:   deleted,
@@ -1666,6 +1695,9 @@ func (s *ContentModerationService) ClearFlaggedInputHashes(ctx context.Context) 
 	if err != nil {
 		return nil, fmt.Errorf("clear content moderation flagged hashes: %w", err)
 	}
+	s.sideEffectMu.Lock()
+	s.sideEffectLocal = make(map[string]contentModerationLocalSideEffect)
+	s.sideEffectMu.Unlock()
 	return &ContentModerationClearHashesResult{Deleted: deleted}, nil
 }
 
@@ -2056,41 +2088,157 @@ func (s *ContentModerationService) persistContentModerationLog(ctx context.Conte
 	if s == nil || log == nil {
 		return
 	}
+	log.InputHash = strings.TrimSpace(inputHash)
+	retentionTTL := contentModerationHitRetentionTTL(cfg)
+
 	autoBanJustApplied := false
-	if applySideEffects && s.claimFlaggedInputSideEffects(ctx, cfg, log, inputHash) {
+	violationReservation, applyViolation := s.reserveFlaggedInputSideEffect(ctx, cfg, log, inputHash, contentModerationEffectViolation, applySideEffects && log.UserID != nil && *log.UserID > 0)
+	if applyViolation {
 		autoBanJustApplied = s.applyFlaggedAccountSideEffects(ctx, cfg, log)
-		s.sendFlaggedNotificationSideEffects(ctx, cfg, log, autoBanJustApplied)
+		log.SideEffectsApplied = log.ViolationCount > 0
 	}
+
+	if applySideEffects && cfg != nil && cfg.EmailOnHit && s.emailService != nil && strings.TrimSpace(log.UserEmail) != "" {
+		mailReservation, sendMail := s.reserveFlaggedInputSideEffect(ctx, cfg, log, inputHash, contentModerationEffectViolationMail, true)
+		if sendMail {
+			if err := s.sendViolationEmail(ctx, cfg, log); err != nil {
+				slog.Warn("content_moderation.email_failed", "user_id", contentModerationEmailUserID(log), "recipient_hash", notificationEmailHash(log.UserEmail), "error", err)
+				s.releaseFlaggedInputSideEffect(ctx, mailReservation)
+			} else {
+				log.EmailSent = true
+				s.finalizeFlaggedInputSideEffect(ctx, mailReservation, retentionTTL)
+			}
+		}
+	}
+
+	if autoBanJustApplied && s.emailService != nil && strings.TrimSpace(log.UserEmail) != "" {
+		disabledReservation, sendDisabledMail := s.reserveFlaggedInputSideEffect(ctx, cfg, log, inputHash, contentModerationEffectDisabledMail, true)
+		if sendDisabledMail {
+			if err := s.sendAccountDisabledEmail(ctx, cfg, log); err != nil {
+				slog.Warn("content_moderation.ban_email_failed", "user_id", contentModerationEmailUserID(log), "recipient_hash", notificationEmailHash(log.UserEmail), "error", err)
+				s.releaseFlaggedInputSideEffect(ctx, disabledReservation)
+			} else {
+				log.EmailSent = true
+				s.finalizeFlaggedInputSideEffect(ctx, disabledReservation, retentionTTL)
+			}
+		}
+	}
+
+	persisted := true
 	if s.repo != nil {
 		if err := s.repo.CreateLog(ctx, log); err != nil {
 			slog.Warn("content_moderation.create_log_failed", "user_id", contentModerationEmailUserID(log), "endpoint", log.Endpoint, "action", log.Action, "error", err)
-			return
+			persisted = false
+		}
+	}
+	if violationReservation != nil {
+		if persisted && log.SideEffectsApplied {
+			s.finalizeFlaggedInputSideEffect(ctx, violationReservation, retentionTTL)
+		} else {
+			s.releaseFlaggedInputSideEffect(ctx, violationReservation)
 		}
 	}
 }
 
-func (s *ContentModerationService) claimFlaggedInputSideEffects(ctx context.Context, cfg *ContentModerationConfig, log *ContentModerationLog, inputHash string) bool {
-	if s == nil || cfg == nil || log == nil || !log.Flagged || !cfg.PreHashCheckEnabled || s.hashCache == nil {
-		return true
+func (s *ContentModerationService) reserveFlaggedInputSideEffect(ctx context.Context, cfg *ContentModerationConfig, log *ContentModerationLog, inputHash string, effectType string, eligible bool) (*contentModerationSideEffectReservation, bool) {
+	if !eligible || s == nil || log == nil || !log.Flagged {
+		return nil, false
 	}
 	subjectKey := contentModerationSideEffectSubjectKey(log)
 	if subjectKey == "" || strings.TrimSpace(inputHash) == "" {
-		return true
+		return nil, true
 	}
-	ttl := time.Duration(cfg.HitRetentionDays) * 24 * time.Hour
-	if ttl <= 0 {
-		ttl = defaultContentModerationHitRetentionDays * 24 * time.Hour
+	token := uuid.NewString()
+	localKey := contentModerationLocalSideEffectKey(subjectKey, effectType, inputHash)
+	if !s.reserveLocalSideEffect(localKey, token, contentModerationSideEffectReservationTTL) {
+		return nil, false
 	}
-	claimed, err := s.hashCache.ClaimFlaggedInputSideEffects(ctx, subjectKey, inputHash, ttl)
+	reservation := &contentModerationSideEffectReservation{
+		subjectKey: subjectKey,
+		effectType: effectType,
+		inputHash:  strings.TrimSpace(inputHash),
+		token:      token,
+	}
+	if s.hashCache == nil {
+		return reservation, true
+	}
+	reserved, err := s.hashCache.ReserveFlaggedInputSideEffect(
+		ctx,
+		subjectKey,
+		effectType,
+		inputHash,
+		token,
+		contentModerationSideEffectReservationTTL,
+		contentModerationHitRetentionTTL(cfg),
+	)
 	if err != nil {
-		slog.Warn("content_moderation.side_effect_claim_failed",
+		slog.Warn("content_moderation.side_effect_reserve_failed_using_local_fallback",
 			"user_id", contentModerationEmailUserID(log),
 			"api_key_id", contentModerationLogAPIKeyID(log),
+			"effect_type", effectType,
 			"action", log.Action,
 			"error", err)
-		return true
+		return reservation, true
 	}
-	return claimed
+	if !reserved {
+		s.releaseLocalSideEffect(localKey, token)
+		return nil, false
+	}
+	reservation.redisReserved = true
+	return reservation, true
+}
+
+func (s *ContentModerationService) finalizeFlaggedInputSideEffect(ctx context.Context, reservation *contentModerationSideEffectReservation, retentionTTL time.Duration) {
+	if s == nil || reservation == nil {
+		return
+	}
+	localKey := contentModerationLocalSideEffectKey(reservation.subjectKey, reservation.effectType, reservation.inputHash)
+	if !reservation.redisReserved || s.hashCache == nil {
+		s.finalizeLocalSideEffect(localKey, reservation.token, retentionTTL)
+		return
+	}
+	finalized, err := s.hashCache.FinalizeFlaggedInputSideEffect(ctx, reservation.subjectKey, reservation.effectType, reservation.inputHash, reservation.token, retentionTTL)
+	if err != nil {
+		// Redis was unavailable during finalization. Retain the process-local
+		// marker so one failing dependency cannot recreate an email storm.
+		s.finalizeLocalSideEffect(localKey, reservation.token, retentionTTL)
+		slog.Warn("content_moderation.side_effect_finalize_failed",
+			"effect_type", reservation.effectType,
+			"finalized", finalized,
+			"error", err)
+		return
+	}
+	if !finalized {
+		// The reservation may have been removed by an administrator deleting or
+		// clearing the hash. Do not resurrect it in the local fallback cache.
+		s.releaseLocalSideEffect(localKey, reservation.token)
+		slog.Warn("content_moderation.side_effect_finalize_lost_reservation",
+			"effect_type", reservation.effectType)
+		return
+	}
+	s.finalizeLocalSideEffect(localKey, reservation.token, retentionTTL)
+}
+
+func (s *ContentModerationService) releaseFlaggedInputSideEffect(ctx context.Context, reservation *contentModerationSideEffectReservation) {
+	if s == nil || reservation == nil {
+		return
+	}
+	s.releaseLocalSideEffect(contentModerationLocalSideEffectKey(reservation.subjectKey, reservation.effectType, reservation.inputHash), reservation.token)
+	if !reservation.redisReserved || s.hashCache == nil {
+		return
+	}
+	released, err := s.hashCache.ReleaseFlaggedInputSideEffect(ctx, reservation.subjectKey, reservation.effectType, reservation.inputHash, reservation.token)
+	if err != nil {
+		slog.Warn("content_moderation.side_effect_release_failed", "effect_type", reservation.effectType, "released", released, "error", err)
+	}
+}
+
+func contentModerationHitRetentionTTL(cfg *ContentModerationConfig) time.Duration {
+	days := defaultContentModerationHitRetentionDays
+	if cfg != nil && cfg.HitRetentionDays > 0 {
+		days = cfg.HitRetentionDays
+	}
+	return time.Duration(days) * 24 * time.Hour
 }
 
 func contentModerationSideEffectSubjectKey(log *ContentModerationLog) string {
@@ -2156,29 +2304,88 @@ func (s *ContentModerationService) applyFlaggedAccountSideEffects(ctx context.Co
 	return autoBanJustApplied
 }
 
-func (s *ContentModerationService) sendFlaggedNotificationSideEffects(ctx context.Context, cfg *ContentModerationConfig, log *ContentModerationLog, autoBanJustApplied bool) {
-	if s == nil || cfg == nil || log == nil || !log.Flagged {
+func contentModerationLocalSideEffectKey(subjectKey string, effectType string, inputHash string) string {
+	return strings.TrimSpace(subjectKey) + "\x00" + strings.TrimSpace(effectType) + "\x00" + strings.TrimSpace(inputHash)
+}
+
+func (s *ContentModerationService) reserveLocalSideEffect(key string, token string, ttl time.Duration) bool {
+	if s == nil || key == "" || token == "" || ttl <= 0 {
+		return false
+	}
+	now := time.Now()
+	s.sideEffectMu.Lock()
+	defer s.sideEffectMu.Unlock()
+	if s.sideEffectLocal == nil {
+		s.sideEffectLocal = make(map[string]contentModerationLocalSideEffect)
+	}
+	if current, ok := s.sideEffectLocal[key]; ok && current.expiresAt.After(now) {
+		return false
+	}
+	delete(s.sideEffectLocal, key)
+	s.pruneLocalSideEffectsLocked(now)
+	s.sideEffectLocal[key] = contentModerationLocalSideEffect{token: token, expiresAt: now.Add(ttl)}
+	return true
+}
+
+func (s *ContentModerationService) finalizeLocalSideEffect(key string, token string, ttl time.Duration) {
+	if s == nil || ttl <= 0 {
 		return
 	}
-	if s.emailService == nil || strings.TrimSpace(log.UserEmail) == "" {
+	s.sideEffectMu.Lock()
+	defer s.sideEffectMu.Unlock()
+	current, ok := s.sideEffectLocal[key]
+	if !ok || current.token != token {
 		return
 	}
-	emailSent := false
-	if cfg.EmailOnHit {
-		if err := s.sendViolationEmail(ctx, cfg, log); err != nil {
-			slog.Warn("content_moderation.email_failed", "user_id", *log.UserID, "email", log.UserEmail, "error", err)
-		} else {
-			emailSent = true
+	current.finalized = true
+	current.expiresAt = time.Now().Add(ttl)
+	s.sideEffectLocal[key] = current
+}
+
+func (s *ContentModerationService) releaseLocalSideEffect(key string, token string) {
+	if s == nil {
+		return
+	}
+	s.sideEffectMu.Lock()
+	defer s.sideEffectMu.Unlock()
+	if current, ok := s.sideEffectLocal[key]; ok && current.token == token && !current.finalized {
+		delete(s.sideEffectLocal, key)
+	}
+}
+
+func (s *ContentModerationService) pruneLocalSideEffectsLocked(now time.Time) {
+	if len(s.sideEffectLocal) < contentModerationLocalSideEffectMaxEntries {
+		return
+	}
+	var oldestKey string
+	var oldestExpiry time.Time
+	for key, entry := range s.sideEffectLocal {
+		if !entry.expiresAt.After(now) {
+			delete(s.sideEffectLocal, key)
+			continue
+		}
+		if oldestKey == "" || entry.expiresAt.Before(oldestExpiry) {
+			oldestKey = key
+			oldestExpiry = entry.expiresAt
 		}
 	}
-	if autoBanJustApplied {
-		if err := s.sendAccountDisabledEmail(ctx, cfg, log); err != nil {
-			slog.Warn("content_moderation.ban_email_failed", "user_id", *log.UserID, "email", log.UserEmail, "error", err)
-		} else {
-			emailSent = true
+	if len(s.sideEffectLocal) >= contentModerationLocalSideEffectMaxEntries && oldestKey != "" {
+		delete(s.sideEffectLocal, oldestKey)
+	}
+}
+
+func (s *ContentModerationService) clearLocalSideEffectsForInputHash(inputHash string) {
+	if s == nil {
+		return
+	}
+	suffix := "\x00" + strings.TrimSpace(inputHash)
+	s.sideEffectMu.Lock()
+	defer s.sideEffectMu.Unlock()
+	for key := range s.sideEffectLocal {
+		if strings.HasSuffix(key, suffix) {
+			delete(s.sideEffectLocal, key)
 		}
 	}
-	log.EmailSent = emailSent
 }
 
 func (s *ContentModerationService) sendViolationEmail(ctx context.Context, cfg *ContentModerationConfig, log *ContentModerationLog) error {
@@ -2239,10 +2446,18 @@ func contentModerationEmailUserID(log *ContentModerationLog) int64 {
 }
 
 func contentModerationEmailSourceID(log *ContentModerationLog) string {
-	if log == nil || log.ID <= 0 {
+	if log == nil {
 		return ""
 	}
-	return fmt.Sprintf("%d", log.ID)
+	if inputHash := normalizeContentModerationHash(log.InputHash); inputHash != "" {
+		identity := contentModerationSideEffectSubjectKey(log) + "\x00" + inputHash
+		digest := sha256.Sum256([]byte(identity))
+		return "hit-" + hex.EncodeToString(digest[:16])
+	}
+	if log.ID > 0 {
+		return fmt.Sprintf("%d", log.ID)
+	}
+	return ""
 }
 
 func contentModerationEmailVariables(log *ContentModerationLog, cfg *ContentModerationConfig) map[string]string {

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -35,11 +36,14 @@ func TestContentModerationConfigIncludesCustomSourceGroup(t *testing.T) {
 }
 
 type contentModerationTestSettingRepo struct {
+	mu            sync.RWMutex
 	values        map[string]string
 	getValueCalls int
 }
 
 func (r *contentModerationTestSettingRepo) Get(ctx context.Context, key string) (*Setting, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
 	if value, ok := r.values[key]; ok {
 		return &Setting{Key: key, Value: value}, nil
 	}
@@ -47,6 +51,8 @@ func (r *contentModerationTestSettingRepo) Get(ctx context.Context, key string) 
 }
 
 func (r *contentModerationTestSettingRepo) GetValue(ctx context.Context, key string) (string, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	r.getValueCalls++
 	if value, ok := r.values[key]; ok {
 		return value, nil
@@ -98,7 +104,7 @@ func TestContentModerationRuntimeRefreshPropagatesExternalSettingChanges(t *test
 	require.False(t, initial.riskEnabled)
 	require.Equal(t, 2, settingRepo.getValueCalls)
 
-	settingRepo.values[SettingKeyRiskControlEnabled] = "true"
+	require.NoError(t, settingRepo.Set(context.Background(), SettingKeyRiskControlEnabled, "true"))
 	refreshed, err := svc.loadRuntimeConfigSnapshot(context.Background(), true)
 	require.NoError(t, err)
 	require.True(t, refreshed.riskEnabled)
@@ -209,6 +215,8 @@ func TestContentModerationCheck_FullRecordQueueDoesNotPublishKeywordDedupHash(t 
 }
 
 func (r *contentModerationTestSettingRepo) Set(ctx context.Context, key, value string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	if r.values == nil {
 		r.values = map[string]string{}
 	}
@@ -217,6 +225,8 @@ func (r *contentModerationTestSettingRepo) Set(ctx context.Context, key, value s
 }
 
 func (r *contentModerationTestSettingRepo) GetMultiple(ctx context.Context, keys []string) (map[string]string, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
 	out := map[string]string{}
 	for _, key := range keys {
 		if value, ok := r.values[key]; ok {
@@ -227,6 +237,8 @@ func (r *contentModerationTestSettingRepo) GetMultiple(ctx context.Context, keys
 }
 
 func (r *contentModerationTestSettingRepo) SetMultiple(ctx context.Context, settings map[string]string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	if r.values == nil {
 		r.values = map[string]string{}
 	}
@@ -237,6 +249,8 @@ func (r *contentModerationTestSettingRepo) SetMultiple(ctx context.Context, sett
 }
 
 func (r *contentModerationTestSettingRepo) GetAll(ctx context.Context) (map[string]string, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
 	out := make(map[string]string, len(r.values))
 	for key, value := range r.values {
 		out[key] = value
@@ -245,19 +259,32 @@ func (r *contentModerationTestSettingRepo) GetAll(ctx context.Context) (map[stri
 }
 
 func (r *contentModerationTestSettingRepo) Delete(ctx context.Context, key string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	delete(r.values, key)
 	return nil
 }
 
 type contentModerationTestRepo struct {
-	mu   sync.Mutex
-	logs []ContentModerationLog
+	mu            sync.Mutex
+	logs          []ContentModerationLog
+	createLogErrs []error
 }
 
 func (r *contentModerationTestRepo) CreateLog(ctx context.Context, log *ContentModerationLog) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
+	if len(r.createLogErrs) > 0 {
+		err := r.createLogErrs[0]
+		r.createLogErrs = r.createLogErrs[1:]
+		if err != nil {
+			return err
+		}
+	}
 	if log != nil {
+		if log.CreatedAt.IsZero() {
+			log.CreatedAt = time.Now()
+		}
 		r.logs = append(r.logs, *log)
 	}
 	return nil
@@ -272,7 +299,7 @@ func (r *contentModerationTestRepo) CountFlaggedByUserSince(ctx context.Context,
 	defer r.mu.Unlock()
 	count := 0
 	for _, log := range r.logs {
-		if log.UserID == nil || *log.UserID != userID || !log.Flagged || log.ViolationCount <= 0 {
+		if log.UserID == nil || *log.UserID != userID || !log.Flagged || !log.SideEffectsApplied {
 			continue
 		}
 		if log.CreatedAt.IsZero() || log.CreatedAt.Before(since) {
@@ -316,15 +343,18 @@ func requireRecordedHashCount(t *testing.T, cache *contentModerationTestHashCach
 }
 
 type contentModerationTestHashCache struct {
-	mu               sync.Mutex
-	hashes           map[string]struct{}
-	sideEffectClaims map[string]struct{}
-	recorded         []string
-	recordedTTLs     []time.Duration
-	checked          []string
-	deleted          []string
-	hasResult        bool
-	hasResultUsed    bool
+	mu            sync.Mutex
+	hashes        map[string]struct{}
+	sideEffects   map[string]string
+	reserveErr    error
+	finalizeErr   error
+	releaseErr    error
+	recorded      []string
+	recordedTTLs  []time.Duration
+	checked       []string
+	deleted       []string
+	hasResult     bool
+	hasResultUsed bool
 }
 
 type contentModerationTestUserRepo struct {
@@ -495,17 +525,48 @@ func (c *contentModerationTestHashCache) HasFlaggedInputHash(ctx context.Context
 	return ok, nil
 }
 
-func (c *contentModerationTestHashCache) ClaimFlaggedInputSideEffects(ctx context.Context, subjectKey string, inputHash string, ttl time.Duration) (bool, error) {
+func (c *contentModerationTestHashCache) ReserveFlaggedInputSideEffect(ctx context.Context, subjectKey string, effectType string, inputHash string, token string, reservationTTL time.Duration, retentionTTL time.Duration) (bool, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	if c.sideEffectClaims == nil {
-		c.sideEffectClaims = map[string]struct{}{}
+	if c.reserveErr != nil {
+		return false, c.reserveErr
 	}
-	key := subjectKey + "\x00" + inputHash
-	if _, exists := c.sideEffectClaims[key]; exists {
+	if c.sideEffects == nil {
+		c.sideEffects = map[string]string{}
+	}
+	key := subjectKey + "\x00" + effectType + "\x00" + inputHash
+	if _, exists := c.sideEffects[key]; exists {
 		return false, nil
 	}
-	c.sideEffectClaims[key] = struct{}{}
+	c.sideEffects[key] = "r:" + token
+	return true, nil
+}
+
+func (c *contentModerationTestHashCache) FinalizeFlaggedInputSideEffect(ctx context.Context, subjectKey string, effectType string, inputHash string, token string, retentionTTL time.Duration) (bool, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.finalizeErr != nil {
+		return false, c.finalizeErr
+	}
+	key := subjectKey + "\x00" + effectType + "\x00" + inputHash
+	if c.sideEffects[key] != "r:"+token {
+		return false, nil
+	}
+	c.sideEffects[key] = "f"
+	return true, nil
+}
+
+func (c *contentModerationTestHashCache) ReleaseFlaggedInputSideEffect(ctx context.Context, subjectKey string, effectType string, inputHash string, token string) (bool, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.releaseErr != nil {
+		return false, c.releaseErr
+	}
+	key := subjectKey + "\x00" + effectType + "\x00" + inputHash
+	if c.sideEffects[key] != "r:"+token {
+		return false, nil
+	}
+	delete(c.sideEffects, key)
 	return true, nil
 }
 
@@ -520,9 +581,9 @@ func (c *contentModerationTestHashCache) DeleteFlaggedInputHash(ctx context.Cont
 			deleted = true
 		}
 	}
-	for key := range c.sideEffectClaims {
+	for key := range c.sideEffects {
 		if strings.HasSuffix(key, "\x00"+inputHash) {
-			delete(c.sideEffectClaims, key)
+			delete(c.sideEffects, key)
 		}
 	}
 	return deleted, nil
@@ -533,7 +594,7 @@ func (c *contentModerationTestHashCache) ClearFlaggedInputHashes(ctx context.Con
 	defer c.mu.Unlock()
 	deleted := int64(len(c.hashes))
 	c.hashes = map[string]struct{}{}
-	c.sideEffectClaims = map[string]struct{}{}
+	c.sideEffects = map[string]string{}
 	return deleted, nil
 }
 
@@ -1980,10 +2041,10 @@ func TestContentModerationCheck_PreHashUsesRedisHashCache(t *testing.T) {
 	require.Equal(t, ContentModerationActionHashBlock, logs[0].Action)
 	require.Equal(t, 1.0, logs[0].CategoryScores["hash"])
 	require.Equal(t, ContentModerationModePreBlock, logs[0].Mode)
-	require.Equal(t, 1, logs[0].ViolationCount)
-	require.True(t, logs[0].AutoBanned)
-	require.Len(t, userRepo.updated, 1)
-	require.Equal(t, StatusDisabled, userRepo.updated[0].Status)
+	require.Zero(t, logs[0].ViolationCount)
+	require.False(t, logs[0].SideEffectsApplied)
+	require.False(t, logs[0].AutoBanned)
+	require.Empty(t, userRepo.updated)
 }
 
 func TestContentModerationCheck_HashBlockLogsDoNotIncreaseNextViolationCount(t *testing.T) {
@@ -2135,6 +2196,7 @@ func newContentModerationFlaggedLog(userID int64) *ContentModerationLog {
 func newAppliedContentModerationFlaggedLog(userID int64) *ContentModerationLog {
 	log := newContentModerationFlaggedLog(userID)
 	log.ViolationCount = 1
+	log.SideEffectsApplied = true
 	return log
 }
 
@@ -2178,6 +2240,7 @@ func TestContentModerationCheck_PreBlockFlaggedWritesRedisHashCache(t *testing.T
 
 	body := []byte(`{"messages":[{"role":"user","content":"repeat blocked prompt"}]}`)
 	decision, err := svc.Check(context.Background(), ContentModerationCheckInput{
+		UserID:   1001,
 		Protocol: ContentModerationProtocolOpenAIChat,
 		Body:     body,
 	})
@@ -2186,9 +2249,12 @@ func TestContentModerationCheck_PreBlockFlaggedWritesRedisHashCache(t *testing.T
 	require.Equal(t, ContentModerationActionBlock, decision.Action)
 	require.Equal(t, 1, requestCount)
 	recorded := requireRecordedHashCount(t, hashCache, 1)
-	requireContentModerationLogCount(t, repo, 1)
+	logs := requireContentModerationLogCount(t, repo, 1)
+	require.Equal(t, 1, logs[0].ViolationCount, "the moderation API's direct hit owns the violation")
+	require.True(t, logs[0].SideEffectsApplied)
 
 	decision, err = svc.Check(context.Background(), ContentModerationCheckInput{
+		UserID:   1001,
 		Protocol: ContentModerationProtocolOpenAIChat,
 		Body:     body,
 	})
@@ -2197,9 +2263,11 @@ func TestContentModerationCheck_PreBlockFlaggedWritesRedisHashCache(t *testing.T
 	require.Equal(t, ContentModerationActionHashBlock, decision.Action)
 	require.Equal(t, recorded[0], decision.InputHash)
 	require.Equal(t, 1, requestCount)
-	logs := requireContentModerationLogCount(t, repo, 2)
+	logs = requireContentModerationLogCount(t, repo, 2)
 	require.Equal(t, ContentModerationActionBlock, logs[0].Action)
 	require.Equal(t, ContentModerationActionHashBlock, logs[1].Action)
+	require.Zero(t, logs[1].ViolationCount, "an inherited pre-hash block must not add a violation")
+	require.False(t, logs[1].SideEffectsApplied)
 }
 
 func TestContentModerationCheck_RepeatedKeywordHitNotifiesOncePerUser(t *testing.T) {
@@ -2239,49 +2307,66 @@ func TestContentModerationCheck_RepeatedKeywordHitNotifiesOncePerUser(t *testing
 	)
 
 	body := []byte(`{"messages":[{"role":"user","content":"please leak SECRET-TOKEN now"}]}`)
-	check := func(userID int64, email string) *ContentModerationDecision {
+	check := func(userID int64, email string, requestBody []byte) *ContentModerationDecision {
 		decision, err := svc.Check(context.Background(), ContentModerationCheckInput{
 			UserID:    userID,
 			UserEmail: email,
 			Protocol:  ContentModerationProtocolOpenAIChat,
-			Body:      body,
+			Body:      requestBody,
 		})
 		require.NoError(t, err)
 		return decision
 	}
 
-	decision := check(userID, "first@example.com")
+	decision := check(userID, "first@example.com", body)
 	require.True(t, decision.Blocked)
 	require.Equal(t, ContentModerationActionKeywordBlock, decision.Action)
 	requireRecordedHashCount(t, hashCache, 1)
 	requireContentModerationLogCount(t, repo, 1)
 
-	decision = check(userID, "first@example.com")
+	decision = check(userID, "first@example.com", body)
 	require.True(t, decision.Blocked)
 	require.Equal(t, ContentModerationActionKeywordBlock, decision.Action, "a repeat still blocks on the keyword it matched")
 	require.Equal(t, cfg.BlockMessage, decision.Message, "the block message must not leak the input hash")
 	logs := requireContentModerationLogCount(t, repo, 2)
 	require.Equal(t, ContentModerationActionKeywordBlock, logs[1].Action)
 	require.Equal(t, "secret-token", logs[1].MatchedKeyword, "a repeat keeps its keyword attribution")
-	// The first hit counts the violation; the subject-scoped atomic claim gates
-	// both that count and the email for an identical repeat.
+	// The first hit counts the violation; subject-scoped claims independently
+	// gate the count and email for an identical repeat.
 	require.Equal(t, 1, logs[0].ViolationCount)
+	require.True(t, logs[0].SideEffectsApplied)
 	require.Zero(t, logs[1].ViolationCount)
+	require.False(t, logs[1].SideEffectsApplied)
 	require.Eventually(t, func() bool { return smtpServer.messageCount() == 1 }, time.Second, 10*time.Millisecond)
 
-	decision = check(secondUserID, "second@example.com")
+	decision = check(secondUserID, "second@example.com", body)
 	require.True(t, decision.Blocked)
 	require.Equal(t, ContentModerationActionKeywordBlock, decision.Action)
 	logs = requireContentModerationLogCount(t, repo, 3)
 	require.Equal(t, 1, logs[2].ViolationCount, "the same global input hash must count for a different user")
+	require.True(t, logs[2].SideEffectsApplied)
 	require.Eventually(t, func() bool { return smtpServer.messageCount() == 2 }, time.Second, 10*time.Millisecond)
-	// The hash is written once, with a TTL tied to hit-log retention.
-	recorded := requireRecordedHashCount(t, hashCache, 1)
-	require.Equal(t, hashCache.snapshotRecorded()[0], recorded[0])
+
+	// Deduplication is scoped by user and the full normalized input hash, not
+	// just the matched keyword. A genuinely different prompt gets one new set
+	// of side effects for the same user.
+	otherBody := []byte(`{"messages":[{"role":"user","content":"a different SECRET-TOKEN request"}]}`)
+	decision = check(userID, "first@example.com", otherBody)
+	require.True(t, decision.Blocked)
+	require.Equal(t, ContentModerationActionKeywordBlock, decision.Action)
+	logs = requireContentModerationLogCount(t, repo, 4)
+	require.Equal(t, 2, logs[3].ViolationCount)
+	require.True(t, logs[3].SideEffectsApplied)
+	require.Eventually(t, func() bool { return smtpServer.messageCount() == 3 }, time.Second, 10*time.Millisecond)
+
+	// Each distinct full input hash is written once, with TTL tied to hit-log retention.
+	requireRecordedHashCount(t, hashCache, 2)
+	require.NotEqual(t, hashCache.snapshotRecorded()[0], hashCache.snapshotRecorded()[1])
 	require.Equal(t, 30*24*time.Hour, hashCache.recordedTTLs[0])
+	require.Equal(t, 30*24*time.Hour, hashCache.recordedTTLs[1])
 }
 
-func TestContentModerationCheck_GlobalAPIHashAppliesSideEffectsPerUser(t *testing.T) {
+func TestContentModerationCheck_GlobalAPIHashBlocksWithoutSideEffects(t *testing.T) {
 	cfg := defaultContentModerationConfig()
 	cfg.Enabled = true
 	cfg.Mode = ContentModerationModePreBlock
@@ -2335,15 +2420,18 @@ func TestContentModerationCheck_GlobalAPIHashAppliesSideEffectsPerUser(t *testin
 	check(3002, "second@example.com")
 
 	logs := requireContentModerationLogCount(t, repo, 3)
-	require.Equal(t, []int{1, 0, 1}, []int{
+	require.Equal(t, []int{0, 0, 0}, []int{
 		logs[0].ViolationCount,
 		logs[1].ViolationCount,
 		logs[2].ViolationCount,
 	})
-	require.Eventually(t, func() bool { return smtpServer.messageCount() == 2 }, time.Second, 10*time.Millisecond)
+	require.False(t, logs[0].SideEffectsApplied)
+	require.False(t, logs[1].SideEffectsApplied)
+	require.False(t, logs[2].SideEffectsApplied)
+	require.Never(t, func() bool { return smtpServer.messageCount() > 0 }, 100*time.Millisecond, 10*time.Millisecond)
 }
 
-func TestContentModerationCheck_ObserveGlobalHashCountsOncePerUserWithoutBlocking(t *testing.T) {
+func TestContentModerationCheck_ObserveGlobalHashSkipsSideEffectsWithoutBlocking(t *testing.T) {
 	cfg := defaultContentModerationConfig()
 	cfg.Enabled = true
 	cfg.Mode = ContentModerationModeObserve
@@ -2386,7 +2474,7 @@ func TestContentModerationCheck_ObserveGlobalHashCountsOncePerUserWithoutBlockin
 	check(4002)
 
 	logs := requireContentModerationLogCount(t, repo, 3)
-	require.Equal(t, []int{1, 0, 1}, []int{
+	require.Equal(t, []int{0, 0, 0}, []int{
 		logs[0].ViolationCount,
 		logs[1].ViolationCount,
 		logs[2].ViolationCount,
@@ -2396,6 +2484,111 @@ func TestContentModerationCheck_ObserveGlobalHashCountsOncePerUserWithoutBlockin
 		ContentModerationActionAllow,
 		ContentModerationActionAllow,
 	}, []string{logs[0].Action, logs[1].Action, logs[2].Action})
+}
+
+func TestContentModerationSideEffectsUseLocalFallbackWhenRedisReserveFails(t *testing.T) {
+	cfg := defaultContentModerationConfig()
+	cfg.PreHashCheckEnabled = false
+	cfg.AutoBanEnabled = false
+	cfg.EmailOnHit = false
+
+	repo := &contentModerationTestRepo{}
+	hashCache := &contentModerationTestHashCache{reserveErr: errors.New("redis unavailable")}
+	svc := &ContentModerationService{
+		repo:            repo,
+		hashCache:       hashCache,
+		sideEffectLocal: make(map[string]contentModerationLocalSideEffect),
+	}
+	inputHash := strings.Repeat("a", 64)
+
+	svc.persistContentModerationLog(context.Background(), cfg, newContentModerationFlaggedLog(5001), inputHash, true)
+	svc.persistContentModerationLog(context.Background(), cfg, newContentModerationFlaggedLog(5001), inputHash, true)
+
+	logs := requireContentModerationLogCount(t, repo, 2)
+	require.Equal(t, []int{1, 0}, []int{logs[0].ViolationCount, logs[1].ViolationCount})
+	require.True(t, logs[0].SideEffectsApplied)
+	require.False(t, logs[1].SideEffectsApplied)
+}
+
+func TestContentModerationViolationReservationReleasesWhenLogPersistenceFails(t *testing.T) {
+	cfg := defaultContentModerationConfig()
+	cfg.AutoBanEnabled = false
+	cfg.EmailOnHit = false
+
+	repo := &contentModerationTestRepo{createLogErrs: []error{errors.New("database unavailable")}}
+	svc := &ContentModerationService{
+		repo:            repo,
+		hashCache:       &contentModerationTestHashCache{},
+		sideEffectLocal: make(map[string]contentModerationLocalSideEffect),
+	}
+	inputHash := strings.Repeat("b", 64)
+
+	svc.persistContentModerationLog(context.Background(), cfg, newContentModerationFlaggedLog(5002), inputHash, true)
+	require.Empty(t, repo.snapshotLogs())
+
+	svc.persistContentModerationLog(context.Background(), cfg, newContentModerationFlaggedLog(5002), inputHash, true)
+	logs := requireContentModerationLogCount(t, repo, 1)
+	require.Equal(t, 1, logs[0].ViolationCount)
+	require.True(t, logs[0].SideEffectsApplied)
+}
+
+func TestContentModerationEmailReservationReleasesAfterSendFailure(t *testing.T) {
+	cfg := defaultContentModerationConfig()
+	cfg.AutoBanEnabled = false
+	cfg.EmailOnHit = true
+
+	repo := &contentModerationTestRepo{}
+	hashCache := &contentModerationTestHashCache{}
+	settingRepo := &contentModerationTestSettingRepo{values: map[string]string{}}
+	smtpServer := startNotificationEmailTestSMTPServer(t)
+	svc := &ContentModerationService{
+		settingRepo:     settingRepo,
+		repo:            repo,
+		hashCache:       hashCache,
+		emailService:    NewEmailService(settingRepo, nil),
+		sideEffectLocal: make(map[string]contentModerationLocalSideEffect),
+	}
+	inputHash := strings.Repeat("c", 64)
+	newLog := func() *ContentModerationLog {
+		log := newContentModerationFlaggedLog(5003)
+		log.UserEmail = "retry@example.com"
+		return log
+	}
+
+	// The first send fails before SMTP is configured. Its email reservation
+	// must be released while the violation itself remains finalized.
+	svc.persistContentModerationLog(context.Background(), cfg, newLog(), inputHash, true)
+	logs := requireContentModerationLogCount(t, repo, 1)
+	require.Equal(t, 1, logs[0].ViolationCount)
+	require.True(t, logs[0].SideEffectsApplied)
+	require.False(t, logs[0].EmailSent)
+
+	require.NoError(t, settingRepo.SetMultiple(context.Background(), smtpServer.settings()))
+	svc.persistContentModerationLog(context.Background(), cfg, newLog(), inputHash, true)
+	svc.persistContentModerationLog(context.Background(), cfg, newLog(), inputHash, true)
+
+	logs = requireContentModerationLogCount(t, repo, 3)
+	require.Equal(t, []int{1, 0, 0}, []int{logs[0].ViolationCount, logs[1].ViolationCount, logs[2].ViolationCount})
+	require.Equal(t, []bool{false, true, false}, []bool{logs[0].EmailSent, logs[1].EmailSent, logs[2].EmailSent})
+	require.Equal(t, int64(1), smtpServer.messageCount())
+}
+
+func TestContentModerationHistoricalViolationCountsDoNotPoisonAutoBanWindow(t *testing.T) {
+	cfg := defaultContentModerationConfig()
+	cfg.AutoBanEnabled = false
+
+	userID := int64(5004)
+	historical := newContentModerationFlaggedLog(userID)
+	historical.ViolationCount = 196
+	historical.SideEffectsApplied = false
+	repo := &contentModerationTestRepo{}
+	require.NoError(t, repo.CreateLog(context.Background(), historical))
+	svc := &ContentModerationService{repo: repo}
+
+	svc.persistContentModerationLog(context.Background(), cfg, newContentModerationFlaggedLog(userID), "", true)
+	logs := requireContentModerationLogCount(t, repo, 2)
+	require.Equal(t, 1, logs[1].ViolationCount)
+	require.True(t, logs[1].SideEffectsApplied)
 }
 
 func TestContentModerationSideEffectSubjectKeyUsesStableIdentityFallbacks(t *testing.T) {
@@ -2429,6 +2622,22 @@ func TestContentModerationSideEffectSubjectKeyUsesStableIdentityFallbacks(t *tes
 			require.Equal(t, test.want, contentModerationSideEffectSubjectKey(test.log))
 		})
 	}
+}
+
+func TestContentModerationEmailSourceIDIsStablePerSubjectAndInput(t *testing.T) {
+	firstUserID := int64(1001)
+	secondUserID := int64(1002)
+	inputHash := strings.Repeat("d", 64)
+
+	first := &ContentModerationLog{ID: 1, UserID: &firstUserID, InputHash: inputHash}
+	retry := &ContentModerationLog{ID: 999, UserID: &firstUserID, InputHash: inputHash}
+	otherUser := &ContentModerationLog{ID: 2, UserID: &secondUserID, InputHash: inputHash}
+	otherInput := &ContentModerationLog{ID: 3, UserID: &firstUserID, InputHash: strings.Repeat("e", 64)}
+
+	require.Equal(t, contentModerationEmailSourceID(first), contentModerationEmailSourceID(retry))
+	require.NotEqual(t, contentModerationEmailSourceID(first), contentModerationEmailSourceID(otherUser))
+	require.NotEqual(t, contentModerationEmailSourceID(first), contentModerationEmailSourceID(otherInput))
+	require.Equal(t, "42", contentModerationEmailSourceID(&ContentModerationLog{ID: 42}), "legacy logs without an input hash keep their row identity")
 }
 
 func TestContentModerationCheck_ObserveModeNeverBlocksOnFlaggedHash(t *testing.T) {
