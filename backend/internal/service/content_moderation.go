@@ -704,6 +704,7 @@ type ContentModerationRepository interface {
 type ContentModerationHashCache interface {
 	RecordFlaggedInputHash(ctx context.Context, inputHash string, ttl time.Duration) error
 	HasFlaggedInputHash(ctx context.Context, inputHash string) (bool, error)
+	ClaimFlaggedInputSideEffects(ctx context.Context, subjectKey string, inputHash string, ttl time.Duration) (bool, error)
 	DeleteFlaggedInputHash(ctx context.Context, inputHash string) (bool, error)
 	ClearFlaggedInputHashes(ctx context.Context) (int64, error)
 	CountFlaggedInputHashes(ctx context.Context) (int64, error)
@@ -1222,9 +1223,9 @@ func (s *ContentModerationService) check(ctx context.Context, input ContentModer
 				log.MatchedKeyword = match.Keyword
 				log.InputExcerpt = buildKeywordContextExcerptForMatch(content.Text, match)
 				// Keyword matching is local, so a repeat still blocks on its own
-				// merits and keeps its attribution; only the notification and the
-				// violation count are deduplicated by hash.
-				recordAccepted := s.enqueueRecord(input, cfg, log, !alreadyFlagged)
+				// merits and keeps its attribution. Notification and violation
+				// side effects are claimed independently per authenticated subject.
+				recordAccepted := s.enqueueRecord(input, cfg, log, hashText, true)
 				if !alreadyFlagged && recordAccepted {
 					s.recordFlaggedInputHash(ctx, cfg, input, hashText)
 				}
@@ -1254,7 +1255,9 @@ func (s *ContentModerationService) check(ctx context.Context, input ContentModer
 	}
 	if alreadyFlagged {
 		// Observe mode audits without blocking, so a known-bad input only skips
-		// the upstream call here — turning it away would defeat the mode.
+		// the upstream call here — turning it away would defeat the mode. It still
+		// records a flagged observation so each authenticated subject receives its
+		// own first-hit notification and violation count.
 		if cfg.Mode != ContentModerationModePreBlock {
 			slog.Info("content_moderation.hash_skip_audit",
 				"user_id", input.UserID,
@@ -1264,6 +1267,9 @@ func (s *ContentModerationService) check(ctx context.Context, input ContentModer
 				"protocol", input.Protocol,
 				"mode", cfg.Mode,
 				"input_hash", hashText)
+			scores := map[string]float64{"hash": 1.0}
+			log := s.buildLog(input, cfg, ContentModerationActionAllow, true, "hash", 1.0, scores, content.ExcerptText(), nil, nil, "")
+			s.enqueueRecord(input, cfg, log, hashText, true)
 			return allow, nil
 		}
 		s.recordPreBlockSyncMetric(0, ContentModerationActionHashBlock)
@@ -1280,7 +1286,7 @@ func (s *ContentModerationService) check(ctx context.Context, input ContentModer
 		}
 		scores := map[string]float64{"hash": 1.0}
 		log := s.buildLog(input, cfg, ContentModerationActionHashBlock, true, "hash", 1.0, scores, content.ExcerptText(), nil, nil, "")
-		s.enqueueRecord(input, cfg, log, false)
+		s.enqueueRecord(input, cfg, log, hashText, true)
 		return &ContentModerationDecision{
 			Allowed:    false,
 			Blocked:    true,
@@ -1399,11 +1405,11 @@ func (s *ContentModerationService) checkSync(ctx context.Context, input ContentM
 	if flagged || cfg.RecordNonHits {
 		log := s.buildLog(input, cfg, action, flagged, highestCategory, highestScore, result.CategoryScores, content.ExcerptText(), &latency, queueDelay, "")
 		if queueRecord {
-			if s.enqueueRecord(input, cfg, log, flagged) && flagged {
+			if s.enqueueRecord(input, cfg, log, hashText, flagged) && flagged {
 				s.recordFlaggedInputHash(ctx, cfg, input, hashText)
 			}
 		} else {
-			s.persistContentModerationLog(ctx, cfg, log, flagged)
+			s.persistContentModerationLog(ctx, cfg, log, hashText, flagged)
 		}
 	}
 	if blocked {
@@ -1478,7 +1484,7 @@ func (s *ContentModerationService) enqueueAsync(input ContentModerationCheckInpu
 	}
 }
 
-func (s *ContentModerationService) enqueueRecord(input ContentModerationCheckInput, cfg *ContentModerationConfig, log *ContentModerationLog, applySideEffects bool) bool {
+func (s *ContentModerationService) enqueueRecord(input ContentModerationCheckInput, cfg *ContentModerationConfig, log *ContentModerationLog, inputHash string, applySideEffects bool) bool {
 	if s == nil || s.asyncQueue == nil || log == nil {
 		return false
 	}
@@ -1498,6 +1504,7 @@ func (s *ContentModerationService) enqueueRecord(input ContentModerationCheckInp
 	input.Body = nil
 	task := contentModerationTask{
 		input:            input,
+		inputHash:        inputHash,
 		log:              log,
 		config:           cloneContentModerationConfig(cfg),
 		applySideEffects: applySideEffects,
@@ -1546,7 +1553,7 @@ func (s *ContentModerationService) worker(id int) {
 				if taskCfg == nil {
 					taskCfg = cfg
 				}
-				s.persistContentModerationLog(ctx, taskCfg, task.log, task.applySideEffects)
+				s.persistContentModerationLog(ctx, taskCfg, task.log, task.inputHash, task.applySideEffects)
 				s.asyncProcessed.Add(1)
 				return
 			}
@@ -2045,12 +2052,12 @@ func (s *ContentModerationService) recordFlaggedInputHash(ctx context.Context, c
 	}
 }
 
-func (s *ContentModerationService) persistContentModerationLog(ctx context.Context, cfg *ContentModerationConfig, log *ContentModerationLog, applySideEffects bool) {
+func (s *ContentModerationService) persistContentModerationLog(ctx context.Context, cfg *ContentModerationConfig, log *ContentModerationLog, inputHash string, applySideEffects bool) {
 	if s == nil || log == nil {
 		return
 	}
 	autoBanJustApplied := false
-	if applySideEffects {
+	if applySideEffects && s.claimFlaggedInputSideEffects(ctx, cfg, log, inputHash) {
 		autoBanJustApplied = s.applyFlaggedAccountSideEffects(ctx, cfg, log)
 		s.sendFlaggedNotificationSideEffects(ctx, cfg, log, autoBanJustApplied)
 	}
@@ -2060,6 +2067,53 @@ func (s *ContentModerationService) persistContentModerationLog(ctx context.Conte
 			return
 		}
 	}
+}
+
+func (s *ContentModerationService) claimFlaggedInputSideEffects(ctx context.Context, cfg *ContentModerationConfig, log *ContentModerationLog, inputHash string) bool {
+	if s == nil || cfg == nil || log == nil || !log.Flagged || !cfg.PreHashCheckEnabled || s.hashCache == nil {
+		return true
+	}
+	subjectKey := contentModerationSideEffectSubjectKey(log)
+	if subjectKey == "" || strings.TrimSpace(inputHash) == "" {
+		return true
+	}
+	ttl := time.Duration(cfg.HitRetentionDays) * 24 * time.Hour
+	if ttl <= 0 {
+		ttl = defaultContentModerationHitRetentionDays * 24 * time.Hour
+	}
+	claimed, err := s.hashCache.ClaimFlaggedInputSideEffects(ctx, subjectKey, inputHash, ttl)
+	if err != nil {
+		slog.Warn("content_moderation.side_effect_claim_failed",
+			"user_id", contentModerationEmailUserID(log),
+			"api_key_id", contentModerationLogAPIKeyID(log),
+			"action", log.Action,
+			"error", err)
+		return true
+	}
+	return claimed
+}
+
+func contentModerationSideEffectSubjectKey(log *ContentModerationLog) string {
+	if log == nil {
+		return ""
+	}
+	if log.UserID != nil && *log.UserID > 0 {
+		return fmt.Sprintf("user:%d", *log.UserID)
+	}
+	if log.APIKeyID != nil && *log.APIKeyID > 0 {
+		return fmt.Sprintf("api_key:%d", *log.APIKeyID)
+	}
+	if email := strings.ToLower(strings.TrimSpace(log.UserEmail)); email != "" {
+		return "email:" + email
+	}
+	return ""
+}
+
+func contentModerationLogAPIKeyID(log *ContentModerationLog) int64 {
+	if log == nil || log.APIKeyID == nil {
+		return 0
+	}
+	return *log.APIKeyID
 }
 
 func (s *ContentModerationService) applyFlaggedAccountSideEffects(ctx context.Context, cfg *ContentModerationConfig, log *ContentModerationLog) bool {

@@ -203,7 +203,7 @@ func TestContentModerationCheck_FullRecordQueueDoesNotPublishKeywordDedupHash(t 
 	require.NotNil(t, task.log)
 	require.Equal(t, ContentModerationActionKeywordBlock, task.log.Action)
 	require.True(t, task.applySideEffects, "the retry must still own the violation and notification side effects")
-	svc.persistContentModerationLog(context.Background(), task.config, task.log, task.applySideEffects)
+	svc.persistContentModerationLog(context.Background(), task.config, task.log, task.inputHash, task.applySideEffects)
 	logs := requireContentModerationLogCount(t, repo, 1)
 	require.Equal(t, 1, logs[0].ViolationCount)
 }
@@ -272,7 +272,7 @@ func (r *contentModerationTestRepo) CountFlaggedByUserSince(ctx context.Context,
 	defer r.mu.Unlock()
 	count := 0
 	for _, log := range r.logs {
-		if log.UserID == nil || *log.UserID != userID || !log.Flagged || log.Action == ContentModerationActionHashBlock {
+		if log.UserID == nil || *log.UserID != userID || !log.Flagged || log.ViolationCount <= 0 {
 			continue
 		}
 		if log.CreatedAt.IsZero() || log.CreatedAt.Before(since) {
@@ -316,14 +316,15 @@ func requireRecordedHashCount(t *testing.T, cache *contentModerationTestHashCach
 }
 
 type contentModerationTestHashCache struct {
-	mu            sync.Mutex
-	hashes        map[string]struct{}
-	recorded      []string
-	recordedTTLs  []time.Duration
-	checked       []string
-	deleted       []string
-	hasResult     bool
-	hasResultUsed bool
+	mu               sync.Mutex
+	hashes           map[string]struct{}
+	sideEffectClaims map[string]struct{}
+	recorded         []string
+	recordedTTLs     []time.Duration
+	checked          []string
+	deleted          []string
+	hasResult        bool
+	hasResultUsed    bool
 }
 
 type contentModerationTestUserRepo struct {
@@ -494,18 +495,37 @@ func (c *contentModerationTestHashCache) HasFlaggedInputHash(ctx context.Context
 	return ok, nil
 }
 
+func (c *contentModerationTestHashCache) ClaimFlaggedInputSideEffects(ctx context.Context, subjectKey string, inputHash string, ttl time.Duration) (bool, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.sideEffectClaims == nil {
+		c.sideEffectClaims = map[string]struct{}{}
+	}
+	key := subjectKey + "\x00" + inputHash
+	if _, exists := c.sideEffectClaims[key]; exists {
+		return false, nil
+	}
+	c.sideEffectClaims[key] = struct{}{}
+	return true, nil
+}
+
 func (c *contentModerationTestHashCache) DeleteFlaggedInputHash(ctx context.Context, inputHash string) (bool, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.deleted = append(c.deleted, inputHash)
-	if c.hashes == nil {
-		return false, nil
+	deleted := false
+	if c.hashes != nil {
+		if _, ok := c.hashes[inputHash]; ok {
+			delete(c.hashes, inputHash)
+			deleted = true
+		}
 	}
-	if _, ok := c.hashes[inputHash]; !ok {
-		return false, nil
+	for key := range c.sideEffectClaims {
+		if strings.HasSuffix(key, "\x00"+inputHash) {
+			delete(c.sideEffectClaims, key)
+		}
 	}
-	delete(c.hashes, inputHash)
-	return true, nil
+	return deleted, nil
 }
 
 func (c *contentModerationTestHashCache) ClearFlaggedInputHashes(ctx context.Context) (int64, error) {
@@ -513,6 +533,7 @@ func (c *contentModerationTestHashCache) ClearFlaggedInputHashes(ctx context.Con
 	defer c.mu.Unlock()
 	deleted := int64(len(c.hashes))
 	c.hashes = map[string]struct{}{}
+	c.sideEffectClaims = map[string]struct{}{}
 	return deleted, nil
 }
 
@@ -2036,12 +2057,12 @@ func TestContentModerationAutoBanSkipsAdminAccount(t *testing.T) {
 
 	userID := int64(1001)
 	repo := &contentModerationTestRepo{}
-	require.NoError(t, repo.CreateLog(context.Background(), newContentModerationFlaggedLog(userID)))
+	require.NoError(t, repo.CreateLog(context.Background(), newAppliedContentModerationFlaggedLog(userID)))
 	userRepo := &contentModerationTestUserRepo{user: &User{ID: userID, Role: RoleAdmin, Status: StatusActive}}
 	invalidator := &contentModerationTestAuthCacheInvalidator{}
 	svc := NewContentModerationService(nil, repo, nil, nil, userRepo, invalidator, nil)
 
-	svc.persistContentModerationLog(context.Background(), cfg, newContentModerationFlaggedLog(userID), true)
+	svc.persistContentModerationLog(context.Background(), cfg, newContentModerationFlaggedLog(userID), "", true)
 
 	logs := requireContentModerationLogCount(t, repo, 2)
 	require.Equal(t, 2, logs[1].ViolationCount)
@@ -2063,12 +2084,12 @@ func TestContentModerationAutoBanDisablesRegularUserAtThreshold(t *testing.T) {
 
 	userID := int64(1001)
 	repo := &contentModerationTestRepo{}
-	require.NoError(t, repo.CreateLog(context.Background(), newContentModerationFlaggedLog(userID)))
+	require.NoError(t, repo.CreateLog(context.Background(), newAppliedContentModerationFlaggedLog(userID)))
 	userRepo := &contentModerationTestUserRepo{user: &User{ID: userID, Role: RoleUser, Status: StatusActive}}
 	invalidator := &contentModerationTestAuthCacheInvalidator{}
 	svc := NewContentModerationService(nil, repo, nil, nil, userRepo, invalidator, nil)
 
-	svc.persistContentModerationLog(context.Background(), cfg, newContentModerationFlaggedLog(userID), true)
+	svc.persistContentModerationLog(context.Background(), cfg, newContentModerationFlaggedLog(userID), "", true)
 
 	logs := requireContentModerationLogCount(t, repo, 2)
 	require.Equal(t, 2, logs[1].ViolationCount)
@@ -2089,7 +2110,7 @@ func TestContentModerationAdminBelowBanThresholdRecordsViolationOnly(t *testing.
 	invalidator := &contentModerationTestAuthCacheInvalidator{}
 	svc := NewContentModerationService(nil, repo, nil, nil, userRepo, invalidator, nil)
 
-	svc.persistContentModerationLog(context.Background(), cfg, newContentModerationFlaggedLog(userID), true)
+	svc.persistContentModerationLog(context.Background(), cfg, newContentModerationFlaggedLog(userID), "", true)
 
 	logs := requireContentModerationLogCount(t, repo, 1)
 	require.Equal(t, 1, logs[0].ViolationCount)
@@ -2108,6 +2129,12 @@ func newContentModerationFlaggedLog(userID int64) *ContentModerationLog {
 		HighestScore:    0.9,
 		CreatedAt:       time.Now(),
 	}
+}
+
+func newAppliedContentModerationFlaggedLog(userID int64) *ContentModerationLog {
+	log := newContentModerationFlaggedLog(userID)
+	log.ViolationCount = 1
+	return log
 }
 
 func TestContentModerationCheck_PreBlockFlaggedWritesRedisHashCache(t *testing.T) {
@@ -2174,7 +2201,7 @@ func TestContentModerationCheck_PreBlockFlaggedWritesRedisHashCache(t *testing.T
 	require.Equal(t, ContentModerationActionHashBlock, logs[1].Action)
 }
 
-func TestContentModerationCheck_RepeatedKeywordHitNotifiesOnce(t *testing.T) {
+func TestContentModerationCheck_RepeatedKeywordHitNotifiesOncePerUser(t *testing.T) {
 	cfg := defaultContentModerationConfig()
 	cfg.Enabled = true
 	cfg.Mode = ContentModerationModePreBlock
@@ -2183,12 +2210,152 @@ func TestContentModerationCheck_RepeatedKeywordHitNotifiesOnce(t *testing.T) {
 	cfg.BlockedKeywords = []string{"secret-token"}
 	cfg.EmailOnHit = true
 	cfg.HitRetentionDays = 30
+	cfg.WorkerCount = 1
 	rawCfg, err := json.Marshal(cfg)
 	require.NoError(t, err)
 
 	userID := int64(2002)
+	secondUserID := int64(2003)
 	repo := &contentModerationTestRepo{}
 	hashCache := &contentModerationTestHashCache{}
+	smtpServer := startNotificationEmailTestSMTPServer(t)
+	settings := map[string]string{
+		SettingKeyRiskControlEnabled:      "true",
+		SettingKeyContentModerationConfig: string(rawCfg),
+	}
+	for key, value := range smtpServer.settings() {
+		settings[key] = value
+	}
+	settingRepo := &contentModerationTestSettingRepo{values: settings}
+	svc := NewContentModerationService(
+		settingRepo,
+		repo,
+		hashCache,
+		nil,
+		nil,
+		nil,
+		NewEmailService(settingRepo, nil),
+	)
+
+	body := []byte(`{"messages":[{"role":"user","content":"please leak SECRET-TOKEN now"}]}`)
+	check := func(userID int64, email string) *ContentModerationDecision {
+		decision, err := svc.Check(context.Background(), ContentModerationCheckInput{
+			UserID:    userID,
+			UserEmail: email,
+			Protocol:  ContentModerationProtocolOpenAIChat,
+			Body:      body,
+		})
+		require.NoError(t, err)
+		return decision
+	}
+
+	decision := check(userID, "first@example.com")
+	require.True(t, decision.Blocked)
+	require.Equal(t, ContentModerationActionKeywordBlock, decision.Action)
+	requireRecordedHashCount(t, hashCache, 1)
+	requireContentModerationLogCount(t, repo, 1)
+
+	decision = check(userID, "first@example.com")
+	require.True(t, decision.Blocked)
+	require.Equal(t, ContentModerationActionKeywordBlock, decision.Action, "a repeat still blocks on the keyword it matched")
+	require.Equal(t, cfg.BlockMessage, decision.Message, "the block message must not leak the input hash")
+	logs := requireContentModerationLogCount(t, repo, 2)
+	require.Equal(t, ContentModerationActionKeywordBlock, logs[1].Action)
+	require.Equal(t, "secret-token", logs[1].MatchedKeyword, "a repeat keeps its keyword attribution")
+	// The first hit counts the violation; the subject-scoped atomic claim gates
+	// both that count and the email for an identical repeat.
+	require.Equal(t, 1, logs[0].ViolationCount)
+	require.Zero(t, logs[1].ViolationCount)
+	require.Eventually(t, func() bool { return smtpServer.messageCount() == 1 }, time.Second, 10*time.Millisecond)
+
+	decision = check(secondUserID, "second@example.com")
+	require.True(t, decision.Blocked)
+	require.Equal(t, ContentModerationActionKeywordBlock, decision.Action)
+	logs = requireContentModerationLogCount(t, repo, 3)
+	require.Equal(t, 1, logs[2].ViolationCount, "the same global input hash must count for a different user")
+	require.Eventually(t, func() bool { return smtpServer.messageCount() == 2 }, time.Second, 10*time.Millisecond)
+	// The hash is written once, with a TTL tied to hit-log retention.
+	recorded := requireRecordedHashCount(t, hashCache, 1)
+	require.Equal(t, hashCache.snapshotRecorded()[0], recorded[0])
+	require.Equal(t, 30*24*time.Hour, hashCache.recordedTTLs[0])
+}
+
+func TestContentModerationCheck_GlobalAPIHashAppliesSideEffectsPerUser(t *testing.T) {
+	cfg := defaultContentModerationConfig()
+	cfg.Enabled = true
+	cfg.Mode = ContentModerationModePreBlock
+	cfg.PreHashCheckEnabled = true
+	cfg.EmailOnHit = true
+	cfg.HitRetentionDays = 30
+	cfg.WorkerCount = 1
+	rawCfg, err := json.Marshal(cfg)
+	require.NoError(t, err)
+
+	body := []byte(`{"messages":[{"role":"user","content":"globally cached moderation hit"}]}`)
+	content := ExtractContentModerationInput(ContentModerationProtocolOpenAIChat, body)
+	content.Normalize()
+	inputHash := content.Hash()
+	hashCache := &contentModerationTestHashCache{hashes: map[string]struct{}{inputHash: {}}}
+	repo := &contentModerationTestRepo{}
+	smtpServer := startNotificationEmailTestSMTPServer(t)
+	settings := map[string]string{
+		SettingKeyRiskControlEnabled:      "true",
+		SettingKeyContentModerationConfig: string(rawCfg),
+	}
+	for key, value := range smtpServer.settings() {
+		settings[key] = value
+	}
+	settingRepo := &contentModerationTestSettingRepo{values: settings}
+	svc := NewContentModerationService(
+		settingRepo,
+		repo,
+		hashCache,
+		nil,
+		nil,
+		nil,
+		NewEmailService(settingRepo, nil),
+	)
+
+	check := func(userID int64, email string) *ContentModerationDecision {
+		decision, checkErr := svc.Check(context.Background(), ContentModerationCheckInput{
+			UserID:    userID,
+			UserEmail: email,
+			Protocol:  ContentModerationProtocolOpenAIChat,
+			Body:      body,
+		})
+		require.NoError(t, checkErr)
+		require.True(t, decision.Blocked)
+		require.Equal(t, ContentModerationActionHashBlock, decision.Action)
+		return decision
+	}
+
+	check(3001, "first@example.com")
+	check(3001, "first@example.com")
+	check(3002, "second@example.com")
+
+	logs := requireContentModerationLogCount(t, repo, 3)
+	require.Equal(t, []int{1, 0, 1}, []int{
+		logs[0].ViolationCount,
+		logs[1].ViolationCount,
+		logs[2].ViolationCount,
+	})
+	require.Eventually(t, func() bool { return smtpServer.messageCount() == 2 }, time.Second, 10*time.Millisecond)
+}
+
+func TestContentModerationCheck_ObserveGlobalHashCountsOncePerUserWithoutBlocking(t *testing.T) {
+	cfg := defaultContentModerationConfig()
+	cfg.Enabled = true
+	cfg.Mode = ContentModerationModeObserve
+	cfg.PreHashCheckEnabled = true
+	cfg.WorkerCount = 1
+	rawCfg, err := json.Marshal(cfg)
+	require.NoError(t, err)
+
+	body := []byte(`{"messages":[{"role":"user","content":"cached observe-mode hit"}]}`)
+	content := ExtractContentModerationInput(ContentModerationProtocolOpenAIChat, body)
+	content.Normalize()
+	hashCache := &contentModerationTestHashCache{hashes: map[string]struct{}{content.Hash(): {}}}
+	repo := &contentModerationTestRepo{}
 	svc := NewContentModerationService(
 		&contentModerationTestSettingRepo{values: map[string]string{
 			SettingKeyRiskControlEnabled:      "true",
@@ -2202,38 +2369,65 @@ func TestContentModerationCheck_RepeatedKeywordHitNotifiesOnce(t *testing.T) {
 		nil,
 	)
 
-	body := []byte(`{"messages":[{"role":"user","content":"please leak SECRET-TOKEN now"}]}`)
-	check := func() *ContentModerationDecision {
-		decision, err := svc.Check(context.Background(), ContentModerationCheckInput{
+	check := func(userID int64) {
+		decision, checkErr := svc.Check(context.Background(), ContentModerationCheckInput{
 			UserID:   userID,
 			Protocol: ContentModerationProtocolOpenAIChat,
 			Body:     body,
 		})
-		require.NoError(t, err)
-		return decision
+		require.NoError(t, checkErr)
+		require.True(t, decision.Allowed)
+		require.False(t, decision.Blocked)
 	}
 
-	decision := check()
-	require.True(t, decision.Blocked)
-	require.Equal(t, ContentModerationActionKeywordBlock, decision.Action)
-	requireRecordedHashCount(t, hashCache, 1)
-	requireContentModerationLogCount(t, repo, 1)
+	check(4001)
+	check(4001)
+	check(4002)
 
-	decision = check()
-	require.True(t, decision.Blocked)
-	require.Equal(t, ContentModerationActionKeywordBlock, decision.Action, "a repeat still blocks on the keyword it matched")
-	require.Equal(t, cfg.BlockMessage, decision.Message, "the block message must not leak the input hash")
-	logs := requireContentModerationLogCount(t, repo, 2)
-	require.Equal(t, ContentModerationActionKeywordBlock, logs[1].Action)
-	require.Equal(t, "secret-token", logs[1].MatchedKeyword, "a repeat keeps its keyword attribution")
-	// The first hit counts the violation; the repeat must not, which is the same
-	// applySideEffects flag that gates the email.
-	require.Equal(t, 1, logs[0].ViolationCount)
-	require.Zero(t, logs[1].ViolationCount)
-	// The hash is written once, with a TTL tied to hit-log retention.
-	recorded := requireRecordedHashCount(t, hashCache, 1)
-	require.Equal(t, hashCache.snapshotRecorded()[0], recorded[0])
-	require.Equal(t, 30*24*time.Hour, hashCache.recordedTTLs[0])
+	logs := requireContentModerationLogCount(t, repo, 3)
+	require.Equal(t, []int{1, 0, 1}, []int{
+		logs[0].ViolationCount,
+		logs[1].ViolationCount,
+		logs[2].ViolationCount,
+	})
+	require.Equal(t, []string{
+		ContentModerationActionAllow,
+		ContentModerationActionAllow,
+		ContentModerationActionAllow,
+	}, []string{logs[0].Action, logs[1].Action, logs[2].Action})
+}
+
+func TestContentModerationSideEffectSubjectKeyUsesStableIdentityFallbacks(t *testing.T) {
+	userID := int64(1001)
+	apiKeyID := int64(2002)
+	tests := []struct {
+		name string
+		log  *ContentModerationLog
+		want string
+	}{
+		{
+			name: "user takes precedence",
+			log:  &ContentModerationLog{UserID: &userID, APIKeyID: &apiKeyID, UserEmail: "User@Example.com"},
+			want: "user:1001",
+		},
+		{
+			name: "api key fallback",
+			log:  &ContentModerationLog{APIKeyID: &apiKeyID, UserEmail: "User@Example.com"},
+			want: "api_key:2002",
+		},
+		{
+			name: "normalized email fallback",
+			log:  &ContentModerationLog{UserEmail: " User@Example.com "},
+			want: "email:user@example.com",
+		},
+		{name: "missing identity", log: &ContentModerationLog{}, want: ""},
+		{name: "nil log", log: nil, want: ""},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			require.Equal(t, test.want, contentModerationSideEffectSubjectKey(test.log))
+		})
+	}
 }
 
 func TestContentModerationCheck_ObserveModeNeverBlocksOnFlaggedHash(t *testing.T) {

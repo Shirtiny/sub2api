@@ -31,14 +31,14 @@ func TestBuildContentModerationLogWhereGroupFilterIncludesCustomSubscriptionGrou
 	require.Equal(t, []any{groupID}, args)
 }
 
-func TestContentModerationRepositoryCountFlaggedByUserSince_ExcludesHashBlock(t *testing.T) {
+func TestContentModerationRepositoryCountFlaggedByUserSince_CountsOnlyAppliedViolations(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	require.NoError(t, err)
 	defer func() { _ = db.Close() }()
 
 	repo := NewContentModerationRepository(db)
 	since := time.Now().Add(-time.Hour)
-	mock.ExpectQuery(regexp.QuoteMeta("AND action <> 'hash_block'")).
+	mock.ExpectQuery(regexp.QuoteMeta("AND violation_count > 0")).
 		WithArgs(int64(1001), since).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(2))
 
