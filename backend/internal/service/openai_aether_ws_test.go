@@ -58,7 +58,9 @@ func TestResolveAetherWSAccountCapabilityRequiresExplicitEffectiveConfiguration(
 		reason string
 	}{
 		{name: "account disabled", mutate: func(a *Account, _ *config.Config) {
-			a.Extra[AetherWSAccountExtraKey].(map[string]any)["enabled"] = false
+			extra, ok := a.Extra[AetherWSAccountExtraKey].(map[string]any)
+			require.True(t, ok)
+			extra["enabled"] = false
 		}, reason: "aether_ws_account_disabled"},
 		{name: "oauth account", mutate: func(a *Account, _ *config.Config) { a.Type = AccountTypeOAuth }, reason: "aether_ws_requires_openai_apikey"},
 		{name: "zero concurrency", mutate: func(a *Account, _ *config.Config) { a.Concurrency = 0 }, reason: "account_concurrency_invalid"},

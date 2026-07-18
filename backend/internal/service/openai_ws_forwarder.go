@@ -147,10 +147,7 @@ func ShouldPenalizeOpenAIWSAccount(err error) bool {
 	var turnErr *openAIWSIngressTurnError
 	if !errors.As(err, &turnErr) || turnErr == nil {
 		var closeErr *OpenAIWSClientCloseError
-		if errors.As(err, &closeErr) {
-			return false
-		}
-		return true
+		return !errors.As(err, &closeErr)
 	}
 	switch turnErr.stage {
 	case "read_client", "client_disconnected", "write_client", "idle_timeout":

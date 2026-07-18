@@ -59,7 +59,7 @@ func (wsPanicSubscriptionRepository) GetActiveByUserIDAndGroupID(context.Context
 	panic("cache-only billing must not load a subscription")
 }
 
-type wsPanicAPIKeyRateLimitLoader struct{ apiKeyRateLimitLoader }
+type wsPanicAPIKeyRateLimitLoader struct{}
 
 func (wsPanicAPIKeyRateLimitLoader) GetRateLimitData(context.Context, int64) (*APIKeyRateLimitData, error) {
 	panic("cache-only billing must not load API key rate limits")

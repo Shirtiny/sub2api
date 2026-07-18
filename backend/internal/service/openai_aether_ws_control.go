@@ -321,15 +321,6 @@ type aetherWSServiceTierMutation struct {
 	replacement string
 }
 
-func appendAetherWSMetadataObjectFenceAndModel(
-	payload []byte,
-	fenceJSON []byte,
-	envelope openaiwsv2.ClientEnvelope,
-	upstreamModel string,
-) ([]byte, error) {
-	return appendAetherWSMetadataObjectFenceAndModelAndTier(payload, fenceJSON, envelope, upstreamModel, nil)
-}
-
 func appendAetherWSMetadataObjectFenceAndModelAndTier(
 	payload []byte,
 	fenceJSON []byte,
@@ -406,19 +397,6 @@ func appendAetherWSMetadataObjectFenceAndModelAndTier(
 		editCount++
 	}
 	return applyAetherWSJSONEdits(payload, edits[:editCount])
-}
-
-func appendAetherWSClientMetadataFence(payload, fenceJSON []byte) ([]byte, error) {
-	return appendAetherWSClientMetadataFenceAndModel(payload, fenceJSON, openaiwsv2.ClientEnvelope{}, "")
-}
-
-func appendAetherWSClientMetadataFenceAndModel(
-	payload []byte,
-	fenceJSON []byte,
-	envelope openaiwsv2.ClientEnvelope,
-	upstreamModel string,
-) ([]byte, error) {
-	return appendAetherWSClientMetadataFenceAndModelAndTier(payload, fenceJSON, envelope, upstreamModel, nil)
 }
 
 func appendAetherWSClientMetadataFenceAndModelAndTier(

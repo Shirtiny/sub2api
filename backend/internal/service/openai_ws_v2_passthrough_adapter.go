@@ -1116,58 +1116,6 @@ func buildAetherWSReconnectDirective(
 	return directive
 }
 
-func (s *OpenAIGatewayService) mapOpenAIWSPassthroughDialError(
-	err error,
-	statusCode int,
-	handshakeHeaders http.Header,
-) error {
-	if err == nil {
-		return nil
-	}
-	wrappedErr := err
-	var dialErr *openAIWSDialError
-	if !errors.As(err, &dialErr) {
-		wrappedErr = &openAIWSDialError{
-			StatusCode:      statusCode,
-			ResponseHeaders: cloneHeader(handshakeHeaders),
-			Err:             err,
-		}
-	}
-
-	if errors.Is(err, context.Canceled) {
-		return err
-	}
-	if errors.Is(err, context.DeadlineExceeded) {
-		return NewOpenAIWSClientCloseError(
-			coderws.StatusTryAgainLater,
-			"upstream websocket connect timeout",
-			wrappedErr,
-		)
-	}
-	if statusCode == http.StatusTooManyRequests {
-		return NewOpenAIWSClientCloseError(
-			coderws.StatusTryAgainLater,
-			"upstream websocket is busy, please retry later",
-			wrappedErr,
-		)
-	}
-	if statusCode == http.StatusUnauthorized || statusCode == http.StatusForbidden {
-		return NewOpenAIWSClientCloseError(
-			coderws.StatusPolicyViolation,
-			"upstream websocket authentication failed",
-			wrappedErr,
-		)
-	}
-	if statusCode >= http.StatusBadRequest && statusCode < http.StatusInternalServerError {
-		return NewOpenAIWSClientCloseError(
-			coderws.StatusPolicyViolation,
-			"upstream websocket handshake rejected",
-			wrappedErr,
-		)
-	}
-	return fmt.Errorf("openai ws passthrough dial: %w", wrappedErr)
-}
-
 func openaiwsv2RelayMessageTypeName(msgType coderws.MessageType) string {
 	switch msgType {
 	case coderws.MessageText:

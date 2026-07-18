@@ -139,12 +139,14 @@ func TestParseClientEnvelopeStructuralLimits(t *testing.T) {
 	})
 	t.Run("field count", func(t *testing.T) {
 		var payload strings.Builder
-		payload.WriteString(`{"type":"response.create"`)
+		_, err := payload.WriteString(`{"type":"response.create"`)
+		require.NoError(t, err)
 		for index := 0; index < ClientEnvelopeMaxTopLevelFields; index++ {
 			fmt.Fprintf(&payload, `,"f%d":%d`, index, index)
 		}
-		payload.WriteByte('}')
-		_, err := ParseClientEnvelope([]byte(payload.String()))
+		err = payload.WriteByte('}')
+		require.NoError(t, err)
+		_, err = ParseClientEnvelope([]byte(payload.String()))
 		require.ErrorIs(t, err, errClientEnvelopeTooManyFields)
 	})
 	t.Run("depth", func(t *testing.T) {

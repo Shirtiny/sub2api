@@ -432,7 +432,7 @@ func (s *SchedulerSnapshotService) handleBulkAccountEvent(ctx context.Context, p
 		if account == nil || account.ID <= 0 {
 			continue
 		}
-		if !(batchedEpochs && epochs[account.ID] > 0) {
+		if !batchedEpochs || epochs[account.ID] <= 0 {
 			if err := s.publishAccountSnapshot(ctx, account, epochs[account.ID]); err != nil {
 				return err
 			}

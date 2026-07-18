@@ -41,11 +41,6 @@ type closeTrackingFrameConn struct {
 	closeCalls atomic.Int32
 }
 
-type readCountingFrameConn struct {
-	FrameConn
-	readCalls atomic.Int32
-}
-
 type closeAfterWriteFrameConn struct {
 	*passthroughTestFrameConn
 	closeAfter []byte
@@ -185,11 +180,6 @@ func (c *closeTrackingFrameConn) Close() error {
 		return nil
 	}
 	return c.FrameConn.Close()
-}
-
-func (c *readCountingFrameConn) ReadFrame(ctx context.Context) (coderws.MessageType, []byte, error) {
-	c.readCalls.Add(1)
-	return c.FrameConn.ReadFrame(ctx)
 }
 
 func (c *closeAfterWriteFrameConn) WriteFrame(ctx context.Context, msgType coderws.MessageType, payload []byte) error {
