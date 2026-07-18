@@ -1980,9 +1980,10 @@ func TestContentModerationCheck_PreHashUsesRedisHashCache(t *testing.T) {
 	require.Equal(t, ContentModerationActionHashBlock, logs[0].Action)
 	require.Equal(t, 1.0, logs[0].CategoryScores["hash"])
 	require.Equal(t, ContentModerationModePreBlock, logs[0].Mode)
-	require.Zero(t, logs[0].ViolationCount)
-	require.False(t, logs[0].AutoBanned)
-	require.Empty(t, userRepo.updated)
+	require.Equal(t, 1, logs[0].ViolationCount)
+	require.True(t, logs[0].AutoBanned)
+	require.Len(t, userRepo.updated, 1)
+	require.Equal(t, StatusDisabled, userRepo.updated[0].Status)
 }
 
 func TestContentModerationCheck_HashBlockLogsDoNotIncreaseNextViolationCount(t *testing.T) {

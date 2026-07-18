@@ -442,12 +442,13 @@ func TestAlreadyProcessedRecoversStaleRechargingLease(t *testing.T) {
 	ctx := context.Background()
 	client := newPaymentConfigServiceTestClient(t)
 	ensurePaymentAuditOrderActionUniqueIndex(t, ctx, client)
+	staleAt := time.Now().UTC().Add(-paymentFulfillmentLeaseDuration - time.Minute)
 	order := createPaymentFulfillmentSubscriptionOrder(
 		t,
 		ctx,
 		client,
 		OrderStatusRecharging,
-		time.Now().Add(-paymentFulfillmentLeaseDuration-time.Minute),
+		staleAt,
 	)
 	_, err := client.PaymentAuditLog.Create().
 		SetOrderID(strconv.FormatInt(order.ID, 10)).
@@ -475,7 +476,7 @@ func TestAlreadyProcessedRecoversStaleRechargingLease(t *testing.T) {
 func TestFulfillmentLeaseVersionRejectsStaleWorker(t *testing.T) {
 	ctx := context.Background()
 	client := newPaymentConfigServiceTestClient(t)
-	staleAt := time.Now().Add(-paymentFulfillmentLeaseDuration - time.Minute)
+	staleAt := time.Now().UTC().Add(-paymentFulfillmentLeaseDuration - time.Minute)
 	order := createPaymentFulfillmentSubscriptionOrder(t, ctx, client, OrderStatusRecharging, staleAt)
 	svc := &PaymentService{entClient: client}
 
@@ -508,7 +509,7 @@ func TestExecuteBalanceFulfillmentRecoversAfterRedeemWithoutCreditingAgain(t *te
 	ctx := context.Background()
 	client := newPaymentConfigServiceTestClient(t)
 	ensurePaymentAuditOrderActionUniqueIndex(t, ctx, client)
-	staleAt := time.Now().Add(-paymentFulfillmentLeaseDuration - time.Minute)
+	staleAt := time.Now().UTC().Add(-paymentFulfillmentLeaseDuration - time.Minute)
 	order := createPaymentFulfillmentSubscriptionOrder(t, ctx, client, OrderStatusRecharging, staleAt)
 	order, err := client.PaymentOrder.UpdateOneID(order.ID).
 		SetOrderType(payment.OrderTypeBalance).
@@ -544,7 +545,7 @@ func TestExecuteSubscriptionFulfillmentRecoversCommittedAssignmentWithoutExtendi
 	ctx := context.Background()
 	client := newPaymentConfigServiceTestClient(t)
 	ensurePaymentAuditOrderActionUniqueIndex(t, ctx, client)
-	staleAt := time.Now().Add(-paymentFulfillmentLeaseDuration - time.Minute)
+	staleAt := time.Now().UTC().Add(-paymentFulfillmentLeaseDuration - time.Minute)
 	order := createPaymentFulfillmentSubscriptionOrder(t, ctx, client, OrderStatusRecharging, staleAt)
 
 	expiresAt := time.Now().Add(30 * 24 * time.Hour).Truncate(time.Second)
