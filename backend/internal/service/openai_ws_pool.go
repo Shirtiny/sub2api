@@ -78,7 +78,11 @@ type openAIWSConnLease struct {
 	queueWait time.Duration
 	connPick  time.Duration
 	reused    bool
-	released  atomic.Bool
+	// Aether-managed connections carry request-scoped identity in the WebSocket
+	// handshake and Aether closes them after a routed terminal. They must not be
+	// returned to the account-wide idle pool for another client session.
+	closeOnRelease bool
+	released       atomic.Bool
 }
 
 func (l *openAIWSConnLease) activeConn() (*openAIWSConn, error) {
@@ -215,6 +219,15 @@ func (l *openAIWSConnLease) Release() {
 		return
 	}
 	if !l.released.CompareAndSwap(false, true) {
+		return
+	}
+	if l.closeOnRelease {
+		if l.pool != nil {
+			l.pool.evictConn(l.accountID, l.conn.id)
+		}
+		// evictConn only closes connections that are still registered in the
+		// pool. Close again defensively for already-evicted/broken leases.
+		l.conn.close()
 		return
 	}
 	l.conn.release()
@@ -801,7 +814,14 @@ func (p *openAIWSConnPool) acquire(ctx context.Context, req openAIWSAcquireReque
 		ap.lastCleanupAt = now
 	}
 	pickStartedAt := time.Now()
-	allowReuse := !req.ForceNewConn
+	// Aether's public WS contract is connection-scoped: handshake headers carry
+	// the Cafecode identity, the first response.create has a bounded deadline,
+	// and route-v1 may close the connection after a terminal. Reusing an idle
+	// account-level connection can therefore race the first-frame deadline and
+	// can leak the previous client's handshake identity into the next session.
+	aetherManaged := req.Account.IsAetherWSManaged()
+	forceNewConn := req.ForceNewConn || aetherManaged
+	allowReuse := !forceNewConn
 	preferredConnID := stringsTrim(req.PreferredConnID)
 	forcePreferredConn := allowReuse && req.ForcePreferredConn
 
@@ -965,7 +985,7 @@ func (p *openAIWSConnPool) acquire(ctx context.Context, req openAIWSAcquireReque
 		}
 	}
 
-	if req.ForceNewConn && len(ap.conns)+ap.creating >= effectiveMaxConns {
+	if forceNewConn && len(ap.conns)+ap.creating >= effectiveMaxConns {
 		if idle := p.pickOldestIdleConnLocked(ap); idle != nil {
 			delete(ap.conns, idle.id)
 			evicted = append(evicted, idle)
@@ -1004,12 +1024,18 @@ func (p *openAIWSConnPool) acquire(ctx context.Context, req openAIWSAcquireReque
 				return nil, err
 			}
 		}
-		lease := &openAIWSConnLease{pool: p, accountID: accountID, conn: conn, connPick: connPick}
+		lease := &openAIWSConnLease{
+			pool:           p,
+			accountID:      accountID,
+			conn:           conn,
+			connPick:       connPick,
+			closeOnRelease: aetherManaged,
+		}
 		p.ensureTargetIdleAsync(accountID)
 		return lease, nil
 	}
 
-	if req.ForceNewConn {
+	if forceNewConn {
 		p.recordConnPickDuration(time.Since(pickStartedAt))
 		ap.mu.Unlock()
 		closeOpenAIWSConns(evicted)
@@ -1291,6 +1317,12 @@ func (p *openAIWSConnPool) ensureTargetIdleAsync(accountID int64) {
 	ap.mu.Lock()
 	defer ap.mu.Unlock()
 	if ap.lastAcquire == nil {
+		return
+	}
+	if ap.lastAcquire.Account != nil && ap.lastAcquire.Account.IsAetherWSManaged() {
+		// Aether starts its first response.create deadline at the handshake.
+		// Prewarming would create sockets that expire before a client turn is
+		// assigned, so Aether-managed connections are always dialed on demand.
 		return
 	}
 	if ap.prewarmActive {

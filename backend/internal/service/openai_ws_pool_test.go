@@ -160,6 +160,86 @@ func TestOpenAIWSConnPool_EnsureTargetIdleAsync(t *testing.T) {
 	require.GreaterOrEqual(t, metrics.ScaleUpTotal, int64(2))
 }
 
+func TestOpenAIWSConnPool_EnsureTargetIdleAsyncSkipsAetherManagedAccount(t *testing.T) {
+	cfg := &config.Config{}
+	cfg.Gateway.OpenAIWS.MaxConnsPerAccount = 4
+	cfg.Gateway.OpenAIWS.MinIdlePerAccount = 4
+	cfg.Gateway.OpenAIWS.DialTimeoutSeconds = 1
+
+	pool := newOpenAIWSConnPool(cfg)
+	dialer := &openAIWSCountingDialer{}
+	pool.setClientDialerForTest(dialer)
+
+	account := effectiveAetherWSTestAccount()
+	account.ID = 177
+	account.Concurrency = 4
+	ap := pool.getOrCreateAccountPool(account.ID)
+	ap.mu.Lock()
+	ap.lastAcquire = &openAIWSAcquireRequest{
+		Account: account,
+		WSURL:   "ws://aether-app/v1/responses",
+	}
+	ap.mu.Unlock()
+
+	pool.ensureTargetIdleAsync(account.ID)
+
+	ap.mu.Lock()
+	defer ap.mu.Unlock()
+	require.Empty(t, ap.conns)
+	require.False(t, ap.prewarmActive)
+	require.Zero(t, dialer.DialCount())
+}
+
+func TestOpenAIWSConnPool_AetherManagedConnectionsAreOnDemandAndSessionScoped(t *testing.T) {
+	cfg := &config.Config{}
+	cfg.Gateway.OpenAIWS.MaxConnsPerAccount = 4
+	cfg.Gateway.OpenAIWS.MinIdlePerAccount = 4
+	cfg.Gateway.OpenAIWS.DialTimeoutSeconds = 1
+
+	pool := newOpenAIWSConnPool(cfg)
+	dialer := &openAIWSCountingDialer{}
+	pool.setClientDialerForTest(dialer)
+
+	account := effectiveAetherWSTestAccount()
+	account.ID = 188
+	account.Concurrency = 4
+	req := openAIWSAcquireRequest{
+		Account: account,
+		WSURL:   "ws://aether-app/v1/responses",
+		Headers: http.Header{
+			"Cafecode-Uid": []string{"1"},
+		},
+	}
+
+	first, err := pool.Acquire(context.Background(), req)
+	require.NoError(t, err)
+	require.NotNil(t, first)
+	require.False(t, first.Reused())
+	firstConnID := first.ConnID()
+	require.Equal(t, 1, dialer.DialCount())
+	first.Release()
+
+	ap, ok := pool.getAccountPool(account.ID)
+	require.True(t, ok)
+	ap.mu.Lock()
+	require.Empty(t, ap.conns, "Aether connection must close instead of returning to the idle pool")
+	ap.mu.Unlock()
+
+	second, err := pool.Acquire(context.Background(), req)
+	require.NoError(t, err)
+	require.NotNil(t, second)
+	require.False(t, second.Reused())
+	require.NotEqual(t, firstConnID, second.ConnID())
+	require.Equal(t, 2, dialer.DialCount())
+	second.Release()
+
+	ap.mu.Lock()
+	require.Empty(t, ap.conns)
+	ap.mu.Unlock()
+	pool.ensureTargetIdleAsync(account.ID)
+	require.Equal(t, 2, dialer.DialCount(), "Aether account must not be replenished by idle prewarm")
+}
+
 func TestOpenAIWSConnPool_EnsureTargetIdleAsyncCooldown(t *testing.T) {
 	cfg := &config.Config{}
 	cfg.Gateway.OpenAIWS.MaxConnsPerAccount = 4
