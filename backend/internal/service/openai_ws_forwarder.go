@@ -1216,6 +1216,7 @@ func (s *OpenAIGatewayService) buildOpenAIWSHeaders(
 ) (http.Header, openAIWSSessionHeaderResolution) {
 	headers := make(http.Header)
 	headers.Set("authorization", "Bearer "+token)
+	applyCafecodeIdentityHeaderValues(headers, c, account)
 
 	sessionResolution := resolveOpenAIWSSessionHeaders(c, promptCacheKey)
 	if c != nil && c.Request != nil {

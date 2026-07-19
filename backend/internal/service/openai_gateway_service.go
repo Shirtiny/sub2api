@@ -953,8 +953,15 @@ func applyCafecodeIdentityHeaders(req *http.Request, c *gin.Context, account *Ac
 	if req == nil {
 		return
 	}
-	req.Header.Del("cafecode-uid")
-	req.Header.Del("cafecode-uname")
+	applyCafecodeIdentityHeaderValues(req.Header, c, account)
+}
+
+func applyCafecodeIdentityHeaderValues(headers http.Header, c *gin.Context, account *Account) {
+	if headers == nil {
+		return
+	}
+	headers.Del("cafecode-uid")
+	headers.Del("cafecode-uname")
 	if !account.IsCafecodeIdentityHeadersEnabled() {
 		return
 	}
@@ -962,12 +969,12 @@ func applyCafecodeIdentityHeaders(req *http.Request, c *gin.Context, account *Ac
 	if apiKey == nil || apiKey.User == nil {
 		return
 	}
-	req.Header.Set("cafecode-uid", strconv.FormatInt(apiKey.User.ID, 10))
+	headers.Set("cafecode-uid", strconv.FormatInt(apiKey.User.ID, 10))
 	uname := cafecodeIdentityHeaderUname(apiKey.User)
 	if uname != "" {
-		req.Header.Set("cafecode-uname", uname)
+		headers.Set("cafecode-uname", uname)
 	} else {
-		req.Header.Del("cafecode-uname")
+		headers.Del("cafecode-uname")
 	}
 }
 

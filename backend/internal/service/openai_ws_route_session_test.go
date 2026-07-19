@@ -4,6 +4,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/Wei-Shaw/sub2api/internal/pkg/openai_compat"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
 )
@@ -141,6 +142,29 @@ func TestBuildOpenAIWSHeadersForwardsCanonicalCodexIdentity(t *testing.T) {
 	require.Equal(t, "session-a", headers.Get("session-id"))
 	require.Equal(t, "thread-a", headers.Get("thread-id"))
 	require.Equal(t, "thread-a", headers.Get("x-client-request-id"))
+}
+
+func TestBuildOpenAIWSHeadersAppliesCafecodeIdentity(t *testing.T) {
+	c := newOpenAIWSRouteSessionTestContext()
+	c.Request.Header.Set("cafecode-uid", "spoofed")
+	c.Request.Header.Set("cafecode-uname", "spoofed")
+	c.Set("api_key", &APIKey{User: &User{
+		ID:       42,
+		Username: "cafe-user",
+		Email:    "fallback@example.test",
+	}})
+
+	svc := &OpenAIGatewayService{}
+	disabledHeaders, _ := svc.buildOpenAIWSHeaders(c, &Account{}, "token", OpenAIWSProtocolDecision{}, true, "", "", "")
+	require.Empty(t, disabledHeaders.Get("cafecode-uid"))
+	require.Empty(t, disabledHeaders.Get("cafecode-uname"))
+
+	enabledAccount := &Account{Extra: map[string]any{
+		openai_compat.ExtraKeyCafecodeIdentityHeadersEnabled: true,
+	}}
+	enabledHeaders, _ := svc.buildOpenAIWSHeaders(c, enabledAccount, "token", OpenAIWSProtocolDecision{}, true, "", "", "")
+	require.Equal(t, "42", enabledHeaders.Get("cafecode-uid"))
+	require.Equal(t, "cafe-user", enabledHeaders.Get("cafecode-uname"))
 }
 
 func newOpenAIWSRouteSessionTestContext() *gin.Context {
