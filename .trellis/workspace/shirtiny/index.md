@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 6
-- **Last Active**: 2026-07-17
+- **Total Sessions**: 7
+- **Last Active**: 2026-07-21
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~285 | Active |
+| `journal-1.md` | ~345 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits |
 |---|------|-------|---------|
+| 7 | 2026-07-21 | Admin subscription stats, usage series, and window shifting | `62285b4b` |
 | 6 | 2026-07-17 | End-to-end Codex WebSocket transport | `f4a25381`, Aether `dbf4bd82` |
 | 5 | 2026-05-11 | Account pass-through toggle | - |
 | 4 | 2026-05-01 | Merge main into custom-prod | `a2bcb5ab` |

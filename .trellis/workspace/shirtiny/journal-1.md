@@ -285,3 +285,61 @@ Implemented account-controlled client WebSocket ingress in sub2api, direct local
 - Before production enablement: drain pre-v2 sessions and complete the final v2 scheduler rebuild/readiness gate.
 - Validate real official credentials/TLS capture, shared Redis across multiple instances, MySQL/PostgreSQL integration, staging proxies, and load evidence.
 - Consider a durable moderation outbox as a later reliability enhancement.
+
+---
+
+## Session 7: Admin subscription stats, usage series, and window shifting
+
+**Date**: 2026-07-21
+**Task**: Add bulk reset-window shifting and a subscription statistics panel to `/admin/subscriptions`
+
+### Summary
+
+Added three admin capabilities: filter-scoped bulk shifting of subscription reset windows, a cross-plan quota/usage statistics panel, and per-subscription daily/weekly/whole-cycle usage rates backed by a new durable rollup table. Settled the daily-versus-weekly quota accounting question by replacing an ad-hoc coefficient with an explicit time horizon.
+
+### Main Changes
+
+- Added `POST /admin/subscriptions/bulk-shift-window` with dry-run preview. Only rows whose window start is non-null and whose group actually sets that limit are touched; rows whose shifted start would land in the future are skipped whole and counted separately; usage counters are never modified.
+- Added `GET /admin/subscriptions/stats` returning remaining-today, remaining-this-week, an N-day consumable ceiling, per-plan breakdown, and daily/weekly usage-ratio rankings. Daily and weekly limits are not implicitly converted into each other; the third metric exposes the conversion as a selectable 1/3/7/14/30-day horizon, truncated by `expires_at`.
+- Added `GET /admin/subscriptions/:id/usage-series` returning per-day, per-week and whole-cycle usage ratios, with derived denominators explicitly flagged.
+- Added the `subscription_usage_daily` rollup table (migration 174), written incrementally by `DashboardAggregationService`, retained for 400 days and decoupled from `usage_logs`. No foreign keys, so history survives subscription deletion. Limit columns are per-day snapshots including `custom_multiplier`, so repricing does not shift historical denominators.
+- Added the frontend shift-window dialog, the statistics dialog with drill-down, a shared `ratioToneClass` helper, a shared `createIdempotencyKey` util, and full zh/en locale entries.
+- Added `docs/SUBSCRIPTION_ADMIN_STATS_AND_WINDOW_SHIFT.md` covering accounting decisions, the recompute hazard, rollout steps and the backfill SQL, plus a `.gitignore` allowlist entry for it.
+
+### Findings
+
+- Production `usage_logs` retains only about one day. This is not the application's 90-day `usage_logs_days` setting but the host script `/root/clean` (`SUB2API_KEEP_DAYS=1`, weekly cron). Its purge list is an explicit allowlist, so `subscription_usage_daily` is unaffected.
+- No pre-existing data source could serve per-subscription history: `usage_dashboard_daily` is site-wide only, `*_daily_users` carries no cost, and `billing_usage_entries` is empty because that write path is not enabled.
+- Rollup totals exceed the subscription counters for a few rows. This is correct: the rollup records actual spend while the counter records spend since the last reset, and administrators had reset quotas mid-window. Usage ratios can legitimately exceed 100%.
+- The `3.5 x daily limit` figure previously used for manual estimates was really "about four days remaining until the weekly reset". It understates exposure by roughly 40%, since a $150/day limit is $1,050/week rather than $525.
+
+### Bug Caught During Implementation
+
+`recomputeRangeInTx` initially deleted the rollup range before rebuilding, mirroring the four sibling statements for `usage_dashboard_*`. Those tables are derived views of `usage_logs` and must roll back with their source; `subscription_usage_daily` is the opposite and exists precisely to outlive it. `UsageCleanupService` triggers `TriggerRecomputeRange` over the same range immediately after purging `usage_logs`, so one administrator cleanup would have permanently destroyed that period's subscription usage history. Both the incremental and recompute paths now use pure upsert; only the retention job may delete.
+
+### Git Commits
+
+- sub2api: `62285b4b` — `feat(subscriptions): 管理端订阅统计、使用率明细与窗口平移`
+
+### Testing
+
+- [OK] `go build ./...`, `go vet ./...`
+- [OK] `go test -tags=unit` across service, handler, repository, server and config packages
+- [OK] `go test -tags=integration` for the new `SubscriptionUsageDailySuite` (testcontainers, real migrations)
+- [OK] Mutation-verified the regression guard: restoring the delete makes `TestRecomputeKeepsRollupAfterUsageLogsPurged` fail on the intended assertion
+- [OK] `golangci-lint` exit 0; the six reported issues are all in untouched files
+- [OK] Both hand-written SQL statements executed against the production database inside rolled-back transactions: rollup produced 276 rows across 116 subscriptions; the shift matched 54 rows with usage untouched and daily-limited groups unaffected; the future-guard skipped all 54 rows at +720h
+- [OK] Migration verified idempotent by running it twice on a scratch database
+- [OK] Frontend `pnpm typecheck` and `pnpm lint:check` (0 errors)
+- [!] Frontend `pnpm test:run`: 840/843 passing. The three failures (`usePersistedPageSize`, `EmailOAuthButtons`, `HelpTooltip`) are pre-existing and touch no file changed in this session.
+
+### Status
+
+[OK] **Completed and committed; not yet deployed**
+
+### Next Steps
+
+- After deployment, run the backfill SQL in the documentation. Only the days still present in `usage_logs` can be recovered; earlier history is permanently gone, so the table needs a full subscription cycle before the series view is complete.
+- Investigate raising `SUB2API_KEEP_DAYS` from 1 to about 3, so a container outage longer than a day cannot lose usage before the rollup captures it.
+- Decide whether the shift-window double-click guard should move from the frontend in-flight check into a handler-held idempotency key.
+- Consider consolidating the three remaining duplicate `createIdempotencyKey` copies in `api/keys.ts`, `api/user.ts` and `api/payment.ts` onto the new shared util.
