@@ -1716,6 +1716,167 @@ export interface ExtendSubscriptionRequest {
   days: number
 }
 
+// ==================== Subscription Window Shift ====================
+
+/** 批量移动重置窗口时可选的过滤条件，与订阅列表的筛选项一一对应。 */
+export interface SubscriptionFilterScope {
+  status?: 'active' | 'expired' | 'revoked'
+  user_id?: number
+  group_id?: number
+  platform?: string
+}
+
+export interface BulkShiftWindowRequest {
+  daily: boolean
+  weekly: boolean
+  monthly: boolean
+  /** 正数推迟重置、负数提前；非 0，绝对值 <= 720 */
+  offset_hours: number
+  /** true = 只统计不落库，用于弹窗预览影响条数 */
+  dry_run: boolean
+  filters?: SubscriptionFilterScope
+}
+
+export interface BulkShiftWindowResult {
+  /** 命中过滤条件、且该窗口确实可移动的订阅数 */
+  matched: number
+  /** 实际写库条数；dry_run=true 时恒为 0 */
+  updated: number
+  /** 因移动后窗口起点会落到未来而被跳过的条数 */
+  skipped_future: number
+  dry_run: boolean
+}
+
+// ==================== Subscription Stats ====================
+
+export interface SubscriptionStatsTotals {
+  active_subscriptions: number
+  active_users: number
+  daily_limited_subscriptions: number
+  weekly_limited_subscriptions: number
+  /** Σ(日限 − 日用量)，仅统计有日限的订阅 */
+  remaining_today_usd: number
+  /** Σ(周限 − 周用量)，仅统计有周限的订阅 */
+  remaining_week_usd: number
+  /** 未来 horizon_days 天理论可消耗上限，受 expires_at 截断 */
+  horizon_capacity_usd: number
+}
+
+export interface SubscriptionStatsPlan {
+  group_id: number
+  group_name: string
+  platform: string
+  subscriptions: number
+  users: number
+  /** 0 表示该窗口无限额 */
+  daily_limit_usd: number
+  weekly_limit_usd: number
+  monthly_limit_usd: number
+  daily_quota_usd: number
+  daily_used_usd: number
+  remaining_today_usd: number
+  weekly_quota_usd: number
+  weekly_used_usd: number
+  remaining_week_usd: number
+  monthly_quota_usd: number
+  monthly_used_usd: number
+  remaining_month_usd: number
+  /** 主窗口口径已用（主窗口优先级 日 > 周 > 月） */
+  used_usd: number
+  /** 主窗口口径总额度 */
+  quota_usd: number
+  /** used_usd / quota_usd，可 > 1 */
+  usage_ratio: number
+  horizon_capacity_usd: number
+}
+
+export interface SubscriptionStatsRankingItem {
+  subscription_id: number
+  user_id: number
+  username: string
+  email: string
+  group_id: number
+  group_name: string
+  limit_usd: number
+  used_usd: number
+  remaining_usd: number
+  /** used/limit，可 > 1 */
+  usage_ratio: number
+  window_start: string | null
+  window_resets_at: string | null
+  expires_at: string | null
+}
+
+export interface SubscriptionStatsRanking {
+  daily: SubscriptionStatsRankingItem[]
+  weekly: SubscriptionStatsRankingItem[]
+}
+
+export interface SubscriptionStats {
+  generated_at: string
+  horizon_days: number
+  totals: SubscriptionStatsTotals
+  plans: SubscriptionStatsPlan[]
+  ranking: SubscriptionStatsRanking
+}
+
+// ==================== Subscription Usage Series ====================
+
+export interface SubscriptionUsageDailyPoint {
+  date: string
+  cost_usd: number
+  requests: number
+  /** 无日限时用 周限÷7 折算 */
+  limit_usd: number
+  /** true = 分母是折算值，UI 需标注 */
+  limit_is_derived: boolean
+  usage_ratio: number
+}
+
+export interface SubscriptionUsageWeeklyPoint {
+  week_start: string
+  week_end: string
+  cost_usd: number
+  requests: number
+  limit_usd: number
+  /** 无周限时用 日限×7 折算，则为 true */
+  limit_is_derived: boolean
+  usage_ratio: number
+}
+
+export type SubscriptionUsageWindowKind = 'daily' | 'weekly' | 'monthly'
+
+export interface SubscriptionUsageCycle {
+  start: string
+  end: string
+  cost_usd: number
+  /** 限额 × 周期内已经历的窗口数 */
+  quota_usd: number
+  usage_ratio: number
+  windows_elapsed: number
+  window_kind: SubscriptionUsageWindowKind
+}
+
+export interface SubscriptionUsageSeries {
+  subscription_id: number
+  user_id: number
+  username: string
+  group_id: number
+  group_name: string
+  starts_at: string | null
+  expires_at: string | null
+  daily_limit_usd: number
+  weekly_limit_usd: number
+  monthly_limit_usd: number
+  /** 汇总表最早有数据的日期；null 表示无任何数据 */
+  data_from: string | null
+  /** data_from > starts_at 时为 false，UI 需提示历史缺失 */
+  data_complete: boolean
+  daily: SubscriptionUsageDailyPoint[]
+  weekly: SubscriptionUsageWeeklyPoint[]
+  cycle: SubscriptionUsageCycle | null
+}
+
 // ==================== Query Parameters ====================
 
 export interface UserErrorRequest {

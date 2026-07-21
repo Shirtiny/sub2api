@@ -170,3 +170,11 @@ func TestSubscriptionExpiryService_ExpiryReminderSettingReadErrorFailsClosed(t *
 
 	require.False(t, svc.expiryReminderEnabled(context.Background()))
 }
+
+func (r *subscriptionExpiryRepoStub) ShiftUsageWindows(ctx context.Context, input ShiftWindowQuery) (ShiftWindowRows, error) {
+	return ShiftWindowRows{}, nil
+}
+
+func (r *subscriptionExpiryRepoStub) ListUsageDaily(ctx context.Context, subscriptionID int64, from, to time.Time) ([]SubscriptionUsageDaily, error) {
+	return nil, nil
+}

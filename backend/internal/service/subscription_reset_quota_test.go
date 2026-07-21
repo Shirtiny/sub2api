@@ -417,3 +417,11 @@ func TestEnsureWindowMaintenance_LegacyCustomGroupPreservesMultipliedLimit(t *te
 	require.True(t, refreshed.CheckDailyLimit(group, 20))
 	require.False(t, refreshed.CheckDailyLimit(group, 20.01))
 }
+
+func (r *resetQuotaUserSubRepoStub) ShiftUsageWindows(ctx context.Context, input ShiftWindowQuery) (ShiftWindowRows, error) {
+	return ShiftWindowRows{}, nil
+}
+
+func (r *resetQuotaUserSubRepoStub) ListUsageDaily(ctx context.Context, subscriptionID int64, from, to time.Time) ([]SubscriptionUsageDaily, error) {
+	return nil, nil
+}

@@ -109,6 +109,21 @@
               <Icon name="refresh" size="md" class="mr-2" :class="bulkResettingQuota ? 'animate-spin' : ''" />
               {{ t('admin.subscriptions.bulkResetQuota') }}
             </button>
+            <button
+              @click="openShiftWindowDialog"
+              :disabled="shiftingWindow"
+              class="btn btn-secondary"
+            >
+              <Icon name="clock" size="md" class="mr-2" />
+              {{ t('admin.subscriptions.shiftWindow') }}
+            </button>
+            <button
+              @click="showStatsDialog = true"
+              class="btn btn-secondary"
+            >
+              <Icon name="chartBar" size="md" class="mr-2" />
+              {{ t('admin.subscriptions.stats.openButton') }}
+            </button>
             <!-- Column Settings Dropdown -->
             <div class="relative" ref="columnDropdownRef">
               <button
@@ -693,6 +708,120 @@
         </p>
       </div>
     </ConfirmDialog>
+    <!-- Bulk Shift Reset Window Dialog -->
+    <BaseDialog
+      :show="showShiftWindowDialog"
+      :title="t('admin.subscriptions.shiftWindowTitle')"
+      width="normal"
+      @close="closeShiftWindowDialog"
+    >
+      <div class="space-y-4">
+        <!-- Danger notice -->
+        <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200">
+          {{ t('admin.subscriptions.shiftWindowWarning') }}
+        </div>
+
+        <!-- Window checkboxes -->
+        <div>
+          <p class="mb-2 text-sm font-medium text-content-primary">
+            {{ t('admin.subscriptions.shiftWindowWindows') }}
+          </p>
+          <div class="space-y-2">
+            <label
+              v-for="window in bulkResetWindows"
+              :key="window.key"
+              class="flex items-center gap-2"
+            >
+              <input
+                v-model="shiftWindowSelection[window.key]"
+                type="checkbox"
+                class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                @change="scheduleShiftPreview"
+              />
+              <span class="text-sm text-content-secondary">
+                {{ t(`admin.subscriptions.shiftWindow${window.key === 'daily' ? 'Daily' : window.key === 'weekly' ? 'Weekly' : 'Monthly'}`) }}
+              </span>
+            </label>
+          </div>
+          <p v-if="!hasShiftWindow" class="mt-1 text-sm text-red-600 dark:text-red-400">
+            {{ t('admin.subscriptions.shiftWindowNoWindow') }}
+          </p>
+        </div>
+
+        <!-- Offset hours -->
+        <div>
+          <label class="mb-1 block text-sm font-medium text-content-primary" for="shift-offset-hours">
+            {{ t('admin.subscriptions.shiftWindowOffsetHours') }}
+          </label>
+          <input
+            id="shift-offset-hours"
+            v-model.number="shiftWindowForm.offset_hours"
+            type="number"
+            step="1"
+            :min="-SHIFT_WINDOW_MAX_HOURS"
+            :max="SHIFT_WINDOW_MAX_HOURS"
+            class="input"
+            @input="scheduleShiftPreview"
+          />
+          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            {{ t('admin.subscriptions.shiftWindowOffsetHint', { max: SHIFT_WINDOW_MAX_HOURS }) }}
+          </p>
+          <p v-if="shiftOffsetError" class="mt-1 text-sm text-red-600 dark:text-red-400">
+            {{ shiftOffsetError }}
+          </p>
+        </div>
+
+        <!-- Current filter scope -->
+        <div class="rounded-xl border border-gray-200 p-3 dark:border-dark-700">
+          <p class="text-sm font-medium text-content-primary">
+            {{ t('admin.subscriptions.shiftWindowScope') }}
+          </p>
+          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            {{ t('admin.subscriptions.shiftWindowScopeHint') }}
+          </p>
+          <ul class="mt-2 space-y-0.5 text-xs text-content-secondary">
+            <li v-for="line in shiftScopeSummary" :key="line">• {{ line }}</li>
+          </ul>
+        </div>
+
+        <!-- Dry-run preview -->
+        <div
+          class="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-200"
+          data-test="shift-preview"
+        >
+          <span v-if="shiftPreviewLoading">{{ t('admin.subscriptions.shiftWindowPreviewLoading') }}</span>
+          <span v-else-if="shiftPreview">
+            {{ t('admin.subscriptions.shiftWindowPreview', {
+              matched: shiftPreview.matched,
+              skipped: shiftPreview.skipped_future
+            }) }}
+          </span>
+          <span v-else>{{ t('admin.subscriptions.shiftWindowPreviewUnavailable') }}</span>
+        </div>
+      </div>
+
+      <template #footer>
+        <div class="flex justify-end gap-3">
+          <button type="button" class="btn btn-secondary" @click="closeShiftWindowDialog">
+            {{ t('common.cancel') }}
+          </button>
+          <button
+            type="button"
+            class="btn btn-danger"
+            :disabled="!canSubmitShiftWindow"
+            @click="confirmShiftWindow"
+          >
+            {{ shiftingWindow
+              ? t('admin.subscriptions.shiftWindowSubmitting')
+              : t('admin.subscriptions.shiftWindowSubmit') }}
+          </button>
+        </div>
+      </template>
+    </BaseDialog>
+
+    <!-- Subscription Stats Dialog -->
+    <SubscriptionStatsDialog :show="showStatsDialog" @close="showStatsDialog = false" />
+
     <!-- Subscription Guide Modal -->
     <teleport to="body">
       <transition name="modal">
@@ -780,7 +909,14 @@ import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
 import { adminAPI } from '@/api/admin'
-import type { UserSubscription, Group, GroupPlatform, SubscriptionType } from '@/types'
+import type {
+  UserSubscription,
+  Group,
+  GroupPlatform,
+  SubscriptionType,
+  BulkShiftWindowResult,
+  SubscriptionFilterScope
+} from '@/types'
 import type { SimpleUser } from '@/api/admin/usage'
 import type { Column } from '@/components/common/types'
 import { formatDateOnly } from '@/utils/format'
@@ -795,8 +931,14 @@ import EmptyState from '@/components/common/EmptyState.vue'
 import Select from '@/components/common/Select.vue'
 import GroupBadge from '@/components/common/GroupBadge.vue'
 import GroupOptionItem from '@/components/common/GroupOptionItem.vue'
+import SubscriptionStatsDialog from '@/components/admin/SubscriptionStatsDialog.vue'
 import Icon from '@/components/icons/Icon.vue'
-import { getRemainingDurationParts, isOneTimeDailyQuota, type RemainingDurationParts } from '@/utils/subscriptionQuota'
+import {
+  getRemainingDurationParts,
+  isOneTimeDailyQuota,
+  ratioToneClass,
+  type RemainingDurationParts
+} from '@/utils/subscriptionQuota'
 
 const { t } = useI18n()
 const appStore = useAppStore()
@@ -995,6 +1137,169 @@ const bulkResetWindows = [
 const hasBulkResetWindow = computed(
   () => bulkResetSelection.daily || bulkResetSelection.weekly || bulkResetSelection.monthly
 )
+
+// ---- 统一延长重置窗口 ----
+// 后端约束：偏移小时数非 0 且绝对值 <= 720（30 天）。
+const SHIFT_WINDOW_MAX_HOURS = 720
+const showStatsDialog = ref(false)
+const showShiftWindowDialog = ref(false)
+const shiftingWindow = ref(false)
+const shiftWindowSelection = reactive({ daily: false, weekly: true, monthly: false })
+const shiftWindowForm = reactive({ offset_hours: 0 })
+const shiftPreview = ref<BulkShiftWindowResult | null>(null)
+const shiftPreviewLoading = ref(false)
+let shiftPreviewTimeout: ReturnType<typeof setTimeout> | null = null
+let shiftPreviewController: AbortController | null = null
+
+const hasShiftWindow = computed(
+  () => shiftWindowSelection.daily || shiftWindowSelection.weekly || shiftWindowSelection.monthly
+)
+
+const shiftOffsetError = computed(() => {
+  const hours = shiftWindowForm.offset_hours
+  if (!Number.isFinite(hours) || hours === 0) {
+    return t('admin.subscriptions.shiftWindowOffsetRequired')
+  }
+  if (!Number.isInteger(hours)) {
+    return t('admin.subscriptions.shiftWindowOffsetInteger')
+  }
+  if (Math.abs(hours) > SHIFT_WINDOW_MAX_HOURS) {
+    return t('admin.subscriptions.shiftWindowOffsetRange', { max: SHIFT_WINDOW_MAX_HOURS })
+  }
+  return ''
+})
+
+const isShiftWindowValid = computed(() => hasShiftWindow.value && !shiftOffsetError.value)
+
+const canSubmitShiftWindow = computed(() => isShiftWindowValid.value && !shiftingWindow.value)
+
+// 只下发页面上真正生效的筛选项，未选的字段不进请求体。
+const buildShiftFilters = (): SubscriptionFilterScope | undefined => {
+  const scope: SubscriptionFilterScope = {}
+  if (filters.status) {
+    scope.status = filters.status as SubscriptionFilterScope['status']
+  }
+  if (filters.group_id) {
+    scope.group_id = parseInt(filters.group_id)
+  }
+  if (filters.platform) {
+    scope.platform = filters.platform
+  }
+  if (filters.user_id) {
+    scope.user_id = filters.user_id
+  }
+  return Object.keys(scope).length > 0 ? scope : undefined
+}
+
+const shiftScopeSummary = computed(() => {
+  const lines: string[] = []
+  lines.push(
+    `${t('admin.subscriptions.columns.status')}: ${
+      filters.status
+        ? t(`admin.subscriptions.status.${filters.status}`)
+        : t('admin.subscriptions.allStatus')
+    }`
+  )
+  const groupLabel = filters.group_id
+    ? (groups.value.find((g) => g.id.toString() === filters.group_id)?.name ?? filters.group_id)
+    : t('admin.subscriptions.allGroups')
+  lines.push(`${t('admin.subscriptions.columns.group')}: ${groupLabel}`)
+  lines.push(
+    `${t('admin.subscriptions.shiftWindowScopePlatform')}: ${
+      filters.platform || t('admin.subscriptions.allPlatforms')
+    }`
+  )
+  if (selectedFilterUser.value) {
+    lines.push(`${t('admin.subscriptions.columns.user')}: ${selectedFilterUser.value.email}`)
+  }
+  return lines
+})
+
+const runShiftPreview = async () => {
+  if (!isShiftWindowValid.value) {
+    shiftPreview.value = null
+    shiftPreviewLoading.value = false
+    return
+  }
+
+  shiftPreviewController?.abort()
+  const controller = new AbortController()
+  shiftPreviewController = controller
+
+  shiftPreviewLoading.value = true
+  try {
+    const result = await adminAPI.subscriptions.bulkShiftWindow({
+      ...shiftWindowSelection,
+      offset_hours: shiftWindowForm.offset_hours,
+      dry_run: true,
+      filters: buildShiftFilters()
+    })
+    if (shiftPreviewController !== controller) return
+    shiftPreview.value = result
+  } catch (error: any) {
+    if (shiftPreviewController !== controller) return
+    if (error?.name === 'AbortError' || error?.code === 'ERR_CANCELED') return
+    shiftPreview.value = null
+    console.error('Error previewing window shift:', error)
+  } finally {
+    if (shiftPreviewController === controller) {
+      shiftPreviewLoading.value = false
+      shiftPreviewController = null
+    }
+  }
+}
+
+const scheduleShiftPreview = () => {
+  if (shiftPreviewTimeout) {
+    clearTimeout(shiftPreviewTimeout)
+  }
+  shiftPreviewTimeout = setTimeout(runShiftPreview, 300)
+}
+
+const openShiftWindowDialog = () => {
+  shiftPreview.value = null
+  showShiftWindowDialog.value = true
+  runShiftPreview()
+}
+
+const closeShiftWindowDialog = () => {
+  showShiftWindowDialog.value = false
+  if (shiftPreviewTimeout) {
+    clearTimeout(shiftPreviewTimeout)
+    shiftPreviewTimeout = null
+  }
+  shiftPreviewController?.abort()
+  shiftPreviewController = null
+  shiftPreviewLoading.value = false
+}
+
+const confirmShiftWindow = async () => {
+  if (!isShiftWindowValid.value || shiftingWindow.value) return
+  shiftingWindow.value = true
+  try {
+    const result = await adminAPI.subscriptions.bulkShiftWindow({
+      ...shiftWindowSelection,
+      offset_hours: shiftWindowForm.offset_hours,
+      dry_run: false,
+      filters: buildShiftFilters()
+    })
+    appStore.showSuccess(
+      t('admin.subscriptions.shiftWindowSuccess', {
+        count: result.updated,
+        skipped: result.skipped_future
+      })
+    )
+    closeShiftWindowDialog()
+    await loadSubscriptions()
+  } catch (error: any) {
+    appStore.showError(
+      error.response?.data?.detail || t('admin.subscriptions.shiftWindowFailed')
+    )
+    console.error('Error shifting subscription windows:', error)
+  } finally {
+    shiftingWindow.value = false
+  }
+}
 const extendingSubscription = ref<UserSubscription | null>(null)
 const revokingSubscription = ref<UserSubscription | null>(null)
 
@@ -1377,12 +1682,9 @@ const getProgressWidth = (used: number | null | undefined, limit: number | null)
 }
 
 const getProgressClass = (used: number | null | undefined, limit: number | null): string => {
+  // 无限额时保持灰色，其余走统一的使用率配色。
   if (!limit || limit === 0) return 'bg-gray-400'
-  const usedValue = used ?? 0
-  const percentage = (usedValue / limit) * 100
-  if (percentage >= 90) return 'bg-red-500'
-  if (percentage >= 70) return 'bg-orange-500'
-  return 'bg-green-500'
+  return ratioToneClass((used ?? 0) / limit)
 }
 
 const formatResetDuration = (parts: RemainingDurationParts): string => {
@@ -1470,6 +1772,10 @@ onUnmounted(() => {
   if (userSearchTimeout) {
     clearTimeout(userSearchTimeout)
   }
+  if (shiftPreviewTimeout) {
+    clearTimeout(shiftPreviewTimeout)
+  }
+  shiftPreviewController?.abort()
 })
 </script>
 

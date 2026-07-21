@@ -43,6 +43,7 @@ type DashboardAggregationRepository interface {
 	GetAggregationWatermark(ctx context.Context) (time.Time, error)
 	UpdateAggregationWatermark(ctx context.Context, aggregatedAt time.Time) error
 	CleanupAggregates(ctx context.Context, hourlyCutoff, dailyCutoff time.Time) error
+	CleanupSubscriptionUsageDaily(ctx context.Context, cutoff time.Time) error
 	CleanupUsageLogs(ctx context.Context, cutoff time.Time) error
 	CleanupUsageBillingDedup(ctx context.Context, cutoff time.Time) error
 	EnsureUsageLogsPartitions(ctx context.Context, now time.Time) error
@@ -329,12 +330,17 @@ func (s *DashboardAggregationService) maybeCleanupRetention(ctx context.Context,
 
 	hourlyCutoff := now.AddDate(0, 0, -s.cfg.Retention.HourlyDays)
 	dailyCutoff := now.AddDate(0, 0, -s.cfg.Retention.DailyDays)
+	subDailyCutoff := now.AddDate(0, 0, -s.cfg.Retention.SubscriptionDailyDays)
 	usageCutoff := now.AddDate(0, 0, -s.cfg.Retention.UsageLogsDays)
 	dedupCutoff := now.AddDate(0, 0, -s.cfg.Retention.UsageBillingDedupDays)
 
 	aggErr := s.repo.CleanupAggregates(ctx, hourlyCutoff, dailyCutoff)
 	if aggErr != nil {
 		logger.LegacyPrintf("service.dashboard_aggregation", "[DashboardAggregation] 聚合保留清理失败: %v", aggErr)
+	}
+	subDailyErr := s.repo.CleanupSubscriptionUsageDaily(ctx, subDailyCutoff)
+	if subDailyErr != nil {
+		logger.LegacyPrintf("service.dashboard_aggregation", "[DashboardAggregation] subscription_usage_daily 保留清理失败: %v", subDailyErr)
 	}
 	usageErr := s.repo.CleanupUsageLogs(ctx, usageCutoff)
 	if usageErr != nil {
@@ -344,7 +350,7 @@ func (s *DashboardAggregationService) maybeCleanupRetention(ctx context.Context,
 	if dedupErr != nil {
 		logger.LegacyPrintf("service.dashboard_aggregation", "[DashboardAggregation] usage_billing_dedup 保留清理失败: %v", dedupErr)
 	}
-	if aggErr == nil && usageErr == nil && dedupErr == nil {
+	if aggErr == nil && subDailyErr == nil && usageErr == nil && dedupErr == nil {
 		s.lastRetentionCleanup.Store(now)
 	}
 }

@@ -497,3 +497,11 @@ func TestExecuteSubscriptionFulfillmentRollsBackWhenAuditLogFails(t *testing.T) 
 	require.NoError(t, err)
 	require.InDelta(t, 20, reloadedUser.TotalRecharged, 1e-9)
 }
+
+func (r *paymentFulfillmentSubscriptionRepo) ShiftUsageWindows(ctx context.Context, input ShiftWindowQuery) (ShiftWindowRows, error) {
+	return ShiftWindowRows{}, nil
+}
+
+func (r *paymentFulfillmentSubscriptionRepo) ListUsageDaily(ctx context.Context, subscriptionID int64, from, to time.Time) ([]SubscriptionUsageDaily, error) {
+	return nil, nil
+}

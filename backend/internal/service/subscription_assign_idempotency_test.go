@@ -643,3 +643,10 @@ func strconvFormatInt(v int64) string {
 func infraerrorsReason(err error) string {
 	return infraerrors.Reason(err)
 }
+
+func (userSubRepoNoop) ShiftUsageWindows(context.Context, ShiftWindowQuery) (ShiftWindowRows, error) {
+	panic("unexpected ShiftUsageWindows call")
+}
+func (userSubRepoNoop) ListUsageDaily(context.Context, int64, time.Time, time.Time) ([]SubscriptionUsageDaily, error) {
+	panic("unexpected ListUsageDaily call")
+}

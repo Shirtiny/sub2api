@@ -96,6 +96,11 @@ func (r *dashboardAggregationRepository) aggregateRangeInTx(ctx context.Context,
 	if err := r.upsertDailyAggregates(ctx, dayStart, dayEnd); err != nil {
 		return err
 	}
+	// 纯 upsert，不先删范围：增量路径只覆盖水位线附近的窗口，若 usage_logs 已被
+	// 保留期裁剪，删除会连带毁掉本表要长期保存的历史。清理陈旧行交给 RecomputeRange。
+	if err := r.upsertSubscriptionUsageDaily(ctx, dayStart, dayEnd); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -152,6 +157,12 @@ func (r *dashboardAggregationRepository) recomputeRangeInTx(ctx context.Context,
 	if _, err := r.sql.ExecContext(ctx, "DELETE FROM usage_dashboard_daily_users WHERE bucket_date >= $1::date AND bucket_date < $2::date", dayStart, dayEnd); err != nil {
 		return err
 	}
+	// 刻意不删 subscription_usage_daily。usage_dashboard_* 是 usage_logs 的派生视图，
+	// 源行被删就该跟着回退；这张表相反，它的全部价值就在于 usage_logs 被保留期或
+	// 运维清理脚本裁掉之后历史仍在。RecomputeRange 的调用方之一正是
+	// UsageCleanupService（见 usage_cleanup_service.go），它在删完某区间的 usage_logs
+	// 后立刻对同一区间触发重算 —— 若这里删了，那段订阅用量历史将永久且无法重建地消失。
+	// 下面的 upsert 仍会刷新还有源行的键，所以重算只会让数据更准，不会抹掉历史。
 
 	if err := r.insertHourlyActiveUsers(ctx, hourStart, hourEnd); err != nil {
 		return err
@@ -163,6 +174,9 @@ func (r *dashboardAggregationRepository) recomputeRangeInTx(ctx context.Context,
 		return err
 	}
 	if err := r.upsertDailyAggregates(ctx, dayStart, dayEnd); err != nil {
+		return err
+	}
+	if err := r.upsertSubscriptionUsageDaily(ctx, dayStart, dayEnd); err != nil {
 		return err
 	}
 	return nil
@@ -207,6 +221,86 @@ func (r *dashboardAggregationRepository) CleanupAggregates(ctx context.Context, 
 		return err
 	}
 	return nil
+}
+
+func (r *dashboardAggregationRepository) CleanupSubscriptionUsageDaily(ctx context.Context, cutoff time.Time) error {
+	_, err := r.sql.ExecContext(ctx, "DELETE FROM subscription_usage_daily WHERE bucket_date < $1::date", cutoff.UTC())
+	return err
+}
+
+// upsertSubscriptionUsageDaily 把 [start, end) 覆盖到的完整自然日重新聚合进
+// subscription_usage_daily。按 (subscription_id, bucket_date) 整键替换，可重复执行。
+//
+// 限额三列写的是聚合当时的有效限额快照（含 custom_multiplier 倍率），
+// 谓词与 service.UserSubscription.HasActiveVirtualCustomEntitlementAt +
+// service.EffectiveSubscriptionGroup 保持一致：自定义分组自身已经带好倍率，不再叠乘。
+func (r *dashboardAggregationRepository) upsertSubscriptionUsageDaily(ctx context.Context, start, end time.Time) error {
+	tzName := timezone.Name()
+	query := `
+		INSERT INTO subscription_usage_daily (
+			subscription_id,
+			bucket_date,
+			user_id,
+			group_id,
+			cost_usd,
+			request_count,
+			daily_limit_usd,
+			weekly_limit_usd,
+			monthly_limit_usd,
+			computed_at
+		)
+		SELECT
+			agg.subscription_id,
+			agg.bucket_date,
+			agg.user_id,
+			us.group_id,
+			agg.cost_usd,
+			agg.request_count,
+			NULLIF(g.daily_limit_usd, 0) * eff.multiplier,
+			NULLIF(g.weekly_limit_usd, 0) * eff.multiplier,
+			NULLIF(g.monthly_limit_usd, 0) * eff.multiplier,
+			NOW()
+		FROM (
+			SELECT
+				ul.subscription_id AS subscription_id,
+				(ul.created_at AT TIME ZONE $3)::date AS bucket_date,
+				ul.user_id AS user_id,
+				COALESCE(SUM(ul.actual_cost), 0) AS cost_usd,
+				COUNT(*) AS request_count
+			FROM usage_logs ul
+			WHERE ul.created_at >= $1
+			  AND ul.created_at < $2
+			  AND ul.subscription_id IS NOT NULL
+			  AND ul.billing_type = 1
+			GROUP BY ul.subscription_id, (ul.created_at AT TIME ZONE $3)::date, ul.user_id
+		) AS agg
+		JOIN user_subscriptions us ON us.id = agg.subscription_id
+		LEFT JOIN groups g ON g.id = us.group_id
+		CROSS JOIN LATERAL (
+			SELECT CASE
+				WHEN us.custom_multiplier IS NOT NULL
+					AND us.custom_multiplier >= 1
+					AND us.custom_source_plan_id IS NOT NULL
+					AND us.custom_source_group_id IS NOT NULL
+					AND us.custom_expires_at IS NOT NULL
+					AND us.custom_expires_at > NOW()
+					AND COALESCE(g.is_custom_subscription_group, FALSE) = FALSE
+				THEN us.custom_multiplier::numeric
+				ELSE 1
+			END AS multiplier
+		) AS eff
+		ON CONFLICT (subscription_id, bucket_date) DO UPDATE SET
+			user_id = EXCLUDED.user_id,
+			group_id = EXCLUDED.group_id,
+			cost_usd = EXCLUDED.cost_usd,
+			request_count = EXCLUDED.request_count,
+			daily_limit_usd = EXCLUDED.daily_limit_usd,
+			weekly_limit_usd = EXCLUDED.weekly_limit_usd,
+			monthly_limit_usd = EXCLUDED.monthly_limit_usd,
+			computed_at = NOW()
+	`
+	_, err := r.sql.ExecContext(ctx, query, start, end, tzName)
+	return err
 }
 
 func (r *dashboardAggregationRepository) CleanupUsageLogs(ctx context.Context, cutoff time.Time) error {

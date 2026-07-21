@@ -14,6 +14,7 @@ type dashboardAggregationRepoTestStub struct {
 	aggregateCalls       int
 	recomputeCalls       int
 	cleanupUsageCalls    int
+	cleanupSubDailyCalls int
 	cleanupDedupCalls    int
 	ensurePartitionCalls int
 	lastStart            time.Time
@@ -21,6 +22,7 @@ type dashboardAggregationRepoTestStub struct {
 	watermark            time.Time
 	aggregateErr         error
 	cleanupAggregatesErr error
+	cleanupSubDailyErr   error
 	cleanupUsageErr      error
 	cleanupDedupErr      error
 	ensurePartitionErr   error
@@ -48,6 +50,11 @@ func (s *dashboardAggregationRepoTestStub) UpdateAggregationWatermark(ctx contex
 
 func (s *dashboardAggregationRepoTestStub) CleanupAggregates(ctx context.Context, hourlyCutoff, dailyCutoff time.Time) error {
 	return s.cleanupAggregatesErr
+}
+
+func (s *dashboardAggregationRepoTestStub) CleanupSubscriptionUsageDaily(ctx context.Context, cutoff time.Time) error {
+	s.cleanupSubDailyCalls++
+	return s.cleanupSubDailyErr
 }
 
 func (s *dashboardAggregationRepoTestStub) CleanupUsageLogs(ctx context.Context, cutoff time.Time) error {

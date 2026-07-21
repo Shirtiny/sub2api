@@ -120,6 +120,10 @@ func (s *dashboardAggregationRepoStub) CleanupAggregates(ctx context.Context, ho
 	return nil
 }
 
+func (s *dashboardAggregationRepoStub) CleanupSubscriptionUsageDaily(ctx context.Context, cutoff time.Time) error {
+	return nil
+}
+
 func (s *dashboardAggregationRepoStub) CleanupUsageLogs(ctx context.Context, cutoff time.Time) error {
 	return nil
 }

@@ -2,6 +2,8 @@ package repository
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -461,6 +463,179 @@ func (r *userSubscriptionRepository) ResetActiveUsage(ctx context.Context, reset
 	}
 	count, err := update.Save(ctx)
 	return int64(count), translatePersistenceError(err, nil, nil)
+}
+
+// ShiftUsageWindows 按过滤条件批量平移订阅的窗口起点，只改 *_window_start，不动任何 *_usage_usd。
+//
+// 三条不变量：
+//   - 只命中「窗口起点非 NULL」且「所属分组确实设了该窗口限额」的行，其余行完全不碰；
+//   - 平移后任一目标窗口起点会落到未来的行整行跳过（Future=true），避免造出比一个周期更长的窗口；
+//   - dryRun 时 UPDATE 分支恒不命中，仅返回命中明细供前端预览。
+func (r *userSubscriptionRepository) ShiftUsageWindows(ctx context.Context, input service.ShiftWindowQuery) (service.ShiftWindowRows, error) {
+	var result service.ShiftWindowRows
+	if !input.Daily && !input.Weekly && !input.Monthly {
+		return result, nil
+	}
+	if input.Offset == 0 {
+		return result, nil
+	}
+
+	conds := []string{"us.deleted_at IS NULL", "g.deleted_at IS NULL"}
+	args := []any{
+		input.Daily,
+		input.Weekly,
+		input.Monthly,
+		input.Offset.Hours(),
+		input.DryRun,
+	}
+	now := time.Now()
+	switch input.Status {
+	case service.SubscriptionStatusActive:
+		args = append(args, now)
+		conds = append(conds, fmt.Sprintf("us.status = '%s'", service.SubscriptionStatusActive))
+		conds = append(conds, fmt.Sprintf("(us.expires_at IS NULL OR us.expires_at > $%d)", len(args)))
+	case service.SubscriptionStatusExpired:
+		args = append(args, now)
+		conds = append(conds, fmt.Sprintf("(us.status = '%s' OR (us.status = '%s' AND us.expires_at <= $%d))",
+			service.SubscriptionStatusExpired, service.SubscriptionStatusActive, len(args)))
+	case "":
+		// 不过滤状态
+	default:
+		args = append(args, input.Status)
+		conds = append(conds, fmt.Sprintf("us.status = $%d", len(args)))
+	}
+	if input.UserID != nil {
+		args = append(args, *input.UserID)
+		conds = append(conds, fmt.Sprintf("us.user_id = $%d", len(args)))
+	}
+	if input.GroupID != nil {
+		args = append(args, *input.GroupID)
+		conds = append(conds, fmt.Sprintf("us.group_id = $%d", len(args)))
+	}
+	if input.Platform != "" {
+		args = append(args, input.Platform)
+		conds = append(conds, fmt.Sprintf("g.platform = $%d", len(args)))
+	}
+
+	query := fmt.Sprintf(`
+		WITH scoped AS (
+			SELECT
+				us.id,
+				us.user_id,
+				us.group_id,
+				us.daily_window_start AS d,
+				us.weekly_window_start AS w,
+				us.monthly_window_start AS m,
+				($1 AND g.daily_limit_usd > 0 AND us.daily_window_start IS NOT NULL) AS hit_daily,
+				($2 AND g.weekly_limit_usd > 0 AND us.weekly_window_start IS NOT NULL) AS hit_weekly,
+				($3 AND g.monthly_limit_usd > 0 AND us.monthly_window_start IS NOT NULL) AS hit_monthly
+			FROM user_subscriptions us
+			JOIN groups g ON g.id = us.group_id
+			WHERE %s
+		),
+		matched AS (
+			SELECT
+				scoped.*,
+				(
+					(hit_daily AND d + ($4 * INTERVAL '1 hour') > NOW())
+					OR (hit_weekly AND w + ($4 * INTERVAL '1 hour') > NOW())
+					OR (hit_monthly AND m + ($4 * INTERVAL '1 hour') > NOW())
+				) AS future
+			FROM scoped
+			WHERE hit_daily OR hit_weekly OR hit_monthly
+		),
+		upd AS (
+			UPDATE user_subscriptions us
+			SET
+				daily_window_start = CASE WHEN matched.hit_daily
+					THEN us.daily_window_start + ($4 * INTERVAL '1 hour') ELSE us.daily_window_start END,
+				weekly_window_start = CASE WHEN matched.hit_weekly
+					THEN us.weekly_window_start + ($4 * INTERVAL '1 hour') ELSE us.weekly_window_start END,
+				monthly_window_start = CASE WHEN matched.hit_monthly
+					THEN us.monthly_window_start + ($4 * INTERVAL '1 hour') ELSE us.monthly_window_start END,
+				updated_at = NOW()
+			FROM matched
+			WHERE us.id = matched.id
+				AND matched.future = FALSE
+				AND $5 = FALSE
+			RETURNING us.id
+		)
+		SELECT
+			matched.id,
+			matched.user_id,
+			matched.group_id,
+			matched.future,
+			(SELECT COUNT(*) FROM upd) AS updated_count
+		FROM matched
+		ORDER BY matched.id
+	`, strings.Join(conds, " AND "))
+
+	client := clientFromContext(ctx, r.client)
+	rows, err := client.QueryContext(ctx, query, args...)
+	if err != nil {
+		return result, translatePersistenceError(err, nil, nil)
+	}
+	defer func() { _ = rows.Close() }()
+
+	for rows.Next() {
+		var row service.ShiftWindowRow
+		var updated int64
+		if err := rows.Scan(&row.ID, &row.UserID, &row.GroupID, &row.Future, &updated); err != nil {
+			return service.ShiftWindowRows{}, translatePersistenceError(err, nil, nil)
+		}
+		result.Rows = append(result.Rows, row)
+		result.Updated = updated
+	}
+	if err := rows.Err(); err != nil {
+		return service.ShiftWindowRows{}, translatePersistenceError(err, nil, nil)
+	}
+	return result, nil
+}
+
+// ListUsageDaily 读取某个订阅在 [from, to] 区间内的每日用量汇总。
+// 数据来自 subscription_usage_daily（由 DashboardAggregationService 增量写入），
+// 与 usage_logs 的保留期解耦，因此能覆盖整个订阅周期。
+func (r *userSubscriptionRepository) ListUsageDaily(ctx context.Context, subscriptionID int64, from, to time.Time) ([]service.SubscriptionUsageDaily, error) {
+	const query = `
+		SELECT
+			bucket_date,
+			cost_usd,
+			request_count,
+			daily_limit_usd,
+			weekly_limit_usd,
+			monthly_limit_usd
+		FROM subscription_usage_daily
+		WHERE subscription_id = $1
+			AND bucket_date >= $2::date
+			AND bucket_date <= $3::date
+		ORDER BY bucket_date
+	`
+	client := clientFromContext(ctx, r.client)
+	rows, err := client.QueryContext(ctx, query, subscriptionID, from, to)
+	if err != nil {
+		return nil, translatePersistenceError(err, nil, nil)
+	}
+	defer func() { _ = rows.Close() }()
+
+	var out []service.SubscriptionUsageDaily
+	for rows.Next() {
+		var row service.SubscriptionUsageDaily
+		if err := rows.Scan(
+			&row.BucketDate,
+			&row.CostUSD,
+			&row.RequestCount,
+			&row.DailyLimitUSD,
+			&row.WeeklyLimitUSD,
+			&row.MonthlyLimitUSD,
+		); err != nil {
+			return nil, translatePersistenceError(err, nil, nil)
+		}
+		out = append(out, row)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, translatePersistenceError(err, nil, nil)
+	}
+	return out, nil
 }
 
 // IncrementUsage 原子性地累加订阅用量。

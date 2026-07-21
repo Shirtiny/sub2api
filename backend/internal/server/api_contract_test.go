@@ -2702,3 +2702,11 @@ var (
 	_ service.UsageLogRepository         = (*stubUsageLogRepo)(nil)
 	_ service.SettingRepository          = (*stubSettingRepo)(nil)
 )
+
+func (stubUserSubscriptionRepo) ShiftUsageWindows(ctx context.Context, input service.ShiftWindowQuery) (service.ShiftWindowRows, error) {
+	return service.ShiftWindowRows{}, nil
+}
+
+func (stubUserSubscriptionRepo) ListUsageDaily(ctx context.Context, subscriptionID int64, from, to time.Time) ([]service.SubscriptionUsageDaily, error) {
+	return nil, nil
+}

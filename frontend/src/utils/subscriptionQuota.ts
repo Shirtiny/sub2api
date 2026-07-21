@@ -21,6 +21,20 @@ export function isOneTimeDailyQuota(
   return expiresAt <= startsAt + ONE_DAY_MS
 }
 
+/**
+ * 用量比值对应的进度条配色，是使用率配色的唯一事实源。
+ * 阈值：>=90% 红、>=70% 橙、其余绿。
+ *
+ * 注意 ratio 可以大于 1：管理员中途重置配额后，汇总表记的是实际花费、
+ * 订阅计数器记的是当前窗口计费额，两者本就会背离。
+ */
+export function ratioToneClass(ratio: number | null | undefined): string {
+  const value = ratio ?? 0
+  if (value >= 0.9) return 'bg-red-500'
+  if (value >= 0.7) return 'bg-orange-500'
+  return 'bg-green-500'
+}
+
 export function getRemainingDurationParts(
   targetAt: Date | string,
   now: Date = new Date()

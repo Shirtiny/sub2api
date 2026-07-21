@@ -31,7 +31,48 @@ type UserSubscriptionRepository interface {
 	ResetWeeklyUsage(ctx context.Context, id int64, expectedWindowStart *time.Time, newWindowStart time.Time) error
 	ResetMonthlyUsage(ctx context.Context, id int64, expectedWindowStart *time.Time, newWindowStart time.Time) error
 	ResetActiveUsage(ctx context.Context, resetDaily, resetWeekly, resetMonthly bool, newWindowStart time.Time) (int64, error)
+	ShiftUsageWindows(ctx context.Context, input ShiftWindowQuery) (ShiftWindowRows, error)
 	IncrementUsage(ctx context.Context, id int64, costUSD float64) error
 
+	ListUsageDaily(ctx context.Context, subscriptionID int64, from, to time.Time) ([]SubscriptionUsageDaily, error)
+
 	BatchUpdateExpiredStatus(ctx context.Context) (int64, error)
+}
+
+// ShiftWindowQuery 描述一次批量窗口平移的目标范围与位移量。
+type ShiftWindowQuery struct {
+	Daily    bool
+	Weekly   bool
+	Monthly  bool
+	Offset   time.Duration
+	DryRun   bool
+	Status   string
+	UserID   *int64
+	GroupID  *int64
+	Platform string
+}
+
+// ShiftWindowRow 是一条被平移条件命中的订阅。
+type ShiftWindowRow struct {
+	ID      int64
+	UserID  int64
+	GroupID int64
+	// Future 表示平移后至少有一个目标窗口的起点会落到未来，该行整行跳过。
+	Future bool
+}
+
+// ShiftWindowRows 汇总一次平移的命中明细与实际写库条数。
+type ShiftWindowRows struct {
+	Rows    []ShiftWindowRow
+	Updated int64
+}
+
+// SubscriptionUsageDaily 是 subscription_usage_daily 的一行：订阅在某个自然日的用量与当日限额快照。
+type SubscriptionUsageDaily struct {
+	BucketDate      time.Time
+	CostUSD         float64
+	RequestCount    int64
+	DailyLimitUSD   *float64
+	WeeklyLimitUSD  *float64
+	MonthlyLimitUSD *float64
 }

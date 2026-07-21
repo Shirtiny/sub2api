@@ -1203,3 +1203,11 @@ func (r *stubUserSubscriptionRepo) IncrementUsage(ctx context.Context, id int64,
 func (r *stubUserSubscriptionRepo) BatchUpdateExpiredStatus(ctx context.Context) (int64, error) {
 	return 0, errors.New("not implemented")
 }
+
+func (r *stubUserSubscriptionRepo) ShiftUsageWindows(ctx context.Context, input service.ShiftWindowQuery) (service.ShiftWindowRows, error) {
+	return service.ShiftWindowRows{}, nil
+}
+
+func (r *stubUserSubscriptionRepo) ListUsageDaily(ctx context.Context, subscriptionID int64, from, to time.Time) ([]service.SubscriptionUsageDaily, error) {
+	return nil, nil
+}

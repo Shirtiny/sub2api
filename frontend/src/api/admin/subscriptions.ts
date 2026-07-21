@@ -9,9 +9,14 @@ import type {
   SubscriptionProgress,
   AssignSubscriptionRequest,
   BulkAssignSubscriptionRequest,
+  BulkShiftWindowRequest,
+  BulkShiftWindowResult,
   ExtendSubscriptionRequest,
-  PaginatedResponse
+  PaginatedResponse,
+  SubscriptionStats,
+  SubscriptionUsageSeries
 } from '@/types'
+import { createIdempotencyKey } from '@/utils/idempotency'
 
 /**
  * List all subscriptions with pagination
@@ -149,6 +154,62 @@ export async function bulkResetQuota(
 }
 
 /**
+ * Shift the reset window start of many subscriptions at once
+ * @param request - Which windows to move, the hour offset, and the filter scope.
+ *                  Pass `dry_run: true` to preview the affected count without writing.
+ * @returns Matched / updated / skipped counts
+ */
+export async function bulkShiftWindow(
+  request: BulkShiftWindowRequest
+): Promise<BulkShiftWindowResult> {
+  // 后端对写入路径包了幂等协调器，但 key 只从请求头取——不带头就完全不去重，
+  // 双击或网络重试会把窗口平移两次（+14h 变 +28h）。每次调用生成新 key：
+  // 同一次提交的重试被去重，用户有意的第二次提交仍能生效。
+  // dry_run 是只读预览，不需要幂等键。
+  const headers = request.dry_run
+    ? undefined
+    : { 'Idempotency-Key': createIdempotencyKey('subscription-shift-window') }
+  const { data } = await apiClient.post<BulkShiftWindowResult>(
+    '/admin/subscriptions/bulk-shift-window',
+    request,
+    { headers }
+  )
+  return data
+}
+
+/**
+ * Get aggregated subscription statistics (remaining quota, per-plan breakdown, usage ranking)
+ * @param params - horizon_days (1|3|7|14|30, default 7) and ranking_limit (1..100, default 20)
+ * @returns Aggregated stats snapshot
+ */
+export async function getStats(
+  params?: { horizon_days?: number; ranking_limit?: number },
+  options?: { signal?: AbortSignal }
+): Promise<SubscriptionStats> {
+  const { data } = await apiClient.get<SubscriptionStats>('/admin/subscriptions/stats', {
+    params,
+    signal: options?.signal
+  })
+  return data
+}
+
+/**
+ * Get the daily / weekly / whole-cycle usage series for one subscription
+ * @param id - Subscription ID
+ * @returns Usage series with per-day, per-week and cycle-level usage ratios
+ */
+export async function getUsageSeries(
+  id: number,
+  options?: { signal?: AbortSignal }
+): Promise<SubscriptionUsageSeries> {
+  const { data } = await apiClient.get<SubscriptionUsageSeries>(
+    `/admin/subscriptions/${id}/usage-series`,
+    { signal: options?.signal }
+  )
+  return data
+}
+
+/**
  * List subscriptions by group
  * @param groupId - Group ID
  * @param page - Page number
@@ -200,6 +261,9 @@ export const subscriptionsAPI = {
   revoke,
   resetQuota,
   bulkResetQuota,
+  bulkShiftWindow,
+  getStats,
+  getUsageSeries,
   listByGroup,
   listByUser
 }

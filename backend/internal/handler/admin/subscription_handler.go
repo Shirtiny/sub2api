@@ -269,6 +269,116 @@ func (h *SubscriptionHandler) BulkResetQuota(c *gin.Context) {
 	response.Success(c, gin.H{"count": count})
 }
 
+// ShiftSubscriptionWindowFilters mirrors the list filters so the bulk shift can be scoped
+// to exactly what the operator sees on screen.
+type ShiftSubscriptionWindowFilters struct {
+	Status   string `json:"status"`
+	UserID   *int64 `json:"user_id"`
+	GroupID  *int64 `json:"group_id"`
+	Platform string `json:"platform"`
+}
+
+// ShiftSubscriptionWindowRequest represents the bulk window shift request.
+type ShiftSubscriptionWindowRequest struct {
+	Daily       bool                            `json:"daily"`
+	Weekly      bool                            `json:"weekly"`
+	Monthly     bool                            `json:"monthly"`
+	OffsetHours int                             `json:"offset_hours" binding:"required,min=-720,max=720"`
+	DryRun      bool                            `json:"dry_run"`
+	Filters     *ShiftSubscriptionWindowFilters `json:"filters"`
+}
+
+// BulkShiftWindow shifts the reset window start of every matching subscription.
+// POST /api/v1/admin/subscriptions/bulk-shift-window
+func (h *SubscriptionHandler) BulkShiftWindow(c *gin.Context) {
+	var req ShiftSubscriptionWindowRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+	if !req.Daily && !req.Weekly && !req.Monthly {
+		response.BadRequest(c, "At least one of 'daily', 'weekly', or 'monthly' must be true")
+		return
+	}
+
+	input := &service.ShiftSubscriptionWindowInput{
+		Daily:       req.Daily,
+		Weekly:      req.Weekly,
+		Monthly:     req.Monthly,
+		OffsetHours: req.OffsetHours,
+		DryRun:      req.DryRun,
+	}
+	if req.Filters != nil {
+		input.Status = req.Filters.Status
+		input.UserID = req.Filters.UserID
+		input.GroupID = req.Filters.GroupID
+		input.Platform = req.Filters.Platform
+	}
+
+	// dry-run 不写库，走幂等包装只会白占一个键，直接执行即可。
+	if req.DryRun {
+		result, err := h.subscriptionService.ShiftSubscriptionWindows(c.Request.Context(), input)
+		if err != nil {
+			response.ErrorFrom(c, err)
+			return
+		}
+		response.Success(c, result)
+		return
+	}
+
+	executeAdminIdempotentJSON(c, "admin.subscriptions.shift_window", req, service.DefaultWriteIdempotencyTTL(), func(ctx context.Context) (any, error) {
+		return h.subscriptionService.ShiftSubscriptionWindows(ctx, input)
+	})
+}
+
+// GetStats returns aggregated quota/usage statistics across all active subscriptions.
+// GET /api/v1/admin/subscriptions/stats
+func (h *SubscriptionHandler) GetStats(c *gin.Context) {
+	horizonDays := 7
+	if raw := c.Query("horizon_days"); raw != "" {
+		parsed, err := strconv.Atoi(raw)
+		if err != nil || parsed < 1 || parsed > 90 {
+			response.BadRequest(c, "Invalid horizon_days")
+			return
+		}
+		horizonDays = parsed
+	}
+
+	rankingLimit := 20
+	if raw := c.Query("ranking_limit"); raw != "" {
+		parsed, err := strconv.Atoi(raw)
+		if err != nil || parsed < 1 || parsed > 100 {
+			response.BadRequest(c, "Invalid ranking_limit")
+			return
+		}
+		rankingLimit = parsed
+	}
+
+	stats, err := h.subscriptionService.GetSubscriptionStats(c.Request.Context(), horizonDays, rankingLimit)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, stats)
+}
+
+// GetUsageSeries returns the per-day / per-week / whole-cycle usage rates of one subscription.
+// GET /api/v1/admin/subscriptions/:id/usage-series
+func (h *SubscriptionHandler) GetUsageSeries(c *gin.Context) {
+	subscriptionID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		response.BadRequest(c, "Invalid subscription ID")
+		return
+	}
+
+	series, err := h.subscriptionService.GetSubscriptionUsageSeries(c.Request.Context(), subscriptionID)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, series)
+}
+
 // Revoke handles revoking a subscription
 // DELETE /api/v1/admin/subscriptions/:id
 func (h *SubscriptionHandler) Revoke(c *gin.Context) {

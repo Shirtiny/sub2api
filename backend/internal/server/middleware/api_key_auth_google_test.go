@@ -765,3 +765,11 @@ func TestApiKeyAuthWithSubscriptionGoogle_SubscriptionLimitExceededReturns429(t 
 	require.Equal(t, "RESOURCE_EXHAUSTED", resp.Error.Status)
 	require.Contains(t, resp.Error.Message, "daily usage limit exceeded")
 }
+
+func (f fakeGoogleSubscriptionRepo) ShiftUsageWindows(ctx context.Context, input service.ShiftWindowQuery) (service.ShiftWindowRows, error) {
+	return service.ShiftWindowRows{}, nil
+}
+
+func (f fakeGoogleSubscriptionRepo) ListUsageDaily(ctx context.Context, subscriptionID int64, from, to time.Time) ([]service.SubscriptionUsageDaily, error) {
+	return nil, nil
+}
