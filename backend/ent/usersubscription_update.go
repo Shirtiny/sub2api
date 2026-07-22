@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/Wei-Shaw/sub2api/ent/group"
 	"github.com/Wei-Shaw/sub2api/ent/predicate"
+	"github.com/Wei-Shaw/sub2api/ent/subscriptionconcurrencyentitlement"
 	"github.com/Wei-Shaw/sub2api/ent/usagelog"
 	"github.com/Wei-Shaw/sub2api/ent/user"
 	"github.com/Wei-Shaw/sub2api/ent/usersubscription"
@@ -250,6 +251,41 @@ func (_u *UserSubscriptionUpdate) AddMonthlyUsageUsd(v float64) *UserSubscriptio
 	return _u
 }
 
+// SetEarlyResetEnabled sets the "early_reset_enabled" field.
+func (_u *UserSubscriptionUpdate) SetEarlyResetEnabled(v bool) *UserSubscriptionUpdate {
+	_u.mutation.SetEarlyResetEnabled(v)
+	return _u
+}
+
+// SetNillableEarlyResetEnabled sets the "early_reset_enabled" field if the given value is not nil.
+func (_u *UserSubscriptionUpdate) SetNillableEarlyResetEnabled(v *bool) *UserSubscriptionUpdate {
+	if v != nil {
+		_u.SetEarlyResetEnabled(*v)
+	}
+	return _u
+}
+
+// SetEarlyResetDurationDays sets the "early_reset_duration_days" field.
+func (_u *UserSubscriptionUpdate) SetEarlyResetDurationDays(v int) *UserSubscriptionUpdate {
+	_u.mutation.ResetEarlyResetDurationDays()
+	_u.mutation.SetEarlyResetDurationDays(v)
+	return _u
+}
+
+// SetNillableEarlyResetDurationDays sets the "early_reset_duration_days" field if the given value is not nil.
+func (_u *UserSubscriptionUpdate) SetNillableEarlyResetDurationDays(v *int) *UserSubscriptionUpdate {
+	if v != nil {
+		_u.SetEarlyResetDurationDays(*v)
+	}
+	return _u
+}
+
+// AddEarlyResetDurationDays adds value to the "early_reset_duration_days" field.
+func (_u *UserSubscriptionUpdate) AddEarlyResetDurationDays(v int) *UserSubscriptionUpdate {
+	_u.mutation.AddEarlyResetDurationDays(v)
+	return _u
+}
+
 // SetAssignedBy sets the "assigned_by" field.
 func (_u *UserSubscriptionUpdate) SetAssignedBy(v int64) *UserSubscriptionUpdate {
 	_u.mutation.SetAssignedBy(v)
@@ -301,6 +337,53 @@ func (_u *UserSubscriptionUpdate) SetNillableNotes(v *string) *UserSubscriptionU
 // ClearNotes clears the value of the "notes" field.
 func (_u *UserSubscriptionUpdate) ClearNotes() *UserSubscriptionUpdate {
 	_u.mutation.ClearNotes()
+	return _u
+}
+
+// SetPlanConcurrency sets the "plan_concurrency" field.
+func (_u *UserSubscriptionUpdate) SetPlanConcurrency(v int) *UserSubscriptionUpdate {
+	_u.mutation.ResetPlanConcurrency()
+	_u.mutation.SetPlanConcurrency(v)
+	return _u
+}
+
+// SetNillablePlanConcurrency sets the "plan_concurrency" field if the given value is not nil.
+func (_u *UserSubscriptionUpdate) SetNillablePlanConcurrency(v *int) *UserSubscriptionUpdate {
+	if v != nil {
+		_u.SetPlanConcurrency(*v)
+	}
+	return _u
+}
+
+// AddPlanConcurrency adds value to the "plan_concurrency" field.
+func (_u *UserSubscriptionUpdate) AddPlanConcurrency(v int) *UserSubscriptionUpdate {
+	_u.mutation.AddPlanConcurrency(v)
+	return _u
+}
+
+// ClearPlanConcurrency clears the value of the "plan_concurrency" field.
+func (_u *UserSubscriptionUpdate) ClearPlanConcurrency() *UserSubscriptionUpdate {
+	_u.mutation.ClearPlanConcurrency()
+	return _u
+}
+
+// SetPlanConcurrencyExpiresAt sets the "plan_concurrency_expires_at" field.
+func (_u *UserSubscriptionUpdate) SetPlanConcurrencyExpiresAt(v time.Time) *UserSubscriptionUpdate {
+	_u.mutation.SetPlanConcurrencyExpiresAt(v)
+	return _u
+}
+
+// SetNillablePlanConcurrencyExpiresAt sets the "plan_concurrency_expires_at" field if the given value is not nil.
+func (_u *UserSubscriptionUpdate) SetNillablePlanConcurrencyExpiresAt(v *time.Time) *UserSubscriptionUpdate {
+	if v != nil {
+		_u.SetPlanConcurrencyExpiresAt(*v)
+	}
+	return _u
+}
+
+// ClearPlanConcurrencyExpiresAt clears the value of the "plan_concurrency_expires_at" field.
+func (_u *UserSubscriptionUpdate) ClearPlanConcurrencyExpiresAt() *UserSubscriptionUpdate {
+	_u.mutation.ClearPlanConcurrencyExpiresAt()
 	return _u
 }
 
@@ -469,6 +552,21 @@ func (_u *UserSubscriptionUpdate) AddUsageLogs(v ...*UsageLog) *UserSubscription
 	return _u.AddUsageLogIDs(ids...)
 }
 
+// AddConcurrencyEntitlementIDs adds the "concurrency_entitlements" edge to the SubscriptionConcurrencyEntitlement entity by IDs.
+func (_u *UserSubscriptionUpdate) AddConcurrencyEntitlementIDs(ids ...int64) *UserSubscriptionUpdate {
+	_u.mutation.AddConcurrencyEntitlementIDs(ids...)
+	return _u
+}
+
+// AddConcurrencyEntitlements adds the "concurrency_entitlements" edges to the SubscriptionConcurrencyEntitlement entity.
+func (_u *UserSubscriptionUpdate) AddConcurrencyEntitlements(v ...*SubscriptionConcurrencyEntitlement) *UserSubscriptionUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddConcurrencyEntitlementIDs(ids...)
+}
+
 // Mutation returns the UserSubscriptionMutation object of the builder.
 func (_u *UserSubscriptionUpdate) Mutation() *UserSubscriptionMutation {
 	return _u.mutation
@@ -511,6 +609,27 @@ func (_u *UserSubscriptionUpdate) RemoveUsageLogs(v ...*UsageLog) *UserSubscript
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveUsageLogIDs(ids...)
+}
+
+// ClearConcurrencyEntitlements clears all "concurrency_entitlements" edges to the SubscriptionConcurrencyEntitlement entity.
+func (_u *UserSubscriptionUpdate) ClearConcurrencyEntitlements() *UserSubscriptionUpdate {
+	_u.mutation.ClearConcurrencyEntitlements()
+	return _u
+}
+
+// RemoveConcurrencyEntitlementIDs removes the "concurrency_entitlements" edge to SubscriptionConcurrencyEntitlement entities by IDs.
+func (_u *UserSubscriptionUpdate) RemoveConcurrencyEntitlementIDs(ids ...int64) *UserSubscriptionUpdate {
+	_u.mutation.RemoveConcurrencyEntitlementIDs(ids...)
+	return _u
+}
+
+// RemoveConcurrencyEntitlements removes "concurrency_entitlements" edges to SubscriptionConcurrencyEntitlement entities.
+func (_u *UserSubscriptionUpdate) RemoveConcurrencyEntitlements(v ...*SubscriptionConcurrencyEntitlement) *UserSubscriptionUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveConcurrencyEntitlementIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -560,6 +679,16 @@ func (_u *UserSubscriptionUpdate) check() error {
 	if v, ok := _u.mutation.Status(); ok {
 		if err := usersubscription.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "UserSubscription.status": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.EarlyResetDurationDays(); ok {
+		if err := usersubscription.EarlyResetDurationDaysValidator(v); err != nil {
+			return &ValidationError{Name: "early_reset_duration_days", err: fmt.Errorf(`ent: validator failed for field "UserSubscription.early_reset_duration_days": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.PlanConcurrency(); ok {
+		if err := usersubscription.PlanConcurrencyValidator(v); err != nil {
+			return &ValidationError{Name: "plan_concurrency", err: fmt.Errorf(`ent: validator failed for field "UserSubscription.plan_concurrency": %w`, err)}
 		}
 	}
 	if v, ok := _u.mutation.CustomDisplayName(); ok {
@@ -642,6 +771,15 @@ func (_u *UserSubscriptionUpdate) sqlSave(ctx context.Context) (_node int, err e
 	if value, ok := _u.mutation.AddedMonthlyUsageUsd(); ok {
 		_spec.AddField(usersubscription.FieldMonthlyUsageUsd, field.TypeFloat64, value)
 	}
+	if value, ok := _u.mutation.EarlyResetEnabled(); ok {
+		_spec.SetField(usersubscription.FieldEarlyResetEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.EarlyResetDurationDays(); ok {
+		_spec.SetField(usersubscription.FieldEarlyResetDurationDays, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedEarlyResetDurationDays(); ok {
+		_spec.AddField(usersubscription.FieldEarlyResetDurationDays, field.TypeInt, value)
+	}
 	if value, ok := _u.mutation.AssignedAt(); ok {
 		_spec.SetField(usersubscription.FieldAssignedAt, field.TypeTime, value)
 	}
@@ -650,6 +788,21 @@ func (_u *UserSubscriptionUpdate) sqlSave(ctx context.Context) (_node int, err e
 	}
 	if _u.mutation.NotesCleared() {
 		_spec.ClearField(usersubscription.FieldNotes, field.TypeString)
+	}
+	if value, ok := _u.mutation.PlanConcurrency(); ok {
+		_spec.SetField(usersubscription.FieldPlanConcurrency, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedPlanConcurrency(); ok {
+		_spec.AddField(usersubscription.FieldPlanConcurrency, field.TypeInt, value)
+	}
+	if _u.mutation.PlanConcurrencyCleared() {
+		_spec.ClearField(usersubscription.FieldPlanConcurrency, field.TypeInt)
+	}
+	if value, ok := _u.mutation.PlanConcurrencyExpiresAt(); ok {
+		_spec.SetField(usersubscription.FieldPlanConcurrencyExpiresAt, field.TypeTime, value)
+	}
+	if _u.mutation.PlanConcurrencyExpiresAtCleared() {
+		_spec.ClearField(usersubscription.FieldPlanConcurrencyExpiresAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.CustomMultiplier(); ok {
 		_spec.SetField(usersubscription.FieldCustomMultiplier, field.TypeInt, value)
@@ -815,6 +968,51 @@ func (_u *UserSubscriptionUpdate) sqlSave(ctx context.Context) (_node int, err e
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(usagelog.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ConcurrencyEntitlementsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   usersubscription.ConcurrencyEntitlementsTable,
+			Columns: []string{usersubscription.ConcurrencyEntitlementsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(subscriptionconcurrencyentitlement.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedConcurrencyEntitlementsIDs(); len(nodes) > 0 && !_u.mutation.ConcurrencyEntitlementsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   usersubscription.ConcurrencyEntitlementsTable,
+			Columns: []string{usersubscription.ConcurrencyEntitlementsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(subscriptionconcurrencyentitlement.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ConcurrencyEntitlementsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   usersubscription.ConcurrencyEntitlementsTable,
+			Columns: []string{usersubscription.ConcurrencyEntitlementsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(subscriptionconcurrencyentitlement.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -1061,6 +1259,41 @@ func (_u *UserSubscriptionUpdateOne) AddMonthlyUsageUsd(v float64) *UserSubscrip
 	return _u
 }
 
+// SetEarlyResetEnabled sets the "early_reset_enabled" field.
+func (_u *UserSubscriptionUpdateOne) SetEarlyResetEnabled(v bool) *UserSubscriptionUpdateOne {
+	_u.mutation.SetEarlyResetEnabled(v)
+	return _u
+}
+
+// SetNillableEarlyResetEnabled sets the "early_reset_enabled" field if the given value is not nil.
+func (_u *UserSubscriptionUpdateOne) SetNillableEarlyResetEnabled(v *bool) *UserSubscriptionUpdateOne {
+	if v != nil {
+		_u.SetEarlyResetEnabled(*v)
+	}
+	return _u
+}
+
+// SetEarlyResetDurationDays sets the "early_reset_duration_days" field.
+func (_u *UserSubscriptionUpdateOne) SetEarlyResetDurationDays(v int) *UserSubscriptionUpdateOne {
+	_u.mutation.ResetEarlyResetDurationDays()
+	_u.mutation.SetEarlyResetDurationDays(v)
+	return _u
+}
+
+// SetNillableEarlyResetDurationDays sets the "early_reset_duration_days" field if the given value is not nil.
+func (_u *UserSubscriptionUpdateOne) SetNillableEarlyResetDurationDays(v *int) *UserSubscriptionUpdateOne {
+	if v != nil {
+		_u.SetEarlyResetDurationDays(*v)
+	}
+	return _u
+}
+
+// AddEarlyResetDurationDays adds value to the "early_reset_duration_days" field.
+func (_u *UserSubscriptionUpdateOne) AddEarlyResetDurationDays(v int) *UserSubscriptionUpdateOne {
+	_u.mutation.AddEarlyResetDurationDays(v)
+	return _u
+}
+
 // SetAssignedBy sets the "assigned_by" field.
 func (_u *UserSubscriptionUpdateOne) SetAssignedBy(v int64) *UserSubscriptionUpdateOne {
 	_u.mutation.SetAssignedBy(v)
@@ -1112,6 +1345,53 @@ func (_u *UserSubscriptionUpdateOne) SetNillableNotes(v *string) *UserSubscripti
 // ClearNotes clears the value of the "notes" field.
 func (_u *UserSubscriptionUpdateOne) ClearNotes() *UserSubscriptionUpdateOne {
 	_u.mutation.ClearNotes()
+	return _u
+}
+
+// SetPlanConcurrency sets the "plan_concurrency" field.
+func (_u *UserSubscriptionUpdateOne) SetPlanConcurrency(v int) *UserSubscriptionUpdateOne {
+	_u.mutation.ResetPlanConcurrency()
+	_u.mutation.SetPlanConcurrency(v)
+	return _u
+}
+
+// SetNillablePlanConcurrency sets the "plan_concurrency" field if the given value is not nil.
+func (_u *UserSubscriptionUpdateOne) SetNillablePlanConcurrency(v *int) *UserSubscriptionUpdateOne {
+	if v != nil {
+		_u.SetPlanConcurrency(*v)
+	}
+	return _u
+}
+
+// AddPlanConcurrency adds value to the "plan_concurrency" field.
+func (_u *UserSubscriptionUpdateOne) AddPlanConcurrency(v int) *UserSubscriptionUpdateOne {
+	_u.mutation.AddPlanConcurrency(v)
+	return _u
+}
+
+// ClearPlanConcurrency clears the value of the "plan_concurrency" field.
+func (_u *UserSubscriptionUpdateOne) ClearPlanConcurrency() *UserSubscriptionUpdateOne {
+	_u.mutation.ClearPlanConcurrency()
+	return _u
+}
+
+// SetPlanConcurrencyExpiresAt sets the "plan_concurrency_expires_at" field.
+func (_u *UserSubscriptionUpdateOne) SetPlanConcurrencyExpiresAt(v time.Time) *UserSubscriptionUpdateOne {
+	_u.mutation.SetPlanConcurrencyExpiresAt(v)
+	return _u
+}
+
+// SetNillablePlanConcurrencyExpiresAt sets the "plan_concurrency_expires_at" field if the given value is not nil.
+func (_u *UserSubscriptionUpdateOne) SetNillablePlanConcurrencyExpiresAt(v *time.Time) *UserSubscriptionUpdateOne {
+	if v != nil {
+		_u.SetPlanConcurrencyExpiresAt(*v)
+	}
+	return _u
+}
+
+// ClearPlanConcurrencyExpiresAt clears the value of the "plan_concurrency_expires_at" field.
+func (_u *UserSubscriptionUpdateOne) ClearPlanConcurrencyExpiresAt() *UserSubscriptionUpdateOne {
+	_u.mutation.ClearPlanConcurrencyExpiresAt()
 	return _u
 }
 
@@ -1280,6 +1560,21 @@ func (_u *UserSubscriptionUpdateOne) AddUsageLogs(v ...*UsageLog) *UserSubscript
 	return _u.AddUsageLogIDs(ids...)
 }
 
+// AddConcurrencyEntitlementIDs adds the "concurrency_entitlements" edge to the SubscriptionConcurrencyEntitlement entity by IDs.
+func (_u *UserSubscriptionUpdateOne) AddConcurrencyEntitlementIDs(ids ...int64) *UserSubscriptionUpdateOne {
+	_u.mutation.AddConcurrencyEntitlementIDs(ids...)
+	return _u
+}
+
+// AddConcurrencyEntitlements adds the "concurrency_entitlements" edges to the SubscriptionConcurrencyEntitlement entity.
+func (_u *UserSubscriptionUpdateOne) AddConcurrencyEntitlements(v ...*SubscriptionConcurrencyEntitlement) *UserSubscriptionUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddConcurrencyEntitlementIDs(ids...)
+}
+
 // Mutation returns the UserSubscriptionMutation object of the builder.
 func (_u *UserSubscriptionUpdateOne) Mutation() *UserSubscriptionMutation {
 	return _u.mutation
@@ -1322,6 +1617,27 @@ func (_u *UserSubscriptionUpdateOne) RemoveUsageLogs(v ...*UsageLog) *UserSubscr
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveUsageLogIDs(ids...)
+}
+
+// ClearConcurrencyEntitlements clears all "concurrency_entitlements" edges to the SubscriptionConcurrencyEntitlement entity.
+func (_u *UserSubscriptionUpdateOne) ClearConcurrencyEntitlements() *UserSubscriptionUpdateOne {
+	_u.mutation.ClearConcurrencyEntitlements()
+	return _u
+}
+
+// RemoveConcurrencyEntitlementIDs removes the "concurrency_entitlements" edge to SubscriptionConcurrencyEntitlement entities by IDs.
+func (_u *UserSubscriptionUpdateOne) RemoveConcurrencyEntitlementIDs(ids ...int64) *UserSubscriptionUpdateOne {
+	_u.mutation.RemoveConcurrencyEntitlementIDs(ids...)
+	return _u
+}
+
+// RemoveConcurrencyEntitlements removes "concurrency_entitlements" edges to SubscriptionConcurrencyEntitlement entities.
+func (_u *UserSubscriptionUpdateOne) RemoveConcurrencyEntitlements(v ...*SubscriptionConcurrencyEntitlement) *UserSubscriptionUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveConcurrencyEntitlementIDs(ids...)
 }
 
 // Where appends a list predicates to the UserSubscriptionUpdate builder.
@@ -1384,6 +1700,16 @@ func (_u *UserSubscriptionUpdateOne) check() error {
 	if v, ok := _u.mutation.Status(); ok {
 		if err := usersubscription.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "UserSubscription.status": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.EarlyResetDurationDays(); ok {
+		if err := usersubscription.EarlyResetDurationDaysValidator(v); err != nil {
+			return &ValidationError{Name: "early_reset_duration_days", err: fmt.Errorf(`ent: validator failed for field "UserSubscription.early_reset_duration_days": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.PlanConcurrency(); ok {
+		if err := usersubscription.PlanConcurrencyValidator(v); err != nil {
+			return &ValidationError{Name: "plan_concurrency", err: fmt.Errorf(`ent: validator failed for field "UserSubscription.plan_concurrency": %w`, err)}
 		}
 	}
 	if v, ok := _u.mutation.CustomDisplayName(); ok {
@@ -1483,6 +1809,15 @@ func (_u *UserSubscriptionUpdateOne) sqlSave(ctx context.Context) (_node *UserSu
 	if value, ok := _u.mutation.AddedMonthlyUsageUsd(); ok {
 		_spec.AddField(usersubscription.FieldMonthlyUsageUsd, field.TypeFloat64, value)
 	}
+	if value, ok := _u.mutation.EarlyResetEnabled(); ok {
+		_spec.SetField(usersubscription.FieldEarlyResetEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.EarlyResetDurationDays(); ok {
+		_spec.SetField(usersubscription.FieldEarlyResetDurationDays, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedEarlyResetDurationDays(); ok {
+		_spec.AddField(usersubscription.FieldEarlyResetDurationDays, field.TypeInt, value)
+	}
 	if value, ok := _u.mutation.AssignedAt(); ok {
 		_spec.SetField(usersubscription.FieldAssignedAt, field.TypeTime, value)
 	}
@@ -1491,6 +1826,21 @@ func (_u *UserSubscriptionUpdateOne) sqlSave(ctx context.Context) (_node *UserSu
 	}
 	if _u.mutation.NotesCleared() {
 		_spec.ClearField(usersubscription.FieldNotes, field.TypeString)
+	}
+	if value, ok := _u.mutation.PlanConcurrency(); ok {
+		_spec.SetField(usersubscription.FieldPlanConcurrency, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedPlanConcurrency(); ok {
+		_spec.AddField(usersubscription.FieldPlanConcurrency, field.TypeInt, value)
+	}
+	if _u.mutation.PlanConcurrencyCleared() {
+		_spec.ClearField(usersubscription.FieldPlanConcurrency, field.TypeInt)
+	}
+	if value, ok := _u.mutation.PlanConcurrencyExpiresAt(); ok {
+		_spec.SetField(usersubscription.FieldPlanConcurrencyExpiresAt, field.TypeTime, value)
+	}
+	if _u.mutation.PlanConcurrencyExpiresAtCleared() {
+		_spec.ClearField(usersubscription.FieldPlanConcurrencyExpiresAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.CustomMultiplier(); ok {
 		_spec.SetField(usersubscription.FieldCustomMultiplier, field.TypeInt, value)
@@ -1656,6 +2006,51 @@ func (_u *UserSubscriptionUpdateOne) sqlSave(ctx context.Context) (_node *UserSu
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(usagelog.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ConcurrencyEntitlementsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   usersubscription.ConcurrencyEntitlementsTable,
+			Columns: []string{usersubscription.ConcurrencyEntitlementsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(subscriptionconcurrencyentitlement.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedConcurrencyEntitlementsIDs(); len(nodes) > 0 && !_u.mutation.ConcurrencyEntitlementsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   usersubscription.ConcurrencyEntitlementsTable,
+			Columns: []string{usersubscription.ConcurrencyEntitlementsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(subscriptionconcurrencyentitlement.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ConcurrencyEntitlementsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   usersubscription.ConcurrencyEntitlementsTable,
+			Columns: []string{usersubscription.ConcurrencyEntitlementsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(subscriptionconcurrencyentitlement.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

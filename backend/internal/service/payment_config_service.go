@@ -156,7 +156,10 @@ type CreatePlanRequest struct {
 	Price                   float64  `json:"price"`
 	OriginalPrice           *float64 `json:"original_price"`
 	ValidityDays            int      `json:"validity_days"`
+	Concurrency             int      `json:"concurrency"`
 	ValidityUnit            string   `json:"validity_unit"`
+	EarlyResetEnabled       bool     `json:"early_reset_enabled"`
+	EarlyResetDurationDays  int      `json:"early_reset_duration_days"`
 	Features                string   `json:"features"`
 	ProductName             string   `json:"product_name"`
 	ForSale                 bool     `json:"for_sale"`
@@ -173,7 +176,10 @@ type UpdatePlanRequest struct {
 	Price                   *float64 `json:"price"`
 	OriginalPrice           *float64 `json:"original_price"`
 	ValidityDays            *int     `json:"validity_days"`
+	Concurrency             *int     `json:"concurrency"`
 	ValidityUnit            *string  `json:"validity_unit"`
+	EarlyResetEnabled       *bool    `json:"early_reset_enabled"`
+	EarlyResetDurationDays  *int     `json:"early_reset_duration_days"`
 	Features                *string  `json:"features"`
 	ProductName             *string  `json:"product_name"`
 	ForSale                 *bool    `json:"for_sale"`

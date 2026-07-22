@@ -17,6 +17,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/identityadoptiondecision"
 	"github.com/Wei-Shaw/sub2api/ent/predicate"
 	"github.com/Wei-Shaw/sub2api/ent/schema/mixins"
+	"github.com/Wei-Shaw/sub2api/ent/subscriptionconcurrencyentitlement"
 	dbuser "github.com/Wei-Shaw/sub2api/ent/user"
 	"github.com/Wei-Shaw/sub2api/ent/userallowedgroup"
 	"github.com/Wei-Shaw/sub2api/ent/usersubscription"
@@ -24,6 +25,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/lib/pq"
 
+	entdialect "entgo.io/ent/dialect"
 	entsql "entgo.io/ent/dialect/sql"
 )
 
@@ -127,6 +129,9 @@ func (r *userRepository) GetByID(ctx context.Context, id int64) (*service.User, 
 	}
 
 	out := userEntityToService(m)
+	if err := r.hydratePlanConcurrencyEntitlements(ctx, map[int64]*service.User{id: out}); err != nil {
+		return nil, err
+	}
 	groups, err := r.loadAllowedGroups(ctx, []int64{id})
 	if err != nil {
 		return nil, err
@@ -144,6 +149,9 @@ func (r *userRepository) GetByIDIncludeDeleted(ctx context.Context, id int64) (*
 		return nil, translatePersistenceError(err, service.ErrUserNotFound, nil)
 	}
 	out := userEntityToService(m)
+	if err := r.hydratePlanConcurrencyEntitlements(ctx, map[int64]*service.User{id: out}); err != nil {
+		return nil, err
+	}
 	groups, err := r.loadAllowedGroups(ctx, []int64{id})
 	if err != nil {
 		return nil, err
@@ -171,6 +179,9 @@ func (r *userRepository) GetByEmail(ctx context.Context, email string) (*service
 	m := matches[0]
 
 	out := userEntityToService(m)
+	if err := r.hydratePlanConcurrencyEntitlements(ctx, map[int64]*service.User{m.ID: out}); err != nil {
+		return nil, err
+	}
 	groups, err := r.loadAllowedGroups(ctx, []int64{m.ID})
 	if err != nil {
 		return nil, err
@@ -510,6 +521,9 @@ func (r *userRepository) ListWithFilters(ctx context.Context, params pagination.
 		outUsers = append(outUsers, *u)
 		userMap[u.ID] = &outUsers[len(outUsers)-1]
 	}
+	if err := r.hydratePlanConcurrencyEntitlements(ctx, userMap); err != nil {
+		return nil, nil, err
+	}
 
 	shouldLoadSubscriptions := filters.IncludeSubscriptions == nil || *filters.IncludeSubscriptions
 	if shouldLoadSubscriptions {
@@ -545,12 +559,92 @@ func (r *userRepository) ListWithFilters(ctx context.Context, params pagination.
 	return outUsers, paginationResultFromTotal(int64(total), params), nil
 }
 
+func (r *userRepository) hydratePlanConcurrencyEntitlements(ctx context.Context, users map[int64]*service.User) error {
+	if len(users) == 0 {
+		return nil
+	}
+	userIDs := make([]int64, 0, len(users))
+	for userID := range users {
+		userIDs = append(userIDs, userID)
+	}
+	now := time.Now()
+
+	entitlements, err := r.client.SubscriptionConcurrencyEntitlement.Query().
+		Where(
+			subscriptionconcurrencyentitlement.UserIDIn(userIDs...),
+			subscriptionconcurrencyentitlement.ExpiresAtGT(now),
+			subscriptionconcurrencyentitlement.HasSubscriptionWith(
+				usersubscription.StatusEQ(service.SubscriptionStatusActive),
+				usersubscription.ExpiresAtGT(now),
+				usersubscription.DeletedAtIsNil(),
+			),
+		).
+		WithSubscription(func(q *dbent.UserSubscriptionQuery) {
+			q.Select(
+				usersubscription.FieldExpiresAt,
+				usersubscription.FieldCustomExpiresAt,
+			)
+		}).
+		All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, entitlement := range entitlements {
+		if user := users[entitlement.UserID]; user != nil {
+			if mapped, ok := planConcurrencyEntitlementToService(entitlement); ok {
+				user.PlanConcurrencyEntitlements = append(user.PlanConcurrencyEntitlements, mapped)
+			}
+		}
+	}
+
+	legacySubscriptions, err := r.client.UserSubscription.Query().
+		Where(
+			usersubscription.UserIDIn(userIDs...),
+			usersubscription.StatusEQ(service.SubscriptionStatusActive),
+			usersubscription.ExpiresAtGT(now),
+			usersubscription.DeletedAtIsNil(),
+			usersubscription.PlanConcurrencyNotNil(),
+			usersubscription.Or(
+				usersubscription.PlanConcurrencyExpiresAtIsNil(),
+				usersubscription.PlanConcurrencyExpiresAtGT(now),
+			),
+		).
+		All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, subscription := range legacySubscriptions {
+		if user := users[subscription.UserID]; user != nil && subscription.PlanConcurrency != nil {
+			expiresAt := normalizeSubscriptionExpiresAt(subscription.ExpiresAt)
+			if subscription.PlanConcurrencyExpiresAt != nil && subscription.PlanConcurrencyExpiresAt.Before(expiresAt) {
+				expiresAt = *subscription.PlanConcurrencyExpiresAt
+			}
+			if subscription.CustomExpiresAt != nil && subscription.CustomExpiresAt.Before(expiresAt) {
+				expiresAt = *subscription.CustomExpiresAt
+			}
+			if !subscription.StartsAt.Before(expiresAt) {
+				continue
+			}
+			user.PlanConcurrencyEntitlements = append(user.PlanConcurrencyEntitlements, service.PlanConcurrencyEntitlement{
+				SubscriptionID: subscription.ID,
+				Concurrency:    *subscription.PlanConcurrency,
+				StartsAt:       subscription.StartsAt,
+				ExpiresAt:      expiresAt,
+			})
+		}
+	}
+	return nil
+}
+
 func userListOrder(params pagination.PaginationParams) []func(*entsql.Selector) {
 	sortBy := strings.ToLower(strings.TrimSpace(params.SortBy))
 	sortOrder := params.NormalizedSortOrder(pagination.SortOrderDesc)
 
 	if sortBy == "last_used_at" {
 		return userLastUsedAtOrder(sortOrder)
+	}
+	if sortBy == "concurrency" {
+		return userEffectiveConcurrencyOrder(sortOrder)
 	}
 
 	var field string
@@ -571,9 +665,6 @@ func userListOrder(params pagination.PaginationParams) []func(*entsql.Selector) 
 		defaultField = false
 	case "membership_level", "total_recharged":
 		field = dbuser.FieldTotalRecharged
-		defaultField = false
-	case "concurrency":
-		field = dbuser.FieldConcurrency
 		defaultField = false
 	case "status":
 		field = dbuser.FieldStatus
@@ -611,6 +702,97 @@ func userListOrder(params pagination.PaginationParams) []func(*entsql.Selector) 
 		}
 	}
 	return []func(*entsql.Selector){dbent.Desc(field), dbent.Desc(dbuser.FieldID)}
+}
+
+func userEffectiveConcurrencyOrder(sortOrder string) []func(*entsql.Selector) {
+	return []func(*entsql.Selector){func(s *entsql.Selector) {
+		userID := s.C(dbuser.FieldID)
+		baseConcurrency := s.C(dbuser.FieldConcurrency)
+		nowExpr := "CURRENT_TIMESTAMP"
+		timestampExpr := func(column string) string { return column }
+		if s.Dialect() == entdialect.SQLite {
+			timestampExpr = func(column string) string {
+				positiveOffset := fmt.Sprintf("instr(%s, ' +')", column)
+				negativeOffset := fmt.Sprintf("instr(%s, ' -')", column)
+				return fmt.Sprintf(`(CASE
+					WHEN %[1]s > 0 THEN datetime(substr(%[3]s, 1, 19) || substr(%[3]s, %[1]s + 1, 3) || ':' || substr(%[3]s, %[1]s + 4, 2))
+					WHEN %[2]s > 0 THEN datetime(substr(%[3]s, 1, 19) || substr(%[3]s, %[2]s + 1, 3) || ':' || substr(%[3]s, %[2]s + 4, 2))
+					ELSE datetime(substr(%[3]s, 1, 19))
+				END)`, positiveOffset, negativeOffset, column)
+			}
+		}
+		normalizedConcurrency := fmt.Sprintf(`(
+			SELECT MAX(sce.concurrency)
+			FROM subscription_concurrency_entitlements sce
+			JOIN user_subscriptions us ON us.id = sce.subscription_id
+			WHERE sce.user_id = %s
+			  AND %s <= %s
+			  AND %s > %s
+			  AND us.status = 'active'
+			  AND us.deleted_at IS NULL
+			  AND %s <= %s
+			  AND %s > %s
+			  AND (us.custom_expires_at IS NULL OR %s > %s)
+			  AND NOT EXISTS (
+				SELECT 1
+				FROM subscription_concurrency_entitlements newer
+				WHERE newer.subscription_id = sce.subscription_id
+				  AND %s <= %s
+				  AND %s > %s
+				  AND (
+					%s > %s
+					OR (%s = %s AND newer.concurrency > sce.concurrency)
+				  )
+			  )
+		)`,
+			userID,
+			timestampExpr("sce.starts_at"), nowExpr,
+			timestampExpr("sce.expires_at"), nowExpr,
+			timestampExpr("us.starts_at"), nowExpr,
+			timestampExpr("us.expires_at"), nowExpr,
+			timestampExpr("us.custom_expires_at"), nowExpr,
+			timestampExpr("newer.starts_at"), nowExpr,
+			timestampExpr("newer.expires_at"), nowExpr,
+			timestampExpr("newer.starts_at"), timestampExpr("sce.starts_at"),
+			timestampExpr("newer.starts_at"), timestampExpr("sce.starts_at"),
+		)
+		legacyConcurrency := fmt.Sprintf(`(
+			SELECT MAX(us.plan_concurrency)
+			FROM user_subscriptions us
+			WHERE us.user_id = %s
+			  AND us.status = 'active'
+			  AND us.deleted_at IS NULL
+			  AND %s <= %s
+			  AND %s > %s
+			  AND us.plan_concurrency > 0
+			  AND (us.plan_concurrency_expires_at IS NULL OR %s > %s)
+			  AND (us.custom_expires_at IS NULL OR %s > %s)
+		)`,
+			userID,
+			timestampExpr("us.starts_at"), nowExpr,
+			timestampExpr("us.expires_at"), nowExpr,
+			timestampExpr("us.plan_concurrency_expires_at"), nowExpr,
+			timestampExpr("us.custom_expires_at"), nowExpr,
+		)
+		greatest := "GREATEST"
+		if s.Dialect() == entdialect.SQLite {
+			greatest = "MAX"
+		}
+		activePlanConcurrency := fmt.Sprintf(
+			"%s(COALESCE(%s, 0), COALESCE(%s, 0))",
+			greatest,
+			normalizedConcurrency,
+			legacyConcurrency,
+		)
+		direction := "DESC"
+		tieOrder := entsql.Desc
+		if sortOrder == pagination.SortOrderAsc {
+			direction = "ASC"
+			tieOrder = entsql.Asc
+		}
+		s.OrderExpr(entsql.Expr(fmt.Sprintf("COALESCE(NULLIF(%s, 0), %s) %s", activePlanConcurrency, baseConcurrency, direction)))
+		s.OrderBy(tieOrder(userID))
+	}}
 }
 
 func (r *userRepository) GetLatestUsedAtByUserIDs(ctx context.Context, userIDs []int64) (map[int64]*time.Time, error) {
@@ -947,6 +1129,9 @@ func (r *userRepository) GetFirstAdmin(ctx context.Context) (*service.User, erro
 	}
 
 	out := userEntityToService(m)
+	if err := r.hydratePlanConcurrencyEntitlements(ctx, map[int64]*service.User{m.ID: out}); err != nil {
+		return nil, err
+	}
 	groups, err := r.loadAllowedGroups(ctx, []int64{m.ID})
 	if err != nil {
 		return nil, err

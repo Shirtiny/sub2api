@@ -25,6 +25,12 @@ const (
 	FieldOriginalPrice = "original_price"
 	// FieldValidityDays holds the string denoting the validity_days field in the database.
 	FieldValidityDays = "validity_days"
+	// FieldConcurrency holds the string denoting the concurrency field in the database.
+	FieldConcurrency = "concurrency"
+	// FieldEarlyResetEnabled holds the string denoting the early_reset_enabled field in the database.
+	FieldEarlyResetEnabled = "early_reset_enabled"
+	// FieldEarlyResetDurationDays holds the string denoting the early_reset_duration_days field in the database.
+	FieldEarlyResetDurationDays = "early_reset_duration_days"
 	// FieldValidityUnit holds the string denoting the validity_unit field in the database.
 	FieldValidityUnit = "validity_unit"
 	// FieldFeatures holds the string denoting the features field in the database.
@@ -58,6 +64,9 @@ var Columns = []string{
 	FieldPrice,
 	FieldOriginalPrice,
 	FieldValidityDays,
+	FieldConcurrency,
+	FieldEarlyResetEnabled,
+	FieldEarlyResetDurationDays,
 	FieldValidityUnit,
 	FieldFeatures,
 	FieldProductName,
@@ -87,6 +96,16 @@ var (
 	DefaultDescription string
 	// DefaultValidityDays holds the default value on creation for the "validity_days" field.
 	DefaultValidityDays int
+	// DefaultConcurrency holds the default value on creation for the "concurrency" field.
+	DefaultConcurrency int
+	// ConcurrencyValidator is a validator for the "concurrency" field. It is called by the builders before save.
+	ConcurrencyValidator func(int) error
+	// DefaultEarlyResetEnabled holds the default value on creation for the "early_reset_enabled" field.
+	DefaultEarlyResetEnabled bool
+	// DefaultEarlyResetDurationDays holds the default value on creation for the "early_reset_duration_days" field.
+	DefaultEarlyResetDurationDays int
+	// EarlyResetDurationDaysValidator is a validator for the "early_reset_duration_days" field. It is called by the builders before save.
+	EarlyResetDurationDaysValidator func(int) error
 	// DefaultValidityUnit holds the default value on creation for the "validity_unit" field.
 	DefaultValidityUnit string
 	// ValidityUnitValidator is a validator for the "validity_unit" field. It is called by the builders before save.
@@ -151,6 +170,21 @@ func ByOriginalPrice(opts ...sql.OrderTermOption) OrderOption {
 // ByValidityDays orders the results by the validity_days field.
 func ByValidityDays(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldValidityDays, opts...).ToFunc()
+}
+
+// ByConcurrency orders the results by the concurrency field.
+func ByConcurrency(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldConcurrency, opts...).ToFunc()
+}
+
+// ByEarlyResetEnabled orders the results by the early_reset_enabled field.
+func ByEarlyResetEnabled(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldEarlyResetEnabled, opts...).ToFunc()
+}
+
+// ByEarlyResetDurationDays orders the results by the early_reset_duration_days field.
+func ByEarlyResetDurationDays(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldEarlyResetDurationDays, opts...).ToFunc()
 }
 
 // ByValidityUnit orders the results by the validity_unit field.

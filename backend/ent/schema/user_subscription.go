@@ -68,6 +68,14 @@ func (UserSubscription) Fields() []ent.Field {
 		field.Float("monthly_usage_usd").
 			SchemaType(map[string]string{dialect.Postgres: "decimal(20,10)"}).
 			Default(0),
+		field.Bool("early_reset_enabled").
+			Default(false).
+			Comment("whether the subscriber may reset quota before the normal window"),
+		field.Int("early_reset_duration_days").
+			Default(0).
+			Min(0).
+			Max(36500).
+			Comment("days deducted from the subscription period on early reset"),
 
 		field.Int64("assigned_by").
 			Optional().
@@ -79,6 +87,20 @@ func (UserSubscription) Fields() []ent.Field {
 			Optional().
 			Nillable().
 			SchemaType(map[string]string{dialect.Postgres: "text"}),
+
+		// Legacy single-window plan concurrency fields. New purchases use
+		// subscription_concurrency_entitlements so renewals can keep distinct terms.
+		field.Int("plan_concurrency").
+			Optional().
+			Nillable().
+			Positive().
+			Max(2147483647).
+			Comment("user concurrency granted by a purchased subscription plan"),
+		field.Time("plan_concurrency_expires_at").
+			Optional().
+			Nillable().
+			SchemaType(map[string]string{dialect.Postgres: "timestamptz"}).
+			Comment("expiration of the plan concurrency entitlement"),
 
 		// Virtual custom subscription entitlement metadata. Normal subscriptions
 		// keep these fields nil; legacy real custom groups keep their metadata on
@@ -125,6 +147,7 @@ func (UserSubscription) Edges() []ent.Edge {
 			Field("assigned_by").
 			Unique(),
 		edge.To("usage_logs", UsageLog.Type),
+		edge.To("concurrency_entitlements", SubscriptionConcurrencyEntitlement.Type),
 	}
 }
 

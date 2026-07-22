@@ -239,6 +239,48 @@ func (_c *PaymentOrderCreate) SetNillableSubscriptionDays(v *int) *PaymentOrderC
 	return _c
 }
 
+// SetSubscriptionConcurrency sets the "subscription_concurrency" field.
+func (_c *PaymentOrderCreate) SetSubscriptionConcurrency(v int) *PaymentOrderCreate {
+	_c.mutation.SetSubscriptionConcurrency(v)
+	return _c
+}
+
+// SetNillableSubscriptionConcurrency sets the "subscription_concurrency" field if the given value is not nil.
+func (_c *PaymentOrderCreate) SetNillableSubscriptionConcurrency(v *int) *PaymentOrderCreate {
+	if v != nil {
+		_c.SetSubscriptionConcurrency(*v)
+	}
+	return _c
+}
+
+// SetSubscriptionEarlyResetEnabled sets the "subscription_early_reset_enabled" field.
+func (_c *PaymentOrderCreate) SetSubscriptionEarlyResetEnabled(v bool) *PaymentOrderCreate {
+	_c.mutation.SetSubscriptionEarlyResetEnabled(v)
+	return _c
+}
+
+// SetNillableSubscriptionEarlyResetEnabled sets the "subscription_early_reset_enabled" field if the given value is not nil.
+func (_c *PaymentOrderCreate) SetNillableSubscriptionEarlyResetEnabled(v *bool) *PaymentOrderCreate {
+	if v != nil {
+		_c.SetSubscriptionEarlyResetEnabled(*v)
+	}
+	return _c
+}
+
+// SetSubscriptionEarlyResetDurationDays sets the "subscription_early_reset_duration_days" field.
+func (_c *PaymentOrderCreate) SetSubscriptionEarlyResetDurationDays(v int) *PaymentOrderCreate {
+	_c.mutation.SetSubscriptionEarlyResetDurationDays(v)
+	return _c
+}
+
+// SetNillableSubscriptionEarlyResetDurationDays sets the "subscription_early_reset_duration_days" field if the given value is not nil.
+func (_c *PaymentOrderCreate) SetNillableSubscriptionEarlyResetDurationDays(v *int) *PaymentOrderCreate {
+	if v != nil {
+		_c.SetSubscriptionEarlyResetDurationDays(*v)
+	}
+	return _c
+}
+
 // SetSubscriptionMultiplier sets the "subscription_multiplier" field.
 func (_c *PaymentOrderCreate) SetSubscriptionMultiplier(v int) *PaymentOrderCreate {
 	_c.mutation.SetSubscriptionMultiplier(v)
@@ -613,6 +655,14 @@ func (_c *PaymentOrderCreate) defaults() {
 		v := paymentorder.DefaultOrderType
 		_c.mutation.SetOrderType(v)
 	}
+	if _, ok := _c.mutation.SubscriptionEarlyResetEnabled(); !ok {
+		v := paymentorder.DefaultSubscriptionEarlyResetEnabled
+		_c.mutation.SetSubscriptionEarlyResetEnabled(v)
+	}
+	if _, ok := _c.mutation.SubscriptionEarlyResetDurationDays(); !ok {
+		v := paymentorder.DefaultSubscriptionEarlyResetDurationDays
+		_c.mutation.SetSubscriptionEarlyResetDurationDays(v)
+	}
 	if _, ok := _c.mutation.Status(); !ok {
 		v := paymentorder.DefaultStatus
 		_c.mutation.SetStatus(v)
@@ -711,6 +761,22 @@ func (_c *PaymentOrderCreate) check() error {
 	if v, ok := _c.mutation.OrderType(); ok {
 		if err := paymentorder.OrderTypeValidator(v); err != nil {
 			return &ValidationError{Name: "order_type", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.order_type": %w`, err)}
+		}
+	}
+	if v, ok := _c.mutation.SubscriptionConcurrency(); ok {
+		if err := paymentorder.SubscriptionConcurrencyValidator(v); err != nil {
+			return &ValidationError{Name: "subscription_concurrency", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.subscription_concurrency": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.SubscriptionEarlyResetEnabled(); !ok {
+		return &ValidationError{Name: "subscription_early_reset_enabled", err: errors.New(`ent: missing required field "PaymentOrder.subscription_early_reset_enabled"`)}
+	}
+	if _, ok := _c.mutation.SubscriptionEarlyResetDurationDays(); !ok {
+		return &ValidationError{Name: "subscription_early_reset_duration_days", err: errors.New(`ent: missing required field "PaymentOrder.subscription_early_reset_duration_days"`)}
+	}
+	if v, ok := _c.mutation.SubscriptionEarlyResetDurationDays(); ok {
+		if err := paymentorder.SubscriptionEarlyResetDurationDaysValidator(v); err != nil {
+			return &ValidationError{Name: "subscription_early_reset_duration_days", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.subscription_early_reset_duration_days": %w`, err)}
 		}
 	}
 	if v, ok := _c.mutation.ProviderInstanceID(); ok {
@@ -872,6 +938,18 @@ func (_c *PaymentOrderCreate) createSpec() (*PaymentOrder, *sqlgraph.CreateSpec)
 	if value, ok := _c.mutation.SubscriptionDays(); ok {
 		_spec.SetField(paymentorder.FieldSubscriptionDays, field.TypeInt, value)
 		_node.SubscriptionDays = &value
+	}
+	if value, ok := _c.mutation.SubscriptionConcurrency(); ok {
+		_spec.SetField(paymentorder.FieldSubscriptionConcurrency, field.TypeInt, value)
+		_node.SubscriptionConcurrency = &value
+	}
+	if value, ok := _c.mutation.SubscriptionEarlyResetEnabled(); ok {
+		_spec.SetField(paymentorder.FieldSubscriptionEarlyResetEnabled, field.TypeBool, value)
+		_node.SubscriptionEarlyResetEnabled = value
+	}
+	if value, ok := _c.mutation.SubscriptionEarlyResetDurationDays(); ok {
+		_spec.SetField(paymentorder.FieldSubscriptionEarlyResetDurationDays, field.TypeInt, value)
+		_node.SubscriptionEarlyResetDurationDays = value
 	}
 	if value, ok := _c.mutation.SubscriptionMultiplier(); ok {
 		_spec.SetField(paymentorder.FieldSubscriptionMultiplier, field.TypeInt, value)
@@ -1369,6 +1447,60 @@ func (u *PaymentOrderUpsert) AddSubscriptionDays(v int) *PaymentOrderUpsert {
 // ClearSubscriptionDays clears the value of the "subscription_days" field.
 func (u *PaymentOrderUpsert) ClearSubscriptionDays() *PaymentOrderUpsert {
 	u.SetNull(paymentorder.FieldSubscriptionDays)
+	return u
+}
+
+// SetSubscriptionConcurrency sets the "subscription_concurrency" field.
+func (u *PaymentOrderUpsert) SetSubscriptionConcurrency(v int) *PaymentOrderUpsert {
+	u.Set(paymentorder.FieldSubscriptionConcurrency, v)
+	return u
+}
+
+// UpdateSubscriptionConcurrency sets the "subscription_concurrency" field to the value that was provided on create.
+func (u *PaymentOrderUpsert) UpdateSubscriptionConcurrency() *PaymentOrderUpsert {
+	u.SetExcluded(paymentorder.FieldSubscriptionConcurrency)
+	return u
+}
+
+// AddSubscriptionConcurrency adds v to the "subscription_concurrency" field.
+func (u *PaymentOrderUpsert) AddSubscriptionConcurrency(v int) *PaymentOrderUpsert {
+	u.Add(paymentorder.FieldSubscriptionConcurrency, v)
+	return u
+}
+
+// ClearSubscriptionConcurrency clears the value of the "subscription_concurrency" field.
+func (u *PaymentOrderUpsert) ClearSubscriptionConcurrency() *PaymentOrderUpsert {
+	u.SetNull(paymentorder.FieldSubscriptionConcurrency)
+	return u
+}
+
+// SetSubscriptionEarlyResetEnabled sets the "subscription_early_reset_enabled" field.
+func (u *PaymentOrderUpsert) SetSubscriptionEarlyResetEnabled(v bool) *PaymentOrderUpsert {
+	u.Set(paymentorder.FieldSubscriptionEarlyResetEnabled, v)
+	return u
+}
+
+// UpdateSubscriptionEarlyResetEnabled sets the "subscription_early_reset_enabled" field to the value that was provided on create.
+func (u *PaymentOrderUpsert) UpdateSubscriptionEarlyResetEnabled() *PaymentOrderUpsert {
+	u.SetExcluded(paymentorder.FieldSubscriptionEarlyResetEnabled)
+	return u
+}
+
+// SetSubscriptionEarlyResetDurationDays sets the "subscription_early_reset_duration_days" field.
+func (u *PaymentOrderUpsert) SetSubscriptionEarlyResetDurationDays(v int) *PaymentOrderUpsert {
+	u.Set(paymentorder.FieldSubscriptionEarlyResetDurationDays, v)
+	return u
+}
+
+// UpdateSubscriptionEarlyResetDurationDays sets the "subscription_early_reset_duration_days" field to the value that was provided on create.
+func (u *PaymentOrderUpsert) UpdateSubscriptionEarlyResetDurationDays() *PaymentOrderUpsert {
+	u.SetExcluded(paymentorder.FieldSubscriptionEarlyResetDurationDays)
+	return u
+}
+
+// AddSubscriptionEarlyResetDurationDays adds v to the "subscription_early_reset_duration_days" field.
+func (u *PaymentOrderUpsert) AddSubscriptionEarlyResetDurationDays(v int) *PaymentOrderUpsert {
+	u.Add(paymentorder.FieldSubscriptionEarlyResetDurationDays, v)
 	return u
 }
 
@@ -2219,6 +2351,69 @@ func (u *PaymentOrderUpsertOne) UpdateSubscriptionDays() *PaymentOrderUpsertOne 
 func (u *PaymentOrderUpsertOne) ClearSubscriptionDays() *PaymentOrderUpsertOne {
 	return u.Update(func(s *PaymentOrderUpsert) {
 		s.ClearSubscriptionDays()
+	})
+}
+
+// SetSubscriptionConcurrency sets the "subscription_concurrency" field.
+func (u *PaymentOrderUpsertOne) SetSubscriptionConcurrency(v int) *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.SetSubscriptionConcurrency(v)
+	})
+}
+
+// AddSubscriptionConcurrency adds v to the "subscription_concurrency" field.
+func (u *PaymentOrderUpsertOne) AddSubscriptionConcurrency(v int) *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.AddSubscriptionConcurrency(v)
+	})
+}
+
+// UpdateSubscriptionConcurrency sets the "subscription_concurrency" field to the value that was provided on create.
+func (u *PaymentOrderUpsertOne) UpdateSubscriptionConcurrency() *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.UpdateSubscriptionConcurrency()
+	})
+}
+
+// ClearSubscriptionConcurrency clears the value of the "subscription_concurrency" field.
+func (u *PaymentOrderUpsertOne) ClearSubscriptionConcurrency() *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.ClearSubscriptionConcurrency()
+	})
+}
+
+// SetSubscriptionEarlyResetEnabled sets the "subscription_early_reset_enabled" field.
+func (u *PaymentOrderUpsertOne) SetSubscriptionEarlyResetEnabled(v bool) *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.SetSubscriptionEarlyResetEnabled(v)
+	})
+}
+
+// UpdateSubscriptionEarlyResetEnabled sets the "subscription_early_reset_enabled" field to the value that was provided on create.
+func (u *PaymentOrderUpsertOne) UpdateSubscriptionEarlyResetEnabled() *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.UpdateSubscriptionEarlyResetEnabled()
+	})
+}
+
+// SetSubscriptionEarlyResetDurationDays sets the "subscription_early_reset_duration_days" field.
+func (u *PaymentOrderUpsertOne) SetSubscriptionEarlyResetDurationDays(v int) *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.SetSubscriptionEarlyResetDurationDays(v)
+	})
+}
+
+// AddSubscriptionEarlyResetDurationDays adds v to the "subscription_early_reset_duration_days" field.
+func (u *PaymentOrderUpsertOne) AddSubscriptionEarlyResetDurationDays(v int) *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.AddSubscriptionEarlyResetDurationDays(v)
+	})
+}
+
+// UpdateSubscriptionEarlyResetDurationDays sets the "subscription_early_reset_duration_days" field to the value that was provided on create.
+func (u *PaymentOrderUpsertOne) UpdateSubscriptionEarlyResetDurationDays() *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.UpdateSubscriptionEarlyResetDurationDays()
 	})
 }
 
@@ -3305,6 +3500,69 @@ func (u *PaymentOrderUpsertBulk) UpdateSubscriptionDays() *PaymentOrderUpsertBul
 func (u *PaymentOrderUpsertBulk) ClearSubscriptionDays() *PaymentOrderUpsertBulk {
 	return u.Update(func(s *PaymentOrderUpsert) {
 		s.ClearSubscriptionDays()
+	})
+}
+
+// SetSubscriptionConcurrency sets the "subscription_concurrency" field.
+func (u *PaymentOrderUpsertBulk) SetSubscriptionConcurrency(v int) *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.SetSubscriptionConcurrency(v)
+	})
+}
+
+// AddSubscriptionConcurrency adds v to the "subscription_concurrency" field.
+func (u *PaymentOrderUpsertBulk) AddSubscriptionConcurrency(v int) *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.AddSubscriptionConcurrency(v)
+	})
+}
+
+// UpdateSubscriptionConcurrency sets the "subscription_concurrency" field to the value that was provided on create.
+func (u *PaymentOrderUpsertBulk) UpdateSubscriptionConcurrency() *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.UpdateSubscriptionConcurrency()
+	})
+}
+
+// ClearSubscriptionConcurrency clears the value of the "subscription_concurrency" field.
+func (u *PaymentOrderUpsertBulk) ClearSubscriptionConcurrency() *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.ClearSubscriptionConcurrency()
+	})
+}
+
+// SetSubscriptionEarlyResetEnabled sets the "subscription_early_reset_enabled" field.
+func (u *PaymentOrderUpsertBulk) SetSubscriptionEarlyResetEnabled(v bool) *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.SetSubscriptionEarlyResetEnabled(v)
+	})
+}
+
+// UpdateSubscriptionEarlyResetEnabled sets the "subscription_early_reset_enabled" field to the value that was provided on create.
+func (u *PaymentOrderUpsertBulk) UpdateSubscriptionEarlyResetEnabled() *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.UpdateSubscriptionEarlyResetEnabled()
+	})
+}
+
+// SetSubscriptionEarlyResetDurationDays sets the "subscription_early_reset_duration_days" field.
+func (u *PaymentOrderUpsertBulk) SetSubscriptionEarlyResetDurationDays(v int) *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.SetSubscriptionEarlyResetDurationDays(v)
+	})
+}
+
+// AddSubscriptionEarlyResetDurationDays adds v to the "subscription_early_reset_duration_days" field.
+func (u *PaymentOrderUpsertBulk) AddSubscriptionEarlyResetDurationDays(v int) *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.AddSubscriptionEarlyResetDurationDays(v)
+	})
+}
+
+// UpdateSubscriptionEarlyResetDurationDays sets the "subscription_early_reset_duration_days" field to the value that was provided on create.
+func (u *PaymentOrderUpsertBulk) UpdateSubscriptionEarlyResetDurationDays() *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.UpdateSubscriptionEarlyResetDurationDays()
 	})
 }
 

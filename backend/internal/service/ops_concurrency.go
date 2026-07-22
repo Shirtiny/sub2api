@@ -298,7 +298,7 @@ func (s *OpsService) listAllActiveUsersForOps(ctx context.Context) ([]User, erro
 }
 
 // getUsersLoadMapBestEffort returns user load info for the given users.
-func (s *OpsService) getUsersLoadMapBestEffort(ctx context.Context, users []User) map[int64]*UserLoadInfo {
+func (s *OpsService) getUsersLoadMapBestEffort(ctx context.Context, users []User, now time.Time) map[int64]*UserLoadInfo {
 	if s == nil || s.concurrencyService == nil {
 		return map[int64]*UserLoadInfo{}
 	}
@@ -312,8 +312,9 @@ func (s *OpsService) getUsersLoadMapBestEffort(ctx context.Context, users []User
 		if u.ID <= 0 {
 			continue
 		}
-		if prev, ok := unique[u.ID]; !ok || u.Concurrency > prev {
-			unique[u.ID] = u.Concurrency
+		effectiveConcurrency := u.EffectiveConcurrencyAt(now)
+		if prev, ok := unique[u.ID]; !ok || effectiveConcurrency > prev {
+			unique[u.ID] = effectiveConcurrency
 		}
 	}
 
@@ -357,7 +358,7 @@ func (s *OpsService) GetUserConcurrencyStats(ctx context.Context) (map[int64]*Us
 	}
 
 	collectedAt := time.Now()
-	loadMap := s.getUsersLoadMapBestEffort(ctx, users)
+	loadMap := s.getUsersLoadMapBestEffort(ctx, users, collectedAt)
 
 	result := make(map[int64]*UserConcurrencyInfo)
 
@@ -384,7 +385,7 @@ func (s *OpsService) GetUserConcurrencyStats(ctx context.Context) (map[int64]*Us
 			UserEmail:      u.Email,
 			Username:       u.Username,
 			CurrentInUse:   currentInUse,
-			MaxCapacity:    int64(u.Concurrency),
+			MaxCapacity:    int64(u.EffectiveConcurrencyAt(collectedAt)),
 			WaitingInQueue: waiting,
 		}
 		if info.MaxCapacity > 0 {

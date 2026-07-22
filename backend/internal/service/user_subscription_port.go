@@ -39,6 +39,16 @@ type UserSubscriptionRepository interface {
 	BatchUpdateExpiredStatus(ctx context.Context) (int64, error)
 }
 
+type EarlyResetSubscriptionParams struct {
+	ID                      int64
+	UserID                  int64
+	ExpectedExpiresAt       time.Time
+	ExpectedCustomExpiresAt *time.Time
+	NewExpiresAt            time.Time
+	NewCustomExpiresAt      *time.Time
+	WindowStart             time.Time
+}
+
 // ShiftWindowQuery 描述一次批量窗口平移的目标范围与位移量。
 type ShiftWindowQuery struct {
 	Daily    bool

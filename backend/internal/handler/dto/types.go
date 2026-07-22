@@ -9,18 +9,20 @@ import (
 )
 
 type User struct {
-	ID            int64      `json:"id"`
-	Email         string     `json:"email"`
-	Username      string     `json:"username"`
-	Role          string     `json:"role"`
-	Balance       float64    `json:"balance"`
-	Concurrency   int        `json:"concurrency"`
-	Status        string     `json:"status"`
-	AllowedGroups []int64    `json:"allowed_groups"`
-	LastActiveAt  *time.Time `json:"last_active_at,omitempty"`
-	CreatedAt     time.Time  `json:"created_at"`
-	UpdatedAt     time.Time  `json:"updated_at"`
-	DeletedAt     *time.Time `json:"deleted_at,omitempty"`
+	ID                   int64      `json:"id"`
+	Email                string     `json:"email"`
+	Username             string     `json:"username"`
+	Role                 string     `json:"role"`
+	Balance              float64    `json:"balance"`
+	Concurrency          int        `json:"concurrency"`
+	BaseConcurrency      int        `json:"base_concurrency"`
+	EffectiveConcurrency int        `json:"effective_concurrency"`
+	Status               string     `json:"status"`
+	AllowedGroups        []int64    `json:"allowed_groups"`
+	LastActiveAt         *time.Time `json:"last_active_at,omitempty"`
+	CreatedAt            time.Time  `json:"created_at"`
+	UpdatedAt            time.Time  `json:"updated_at"`
+	DeletedAt            *time.Time `json:"deleted_at,omitempty"`
 
 	// 余额不足通知
 	BalanceNotifyEnabled       bool               `json:"balance_notify_enabled"`
@@ -583,9 +585,11 @@ type UserSubscription struct {
 	WeeklyWindowStart  *time.Time `json:"weekly_window_start"`
 	MonthlyWindowStart *time.Time `json:"monthly_window_start"`
 
-	DailyUsageUSD   float64 `json:"daily_usage_usd"`
-	WeeklyUsageUSD  float64 `json:"weekly_usage_usd"`
-	MonthlyUsageUSD float64 `json:"monthly_usage_usd"`
+	DailyUsageUSD          float64 `json:"daily_usage_usd"`
+	WeeklyUsageUSD         float64 `json:"weekly_usage_usd"`
+	MonthlyUsageUSD        float64 `json:"monthly_usage_usd"`
+	EarlyResetEnabled      bool    `json:"early_reset_enabled"`
+	EarlyResetDurationDays int     `json:"early_reset_duration_days"`
 
 	CustomMultiplier    *int       `json:"custom_multiplier,omitempty"`
 	CustomSourcePlanID  *int64     `json:"custom_source_plan_id,omitempty"`

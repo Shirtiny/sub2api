@@ -29,6 +29,12 @@ type SubscriptionPlan struct {
 	OriginalPrice *float64 `json:"original_price,omitempty"`
 	// ValidityDays holds the value of the "validity_days" field.
 	ValidityDays int `json:"validity_days,omitempty"`
+	// maximum user concurrency while the purchased plan is active
+	Concurrency int `json:"concurrency,omitempty"`
+	// whether purchased subscriptions may reset quota before the normal window
+	EarlyResetEnabled bool `json:"early_reset_enabled,omitempty"`
+	// subscription days deducted for each early quota reset
+	EarlyResetDurationDays int `json:"early_reset_duration_days,omitempty"`
 	// ValidityUnit holds the value of the "validity_unit" field.
 	ValidityUnit string `json:"validity_unit,omitempty"`
 	// Features holds the value of the "features" field.
@@ -57,11 +63,11 @@ func (*SubscriptionPlan) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case subscriptionplan.FieldForSale, subscriptionplan.FieldCustomMultiplierEnabled:
+		case subscriptionplan.FieldEarlyResetEnabled, subscriptionplan.FieldForSale, subscriptionplan.FieldCustomMultiplierEnabled:
 			values[i] = new(sql.NullBool)
 		case subscriptionplan.FieldPrice, subscriptionplan.FieldOriginalPrice:
 			values[i] = new(sql.NullFloat64)
-		case subscriptionplan.FieldID, subscriptionplan.FieldGroupID, subscriptionplan.FieldValidityDays, subscriptionplan.FieldSortOrder, subscriptionplan.FieldCustomMultiplierMin, subscriptionplan.FieldCustomMultiplierMax:
+		case subscriptionplan.FieldID, subscriptionplan.FieldGroupID, subscriptionplan.FieldValidityDays, subscriptionplan.FieldConcurrency, subscriptionplan.FieldEarlyResetDurationDays, subscriptionplan.FieldSortOrder, subscriptionplan.FieldCustomMultiplierMin, subscriptionplan.FieldCustomMultiplierMax:
 			values[i] = new(sql.NullInt64)
 		case subscriptionplan.FieldName, subscriptionplan.FieldDescription, subscriptionplan.FieldValidityUnit, subscriptionplan.FieldFeatures, subscriptionplan.FieldProductName:
 			values[i] = new(sql.NullString)
@@ -124,6 +130,24 @@ func (_m *SubscriptionPlan) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field validity_days", values[i])
 			} else if value.Valid {
 				_m.ValidityDays = int(value.Int64)
+			}
+		case subscriptionplan.FieldConcurrency:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field concurrency", values[i])
+			} else if value.Valid {
+				_m.Concurrency = int(value.Int64)
+			}
+		case subscriptionplan.FieldEarlyResetEnabled:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field early_reset_enabled", values[i])
+			} else if value.Valid {
+				_m.EarlyResetEnabled = value.Bool
+			}
+		case subscriptionplan.FieldEarlyResetDurationDays:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field early_reset_duration_days", values[i])
+			} else if value.Valid {
+				_m.EarlyResetDurationDays = int(value.Int64)
 			}
 		case subscriptionplan.FieldValidityUnit:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -240,6 +264,15 @@ func (_m *SubscriptionPlan) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("validity_days=")
 	builder.WriteString(fmt.Sprintf("%v", _m.ValidityDays))
+	builder.WriteString(", ")
+	builder.WriteString("concurrency=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Concurrency))
+	builder.WriteString(", ")
+	builder.WriteString("early_reset_enabled=")
+	builder.WriteString(fmt.Sprintf("%v", _m.EarlyResetEnabled))
+	builder.WriteString(", ")
+	builder.WriteString("early_reset_duration_days=")
+	builder.WriteString(fmt.Sprintf("%v", _m.EarlyResetDurationDays))
 	builder.WriteString(", ")
 	builder.WriteString("validity_unit=")
 	builder.WriteString(_m.ValidityUnit)

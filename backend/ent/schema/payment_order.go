@@ -94,6 +94,20 @@ func (PaymentOrder) Fields() []ent.Field {
 		field.Int("subscription_days").
 			Optional().
 			Nillable(),
+		field.Int("subscription_concurrency").
+			Optional().
+			Nillable().
+			Positive().
+			Max(2147483647).
+			Comment("plan concurrency snapshot used during subscription fulfillment"),
+		field.Bool("subscription_early_reset_enabled").
+			Default(false).
+			Comment("whether fulfilled subscriptions may use early reset"),
+		field.Int("subscription_early_reset_duration_days").
+			Default(0).
+			Min(0).
+			Max(36500).
+			Comment("days deducted from the subscription period on early reset"),
 		field.Int("subscription_multiplier").
 			Optional().
 			Nillable().

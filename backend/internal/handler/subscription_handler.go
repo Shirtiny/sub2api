@@ -1,6 +1,9 @@
 package handler
 
 import (
+	"context"
+	"strconv"
+
 	"github.com/Wei-Shaw/sub2api/internal/handler/dto"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
 	middleware2 "github.com/Wei-Shaw/sub2api/internal/server/middleware"
@@ -62,6 +65,34 @@ func (h *SubscriptionHandler) List(c *gin.Context) {
 		out = append(out, *dto.UserSubscriptionFromService(&subscriptions[i]))
 	}
 	response.Success(c, out)
+}
+
+// EarlyReset resets subscription quota and deducts the configured subscription days.
+// POST /api/v1/subscriptions/:id/early-reset
+func (h *SubscriptionHandler) EarlyReset(c *gin.Context) {
+	subject, ok := middleware2.GetAuthSubjectFromContext(c)
+	if !ok {
+		response.Unauthorized(c, "User not found in context")
+		return
+	}
+	subscriptionID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil || subscriptionID <= 0 {
+		response.BadRequest(c, "Invalid subscription ID")
+		return
+	}
+	executeUserIdempotentJSON(
+		c,
+		"user_subscription_early_reset",
+		map[string]int64{"subscription_id": subscriptionID},
+		service.DefaultWriteIdempotencyTTL(),
+		func(ctx context.Context) (any, error) {
+			sub, resetErr := h.subscriptionService.EarlyResetSubscription(ctx, subject.UserID, subscriptionID)
+			if resetErr != nil {
+				return nil, resetErr
+			}
+			return dto.UserSubscriptionFromService(sub), nil
+		},
+	)
 }
 
 // GetActive handles getting current user's active subscriptions

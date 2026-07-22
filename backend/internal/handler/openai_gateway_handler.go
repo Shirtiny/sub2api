@@ -1346,7 +1346,7 @@ func (h *OpenAIGatewayHandler) ResponsesWebSocket(c *gin.Context) {
 		return
 	}
 	apiKey = leasedAPIKey
-	subject = middleware2.AuthSubject{UserID: apiKey.User.ID, Concurrency: apiKey.User.Concurrency}
+	subject = middleware2.AuthSubject{UserID: apiKey.User.ID, Concurrency: apiKey.User.EffectiveConcurrencyAt(time.Now())}
 	authEpochLease := h.apiKeyService.AuthEpochLeaseForAuthenticatedKey(apiKey)
 	reqLog.Info("openai.websocket_ingress_started")
 	userAgent := strings.TrimSpace(c.GetHeader("User-Agent"))
@@ -1466,7 +1466,7 @@ func (h *OpenAIGatewayHandler) ResponsesWebSocket(c *gin.Context) {
 		return
 	}
 
-	userReleaseFunc, userAcquired, err := h.concurrencyHelper.TryAcquireUserSlot(ctx, subject.UserID, subject.Concurrency)
+	userReleaseFunc, userAcquired, err := h.concurrencyHelper.TryAcquireUserSlot(ctx, subject.UserID, apiKey.User.EffectiveConcurrencyAt(time.Now()))
 	if err != nil {
 		reqLog.Warn("openai.websocket_user_slot_acquire_failed", zap.Error(err))
 		closeOpenAIClientWS(wsConn, coderws.StatusInternalError, "failed to acquire user concurrency slot")
@@ -1484,7 +1484,7 @@ func (h *OpenAIGatewayHandler) ResponsesWebSocket(c *gin.Context) {
 		if turnFinalizer.HasUserRelease() {
 			return true
 		}
-		userReleaseFunc, userAcquired, err := h.concurrencyHelper.TryAcquireUserSlot(ctx, subject.UserID, subject.Concurrency)
+		userReleaseFunc, userAcquired, err := h.concurrencyHelper.TryAcquireUserSlot(ctx, subject.UserID, apiKey.User.EffectiveConcurrencyAt(time.Now()))
 		if err != nil {
 			reqLog.Warn("openai.websocket_user_slot_reacquire_failed", zap.Error(err))
 			closeOpenAIClientWS(wsConn, coderws.StatusInternalError, "failed to acquire user concurrency slot")
@@ -1784,7 +1784,7 @@ func (h *OpenAIGatewayHandler) ResponsesWebSocket(c *gin.Context) {
 				}
 				// Non-first turns reacquire both slots only after finalizer capacity
 				// is reserved; idle sockets therefore hold no inference permits.
-				userReleaseFunc, userAcquired, err := h.concurrencyHelper.TryAcquireUserSlot(ctx, subject.UserID, subject.Concurrency)
+				userReleaseFunc, userAcquired, err := h.concurrencyHelper.TryAcquireUserSlot(ctx, subject.UserID, apiKey.User.EffectiveConcurrencyAt(time.Now()))
 				if err != nil {
 					turnFinalizer.AbortCurrent()
 					return service.NewOpenAIWSClientCloseError(coderws.StatusInternalError, "failed to acquire user concurrency slot", err)

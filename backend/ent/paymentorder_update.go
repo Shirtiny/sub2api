@@ -406,6 +406,68 @@ func (_u *PaymentOrderUpdate) ClearSubscriptionDays() *PaymentOrderUpdate {
 	return _u
 }
 
+// SetSubscriptionConcurrency sets the "subscription_concurrency" field.
+func (_u *PaymentOrderUpdate) SetSubscriptionConcurrency(v int) *PaymentOrderUpdate {
+	_u.mutation.ResetSubscriptionConcurrency()
+	_u.mutation.SetSubscriptionConcurrency(v)
+	return _u
+}
+
+// SetNillableSubscriptionConcurrency sets the "subscription_concurrency" field if the given value is not nil.
+func (_u *PaymentOrderUpdate) SetNillableSubscriptionConcurrency(v *int) *PaymentOrderUpdate {
+	if v != nil {
+		_u.SetSubscriptionConcurrency(*v)
+	}
+	return _u
+}
+
+// AddSubscriptionConcurrency adds value to the "subscription_concurrency" field.
+func (_u *PaymentOrderUpdate) AddSubscriptionConcurrency(v int) *PaymentOrderUpdate {
+	_u.mutation.AddSubscriptionConcurrency(v)
+	return _u
+}
+
+// ClearSubscriptionConcurrency clears the value of the "subscription_concurrency" field.
+func (_u *PaymentOrderUpdate) ClearSubscriptionConcurrency() *PaymentOrderUpdate {
+	_u.mutation.ClearSubscriptionConcurrency()
+	return _u
+}
+
+// SetSubscriptionEarlyResetEnabled sets the "subscription_early_reset_enabled" field.
+func (_u *PaymentOrderUpdate) SetSubscriptionEarlyResetEnabled(v bool) *PaymentOrderUpdate {
+	_u.mutation.SetSubscriptionEarlyResetEnabled(v)
+	return _u
+}
+
+// SetNillableSubscriptionEarlyResetEnabled sets the "subscription_early_reset_enabled" field if the given value is not nil.
+func (_u *PaymentOrderUpdate) SetNillableSubscriptionEarlyResetEnabled(v *bool) *PaymentOrderUpdate {
+	if v != nil {
+		_u.SetSubscriptionEarlyResetEnabled(*v)
+	}
+	return _u
+}
+
+// SetSubscriptionEarlyResetDurationDays sets the "subscription_early_reset_duration_days" field.
+func (_u *PaymentOrderUpdate) SetSubscriptionEarlyResetDurationDays(v int) *PaymentOrderUpdate {
+	_u.mutation.ResetSubscriptionEarlyResetDurationDays()
+	_u.mutation.SetSubscriptionEarlyResetDurationDays(v)
+	return _u
+}
+
+// SetNillableSubscriptionEarlyResetDurationDays sets the "subscription_early_reset_duration_days" field if the given value is not nil.
+func (_u *PaymentOrderUpdate) SetNillableSubscriptionEarlyResetDurationDays(v *int) *PaymentOrderUpdate {
+	if v != nil {
+		_u.SetSubscriptionEarlyResetDurationDays(*v)
+	}
+	return _u
+}
+
+// AddSubscriptionEarlyResetDurationDays adds value to the "subscription_early_reset_duration_days" field.
+func (_u *PaymentOrderUpdate) AddSubscriptionEarlyResetDurationDays(v int) *PaymentOrderUpdate {
+	_u.mutation.AddSubscriptionEarlyResetDurationDays(v)
+	return _u
+}
+
 // SetSubscriptionMultiplier sets the "subscription_multiplier" field.
 func (_u *PaymentOrderUpdate) SetSubscriptionMultiplier(v int) *PaymentOrderUpdate {
 	_u.mutation.ResetSubscriptionMultiplier()
@@ -957,6 +1019,16 @@ func (_u *PaymentOrderUpdate) check() error {
 			return &ValidationError{Name: "order_type", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.order_type": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.SubscriptionConcurrency(); ok {
+		if err := paymentorder.SubscriptionConcurrencyValidator(v); err != nil {
+			return &ValidationError{Name: "subscription_concurrency", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.subscription_concurrency": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.SubscriptionEarlyResetDurationDays(); ok {
+		if err := paymentorder.SubscriptionEarlyResetDurationDaysValidator(v); err != nil {
+			return &ValidationError{Name: "subscription_early_reset_duration_days", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.subscription_early_reset_duration_days": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.ProviderInstanceID(); ok {
 		if err := paymentorder.ProviderInstanceIDValidator(v); err != nil {
 			return &ValidationError{Name: "provider_instance_id", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.provider_instance_id": %w`, err)}
@@ -1106,6 +1178,24 @@ func (_u *PaymentOrderUpdate) sqlSave(ctx context.Context) (_node int, err error
 	}
 	if _u.mutation.SubscriptionDaysCleared() {
 		_spec.ClearField(paymentorder.FieldSubscriptionDays, field.TypeInt)
+	}
+	if value, ok := _u.mutation.SubscriptionConcurrency(); ok {
+		_spec.SetField(paymentorder.FieldSubscriptionConcurrency, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedSubscriptionConcurrency(); ok {
+		_spec.AddField(paymentorder.FieldSubscriptionConcurrency, field.TypeInt, value)
+	}
+	if _u.mutation.SubscriptionConcurrencyCleared() {
+		_spec.ClearField(paymentorder.FieldSubscriptionConcurrency, field.TypeInt)
+	}
+	if value, ok := _u.mutation.SubscriptionEarlyResetEnabled(); ok {
+		_spec.SetField(paymentorder.FieldSubscriptionEarlyResetEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.SubscriptionEarlyResetDurationDays(); ok {
+		_spec.SetField(paymentorder.FieldSubscriptionEarlyResetDurationDays, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedSubscriptionEarlyResetDurationDays(); ok {
+		_spec.AddField(paymentorder.FieldSubscriptionEarlyResetDurationDays, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.SubscriptionMultiplier(); ok {
 		_spec.SetField(paymentorder.FieldSubscriptionMultiplier, field.TypeInt, value)
@@ -1668,6 +1758,68 @@ func (_u *PaymentOrderUpdateOne) AddSubscriptionDays(v int) *PaymentOrderUpdateO
 // ClearSubscriptionDays clears the value of the "subscription_days" field.
 func (_u *PaymentOrderUpdateOne) ClearSubscriptionDays() *PaymentOrderUpdateOne {
 	_u.mutation.ClearSubscriptionDays()
+	return _u
+}
+
+// SetSubscriptionConcurrency sets the "subscription_concurrency" field.
+func (_u *PaymentOrderUpdateOne) SetSubscriptionConcurrency(v int) *PaymentOrderUpdateOne {
+	_u.mutation.ResetSubscriptionConcurrency()
+	_u.mutation.SetSubscriptionConcurrency(v)
+	return _u
+}
+
+// SetNillableSubscriptionConcurrency sets the "subscription_concurrency" field if the given value is not nil.
+func (_u *PaymentOrderUpdateOne) SetNillableSubscriptionConcurrency(v *int) *PaymentOrderUpdateOne {
+	if v != nil {
+		_u.SetSubscriptionConcurrency(*v)
+	}
+	return _u
+}
+
+// AddSubscriptionConcurrency adds value to the "subscription_concurrency" field.
+func (_u *PaymentOrderUpdateOne) AddSubscriptionConcurrency(v int) *PaymentOrderUpdateOne {
+	_u.mutation.AddSubscriptionConcurrency(v)
+	return _u
+}
+
+// ClearSubscriptionConcurrency clears the value of the "subscription_concurrency" field.
+func (_u *PaymentOrderUpdateOne) ClearSubscriptionConcurrency() *PaymentOrderUpdateOne {
+	_u.mutation.ClearSubscriptionConcurrency()
+	return _u
+}
+
+// SetSubscriptionEarlyResetEnabled sets the "subscription_early_reset_enabled" field.
+func (_u *PaymentOrderUpdateOne) SetSubscriptionEarlyResetEnabled(v bool) *PaymentOrderUpdateOne {
+	_u.mutation.SetSubscriptionEarlyResetEnabled(v)
+	return _u
+}
+
+// SetNillableSubscriptionEarlyResetEnabled sets the "subscription_early_reset_enabled" field if the given value is not nil.
+func (_u *PaymentOrderUpdateOne) SetNillableSubscriptionEarlyResetEnabled(v *bool) *PaymentOrderUpdateOne {
+	if v != nil {
+		_u.SetSubscriptionEarlyResetEnabled(*v)
+	}
+	return _u
+}
+
+// SetSubscriptionEarlyResetDurationDays sets the "subscription_early_reset_duration_days" field.
+func (_u *PaymentOrderUpdateOne) SetSubscriptionEarlyResetDurationDays(v int) *PaymentOrderUpdateOne {
+	_u.mutation.ResetSubscriptionEarlyResetDurationDays()
+	_u.mutation.SetSubscriptionEarlyResetDurationDays(v)
+	return _u
+}
+
+// SetNillableSubscriptionEarlyResetDurationDays sets the "subscription_early_reset_duration_days" field if the given value is not nil.
+func (_u *PaymentOrderUpdateOne) SetNillableSubscriptionEarlyResetDurationDays(v *int) *PaymentOrderUpdateOne {
+	if v != nil {
+		_u.SetSubscriptionEarlyResetDurationDays(*v)
+	}
+	return _u
+}
+
+// AddSubscriptionEarlyResetDurationDays adds value to the "subscription_early_reset_duration_days" field.
+func (_u *PaymentOrderUpdateOne) AddSubscriptionEarlyResetDurationDays(v int) *PaymentOrderUpdateOne {
+	_u.mutation.AddSubscriptionEarlyResetDurationDays(v)
 	return _u
 }
 
@@ -2235,6 +2387,16 @@ func (_u *PaymentOrderUpdateOne) check() error {
 			return &ValidationError{Name: "order_type", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.order_type": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.SubscriptionConcurrency(); ok {
+		if err := paymentorder.SubscriptionConcurrencyValidator(v); err != nil {
+			return &ValidationError{Name: "subscription_concurrency", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.subscription_concurrency": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.SubscriptionEarlyResetDurationDays(); ok {
+		if err := paymentorder.SubscriptionEarlyResetDurationDaysValidator(v); err != nil {
+			return &ValidationError{Name: "subscription_early_reset_duration_days", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.subscription_early_reset_duration_days": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.ProviderInstanceID(); ok {
 		if err := paymentorder.ProviderInstanceIDValidator(v); err != nil {
 			return &ValidationError{Name: "provider_instance_id", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.provider_instance_id": %w`, err)}
@@ -2401,6 +2563,24 @@ func (_u *PaymentOrderUpdateOne) sqlSave(ctx context.Context) (_node *PaymentOrd
 	}
 	if _u.mutation.SubscriptionDaysCleared() {
 		_spec.ClearField(paymentorder.FieldSubscriptionDays, field.TypeInt)
+	}
+	if value, ok := _u.mutation.SubscriptionConcurrency(); ok {
+		_spec.SetField(paymentorder.FieldSubscriptionConcurrency, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedSubscriptionConcurrency(); ok {
+		_spec.AddField(paymentorder.FieldSubscriptionConcurrency, field.TypeInt, value)
+	}
+	if _u.mutation.SubscriptionConcurrencyCleared() {
+		_spec.ClearField(paymentorder.FieldSubscriptionConcurrency, field.TypeInt)
+	}
+	if value, ok := _u.mutation.SubscriptionEarlyResetEnabled(); ok {
+		_spec.SetField(paymentorder.FieldSubscriptionEarlyResetEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.SubscriptionEarlyResetDurationDays(); ok {
+		_spec.SetField(paymentorder.FieldSubscriptionEarlyResetDurationDays, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedSubscriptionEarlyResetDurationDays(); ok {
+		_spec.AddField(paymentorder.FieldSubscriptionEarlyResetDurationDays, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.SubscriptionMultiplier(); ok {
 		_spec.SetField(paymentorder.FieldSubscriptionMultiplier, field.TypeInt, value)

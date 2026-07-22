@@ -41,6 +41,8 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/redeemcode"
 	"github.com/Wei-Shaw/sub2api/ent/securitysecret"
 	"github.com/Wei-Shaw/sub2api/ent/setting"
+	"github.com/Wei-Shaw/sub2api/ent/subscriptionconcurrencyentitlement"
+	"github.com/Wei-Shaw/sub2api/ent/subscriptionearlyresetentitlement"
 	"github.com/Wei-Shaw/sub2api/ent/subscriptionplan"
 	"github.com/Wei-Shaw/sub2api/ent/tlsfingerprintprofile"
 	"github.com/Wei-Shaw/sub2api/ent/usagecleanuptask"
@@ -112,6 +114,10 @@ type Client struct {
 	SecuritySecret *SecuritySecretClient
 	// Setting is the client for interacting with the Setting builders.
 	Setting *SettingClient
+	// SubscriptionConcurrencyEntitlement is the client for interacting with the SubscriptionConcurrencyEntitlement builders.
+	SubscriptionConcurrencyEntitlement *SubscriptionConcurrencyEntitlementClient
+	// SubscriptionEarlyResetEntitlement is the client for interacting with the SubscriptionEarlyResetEntitlement builders.
+	SubscriptionEarlyResetEntitlement *SubscriptionEarlyResetEntitlementClient
 	// SubscriptionPlan is the client for interacting with the SubscriptionPlan builders.
 	SubscriptionPlan *SubscriptionPlanClient
 	// TLSFingerprintProfile is the client for interacting with the TLSFingerprintProfile builders.
@@ -169,6 +175,8 @@ func (c *Client) init() {
 	c.RedeemCode = NewRedeemCodeClient(c.config)
 	c.SecuritySecret = NewSecuritySecretClient(c.config)
 	c.Setting = NewSettingClient(c.config)
+	c.SubscriptionConcurrencyEntitlement = NewSubscriptionConcurrencyEntitlementClient(c.config)
+	c.SubscriptionEarlyResetEntitlement = NewSubscriptionEarlyResetEntitlementClient(c.config)
 	c.SubscriptionPlan = NewSubscriptionPlanClient(c.config)
 	c.TLSFingerprintProfile = NewTLSFingerprintProfileClient(c.config)
 	c.UsageCleanupTask = NewUsageCleanupTaskClient(c.config)
@@ -269,44 +277,46 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:                           ctx,
-		config:                        cfg,
-		APIKey:                        NewAPIKeyClient(cfg),
-		Account:                       NewAccountClient(cfg),
-		AccountGroup:                  NewAccountGroupClient(cfg),
-		Announcement:                  NewAnnouncementClient(cfg),
-		AnnouncementRead:              NewAnnouncementReadClient(cfg),
-		AuthIdentity:                  NewAuthIdentityClient(cfg),
-		AuthIdentityChannel:           NewAuthIdentityChannelClient(cfg),
-		CafeCoupon:                    NewCafeCouponClient(cfg),
-		ChannelMonitor:                NewChannelMonitorClient(cfg),
-		ChannelMonitorDailyRollup:     NewChannelMonitorDailyRollupClient(cfg),
-		ChannelMonitorHistory:         NewChannelMonitorHistoryClient(cfg),
-		ChannelMonitorRequestTemplate: NewChannelMonitorRequestTemplateClient(cfg),
-		ErrorPassthroughRule:          NewErrorPassthroughRuleClient(cfg),
-		Group:                         NewGroupClient(cfg),
-		IdempotencyRecord:             NewIdempotencyRecordClient(cfg),
-		IdentityAdoptionDecision:      NewIdentityAdoptionDecisionClient(cfg),
-		PaymentAuditLog:               NewPaymentAuditLogClient(cfg),
-		PaymentOrder:                  NewPaymentOrderClient(cfg),
-		PaymentProviderInstance:       NewPaymentProviderInstanceClient(cfg),
-		PendingAuthSession:            NewPendingAuthSessionClient(cfg),
-		PromoCode:                     NewPromoCodeClient(cfg),
-		PromoCodeUsage:                NewPromoCodeUsageClient(cfg),
-		Proxy:                         NewProxyClient(cfg),
-		RedeemCode:                    NewRedeemCodeClient(cfg),
-		SecuritySecret:                NewSecuritySecretClient(cfg),
-		Setting:                       NewSettingClient(cfg),
-		SubscriptionPlan:              NewSubscriptionPlanClient(cfg),
-		TLSFingerprintProfile:         NewTLSFingerprintProfileClient(cfg),
-		UsageCleanupTask:              NewUsageCleanupTaskClient(cfg),
-		UsageLog:                      NewUsageLogClient(cfg),
-		User:                          NewUserClient(cfg),
-		UserAllowedGroup:              NewUserAllowedGroupClient(cfg),
-		UserAttributeDefinition:       NewUserAttributeDefinitionClient(cfg),
-		UserAttributeValue:            NewUserAttributeValueClient(cfg),
-		UserPlatformQuota:             NewUserPlatformQuotaClient(cfg),
-		UserSubscription:              NewUserSubscriptionClient(cfg),
+		ctx:                                ctx,
+		config:                             cfg,
+		APIKey:                             NewAPIKeyClient(cfg),
+		Account:                            NewAccountClient(cfg),
+		AccountGroup:                       NewAccountGroupClient(cfg),
+		Announcement:                       NewAnnouncementClient(cfg),
+		AnnouncementRead:                   NewAnnouncementReadClient(cfg),
+		AuthIdentity:                       NewAuthIdentityClient(cfg),
+		AuthIdentityChannel:                NewAuthIdentityChannelClient(cfg),
+		CafeCoupon:                         NewCafeCouponClient(cfg),
+		ChannelMonitor:                     NewChannelMonitorClient(cfg),
+		ChannelMonitorDailyRollup:          NewChannelMonitorDailyRollupClient(cfg),
+		ChannelMonitorHistory:              NewChannelMonitorHistoryClient(cfg),
+		ChannelMonitorRequestTemplate:      NewChannelMonitorRequestTemplateClient(cfg),
+		ErrorPassthroughRule:               NewErrorPassthroughRuleClient(cfg),
+		Group:                              NewGroupClient(cfg),
+		IdempotencyRecord:                  NewIdempotencyRecordClient(cfg),
+		IdentityAdoptionDecision:           NewIdentityAdoptionDecisionClient(cfg),
+		PaymentAuditLog:                    NewPaymentAuditLogClient(cfg),
+		PaymentOrder:                       NewPaymentOrderClient(cfg),
+		PaymentProviderInstance:            NewPaymentProviderInstanceClient(cfg),
+		PendingAuthSession:                 NewPendingAuthSessionClient(cfg),
+		PromoCode:                          NewPromoCodeClient(cfg),
+		PromoCodeUsage:                     NewPromoCodeUsageClient(cfg),
+		Proxy:                              NewProxyClient(cfg),
+		RedeemCode:                         NewRedeemCodeClient(cfg),
+		SecuritySecret:                     NewSecuritySecretClient(cfg),
+		Setting:                            NewSettingClient(cfg),
+		SubscriptionConcurrencyEntitlement: NewSubscriptionConcurrencyEntitlementClient(cfg),
+		SubscriptionEarlyResetEntitlement:  NewSubscriptionEarlyResetEntitlementClient(cfg),
+		SubscriptionPlan:                   NewSubscriptionPlanClient(cfg),
+		TLSFingerprintProfile:              NewTLSFingerprintProfileClient(cfg),
+		UsageCleanupTask:                   NewUsageCleanupTaskClient(cfg),
+		UsageLog:                           NewUsageLogClient(cfg),
+		User:                               NewUserClient(cfg),
+		UserAllowedGroup:                   NewUserAllowedGroupClient(cfg),
+		UserAttributeDefinition:            NewUserAttributeDefinitionClient(cfg),
+		UserAttributeValue:                 NewUserAttributeValueClient(cfg),
+		UserPlatformQuota:                  NewUserPlatformQuotaClient(cfg),
+		UserSubscription:                   NewUserSubscriptionClient(cfg),
 	}, nil
 }
 
@@ -324,44 +334,46 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:                           ctx,
-		config:                        cfg,
-		APIKey:                        NewAPIKeyClient(cfg),
-		Account:                       NewAccountClient(cfg),
-		AccountGroup:                  NewAccountGroupClient(cfg),
-		Announcement:                  NewAnnouncementClient(cfg),
-		AnnouncementRead:              NewAnnouncementReadClient(cfg),
-		AuthIdentity:                  NewAuthIdentityClient(cfg),
-		AuthIdentityChannel:           NewAuthIdentityChannelClient(cfg),
-		CafeCoupon:                    NewCafeCouponClient(cfg),
-		ChannelMonitor:                NewChannelMonitorClient(cfg),
-		ChannelMonitorDailyRollup:     NewChannelMonitorDailyRollupClient(cfg),
-		ChannelMonitorHistory:         NewChannelMonitorHistoryClient(cfg),
-		ChannelMonitorRequestTemplate: NewChannelMonitorRequestTemplateClient(cfg),
-		ErrorPassthroughRule:          NewErrorPassthroughRuleClient(cfg),
-		Group:                         NewGroupClient(cfg),
-		IdempotencyRecord:             NewIdempotencyRecordClient(cfg),
-		IdentityAdoptionDecision:      NewIdentityAdoptionDecisionClient(cfg),
-		PaymentAuditLog:               NewPaymentAuditLogClient(cfg),
-		PaymentOrder:                  NewPaymentOrderClient(cfg),
-		PaymentProviderInstance:       NewPaymentProviderInstanceClient(cfg),
-		PendingAuthSession:            NewPendingAuthSessionClient(cfg),
-		PromoCode:                     NewPromoCodeClient(cfg),
-		PromoCodeUsage:                NewPromoCodeUsageClient(cfg),
-		Proxy:                         NewProxyClient(cfg),
-		RedeemCode:                    NewRedeemCodeClient(cfg),
-		SecuritySecret:                NewSecuritySecretClient(cfg),
-		Setting:                       NewSettingClient(cfg),
-		SubscriptionPlan:              NewSubscriptionPlanClient(cfg),
-		TLSFingerprintProfile:         NewTLSFingerprintProfileClient(cfg),
-		UsageCleanupTask:              NewUsageCleanupTaskClient(cfg),
-		UsageLog:                      NewUsageLogClient(cfg),
-		User:                          NewUserClient(cfg),
-		UserAllowedGroup:              NewUserAllowedGroupClient(cfg),
-		UserAttributeDefinition:       NewUserAttributeDefinitionClient(cfg),
-		UserAttributeValue:            NewUserAttributeValueClient(cfg),
-		UserPlatformQuota:             NewUserPlatformQuotaClient(cfg),
-		UserSubscription:              NewUserSubscriptionClient(cfg),
+		ctx:                                ctx,
+		config:                             cfg,
+		APIKey:                             NewAPIKeyClient(cfg),
+		Account:                            NewAccountClient(cfg),
+		AccountGroup:                       NewAccountGroupClient(cfg),
+		Announcement:                       NewAnnouncementClient(cfg),
+		AnnouncementRead:                   NewAnnouncementReadClient(cfg),
+		AuthIdentity:                       NewAuthIdentityClient(cfg),
+		AuthIdentityChannel:                NewAuthIdentityChannelClient(cfg),
+		CafeCoupon:                         NewCafeCouponClient(cfg),
+		ChannelMonitor:                     NewChannelMonitorClient(cfg),
+		ChannelMonitorDailyRollup:          NewChannelMonitorDailyRollupClient(cfg),
+		ChannelMonitorHistory:              NewChannelMonitorHistoryClient(cfg),
+		ChannelMonitorRequestTemplate:      NewChannelMonitorRequestTemplateClient(cfg),
+		ErrorPassthroughRule:               NewErrorPassthroughRuleClient(cfg),
+		Group:                              NewGroupClient(cfg),
+		IdempotencyRecord:                  NewIdempotencyRecordClient(cfg),
+		IdentityAdoptionDecision:           NewIdentityAdoptionDecisionClient(cfg),
+		PaymentAuditLog:                    NewPaymentAuditLogClient(cfg),
+		PaymentOrder:                       NewPaymentOrderClient(cfg),
+		PaymentProviderInstance:            NewPaymentProviderInstanceClient(cfg),
+		PendingAuthSession:                 NewPendingAuthSessionClient(cfg),
+		PromoCode:                          NewPromoCodeClient(cfg),
+		PromoCodeUsage:                     NewPromoCodeUsageClient(cfg),
+		Proxy:                              NewProxyClient(cfg),
+		RedeemCode:                         NewRedeemCodeClient(cfg),
+		SecuritySecret:                     NewSecuritySecretClient(cfg),
+		Setting:                            NewSettingClient(cfg),
+		SubscriptionConcurrencyEntitlement: NewSubscriptionConcurrencyEntitlementClient(cfg),
+		SubscriptionEarlyResetEntitlement:  NewSubscriptionEarlyResetEntitlementClient(cfg),
+		SubscriptionPlan:                   NewSubscriptionPlanClient(cfg),
+		TLSFingerprintProfile:              NewTLSFingerprintProfileClient(cfg),
+		UsageCleanupTask:                   NewUsageCleanupTaskClient(cfg),
+		UsageLog:                           NewUsageLogClient(cfg),
+		User:                               NewUserClient(cfg),
+		UserAllowedGroup:                   NewUserAllowedGroupClient(cfg),
+		UserAttributeDefinition:            NewUserAttributeDefinitionClient(cfg),
+		UserAttributeValue:                 NewUserAttributeValueClient(cfg),
+		UserPlatformQuota:                  NewUserPlatformQuotaClient(cfg),
+		UserSubscription:                   NewUserSubscriptionClient(cfg),
 	}, nil
 }
 
@@ -398,6 +410,7 @@ func (c *Client) Use(hooks ...Hook) {
 		c.IdempotencyRecord, c.IdentityAdoptionDecision, c.PaymentAuditLog,
 		c.PaymentOrder, c.PaymentProviderInstance, c.PendingAuthSession, c.PromoCode,
 		c.PromoCodeUsage, c.Proxy, c.RedeemCode, c.SecuritySecret, c.Setting,
+		c.SubscriptionConcurrencyEntitlement, c.SubscriptionEarlyResetEntitlement,
 		c.SubscriptionPlan, c.TLSFingerprintProfile, c.UsageCleanupTask, c.UsageLog,
 		c.User, c.UserAllowedGroup, c.UserAttributeDefinition, c.UserAttributeValue,
 		c.UserPlatformQuota, c.UserSubscription,
@@ -417,6 +430,7 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.IdempotencyRecord, c.IdentityAdoptionDecision, c.PaymentAuditLog,
 		c.PaymentOrder, c.PaymentProviderInstance, c.PendingAuthSession, c.PromoCode,
 		c.PromoCodeUsage, c.Proxy, c.RedeemCode, c.SecuritySecret, c.Setting,
+		c.SubscriptionConcurrencyEntitlement, c.SubscriptionEarlyResetEntitlement,
 		c.SubscriptionPlan, c.TLSFingerprintProfile, c.UsageCleanupTask, c.UsageLog,
 		c.User, c.UserAllowedGroup, c.UserAttributeDefinition, c.UserAttributeValue,
 		c.UserPlatformQuota, c.UserSubscription,
@@ -480,6 +494,10 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.SecuritySecret.mutate(ctx, m)
 	case *SettingMutation:
 		return c.Setting.mutate(ctx, m)
+	case *SubscriptionConcurrencyEntitlementMutation:
+		return c.SubscriptionConcurrencyEntitlement.mutate(ctx, m)
+	case *SubscriptionEarlyResetEntitlementMutation:
+		return c.SubscriptionEarlyResetEntitlement.mutate(ctx, m)
 	case *SubscriptionPlanMutation:
 		return c.SubscriptionPlan.mutate(ctx, m)
 	case *TLSFingerprintProfileMutation:
@@ -4594,6 +4612,304 @@ func (c *SettingClient) mutate(ctx context.Context, m *SettingMutation) (Value, 
 	}
 }
 
+// SubscriptionConcurrencyEntitlementClient is a client for the SubscriptionConcurrencyEntitlement schema.
+type SubscriptionConcurrencyEntitlementClient struct {
+	config
+}
+
+// NewSubscriptionConcurrencyEntitlementClient returns a client for the SubscriptionConcurrencyEntitlement from the given config.
+func NewSubscriptionConcurrencyEntitlementClient(c config) *SubscriptionConcurrencyEntitlementClient {
+	return &SubscriptionConcurrencyEntitlementClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `subscriptionconcurrencyentitlement.Hooks(f(g(h())))`.
+func (c *SubscriptionConcurrencyEntitlementClient) Use(hooks ...Hook) {
+	c.hooks.SubscriptionConcurrencyEntitlement = append(c.hooks.SubscriptionConcurrencyEntitlement, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `subscriptionconcurrencyentitlement.Intercept(f(g(h())))`.
+func (c *SubscriptionConcurrencyEntitlementClient) Intercept(interceptors ...Interceptor) {
+	c.inters.SubscriptionConcurrencyEntitlement = append(c.inters.SubscriptionConcurrencyEntitlement, interceptors...)
+}
+
+// Create returns a builder for creating a SubscriptionConcurrencyEntitlement entity.
+func (c *SubscriptionConcurrencyEntitlementClient) Create() *SubscriptionConcurrencyEntitlementCreate {
+	mutation := newSubscriptionConcurrencyEntitlementMutation(c.config, OpCreate)
+	return &SubscriptionConcurrencyEntitlementCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of SubscriptionConcurrencyEntitlement entities.
+func (c *SubscriptionConcurrencyEntitlementClient) CreateBulk(builders ...*SubscriptionConcurrencyEntitlementCreate) *SubscriptionConcurrencyEntitlementCreateBulk {
+	return &SubscriptionConcurrencyEntitlementCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *SubscriptionConcurrencyEntitlementClient) MapCreateBulk(slice any, setFunc func(*SubscriptionConcurrencyEntitlementCreate, int)) *SubscriptionConcurrencyEntitlementCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &SubscriptionConcurrencyEntitlementCreateBulk{err: fmt.Errorf("calling to SubscriptionConcurrencyEntitlementClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*SubscriptionConcurrencyEntitlementCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &SubscriptionConcurrencyEntitlementCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for SubscriptionConcurrencyEntitlement.
+func (c *SubscriptionConcurrencyEntitlementClient) Update() *SubscriptionConcurrencyEntitlementUpdate {
+	mutation := newSubscriptionConcurrencyEntitlementMutation(c.config, OpUpdate)
+	return &SubscriptionConcurrencyEntitlementUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *SubscriptionConcurrencyEntitlementClient) UpdateOne(_m *SubscriptionConcurrencyEntitlement) *SubscriptionConcurrencyEntitlementUpdateOne {
+	mutation := newSubscriptionConcurrencyEntitlementMutation(c.config, OpUpdateOne, withSubscriptionConcurrencyEntitlement(_m))
+	return &SubscriptionConcurrencyEntitlementUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *SubscriptionConcurrencyEntitlementClient) UpdateOneID(id int64) *SubscriptionConcurrencyEntitlementUpdateOne {
+	mutation := newSubscriptionConcurrencyEntitlementMutation(c.config, OpUpdateOne, withSubscriptionConcurrencyEntitlementID(id))
+	return &SubscriptionConcurrencyEntitlementUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for SubscriptionConcurrencyEntitlement.
+func (c *SubscriptionConcurrencyEntitlementClient) Delete() *SubscriptionConcurrencyEntitlementDelete {
+	mutation := newSubscriptionConcurrencyEntitlementMutation(c.config, OpDelete)
+	return &SubscriptionConcurrencyEntitlementDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *SubscriptionConcurrencyEntitlementClient) DeleteOne(_m *SubscriptionConcurrencyEntitlement) *SubscriptionConcurrencyEntitlementDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *SubscriptionConcurrencyEntitlementClient) DeleteOneID(id int64) *SubscriptionConcurrencyEntitlementDeleteOne {
+	builder := c.Delete().Where(subscriptionconcurrencyentitlement.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &SubscriptionConcurrencyEntitlementDeleteOne{builder}
+}
+
+// Query returns a query builder for SubscriptionConcurrencyEntitlement.
+func (c *SubscriptionConcurrencyEntitlementClient) Query() *SubscriptionConcurrencyEntitlementQuery {
+	return &SubscriptionConcurrencyEntitlementQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeSubscriptionConcurrencyEntitlement},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a SubscriptionConcurrencyEntitlement entity by its id.
+func (c *SubscriptionConcurrencyEntitlementClient) Get(ctx context.Context, id int64) (*SubscriptionConcurrencyEntitlement, error) {
+	return c.Query().Where(subscriptionconcurrencyentitlement.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *SubscriptionConcurrencyEntitlementClient) GetX(ctx context.Context, id int64) *SubscriptionConcurrencyEntitlement {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryUser queries the user edge of a SubscriptionConcurrencyEntitlement.
+func (c *SubscriptionConcurrencyEntitlementClient) QueryUser(_m *SubscriptionConcurrencyEntitlement) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(subscriptionconcurrencyentitlement.Table, subscriptionconcurrencyentitlement.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, subscriptionconcurrencyentitlement.UserTable, subscriptionconcurrencyentitlement.UserColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QuerySubscription queries the subscription edge of a SubscriptionConcurrencyEntitlement.
+func (c *SubscriptionConcurrencyEntitlementClient) QuerySubscription(_m *SubscriptionConcurrencyEntitlement) *UserSubscriptionQuery {
+	query := (&UserSubscriptionClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(subscriptionconcurrencyentitlement.Table, subscriptionconcurrencyentitlement.FieldID, id),
+			sqlgraph.To(usersubscription.Table, usersubscription.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, subscriptionconcurrencyentitlement.SubscriptionTable, subscriptionconcurrencyentitlement.SubscriptionColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *SubscriptionConcurrencyEntitlementClient) Hooks() []Hook {
+	return c.hooks.SubscriptionConcurrencyEntitlement
+}
+
+// Interceptors returns the client interceptors.
+func (c *SubscriptionConcurrencyEntitlementClient) Interceptors() []Interceptor {
+	return c.inters.SubscriptionConcurrencyEntitlement
+}
+
+func (c *SubscriptionConcurrencyEntitlementClient) mutate(ctx context.Context, m *SubscriptionConcurrencyEntitlementMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&SubscriptionConcurrencyEntitlementCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&SubscriptionConcurrencyEntitlementUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&SubscriptionConcurrencyEntitlementUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&SubscriptionConcurrencyEntitlementDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown SubscriptionConcurrencyEntitlement mutation op: %q", m.Op())
+	}
+}
+
+// SubscriptionEarlyResetEntitlementClient is a client for the SubscriptionEarlyResetEntitlement schema.
+type SubscriptionEarlyResetEntitlementClient struct {
+	config
+}
+
+// NewSubscriptionEarlyResetEntitlementClient returns a client for the SubscriptionEarlyResetEntitlement from the given config.
+func NewSubscriptionEarlyResetEntitlementClient(c config) *SubscriptionEarlyResetEntitlementClient {
+	return &SubscriptionEarlyResetEntitlementClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `subscriptionearlyresetentitlement.Hooks(f(g(h())))`.
+func (c *SubscriptionEarlyResetEntitlementClient) Use(hooks ...Hook) {
+	c.hooks.SubscriptionEarlyResetEntitlement = append(c.hooks.SubscriptionEarlyResetEntitlement, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `subscriptionearlyresetentitlement.Intercept(f(g(h())))`.
+func (c *SubscriptionEarlyResetEntitlementClient) Intercept(interceptors ...Interceptor) {
+	c.inters.SubscriptionEarlyResetEntitlement = append(c.inters.SubscriptionEarlyResetEntitlement, interceptors...)
+}
+
+// Create returns a builder for creating a SubscriptionEarlyResetEntitlement entity.
+func (c *SubscriptionEarlyResetEntitlementClient) Create() *SubscriptionEarlyResetEntitlementCreate {
+	mutation := newSubscriptionEarlyResetEntitlementMutation(c.config, OpCreate)
+	return &SubscriptionEarlyResetEntitlementCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of SubscriptionEarlyResetEntitlement entities.
+func (c *SubscriptionEarlyResetEntitlementClient) CreateBulk(builders ...*SubscriptionEarlyResetEntitlementCreate) *SubscriptionEarlyResetEntitlementCreateBulk {
+	return &SubscriptionEarlyResetEntitlementCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *SubscriptionEarlyResetEntitlementClient) MapCreateBulk(slice any, setFunc func(*SubscriptionEarlyResetEntitlementCreate, int)) *SubscriptionEarlyResetEntitlementCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &SubscriptionEarlyResetEntitlementCreateBulk{err: fmt.Errorf("calling to SubscriptionEarlyResetEntitlementClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*SubscriptionEarlyResetEntitlementCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &SubscriptionEarlyResetEntitlementCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for SubscriptionEarlyResetEntitlement.
+func (c *SubscriptionEarlyResetEntitlementClient) Update() *SubscriptionEarlyResetEntitlementUpdate {
+	mutation := newSubscriptionEarlyResetEntitlementMutation(c.config, OpUpdate)
+	return &SubscriptionEarlyResetEntitlementUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *SubscriptionEarlyResetEntitlementClient) UpdateOne(_m *SubscriptionEarlyResetEntitlement) *SubscriptionEarlyResetEntitlementUpdateOne {
+	mutation := newSubscriptionEarlyResetEntitlementMutation(c.config, OpUpdateOne, withSubscriptionEarlyResetEntitlement(_m))
+	return &SubscriptionEarlyResetEntitlementUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *SubscriptionEarlyResetEntitlementClient) UpdateOneID(id int64) *SubscriptionEarlyResetEntitlementUpdateOne {
+	mutation := newSubscriptionEarlyResetEntitlementMutation(c.config, OpUpdateOne, withSubscriptionEarlyResetEntitlementID(id))
+	return &SubscriptionEarlyResetEntitlementUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for SubscriptionEarlyResetEntitlement.
+func (c *SubscriptionEarlyResetEntitlementClient) Delete() *SubscriptionEarlyResetEntitlementDelete {
+	mutation := newSubscriptionEarlyResetEntitlementMutation(c.config, OpDelete)
+	return &SubscriptionEarlyResetEntitlementDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *SubscriptionEarlyResetEntitlementClient) DeleteOne(_m *SubscriptionEarlyResetEntitlement) *SubscriptionEarlyResetEntitlementDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *SubscriptionEarlyResetEntitlementClient) DeleteOneID(id int64) *SubscriptionEarlyResetEntitlementDeleteOne {
+	builder := c.Delete().Where(subscriptionearlyresetentitlement.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &SubscriptionEarlyResetEntitlementDeleteOne{builder}
+}
+
+// Query returns a query builder for SubscriptionEarlyResetEntitlement.
+func (c *SubscriptionEarlyResetEntitlementClient) Query() *SubscriptionEarlyResetEntitlementQuery {
+	return &SubscriptionEarlyResetEntitlementQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeSubscriptionEarlyResetEntitlement},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a SubscriptionEarlyResetEntitlement entity by its id.
+func (c *SubscriptionEarlyResetEntitlementClient) Get(ctx context.Context, id int64) (*SubscriptionEarlyResetEntitlement, error) {
+	return c.Query().Where(subscriptionearlyresetentitlement.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *SubscriptionEarlyResetEntitlementClient) GetX(ctx context.Context, id int64) *SubscriptionEarlyResetEntitlement {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *SubscriptionEarlyResetEntitlementClient) Hooks() []Hook {
+	return c.hooks.SubscriptionEarlyResetEntitlement
+}
+
+// Interceptors returns the client interceptors.
+func (c *SubscriptionEarlyResetEntitlementClient) Interceptors() []Interceptor {
+	return c.inters.SubscriptionEarlyResetEntitlement
+}
+
+func (c *SubscriptionEarlyResetEntitlementClient) mutate(ctx context.Context, m *SubscriptionEarlyResetEntitlementMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&SubscriptionEarlyResetEntitlementCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&SubscriptionEarlyResetEntitlementUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&SubscriptionEarlyResetEntitlementUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&SubscriptionEarlyResetEntitlementDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown SubscriptionEarlyResetEntitlement mutation op: %q", m.Op())
+	}
+}
+
 // SubscriptionPlanClient is a client for the SubscriptionPlan schema.
 type SubscriptionPlanClient struct {
 	config
@@ -5355,6 +5671,22 @@ func (c *UserClient) QuerySubscriptions(_m *User) *UserSubscriptionQuery {
 			sqlgraph.From(user.Table, user.FieldID, id),
 			sqlgraph.To(usersubscription.Table, usersubscription.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, user.SubscriptionsTable, user.SubscriptionsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QuerySubscriptionConcurrencyEntitlements queries the subscription_concurrency_entitlements edge of a User.
+func (c *UserClient) QuerySubscriptionConcurrencyEntitlements(_m *User) *SubscriptionConcurrencyEntitlementQuery {
+	query := (&SubscriptionConcurrencyEntitlementClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(subscriptionconcurrencyentitlement.Table, subscriptionconcurrencyentitlement.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.SubscriptionConcurrencyEntitlementsTable, user.SubscriptionConcurrencyEntitlementsColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -6336,6 +6668,22 @@ func (c *UserSubscriptionClient) QueryUsageLogs(_m *UserSubscription) *UsageLogQ
 	return query
 }
 
+// QueryConcurrencyEntitlements queries the concurrency_entitlements edge of a UserSubscription.
+func (c *UserSubscriptionClient) QueryConcurrencyEntitlements(_m *UserSubscription) *SubscriptionConcurrencyEntitlementQuery {
+	query := (&SubscriptionConcurrencyEntitlementClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(usersubscription.Table, usersubscription.FieldID, id),
+			sqlgraph.To(subscriptionconcurrencyentitlement.Table, subscriptionconcurrencyentitlement.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, usersubscription.ConcurrencyEntitlementsTable, usersubscription.ConcurrencyEntitlementsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *UserSubscriptionClient) Hooks() []Hook {
 	hooks := c.hooks.UserSubscription
@@ -6371,10 +6719,11 @@ type (
 		ChannelMonitorHistory, ChannelMonitorRequestTemplate, ErrorPassthroughRule,
 		Group, IdempotencyRecord, IdentityAdoptionDecision, PaymentAuditLog,
 		PaymentOrder, PaymentProviderInstance, PendingAuthSession, PromoCode,
-		PromoCodeUsage, Proxy, RedeemCode, SecuritySecret, Setting, SubscriptionPlan,
-		TLSFingerprintProfile, UsageCleanupTask, UsageLog, User, UserAllowedGroup,
-		UserAttributeDefinition, UserAttributeValue, UserPlatformQuota,
-		UserSubscription []ent.Hook
+		PromoCodeUsage, Proxy, RedeemCode, SecuritySecret, Setting,
+		SubscriptionConcurrencyEntitlement, SubscriptionEarlyResetEntitlement,
+		SubscriptionPlan, TLSFingerprintProfile, UsageCleanupTask, UsageLog, User,
+		UserAllowedGroup, UserAttributeDefinition, UserAttributeValue,
+		UserPlatformQuota, UserSubscription []ent.Hook
 	}
 	inters struct {
 		APIKey, Account, AccountGroup, Announcement, AnnouncementRead, AuthIdentity,
@@ -6382,10 +6731,11 @@ type (
 		ChannelMonitorHistory, ChannelMonitorRequestTemplate, ErrorPassthroughRule,
 		Group, IdempotencyRecord, IdentityAdoptionDecision, PaymentAuditLog,
 		PaymentOrder, PaymentProviderInstance, PendingAuthSession, PromoCode,
-		PromoCodeUsage, Proxy, RedeemCode, SecuritySecret, Setting, SubscriptionPlan,
-		TLSFingerprintProfile, UsageCleanupTask, UsageLog, User, UserAllowedGroup,
-		UserAttributeDefinition, UserAttributeValue, UserPlatformQuota,
-		UserSubscription []ent.Interceptor
+		PromoCodeUsage, Proxy, RedeemCode, SecuritySecret, Setting,
+		SubscriptionConcurrencyEntitlement, SubscriptionEarlyResetEntitlement,
+		SubscriptionPlan, TLSFingerprintProfile, UsageCleanupTask, UsageLog, User,
+		UserAllowedGroup, UserAttributeDefinition, UserAttributeValue,
+		UserPlatformQuota, UserSubscription []ent.Interceptor
 	}
 )
 

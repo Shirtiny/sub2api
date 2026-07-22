@@ -12,6 +12,7 @@ func UserFromServiceShallow(u *service.User) *User {
 	if u == nil {
 		return nil
 	}
+	effectiveConcurrency := u.EffectiveConcurrencyAt(time.Now())
 	return &User{
 		ID:                         u.ID,
 		Email:                      u.Email,
@@ -19,6 +20,8 @@ func UserFromServiceShallow(u *service.User) *User {
 		Role:                       u.Role,
 		Balance:                    u.Balance,
 		Concurrency:                u.Concurrency,
+		BaseConcurrency:            u.Concurrency,
+		EffectiveConcurrency:       effectiveConcurrency,
 		Status:                     u.Status,
 		AllowedGroups:              u.AllowedGroups,
 		LastActiveAt:               u.LastActiveAt,
@@ -780,27 +783,29 @@ func userSubscriptionFromServiceBase(sub *service.UserSubscription) UserSubscrip
 		customExpiresAt = sub.CustomExpiresAt
 	}
 	return UserSubscription{
-		ID:                  sub.ID,
-		UserID:              sub.UserID,
-		GroupID:             sub.GroupID,
-		StartsAt:            sub.StartsAt,
-		ExpiresAt:           sub.ExpiresAt,
-		Status:              sub.Status,
-		DailyWindowStart:    sub.DailyWindowStart,
-		WeeklyWindowStart:   sub.WeeklyWindowStart,
-		MonthlyWindowStart:  sub.MonthlyWindowStart,
-		DailyUsageUSD:       sub.DailyUsageUSD,
-		WeeklyUsageUSD:      sub.WeeklyUsageUSD,
-		MonthlyUsageUSD:     sub.MonthlyUsageUSD,
-		CustomMultiplier:    customMultiplier,
-		CustomSourcePlanID:  sub.DisplayCustomSourcePlanID(),
-		CustomSourceGroupID: sub.DisplayCustomSourceGroupID(),
-		CustomExpiresAt:     customExpiresAt,
-		CustomDisplayName:   customDisplayName,
-		CreatedAt:           sub.CreatedAt,
-		UpdatedAt:           sub.UpdatedAt,
-		User:                UserFromServiceShallow(sub.User),
-		Group:               groupDTO,
+		ID:                     sub.ID,
+		UserID:                 sub.UserID,
+		GroupID:                sub.GroupID,
+		StartsAt:               sub.StartsAt,
+		ExpiresAt:              sub.ExpiresAt,
+		Status:                 sub.Status,
+		DailyWindowStart:       sub.DailyWindowStart,
+		WeeklyWindowStart:      sub.WeeklyWindowStart,
+		MonthlyWindowStart:     sub.MonthlyWindowStart,
+		DailyUsageUSD:          sub.DailyUsageUSD,
+		WeeklyUsageUSD:         sub.WeeklyUsageUSD,
+		MonthlyUsageUSD:        sub.MonthlyUsageUSD,
+		EarlyResetEnabled:      sub.EarlyResetEnabled,
+		EarlyResetDurationDays: sub.EarlyResetDurationDays,
+		CustomMultiplier:       customMultiplier,
+		CustomSourcePlanID:     sub.DisplayCustomSourcePlanID(),
+		CustomSourceGroupID:    sub.DisplayCustomSourceGroupID(),
+		CustomExpiresAt:        customExpiresAt,
+		CustomDisplayName:      customDisplayName,
+		CreatedAt:              sub.CreatedAt,
+		UpdatedAt:              sub.UpdatedAt,
+		User:                   UserFromServiceShallow(sub.User),
+		Group:                  groupDTO,
 	}
 }
 

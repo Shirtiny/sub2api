@@ -279,6 +279,17 @@ func TestAPIKeyService_GetByKey_DoesNotReadPersistentEpoch(t *testing.T) {
 	require.Zero(t, atomic.LoadInt32(&cache.epochGets), "ordinary HTTP auth must not add a Redis generation RTT")
 }
 
+func TestAPIKeyService_ApplyAuthCacheEntryRejectsPreviousSnapshotVersion(t *testing.T) {
+	svc := &APIKeyService{}
+	apiKey, hit, err := svc.applyAuthCacheEntry("cached-key", &APIKeyAuthCacheEntry{
+		Snapshot: &APIKeyAuthSnapshot{Version: apiKeyAuthSnapshotVersion - 1},
+	})
+
+	require.NoError(t, err)
+	require.False(t, hit)
+	require.Nil(t, apiKey)
+}
+
 func TestAPIKeyService_GetByKeyWithAuthEpochLease_HydratesCompleteSnapshot(t *testing.T) {
 	plaintext := "ws-complete-auth-snapshot"
 	groupID := int64(8)
@@ -470,6 +481,31 @@ func TestAPIKeyService_SnapshotRoundTrip_PreservesMessagesDispatchModelConfig(t 
 	require.Equal(t, apiKey.Name, roundTrip.Name)
 	require.NotNil(t, roundTrip.Group)
 	require.Equal(t, apiKey.Group.MessagesDispatchModelConfig, roundTrip.Group.MessagesDispatchModelConfig)
+}
+
+func TestAPIKeyService_SnapshotRoundTripPreservesBaseConcurrencyAcrossPlanExpiry(t *testing.T) {
+	svc := NewAPIKeyService(nil, nil, nil, nil, nil, nil, &config.Config{})
+	now := time.Now()
+	apiKey := &APIKey{
+		Key:    "k-plan-concurrency-roundtrip",
+		Status: StatusActive,
+		User: &User{
+			ID:          2,
+			Status:      StatusActive,
+			Concurrency: 5,
+			PlanConcurrencyEntitlements: []PlanConcurrencyEntitlement{
+				{SubscriptionID: 42, Concurrency: 16, StartsAt: now.Add(-time.Minute), ExpiresAt: now.Add(time.Minute)},
+			},
+		},
+	}
+
+	roundTrip := svc.snapshotToAPIKey(apiKey.Key, svc.snapshotFromAPIKey(context.Background(), apiKey))
+
+	require.NotNil(t, roundTrip)
+	require.Equal(t, 5, roundTrip.User.Concurrency)
+	require.Equal(t, int64(42), roundTrip.User.PlanConcurrencyEntitlements[0].SubscriptionID)
+	require.Equal(t, 16, roundTrip.User.EffectiveConcurrencyAt(now))
+	require.Equal(t, 5, roundTrip.User.EffectiveConcurrencyAt(now.Add(2*time.Minute)))
 }
 
 func TestAPIKeyService_GetByKey_IgnoresLegacyAuthCacheSnapshotWithoutMessagesDispatchConfig(t *testing.T) {

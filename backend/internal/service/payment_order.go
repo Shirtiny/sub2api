@@ -321,6 +321,13 @@ func subscriptionOrderAmount(plan *dbent.SubscriptionPlan, multiplier int) float
 	return math.Round(plan.Price*float64(multiplier)*100) / 100
 }
 
+func subscriptionOrderConcurrency(plan *dbent.SubscriptionPlan) (int, error) {
+	if plan == nil || plan.Concurrency <= 0 || plan.Concurrency > maxPlanConcurrency {
+		return 0, infraerrors.BadRequest("PLAN_CONCURRENCY_INVALID", "subscription plan concurrency is invalid")
+	}
+	return plan.Concurrency, nil
+}
+
 func subscriptionOrderOriginalPrice(plan *dbent.SubscriptionPlan) *float64 {
 	if plan == nil || plan.OriginalPrice == nil {
 		return nil
@@ -477,7 +484,14 @@ func (s *PaymentService) createOrderInTx(ctx context.Context, req CreateOrderReq
 		if multiplier < 1 {
 			multiplier = 1
 		}
+		concurrency, concurrencyErr := subscriptionOrderConcurrency(plan)
+		if concurrencyErr != nil {
+			return nil, concurrencyErr
+		}
 		b.SetPlanID(plan.ID).SetSubscriptionGroupID(plan.GroupID).SetSubscriptionDays(psComputeValidityDays(plan.ValidityDays, plan.ValidityUnit)).
+			SetSubscriptionConcurrency(concurrency).
+			SetSubscriptionEarlyResetEnabled(plan.EarlyResetEnabled).
+			SetSubscriptionEarlyResetDurationDays(plan.EarlyResetDurationDays).
 			SetSubscriptionMultiplier(multiplier).
 			SetSubscriptionSourceGroupID(plan.GroupID).
 			SetSubscriptionSourcePrice(plan.Price).

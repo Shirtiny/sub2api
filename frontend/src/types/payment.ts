@@ -122,7 +122,10 @@ export interface SubscriptionPlan {
   price: number
   original_price?: number
   validity_days: number
+  concurrency: number
   validity_unit: string
+  early_reset_enabled?: boolean
+  early_reset_duration_days?: number
   /** Stored as JSON string in backend; API layer should parse before use */
   features: string[]
   for_sale: boolean

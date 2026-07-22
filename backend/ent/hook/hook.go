@@ -321,6 +321,30 @@ func (f SettingFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, err
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SettingMutation", m)
 }
 
+// The SubscriptionConcurrencyEntitlementFunc type is an adapter to allow the use of ordinary
+// function as SubscriptionConcurrencyEntitlement mutator.
+type SubscriptionConcurrencyEntitlementFunc func(context.Context, *ent.SubscriptionConcurrencyEntitlementMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f SubscriptionConcurrencyEntitlementFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.SubscriptionConcurrencyEntitlementMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SubscriptionConcurrencyEntitlementMutation", m)
+}
+
+// The SubscriptionEarlyResetEntitlementFunc type is an adapter to allow the use of ordinary
+// function as SubscriptionEarlyResetEntitlement mutator.
+type SubscriptionEarlyResetEntitlementFunc func(context.Context, *ent.SubscriptionEarlyResetEntitlementMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f SubscriptionEarlyResetEntitlementFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.SubscriptionEarlyResetEntitlementMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SubscriptionEarlyResetEntitlementMutation", m)
+}
+
 // The SubscriptionPlanFunc type is an adapter to allow the use of ordinary
 // function as SubscriptionPlan mutator.
 type SubscriptionPlanFunc func(context.Context, *ent.SubscriptionPlanMutation) (ent.Value, error)

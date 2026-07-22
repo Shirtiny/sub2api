@@ -12,97 +12,97 @@ import (
 )
 
 func TestValidatePlanRequired_AllValid(t *testing.T) {
-	err := validatePlanRequired("Pro", 1, 9.99, 30, "days", nil)
+	err := validatePlanRequired("Pro", 1, 9.99, 30, 1, "days", nil)
 	require.NoError(t, err)
 }
 
 func TestValidatePlanRequired_EmptyName(t *testing.T) {
-	err := validatePlanRequired("", 1, 9.99, 30, "days", nil)
+	err := validatePlanRequired("", 1, 9.99, 30, 1, "days", nil)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "plan name")
 }
 
 func TestValidatePlanRequired_WhitespaceName(t *testing.T) {
-	err := validatePlanRequired("   ", 1, 9.99, 30, "days", nil)
+	err := validatePlanRequired("   ", 1, 9.99, 30, 1, "days", nil)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "plan name")
 }
 
 func TestValidatePlanRequired_ZeroGroupID(t *testing.T) {
-	err := validatePlanRequired("Pro", 0, 9.99, 30, "days", nil)
+	err := validatePlanRequired("Pro", 0, 9.99, 30, 1, "days", nil)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "group")
 }
 
 func TestValidatePlanRequired_NegativeGroupID(t *testing.T) {
-	err := validatePlanRequired("Pro", -1, 9.99, 30, "days", nil)
+	err := validatePlanRequired("Pro", -1, 9.99, 30, 1, "days", nil)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "group")
 }
 
 func TestValidatePlanRequired_ZeroPrice(t *testing.T) {
-	err := validatePlanRequired("Pro", 1, 0, 30, "days", nil)
+	err := validatePlanRequired("Pro", 1, 0, 30, 1, "days", nil)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "price")
 }
 
 func TestValidatePlanRequired_NegativePrice(t *testing.T) {
-	err := validatePlanRequired("Pro", 1, -5, 30, "days", nil)
+	err := validatePlanRequired("Pro", 1, -5, 30, 1, "days", nil)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "price")
 }
 
 func TestValidatePlanRequired_ZeroValidityDays(t *testing.T) {
-	err := validatePlanRequired("Pro", 1, 9.99, 0, "days", nil)
+	err := validatePlanRequired("Pro", 1, 9.99, 0, 1, "days", nil)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "validity days")
 }
 
 func TestValidatePlanRequired_NegativeValidityDays(t *testing.T) {
-	err := validatePlanRequired("Pro", 1, 9.99, -7, "days", nil)
+	err := validatePlanRequired("Pro", 1, 9.99, -7, 1, "days", nil)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "validity days")
 }
 
 func TestValidatePlanRequired_EmptyValidityUnit(t *testing.T) {
-	err := validatePlanRequired("Pro", 1, 9.99, 30, "", nil)
+	err := validatePlanRequired("Pro", 1, 9.99, 30, 1, "", nil)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "validity unit")
 }
 
 func TestValidatePlanRequired_WhitespaceValidityUnit(t *testing.T) {
-	err := validatePlanRequired("Pro", 1, 9.99, 30, "   ", nil)
+	err := validatePlanRequired("Pro", 1, 9.99, 30, 1, "   ", nil)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "validity unit")
 }
 
 func TestValidatePlanRequired_NameValidatedFirst(t *testing.T) {
-	err := validatePlanRequired("", 0, 0, 0, "", nil)
+	err := validatePlanRequired("", 0, 0, 0, 1, "", nil)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "plan name")
 }
 
 func TestValidatePlanRequired_TrimmedValidName(t *testing.T) {
-	err := validatePlanRequired("  Pro  ", 1, 9.99, 30, "days", nil)
+	err := validatePlanRequired("  Pro  ", 1, 9.99, 30, 1, "days", nil)
 	require.NoError(t, err)
 }
 
 func TestValidatePlanRequired_NegativeOriginalPrice(t *testing.T) {
 	neg := -10.0
-	err := validatePlanRequired("Pro", 1, 9.99, 30, "days", &neg)
+	err := validatePlanRequired("Pro", 1, 9.99, 30, 1, "days", &neg)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "original price")
 }
 
 func TestValidatePlanRequired_ZeroOriginalPrice(t *testing.T) {
 	zero := 0.0
-	err := validatePlanRequired("Pro", 1, 9.99, 30, "days", &zero)
+	err := validatePlanRequired("Pro", 1, 9.99, 30, 1, "days", &zero)
 	require.NoError(t, err)
 }
 
 func TestValidatePlanRequired_ValidOriginalPrice(t *testing.T) {
 	op := 19.99
-	err := validatePlanRequired("Pro", 1, 9.99, 30, "days", &op)
+	err := validatePlanRequired("Pro", 1, 9.99, 30, 1, "days", &op)
 	require.NoError(t, err)
 }
 
@@ -117,6 +117,20 @@ func TestNormalizePlanCustomMultiplierConfigRejectsBelowOne(t *testing.T) {
 	_, _, err := normalizePlanCustomMultiplierConfig(true, 0, 5)
 	require.Error(t, err)
 	require.Equal(t, "PLAN_CUSTOM_MULTIPLIER_MIN_INVALID", infraerrors.Reason(err))
+}
+
+func TestNormalizePlanEarlyResetConfig(t *testing.T) {
+	duration, err := normalizePlanEarlyResetConfig(false, 0)
+	require.NoError(t, err)
+	require.Equal(t, 1, duration)
+
+	duration, err = normalizePlanEarlyResetConfig(true, 7)
+	require.NoError(t, err)
+	require.Equal(t, 7, duration)
+
+	_, err = normalizePlanEarlyResetConfig(true, 0)
+	require.Error(t, err)
+	require.Equal(t, "PLAN_EARLY_RESET_DURATION_INVALID", infraerrors.Reason(err))
 }
 
 // --- validatePlanPatch tests ---
@@ -192,6 +206,18 @@ func TestValidatePlanPatch_ZeroValidityDays(t *testing.T) {
 	require.Contains(t, err.Error(), "validity days")
 }
 
+func TestValidatePlanPatch_ZeroConcurrency(t *testing.T) {
+	err := validatePlanPatch(UpdatePlanRequest{Concurrency: ptrInt(0)})
+	require.Error(t, err)
+	require.Equal(t, "PLAN_CONCURRENCY_INVALID", infraerrors.Reason(err))
+}
+
+func TestValidatePlanPatch_ConcurrencyAbovePostgresInt(t *testing.T) {
+	err := validatePlanPatch(UpdatePlanRequest{Concurrency: ptrInt(maxPlanConcurrency + 1)})
+	require.Error(t, err)
+	require.Equal(t, "PLAN_CONCURRENCY_INVALID", infraerrors.Reason(err))
+}
+
 func TestValidatePlanPatch_EmptyValidityUnit(t *testing.T) {
 	err := validatePlanPatch(UpdatePlanRequest{ValidityUnit: ptrStr("")})
 	require.Error(t, err)
@@ -218,6 +244,7 @@ func TestCreatePlanValidatesGroupExistsActiveAndSubscriptionType(t *testing.T) {
 		Name:         "Missing Group Plan",
 		Price:        10,
 		ValidityDays: 30,
+		Concurrency:  1,
 		ValidityUnit: "days",
 	})
 	require.Error(t, err)
@@ -225,21 +252,25 @@ func TestCreatePlanValidatesGroupExistsActiveAndSubscriptionType(t *testing.T) {
 
 	inactiveGroup, err := client.Group.Create().SetName("inactive-plan-group").SetStatus(StatusDisabled).SetPlatform(PlatformOpenAI).SetSubscriptionType(SubscriptionTypeSubscription).Save(ctx)
 	require.NoError(t, err)
-	_, err = svc.CreatePlan(ctx, CreatePlanRequest{GroupID: inactiveGroup.ID, Name: "Inactive Group Plan", Price: 10, ValidityDays: 30, ValidityUnit: "days"})
+	_, err = svc.CreatePlan(ctx, CreatePlanRequest{GroupID: inactiveGroup.ID, Name: "Inactive Group Plan", Price: 10, ValidityDays: 30, Concurrency: 1, ValidityUnit: "days"})
 	require.Error(t, err)
 	require.Equal(t, "PLAN_GROUP_INACTIVE", infraerrors.Reason(err))
 
 	standardGroup, err := client.Group.Create().SetName("standard-plan-group").SetStatus(payment.EntityStatusActive).SetPlatform(PlatformOpenAI).SetSubscriptionType(SubscriptionTypeStandard).Save(ctx)
 	require.NoError(t, err)
-	_, err = svc.CreatePlan(ctx, CreatePlanRequest{GroupID: standardGroup.ID, Name: "Standard Group Plan", Price: 10, ValidityDays: 30, ValidityUnit: "days"})
+	_, err = svc.CreatePlan(ctx, CreatePlanRequest{GroupID: standardGroup.ID, Name: "Standard Group Plan", Price: 10, ValidityDays: 30, Concurrency: 1, ValidityUnit: "days"})
 	require.Error(t, err)
 	require.Equal(t, "PLAN_GROUP_TYPE_MISMATCH", infraerrors.Reason(err))
 
 	subscriptionGroup, err := client.Group.Create().SetName("subscription-plan-group").SetStatus(payment.EntityStatusActive).SetPlatform(PlatformOpenAI).SetSubscriptionType(SubscriptionTypeSubscription).Save(ctx)
 	require.NoError(t, err)
-	plan, err := svc.CreatePlan(ctx, CreatePlanRequest{GroupID: subscriptionGroup.ID, Name: "Valid Group Plan", Price: 10, ValidityDays: 30, ValidityUnit: "days"})
+	plan, err := svc.CreatePlan(ctx, CreatePlanRequest{GroupID: subscriptionGroup.ID, Name: "Valid Group Plan", Price: 10, ValidityDays: 30, Concurrency: 5, ValidityUnit: "days"})
 	require.NoError(t, err)
 	require.Equal(t, subscriptionGroup.ID, plan.GroupID)
+	require.Equal(t, 5, plan.Concurrency)
+	compatiblePlan, err := svc.CreatePlan(ctx, CreatePlanRequest{GroupID: subscriptionGroup.ID, Name: "Compatible Plan", Price: 10, ValidityDays: 30, ValidityUnit: "days"})
+	require.NoError(t, err)
+	require.Equal(t, 1, compatiblePlan.Concurrency)
 }
 
 func TestUpdatePlanValidatesNewGroupBeforeSaving(t *testing.T) {

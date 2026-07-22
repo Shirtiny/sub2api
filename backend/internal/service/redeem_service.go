@@ -552,6 +552,9 @@ func (s *RedeemService) invalidateRedeemCaches(ctx context.Context, userID int64
 		if s.authCacheInvalidator != nil {
 			s.authCacheInvalidator.InvalidateAuthCacheByUserID(ctx, userID)
 		}
+		if s.subscriptionService != nil && redeemCode.GroupID != nil {
+			s.subscriptionService.InvalidateSubCache(userID, *redeemCode.GroupID)
+		}
 		if s.billingCacheService == nil {
 			return
 		}
@@ -652,36 +655,39 @@ func (s *RedeemService) reduceOrCancelSubscription(ctx context.Context, userID, 
 	}
 
 	notes := fmt.Sprintf("通过兑换码 %s 退款扣减 %d 天", code, reduceDays)
-
-	if remaining <= reduceDays {
-		// 剩余天数不足，直接取消订阅
-		if err := s.subscriptionService.userSubRepo.UpdateStatus(ctx, sub.ID, SubscriptionStatusExpired); err != nil {
-			return fmt.Errorf("cancel subscription: %w", err)
-		}
-		// 设置过期时间为当前时间
-		if err := s.subscriptionService.userSubRepo.ExtendExpiry(ctx, sub.ID, now); err != nil {
-			return fmt.Errorf("set subscription expiry: %w", err)
-		}
-	} else {
-		// 缩短天数
-		newExpiresAt := sub.ExpiresAt.AddDate(0, 0, -reduceDays)
-		if err := s.subscriptionService.userSubRepo.ExtendExpiry(ctx, sub.ID, newExpiresAt); err != nil {
-			return fmt.Errorf("reduce subscription: %w", err)
-		}
+	newExpiresAt := sub.ExpiresAt.AddDate(0, 0, -reduceDays)
+	cancelSubscription := remaining <= reduceDays
+	if cancelSubscription {
+		newExpiresAt = now
 	}
 
-	// 追加备注
 	newNotes := sub.Notes
 	if newNotes != "" {
 		newNotes += "\n"
 	}
 	newNotes += notes
-	if err := s.subscriptionService.userSubRepo.UpdateNotes(ctx, sub.ID, newNotes); err != nil {
-		return fmt.Errorf("update subscription notes: %w", err)
+
+	if err := s.subscriptionService.withSubscriptionUpdateTx(ctx, func(txCtx context.Context) error {
+		if err := s.subscriptionService.userSubRepo.ExtendExpiry(txCtx, sub.ID, newExpiresAt); err != nil {
+			return fmt.Errorf("reduce subscription: %w", err)
+		}
+		if cancelSubscription {
+			if err := s.subscriptionService.userSubRepo.UpdateStatus(txCtx, sub.ID, SubscriptionStatusExpired); err != nil {
+				return fmt.Errorf("cancel subscription: %w", err)
+			}
+		}
+		if err := s.subscriptionService.updateLegacyPlanConcurrencyExpiry(txCtx, sub.ID, newExpiresAt); err != nil {
+			return fmt.Errorf("update subscription concurrency expiry: %w", err)
+		}
+		if err := s.subscriptionService.userSubRepo.UpdateNotes(txCtx, sub.ID, newNotes); err != nil {
+			return fmt.Errorf("update subscription notes: %w", err)
+		}
+		return nil
+	}); err != nil {
+		return err
 	}
 
-	// 失效缓存
-	s.subscriptionService.InvalidateSubCache(userID, groupID)
+	s.subscriptionService.invalidateSubscriptionCaches(ctx, userID, groupID)
 
 	return nil
 }

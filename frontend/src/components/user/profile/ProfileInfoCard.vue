@@ -78,7 +78,7 @@
                   {{ t('profile.concurrencyLimit') }}
                 </p>
                 <p class="mt-1 text-lg font-semibold text-content-primary">
-                  {{ user?.concurrency || 0 }}
+                  {{ user?.effective_concurrency ?? user?.concurrency ?? 0 }}
                 </p>
               </div>
               <div

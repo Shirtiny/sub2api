@@ -143,6 +143,7 @@ func (h *PaymentHandler) GetPlans(c *gin.Context) {
 		Price                   float64  `json:"price"`
 		OriginalPrice           *float64 `json:"original_price,omitempty"`
 		ValidityDays            int      `json:"validity_days"`
+		Concurrency             int      `json:"concurrency"`
 		ValidityUnit            string   `json:"validity_unit"`
 		Features                string   `json:"features"`
 		ProductName             string   `json:"product_name"`
@@ -158,7 +159,7 @@ func (h *PaymentHandler) GetPlans(c *gin.Context) {
 		result = append(result, planWithPlatform{
 			ID: int64(p.ID), GroupID: p.GroupID, GroupPlatform: platformMap[p.GroupID],
 			Name: p.Name, Description: p.Description, Price: p.Price, OriginalPrice: p.OriginalPrice,
-			ValidityDays: p.ValidityDays, ValidityUnit: p.ValidityUnit, Features: p.Features,
+			ValidityDays: p.ValidityDays, Concurrency: p.Concurrency, ValidityUnit: p.ValidityUnit, Features: p.Features,
 			ProductName: p.ProductName, ForSale: p.ForSale, SortOrder: p.SortOrder,
 			CustomMultiplierEnabled: p.CustomMultiplierEnabled,
 			CustomMultiplierMin:     p.CustomMultiplierMin,
@@ -212,7 +213,7 @@ func (h *PaymentHandler) GetCheckoutInfo(c *gin.Context) {
 			WeeklyLimitUSD: gi.WeeklyLimitUSD, MonthlyLimitUSD: gi.MonthlyLimitUSD,
 			ModelScopes: gi.ModelScopes,
 			Name:        p.Name, Description: p.Description, Price: p.Price, OriginalPrice: p.OriginalPrice,
-			ValidityDays: p.ValidityDays, ValidityUnit: p.ValidityUnit, Features: parseFeatures(p.Features),
+			ValidityDays: p.ValidityDays, Concurrency: p.Concurrency, ValidityUnit: p.ValidityUnit, Features: parseFeatures(p.Features),
 			ProductName:             p.ProductName,
 			CustomMultiplierEnabled: p.CustomMultiplierEnabled,
 			CustomMultiplierMin:     p.CustomMultiplierMin,
@@ -278,6 +279,7 @@ type checkoutPlan struct {
 	Price                   float64  `json:"price"`
 	OriginalPrice           *float64 `json:"original_price,omitempty"`
 	ValidityDays            int      `json:"validity_days"`
+	Concurrency             int      `json:"concurrency"`
 	ValidityUnit            string   `json:"validity_unit"`
 	Features                []string `json:"features"`
 	ProductName             string   `json:"product_name"`

@@ -47,12 +47,20 @@ type UserSubscription struct {
 	WeeklyUsageUsd float64 `json:"weekly_usage_usd,omitempty"`
 	// MonthlyUsageUsd holds the value of the "monthly_usage_usd" field.
 	MonthlyUsageUsd float64 `json:"monthly_usage_usd,omitempty"`
+	// whether the subscriber may reset quota before the normal window
+	EarlyResetEnabled bool `json:"early_reset_enabled,omitempty"`
+	// days deducted from the subscription period on early reset
+	EarlyResetDurationDays int `json:"early_reset_duration_days,omitempty"`
 	// AssignedBy holds the value of the "assigned_by" field.
 	AssignedBy *int64 `json:"assigned_by,omitempty"`
 	// AssignedAt holds the value of the "assigned_at" field.
 	AssignedAt time.Time `json:"assigned_at,omitempty"`
 	// Notes holds the value of the "notes" field.
 	Notes *string `json:"notes,omitempty"`
+	// user concurrency granted by a purchased subscription plan
+	PlanConcurrency *int `json:"plan_concurrency,omitempty"`
+	// expiration of the plan concurrency entitlement
+	PlanConcurrencyExpiresAt *time.Time `json:"plan_concurrency_expires_at,omitempty"`
 	// virtual custom subscription multiplier; nil means normal subscription
 	CustomMultiplier *int `json:"custom_multiplier,omitempty"`
 	// source subscription plan id for virtual custom entitlement
@@ -79,9 +87,11 @@ type UserSubscriptionEdges struct {
 	AssignedByUser *User `json:"assigned_by_user,omitempty"`
 	// UsageLogs holds the value of the usage_logs edge.
 	UsageLogs []*UsageLog `json:"usage_logs,omitempty"`
+	// ConcurrencyEntitlements holds the value of the concurrency_entitlements edge.
+	ConcurrencyEntitlements []*SubscriptionConcurrencyEntitlement `json:"concurrency_entitlements,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [4]bool
+	loadedTypes [5]bool
 }
 
 // UserOrErr returns the User value or an error if the edge
@@ -126,18 +136,29 @@ func (e UserSubscriptionEdges) UsageLogsOrErr() ([]*UsageLog, error) {
 	return nil, &NotLoadedError{edge: "usage_logs"}
 }
 
+// ConcurrencyEntitlementsOrErr returns the ConcurrencyEntitlements value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserSubscriptionEdges) ConcurrencyEntitlementsOrErr() ([]*SubscriptionConcurrencyEntitlement, error) {
+	if e.loadedTypes[4] {
+		return e.ConcurrencyEntitlements, nil
+	}
+	return nil, &NotLoadedError{edge: "concurrency_entitlements"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*UserSubscription) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case usersubscription.FieldEarlyResetEnabled:
+			values[i] = new(sql.NullBool)
 		case usersubscription.FieldDailyUsageUsd, usersubscription.FieldWeeklyUsageUsd, usersubscription.FieldMonthlyUsageUsd:
 			values[i] = new(sql.NullFloat64)
-		case usersubscription.FieldID, usersubscription.FieldUserID, usersubscription.FieldGroupID, usersubscription.FieldAssignedBy, usersubscription.FieldCustomMultiplier, usersubscription.FieldCustomSourcePlanID, usersubscription.FieldCustomSourceGroupID:
+		case usersubscription.FieldID, usersubscription.FieldUserID, usersubscription.FieldGroupID, usersubscription.FieldEarlyResetDurationDays, usersubscription.FieldAssignedBy, usersubscription.FieldPlanConcurrency, usersubscription.FieldCustomMultiplier, usersubscription.FieldCustomSourcePlanID, usersubscription.FieldCustomSourceGroupID:
 			values[i] = new(sql.NullInt64)
 		case usersubscription.FieldStatus, usersubscription.FieldNotes, usersubscription.FieldCustomDisplayName:
 			values[i] = new(sql.NullString)
-		case usersubscription.FieldCreatedAt, usersubscription.FieldUpdatedAt, usersubscription.FieldDeletedAt, usersubscription.FieldStartsAt, usersubscription.FieldExpiresAt, usersubscription.FieldDailyWindowStart, usersubscription.FieldWeeklyWindowStart, usersubscription.FieldMonthlyWindowStart, usersubscription.FieldAssignedAt, usersubscription.FieldCustomExpiresAt:
+		case usersubscription.FieldCreatedAt, usersubscription.FieldUpdatedAt, usersubscription.FieldDeletedAt, usersubscription.FieldStartsAt, usersubscription.FieldExpiresAt, usersubscription.FieldDailyWindowStart, usersubscription.FieldWeeklyWindowStart, usersubscription.FieldMonthlyWindowStart, usersubscription.FieldAssignedAt, usersubscription.FieldPlanConcurrencyExpiresAt, usersubscription.FieldCustomExpiresAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -248,6 +269,18 @@ func (_m *UserSubscription) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.MonthlyUsageUsd = value.Float64
 			}
+		case usersubscription.FieldEarlyResetEnabled:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field early_reset_enabled", values[i])
+			} else if value.Valid {
+				_m.EarlyResetEnabled = value.Bool
+			}
+		case usersubscription.FieldEarlyResetDurationDays:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field early_reset_duration_days", values[i])
+			} else if value.Valid {
+				_m.EarlyResetDurationDays = int(value.Int64)
+			}
 		case usersubscription.FieldAssignedBy:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field assigned_by", values[i])
@@ -267,6 +300,20 @@ func (_m *UserSubscription) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Notes = new(string)
 				*_m.Notes = value.String
+			}
+		case usersubscription.FieldPlanConcurrency:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field plan_concurrency", values[i])
+			} else if value.Valid {
+				_m.PlanConcurrency = new(int)
+				*_m.PlanConcurrency = int(value.Int64)
+			}
+		case usersubscription.FieldPlanConcurrencyExpiresAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field plan_concurrency_expires_at", values[i])
+			} else if value.Valid {
+				_m.PlanConcurrencyExpiresAt = new(time.Time)
+				*_m.PlanConcurrencyExpiresAt = value.Time
 			}
 		case usersubscription.FieldCustomMultiplier:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -334,6 +381,11 @@ func (_m *UserSubscription) QueryAssignedByUser() *UserQuery {
 // QueryUsageLogs queries the "usage_logs" edge of the UserSubscription entity.
 func (_m *UserSubscription) QueryUsageLogs() *UsageLogQuery {
 	return NewUserSubscriptionClient(_m.config).QueryUsageLogs(_m)
+}
+
+// QueryConcurrencyEntitlements queries the "concurrency_entitlements" edge of the UserSubscription entity.
+func (_m *UserSubscription) QueryConcurrencyEntitlements() *SubscriptionConcurrencyEntitlementQuery {
+	return NewUserSubscriptionClient(_m.config).QueryConcurrencyEntitlements(_m)
 }
 
 // Update returns a builder for updating this UserSubscription.
@@ -409,6 +461,12 @@ func (_m *UserSubscription) String() string {
 	builder.WriteString("monthly_usage_usd=")
 	builder.WriteString(fmt.Sprintf("%v", _m.MonthlyUsageUsd))
 	builder.WriteString(", ")
+	builder.WriteString("early_reset_enabled=")
+	builder.WriteString(fmt.Sprintf("%v", _m.EarlyResetEnabled))
+	builder.WriteString(", ")
+	builder.WriteString("early_reset_duration_days=")
+	builder.WriteString(fmt.Sprintf("%v", _m.EarlyResetDurationDays))
+	builder.WriteString(", ")
 	if v := _m.AssignedBy; v != nil {
 		builder.WriteString("assigned_by=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
@@ -420,6 +478,16 @@ func (_m *UserSubscription) String() string {
 	if v := _m.Notes; v != nil {
 		builder.WriteString("notes=")
 		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	if v := _m.PlanConcurrency; v != nil {
+		builder.WriteString("plan_concurrency=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.PlanConcurrencyExpiresAt; v != nil {
+		builder.WriteString("plan_concurrency_expires_at=")
+		builder.WriteString(v.Format(time.ANSIC))
 	}
 	builder.WriteString(", ")
 	if v := _m.CustomMultiplier; v != nil {

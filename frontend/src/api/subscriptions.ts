@@ -5,6 +5,7 @@
 
 import { apiClient } from './client'
 import type { UserSubscription, SubscriptionProgress } from '@/types'
+import { createIdempotencyKey } from '@/utils/idempotency'
 
 /**
  * Subscription summary for user dashboard
@@ -67,10 +68,27 @@ export async function getSubscriptionProgress(
   return response.data
 }
 
+export async function earlyResetSubscription(
+  subscriptionId: number,
+  idempotencyKey = createIdempotencyKey('subscription-early-reset')
+): Promise<UserSubscription> {
+  const response = await apiClient.post<UserSubscription>(
+    `/subscriptions/${subscriptionId}/early-reset`,
+    {},
+    {
+      headers: {
+        'Idempotency-Key': idempotencyKey
+      }
+    }
+  )
+  return response.data
+}
+
 export default {
   getMySubscriptions,
   getActiveSubscriptions,
   getSubscriptionsProgress,
   getSubscriptionSummary,
-  getSubscriptionProgress
+  getSubscriptionProgress,
+  earlyResetSubscription
 }

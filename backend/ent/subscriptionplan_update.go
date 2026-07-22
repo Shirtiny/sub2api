@@ -146,6 +146,62 @@ func (_u *SubscriptionPlanUpdate) AddValidityDays(v int) *SubscriptionPlanUpdate
 	return _u
 }
 
+// SetConcurrency sets the "concurrency" field.
+func (_u *SubscriptionPlanUpdate) SetConcurrency(v int) *SubscriptionPlanUpdate {
+	_u.mutation.ResetConcurrency()
+	_u.mutation.SetConcurrency(v)
+	return _u
+}
+
+// SetNillableConcurrency sets the "concurrency" field if the given value is not nil.
+func (_u *SubscriptionPlanUpdate) SetNillableConcurrency(v *int) *SubscriptionPlanUpdate {
+	if v != nil {
+		_u.SetConcurrency(*v)
+	}
+	return _u
+}
+
+// AddConcurrency adds value to the "concurrency" field.
+func (_u *SubscriptionPlanUpdate) AddConcurrency(v int) *SubscriptionPlanUpdate {
+	_u.mutation.AddConcurrency(v)
+	return _u
+}
+
+// SetEarlyResetEnabled sets the "early_reset_enabled" field.
+func (_u *SubscriptionPlanUpdate) SetEarlyResetEnabled(v bool) *SubscriptionPlanUpdate {
+	_u.mutation.SetEarlyResetEnabled(v)
+	return _u
+}
+
+// SetNillableEarlyResetEnabled sets the "early_reset_enabled" field if the given value is not nil.
+func (_u *SubscriptionPlanUpdate) SetNillableEarlyResetEnabled(v *bool) *SubscriptionPlanUpdate {
+	if v != nil {
+		_u.SetEarlyResetEnabled(*v)
+	}
+	return _u
+}
+
+// SetEarlyResetDurationDays sets the "early_reset_duration_days" field.
+func (_u *SubscriptionPlanUpdate) SetEarlyResetDurationDays(v int) *SubscriptionPlanUpdate {
+	_u.mutation.ResetEarlyResetDurationDays()
+	_u.mutation.SetEarlyResetDurationDays(v)
+	return _u
+}
+
+// SetNillableEarlyResetDurationDays sets the "early_reset_duration_days" field if the given value is not nil.
+func (_u *SubscriptionPlanUpdate) SetNillableEarlyResetDurationDays(v *int) *SubscriptionPlanUpdate {
+	if v != nil {
+		_u.SetEarlyResetDurationDays(*v)
+	}
+	return _u
+}
+
+// AddEarlyResetDurationDays adds value to the "early_reset_duration_days" field.
+func (_u *SubscriptionPlanUpdate) AddEarlyResetDurationDays(v int) *SubscriptionPlanUpdate {
+	_u.mutation.AddEarlyResetDurationDays(v)
+	return _u
+}
+
 // SetValidityUnit sets the "validity_unit" field.
 func (_u *SubscriptionPlanUpdate) SetValidityUnit(v string) *SubscriptionPlanUpdate {
 	_u.mutation.SetValidityUnit(v)
@@ -333,6 +389,16 @@ func (_u *SubscriptionPlanUpdate) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "SubscriptionPlan.name": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Concurrency(); ok {
+		if err := subscriptionplan.ConcurrencyValidator(v); err != nil {
+			return &ValidationError{Name: "concurrency", err: fmt.Errorf(`ent: validator failed for field "SubscriptionPlan.concurrency": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.EarlyResetDurationDays(); ok {
+		if err := subscriptionplan.EarlyResetDurationDaysValidator(v); err != nil {
+			return &ValidationError{Name: "early_reset_duration_days", err: fmt.Errorf(`ent: validator failed for field "SubscriptionPlan.early_reset_duration_days": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.ValidityUnit(); ok {
 		if err := subscriptionplan.ValidityUnitValidator(v); err != nil {
 			return &ValidationError{Name: "validity_unit", err: fmt.Errorf(`ent: validator failed for field "SubscriptionPlan.validity_unit": %w`, err)}
@@ -390,6 +456,21 @@ func (_u *SubscriptionPlanUpdate) sqlSave(ctx context.Context) (_node int, err e
 	}
 	if value, ok := _u.mutation.AddedValidityDays(); ok {
 		_spec.AddField(subscriptionplan.FieldValidityDays, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.Concurrency(); ok {
+		_spec.SetField(subscriptionplan.FieldConcurrency, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedConcurrency(); ok {
+		_spec.AddField(subscriptionplan.FieldConcurrency, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.EarlyResetEnabled(); ok {
+		_spec.SetField(subscriptionplan.FieldEarlyResetEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.EarlyResetDurationDays(); ok {
+		_spec.SetField(subscriptionplan.FieldEarlyResetDurationDays, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedEarlyResetDurationDays(); ok {
+		_spec.AddField(subscriptionplan.FieldEarlyResetDurationDays, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.ValidityUnit(); ok {
 		_spec.SetField(subscriptionplan.FieldValidityUnit, field.TypeString, value)
@@ -562,6 +643,62 @@ func (_u *SubscriptionPlanUpdateOne) SetNillableValidityDays(v *int) *Subscripti
 // AddValidityDays adds value to the "validity_days" field.
 func (_u *SubscriptionPlanUpdateOne) AddValidityDays(v int) *SubscriptionPlanUpdateOne {
 	_u.mutation.AddValidityDays(v)
+	return _u
+}
+
+// SetConcurrency sets the "concurrency" field.
+func (_u *SubscriptionPlanUpdateOne) SetConcurrency(v int) *SubscriptionPlanUpdateOne {
+	_u.mutation.ResetConcurrency()
+	_u.mutation.SetConcurrency(v)
+	return _u
+}
+
+// SetNillableConcurrency sets the "concurrency" field if the given value is not nil.
+func (_u *SubscriptionPlanUpdateOne) SetNillableConcurrency(v *int) *SubscriptionPlanUpdateOne {
+	if v != nil {
+		_u.SetConcurrency(*v)
+	}
+	return _u
+}
+
+// AddConcurrency adds value to the "concurrency" field.
+func (_u *SubscriptionPlanUpdateOne) AddConcurrency(v int) *SubscriptionPlanUpdateOne {
+	_u.mutation.AddConcurrency(v)
+	return _u
+}
+
+// SetEarlyResetEnabled sets the "early_reset_enabled" field.
+func (_u *SubscriptionPlanUpdateOne) SetEarlyResetEnabled(v bool) *SubscriptionPlanUpdateOne {
+	_u.mutation.SetEarlyResetEnabled(v)
+	return _u
+}
+
+// SetNillableEarlyResetEnabled sets the "early_reset_enabled" field if the given value is not nil.
+func (_u *SubscriptionPlanUpdateOne) SetNillableEarlyResetEnabled(v *bool) *SubscriptionPlanUpdateOne {
+	if v != nil {
+		_u.SetEarlyResetEnabled(*v)
+	}
+	return _u
+}
+
+// SetEarlyResetDurationDays sets the "early_reset_duration_days" field.
+func (_u *SubscriptionPlanUpdateOne) SetEarlyResetDurationDays(v int) *SubscriptionPlanUpdateOne {
+	_u.mutation.ResetEarlyResetDurationDays()
+	_u.mutation.SetEarlyResetDurationDays(v)
+	return _u
+}
+
+// SetNillableEarlyResetDurationDays sets the "early_reset_duration_days" field if the given value is not nil.
+func (_u *SubscriptionPlanUpdateOne) SetNillableEarlyResetDurationDays(v *int) *SubscriptionPlanUpdateOne {
+	if v != nil {
+		_u.SetEarlyResetDurationDays(*v)
+	}
+	return _u
+}
+
+// AddEarlyResetDurationDays adds value to the "early_reset_duration_days" field.
+func (_u *SubscriptionPlanUpdateOne) AddEarlyResetDurationDays(v int) *SubscriptionPlanUpdateOne {
+	_u.mutation.AddEarlyResetDurationDays(v)
 	return _u
 }
 
@@ -765,6 +902,16 @@ func (_u *SubscriptionPlanUpdateOne) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "SubscriptionPlan.name": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Concurrency(); ok {
+		if err := subscriptionplan.ConcurrencyValidator(v); err != nil {
+			return &ValidationError{Name: "concurrency", err: fmt.Errorf(`ent: validator failed for field "SubscriptionPlan.concurrency": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.EarlyResetDurationDays(); ok {
+		if err := subscriptionplan.EarlyResetDurationDaysValidator(v); err != nil {
+			return &ValidationError{Name: "early_reset_duration_days", err: fmt.Errorf(`ent: validator failed for field "SubscriptionPlan.early_reset_duration_days": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.ValidityUnit(); ok {
 		if err := subscriptionplan.ValidityUnitValidator(v); err != nil {
 			return &ValidationError{Name: "validity_unit", err: fmt.Errorf(`ent: validator failed for field "SubscriptionPlan.validity_unit": %w`, err)}
@@ -839,6 +986,21 @@ func (_u *SubscriptionPlanUpdateOne) sqlSave(ctx context.Context) (_node *Subscr
 	}
 	if value, ok := _u.mutation.AddedValidityDays(); ok {
 		_spec.AddField(subscriptionplan.FieldValidityDays, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.Concurrency(); ok {
+		_spec.SetField(subscriptionplan.FieldConcurrency, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedConcurrency(); ok {
+		_spec.AddField(subscriptionplan.FieldConcurrency, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.EarlyResetEnabled(); ok {
+		_spec.SetField(subscriptionplan.FieldEarlyResetEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.EarlyResetDurationDays(); ok {
+		_spec.SetField(subscriptionplan.FieldEarlyResetDurationDays, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedEarlyResetDurationDays(); ok {
+		_spec.AddField(subscriptionplan.FieldEarlyResetDurationDays, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.ValidityUnit(); ok {
 		_spec.SetField(subscriptionplan.FieldValidityUnit, field.TypeString, value)

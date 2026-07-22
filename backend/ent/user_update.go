@@ -21,6 +21,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/predicate"
 	"github.com/Wei-Shaw/sub2api/ent/promocodeusage"
 	"github.com/Wei-Shaw/sub2api/ent/redeemcode"
+	"github.com/Wei-Shaw/sub2api/ent/subscriptionconcurrencyentitlement"
 	"github.com/Wei-Shaw/sub2api/ent/usagelog"
 	"github.com/Wei-Shaw/sub2api/ent/user"
 	"github.com/Wei-Shaw/sub2api/ent/userattributevalue"
@@ -457,6 +458,21 @@ func (_u *UserUpdate) AddSubscriptions(v ...*UserSubscription) *UserUpdate {
 	return _u.AddSubscriptionIDs(ids...)
 }
 
+// AddSubscriptionConcurrencyEntitlementIDs adds the "subscription_concurrency_entitlements" edge to the SubscriptionConcurrencyEntitlement entity by IDs.
+func (_u *UserUpdate) AddSubscriptionConcurrencyEntitlementIDs(ids ...int64) *UserUpdate {
+	_u.mutation.AddSubscriptionConcurrencyEntitlementIDs(ids...)
+	return _u
+}
+
+// AddSubscriptionConcurrencyEntitlements adds the "subscription_concurrency_entitlements" edges to the SubscriptionConcurrencyEntitlement entity.
+func (_u *UserUpdate) AddSubscriptionConcurrencyEntitlements(v ...*SubscriptionConcurrencyEntitlement) *UserUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddSubscriptionConcurrencyEntitlementIDs(ids...)
+}
+
 // AddAssignedSubscriptionIDs adds the "assigned_subscriptions" edge to the UserSubscription entity by IDs.
 func (_u *UserUpdate) AddAssignedSubscriptionIDs(ids ...int64) *UserUpdate {
 	_u.mutation.AddAssignedSubscriptionIDs(ids...)
@@ -688,6 +704,27 @@ func (_u *UserUpdate) RemoveSubscriptions(v ...*UserSubscription) *UserUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveSubscriptionIDs(ids...)
+}
+
+// ClearSubscriptionConcurrencyEntitlements clears all "subscription_concurrency_entitlements" edges to the SubscriptionConcurrencyEntitlement entity.
+func (_u *UserUpdate) ClearSubscriptionConcurrencyEntitlements() *UserUpdate {
+	_u.mutation.ClearSubscriptionConcurrencyEntitlements()
+	return _u
+}
+
+// RemoveSubscriptionConcurrencyEntitlementIDs removes the "subscription_concurrency_entitlements" edge to SubscriptionConcurrencyEntitlement entities by IDs.
+func (_u *UserUpdate) RemoveSubscriptionConcurrencyEntitlementIDs(ids ...int64) *UserUpdate {
+	_u.mutation.RemoveSubscriptionConcurrencyEntitlementIDs(ids...)
+	return _u
+}
+
+// RemoveSubscriptionConcurrencyEntitlements removes "subscription_concurrency_entitlements" edges to SubscriptionConcurrencyEntitlement entities.
+func (_u *UserUpdate) RemoveSubscriptionConcurrencyEntitlements(v ...*SubscriptionConcurrencyEntitlement) *UserUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveSubscriptionConcurrencyEntitlementIDs(ids...)
 }
 
 // ClearAssignedSubscriptions clears all "assigned_subscriptions" edges to the UserSubscription entity.
@@ -1237,6 +1274,51 @@ func (_u *UserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(usersubscription.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.SubscriptionConcurrencyEntitlementsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.SubscriptionConcurrencyEntitlementsTable,
+			Columns: []string{user.SubscriptionConcurrencyEntitlementsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(subscriptionconcurrencyentitlement.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedSubscriptionConcurrencyEntitlementsIDs(); len(nodes) > 0 && !_u.mutation.SubscriptionConcurrencyEntitlementsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.SubscriptionConcurrencyEntitlementsTable,
+			Columns: []string{user.SubscriptionConcurrencyEntitlementsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(subscriptionconcurrencyentitlement.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.SubscriptionConcurrencyEntitlementsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.SubscriptionConcurrencyEntitlementsTable,
+			Columns: []string{user.SubscriptionConcurrencyEntitlementsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(subscriptionconcurrencyentitlement.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -2187,6 +2269,21 @@ func (_u *UserUpdateOne) AddSubscriptions(v ...*UserSubscription) *UserUpdateOne
 	return _u.AddSubscriptionIDs(ids...)
 }
 
+// AddSubscriptionConcurrencyEntitlementIDs adds the "subscription_concurrency_entitlements" edge to the SubscriptionConcurrencyEntitlement entity by IDs.
+func (_u *UserUpdateOne) AddSubscriptionConcurrencyEntitlementIDs(ids ...int64) *UserUpdateOne {
+	_u.mutation.AddSubscriptionConcurrencyEntitlementIDs(ids...)
+	return _u
+}
+
+// AddSubscriptionConcurrencyEntitlements adds the "subscription_concurrency_entitlements" edges to the SubscriptionConcurrencyEntitlement entity.
+func (_u *UserUpdateOne) AddSubscriptionConcurrencyEntitlements(v ...*SubscriptionConcurrencyEntitlement) *UserUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddSubscriptionConcurrencyEntitlementIDs(ids...)
+}
+
 // AddAssignedSubscriptionIDs adds the "assigned_subscriptions" edge to the UserSubscription entity by IDs.
 func (_u *UserUpdateOne) AddAssignedSubscriptionIDs(ids ...int64) *UserUpdateOne {
 	_u.mutation.AddAssignedSubscriptionIDs(ids...)
@@ -2418,6 +2515,27 @@ func (_u *UserUpdateOne) RemoveSubscriptions(v ...*UserSubscription) *UserUpdate
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveSubscriptionIDs(ids...)
+}
+
+// ClearSubscriptionConcurrencyEntitlements clears all "subscription_concurrency_entitlements" edges to the SubscriptionConcurrencyEntitlement entity.
+func (_u *UserUpdateOne) ClearSubscriptionConcurrencyEntitlements() *UserUpdateOne {
+	_u.mutation.ClearSubscriptionConcurrencyEntitlements()
+	return _u
+}
+
+// RemoveSubscriptionConcurrencyEntitlementIDs removes the "subscription_concurrency_entitlements" edge to SubscriptionConcurrencyEntitlement entities by IDs.
+func (_u *UserUpdateOne) RemoveSubscriptionConcurrencyEntitlementIDs(ids ...int64) *UserUpdateOne {
+	_u.mutation.RemoveSubscriptionConcurrencyEntitlementIDs(ids...)
+	return _u
+}
+
+// RemoveSubscriptionConcurrencyEntitlements removes "subscription_concurrency_entitlements" edges to SubscriptionConcurrencyEntitlement entities.
+func (_u *UserUpdateOne) RemoveSubscriptionConcurrencyEntitlements(v ...*SubscriptionConcurrencyEntitlement) *UserUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveSubscriptionConcurrencyEntitlementIDs(ids...)
 }
 
 // ClearAssignedSubscriptions clears all "assigned_subscriptions" edges to the UserSubscription entity.
@@ -2997,6 +3115,51 @@ func (_u *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(usersubscription.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.SubscriptionConcurrencyEntitlementsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.SubscriptionConcurrencyEntitlementsTable,
+			Columns: []string{user.SubscriptionConcurrencyEntitlementsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(subscriptionconcurrencyentitlement.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedSubscriptionConcurrencyEntitlementsIDs(); len(nodes) > 0 && !_u.mutation.SubscriptionConcurrencyEntitlementsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.SubscriptionConcurrencyEntitlementsTable,
+			Columns: []string{user.SubscriptionConcurrencyEntitlementsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(subscriptionconcurrencyentitlement.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.SubscriptionConcurrencyEntitlementsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.SubscriptionConcurrencyEntitlementsTable,
+			Columns: []string{user.SubscriptionConcurrencyEntitlementsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(subscriptionconcurrencyentitlement.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

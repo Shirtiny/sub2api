@@ -89,6 +89,21 @@ describe('ProfileInfoCard', () => {
     expect(wrapper.get('[data-testid="profile-auth-bindings-panel"]').exists()).toBe(true)
   })
 
+  it('renders the effective plan concurrency while preserving the base value', () => {
+    const wrapper = mount(ProfileInfoCard, {
+      props: {
+        user: createUser({ concurrency: 5, effective_concurrency: 16 })
+      },
+      global: {
+        stubs: {
+          Icon: true
+        }
+      }
+    })
+
+    expect(wrapper.get('[data-testid="profile-overview-metric-concurrency"]').text()).toContain('16')
+  })
+
   it('renders third-party source hints from profile sources', () => {
     const wrapper = mount(ProfileInfoCard, {
       props: {

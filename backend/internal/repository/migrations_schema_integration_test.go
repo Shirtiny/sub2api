@@ -106,6 +106,16 @@ func TestMigrationsRunner_IsIdempotent_AndSchemaIsUpToDate(t *testing.T) {
 
 	// user_subscriptions: deleted_at for soft delete support (migration 012)
 	requireColumn(t, tx, "user_subscriptions", "deleted_at", "timestamp with time zone", 0, true)
+	requireColumn(t, tx, "user_subscriptions", "plan_concurrency", "integer", 0, true)
+	requireColumn(t, tx, "user_subscriptions", "plan_concurrency_expires_at", "timestamp with time zone", 0, true)
+	requireColumn(t, tx, "subscription_plans", "concurrency", "integer", 0, false)
+	requireColumn(t, tx, "payment_orders", "subscription_concurrency", "integer", 0, true)
+	var concurrencyEntitlementRegclass sql.NullString
+	require.NoError(t, tx.QueryRowContext(context.Background(), "SELECT to_regclass('public.subscription_concurrency_entitlements')").Scan(&concurrencyEntitlementRegclass))
+	require.True(t, concurrencyEntitlementRegclass.Valid)
+	requireColumn(t, tx, "subscription_concurrency_entitlements", "concurrency", "integer", 0, false)
+	requireColumn(t, tx, "subscription_concurrency_entitlements", "starts_at", "timestamp with time zone", 0, false)
+	requireColumn(t, tx, "subscription_concurrency_entitlements", "expires_at", "timestamp with time zone", 0, false)
 
 	// orphan_allowed_groups_audit table should exist (migration 013)
 	var orphanAuditRegclass sql.NullString

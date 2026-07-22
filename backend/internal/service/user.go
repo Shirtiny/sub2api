@@ -20,9 +20,13 @@ type User struct {
 	Role           string
 	Balance        float64
 	Concurrency    int
-	Status         string
-	AllowedGroups  []int64
-	TokenVersion   int64 // Incremented on password change to invalidate existing tokens
+	// PlanConcurrencyEntitlements are transient auth-time snapshots. They are
+	// not stored on users; active subscription terms override Concurrency and
+	// automatically stop applying at their own expiration time.
+	PlanConcurrencyEntitlements []PlanConcurrencyEntitlement
+	Status                      string
+	AllowedGroups               []int64
+	TokenVersion                int64 // Incremented on password change to invalidate existing tokens
 	// TokenVersionResolved indicates TokenVersion already contains the fingerprint-derived
 	// value expected in JWT claims and refresh-token state.
 	TokenVersionResolved bool
@@ -62,6 +66,58 @@ type User struct {
 
 	APIKeys       []APIKey
 	Subscriptions []UserSubscription
+}
+
+type PlanConcurrencyEntitlement struct {
+	SubscriptionID int64     `json:"subscription_id,omitempty"`
+	Concurrency    int       `json:"concurrency"`
+	StartsAt       time.Time `json:"starts_at"`
+	ExpiresAt      time.Time `json:"expires_at"`
+}
+
+// EffectiveConcurrencyAt returns the highest active plan entitlement. When no
+// plan entitlement is active, the user's persisted concurrency is the fallback.
+func (u *User) EffectiveConcurrencyAt(now time.Time) int {
+	if u == nil {
+		return 1
+	}
+	effective := 0
+	type currentSubscriptionEntitlement struct {
+		startsAt    time.Time
+		concurrency int
+	}
+	currentBySubscription := make(map[int64]currentSubscriptionEntitlement)
+	for _, entitlement := range u.PlanConcurrencyEntitlements {
+		if entitlement.Concurrency <= 0 || now.Before(entitlement.StartsAt) || !now.Before(entitlement.ExpiresAt) {
+			continue
+		}
+		if entitlement.SubscriptionID <= 0 {
+			if entitlement.Concurrency > effective {
+				effective = entitlement.Concurrency
+			}
+			continue
+		}
+		current, ok := currentBySubscription[entitlement.SubscriptionID]
+		if !ok || entitlement.StartsAt.After(current.startsAt) ||
+			(entitlement.StartsAt.Equal(current.startsAt) && entitlement.Concurrency > current.concurrency) {
+			currentBySubscription[entitlement.SubscriptionID] = currentSubscriptionEntitlement{
+				startsAt:    entitlement.StartsAt,
+				concurrency: entitlement.Concurrency,
+			}
+		}
+	}
+	for _, entitlement := range currentBySubscription {
+		if entitlement.concurrency > effective {
+			effective = entitlement.concurrency
+		}
+	}
+	if effective > 0 {
+		return effective
+	}
+	if u.Concurrency > 0 {
+		return u.Concurrency
+	}
+	return 1
 }
 
 func (u *User) IsAdmin() bool {

@@ -7,6 +7,17 @@ function hasActiveVirtualCustomEntitlement(subscription: UserSubscription | null
   return Number.isNaN(time) || time > Date.now()
 }
 
+export function subscriptionEffectiveExpiresAt(subscription: UserSubscription | null | undefined): string | null {
+  if (
+    subscription?.custom_expires_at &&
+    hasActiveVirtualCustomEntitlement(subscription) &&
+    subscriptionCustomMultiplier(subscription) != null
+  ) {
+    return subscription.custom_expires_at
+  }
+  return subscription?.expires_at ?? null
+}
+
 export function subscriptionCustomMultiplier(subscription: UserSubscription | null | undefined): number | null {
   if (!hasActiveVirtualCustomEntitlement(subscription)) return null
   const raw = subscription?.custom_multiplier ?? subscription?.group?.custom_multiplier

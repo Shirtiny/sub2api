@@ -12,8 +12,10 @@ import (
 	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 )
 
+const maxPlanConcurrency = int(^uint32(0) >> 1)
+
 // validatePlanRequired checks that all required fields for a plan are provided.
-func validatePlanRequired(name string, groupID int64, price float64, validityDays int, validityUnit string, originalPrice *float64) error {
+func validatePlanRequired(name string, groupID int64, price float64, validityDays int, concurrency int, validityUnit string, originalPrice *float64) error {
 	if strings.TrimSpace(name) == "" {
 		return infraerrors.BadRequest("PLAN_NAME_REQUIRED", "plan name is required")
 	}
@@ -25,6 +27,9 @@ func validatePlanRequired(name string, groupID int64, price float64, validityDay
 	}
 	if validityDays <= 0 {
 		return infraerrors.BadRequest("PLAN_VALIDITY_REQUIRED", "validity days must be > 0")
+	}
+	if concurrency <= 0 || concurrency > maxPlanConcurrency {
+		return infraerrors.BadRequest("PLAN_CONCURRENCY_INVALID", "concurrency must be between 1 and 2147483647")
 	}
 	if strings.TrimSpace(validityUnit) == "" {
 		return infraerrors.BadRequest("PLAN_VALIDITY_UNIT_REQUIRED", "validity unit is required")
@@ -92,6 +97,16 @@ func normalizePlanCustomMultiplierConfig(enabled bool, minValue int, maxValue in
 	return minValue, maxValue, nil
 }
 
+func normalizePlanEarlyResetConfig(enabled bool, durationDays int) (int, error) {
+	if durationDays == 0 && !enabled {
+		return 1, nil
+	}
+	if durationDays <= 0 || durationDays > MaxValidityDays {
+		return 0, infraerrors.BadRequest("PLAN_EARLY_RESET_DURATION_INVALID", "early reset duration days must be between 1 and 36500")
+	}
+	return durationDays, nil
+}
+
 // validatePlanPatch validates only the non-nil fields in a patch update.
 func validatePlanPatch(req UpdatePlanRequest) error {
 	if req.Name != nil && strings.TrimSpace(*req.Name) == "" {
@@ -106,11 +121,17 @@ func validatePlanPatch(req UpdatePlanRequest) error {
 	if req.ValidityDays != nil && *req.ValidityDays <= 0 {
 		return infraerrors.BadRequest("PLAN_VALIDITY_REQUIRED", "validity days must be > 0")
 	}
+	if req.Concurrency != nil && (*req.Concurrency <= 0 || *req.Concurrency > maxPlanConcurrency) {
+		return infraerrors.BadRequest("PLAN_CONCURRENCY_INVALID", "concurrency must be between 1 and 2147483647")
+	}
 	if req.ValidityUnit != nil && strings.TrimSpace(*req.ValidityUnit) == "" {
 		return infraerrors.BadRequest("PLAN_VALIDITY_UNIT_REQUIRED", "validity unit is required")
 	}
 	if req.OriginalPrice != nil && *req.OriginalPrice < 0 {
 		return infraerrors.BadRequest("PLAN_ORIGINAL_PRICE_INVALID", "original price must be >= 0")
+	}
+	if req.EarlyResetDurationDays != nil && (*req.EarlyResetDurationDays <= 0 || *req.EarlyResetDurationDays > MaxValidityDays) {
+		return infraerrors.BadRequest("PLAN_EARLY_RESET_DURATION_INVALID", "early reset duration days must be between 1 and 36500")
 	}
 	return nil
 }
@@ -179,7 +200,10 @@ func (s *PaymentConfigService) ListPlansForSale(ctx context.Context) ([]*dbent.S
 }
 
 func (s *PaymentConfigService) CreatePlan(ctx context.Context, req CreatePlanRequest) (*dbent.SubscriptionPlan, error) {
-	if err := validatePlanRequired(req.Name, req.GroupID, req.Price, req.ValidityDays, req.ValidityUnit, req.OriginalPrice); err != nil {
+	if req.Concurrency == 0 {
+		req.Concurrency = 1
+	}
+	if err := validatePlanRequired(req.Name, req.GroupID, req.Price, req.ValidityDays, req.Concurrency, req.ValidityUnit, req.OriginalPrice); err != nil {
 		return nil, err
 	}
 	if err := s.validateSubscriptionPlanGroup(ctx, req.GroupID); err != nil {
@@ -189,9 +213,15 @@ func (s *PaymentConfigService) CreatePlan(ctx context.Context, req CreatePlanReq
 	if err != nil {
 		return nil, err
 	}
+	earlyResetDurationDays, err := normalizePlanEarlyResetConfig(req.EarlyResetEnabled, req.EarlyResetDurationDays)
+	if err != nil {
+		return nil, err
+	}
 	b := s.entClient.SubscriptionPlan.Create().
 		SetGroupID(req.GroupID).SetName(req.Name).SetDescription(req.Description).
-		SetPrice(req.Price).SetValidityDays(req.ValidityDays).SetValidityUnit(req.ValidityUnit).
+		SetPrice(req.Price).SetValidityDays(req.ValidityDays).SetConcurrency(req.Concurrency).SetValidityUnit(req.ValidityUnit).
+		SetEarlyResetEnabled(req.EarlyResetEnabled).
+		SetEarlyResetDurationDays(earlyResetDurationDays).
 		SetFeatures(req.Features).SetProductName(req.ProductName).
 		SetForSale(req.ForSale).SetSortOrder(req.SortOrder).
 		SetCustomMultiplierEnabled(req.CustomMultiplierEnabled).
@@ -235,6 +265,18 @@ func (s *PaymentConfigService) UpdatePlan(ctx context.Context, id int64, req Upd
 	if err != nil {
 		return nil, err
 	}
+	earlyResetEnabled := current.EarlyResetEnabled
+	earlyResetDurationDays := current.EarlyResetDurationDays
+	if req.EarlyResetEnabled != nil {
+		earlyResetEnabled = *req.EarlyResetEnabled
+	}
+	if req.EarlyResetDurationDays != nil {
+		earlyResetDurationDays = *req.EarlyResetDurationDays
+	}
+	earlyResetDurationDays, err = normalizePlanEarlyResetConfig(earlyResetEnabled, earlyResetDurationDays)
+	if err != nil {
+		return nil, err
+	}
 	u := s.entClient.SubscriptionPlan.UpdateOneID(id)
 	if req.GroupID != nil {
 		u.SetGroupID(*req.GroupID)
@@ -254,8 +296,15 @@ func (s *PaymentConfigService) UpdatePlan(ctx context.Context, id int64, req Upd
 	if req.ValidityDays != nil {
 		u.SetValidityDays(*req.ValidityDays)
 	}
+	if req.Concurrency != nil {
+		u.SetConcurrency(*req.Concurrency)
+	}
 	if req.ValidityUnit != nil {
 		u.SetValidityUnit(*req.ValidityUnit)
+	}
+	if req.EarlyResetEnabled != nil || req.EarlyResetDurationDays != nil {
+		u.SetEarlyResetEnabled(earlyResetEnabled)
+		u.SetEarlyResetDurationDays(earlyResetDurationDays)
 	}
 	if req.Features != nil {
 		u.SetFeatures(*req.Features)

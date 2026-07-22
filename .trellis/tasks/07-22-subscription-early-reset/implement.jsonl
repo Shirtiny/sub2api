@@ -1,0 +1,7 @@
+{"file":".trellis/spec/backend/database-guidelines.md","reason":"Adds Ent fields and an ordered SQL migration."}
+{"file":".trellis/spec/backend/error-handling.md","reason":"Adds user-facing business validation errors and a write endpoint."}
+{"file":".trellis/spec/backend/quality-guidelines.md","reason":"Guides repository/service layering and backend tests."}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Adds a typed plan form section and confirmation flow."}
+{"file":".trellis/spec/frontend/type-safety.md","reason":"Extends plan and subscription API contracts."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Guides API module usage and frontend verification."}
+{"file":".trellis/spec/guides/cross-layer-thinking-guide.md","reason":"Feature spans schema, service, API, and Vue UI."}

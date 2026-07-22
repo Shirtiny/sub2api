@@ -84,6 +84,21 @@ func ValidityDays(v int) predicate.SubscriptionPlan {
 	return predicate.SubscriptionPlan(sql.FieldEQ(FieldValidityDays, v))
 }
 
+// Concurrency applies equality check predicate on the "concurrency" field. It's identical to ConcurrencyEQ.
+func Concurrency(v int) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldEQ(FieldConcurrency, v))
+}
+
+// EarlyResetEnabled applies equality check predicate on the "early_reset_enabled" field. It's identical to EarlyResetEnabledEQ.
+func EarlyResetEnabled(v bool) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldEQ(FieldEarlyResetEnabled, v))
+}
+
+// EarlyResetDurationDays applies equality check predicate on the "early_reset_duration_days" field. It's identical to EarlyResetDurationDaysEQ.
+func EarlyResetDurationDays(v int) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldEQ(FieldEarlyResetDurationDays, v))
+}
+
 // ValidityUnit applies equality check predicate on the "validity_unit" field. It's identical to ValidityUnitEQ.
 func ValidityUnit(v string) predicate.SubscriptionPlan {
 	return predicate.SubscriptionPlan(sql.FieldEQ(FieldValidityUnit, v))
@@ -432,6 +447,96 @@ func ValidityDaysLT(v int) predicate.SubscriptionPlan {
 // ValidityDaysLTE applies the LTE predicate on the "validity_days" field.
 func ValidityDaysLTE(v int) predicate.SubscriptionPlan {
 	return predicate.SubscriptionPlan(sql.FieldLTE(FieldValidityDays, v))
+}
+
+// ConcurrencyEQ applies the EQ predicate on the "concurrency" field.
+func ConcurrencyEQ(v int) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldEQ(FieldConcurrency, v))
+}
+
+// ConcurrencyNEQ applies the NEQ predicate on the "concurrency" field.
+func ConcurrencyNEQ(v int) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldNEQ(FieldConcurrency, v))
+}
+
+// ConcurrencyIn applies the In predicate on the "concurrency" field.
+func ConcurrencyIn(vs ...int) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldIn(FieldConcurrency, vs...))
+}
+
+// ConcurrencyNotIn applies the NotIn predicate on the "concurrency" field.
+func ConcurrencyNotIn(vs ...int) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldNotIn(FieldConcurrency, vs...))
+}
+
+// ConcurrencyGT applies the GT predicate on the "concurrency" field.
+func ConcurrencyGT(v int) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldGT(FieldConcurrency, v))
+}
+
+// ConcurrencyGTE applies the GTE predicate on the "concurrency" field.
+func ConcurrencyGTE(v int) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldGTE(FieldConcurrency, v))
+}
+
+// ConcurrencyLT applies the LT predicate on the "concurrency" field.
+func ConcurrencyLT(v int) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldLT(FieldConcurrency, v))
+}
+
+// ConcurrencyLTE applies the LTE predicate on the "concurrency" field.
+func ConcurrencyLTE(v int) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldLTE(FieldConcurrency, v))
+}
+
+// EarlyResetEnabledEQ applies the EQ predicate on the "early_reset_enabled" field.
+func EarlyResetEnabledEQ(v bool) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldEQ(FieldEarlyResetEnabled, v))
+}
+
+// EarlyResetEnabledNEQ applies the NEQ predicate on the "early_reset_enabled" field.
+func EarlyResetEnabledNEQ(v bool) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldNEQ(FieldEarlyResetEnabled, v))
+}
+
+// EarlyResetDurationDaysEQ applies the EQ predicate on the "early_reset_duration_days" field.
+func EarlyResetDurationDaysEQ(v int) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldEQ(FieldEarlyResetDurationDays, v))
+}
+
+// EarlyResetDurationDaysNEQ applies the NEQ predicate on the "early_reset_duration_days" field.
+func EarlyResetDurationDaysNEQ(v int) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldNEQ(FieldEarlyResetDurationDays, v))
+}
+
+// EarlyResetDurationDaysIn applies the In predicate on the "early_reset_duration_days" field.
+func EarlyResetDurationDaysIn(vs ...int) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldIn(FieldEarlyResetDurationDays, vs...))
+}
+
+// EarlyResetDurationDaysNotIn applies the NotIn predicate on the "early_reset_duration_days" field.
+func EarlyResetDurationDaysNotIn(vs ...int) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldNotIn(FieldEarlyResetDurationDays, vs...))
+}
+
+// EarlyResetDurationDaysGT applies the GT predicate on the "early_reset_duration_days" field.
+func EarlyResetDurationDaysGT(v int) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldGT(FieldEarlyResetDurationDays, v))
+}
+
+// EarlyResetDurationDaysGTE applies the GTE predicate on the "early_reset_duration_days" field.
+func EarlyResetDurationDaysGTE(v int) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldGTE(FieldEarlyResetDurationDays, v))
+}
+
+// EarlyResetDurationDaysLT applies the LT predicate on the "early_reset_duration_days" field.
+func EarlyResetDurationDaysLT(v int) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldLT(FieldEarlyResetDurationDays, v))
+}
+
+// EarlyResetDurationDaysLTE applies the LTE predicate on the "early_reset_duration_days" field.
+func EarlyResetDurationDaysLTE(v int) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldLTE(FieldEarlyResetDurationDays, v))
 }
 
 // ValidityUnitEQ applies the EQ predicate on the "validity_unit" field.

@@ -191,6 +191,20 @@ describe('useSubscriptionStore', () => {
     })
   })
 
+  describe('syncActiveSubscription', () => {
+    it('updates the active subscription immediately and invalidates stale fetches', async () => {
+      mockGetActiveSubscriptions.mockResolvedValue(fakeSubscriptions)
+      const store = useSubscriptionStore()
+      await store.fetchActiveSubscriptions()
+
+      const updated = { ...fakeSubscriptions[0], expires_at: '2099-01-01', daily_usage_usd: 0 }
+      store.syncActiveSubscription(updated)
+
+      expect(store.activeSubscriptions[0]).toEqual(updated)
+      expect(store.activeSubscriptions).toHaveLength(2)
+    })
+  })
+
   // --- clear ---
 
   describe('clear', () => {

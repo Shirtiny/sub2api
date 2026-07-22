@@ -217,6 +217,9 @@ func (s *PaymentService) SetNotificationEmailService(notificationEmailService *N
 
 func (s *PaymentService) SetAuthCacheInvalidator(invalidator APIKeyAuthCacheInvalidator) {
 	s.authCacheInvalidator = invalidator
+	if s.subscriptionSvc != nil {
+		s.subscriptionSvc.SetAuthCacheInvalidator(invalidator)
+	}
 }
 
 func (s *PaymentService) SetChannelCacheInvalidator(invalidator channelCacheInvalidator) {

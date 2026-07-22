@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"strings"
+	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/service"
 
@@ -79,7 +80,7 @@ func jwtAuth(authService *service.AuthService, userService jwtUserReader, activi
 
 		c.Set(string(ContextKeyUser), AuthSubject{
 			UserID:      user.ID,
-			Concurrency: user.Concurrency,
+			Concurrency: user.EffectiveConcurrencyAt(time.Now()),
 		})
 		c.Set(string(ContextKeyUserRole), user.Role)
 		if activityToucher != nil {

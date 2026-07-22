@@ -82,6 +82,48 @@ func (_c *SubscriptionPlanCreate) SetNillableValidityDays(v *int) *SubscriptionP
 	return _c
 }
 
+// SetConcurrency sets the "concurrency" field.
+func (_c *SubscriptionPlanCreate) SetConcurrency(v int) *SubscriptionPlanCreate {
+	_c.mutation.SetConcurrency(v)
+	return _c
+}
+
+// SetNillableConcurrency sets the "concurrency" field if the given value is not nil.
+func (_c *SubscriptionPlanCreate) SetNillableConcurrency(v *int) *SubscriptionPlanCreate {
+	if v != nil {
+		_c.SetConcurrency(*v)
+	}
+	return _c
+}
+
+// SetEarlyResetEnabled sets the "early_reset_enabled" field.
+func (_c *SubscriptionPlanCreate) SetEarlyResetEnabled(v bool) *SubscriptionPlanCreate {
+	_c.mutation.SetEarlyResetEnabled(v)
+	return _c
+}
+
+// SetNillableEarlyResetEnabled sets the "early_reset_enabled" field if the given value is not nil.
+func (_c *SubscriptionPlanCreate) SetNillableEarlyResetEnabled(v *bool) *SubscriptionPlanCreate {
+	if v != nil {
+		_c.SetEarlyResetEnabled(*v)
+	}
+	return _c
+}
+
+// SetEarlyResetDurationDays sets the "early_reset_duration_days" field.
+func (_c *SubscriptionPlanCreate) SetEarlyResetDurationDays(v int) *SubscriptionPlanCreate {
+	_c.mutation.SetEarlyResetDurationDays(v)
+	return _c
+}
+
+// SetNillableEarlyResetDurationDays sets the "early_reset_duration_days" field if the given value is not nil.
+func (_c *SubscriptionPlanCreate) SetNillableEarlyResetDurationDays(v *int) *SubscriptionPlanCreate {
+	if v != nil {
+		_c.SetEarlyResetDurationDays(*v)
+	}
+	return _c
+}
+
 // SetValidityUnit sets the "validity_unit" field.
 func (_c *SubscriptionPlanCreate) SetValidityUnit(v string) *SubscriptionPlanCreate {
 	_c.mutation.SetValidityUnit(v)
@@ -265,6 +307,18 @@ func (_c *SubscriptionPlanCreate) defaults() {
 		v := subscriptionplan.DefaultValidityDays
 		_c.mutation.SetValidityDays(v)
 	}
+	if _, ok := _c.mutation.Concurrency(); !ok {
+		v := subscriptionplan.DefaultConcurrency
+		_c.mutation.SetConcurrency(v)
+	}
+	if _, ok := _c.mutation.EarlyResetEnabled(); !ok {
+		v := subscriptionplan.DefaultEarlyResetEnabled
+		_c.mutation.SetEarlyResetEnabled(v)
+	}
+	if _, ok := _c.mutation.EarlyResetDurationDays(); !ok {
+		v := subscriptionplan.DefaultEarlyResetDurationDays
+		_c.mutation.SetEarlyResetDurationDays(v)
+	}
 	if _, ok := _c.mutation.ValidityUnit(); !ok {
 		v := subscriptionplan.DefaultValidityUnit
 		_c.mutation.SetValidityUnit(v)
@@ -328,6 +382,25 @@ func (_c *SubscriptionPlanCreate) check() error {
 	}
 	if _, ok := _c.mutation.ValidityDays(); !ok {
 		return &ValidationError{Name: "validity_days", err: errors.New(`ent: missing required field "SubscriptionPlan.validity_days"`)}
+	}
+	if _, ok := _c.mutation.Concurrency(); !ok {
+		return &ValidationError{Name: "concurrency", err: errors.New(`ent: missing required field "SubscriptionPlan.concurrency"`)}
+	}
+	if v, ok := _c.mutation.Concurrency(); ok {
+		if err := subscriptionplan.ConcurrencyValidator(v); err != nil {
+			return &ValidationError{Name: "concurrency", err: fmt.Errorf(`ent: validator failed for field "SubscriptionPlan.concurrency": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.EarlyResetEnabled(); !ok {
+		return &ValidationError{Name: "early_reset_enabled", err: errors.New(`ent: missing required field "SubscriptionPlan.early_reset_enabled"`)}
+	}
+	if _, ok := _c.mutation.EarlyResetDurationDays(); !ok {
+		return &ValidationError{Name: "early_reset_duration_days", err: errors.New(`ent: missing required field "SubscriptionPlan.early_reset_duration_days"`)}
+	}
+	if v, ok := _c.mutation.EarlyResetDurationDays(); ok {
+		if err := subscriptionplan.EarlyResetDurationDaysValidator(v); err != nil {
+			return &ValidationError{Name: "early_reset_duration_days", err: fmt.Errorf(`ent: validator failed for field "SubscriptionPlan.early_reset_duration_days": %w`, err)}
+		}
 	}
 	if _, ok := _c.mutation.ValidityUnit(); !ok {
 		return &ValidationError{Name: "validity_unit", err: errors.New(`ent: missing required field "SubscriptionPlan.validity_unit"`)}
@@ -419,6 +492,18 @@ func (_c *SubscriptionPlanCreate) createSpec() (*SubscriptionPlan, *sqlgraph.Cre
 	if value, ok := _c.mutation.ValidityDays(); ok {
 		_spec.SetField(subscriptionplan.FieldValidityDays, field.TypeInt, value)
 		_node.ValidityDays = value
+	}
+	if value, ok := _c.mutation.Concurrency(); ok {
+		_spec.SetField(subscriptionplan.FieldConcurrency, field.TypeInt, value)
+		_node.Concurrency = value
+	}
+	if value, ok := _c.mutation.EarlyResetEnabled(); ok {
+		_spec.SetField(subscriptionplan.FieldEarlyResetEnabled, field.TypeBool, value)
+		_node.EarlyResetEnabled = value
+	}
+	if value, ok := _c.mutation.EarlyResetDurationDays(); ok {
+		_spec.SetField(subscriptionplan.FieldEarlyResetDurationDays, field.TypeInt, value)
+		_node.EarlyResetDurationDays = value
 	}
 	if value, ok := _c.mutation.ValidityUnit(); ok {
 		_spec.SetField(subscriptionplan.FieldValidityUnit, field.TypeString, value)
@@ -611,6 +696,54 @@ func (u *SubscriptionPlanUpsert) UpdateValidityDays() *SubscriptionPlanUpsert {
 // AddValidityDays adds v to the "validity_days" field.
 func (u *SubscriptionPlanUpsert) AddValidityDays(v int) *SubscriptionPlanUpsert {
 	u.Add(subscriptionplan.FieldValidityDays, v)
+	return u
+}
+
+// SetConcurrency sets the "concurrency" field.
+func (u *SubscriptionPlanUpsert) SetConcurrency(v int) *SubscriptionPlanUpsert {
+	u.Set(subscriptionplan.FieldConcurrency, v)
+	return u
+}
+
+// UpdateConcurrency sets the "concurrency" field to the value that was provided on create.
+func (u *SubscriptionPlanUpsert) UpdateConcurrency() *SubscriptionPlanUpsert {
+	u.SetExcluded(subscriptionplan.FieldConcurrency)
+	return u
+}
+
+// AddConcurrency adds v to the "concurrency" field.
+func (u *SubscriptionPlanUpsert) AddConcurrency(v int) *SubscriptionPlanUpsert {
+	u.Add(subscriptionplan.FieldConcurrency, v)
+	return u
+}
+
+// SetEarlyResetEnabled sets the "early_reset_enabled" field.
+func (u *SubscriptionPlanUpsert) SetEarlyResetEnabled(v bool) *SubscriptionPlanUpsert {
+	u.Set(subscriptionplan.FieldEarlyResetEnabled, v)
+	return u
+}
+
+// UpdateEarlyResetEnabled sets the "early_reset_enabled" field to the value that was provided on create.
+func (u *SubscriptionPlanUpsert) UpdateEarlyResetEnabled() *SubscriptionPlanUpsert {
+	u.SetExcluded(subscriptionplan.FieldEarlyResetEnabled)
+	return u
+}
+
+// SetEarlyResetDurationDays sets the "early_reset_duration_days" field.
+func (u *SubscriptionPlanUpsert) SetEarlyResetDurationDays(v int) *SubscriptionPlanUpsert {
+	u.Set(subscriptionplan.FieldEarlyResetDurationDays, v)
+	return u
+}
+
+// UpdateEarlyResetDurationDays sets the "early_reset_duration_days" field to the value that was provided on create.
+func (u *SubscriptionPlanUpsert) UpdateEarlyResetDurationDays() *SubscriptionPlanUpsert {
+	u.SetExcluded(subscriptionplan.FieldEarlyResetDurationDays)
+	return u
+}
+
+// AddEarlyResetDurationDays adds v to the "early_reset_duration_days" field.
+func (u *SubscriptionPlanUpsert) AddEarlyResetDurationDays(v int) *SubscriptionPlanUpsert {
+	u.Add(subscriptionplan.FieldEarlyResetDurationDays, v)
 	return u
 }
 
@@ -901,6 +1034,62 @@ func (u *SubscriptionPlanUpsertOne) AddValidityDays(v int) *SubscriptionPlanUpse
 func (u *SubscriptionPlanUpsertOne) UpdateValidityDays() *SubscriptionPlanUpsertOne {
 	return u.Update(func(s *SubscriptionPlanUpsert) {
 		s.UpdateValidityDays()
+	})
+}
+
+// SetConcurrency sets the "concurrency" field.
+func (u *SubscriptionPlanUpsertOne) SetConcurrency(v int) *SubscriptionPlanUpsertOne {
+	return u.Update(func(s *SubscriptionPlanUpsert) {
+		s.SetConcurrency(v)
+	})
+}
+
+// AddConcurrency adds v to the "concurrency" field.
+func (u *SubscriptionPlanUpsertOne) AddConcurrency(v int) *SubscriptionPlanUpsertOne {
+	return u.Update(func(s *SubscriptionPlanUpsert) {
+		s.AddConcurrency(v)
+	})
+}
+
+// UpdateConcurrency sets the "concurrency" field to the value that was provided on create.
+func (u *SubscriptionPlanUpsertOne) UpdateConcurrency() *SubscriptionPlanUpsertOne {
+	return u.Update(func(s *SubscriptionPlanUpsert) {
+		s.UpdateConcurrency()
+	})
+}
+
+// SetEarlyResetEnabled sets the "early_reset_enabled" field.
+func (u *SubscriptionPlanUpsertOne) SetEarlyResetEnabled(v bool) *SubscriptionPlanUpsertOne {
+	return u.Update(func(s *SubscriptionPlanUpsert) {
+		s.SetEarlyResetEnabled(v)
+	})
+}
+
+// UpdateEarlyResetEnabled sets the "early_reset_enabled" field to the value that was provided on create.
+func (u *SubscriptionPlanUpsertOne) UpdateEarlyResetEnabled() *SubscriptionPlanUpsertOne {
+	return u.Update(func(s *SubscriptionPlanUpsert) {
+		s.UpdateEarlyResetEnabled()
+	})
+}
+
+// SetEarlyResetDurationDays sets the "early_reset_duration_days" field.
+func (u *SubscriptionPlanUpsertOne) SetEarlyResetDurationDays(v int) *SubscriptionPlanUpsertOne {
+	return u.Update(func(s *SubscriptionPlanUpsert) {
+		s.SetEarlyResetDurationDays(v)
+	})
+}
+
+// AddEarlyResetDurationDays adds v to the "early_reset_duration_days" field.
+func (u *SubscriptionPlanUpsertOne) AddEarlyResetDurationDays(v int) *SubscriptionPlanUpsertOne {
+	return u.Update(func(s *SubscriptionPlanUpsert) {
+		s.AddEarlyResetDurationDays(v)
+	})
+}
+
+// UpdateEarlyResetDurationDays sets the "early_reset_duration_days" field to the value that was provided on create.
+func (u *SubscriptionPlanUpsertOne) UpdateEarlyResetDurationDays() *SubscriptionPlanUpsertOne {
+	return u.Update(func(s *SubscriptionPlanUpsert) {
+		s.UpdateEarlyResetDurationDays()
 	})
 }
 
@@ -1378,6 +1567,62 @@ func (u *SubscriptionPlanUpsertBulk) AddValidityDays(v int) *SubscriptionPlanUps
 func (u *SubscriptionPlanUpsertBulk) UpdateValidityDays() *SubscriptionPlanUpsertBulk {
 	return u.Update(func(s *SubscriptionPlanUpsert) {
 		s.UpdateValidityDays()
+	})
+}
+
+// SetConcurrency sets the "concurrency" field.
+func (u *SubscriptionPlanUpsertBulk) SetConcurrency(v int) *SubscriptionPlanUpsertBulk {
+	return u.Update(func(s *SubscriptionPlanUpsert) {
+		s.SetConcurrency(v)
+	})
+}
+
+// AddConcurrency adds v to the "concurrency" field.
+func (u *SubscriptionPlanUpsertBulk) AddConcurrency(v int) *SubscriptionPlanUpsertBulk {
+	return u.Update(func(s *SubscriptionPlanUpsert) {
+		s.AddConcurrency(v)
+	})
+}
+
+// UpdateConcurrency sets the "concurrency" field to the value that was provided on create.
+func (u *SubscriptionPlanUpsertBulk) UpdateConcurrency() *SubscriptionPlanUpsertBulk {
+	return u.Update(func(s *SubscriptionPlanUpsert) {
+		s.UpdateConcurrency()
+	})
+}
+
+// SetEarlyResetEnabled sets the "early_reset_enabled" field.
+func (u *SubscriptionPlanUpsertBulk) SetEarlyResetEnabled(v bool) *SubscriptionPlanUpsertBulk {
+	return u.Update(func(s *SubscriptionPlanUpsert) {
+		s.SetEarlyResetEnabled(v)
+	})
+}
+
+// UpdateEarlyResetEnabled sets the "early_reset_enabled" field to the value that was provided on create.
+func (u *SubscriptionPlanUpsertBulk) UpdateEarlyResetEnabled() *SubscriptionPlanUpsertBulk {
+	return u.Update(func(s *SubscriptionPlanUpsert) {
+		s.UpdateEarlyResetEnabled()
+	})
+}
+
+// SetEarlyResetDurationDays sets the "early_reset_duration_days" field.
+func (u *SubscriptionPlanUpsertBulk) SetEarlyResetDurationDays(v int) *SubscriptionPlanUpsertBulk {
+	return u.Update(func(s *SubscriptionPlanUpsert) {
+		s.SetEarlyResetDurationDays(v)
+	})
+}
+
+// AddEarlyResetDurationDays adds v to the "early_reset_duration_days" field.
+func (u *SubscriptionPlanUpsertBulk) AddEarlyResetDurationDays(v int) *SubscriptionPlanUpsertBulk {
+	return u.Update(func(s *SubscriptionPlanUpsert) {
+		s.AddEarlyResetDurationDays(v)
+	})
+}
+
+// UpdateEarlyResetDurationDays sets the "early_reset_duration_days" field to the value that was provided on create.
+func (u *SubscriptionPlanUpsertBulk) UpdateEarlyResetDurationDays() *SubscriptionPlanUpsertBulk {
+	return u.Update(func(s *SubscriptionPlanUpsert) {
+		s.UpdateEarlyResetDurationDays()
 	})
 }
 

@@ -7204,7 +7204,20 @@ export default {
     resetIn: 'Resets in {time}',
     quotaEndsIn: 'Quota ends in {time}',
     windowNotActive: 'Awaiting first use',
-    usageOf: '{used} of {limit}'
+    usageOf: '{used} of {limit}',
+    earlyReset: 'Reset Early',
+    earlyResetConfirmTitle: 'Confirm Early Reset',
+    earlyResetConfirmMessage: 'This will immediately reset all quota for “{name}” and deduct {days} days from the subscription. This action cannot be undone.',
+    earlyResetConfirm: 'Reset Now',
+    earlyResetting: 'Resetting...',
+    earlyResetSuccess: 'Subscription quota reset successfully',
+    earlyResetFailed: 'Failed to reset subscription early',
+    earlyResetErrors: {
+      INVALID_EARLY_RESET_CONFIG: 'The early reset configuration is invalid. Contact an administrator.',
+      EARLY_RESET_DISABLED: 'Early reset is not enabled for this subscription.',
+      EARLY_RESET_WOULD_EXPIRE: 'This early reset would immediately expire the subscription. Please contact customer support if you want to forfeit the plan.',
+      EARLY_RESET_CONFLICT: 'The subscription changed. Refresh the page and try again.'
+    }
   },
 
   // Onboarding Tour
@@ -7639,6 +7652,8 @@ export default {
       originalPrice: 'Original Price',
       price: 'Price',
       validityDays: 'Validity (days)',
+      concurrency: 'Concurrency',
+      concurrencyHint: 'Maximum concurrent requests while the plan is active. Custom multipliers do not increase concurrency; the user base limit is restored after expiration.',
       validityUnit: 'Validity Unit',
       sortOrder: 'Sort Order',
       forSale: 'For Sale',
@@ -7670,6 +7685,11 @@ export default {
       customMultiplierMax: 'Max multiplier',
       customMultiplierHint: 'When enabled, users can buy this plan by an integer multiplier; price and quotas scale together.',
       customMultiplierInvalid: 'Invalid custom multiplier range. Min must be at least 1 and max cannot be below min.',
+      earlyResetEnabled: 'Allow early reset',
+      earlyResetHint: 'Lets users reset all subscription quota early in exchange for a shorter subscription term.',
+      earlyResetDurationDays: 'Days deducted per reset',
+      earlyResetDurationHint: 'Number of days deducted from the current subscription term after each early reset.',
+      earlyResetDurationInvalid: 'Early reset deduction must be between 1 and 36500 days.',
       dashboardTitle: 'Payment Dashboard',
       dashboardDesc: 'Recharge order analytics and insights',
       daySuffix: 'd',
@@ -7683,6 +7703,7 @@ export default {
       groupRequired: 'Please select a subscription group',
       priceRequired: 'Price must be greater than 0',
       validityDaysRequired: 'Validity days must be greater than 0',
+      concurrencyRequired: 'Concurrency must be greater than 0',
       groupMissing: 'Missing',
       groupInfo: 'Group Info',
       platform: 'Platform',

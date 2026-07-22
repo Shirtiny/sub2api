@@ -59,6 +59,12 @@ type PaymentOrder struct {
 	SubscriptionGroupID *int64 `json:"subscription_group_id,omitempty"`
 	// SubscriptionDays holds the value of the "subscription_days" field.
 	SubscriptionDays *int `json:"subscription_days,omitempty"`
+	// plan concurrency snapshot used during subscription fulfillment
+	SubscriptionConcurrency *int `json:"subscription_concurrency,omitempty"`
+	// whether fulfilled subscriptions may use early reset
+	SubscriptionEarlyResetEnabled bool `json:"subscription_early_reset_enabled,omitempty"`
+	// days deducted from the subscription period on early reset
+	SubscriptionEarlyResetDurationDays int `json:"subscription_early_reset_duration_days,omitempty"`
 	// subscription multiplier snapshot; regular subscription is 1
 	SubscriptionMultiplier *int `json:"subscription_multiplier,omitempty"`
 	// source base group id snapshot for subscription order
@@ -142,11 +148,11 @@ func (*PaymentOrder) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case paymentorder.FieldProviderSnapshot:
 			values[i] = new([]byte)
-		case paymentorder.FieldForceRefund:
+		case paymentorder.FieldSubscriptionEarlyResetEnabled, paymentorder.FieldForceRefund:
 			values[i] = new(sql.NullBool)
 		case paymentorder.FieldAmount, paymentorder.FieldPayAmount, paymentorder.FieldFeeRate, paymentorder.FieldCafeCouponDiscount, paymentorder.FieldSubscriptionSourcePrice, paymentorder.FieldSubscriptionSourceOriginalPrice, paymentorder.FieldRefundAmount:
 			values[i] = new(sql.NullFloat64)
-		case paymentorder.FieldID, paymentorder.FieldUserID, paymentorder.FieldPlanID, paymentorder.FieldSubscriptionGroupID, paymentorder.FieldSubscriptionDays, paymentorder.FieldSubscriptionMultiplier, paymentorder.FieldSubscriptionSourceGroupID:
+		case paymentorder.FieldID, paymentorder.FieldUserID, paymentorder.FieldPlanID, paymentorder.FieldSubscriptionGroupID, paymentorder.FieldSubscriptionDays, paymentorder.FieldSubscriptionConcurrency, paymentorder.FieldSubscriptionEarlyResetDurationDays, paymentorder.FieldSubscriptionMultiplier, paymentorder.FieldSubscriptionSourceGroupID:
 			values[i] = new(sql.NullInt64)
 		case paymentorder.FieldUserEmail, paymentorder.FieldUserName, paymentorder.FieldUserNotes, paymentorder.FieldRechargeCode, paymentorder.FieldCafeCouponCode, paymentorder.FieldOutTradeNo, paymentorder.FieldPaymentType, paymentorder.FieldPaymentTradeNo, paymentorder.FieldPayURL, paymentorder.FieldQrCode, paymentorder.FieldQrCodeImg, paymentorder.FieldOrderType, paymentorder.FieldProviderInstanceID, paymentorder.FieldProviderKey, paymentorder.FieldStatus, paymentorder.FieldRefundReason, paymentorder.FieldRefundRequestReason, paymentorder.FieldRefundRequestedBy, paymentorder.FieldFailedReason, paymentorder.FieldClientIP, paymentorder.FieldSrcHost, paymentorder.FieldSrcURL:
 			values[i] = new(sql.NullString)
@@ -300,6 +306,25 @@ func (_m *PaymentOrder) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.SubscriptionDays = new(int)
 				*_m.SubscriptionDays = int(value.Int64)
+			}
+		case paymentorder.FieldSubscriptionConcurrency:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field subscription_concurrency", values[i])
+			} else if value.Valid {
+				_m.SubscriptionConcurrency = new(int)
+				*_m.SubscriptionConcurrency = int(value.Int64)
+			}
+		case paymentorder.FieldSubscriptionEarlyResetEnabled:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field subscription_early_reset_enabled", values[i])
+			} else if value.Valid {
+				_m.SubscriptionEarlyResetEnabled = value.Bool
+			}
+		case paymentorder.FieldSubscriptionEarlyResetDurationDays:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field subscription_early_reset_duration_days", values[i])
+			} else if value.Valid {
+				_m.SubscriptionEarlyResetDurationDays = int(value.Int64)
 			}
 		case paymentorder.FieldSubscriptionMultiplier:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -585,6 +610,17 @@ func (_m *PaymentOrder) String() string {
 		builder.WriteString("subscription_days=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
+	builder.WriteString(", ")
+	if v := _m.SubscriptionConcurrency; v != nil {
+		builder.WriteString("subscription_concurrency=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	builder.WriteString("subscription_early_reset_enabled=")
+	builder.WriteString(fmt.Sprintf("%v", _m.SubscriptionEarlyResetEnabled))
+	builder.WriteString(", ")
+	builder.WriteString("subscription_early_reset_duration_days=")
+	builder.WriteString(fmt.Sprintf("%v", _m.SubscriptionEarlyResetDurationDays))
 	builder.WriteString(", ")
 	if v := _m.SubscriptionMultiplier; v != nil {
 		builder.WriteString("subscription_multiplier=")

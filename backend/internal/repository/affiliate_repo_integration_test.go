@@ -141,6 +141,13 @@ VALUES ($1, $2, 300, 300, NOW(), NOW())`, u.ID, affCode)
 	require.Equal(t, 0, sourceSubCount)
 	customSubCount := querySingleInt(t, txCtx, client, "SELECT COUNT(*) FROM user_subscriptions WHERE user_id = $1 AND group_id = $2 AND deleted_at IS NULL", u.ID, customGroup.ID)
 	require.Equal(t, 1, customSubCount)
+	entitlementConcurrency := querySingleInt(t, txCtx, client, `
+SELECT concurrency
+FROM subscription_concurrency_entitlements
+WHERE user_id = $1
+ORDER BY id DESC
+LIMIT 1`, u.ID)
+	require.Equal(t, 1, entitlementConcurrency, "custom multiplier must not increase plan concurrency")
 	quotaLeft := querySingleFloat(t, txCtx, client, "SELECT aff_quota::double precision FROM user_affiliates WHERE user_id = $1", u.ID)
 	require.InDelta(t, 0, quotaLeft, 1e-9)
 }
@@ -473,6 +480,7 @@ func TestAffiliateRepository_TransferQuotaToSubscription_CreatesSubscriptionWith
 		SetName("Monthly affiliate package").
 		SetPrice(30).
 		SetValidityDays(30).
+		SetConcurrency(7).
 		SetValidityUnit("days").
 		SetForSale(true).
 		Save(txCtx)
@@ -510,6 +518,13 @@ func TestAffiliateRepository_TransferQuotaToSubscription_CreatesSubscriptionWith
 	require.Equal(t, service.SubscriptionStatusActive, status)
 	require.True(t, expiresInFuture)
 	require.False(t, rows.Next(), "expected one active subscription row")
+	entitlementConcurrency := querySingleInt(t, txCtx, client, `
+SELECT concurrency
+FROM subscription_concurrency_entitlements
+WHERE user_id = $1
+ORDER BY id DESC
+LIMIT 1`, u.ID)
+	require.Equal(t, 7, entitlementConcurrency)
 }
 
 // TestAffiliateRepository_AdminCustomCode covers the success path of admin

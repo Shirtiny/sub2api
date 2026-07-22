@@ -125,6 +125,16 @@ func MonthlyUsageUsd(v float64) predicate.UserSubscription {
 	return predicate.UserSubscription(sql.FieldEQ(FieldMonthlyUsageUsd, v))
 }
 
+// EarlyResetEnabled applies equality check predicate on the "early_reset_enabled" field. It's identical to EarlyResetEnabledEQ.
+func EarlyResetEnabled(v bool) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldEQ(FieldEarlyResetEnabled, v))
+}
+
+// EarlyResetDurationDays applies equality check predicate on the "early_reset_duration_days" field. It's identical to EarlyResetDurationDaysEQ.
+func EarlyResetDurationDays(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldEQ(FieldEarlyResetDurationDays, v))
+}
+
 // AssignedBy applies equality check predicate on the "assigned_by" field. It's identical to AssignedByEQ.
 func AssignedBy(v int64) predicate.UserSubscription {
 	return predicate.UserSubscription(sql.FieldEQ(FieldAssignedBy, v))
@@ -138,6 +148,16 @@ func AssignedAt(v time.Time) predicate.UserSubscription {
 // Notes applies equality check predicate on the "notes" field. It's identical to NotesEQ.
 func Notes(v string) predicate.UserSubscription {
 	return predicate.UserSubscription(sql.FieldEQ(FieldNotes, v))
+}
+
+// PlanConcurrency applies equality check predicate on the "plan_concurrency" field. It's identical to PlanConcurrencyEQ.
+func PlanConcurrency(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldEQ(FieldPlanConcurrency, v))
+}
+
+// PlanConcurrencyExpiresAt applies equality check predicate on the "plan_concurrency_expires_at" field. It's identical to PlanConcurrencyExpiresAtEQ.
+func PlanConcurrencyExpiresAt(v time.Time) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldEQ(FieldPlanConcurrencyExpiresAt, v))
 }
 
 // CustomMultiplier applies equality check predicate on the "custom_multiplier" field. It's identical to CustomMultiplierEQ.
@@ -750,6 +770,56 @@ func MonthlyUsageUsdLTE(v float64) predicate.UserSubscription {
 	return predicate.UserSubscription(sql.FieldLTE(FieldMonthlyUsageUsd, v))
 }
 
+// EarlyResetEnabledEQ applies the EQ predicate on the "early_reset_enabled" field.
+func EarlyResetEnabledEQ(v bool) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldEQ(FieldEarlyResetEnabled, v))
+}
+
+// EarlyResetEnabledNEQ applies the NEQ predicate on the "early_reset_enabled" field.
+func EarlyResetEnabledNEQ(v bool) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldNEQ(FieldEarlyResetEnabled, v))
+}
+
+// EarlyResetDurationDaysEQ applies the EQ predicate on the "early_reset_duration_days" field.
+func EarlyResetDurationDaysEQ(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldEQ(FieldEarlyResetDurationDays, v))
+}
+
+// EarlyResetDurationDaysNEQ applies the NEQ predicate on the "early_reset_duration_days" field.
+func EarlyResetDurationDaysNEQ(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldNEQ(FieldEarlyResetDurationDays, v))
+}
+
+// EarlyResetDurationDaysIn applies the In predicate on the "early_reset_duration_days" field.
+func EarlyResetDurationDaysIn(vs ...int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldIn(FieldEarlyResetDurationDays, vs...))
+}
+
+// EarlyResetDurationDaysNotIn applies the NotIn predicate on the "early_reset_duration_days" field.
+func EarlyResetDurationDaysNotIn(vs ...int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldNotIn(FieldEarlyResetDurationDays, vs...))
+}
+
+// EarlyResetDurationDaysGT applies the GT predicate on the "early_reset_duration_days" field.
+func EarlyResetDurationDaysGT(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldGT(FieldEarlyResetDurationDays, v))
+}
+
+// EarlyResetDurationDaysGTE applies the GTE predicate on the "early_reset_duration_days" field.
+func EarlyResetDurationDaysGTE(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldGTE(FieldEarlyResetDurationDays, v))
+}
+
+// EarlyResetDurationDaysLT applies the LT predicate on the "early_reset_duration_days" field.
+func EarlyResetDurationDaysLT(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldLT(FieldEarlyResetDurationDays, v))
+}
+
+// EarlyResetDurationDaysLTE applies the LTE predicate on the "early_reset_duration_days" field.
+func EarlyResetDurationDaysLTE(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldLTE(FieldEarlyResetDurationDays, v))
+}
+
 // AssignedByEQ applies the EQ predicate on the "assigned_by" field.
 func AssignedByEQ(v int64) predicate.UserSubscription {
 	return predicate.UserSubscription(sql.FieldEQ(FieldAssignedBy, v))
@@ -893,6 +963,106 @@ func NotesEqualFold(v string) predicate.UserSubscription {
 // NotesContainsFold applies the ContainsFold predicate on the "notes" field.
 func NotesContainsFold(v string) predicate.UserSubscription {
 	return predicate.UserSubscription(sql.FieldContainsFold(FieldNotes, v))
+}
+
+// PlanConcurrencyEQ applies the EQ predicate on the "plan_concurrency" field.
+func PlanConcurrencyEQ(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldEQ(FieldPlanConcurrency, v))
+}
+
+// PlanConcurrencyNEQ applies the NEQ predicate on the "plan_concurrency" field.
+func PlanConcurrencyNEQ(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldNEQ(FieldPlanConcurrency, v))
+}
+
+// PlanConcurrencyIn applies the In predicate on the "plan_concurrency" field.
+func PlanConcurrencyIn(vs ...int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldIn(FieldPlanConcurrency, vs...))
+}
+
+// PlanConcurrencyNotIn applies the NotIn predicate on the "plan_concurrency" field.
+func PlanConcurrencyNotIn(vs ...int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldNotIn(FieldPlanConcurrency, vs...))
+}
+
+// PlanConcurrencyGT applies the GT predicate on the "plan_concurrency" field.
+func PlanConcurrencyGT(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldGT(FieldPlanConcurrency, v))
+}
+
+// PlanConcurrencyGTE applies the GTE predicate on the "plan_concurrency" field.
+func PlanConcurrencyGTE(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldGTE(FieldPlanConcurrency, v))
+}
+
+// PlanConcurrencyLT applies the LT predicate on the "plan_concurrency" field.
+func PlanConcurrencyLT(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldLT(FieldPlanConcurrency, v))
+}
+
+// PlanConcurrencyLTE applies the LTE predicate on the "plan_concurrency" field.
+func PlanConcurrencyLTE(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldLTE(FieldPlanConcurrency, v))
+}
+
+// PlanConcurrencyIsNil applies the IsNil predicate on the "plan_concurrency" field.
+func PlanConcurrencyIsNil() predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldIsNull(FieldPlanConcurrency))
+}
+
+// PlanConcurrencyNotNil applies the NotNil predicate on the "plan_concurrency" field.
+func PlanConcurrencyNotNil() predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldNotNull(FieldPlanConcurrency))
+}
+
+// PlanConcurrencyExpiresAtEQ applies the EQ predicate on the "plan_concurrency_expires_at" field.
+func PlanConcurrencyExpiresAtEQ(v time.Time) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldEQ(FieldPlanConcurrencyExpiresAt, v))
+}
+
+// PlanConcurrencyExpiresAtNEQ applies the NEQ predicate on the "plan_concurrency_expires_at" field.
+func PlanConcurrencyExpiresAtNEQ(v time.Time) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldNEQ(FieldPlanConcurrencyExpiresAt, v))
+}
+
+// PlanConcurrencyExpiresAtIn applies the In predicate on the "plan_concurrency_expires_at" field.
+func PlanConcurrencyExpiresAtIn(vs ...time.Time) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldIn(FieldPlanConcurrencyExpiresAt, vs...))
+}
+
+// PlanConcurrencyExpiresAtNotIn applies the NotIn predicate on the "plan_concurrency_expires_at" field.
+func PlanConcurrencyExpiresAtNotIn(vs ...time.Time) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldNotIn(FieldPlanConcurrencyExpiresAt, vs...))
+}
+
+// PlanConcurrencyExpiresAtGT applies the GT predicate on the "plan_concurrency_expires_at" field.
+func PlanConcurrencyExpiresAtGT(v time.Time) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldGT(FieldPlanConcurrencyExpiresAt, v))
+}
+
+// PlanConcurrencyExpiresAtGTE applies the GTE predicate on the "plan_concurrency_expires_at" field.
+func PlanConcurrencyExpiresAtGTE(v time.Time) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldGTE(FieldPlanConcurrencyExpiresAt, v))
+}
+
+// PlanConcurrencyExpiresAtLT applies the LT predicate on the "plan_concurrency_expires_at" field.
+func PlanConcurrencyExpiresAtLT(v time.Time) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldLT(FieldPlanConcurrencyExpiresAt, v))
+}
+
+// PlanConcurrencyExpiresAtLTE applies the LTE predicate on the "plan_concurrency_expires_at" field.
+func PlanConcurrencyExpiresAtLTE(v time.Time) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldLTE(FieldPlanConcurrencyExpiresAt, v))
+}
+
+// PlanConcurrencyExpiresAtIsNil applies the IsNil predicate on the "plan_concurrency_expires_at" field.
+func PlanConcurrencyExpiresAtIsNil() predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldIsNull(FieldPlanConcurrencyExpiresAt))
+}
+
+// PlanConcurrencyExpiresAtNotNil applies the NotNil predicate on the "plan_concurrency_expires_at" field.
+func PlanConcurrencyExpiresAtNotNil() predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldNotNull(FieldPlanConcurrencyExpiresAt))
 }
 
 // CustomMultiplierEQ applies the EQ predicate on the "custom_multiplier" field.
@@ -1254,6 +1424,29 @@ func HasUsageLogs() predicate.UserSubscription {
 func HasUsageLogsWith(preds ...predicate.UsageLog) predicate.UserSubscription {
 	return predicate.UserSubscription(func(s *sql.Selector) {
 		step := newUsageLogsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasConcurrencyEntitlements applies the HasEdge predicate on the "concurrency_entitlements" edge.
+func HasConcurrencyEntitlements() predicate.UserSubscription {
+	return predicate.UserSubscription(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ConcurrencyEntitlementsTable, ConcurrencyEntitlementsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasConcurrencyEntitlementsWith applies the HasEdge predicate on the "concurrency_entitlements" edge with a given conditions (other predicates).
+func HasConcurrencyEntitlementsWith(preds ...predicate.SubscriptionConcurrencyEntitlement) predicate.UserSubscription {
+	return predicate.UserSubscription(func(s *sql.Selector) {
+		step := newConcurrencyEntitlementsStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

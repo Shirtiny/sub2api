@@ -43,7 +43,38 @@
         <div><label class="input-label">{{ t('payment.admin.validityUnit') }} <span class="text-red-500">*</span></label><Select v-model="planForm.validity_unit" :options="validityUnitOptions" /></div>
       </div>
       <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="input-label">{{ t('payment.admin.concurrency') }} <span class="text-red-500">*</span></label>
+          <input v-model.number="planForm.concurrency" type="number" min="1" class="input" required />
+          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ t('payment.admin.concurrencyHint') }}</p>
+        </div>
         <div><label class="input-label">{{ t('payment.admin.sortOrder') }}</label><input v-model.number="planForm.sort_order" type="number" min="0" class="input" /></div>
+      </div>
+      <div class="rounded-lg border border-gray-200 p-3 dark:border-dark-600">
+        <div class="flex items-center justify-between gap-3">
+          <div>
+            <label class="text-sm font-medium text-content-secondary">{{ t('payment.admin.earlyResetEnabled') }}</label>
+            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ t('payment.admin.earlyResetHint') }}</p>
+          </div>
+          <button
+            type="button"
+            :class="[
+              'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
+              planForm.early_reset_enabled ? 'bg-primary-500' : 'bg-gray-300 dark:bg-dark-600'
+            ]"
+            @click="planForm.early_reset_enabled = !planForm.early_reset_enabled"
+          >
+            <span :class="[
+              'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
+              planForm.early_reset_enabled ? 'translate-x-5' : 'translate-x-0'
+            ]" />
+          </button>
+        </div>
+        <div v-if="planForm.early_reset_enabled" class="mt-3">
+          <label class="input-label">{{ t('payment.admin.earlyResetDurationDays') }}</label>
+          <input v-model.number="planForm.early_reset_duration_days" type="number" min="1" max="36500" step="1" class="input" />
+          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ t('payment.admin.earlyResetDurationHint') }}</p>
+        </div>
       </div>
       <div class="rounded-lg border border-gray-200 p-3 dark:border-dark-600">
         <div class="flex items-center justify-between gap-3">
@@ -137,7 +168,7 @@ const { t } = useI18n()
 const appStore = useAppStore()
 
 const saving = ref(false)
-const planForm = reactive({ name: '', group_id: null as number | null, description: '', price: 0, original_price: 0, validity_days: 30, validity_unit: 'days', sort_order: 0, for_sale: true, custom_multiplier_enabled: false, custom_multiplier_min: 1, custom_multiplier_max: 1 })
+const planForm = reactive({ name: '', group_id: null as number | null, description: '', price: 0, original_price: 0, validity_days: 30, concurrency: 1, validity_unit: 'days', early_reset_enabled: false, early_reset_duration_days: 1, sort_order: 0, for_sale: true, custom_multiplier_enabled: false, custom_multiplier_min: 1, custom_multiplier_max: 1 })
 const planFeaturesText = ref('')
 
 const validityUnitOptions = computed(() => [
@@ -165,10 +196,10 @@ const selectedGroupInfo = computed(() => {
 watch(() => props.show, (visible) => {
   if (!visible) return
   if (props.plan) {
-    Object.assign(planForm, { name: props.plan.name, group_id: props.plan.group_id, description: props.plan.description, price: props.plan.price, original_price: props.plan.original_price || 0, validity_days: props.plan.validity_days, validity_unit: props.plan.validity_unit || 'days', sort_order: props.plan.sort_order || 0, for_sale: props.plan.for_sale, custom_multiplier_enabled: props.plan.custom_multiplier_enabled === true, custom_multiplier_min: props.plan.custom_multiplier_min || 1, custom_multiplier_max: props.plan.custom_multiplier_max || props.plan.custom_multiplier_min || 1 })
+    Object.assign(planForm, { name: props.plan.name, group_id: props.plan.group_id, description: props.plan.description, price: props.plan.price, original_price: props.plan.original_price || 0, validity_days: props.plan.validity_days, concurrency: props.plan.concurrency || 1, validity_unit: props.plan.validity_unit || 'days', early_reset_enabled: props.plan.early_reset_enabled === true, early_reset_duration_days: props.plan.early_reset_duration_days || 1, sort_order: props.plan.sort_order || 0, for_sale: props.plan.for_sale, custom_multiplier_enabled: props.plan.custom_multiplier_enabled === true, custom_multiplier_min: props.plan.custom_multiplier_min || 1, custom_multiplier_max: props.plan.custom_multiplier_max || props.plan.custom_multiplier_min || 1 })
     planFeaturesText.value = (props.plan.features || []).join('\n')
   } else {
-    Object.assign(planForm, { name: '', group_id: null, description: '', price: 0, original_price: 0, validity_days: 30, validity_unit: 'days', sort_order: 0, for_sale: true, custom_multiplier_enabled: false, custom_multiplier_min: 1, custom_multiplier_max: 1 })
+    Object.assign(planForm, { name: '', group_id: null, description: '', price: 0, original_price: 0, validity_days: 30, concurrency: 1, validity_unit: 'days', early_reset_enabled: false, early_reset_duration_days: 1, sort_order: 0, for_sale: true, custom_multiplier_enabled: false, custom_multiplier_min: 1, custom_multiplier_max: 1 })
     planFeaturesText.value = ''
   }
 })
@@ -183,7 +214,10 @@ function buildPlanPayload() {
     price: planForm.price,
     original_price: planForm.original_price || 0,
     validity_days: planForm.validity_days,
+    concurrency: planForm.concurrency,
     validity_unit: planForm.validity_unit,
+    early_reset_enabled: planForm.early_reset_enabled,
+    early_reset_duration_days: planForm.early_reset_duration_days,
     sort_order: planForm.sort_order,
     for_sale: planForm.for_sale,
     custom_multiplier_enabled: planForm.custom_multiplier_enabled,
@@ -204,6 +238,14 @@ async function handleSavePlan() {
   }
   if (!planForm.validity_days || planForm.validity_days < 1) {
     appStore.showError(t('payment.admin.validityDaysRequired'))
+    return
+  }
+  if (!planForm.concurrency || planForm.concurrency < 1) {
+    appStore.showError(t('payment.admin.concurrencyRequired'))
+    return
+  }
+  if (planForm.early_reset_enabled && (!planForm.early_reset_duration_days || planForm.early_reset_duration_days < 1 || planForm.early_reset_duration_days > 36500)) {
+    appStore.showError(t('payment.admin.earlyResetDurationInvalid'))
     return
   }
   if (planForm.custom_multiplier_enabled && (planForm.custom_multiplier_min < 1 || planForm.custom_multiplier_max < planForm.custom_multiplier_min)) {

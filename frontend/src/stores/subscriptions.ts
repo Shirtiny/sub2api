@@ -124,6 +124,29 @@ export const useSubscriptionStore = defineStore('subscriptions', () => {
     lastFetchedAt.value = null
   }
 
+  /**
+   * Apply a subscription mutation immediately so all store consumers see it.
+   * Also invalidate any in-flight/cached response that could overwrite it.
+   */
+  function syncActiveSubscription(subscription: UserSubscription) {
+    requestGeneration++
+    lastFetchedAt.value = null
+    const index = activeSubscriptions.value.findIndex(item => item.id === subscription.id)
+    const expiresAt = subscription.expires_at ? Date.parse(subscription.expires_at) : Number.POSITIVE_INFINITY
+    const remainsActive =
+      subscription.status === 'active' && (Number.isNaN(expiresAt) || expiresAt > Date.now())
+    if (!remainsActive) {
+      if (index >= 0) activeSubscriptions.value.splice(index, 1)
+      return
+    }
+    if (index >= 0) {
+      activeSubscriptions.value[index] = subscription
+    } else {
+      activeSubscriptions.value.push(subscription)
+    }
+    loaded.value = true
+  }
+
   return {
     // State
     activeSubscriptions,
@@ -135,6 +158,7 @@ export const useSubscriptionStore = defineStore('subscriptions', () => {
     startPolling,
     stopPolling,
     clear,
-    invalidateCache
+    invalidateCache,
+    syncActiveSubscription
   }
 })

@@ -35,6 +35,8 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/redeemcode"
 	"github.com/Wei-Shaw/sub2api/ent/securitysecret"
 	"github.com/Wei-Shaw/sub2api/ent/setting"
+	"github.com/Wei-Shaw/sub2api/ent/subscriptionconcurrencyentitlement"
+	"github.com/Wei-Shaw/sub2api/ent/subscriptionearlyresetentitlement"
 	"github.com/Wei-Shaw/sub2api/ent/subscriptionplan"
 	"github.com/Wei-Shaw/sub2api/ent/tlsfingerprintprofile"
 	"github.com/Wei-Shaw/sub2api/ent/usagecleanuptask"
@@ -805,6 +807,60 @@ func (f TraverseSetting) Traverse(ctx context.Context, q ent.Query) error {
 	return fmt.Errorf("unexpected query type %T. expect *ent.SettingQuery", q)
 }
 
+// The SubscriptionConcurrencyEntitlementFunc type is an adapter to allow the use of ordinary function as a Querier.
+type SubscriptionConcurrencyEntitlementFunc func(context.Context, *ent.SubscriptionConcurrencyEntitlementQuery) (ent.Value, error)
+
+// Query calls f(ctx, q).
+func (f SubscriptionConcurrencyEntitlementFunc) Query(ctx context.Context, q ent.Query) (ent.Value, error) {
+	if q, ok := q.(*ent.SubscriptionConcurrencyEntitlementQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *ent.SubscriptionConcurrencyEntitlementQuery", q)
+}
+
+// The TraverseSubscriptionConcurrencyEntitlement type is an adapter to allow the use of ordinary function as Traverser.
+type TraverseSubscriptionConcurrencyEntitlement func(context.Context, *ent.SubscriptionConcurrencyEntitlementQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraverseSubscriptionConcurrencyEntitlement) Intercept(next ent.Querier) ent.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraverseSubscriptionConcurrencyEntitlement) Traverse(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.SubscriptionConcurrencyEntitlementQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *ent.SubscriptionConcurrencyEntitlementQuery", q)
+}
+
+// The SubscriptionEarlyResetEntitlementFunc type is an adapter to allow the use of ordinary function as a Querier.
+type SubscriptionEarlyResetEntitlementFunc func(context.Context, *ent.SubscriptionEarlyResetEntitlementQuery) (ent.Value, error)
+
+// Query calls f(ctx, q).
+func (f SubscriptionEarlyResetEntitlementFunc) Query(ctx context.Context, q ent.Query) (ent.Value, error) {
+	if q, ok := q.(*ent.SubscriptionEarlyResetEntitlementQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *ent.SubscriptionEarlyResetEntitlementQuery", q)
+}
+
+// The TraverseSubscriptionEarlyResetEntitlement type is an adapter to allow the use of ordinary function as Traverser.
+type TraverseSubscriptionEarlyResetEntitlement func(context.Context, *ent.SubscriptionEarlyResetEntitlementQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraverseSubscriptionEarlyResetEntitlement) Intercept(next ent.Querier) ent.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraverseSubscriptionEarlyResetEntitlement) Traverse(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.SubscriptionEarlyResetEntitlementQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *ent.SubscriptionEarlyResetEntitlementQuery", q)
+}
+
 // The SubscriptionPlanFunc type is an adapter to allow the use of ordinary function as a Querier.
 type SubscriptionPlanFunc func(context.Context, *ent.SubscriptionPlanQuery) (ent.Value, error)
 
@@ -1130,6 +1186,10 @@ func NewQuery(q ent.Query) (Query, error) {
 		return &query[*ent.SecuritySecretQuery, predicate.SecuritySecret, securitysecret.OrderOption]{typ: ent.TypeSecuritySecret, tq: q}, nil
 	case *ent.SettingQuery:
 		return &query[*ent.SettingQuery, predicate.Setting, setting.OrderOption]{typ: ent.TypeSetting, tq: q}, nil
+	case *ent.SubscriptionConcurrencyEntitlementQuery:
+		return &query[*ent.SubscriptionConcurrencyEntitlementQuery, predicate.SubscriptionConcurrencyEntitlement, subscriptionconcurrencyentitlement.OrderOption]{typ: ent.TypeSubscriptionConcurrencyEntitlement, tq: q}, nil
+	case *ent.SubscriptionEarlyResetEntitlementQuery:
+		return &query[*ent.SubscriptionEarlyResetEntitlementQuery, predicate.SubscriptionEarlyResetEntitlement, subscriptionearlyresetentitlement.OrderOption]{typ: ent.TypeSubscriptionEarlyResetEntitlement, tq: q}, nil
 	case *ent.SubscriptionPlanQuery:
 		return &query[*ent.SubscriptionPlanQuery, predicate.SubscriptionPlan, subscriptionplan.OrderOption]{typ: ent.TypeSubscriptionPlan, tq: q}, nil
 	case *ent.TLSFingerprintProfileQuery:

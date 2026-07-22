@@ -11,6 +11,7 @@ import (
 
 	dbent "github.com/Wei-Shaw/sub2api/ent"
 	"github.com/Wei-Shaw/sub2api/ent/paymentauditlog"
+	"github.com/Wei-Shaw/sub2api/ent/subscriptionconcurrencyentitlement"
 	"github.com/Wei-Shaw/sub2api/ent/usersubscription"
 	"github.com/Wei-Shaw/sub2api/internal/payment"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
@@ -314,6 +315,7 @@ func TestExecuteSubscriptionFulfillmentAddsMembershipPointsOnce(t *testing.T) {
 		SetOrderType(payment.OrderTypeSubscription).
 		SetSubscriptionGroupID(group.ID).
 		SetSubscriptionDays(30).
+		SetSubscriptionConcurrency(7).
 		SetStatus(OrderStatusPaid).
 		SetExpiresAt(time.Now().Add(time.Hour)).
 		SetClientIP("127.0.0.1").
@@ -357,6 +359,11 @@ func TestExecuteSubscriptionFulfillmentAddsMembershipPointsOnce(t *testing.T) {
 		Count(ctx)
 	require.NoError(t, err)
 	require.Equal(t, 1, subCount)
+	entitlement, err := client.SubscriptionConcurrencyEntitlement.Query().Only(ctx)
+	require.NoError(t, err)
+	require.Equal(t, 7, entitlement.Concurrency)
+	require.Equal(t, order.ID, *entitlement.SourceOrderID)
+	require.True(t, entitlement.StartsAt.Before(entitlement.ExpiresAt))
 
 	logCount, err := client.PaymentAuditLog.Query().
 		Where(
@@ -374,6 +381,29 @@ func TestExecuteSubscriptionFulfillmentAddsMembershipPointsOnce(t *testing.T) {
 	reloadedUser, err := client.User.Get(ctx, user.ID)
 	require.NoError(t, err)
 	require.InDelta(t, 12.5, reloadedUser.TotalRecharged, 1e-9)
+	entitlementCount, err := client.SubscriptionConcurrencyEntitlement.Query().Count(ctx)
+	require.NoError(t, err)
+	require.Equal(t, 1, entitlementCount)
+
+	nextConcurrency := 3
+	nextSourceID := order.ID + 1000
+	_, reused, err := subSvc.AssignOrExtendSubscription(ctx, &AssignSubscriptionInput{
+		UserID:                  user.ID,
+		GroupID:                 group.ID,
+		ValidityDays:            30,
+		PlanConcurrency:         &nextConcurrency,
+		PlanConcurrencySourceID: &nextSourceID,
+	})
+	require.NoError(t, err)
+	require.True(t, reused)
+	entitlements, err := client.SubscriptionConcurrencyEntitlement.Query().
+		Order(subscriptionconcurrencyentitlement.ByStartsAt()).
+		All(ctx)
+	require.NoError(t, err)
+	require.Len(t, entitlements, 2)
+	require.Equal(t, 7, entitlements[0].Concurrency)
+	require.Equal(t, nextConcurrency, entitlements[1].Concurrency)
+	require.Equal(t, entitlements[0].ExpiresAt, entitlements[1].StartsAt)
 
 	logCount, err = client.PaymentAuditLog.Query().
 		Where(

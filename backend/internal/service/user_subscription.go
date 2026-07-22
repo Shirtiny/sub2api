@@ -15,13 +15,17 @@ type UserSubscription struct {
 	WeeklyWindowStart  *time.Time
 	MonthlyWindowStart *time.Time
 
-	DailyUsageUSD   float64
-	WeeklyUsageUSD  float64
-	MonthlyUsageUSD float64
+	DailyUsageUSD          float64
+	WeeklyUsageUSD         float64
+	MonthlyUsageUSD        float64
+	EarlyResetEnabled      bool
+	EarlyResetDurationDays int
 
-	AssignedBy *int64
-	AssignedAt time.Time
-	Notes      string
+	AssignedBy               *int64
+	AssignedAt               time.Time
+	Notes                    string
+	PlanConcurrency          *int
+	PlanConcurrencyExpiresAt *time.Time
 
 	CustomMultiplier    *int
 	CustomSourcePlanID  *int64
@@ -35,6 +39,20 @@ type UserSubscription struct {
 	User           *User
 	Group          *Group
 	AssignedByUser *User
+}
+
+func (s *UserSubscription) ActivePlanConcurrencyEntitlementAt(now time.Time) (PlanConcurrencyEntitlement, bool) {
+	if s == nil || s.PlanConcurrency == nil || *s.PlanConcurrency <= 0 || s.Status != SubscriptionStatusActive || now.Before(s.StartsAt) || !now.Before(s.ExpiresAt) {
+		return PlanConcurrencyEntitlement{}, false
+	}
+	expiresAt := s.ExpiresAt
+	if s.PlanConcurrencyExpiresAt != nil && s.PlanConcurrencyExpiresAt.Before(expiresAt) {
+		expiresAt = *s.PlanConcurrencyExpiresAt
+	}
+	if !now.Before(expiresAt) {
+		return PlanConcurrencyEntitlement{}, false
+	}
+	return PlanConcurrencyEntitlement{Concurrency: *s.PlanConcurrency, StartsAt: s.StartsAt, ExpiresAt: expiresAt}, true
 }
 
 func (s *UserSubscription) VirtualCustomMultiplier() int {

@@ -10,6 +10,11 @@ import (
 	"time"
 
 	dbent "github.com/Wei-Shaw/sub2api/ent"
+	"github.com/Wei-Shaw/sub2api/ent/paymentorder"
+	"github.com/Wei-Shaw/sub2api/ent/subscriptionconcurrencyentitlement"
+	"github.com/Wei-Shaw/sub2api/ent/subscriptionearlyresetentitlement"
+	"github.com/Wei-Shaw/sub2api/ent/subscriptionplan"
+	"github.com/Wei-Shaw/sub2api/ent/usersubscription"
 	"github.com/Wei-Shaw/sub2api/internal/config"
 	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
@@ -38,14 +43,24 @@ var (
 	ErrSubscriptionNilInput       = infraerrors.BadRequest("SUBSCRIPTION_NIL_INPUT", "subscription input cannot be nil")
 	ErrAdjustWouldExpire          = infraerrors.BadRequest("ADJUST_WOULD_EXPIRE", "adjustment would result in expired subscription (remaining days must be > 0)")
 	ErrInvalidCustomEntitlement   = infraerrors.BadRequest("INVALID_CUSTOM_ENTITLEMENT", "invalid custom subscription entitlement")
+	ErrInvalidPlanConcurrency     = infraerrors.BadRequest("INVALID_PLAN_CONCURRENCY", "plan concurrency must be between 1 and 2147483647")
+	ErrInvalidEarlyResetConfig    = infraerrors.BadRequest("INVALID_EARLY_RESET_CONFIG", "early reset duration days must be between 1 and 36500")
+	ErrEarlyResetDisabled         = infraerrors.Forbidden("EARLY_RESET_DISABLED", "early reset is not enabled for this subscription")
+	ErrEarlyResetWouldExpire      = infraerrors.BadRequest("EARLY_RESET_WOULD_EXPIRE", "early reset would expire the subscription")
+	ErrEarlyResetConflict         = infraerrors.Conflict("EARLY_RESET_CONFLICT", "subscription changed while early reset was being applied")
 )
+
+type earlyResetSubscriptionRepository interface {
+	EarlyReset(ctx context.Context, input EarlyResetSubscriptionParams) error
+}
 
 // SubscriptionService 订阅服务
 type SubscriptionService struct {
-	groupRepo           GroupRepository
-	userSubRepo         UserSubscriptionRepository
-	billingCacheService *BillingCacheService
-	entClient           *dbent.Client
+	groupRepo            GroupRepository
+	userSubRepo          UserSubscriptionRepository
+	billingCacheService  *BillingCacheService
+	authCacheInvalidator APIKeyAuthCacheInvalidator
+	entClient            *dbent.Client
 
 	// L1 缓存：加速中间件热路径的订阅查询
 	subCacheL1     *ristretto.Cache
@@ -67,6 +82,12 @@ func NewSubscriptionService(groupRepo GroupRepository, userSubRepo UserSubscript
 	svc.initSubCache(cfg)
 	svc.initMaintenanceQueue(cfg)
 	return svc
+}
+
+func (s *SubscriptionService) SetAuthCacheInvalidator(invalidator APIKeyAuthCacheInvalidator) {
+	if s != nil {
+		s.authCacheInvalidator = invalidator
+	}
 }
 
 func (s *SubscriptionService) initMaintenanceQueue(cfg *config.Config) {
@@ -155,6 +176,12 @@ type AssignSubscriptionInput struct {
 	CustomSourcePlanID  *int64
 	CustomSourceGroupID *int64
 	CustomDisplayName   string
+
+	PlanConcurrency         *int
+	PlanConcurrencySourceID *int64
+	EarlyResetEnabled       *bool
+	EarlyResetDurationDays  *int
+	EarlyResetSourceOrderID *int64
 }
 
 // AssignSubscription 分配订阅给用户（不允许重复分配）
@@ -242,6 +269,13 @@ func (s *SubscriptionService) maybeInvalidateAssignmentCaches(userID, groupID in
 	}
 
 	s.InvalidateSubCache(userID, groupID)
+	if s.authCacheInvalidator != nil {
+		go func() {
+			cacheCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			s.authCacheInvalidator.InvalidateAuthCacheByUserID(cacheCtx, userID)
+		}()
+	}
 	if s.billingCacheService != nil {
 		go func() {
 			cacheCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -264,8 +298,18 @@ func (s *SubscriptionService) updateExistingSubscriptionTerm(
 		if isExpired {
 			renewed := renewedSubscriptionTerm(existingSub, input.Notes, startsAt, newExpiresAt)
 			applyAssignCustomEntitlement(renewed, input, false, customExpiresAt)
+			applyAssignEarlyResetConfig(renewed, input)
+			entitlementStartsAt, entitlementExpiresAt, customTerm, hasEntitlement := subscriptionPurchaseWindow(existingSub, input, startsAt, newExpiresAt, customExpiresAt, true)
 			if err := s.userSubRepo.Update(txCtx, renewed); err != nil {
 				return fmt.Errorf("renew expired subscription: %w", err)
+			}
+			if hasEntitlement {
+				if err := s.recordPlanConcurrencyEntitlement(txCtx, renewed.ID, input, entitlementStartsAt, entitlementExpiresAt); err != nil {
+					return fmt.Errorf("record plan concurrency entitlement: %w", err)
+				}
+				if err := s.recordEarlyResetEntitlement(txCtx, renewed.ID, input, entitlementStartsAt, entitlementExpiresAt, customTerm); err != nil {
+					return fmt.Errorf("record early reset entitlement: %w", err)
+				}
 			}
 			return nil
 		}
@@ -281,8 +325,18 @@ func (s *SubscriptionService) updateExistingSubscriptionTerm(
 		updated.Status = SubscriptionStatusActive
 		updated.Notes = appendSubscriptionNotes(existingSub.Notes, input.Notes)
 		applyAssignCustomEntitlement(&updated, input, true, customExpiresAt)
+		applyAssignEarlyResetConfig(&updated, input)
+		entitlementStartsAt, entitlementExpiresAt, customTerm, hasEntitlement := subscriptionPurchaseWindow(existingSub, input, startsAt, newExpiresAt, customExpiresAt, false)
 		if err := s.userSubRepo.Update(txCtx, &updated); err != nil {
 			return fmt.Errorf("extend subscription: %w", err)
+		}
+		if hasEntitlement {
+			if err := s.recordPlanConcurrencyEntitlement(txCtx, updated.ID, input, entitlementStartsAt, entitlementExpiresAt); err != nil {
+				return fmt.Errorf("record plan concurrency entitlement: %w", err)
+			}
+			if err := s.recordEarlyResetEntitlement(txCtx, updated.ID, input, entitlementStartsAt, entitlementExpiresAt, customTerm); err != nil {
+				return fmt.Errorf("record early reset entitlement: %w", err)
+			}
 		}
 
 		return nil
@@ -367,6 +421,21 @@ func validateAssignCustomEntitlement(input *AssignSubscriptionInput) error {
 	if input == nil {
 		return ErrSubscriptionNilInput
 	}
+	if input.EarlyResetDurationDays != nil {
+		durationDays := *input.EarlyResetDurationDays
+		if durationDays < 0 || durationDays > MaxValidityDays {
+			return ErrInvalidEarlyResetConfig
+		}
+		if durationDays == 0 && (input.EarlyResetEnabled == nil || *input.EarlyResetEnabled) {
+			return ErrInvalidEarlyResetConfig
+		}
+	}
+	if input.EarlyResetEnabled != nil && *input.EarlyResetEnabled && (input.EarlyResetDurationDays == nil || *input.EarlyResetDurationDays <= 0) {
+		return ErrInvalidEarlyResetConfig
+	}
+	if input.PlanConcurrency != nil && (*input.PlanConcurrency <= 0 || *input.PlanConcurrency > maxPlanConcurrency) {
+		return ErrInvalidPlanConcurrency
+	}
 	if input.CustomMultiplier == nil {
 		if input.CustomSourcePlanID != nil || input.CustomSourceGroupID != nil || strings.TrimSpace(input.CustomDisplayName) != "" {
 			return ErrInvalidCustomEntitlement
@@ -384,6 +453,113 @@ func validateAssignCustomEntitlement(input *AssignSubscriptionInput) error {
 		return ErrInvalidCustomEntitlement
 	}
 	return nil
+}
+
+func applyAssignEarlyResetConfig(sub *UserSubscription, input *AssignSubscriptionInput) {
+	if sub == nil || input == nil {
+		return
+	}
+	if input.EarlyResetEnabled != nil {
+		sub.EarlyResetEnabled = *input.EarlyResetEnabled
+	}
+	if input.EarlyResetDurationDays != nil {
+		sub.EarlyResetDurationDays = *input.EarlyResetDurationDays
+	}
+}
+
+func subscriptionPurchaseWindow(existing *UserSubscription, input *AssignSubscriptionInput, now, subscriptionExpiresAt time.Time, customExpiresAt *time.Time, expired bool) (time.Time, time.Time, bool, bool) {
+	if input == nil {
+		return time.Time{}, time.Time{}, false, false
+	}
+	customTerm := input.CustomMultiplier != nil
+	expiresAt := subscriptionExpiresAt
+	if customTerm && customExpiresAt != nil && customExpiresAt.Before(expiresAt) {
+		expiresAt = *customExpiresAt
+	}
+	startsAt := now
+	if !expired && existing != nil {
+		if input.CustomMultiplier != nil {
+			// A first virtual-custom purchase overlays the existing base term and
+			// is active immediately. Renewals of the same active custom term are
+			// queued after that custom term, not after the longer base term.
+			if existing.HasActiveVirtualCustomEntitlementAt(now) && existing.CustomExpiresAt != nil {
+				startsAt = *existing.CustomExpiresAt
+			}
+		} else {
+			startsAt = existing.ExpiresAt
+		}
+	}
+	if !startsAt.Before(expiresAt) {
+		return time.Time{}, time.Time{}, customTerm, false
+	}
+	return startsAt, expiresAt, customTerm, true
+}
+
+func planConcurrencyWindow(existing *UserSubscription, input *AssignSubscriptionInput, now, subscriptionExpiresAt time.Time, customExpiresAt *time.Time, expired bool) (time.Time, time.Time, bool) {
+	if input == nil || input.PlanConcurrency == nil || *input.PlanConcurrency <= 0 {
+		return time.Time{}, time.Time{}, false
+	}
+	startsAt, expiresAt, _, ok := subscriptionPurchaseWindow(existing, input, now, subscriptionExpiresAt, customExpiresAt, expired)
+	return startsAt, expiresAt, ok
+}
+
+func (s *SubscriptionService) recordPlanConcurrencyEntitlement(ctx context.Context, subscriptionID int64, input *AssignSubscriptionInput, startsAt, expiresAt time.Time) error {
+	if s == nil || s.entClient == nil || input == nil || input.PlanConcurrency == nil || !startsAt.Before(expiresAt) {
+		return nil
+	}
+	client := s.entClient
+	if tx := dbent.TxFromContext(ctx); tx != nil {
+		client = tx.Client()
+	}
+	builder := client.SubscriptionConcurrencyEntitlement.Create().
+		SetUserID(input.UserID).
+		SetSubscriptionID(subscriptionID).
+		SetConcurrency(*input.PlanConcurrency).
+		SetStartsAt(startsAt).
+		SetExpiresAt(expiresAt)
+	if input.PlanConcurrencySourceID != nil && *input.PlanConcurrencySourceID > 0 {
+		builder.SetSourceOrderID(*input.PlanConcurrencySourceID)
+		_, err := builder.
+			OnConflictColumns(subscriptionconcurrencyentitlement.FieldSourceOrderID).
+			UpdateNewValues().
+			ID(ctx)
+		return err
+	}
+	_, err := builder.Save(ctx)
+	return err
+}
+
+func (s *SubscriptionService) recordEarlyResetEntitlement(ctx context.Context, subscriptionID int64, input *AssignSubscriptionInput, startsAt, expiresAt time.Time, customTerm bool) error {
+	if s == nil || s.entClient == nil || input == nil || input.EarlyResetEnabled == nil || !startsAt.Before(expiresAt) {
+		return nil
+	}
+	enabled := *input.EarlyResetEnabled
+	durationDays := 0
+	if enabled && input.EarlyResetDurationDays != nil {
+		durationDays = *input.EarlyResetDurationDays
+	}
+	client := s.entClient
+	if tx := dbent.TxFromContext(ctx); tx != nil {
+		client = tx.Client()
+	}
+	builder := client.SubscriptionEarlyResetEntitlement.Create().
+		SetUserID(input.UserID).
+		SetSubscriptionID(subscriptionID).
+		SetEnabled(enabled).
+		SetDurationDays(durationDays).
+		SetCustomTerm(customTerm).
+		SetStartsAt(startsAt).
+		SetExpiresAt(expiresAt)
+	if input.EarlyResetSourceOrderID != nil && *input.EarlyResetSourceOrderID > 0 {
+		builder.SetSourceOrderID(*input.EarlyResetSourceOrderID)
+		_, err := builder.
+			OnConflictColumns(subscriptionearlyresetentitlement.FieldSourceOrderID).
+			UpdateNewValues().
+			ID(ctx)
+		return err
+	}
+	_, err := builder.Save(ctx)
+	return err
 }
 
 func detectActiveCustomEntitlementConflict(existing *UserSubscription, input *AssignSubscriptionInput, now time.Time) (string, bool) {
@@ -493,9 +669,19 @@ func (s *SubscriptionService) createSubscription(ctx context.Context, input *Ass
 	}
 	customExpiresAt := sub.ExpiresAt
 	applyAssignCustomEntitlement(sub, input, false, &customExpiresAt)
+	applyAssignEarlyResetConfig(sub, input)
+	entitlementStartsAt, entitlementExpiresAt, customTerm, hasEntitlement := subscriptionPurchaseWindow(nil, input, sub.StartsAt, sub.ExpiresAt, &customExpiresAt, true)
 
 	if err := s.userSubRepo.Create(ctx, sub); err != nil {
 		return nil, err
+	}
+	if hasEntitlement {
+		if err := s.recordPlanConcurrencyEntitlement(ctx, sub.ID, input, entitlementStartsAt, entitlementExpiresAt); err != nil {
+			return nil, fmt.Errorf("record plan concurrency entitlement: %w", err)
+		}
+		if err := s.recordEarlyResetEntitlement(ctx, sub.ID, input, entitlementStartsAt, entitlementExpiresAt, customTerm); err != nil {
+			return nil, fmt.Errorf("record early reset entitlement: %w", err)
+		}
 	}
 
 	// 重新获取完整订阅信息（包含关联）
@@ -633,6 +819,12 @@ func detectAssignSemanticConflict(existing *UserSubscription, input *AssignSubsc
 	if customEntitlementInputMismatch(existing, input) {
 		return "custom_entitlement_mismatch", true
 	}
+	if input.EarlyResetEnabled != nil && existing.EarlyResetEnabled != *input.EarlyResetEnabled {
+		return "early_reset_enabled_mismatch", true
+	}
+	if input.EarlyResetDurationDays != nil && existing.EarlyResetDurationDays != *input.EarlyResetDurationDays {
+		return "early_reset_duration_mismatch", true
+	}
 
 	return "", false
 }
@@ -711,18 +903,11 @@ func (s *SubscriptionService) ExtendSubscription(ctx context.Context, subscripti
 		return nil, ErrAdjustWouldExpire
 	}
 
-	if err := s.userSubRepo.ExtendExpiry(ctx, subscriptionID, newExpiresAt); err != nil {
+	if err := s.adjustSubscriptionExpiryAndConcurrency(ctx, sub, newExpiresAt, days > 0); err != nil {
 		return nil, err
 	}
 
-	// 如果订阅已过期，恢复为active状态
-	if sub.Status == SubscriptionStatusExpired {
-		if err := s.userSubRepo.UpdateStatus(ctx, subscriptionID, SubscriptionStatusActive); err != nil {
-			return nil, err
-		}
-	}
-
-	s.invalidateSubscriptionCachesAsync(sub.UserID, sub.GroupID)
+	s.invalidateSubscriptionCaches(ctx, sub.UserID, sub.GroupID)
 
 	return s.userSubRepo.GetByID(ctx, subscriptionID)
 }
@@ -757,12 +942,97 @@ func (s *SubscriptionService) extendVirtualCustomEntitlement(ctx context.Context
 	if !updated.ExpiresAt.After(now) {
 		return nil, true, ErrAdjustWouldExpire
 	}
-	if err := s.userSubRepo.Update(ctx, &updated); err != nil {
+	if err := s.adjustVirtualCustomSubscriptionAndConcurrency(ctx, &updated, newCustomExpiresAt, days > 0); err != nil {
 		return nil, true, err
 	}
-	s.invalidateSubscriptionCachesAsync(updated.UserID, updated.GroupID)
+	s.invalidateSubscriptionCaches(ctx, updated.UserID, updated.GroupID)
 	refreshed, err := s.userSubRepo.GetByID(ctx, updated.ID)
 	return refreshed, true, err
+}
+
+func (s *SubscriptionService) adjustSubscriptionExpiryAndConcurrency(ctx context.Context, sub *UserSubscription, newExpiresAt time.Time, extendConcurrency bool) error {
+	if sub == nil {
+		return ErrSubscriptionNotFound
+	}
+	return s.withSubscriptionUpdateTx(ctx, func(txCtx context.Context) error {
+		if err := s.userSubRepo.ExtendExpiry(txCtx, sub.ID, newExpiresAt); err != nil {
+			return err
+		}
+		if sub.Status == SubscriptionStatusExpired {
+			if err := s.userSubRepo.UpdateStatus(txCtx, sub.ID, SubscriptionStatusActive); err != nil {
+				return err
+			}
+		}
+		if err := s.updateLegacyPlanConcurrencyExpiry(txCtx, sub.ID, newExpiresAt); err != nil {
+			return err
+		}
+		if extendConcurrency {
+			return s.extendLatestPlanConcurrencyEntitlement(txCtx, sub.ID, newExpiresAt)
+		}
+		return nil
+	})
+}
+
+func (s *SubscriptionService) adjustVirtualCustomSubscriptionAndConcurrency(ctx context.Context, updated *UserSubscription, newCustomExpiresAt time.Time, extendConcurrency bool) error {
+	if updated == nil {
+		return ErrSubscriptionNotFound
+	}
+	return s.withSubscriptionUpdateTx(ctx, func(txCtx context.Context) error {
+		if err := s.userSubRepo.Update(txCtx, updated); err != nil {
+			return err
+		}
+		if err := s.updateLegacyPlanConcurrencyExpiry(txCtx, updated.ID, newCustomExpiresAt); err != nil {
+			return err
+		}
+		if extendConcurrency {
+			return s.extendLatestPlanConcurrencyEntitlement(txCtx, updated.ID, newCustomExpiresAt)
+		}
+		return nil
+	})
+}
+
+func (s *SubscriptionService) updateLegacyPlanConcurrencyExpiry(ctx context.Context, subscriptionID int64, expiresAt time.Time) error {
+	if s == nil || s.entClient == nil {
+		return nil
+	}
+	client := s.entClient
+	if tx := dbent.TxFromContext(ctx); tx != nil {
+		client = tx.Client()
+	}
+	_, err := client.UserSubscription.UpdateOneID(subscriptionID).
+		SetPlanConcurrencyExpiresAt(expiresAt).
+		Where(usersubscription.PlanConcurrencyNotNil()).
+		Save(ctx)
+	if dbent.IsNotFound(err) {
+		return nil
+	}
+	return err
+}
+
+func (s *SubscriptionService) extendLatestPlanConcurrencyEntitlement(ctx context.Context, subscriptionID int64, expiresAt time.Time) error {
+	if s == nil || s.entClient == nil {
+		return nil
+	}
+	client := s.entClient
+	if tx := dbent.TxFromContext(ctx); tx != nil {
+		client = tx.Client()
+	}
+	entitlement, err := client.SubscriptionConcurrencyEntitlement.Query().
+		Where(subscriptionconcurrencyentitlement.SubscriptionIDEQ(subscriptionID)).
+		Order(
+			dbent.Desc(subscriptionconcurrencyentitlement.FieldStartsAt),
+			dbent.Desc(subscriptionconcurrencyentitlement.FieldID),
+		).
+		First(ctx)
+	if dbent.IsNotFound(err) {
+		return nil
+	}
+	if err != nil || !expiresAt.After(entitlement.ExpiresAt) {
+		return err
+	}
+	return client.SubscriptionConcurrencyEntitlement.UpdateOneID(entitlement.ID).
+		SetExpiresAt(expiresAt).
+		Exec(ctx)
 }
 
 // GetByID 根据ID获取订阅
@@ -816,6 +1086,9 @@ func (s *SubscriptionService) ListUserSubscriptions(ctx context.Context, userID 
 	if err != nil {
 		return nil, err
 	}
+	if err := s.applyCurrentEarlyResetPolicies(ctx, subs, time.Now()); err != nil {
+		return nil, err
+	}
 	normalizeExpiredWindows(subs)
 	normalizeSubscriptionStatus(subs)
 	return subs, nil
@@ -827,8 +1100,210 @@ func (s *SubscriptionService) ListActiveUserSubscriptions(ctx context.Context, u
 	if err != nil {
 		return nil, err
 	}
+	if err := s.applyCurrentEarlyResetPolicies(ctx, subs, time.Now()); err != nil {
+		return nil, err
+	}
 	normalizeExpiredWindows(subs)
 	return subs, nil
+}
+
+type earlyResetTerm struct {
+	ID            int64
+	SourceOrderID *int64
+	Enabled       bool
+	DurationDays  int
+	CustomTerm    bool
+	StartsAt      time.Time
+	ExpiresAt     time.Time
+}
+
+func (s *SubscriptionService) applyCurrentEarlyResetPolicies(ctx context.Context, subs []UserSubscription, now time.Time) error {
+	if s == nil || s.entClient == nil || len(subs) == 0 {
+		return nil
+	}
+	ids := make([]int64, 0, len(subs))
+	for i := range subs {
+		ids = append(ids, subs[i].ID)
+	}
+	entitlements, err := s.entClient.SubscriptionEarlyResetEntitlement.Query().
+		Where(subscriptionearlyresetentitlement.SubscriptionIDIn(ids...)).
+		Order(dbent.Asc(subscriptionearlyresetentitlement.FieldStartsAt), dbent.Asc(subscriptionearlyresetentitlement.FieldID)).
+		All(ctx)
+	if err != nil {
+		return fmt.Errorf("load early reset entitlements: %w", err)
+	}
+	hasRows := make(map[int64]bool, len(subs))
+	active := make(map[int64]*dbent.SubscriptionEarlyResetEntitlement, len(subs))
+	customTerms := make(map[int64]bool, len(subs))
+	for i := range subs {
+		customTerms[subs[i].ID] = subs[i].HasActiveVirtualCustomEntitlementAt(now)
+	}
+	for _, entitlement := range entitlements {
+		hasRows[entitlement.SubscriptionID] = true
+		if entitlement.CustomTerm != customTerms[entitlement.SubscriptionID] ||
+			now.Before(entitlement.StartsAt) || !now.Before(entitlement.ExpiresAt) {
+			continue
+		}
+		active[entitlement.SubscriptionID] = entitlement
+	}
+	activeEntitlements := make([]*dbent.SubscriptionEarlyResetEntitlement, 0, len(active))
+	for _, entitlement := range active {
+		activeEntitlements = append(activeEntitlements, entitlement)
+	}
+	planPolicies, err := s.resolvePlanEarlyResetPolicies(ctx, activeEntitlements)
+	if err != nil {
+		return err
+	}
+	for i := range subs {
+		if !hasRows[subs[i].ID] {
+			continue
+		}
+		subs[i].EarlyResetEnabled = false
+		subs[i].EarlyResetDurationDays = 0
+		if entitlement := active[subs[i].ID]; entitlement != nil {
+			policy := earlyResetPolicy{Enabled: entitlement.Enabled, DurationDays: entitlement.DurationDays}
+			if currentPolicy, ok := planPolicies[entitlement.ID]; ok {
+				policy = currentPolicy
+			}
+			subs[i].EarlyResetEnabled = policy.Enabled
+			subs[i].EarlyResetDurationDays = policy.DurationDays
+		}
+	}
+	return nil
+}
+
+func (s *SubscriptionService) currentEarlyResetTerm(ctx context.Context, sub *UserSubscription, now time.Time) (earlyResetTerm, bool, error) {
+	customTerm := sub.HasActiveVirtualCustomEntitlementAt(now)
+	if s == nil || s.entClient == nil {
+		expiresAt := sub.ExpiresAt
+		if customTerm && sub.CustomExpiresAt != nil {
+			expiresAt = *sub.CustomExpiresAt
+		}
+		return earlyResetTerm{
+			Enabled: sub.EarlyResetEnabled, DurationDays: sub.EarlyResetDurationDays,
+			CustomTerm: customTerm, StartsAt: sub.StartsAt, ExpiresAt: expiresAt,
+		}, true, nil
+	}
+	entitlement, err := s.entClient.SubscriptionEarlyResetEntitlement.Query().
+		Where(
+			subscriptionearlyresetentitlement.SubscriptionIDEQ(sub.ID),
+			subscriptionearlyresetentitlement.CustomTermEQ(customTerm),
+			subscriptionearlyresetentitlement.StartsAtLTE(now),
+			subscriptionearlyresetentitlement.ExpiresAtGT(now),
+		).
+		Order(dbent.Desc(subscriptionearlyresetentitlement.FieldStartsAt), dbent.Desc(subscriptionearlyresetentitlement.FieldID)).
+		First(ctx)
+	if err == nil {
+		policies, policyErr := s.resolvePlanEarlyResetPolicies(ctx, []*dbent.SubscriptionEarlyResetEntitlement{entitlement})
+		if policyErr != nil {
+			return earlyResetTerm{}, false, policyErr
+		}
+		policy := earlyResetPolicy{Enabled: entitlement.Enabled, DurationDays: entitlement.DurationDays}
+		if currentPolicy, ok := policies[entitlement.ID]; ok {
+			policy = currentPolicy
+		}
+		return earlyResetTerm{
+			ID: entitlement.ID, SourceOrderID: entitlement.SourceOrderID,
+			Enabled: policy.Enabled, DurationDays: policy.DurationDays,
+			CustomTerm: entitlement.CustomTerm, StartsAt: entitlement.StartsAt, ExpiresAt: entitlement.ExpiresAt,
+		}, true, nil
+	}
+	if !dbent.IsNotFound(err) {
+		return earlyResetTerm{}, false, fmt.Errorf("load current early reset entitlement: %w", err)
+	}
+	hasRows, err := s.entClient.SubscriptionEarlyResetEntitlement.Query().
+		Where(subscriptionearlyresetentitlement.SubscriptionIDEQ(sub.ID)).
+		Exist(ctx)
+	if err != nil {
+		return earlyResetTerm{}, false, fmt.Errorf("check early reset entitlements: %w", err)
+	}
+	if hasRows {
+		return earlyResetTerm{}, false, nil
+	}
+	expiresAt := sub.ExpiresAt
+	if customTerm && sub.CustomExpiresAt != nil {
+		expiresAt = *sub.CustomExpiresAt
+	}
+	return earlyResetTerm{
+		Enabled: sub.EarlyResetEnabled, DurationDays: sub.EarlyResetDurationDays,
+		CustomTerm: customTerm, StartsAt: sub.StartsAt, ExpiresAt: expiresAt,
+	}, true, nil
+}
+
+type earlyResetPolicy struct {
+	Enabled      bool
+	DurationDays int
+}
+
+// resolvePlanEarlyResetPolicies applies the current plan configuration to
+// purchased terms. The entitlement row identifies the active order/term; the
+// plan remains the authority for whether early reset is currently available.
+func (s *SubscriptionService) resolvePlanEarlyResetPolicies(ctx context.Context, entitlements []*dbent.SubscriptionEarlyResetEntitlement) (map[int64]earlyResetPolicy, error) {
+	policies := make(map[int64]earlyResetPolicy, len(entitlements))
+	if s == nil || s.entClient == nil || len(entitlements) == 0 {
+		return policies, nil
+	}
+	sourceOrderIDs := make([]int64, 0, len(entitlements))
+	for _, entitlement := range entitlements {
+		if entitlement.SourceOrderID != nil {
+			sourceOrderIDs = append(sourceOrderIDs, *entitlement.SourceOrderID)
+		}
+	}
+	if len(sourceOrderIDs) == 0 {
+		return policies, nil
+	}
+	client := s.entClient
+	if tx := dbent.TxFromContext(ctx); tx != nil {
+		client = tx.Client()
+	}
+	orders, err := client.PaymentOrder.Query().
+		Where(paymentorder.IDIn(sourceOrderIDs...)).
+		All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("load early reset source orders: %w", err)
+	}
+	orderPlans := make(map[int64]int64, len(orders))
+	planIDs := make([]int64, 0, len(orders))
+	for _, order := range orders {
+		if order.PlanID == nil {
+			continue
+		}
+		orderPlans[order.ID] = *order.PlanID
+		planIDs = append(planIDs, *order.PlanID)
+	}
+	if len(planIDs) == 0 {
+		return policies, nil
+	}
+	plans, err := client.SubscriptionPlan.Query().
+		Where(subscriptionplan.IDIn(planIDs...)).
+		All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("load current early reset plan policies: %w", err)
+	}
+	planPolicies := make(map[int64]earlyResetPolicy, len(plans))
+	for _, plan := range plans {
+		durationDays := 0
+		if plan.EarlyResetEnabled {
+			durationDays = plan.EarlyResetDurationDays
+		}
+		planPolicies[plan.ID] = earlyResetPolicy{
+			Enabled:      plan.EarlyResetEnabled,
+			DurationDays: durationDays,
+		}
+	}
+	for _, entitlement := range entitlements {
+		if entitlement.SourceOrderID == nil {
+			continue
+		}
+		planID, ok := orderPlans[*entitlement.SourceOrderID]
+		if !ok {
+			continue
+		}
+		if policy, ok := planPolicies[planID]; ok {
+			policies[entitlement.ID] = policy
+		}
+	}
+	return policies, nil
 }
 
 // ListGroupSubscriptions 获取分组的所有订阅
@@ -925,6 +1400,156 @@ func (s *SubscriptionService) AdminResetQuota(ctx context.Context, subscriptionI
 	return s.userSubRepo.GetByID(ctx, subscriptionID)
 }
 
+func (s *SubscriptionService) EarlyResetSubscription(ctx context.Context, userID, subscriptionID int64) (*UserSubscription, error) {
+	sub, err := s.userSubRepo.GetByID(ctx, subscriptionID)
+	if err != nil || sub.UserID != userID {
+		return nil, ErrSubscriptionNotFound
+	}
+
+	now := time.Now()
+	if sub.Status != SubscriptionStatusActive || !sub.ExpiresAt.After(now) {
+		return nil, ErrSubscriptionExpired
+	}
+	term, hasCurrentTerm, err := s.currentEarlyResetTerm(ctx, sub, now)
+	if err != nil {
+		return nil, err
+	}
+	if !hasCurrentTerm || !term.Enabled {
+		return nil, ErrEarlyResetDisabled
+	}
+	if term.DurationDays <= 0 || term.DurationDays > MaxValidityDays {
+		return nil, ErrInvalidEarlyResetConfig
+	}
+	shortenedTermExpiry := term.ExpiresAt.AddDate(0, 0, -term.DurationDays)
+	if !shortenedTermExpiry.After(now) || !shortenedTermExpiry.After(term.StartsAt) {
+		return nil, ErrEarlyResetWouldExpire
+	}
+
+	expectedCustomExpiresAt := cloneTimePtr(sub.CustomExpiresAt)
+	newCustomExpiresAt := cloneTimePtr(sub.CustomExpiresAt)
+	newExpiresAt := sub.ExpiresAt.AddDate(0, 0, -term.DurationDays)
+	if term.CustomTerm && sub.CustomExpiresAt != nil {
+		shortenedCustomExpiry := sub.CustomExpiresAt.AddDate(0, 0, -term.DurationDays)
+		newCustomExpiresAt = &shortenedCustomExpiry
+		if !sub.ExpiresAt.After(*sub.CustomExpiresAt) {
+			newExpiresAt = shortenedCustomExpiry
+		} else {
+			newExpiresAt = sub.ExpiresAt
+		}
+	} else if !newExpiresAt.After(now) {
+		return nil, ErrEarlyResetWouldExpire
+	}
+
+	repo, ok := s.userSubRepo.(earlyResetSubscriptionRepository)
+	if !ok {
+		return nil, infraerrors.ServiceUnavailable("EARLY_RESET_UNAVAILABLE", "early reset is unavailable")
+	}
+	windowStart := startOfDay(now)
+	err = s.withSubscriptionUpdateTx(ctx, func(txCtx context.Context) error {
+		if err := repo.EarlyReset(txCtx, EarlyResetSubscriptionParams{
+			ID:                      sub.ID,
+			UserID:                  userID,
+			ExpectedExpiresAt:       sub.ExpiresAt,
+			ExpectedCustomExpiresAt: expectedCustomExpiresAt,
+			NewExpiresAt:            newExpiresAt,
+			NewCustomExpiresAt:      newCustomExpiresAt,
+			WindowStart:             windowStart,
+		}); err != nil {
+			return err
+		}
+		return s.shortenEarlyResetTerms(txCtx, sub.ID, term, shortenedTermExpiry)
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	s.invalidateSubscriptionCaches(ctx, sub.UserID, sub.GroupID)
+	updated := *sub
+	updated.ExpiresAt = newExpiresAt
+	updated.CustomExpiresAt = cloneTimePtr(newCustomExpiresAt)
+	updated.DailyUsageUSD = 0
+	updated.WeeklyUsageUSD = 0
+	updated.MonthlyUsageUSD = 0
+	updated.DailyWindowStart = cloneTimePtr(&windowStart)
+	updated.WeeklyWindowStart = cloneTimePtr(&windowStart)
+	updated.MonthlyWindowStart = cloneTimePtr(&windowStart)
+	updated.EarlyResetEnabled = term.Enabled
+	updated.EarlyResetDurationDays = term.DurationDays
+	return &updated, nil
+}
+
+func (s *SubscriptionService) shortenEarlyResetTerms(ctx context.Context, subscriptionID int64, current earlyResetTerm, newCurrentExpiry time.Time) error {
+	if s == nil || s.entClient == nil || current.ID == 0 {
+		return nil
+	}
+	client := s.entClient
+	if tx := dbent.TxFromContext(ctx); tx != nil {
+		client = tx.Client()
+	}
+	affected, err := client.SubscriptionEarlyResetEntitlement.Update().
+		Where(
+			subscriptionearlyresetentitlement.IDEQ(current.ID),
+			subscriptionearlyresetentitlement.SubscriptionIDEQ(subscriptionID),
+			subscriptionearlyresetentitlement.ExpiresAtEQ(current.ExpiresAt),
+		).
+		SetExpiresAt(newCurrentExpiry).
+		Save(ctx)
+	if err != nil {
+		return err
+	}
+	if affected != 1 {
+		return ErrEarlyResetConflict
+	}
+	if err := syncConcurrencyEntitlementWindow(ctx, client, current.SourceOrderID, current.StartsAt, newCurrentExpiry); err != nil {
+		return err
+	}
+	futureTerms, err := client.SubscriptionEarlyResetEntitlement.Query().
+		Where(
+			subscriptionearlyresetentitlement.SubscriptionIDEQ(subscriptionID),
+			subscriptionearlyresetentitlement.CustomTermEQ(current.CustomTerm),
+			subscriptionearlyresetentitlement.StartsAtGTE(current.ExpiresAt),
+		).
+		Order(dbent.Asc(subscriptionearlyresetentitlement.FieldStartsAt), dbent.Asc(subscriptionearlyresetentitlement.FieldID)).
+		All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, future := range futureTerms {
+		newStartsAt := future.StartsAt.AddDate(0, 0, -current.DurationDays)
+		newExpiresAt := future.ExpiresAt.AddDate(0, 0, -current.DurationDays)
+		if err := client.SubscriptionEarlyResetEntitlement.UpdateOneID(future.ID).
+			SetStartsAt(newStartsAt).
+			SetExpiresAt(newExpiresAt).
+			Exec(ctx); err != nil {
+			return err
+		}
+		if err := syncConcurrencyEntitlementWindow(ctx, client, future.SourceOrderID, newStartsAt, newExpiresAt); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func syncConcurrencyEntitlementWindow(ctx context.Context, client *dbent.Client, sourceOrderID *int64, startsAt, expiresAt time.Time) error {
+	if client == nil || sourceOrderID == nil {
+		return nil
+	}
+	_, err := client.SubscriptionConcurrencyEntitlement.Update().
+		Where(subscriptionconcurrencyentitlement.SourceOrderIDEQ(*sourceOrderID)).
+		SetStartsAt(startsAt).
+		SetExpiresAt(expiresAt).
+		Save(ctx)
+	return err
+}
+
+func cloneTimePtr(value *time.Time) *time.Time {
+	if value == nil {
+		return nil
+	}
+	cloned := *value
+	return &cloned
+}
+
 func (s *SubscriptionService) AdminBulkResetQuota(ctx context.Context, resetDaily, resetWeekly, resetMonthly bool) (int64, error) {
 	if !resetDaily && !resetWeekly && !resetMonthly {
 		return 0, ErrInvalidInput
@@ -965,16 +1590,8 @@ func (s *SubscriptionService) invalidateSubscriptionCaches(ctx context.Context, 
 	if s.billingCacheService != nil {
 		_ = s.billingCacheService.InvalidateSubscription(ctx, userID, groupID)
 	}
-}
-
-func (s *SubscriptionService) invalidateSubscriptionCachesAsync(userID, groupID int64) {
-	s.InvalidateSubCache(userID, groupID)
-	if s.billingCacheService != nil {
-		go func() {
-			cacheCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-			defer cancel()
-			_ = s.billingCacheService.InvalidateSubscription(cacheCtx, userID, groupID)
-		}()
+	if s.authCacheInvalidator != nil {
+		s.authCacheInvalidator.InvalidateAuthCacheByUserID(ctx, userID)
 	}
 }
 

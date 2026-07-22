@@ -45,6 +45,19 @@ func (SubscriptionPlan) Fields() []ent.Field {
 			Nillable(),
 		field.Int("validity_days").
 			Default(30),
+		field.Int("concurrency").
+			Default(1).
+			Positive().
+			Max(2147483647).
+			Comment("maximum user concurrency while the purchased plan is active"),
+		field.Bool("early_reset_enabled").
+			Default(false).
+			Comment("whether purchased subscriptions may reset quota before the normal window"),
+		field.Int("early_reset_duration_days").
+			Default(1).
+			Positive().
+			Max(36500).
+			Comment("subscription days deducted for each early quota reset"),
 		field.String("validity_unit").
 			MaxLen(10).
 			Default("day"),

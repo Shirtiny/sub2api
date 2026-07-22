@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/Wei-Shaw/sub2api/ent/group"
+	"github.com/Wei-Shaw/sub2api/ent/subscriptionconcurrencyentitlement"
 	"github.com/Wei-Shaw/sub2api/ent/usagelog"
 	"github.com/Wei-Shaw/sub2api/ent/user"
 	"github.com/Wei-Shaw/sub2api/ent/usersubscription"
@@ -189,6 +190,34 @@ func (_c *UserSubscriptionCreate) SetNillableMonthlyUsageUsd(v *float64) *UserSu
 	return _c
 }
 
+// SetEarlyResetEnabled sets the "early_reset_enabled" field.
+func (_c *UserSubscriptionCreate) SetEarlyResetEnabled(v bool) *UserSubscriptionCreate {
+	_c.mutation.SetEarlyResetEnabled(v)
+	return _c
+}
+
+// SetNillableEarlyResetEnabled sets the "early_reset_enabled" field if the given value is not nil.
+func (_c *UserSubscriptionCreate) SetNillableEarlyResetEnabled(v *bool) *UserSubscriptionCreate {
+	if v != nil {
+		_c.SetEarlyResetEnabled(*v)
+	}
+	return _c
+}
+
+// SetEarlyResetDurationDays sets the "early_reset_duration_days" field.
+func (_c *UserSubscriptionCreate) SetEarlyResetDurationDays(v int) *UserSubscriptionCreate {
+	_c.mutation.SetEarlyResetDurationDays(v)
+	return _c
+}
+
+// SetNillableEarlyResetDurationDays sets the "early_reset_duration_days" field if the given value is not nil.
+func (_c *UserSubscriptionCreate) SetNillableEarlyResetDurationDays(v *int) *UserSubscriptionCreate {
+	if v != nil {
+		_c.SetEarlyResetDurationDays(*v)
+	}
+	return _c
+}
+
 // SetAssignedBy sets the "assigned_by" field.
 func (_c *UserSubscriptionCreate) SetAssignedBy(v int64) *UserSubscriptionCreate {
 	_c.mutation.SetAssignedBy(v)
@@ -227,6 +256,34 @@ func (_c *UserSubscriptionCreate) SetNotes(v string) *UserSubscriptionCreate {
 func (_c *UserSubscriptionCreate) SetNillableNotes(v *string) *UserSubscriptionCreate {
 	if v != nil {
 		_c.SetNotes(*v)
+	}
+	return _c
+}
+
+// SetPlanConcurrency sets the "plan_concurrency" field.
+func (_c *UserSubscriptionCreate) SetPlanConcurrency(v int) *UserSubscriptionCreate {
+	_c.mutation.SetPlanConcurrency(v)
+	return _c
+}
+
+// SetNillablePlanConcurrency sets the "plan_concurrency" field if the given value is not nil.
+func (_c *UserSubscriptionCreate) SetNillablePlanConcurrency(v *int) *UserSubscriptionCreate {
+	if v != nil {
+		_c.SetPlanConcurrency(*v)
+	}
+	return _c
+}
+
+// SetPlanConcurrencyExpiresAt sets the "plan_concurrency_expires_at" field.
+func (_c *UserSubscriptionCreate) SetPlanConcurrencyExpiresAt(v time.Time) *UserSubscriptionCreate {
+	_c.mutation.SetPlanConcurrencyExpiresAt(v)
+	return _c
+}
+
+// SetNillablePlanConcurrencyExpiresAt sets the "plan_concurrency_expires_at" field if the given value is not nil.
+func (_c *UserSubscriptionCreate) SetNillablePlanConcurrencyExpiresAt(v *time.Time) *UserSubscriptionCreate {
+	if v != nil {
+		_c.SetPlanConcurrencyExpiresAt(*v)
 	}
 	return _c
 }
@@ -345,6 +402,21 @@ func (_c *UserSubscriptionCreate) AddUsageLogs(v ...*UsageLog) *UserSubscription
 	return _c.AddUsageLogIDs(ids...)
 }
 
+// AddConcurrencyEntitlementIDs adds the "concurrency_entitlements" edge to the SubscriptionConcurrencyEntitlement entity by IDs.
+func (_c *UserSubscriptionCreate) AddConcurrencyEntitlementIDs(ids ...int64) *UserSubscriptionCreate {
+	_c.mutation.AddConcurrencyEntitlementIDs(ids...)
+	return _c
+}
+
+// AddConcurrencyEntitlements adds the "concurrency_entitlements" edges to the SubscriptionConcurrencyEntitlement entity.
+func (_c *UserSubscriptionCreate) AddConcurrencyEntitlements(v ...*SubscriptionConcurrencyEntitlement) *UserSubscriptionCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddConcurrencyEntitlementIDs(ids...)
+}
+
 // Mutation returns the UserSubscriptionMutation object of the builder.
 func (_c *UserSubscriptionCreate) Mutation() *UserSubscriptionMutation {
 	return _c.mutation
@@ -412,6 +484,14 @@ func (_c *UserSubscriptionCreate) defaults() error {
 		v := usersubscription.DefaultMonthlyUsageUsd
 		_c.mutation.SetMonthlyUsageUsd(v)
 	}
+	if _, ok := _c.mutation.EarlyResetEnabled(); !ok {
+		v := usersubscription.DefaultEarlyResetEnabled
+		_c.mutation.SetEarlyResetEnabled(v)
+	}
+	if _, ok := _c.mutation.EarlyResetDurationDays(); !ok {
+		v := usersubscription.DefaultEarlyResetDurationDays
+		_c.mutation.SetEarlyResetDurationDays(v)
+	}
 	if _, ok := _c.mutation.AssignedAt(); !ok {
 		if usersubscription.DefaultAssignedAt == nil {
 			return fmt.Errorf("ent: uninitialized usersubscription.DefaultAssignedAt (forgotten import ent/runtime?)")
@@ -459,8 +539,24 @@ func (_c *UserSubscriptionCreate) check() error {
 	if _, ok := _c.mutation.MonthlyUsageUsd(); !ok {
 		return &ValidationError{Name: "monthly_usage_usd", err: errors.New(`ent: missing required field "UserSubscription.monthly_usage_usd"`)}
 	}
+	if _, ok := _c.mutation.EarlyResetEnabled(); !ok {
+		return &ValidationError{Name: "early_reset_enabled", err: errors.New(`ent: missing required field "UserSubscription.early_reset_enabled"`)}
+	}
+	if _, ok := _c.mutation.EarlyResetDurationDays(); !ok {
+		return &ValidationError{Name: "early_reset_duration_days", err: errors.New(`ent: missing required field "UserSubscription.early_reset_duration_days"`)}
+	}
+	if v, ok := _c.mutation.EarlyResetDurationDays(); ok {
+		if err := usersubscription.EarlyResetDurationDaysValidator(v); err != nil {
+			return &ValidationError{Name: "early_reset_duration_days", err: fmt.Errorf(`ent: validator failed for field "UserSubscription.early_reset_duration_days": %w`, err)}
+		}
+	}
 	if _, ok := _c.mutation.AssignedAt(); !ok {
 		return &ValidationError{Name: "assigned_at", err: errors.New(`ent: missing required field "UserSubscription.assigned_at"`)}
+	}
+	if v, ok := _c.mutation.PlanConcurrency(); ok {
+		if err := usersubscription.PlanConcurrencyValidator(v); err != nil {
+			return &ValidationError{Name: "plan_concurrency", err: fmt.Errorf(`ent: validator failed for field "UserSubscription.plan_concurrency": %w`, err)}
+		}
 	}
 	if v, ok := _c.mutation.CustomDisplayName(); ok {
 		if err := usersubscription.CustomDisplayNameValidator(v); err != nil {
@@ -548,6 +644,14 @@ func (_c *UserSubscriptionCreate) createSpec() (*UserSubscription, *sqlgraph.Cre
 		_spec.SetField(usersubscription.FieldMonthlyUsageUsd, field.TypeFloat64, value)
 		_node.MonthlyUsageUsd = value
 	}
+	if value, ok := _c.mutation.EarlyResetEnabled(); ok {
+		_spec.SetField(usersubscription.FieldEarlyResetEnabled, field.TypeBool, value)
+		_node.EarlyResetEnabled = value
+	}
+	if value, ok := _c.mutation.EarlyResetDurationDays(); ok {
+		_spec.SetField(usersubscription.FieldEarlyResetDurationDays, field.TypeInt, value)
+		_node.EarlyResetDurationDays = value
+	}
 	if value, ok := _c.mutation.AssignedAt(); ok {
 		_spec.SetField(usersubscription.FieldAssignedAt, field.TypeTime, value)
 		_node.AssignedAt = value
@@ -555,6 +659,14 @@ func (_c *UserSubscriptionCreate) createSpec() (*UserSubscription, *sqlgraph.Cre
 	if value, ok := _c.mutation.Notes(); ok {
 		_spec.SetField(usersubscription.FieldNotes, field.TypeString, value)
 		_node.Notes = &value
+	}
+	if value, ok := _c.mutation.PlanConcurrency(); ok {
+		_spec.SetField(usersubscription.FieldPlanConcurrency, field.TypeInt, value)
+		_node.PlanConcurrency = &value
+	}
+	if value, ok := _c.mutation.PlanConcurrencyExpiresAt(); ok {
+		_spec.SetField(usersubscription.FieldPlanConcurrencyExpiresAt, field.TypeTime, value)
+		_node.PlanConcurrencyExpiresAt = &value
 	}
 	if value, ok := _c.mutation.CustomMultiplier(); ok {
 		_spec.SetField(usersubscription.FieldCustomMultiplier, field.TypeInt, value)
@@ -636,6 +748,22 @@ func (_c *UserSubscriptionCreate) createSpec() (*UserSubscription, *sqlgraph.Cre
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(usagelog.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.ConcurrencyEntitlementsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   usersubscription.ConcurrencyEntitlementsTable,
+			Columns: []string{usersubscription.ConcurrencyEntitlementsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(subscriptionconcurrencyentitlement.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -893,6 +1021,36 @@ func (u *UserSubscriptionUpsert) AddMonthlyUsageUsd(v float64) *UserSubscription
 	return u
 }
 
+// SetEarlyResetEnabled sets the "early_reset_enabled" field.
+func (u *UserSubscriptionUpsert) SetEarlyResetEnabled(v bool) *UserSubscriptionUpsert {
+	u.Set(usersubscription.FieldEarlyResetEnabled, v)
+	return u
+}
+
+// UpdateEarlyResetEnabled sets the "early_reset_enabled" field to the value that was provided on create.
+func (u *UserSubscriptionUpsert) UpdateEarlyResetEnabled() *UserSubscriptionUpsert {
+	u.SetExcluded(usersubscription.FieldEarlyResetEnabled)
+	return u
+}
+
+// SetEarlyResetDurationDays sets the "early_reset_duration_days" field.
+func (u *UserSubscriptionUpsert) SetEarlyResetDurationDays(v int) *UserSubscriptionUpsert {
+	u.Set(usersubscription.FieldEarlyResetDurationDays, v)
+	return u
+}
+
+// UpdateEarlyResetDurationDays sets the "early_reset_duration_days" field to the value that was provided on create.
+func (u *UserSubscriptionUpsert) UpdateEarlyResetDurationDays() *UserSubscriptionUpsert {
+	u.SetExcluded(usersubscription.FieldEarlyResetDurationDays)
+	return u
+}
+
+// AddEarlyResetDurationDays adds v to the "early_reset_duration_days" field.
+func (u *UserSubscriptionUpsert) AddEarlyResetDurationDays(v int) *UserSubscriptionUpsert {
+	u.Add(usersubscription.FieldEarlyResetDurationDays, v)
+	return u
+}
+
 // SetAssignedBy sets the "assigned_by" field.
 func (u *UserSubscriptionUpsert) SetAssignedBy(v int64) *UserSubscriptionUpsert {
 	u.Set(usersubscription.FieldAssignedBy, v)
@@ -938,6 +1096,48 @@ func (u *UserSubscriptionUpsert) UpdateNotes() *UserSubscriptionUpsert {
 // ClearNotes clears the value of the "notes" field.
 func (u *UserSubscriptionUpsert) ClearNotes() *UserSubscriptionUpsert {
 	u.SetNull(usersubscription.FieldNotes)
+	return u
+}
+
+// SetPlanConcurrency sets the "plan_concurrency" field.
+func (u *UserSubscriptionUpsert) SetPlanConcurrency(v int) *UserSubscriptionUpsert {
+	u.Set(usersubscription.FieldPlanConcurrency, v)
+	return u
+}
+
+// UpdatePlanConcurrency sets the "plan_concurrency" field to the value that was provided on create.
+func (u *UserSubscriptionUpsert) UpdatePlanConcurrency() *UserSubscriptionUpsert {
+	u.SetExcluded(usersubscription.FieldPlanConcurrency)
+	return u
+}
+
+// AddPlanConcurrency adds v to the "plan_concurrency" field.
+func (u *UserSubscriptionUpsert) AddPlanConcurrency(v int) *UserSubscriptionUpsert {
+	u.Add(usersubscription.FieldPlanConcurrency, v)
+	return u
+}
+
+// ClearPlanConcurrency clears the value of the "plan_concurrency" field.
+func (u *UserSubscriptionUpsert) ClearPlanConcurrency() *UserSubscriptionUpsert {
+	u.SetNull(usersubscription.FieldPlanConcurrency)
+	return u
+}
+
+// SetPlanConcurrencyExpiresAt sets the "plan_concurrency_expires_at" field.
+func (u *UserSubscriptionUpsert) SetPlanConcurrencyExpiresAt(v time.Time) *UserSubscriptionUpsert {
+	u.Set(usersubscription.FieldPlanConcurrencyExpiresAt, v)
+	return u
+}
+
+// UpdatePlanConcurrencyExpiresAt sets the "plan_concurrency_expires_at" field to the value that was provided on create.
+func (u *UserSubscriptionUpsert) UpdatePlanConcurrencyExpiresAt() *UserSubscriptionUpsert {
+	u.SetExcluded(usersubscription.FieldPlanConcurrencyExpiresAt)
+	return u
+}
+
+// ClearPlanConcurrencyExpiresAt clears the value of the "plan_concurrency_expires_at" field.
+func (u *UserSubscriptionUpsert) ClearPlanConcurrencyExpiresAt() *UserSubscriptionUpsert {
+	u.SetNull(usersubscription.FieldPlanConcurrencyExpiresAt)
 	return u
 }
 
@@ -1325,6 +1525,41 @@ func (u *UserSubscriptionUpsertOne) UpdateMonthlyUsageUsd() *UserSubscriptionUps
 	})
 }
 
+// SetEarlyResetEnabled sets the "early_reset_enabled" field.
+func (u *UserSubscriptionUpsertOne) SetEarlyResetEnabled(v bool) *UserSubscriptionUpsertOne {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.SetEarlyResetEnabled(v)
+	})
+}
+
+// UpdateEarlyResetEnabled sets the "early_reset_enabled" field to the value that was provided on create.
+func (u *UserSubscriptionUpsertOne) UpdateEarlyResetEnabled() *UserSubscriptionUpsertOne {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.UpdateEarlyResetEnabled()
+	})
+}
+
+// SetEarlyResetDurationDays sets the "early_reset_duration_days" field.
+func (u *UserSubscriptionUpsertOne) SetEarlyResetDurationDays(v int) *UserSubscriptionUpsertOne {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.SetEarlyResetDurationDays(v)
+	})
+}
+
+// AddEarlyResetDurationDays adds v to the "early_reset_duration_days" field.
+func (u *UserSubscriptionUpsertOne) AddEarlyResetDurationDays(v int) *UserSubscriptionUpsertOne {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.AddEarlyResetDurationDays(v)
+	})
+}
+
+// UpdateEarlyResetDurationDays sets the "early_reset_duration_days" field to the value that was provided on create.
+func (u *UserSubscriptionUpsertOne) UpdateEarlyResetDurationDays() *UserSubscriptionUpsertOne {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.UpdateEarlyResetDurationDays()
+	})
+}
+
 // SetAssignedBy sets the "assigned_by" field.
 func (u *UserSubscriptionUpsertOne) SetAssignedBy(v int64) *UserSubscriptionUpsertOne {
 	return u.Update(func(s *UserSubscriptionUpsert) {
@@ -1378,6 +1613,55 @@ func (u *UserSubscriptionUpsertOne) UpdateNotes() *UserSubscriptionUpsertOne {
 func (u *UserSubscriptionUpsertOne) ClearNotes() *UserSubscriptionUpsertOne {
 	return u.Update(func(s *UserSubscriptionUpsert) {
 		s.ClearNotes()
+	})
+}
+
+// SetPlanConcurrency sets the "plan_concurrency" field.
+func (u *UserSubscriptionUpsertOne) SetPlanConcurrency(v int) *UserSubscriptionUpsertOne {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.SetPlanConcurrency(v)
+	})
+}
+
+// AddPlanConcurrency adds v to the "plan_concurrency" field.
+func (u *UserSubscriptionUpsertOne) AddPlanConcurrency(v int) *UserSubscriptionUpsertOne {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.AddPlanConcurrency(v)
+	})
+}
+
+// UpdatePlanConcurrency sets the "plan_concurrency" field to the value that was provided on create.
+func (u *UserSubscriptionUpsertOne) UpdatePlanConcurrency() *UserSubscriptionUpsertOne {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.UpdatePlanConcurrency()
+	})
+}
+
+// ClearPlanConcurrency clears the value of the "plan_concurrency" field.
+func (u *UserSubscriptionUpsertOne) ClearPlanConcurrency() *UserSubscriptionUpsertOne {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.ClearPlanConcurrency()
+	})
+}
+
+// SetPlanConcurrencyExpiresAt sets the "plan_concurrency_expires_at" field.
+func (u *UserSubscriptionUpsertOne) SetPlanConcurrencyExpiresAt(v time.Time) *UserSubscriptionUpsertOne {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.SetPlanConcurrencyExpiresAt(v)
+	})
+}
+
+// UpdatePlanConcurrencyExpiresAt sets the "plan_concurrency_expires_at" field to the value that was provided on create.
+func (u *UserSubscriptionUpsertOne) UpdatePlanConcurrencyExpiresAt() *UserSubscriptionUpsertOne {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.UpdatePlanConcurrencyExpiresAt()
+	})
+}
+
+// ClearPlanConcurrencyExpiresAt clears the value of the "plan_concurrency_expires_at" field.
+func (u *UserSubscriptionUpsertOne) ClearPlanConcurrencyExpiresAt() *UserSubscriptionUpsertOne {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.ClearPlanConcurrencyExpiresAt()
 	})
 }
 
@@ -1949,6 +2233,41 @@ func (u *UserSubscriptionUpsertBulk) UpdateMonthlyUsageUsd() *UserSubscriptionUp
 	})
 }
 
+// SetEarlyResetEnabled sets the "early_reset_enabled" field.
+func (u *UserSubscriptionUpsertBulk) SetEarlyResetEnabled(v bool) *UserSubscriptionUpsertBulk {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.SetEarlyResetEnabled(v)
+	})
+}
+
+// UpdateEarlyResetEnabled sets the "early_reset_enabled" field to the value that was provided on create.
+func (u *UserSubscriptionUpsertBulk) UpdateEarlyResetEnabled() *UserSubscriptionUpsertBulk {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.UpdateEarlyResetEnabled()
+	})
+}
+
+// SetEarlyResetDurationDays sets the "early_reset_duration_days" field.
+func (u *UserSubscriptionUpsertBulk) SetEarlyResetDurationDays(v int) *UserSubscriptionUpsertBulk {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.SetEarlyResetDurationDays(v)
+	})
+}
+
+// AddEarlyResetDurationDays adds v to the "early_reset_duration_days" field.
+func (u *UserSubscriptionUpsertBulk) AddEarlyResetDurationDays(v int) *UserSubscriptionUpsertBulk {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.AddEarlyResetDurationDays(v)
+	})
+}
+
+// UpdateEarlyResetDurationDays sets the "early_reset_duration_days" field to the value that was provided on create.
+func (u *UserSubscriptionUpsertBulk) UpdateEarlyResetDurationDays() *UserSubscriptionUpsertBulk {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.UpdateEarlyResetDurationDays()
+	})
+}
+
 // SetAssignedBy sets the "assigned_by" field.
 func (u *UserSubscriptionUpsertBulk) SetAssignedBy(v int64) *UserSubscriptionUpsertBulk {
 	return u.Update(func(s *UserSubscriptionUpsert) {
@@ -2002,6 +2321,55 @@ func (u *UserSubscriptionUpsertBulk) UpdateNotes() *UserSubscriptionUpsertBulk {
 func (u *UserSubscriptionUpsertBulk) ClearNotes() *UserSubscriptionUpsertBulk {
 	return u.Update(func(s *UserSubscriptionUpsert) {
 		s.ClearNotes()
+	})
+}
+
+// SetPlanConcurrency sets the "plan_concurrency" field.
+func (u *UserSubscriptionUpsertBulk) SetPlanConcurrency(v int) *UserSubscriptionUpsertBulk {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.SetPlanConcurrency(v)
+	})
+}
+
+// AddPlanConcurrency adds v to the "plan_concurrency" field.
+func (u *UserSubscriptionUpsertBulk) AddPlanConcurrency(v int) *UserSubscriptionUpsertBulk {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.AddPlanConcurrency(v)
+	})
+}
+
+// UpdatePlanConcurrency sets the "plan_concurrency" field to the value that was provided on create.
+func (u *UserSubscriptionUpsertBulk) UpdatePlanConcurrency() *UserSubscriptionUpsertBulk {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.UpdatePlanConcurrency()
+	})
+}
+
+// ClearPlanConcurrency clears the value of the "plan_concurrency" field.
+func (u *UserSubscriptionUpsertBulk) ClearPlanConcurrency() *UserSubscriptionUpsertBulk {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.ClearPlanConcurrency()
+	})
+}
+
+// SetPlanConcurrencyExpiresAt sets the "plan_concurrency_expires_at" field.
+func (u *UserSubscriptionUpsertBulk) SetPlanConcurrencyExpiresAt(v time.Time) *UserSubscriptionUpsertBulk {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.SetPlanConcurrencyExpiresAt(v)
+	})
+}
+
+// UpdatePlanConcurrencyExpiresAt sets the "plan_concurrency_expires_at" field to the value that was provided on create.
+func (u *UserSubscriptionUpsertBulk) UpdatePlanConcurrencyExpiresAt() *UserSubscriptionUpsertBulk {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.UpdatePlanConcurrencyExpiresAt()
+	})
+}
+
+// ClearPlanConcurrencyExpiresAt clears the value of the "plan_concurrency_expires_at" field.
+func (u *UserSubscriptionUpsertBulk) ClearPlanConcurrencyExpiresAt() *UserSubscriptionUpsertBulk {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.ClearPlanConcurrencyExpiresAt()
 	})
 }
 

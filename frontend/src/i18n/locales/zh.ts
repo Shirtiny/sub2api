@@ -7205,7 +7205,20 @@ export default {
     resetIn: '{time} 后重置',
     quotaEndsIn: '额度将在 {time} 后结束',
     windowNotActive: '等待首次使用',
-    usageOf: '已用 {used} / {limit}'
+    usageOf: '已用 {used} / {limit}',
+    earlyReset: '提前重置',
+    earlyResetConfirmTitle: '确认提前重置',
+    earlyResetConfirmMessage: '将立即重置“{name}”的全部订阅额度，并缩短 {days} 天订阅时间。此操作不可撤销。',
+    earlyResetConfirm: '确认重置',
+    earlyResetting: '重置中...',
+    earlyResetSuccess: '订阅额度已提前重置',
+    earlyResetFailed: '提前重置失败',
+    earlyResetErrors: {
+      INVALID_EARLY_RESET_CONFIG: '提前重置配置无效，请联系管理员',
+      EARLY_RESET_DISABLED: '该订阅未启用提前重置',
+      EARLY_RESET_WOULD_EXPIRE: '本次提前重置会使订阅立即过期，如需放弃套餐请联系客服',
+      EARLY_RESET_CONFLICT: '订阅状态已发生变化，请刷新后重试'
+    }
   },
 
   // Onboarding Tour
@@ -7665,6 +7678,8 @@ export default {
       originalPrice: '原价',
       price: '价格',
       validityDays: '有效期（天）',
+      concurrency: '并发数量',
+      concurrencyHint: '套餐有效期内的最大并发请求数；定制倍数不会放大并发，套餐到期后恢复用户的基础并发数。',
       validityUnit: '有效期单位',
       sortOrder: '排序',
       forSale: '上架状态',
@@ -7696,6 +7711,11 @@ export default {
       customMultiplierMax: '最大倍数',
       customMultiplierHint: '开启后，用户可按整数倍购买该套餐，价格与限额同步放大。',
       customMultiplierInvalid: '定制倍数范围不合法，最小值至少为 1，最大值不能小于最小值。',
+      earlyResetEnabled: '允许提前重置',
+      earlyResetHint: '开启后，用户可在订阅卡片中主动重置全部额度，代价是缩短订阅时间。',
+      earlyResetDurationDays: '每次缩短天数',
+      earlyResetDurationHint: '每次提前重置后，从当前订阅周期中扣除的天数。',
+      earlyResetDurationInvalid: '提前重置缩短天数必须在 1 到 36500 之间。',
       dashboardTitle: '支付概览',
       dashboardDesc: '充值订单统计与分析',
       daySuffix: '天',
@@ -7709,6 +7729,7 @@ export default {
       groupRequired: '请选择订阅分组',
       priceRequired: '价格必须大于 0',
       validityDaysRequired: '有效期天数必须大于 0',
+      concurrencyRequired: '并发数量必须大于 0',
       groupMissing: '缺失',
       groupInfo: '分组信息',
       platform: '平台',

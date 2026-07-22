@@ -1,0 +1,7 @@
+{"file":".trellis/spec/backend/database-guidelines.md","reason":"Verify migration immutability and Ent generation."}
+{"file":".trellis/spec/backend/error-handling.md","reason":"Verify shared response/error handling and validation matrix."}
+{"file":".trellis/spec/backend/quality-guidelines.md","reason":"Verify layering and backend tests."}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Verify confirmation dialog reuse and typed Vue patterns."}
+{"file":".trellis/spec/frontend/type-safety.md","reason":"Verify cross-layer field names and response types."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Verify lint, typecheck, and focused tests."}
+{"file":".trellis/spec/guides/cross-layer-thinking-guide.md","reason":"Verify complete data flow and edge cases."}

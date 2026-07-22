@@ -149,10 +149,11 @@ func (h *UserHandler) List(c *gin.Context) {
 	var loadInfo map[int64]*service.UserLoadInfo
 	if len(users) > 0 && h.concurrencyService != nil {
 		usersConcurrency := make([]service.UserWithConcurrency, len(users))
+		now := time.Now()
 		for i := range users {
 			usersConcurrency[i] = service.UserWithConcurrency{
 				ID:             users[i].ID,
-				MaxConcurrency: users[i].Concurrency,
+				MaxConcurrency: users[i].EffectiveConcurrencyAt(now),
 			}
 		}
 		loadInfo, _ = h.concurrencyService.GetUsersLoadBatch(c.Request.Context(), usersConcurrency)

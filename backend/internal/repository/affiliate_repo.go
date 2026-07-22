@@ -651,6 +651,7 @@ func (r *affiliateRepository) TransferQuotaToSubscription(ctx context.Context, u
 
 		var planPrice float64
 		var validityDays int
+		var planConcurrency int
 		var targetGroupID int64
 		planRows, err := txClient.QueryContext(txCtx, `
 	SELECT CASE
@@ -658,6 +659,7 @@ func (r *affiliateRepository) TransferQuotaToSubscription(ctx context.Context, u
 	           ELSE p.price::double precision
 	       END AS plan_price,
 	       p.validity_days,
+	       p.concurrency AS plan_concurrency,
 	       COALESCE(cg.name, g.name, '') AS group_name,
 	       COALESCE(cg.id, g.id) AS target_group_id
 	FROM subscription_plans p
@@ -693,7 +695,7 @@ func (r *affiliateRepository) TransferQuotaToSubscription(ctx context.Context, u
 			return fmt.Errorf("query affiliate subscription target: %w", err)
 		}
 		if planRows.Next() {
-			if err := planRows.Scan(&planPrice, &validityDays, &result.GroupName, &targetGroupID); err != nil {
+			if err := planRows.Scan(&planPrice, &validityDays, &planConcurrency, &result.GroupName, &targetGroupID); err != nil {
 				_ = planRows.Close()
 				return err
 			}
@@ -701,7 +703,7 @@ func (r *affiliateRepository) TransferQuotaToSubscription(ctx context.Context, u
 		if err := planRows.Close(); err != nil {
 			return err
 		}
-		if planPrice <= 0 || math.IsNaN(planPrice) || math.IsInf(planPrice, 0) || validityDays <= 0 || targetGroupID <= 0 {
+		if planPrice <= 0 || math.IsNaN(planPrice) || math.IsInf(planPrice, 0) || validityDays <= 0 || planConcurrency <= 0 || targetGroupID <= 0 {
 			return service.ErrSubscriptionNotFound
 		}
 		result.GroupID = targetGroupID
@@ -754,7 +756,7 @@ func (r *affiliateRepository) TransferQuotaToSubscription(ctx context.Context, u
 		WHERE user_id = $1
 		  AND group_id = $2
 		  AND deleted_at IS NULL
-		RETURNING expires_at
+		RETURNING id, expires_at
 	), inserted AS (
 		INSERT INTO user_subscriptions (
 			user_id,
@@ -769,12 +771,34 @@ func (r *affiliateRepository) TransferQuotaToSubscription(ctx context.Context, u
 		)
 		SELECT $1, $2, NOW(), NOW() + ($3 * INTERVAL '1 day'), 'active', NOW(), 'affiliate point subscription redemption', NOW(), NOW()
 		WHERE NOT EXISTS (SELECT 1 FROM updated)
-		RETURNING expires_at
+		RETURNING id, expires_at
+	), subscription_term AS (
+		SELECT id, expires_at FROM updated
+		UNION ALL
+		SELECT id, expires_at FROM inserted
+	), entitlement AS (
+		INSERT INTO subscription_concurrency_entitlements (
+			user_id,
+			subscription_id,
+			concurrency,
+			starts_at,
+			expires_at,
+			created_at,
+			updated_at
+		)
+		SELECT $1,
+		       id,
+		       $4,
+		       expires_at - ($3 * INTERVAL '1 day'),
+		       expires_at,
+		       NOW(),
+		       NOW()
+		FROM subscription_term
+		WHERE expires_at - ($3 * INTERVAL '1 day') < expires_at
+		RETURNING subscription_id
 	)
-	SELECT expires_at FROM updated
-	UNION ALL
-	SELECT expires_at FROM inserted
-	LIMIT 1`, userID, result.GroupID, days)
+	SELECT expires_at FROM subscription_term
+	LIMIT 1`, userID, result.GroupID, days, planConcurrency)
 		if err != nil {
 			return fmt.Errorf("extend subscription by rebate amount: %w", err)
 		}

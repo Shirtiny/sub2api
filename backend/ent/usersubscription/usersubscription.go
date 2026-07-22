@@ -43,12 +43,20 @@ const (
 	FieldWeeklyUsageUsd = "weekly_usage_usd"
 	// FieldMonthlyUsageUsd holds the string denoting the monthly_usage_usd field in the database.
 	FieldMonthlyUsageUsd = "monthly_usage_usd"
+	// FieldEarlyResetEnabled holds the string denoting the early_reset_enabled field in the database.
+	FieldEarlyResetEnabled = "early_reset_enabled"
+	// FieldEarlyResetDurationDays holds the string denoting the early_reset_duration_days field in the database.
+	FieldEarlyResetDurationDays = "early_reset_duration_days"
 	// FieldAssignedBy holds the string denoting the assigned_by field in the database.
 	FieldAssignedBy = "assigned_by"
 	// FieldAssignedAt holds the string denoting the assigned_at field in the database.
 	FieldAssignedAt = "assigned_at"
 	// FieldNotes holds the string denoting the notes field in the database.
 	FieldNotes = "notes"
+	// FieldPlanConcurrency holds the string denoting the plan_concurrency field in the database.
+	FieldPlanConcurrency = "plan_concurrency"
+	// FieldPlanConcurrencyExpiresAt holds the string denoting the plan_concurrency_expires_at field in the database.
+	FieldPlanConcurrencyExpiresAt = "plan_concurrency_expires_at"
 	// FieldCustomMultiplier holds the string denoting the custom_multiplier field in the database.
 	FieldCustomMultiplier = "custom_multiplier"
 	// FieldCustomSourcePlanID holds the string denoting the custom_source_plan_id field in the database.
@@ -67,6 +75,8 @@ const (
 	EdgeAssignedByUser = "assigned_by_user"
 	// EdgeUsageLogs holds the string denoting the usage_logs edge name in mutations.
 	EdgeUsageLogs = "usage_logs"
+	// EdgeConcurrencyEntitlements holds the string denoting the concurrency_entitlements edge name in mutations.
+	EdgeConcurrencyEntitlements = "concurrency_entitlements"
 	// Table holds the table name of the usersubscription in the database.
 	Table = "user_subscriptions"
 	// UserTable is the table that holds the user relation/edge.
@@ -97,6 +107,13 @@ const (
 	UsageLogsInverseTable = "usage_logs"
 	// UsageLogsColumn is the table column denoting the usage_logs relation/edge.
 	UsageLogsColumn = "subscription_id"
+	// ConcurrencyEntitlementsTable is the table that holds the concurrency_entitlements relation/edge.
+	ConcurrencyEntitlementsTable = "subscription_concurrency_entitlements"
+	// ConcurrencyEntitlementsInverseTable is the table name for the SubscriptionConcurrencyEntitlement entity.
+	// It exists in this package in order to avoid circular dependency with the "subscriptionconcurrencyentitlement" package.
+	ConcurrencyEntitlementsInverseTable = "subscription_concurrency_entitlements"
+	// ConcurrencyEntitlementsColumn is the table column denoting the concurrency_entitlements relation/edge.
+	ConcurrencyEntitlementsColumn = "subscription_id"
 )
 
 // Columns holds all SQL columns for usersubscription fields.
@@ -116,9 +133,13 @@ var Columns = []string{
 	FieldDailyUsageUsd,
 	FieldWeeklyUsageUsd,
 	FieldMonthlyUsageUsd,
+	FieldEarlyResetEnabled,
+	FieldEarlyResetDurationDays,
 	FieldAssignedBy,
 	FieldAssignedAt,
 	FieldNotes,
+	FieldPlanConcurrency,
+	FieldPlanConcurrencyExpiresAt,
 	FieldCustomMultiplier,
 	FieldCustomSourcePlanID,
 	FieldCustomSourceGroupID,
@@ -160,8 +181,16 @@ var (
 	DefaultWeeklyUsageUsd float64
 	// DefaultMonthlyUsageUsd holds the default value on creation for the "monthly_usage_usd" field.
 	DefaultMonthlyUsageUsd float64
+	// DefaultEarlyResetEnabled holds the default value on creation for the "early_reset_enabled" field.
+	DefaultEarlyResetEnabled bool
+	// DefaultEarlyResetDurationDays holds the default value on creation for the "early_reset_duration_days" field.
+	DefaultEarlyResetDurationDays int
+	// EarlyResetDurationDaysValidator is a validator for the "early_reset_duration_days" field. It is called by the builders before save.
+	EarlyResetDurationDaysValidator func(int) error
 	// DefaultAssignedAt holds the default value on creation for the "assigned_at" field.
 	DefaultAssignedAt func() time.Time
+	// PlanConcurrencyValidator is a validator for the "plan_concurrency" field. It is called by the builders before save.
+	PlanConcurrencyValidator func(int) error
 	// CustomDisplayNameValidator is a validator for the "custom_display_name" field. It is called by the builders before save.
 	CustomDisplayNameValidator func(string) error
 )
@@ -244,6 +273,16 @@ func ByMonthlyUsageUsd(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldMonthlyUsageUsd, opts...).ToFunc()
 }
 
+// ByEarlyResetEnabled orders the results by the early_reset_enabled field.
+func ByEarlyResetEnabled(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldEarlyResetEnabled, opts...).ToFunc()
+}
+
+// ByEarlyResetDurationDays orders the results by the early_reset_duration_days field.
+func ByEarlyResetDurationDays(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldEarlyResetDurationDays, opts...).ToFunc()
+}
+
 // ByAssignedBy orders the results by the assigned_by field.
 func ByAssignedBy(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldAssignedBy, opts...).ToFunc()
@@ -257,6 +296,16 @@ func ByAssignedAt(opts ...sql.OrderTermOption) OrderOption {
 // ByNotes orders the results by the notes field.
 func ByNotes(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldNotes, opts...).ToFunc()
+}
+
+// ByPlanConcurrency orders the results by the plan_concurrency field.
+func ByPlanConcurrency(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPlanConcurrency, opts...).ToFunc()
+}
+
+// ByPlanConcurrencyExpiresAt orders the results by the plan_concurrency_expires_at field.
+func ByPlanConcurrencyExpiresAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPlanConcurrencyExpiresAt, opts...).ToFunc()
 }
 
 // ByCustomMultiplier orders the results by the custom_multiplier field.
@@ -318,6 +367,20 @@ func ByUsageLogs(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newUsageLogsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByConcurrencyEntitlementsCount orders the results by concurrency_entitlements count.
+func ByConcurrencyEntitlementsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newConcurrencyEntitlementsStep(), opts...)
+	}
+}
+
+// ByConcurrencyEntitlements orders the results by concurrency_entitlements terms.
+func ByConcurrencyEntitlements(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newConcurrencyEntitlementsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newUserStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -344,5 +407,12 @@ func newUsageLogsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(UsageLogsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, UsageLogsTable, UsageLogsColumn),
+	)
+}
+func newConcurrencyEntitlementsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ConcurrencyEntitlementsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ConcurrencyEntitlementsTable, ConcurrencyEntitlementsColumn),
 	)
 }

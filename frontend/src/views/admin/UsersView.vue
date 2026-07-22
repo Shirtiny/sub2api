@@ -557,7 +557,7 @@
           <template #cell-concurrency="{ row }">
             <UserConcurrencyCell
               :current="row.current_concurrency ?? 0"
-              :max="row.concurrency"
+              :max="row.effective_concurrency ?? row.concurrency"
             />
           </template>
 

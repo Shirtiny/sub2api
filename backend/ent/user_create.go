@@ -20,6 +20,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/pendingauthsession"
 	"github.com/Wei-Shaw/sub2api/ent/promocodeusage"
 	"github.com/Wei-Shaw/sub2api/ent/redeemcode"
+	"github.com/Wei-Shaw/sub2api/ent/subscriptionconcurrencyentitlement"
 	"github.com/Wei-Shaw/sub2api/ent/usagelog"
 	"github.com/Wei-Shaw/sub2api/ent/user"
 	"github.com/Wei-Shaw/sub2api/ent/userattributevalue"
@@ -384,6 +385,21 @@ func (_c *UserCreate) AddSubscriptions(v ...*UserSubscription) *UserCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddSubscriptionIDs(ids...)
+}
+
+// AddSubscriptionConcurrencyEntitlementIDs adds the "subscription_concurrency_entitlements" edge to the SubscriptionConcurrencyEntitlement entity by IDs.
+func (_c *UserCreate) AddSubscriptionConcurrencyEntitlementIDs(ids ...int64) *UserCreate {
+	_c.mutation.AddSubscriptionConcurrencyEntitlementIDs(ids...)
+	return _c
+}
+
+// AddSubscriptionConcurrencyEntitlements adds the "subscription_concurrency_entitlements" edges to the SubscriptionConcurrencyEntitlement entity.
+func (_c *UserCreate) AddSubscriptionConcurrencyEntitlements(v ...*SubscriptionConcurrencyEntitlement) *UserCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddSubscriptionConcurrencyEntitlementIDs(ids...)
 }
 
 // AddAssignedSubscriptionIDs adds the "assigned_subscriptions" edge to the UserSubscription entity by IDs.
@@ -900,6 +916,22 @@ func (_c *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(usersubscription.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.SubscriptionConcurrencyEntitlementsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.SubscriptionConcurrencyEntitlementsTable,
+			Columns: []string{user.SubscriptionConcurrencyEntitlementsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(subscriptionconcurrencyentitlement.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

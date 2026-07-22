@@ -612,6 +612,7 @@ func (s *PaymentService) doSub(ctx context.Context, o *dbent.PaymentOrder, lease
 		if err := tx.Commit(); err != nil {
 			return fmt.Errorf("commit transaction: %w", err)
 		}
+		s.subscriptionSvc.invalidateSubscriptionCaches(ctx, o.UserID, gid)
 		if notifyGroupID > 0 {
 			if err := s.notifyCustomSubscriptionGroupChanged(ctx, notifyGroupID); err != nil {
 				slog.Warn("custom subscription group notification failed after commit", "groupID", notifyGroupID, "error", err)
@@ -629,15 +630,17 @@ func (s *PaymentService) doSub(ctx context.Context, o *dbent.PaymentOrder, lease
 		return s.markCompleted(ctx, o, lease, "SUBSCRIPTION_SUCCESS")
 	}
 	orderNote := fmt.Sprintf("payment order %d", o.ID)
+	earlyResetEnabled := o.SubscriptionEarlyResetEnabled
+	earlyResetDurationDays := o.SubscriptionEarlyResetDurationDays
 
-	assignInput := &AssignSubscriptionInput{UserID: o.UserID, GroupID: gid, ValidityDays: days, AssignedBy: 0, Notes: orderNote}
+	assignInput := &AssignSubscriptionInput{UserID: o.UserID, GroupID: gid, ValidityDays: days, AssignedBy: 0, Notes: orderNote, PlanConcurrency: o.SubscriptionConcurrency, PlanConcurrencySourceID: &o.ID, EarlyResetEnabled: &earlyResetEnabled, EarlyResetDurationDays: &earlyResetDurationDays, EarlyResetSourceOrderID: &o.ID}
 	if virtualEntitlement != nil {
 		assignInput.CustomMultiplier = &virtualEntitlement.Multiplier
 		assignInput.CustomSourcePlanID = &virtualEntitlement.SourcePlanID
 		assignInput.CustomSourceGroupID = &virtualEntitlement.SourceGroupID
 		assignInput.CustomDisplayName = virtualEntitlement.DisplayName
 	}
-	if _, _, err = s.subscriptionSvc.AssignOrExtendSubscription(txCtx, assignInput); err != nil {
+	if _, _, err = s.subscriptionSvc.assignOrExtendSubscription(txCtx, assignInput, true); err != nil {
 		_ = tx.Rollback()
 		return fmt.Errorf("assign subscription: %w", err)
 	}
@@ -648,10 +651,11 @@ func (s *PaymentService) doSub(ctx context.Context, o *dbent.PaymentOrder, lease
 		}
 	}
 	auditDetail := map[string]any{
-		"subscriptionGroupID": gid,
-		"subscriptionDays":    days,
-		"creditedAmount":      o.Amount,
-		"payAmount":           o.PayAmount,
+		"subscriptionGroupID":     gid,
+		"subscriptionDays":        days,
+		"subscriptionConcurrency": o.SubscriptionConcurrency,
+		"creditedAmount":          o.Amount,
+		"payAmount":               o.PayAmount,
 	}
 	if virtualEntitlement != nil {
 		auditDetail["customMultiplier"] = virtualEntitlement.Multiplier
@@ -669,6 +673,7 @@ func (s *PaymentService) doSub(ctx context.Context, o *dbent.PaymentOrder, lease
 	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("commit transaction: %w", err)
 	}
+	s.subscriptionSvc.invalidateSubscriptionCaches(ctx, o.UserID, gid)
 	if notifyGroupID > 0 {
 		if err := s.notifyCustomSubscriptionGroupChanged(ctx, notifyGroupID); err != nil {
 			slog.Warn("custom subscription group notification failed after commit", "groupID", notifyGroupID, "error", err)
@@ -714,12 +719,19 @@ func (s *PaymentService) ensurePaymentSubscriptionAssigned(ctx context.Context, 
 		case lookupErr != nil && !errors.Is(lookupErr, ErrSubscriptionNotFound):
 			return fmt.Errorf("check existing subscription assignment: %w", lookupErr)
 		default:
+			earlyResetEnabled := o.SubscriptionEarlyResetEnabled
+			earlyResetDurationDays := o.SubscriptionEarlyResetDurationDays
 			if _, _, err := s.subscriptionSvc.assignOrExtendSubscription(txCtx, &AssignSubscriptionInput{
-				UserID:       o.UserID,
-				GroupID:      groupID,
-				ValidityDays: days,
-				AssignedBy:   0,
-				Notes:        orderNote,
+				UserID:                  o.UserID,
+				GroupID:                 groupID,
+				ValidityDays:            days,
+				AssignedBy:              0,
+				Notes:                   orderNote,
+				PlanConcurrency:         o.SubscriptionConcurrency,
+				PlanConcurrencySourceID: &o.ID,
+				EarlyResetEnabled:       &earlyResetEnabled,
+				EarlyResetDurationDays:  &earlyResetDurationDays,
+				EarlyResetSourceOrderID: &o.ID,
 			}, true); err != nil {
 				return fmt.Errorf("assign subscription: %w", err)
 			}
@@ -754,10 +766,11 @@ func (s *PaymentService) ensurePaymentSubscriptionAssigned(ctx context.Context, 
 		}
 
 		auditDetail := map[string]any{
-			"subscriptionGroupID": groupID,
-			"subscriptionDays":    days,
-			"creditedAmount":      o.Amount,
-			"payAmount":           o.PayAmount,
+			"subscriptionGroupID":     groupID,
+			"subscriptionDays":        days,
+			"subscriptionConcurrency": o.SubscriptionConcurrency,
+			"creditedAmount":          o.Amount,
+			"payAmount":               o.PayAmount,
 		}
 		if coupon := cafeCouponOrderSnapshot(o); coupon != nil {
 			auditDetail["cafeCoupon"] = coupon

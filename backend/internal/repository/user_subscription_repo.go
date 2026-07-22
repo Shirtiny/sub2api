@@ -59,7 +59,11 @@ func (r *userSubscriptionRepository) Create(ctx context.Context, sub *service.Us
 		SetDailyUsageUsd(sub.DailyUsageUSD).
 		SetWeeklyUsageUsd(sub.WeeklyUsageUSD).
 		SetMonthlyUsageUsd(sub.MonthlyUsageUSD).
+		SetEarlyResetEnabled(sub.EarlyResetEnabled).
+		SetEarlyResetDurationDays(sub.EarlyResetDurationDays).
 		SetNillableAssignedBy(sub.AssignedBy).
+		SetNillablePlanConcurrency(sub.PlanConcurrency).
+		SetNillablePlanConcurrencyExpiresAt(sub.PlanConcurrencyExpiresAt).
 		SetNillableCustomMultiplier(sub.CustomMultiplier).
 		SetNillableCustomSourcePlanID(sub.CustomSourcePlanID).
 		SetNillableCustomSourceGroupID(sub.CustomSourceGroupID).
@@ -148,9 +152,22 @@ func (r *userSubscriptionRepository) Update(ctx context.Context, sub *service.Us
 		SetDailyUsageUsd(sub.DailyUsageUSD).
 		SetWeeklyUsageUsd(sub.WeeklyUsageUSD).
 		SetMonthlyUsageUsd(sub.MonthlyUsageUSD).
+		SetEarlyResetEnabled(sub.EarlyResetEnabled).
+		SetEarlyResetDurationDays(sub.EarlyResetDurationDays).
 		SetNillableAssignedBy(sub.AssignedBy).
 		SetAssignedAt(sub.AssignedAt).
 		SetNotes(sub.Notes)
+
+	if sub.PlanConcurrency != nil {
+		builder = builder.SetPlanConcurrency(*sub.PlanConcurrency)
+	} else {
+		builder = builder.ClearPlanConcurrency()
+	}
+	if sub.PlanConcurrencyExpiresAt != nil {
+		builder = builder.SetPlanConcurrencyExpiresAt(*sub.PlanConcurrencyExpiresAt)
+	} else {
+		builder = builder.ClearPlanConcurrencyExpiresAt()
+	}
 
 	if sub.CustomMultiplier != nil {
 		builder = builder.SetCustomMultiplier(*sub.CustomMultiplier)
@@ -378,6 +395,49 @@ func (r *userSubscriptionRepository) ResetUsageWindows(ctx context.Context, id i
 	}
 	_, err := update.Save(ctx)
 	return translatePersistenceError(err, service.ErrSubscriptionNotFound, nil)
+}
+
+func (r *userSubscriptionRepository) EarlyReset(ctx context.Context, input service.EarlyResetSubscriptionParams) error {
+	client := clientFromContext(ctx, r.client)
+	update := client.UserSubscription.Update().Where(
+		usersubscription.IDEQ(input.ID),
+		usersubscription.UserIDEQ(input.UserID),
+		usersubscription.StatusEQ(service.SubscriptionStatusActive),
+		usersubscription.ExpiresAtEQ(input.ExpectedExpiresAt),
+	)
+	if input.ExpectedCustomExpiresAt == nil {
+		update = update.Where(usersubscription.CustomExpiresAtIsNil())
+	} else {
+		update = update.Where(usersubscription.CustomExpiresAtEQ(*input.ExpectedCustomExpiresAt))
+	}
+	update = update.
+		SetExpiresAt(input.NewExpiresAt).
+		SetDailyUsageUsd(0).
+		SetWeeklyUsageUsd(0).
+		SetMonthlyUsageUsd(0).
+		SetDailyWindowStart(input.WindowStart).
+		SetWeeklyWindowStart(input.WindowStart).
+		SetMonthlyWindowStart(input.WindowStart)
+	if input.NewCustomExpiresAt == nil {
+		update = update.ClearCustomExpiresAt()
+	} else {
+		update = update.SetCustomExpiresAt(*input.NewCustomExpiresAt)
+	}
+	affected, err := update.Save(ctx)
+	if err != nil {
+		return translatePersistenceError(err, service.ErrSubscriptionNotFound, nil)
+	}
+	if affected > 0 {
+		return nil
+	}
+	exists, err := client.UserSubscription.Query().Where(usersubscription.IDEQ(input.ID)).Exist(ctx)
+	if err != nil {
+		return translatePersistenceError(err, service.ErrSubscriptionNotFound, nil)
+	}
+	if !exists {
+		return service.ErrSubscriptionNotFound
+	}
+	return service.ErrEarlyResetConflict
 }
 
 func (r *userSubscriptionRepository) ResetDailyUsage(ctx context.Context, id int64, expectedWindowStart *time.Time, newWindowStart time.Time) error {
@@ -732,28 +792,32 @@ func userSubscriptionEntityToService(m *dbent.UserSubscription) *service.UserSub
 		return nil
 	}
 	out := &service.UserSubscription{
-		ID:                  m.ID,
-		UserID:              m.UserID,
-		GroupID:             m.GroupID,
-		StartsAt:            m.StartsAt,
-		ExpiresAt:           normalizeSubscriptionExpiresAt(m.ExpiresAt),
-		Status:              m.Status,
-		DailyWindowStart:    m.DailyWindowStart,
-		WeeklyWindowStart:   m.WeeklyWindowStart,
-		MonthlyWindowStart:  m.MonthlyWindowStart,
-		DailyUsageUSD:       m.DailyUsageUsd,
-		WeeklyUsageUSD:      m.WeeklyUsageUsd,
-		MonthlyUsageUSD:     m.MonthlyUsageUsd,
-		AssignedBy:          m.AssignedBy,
-		AssignedAt:          m.AssignedAt,
-		Notes:               derefString(m.Notes),
-		CustomMultiplier:    m.CustomMultiplier,
-		CustomSourcePlanID:  m.CustomSourcePlanID,
-		CustomSourceGroupID: m.CustomSourceGroupID,
-		CustomExpiresAt:     m.CustomExpiresAt,
-		CustomDisplayName:   derefString(m.CustomDisplayName),
-		CreatedAt:           m.CreatedAt,
-		UpdatedAt:           m.UpdatedAt,
+		ID:                       m.ID,
+		UserID:                   m.UserID,
+		GroupID:                  m.GroupID,
+		StartsAt:                 m.StartsAt,
+		ExpiresAt:                normalizeSubscriptionExpiresAt(m.ExpiresAt),
+		Status:                   m.Status,
+		DailyWindowStart:         m.DailyWindowStart,
+		WeeklyWindowStart:        m.WeeklyWindowStart,
+		MonthlyWindowStart:       m.MonthlyWindowStart,
+		DailyUsageUSD:            m.DailyUsageUsd,
+		WeeklyUsageUSD:           m.WeeklyUsageUsd,
+		MonthlyUsageUSD:          m.MonthlyUsageUsd,
+		EarlyResetEnabled:        m.EarlyResetEnabled,
+		EarlyResetDurationDays:   m.EarlyResetDurationDays,
+		AssignedBy:               m.AssignedBy,
+		AssignedAt:               m.AssignedAt,
+		Notes:                    derefString(m.Notes),
+		PlanConcurrency:          m.PlanConcurrency,
+		PlanConcurrencyExpiresAt: m.PlanConcurrencyExpiresAt,
+		CustomMultiplier:         m.CustomMultiplier,
+		CustomSourcePlanID:       m.CustomSourcePlanID,
+		CustomSourceGroupID:      m.CustomSourceGroupID,
+		CustomExpiresAt:          m.CustomExpiresAt,
+		CustomDisplayName:        derefString(m.CustomDisplayName),
+		CreatedAt:                m.CreatedAt,
+		UpdatedAt:                m.UpdatedAt,
 	}
 	if m.Edges.User != nil {
 		out.User = userEntityToService(m.Edges.User)

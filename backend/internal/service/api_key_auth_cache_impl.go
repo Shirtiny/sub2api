@@ -13,7 +13,7 @@ import (
 	"github.com/dgraph-io/ristretto"
 )
 
-const apiKeyAuthSnapshotVersion = 13 // v13: include group video pricing fields
+const apiKeyAuthSnapshotVersion = 16 // v16: preserve base concurrency and evaluate plan entitlements at request time
 
 type apiKeyAuthCacheConfig struct {
 	l1Size        int
@@ -268,19 +268,20 @@ func (s *APIKeyService) snapshotFromAPIKey(ctx context.Context, apiKey *APIKey) 
 		RateLimit1d: apiKey.RateLimit1d,
 		RateLimit7d: apiKey.RateLimit7d,
 		User: APIKeyAuthUserSnapshot{
-			ID:                         apiKey.User.ID,
-			Status:                     apiKey.User.Status,
-			Role:                       apiKey.User.Role,
-			Balance:                    apiKey.User.Balance,
-			Concurrency:                apiKey.User.Concurrency,
-			Email:                      apiKey.User.Email,
-			Username:                   apiKey.User.Username,
-			BalanceNotifyEnabled:       apiKey.User.BalanceNotifyEnabled,
-			BalanceNotifyThresholdType: apiKey.User.BalanceNotifyThresholdType,
-			BalanceNotifyThreshold:     apiKey.User.BalanceNotifyThreshold,
-			BalanceNotifyExtraEmails:   apiKey.User.BalanceNotifyExtraEmails,
-			TotalRecharged:             apiKey.User.TotalRecharged,
-			RPMLimit:                   apiKey.User.RPMLimit,
+			ID:                          apiKey.User.ID,
+			Status:                      apiKey.User.Status,
+			Role:                        apiKey.User.Role,
+			Balance:                     apiKey.User.Balance,
+			Concurrency:                 apiKey.User.Concurrency,
+			PlanConcurrencyEntitlements: append([]PlanConcurrencyEntitlement(nil), apiKey.User.PlanConcurrencyEntitlements...),
+			Email:                       apiKey.User.Email,
+			Username:                    apiKey.User.Username,
+			BalanceNotifyEnabled:        apiKey.User.BalanceNotifyEnabled,
+			BalanceNotifyThresholdType:  apiKey.User.BalanceNotifyThresholdType,
+			BalanceNotifyThreshold:      apiKey.User.BalanceNotifyThreshold,
+			BalanceNotifyExtraEmails:    apiKey.User.BalanceNotifyExtraEmails,
+			TotalRecharged:              apiKey.User.TotalRecharged,
+			RPMLimit:                    apiKey.User.RPMLimit,
 		},
 	}
 
@@ -360,6 +361,7 @@ func (s *APIKeyService) snapshotToAPIKey(key string, snapshot *APIKeyAuthSnapsho
 			Role:                         snapshot.User.Role,
 			Balance:                      snapshot.User.Balance,
 			Concurrency:                  snapshot.User.Concurrency,
+			PlanConcurrencyEntitlements:  append([]PlanConcurrencyEntitlement(nil), snapshot.User.PlanConcurrencyEntitlements...),
 			Email:                        snapshot.User.Email,
 			Username:                     snapshot.User.Username,
 			BalanceNotifyEnabled:         snapshot.User.BalanceNotifyEnabled,

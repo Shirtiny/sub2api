@@ -1409,6 +1409,29 @@ func HasSubscriptionsWith(preds ...predicate.UserSubscription) predicate.User {
 	})
 }
 
+// HasSubscriptionConcurrencyEntitlements applies the HasEdge predicate on the "subscription_concurrency_entitlements" edge.
+func HasSubscriptionConcurrencyEntitlements() predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, SubscriptionConcurrencyEntitlementsTable, SubscriptionConcurrencyEntitlementsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasSubscriptionConcurrencyEntitlementsWith applies the HasEdge predicate on the "subscription_concurrency_entitlements" edge with a given conditions (other predicates).
+func HasSubscriptionConcurrencyEntitlementsWith(preds ...predicate.SubscriptionConcurrencyEntitlement) predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := newSubscriptionConcurrencyEntitlementsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasAssignedSubscriptions applies the HasEdge predicate on the "assigned_subscriptions" edge.
 func HasAssignedSubscriptions() predicate.User {
 	return predicate.User(func(s *sql.Selector) {

@@ -5,6 +5,7 @@ import (
 	"crypto/subtle"
 	"errors"
 	"strings"
+	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/service"
 
@@ -143,7 +144,7 @@ func validateAdminAPIKey(
 
 	c.Set(string(ContextKeyUser), AuthSubject{
 		UserID:      admin.ID,
-		Concurrency: admin.Concurrency,
+		Concurrency: admin.EffectiveConcurrencyAt(time.Now()),
 	})
 	c.Set(string(ContextKeyUserRole), admin.Role)
 	c.Set("auth_method", "admin_api_key")
@@ -195,7 +196,7 @@ func validateJWTForAdmin(
 
 	c.Set(string(ContextKeyUser), AuthSubject{
 		UserID:      user.ID,
-		Concurrency: user.Concurrency,
+		Concurrency: user.EffectiveConcurrencyAt(time.Now()),
 	})
 	c.Set(string(ContextKeyUserRole), user.Role)
 	c.Set("auth_method", "jwt")

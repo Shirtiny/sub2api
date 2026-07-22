@@ -139,6 +139,7 @@ const planColumns = computed((): Column[] => [
   { key: 'group_id', label: t('payment.admin.group') },
   { key: 'price', label: t('payment.admin.price') },
   { key: 'validity_days', label: t('payment.admin.validityDays') },
+  { key: 'concurrency', label: t('payment.admin.concurrency') },
   { key: 'custom_multiplier_enabled', label: t('payment.admin.customMultiplier') },
   { key: 'for_sale', label: t('payment.admin.forSale') },
   { key: 'sort_order', label: t('payment.admin.sortOrder') },

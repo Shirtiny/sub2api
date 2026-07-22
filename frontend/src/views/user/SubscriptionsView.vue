@@ -58,7 +58,7 @@
                 </p>
               </div>
             </div>
-            <div class="flex items-center gap-2">
+            <div class="flex flex-wrap items-center justify-end gap-2">
               <span
                 :class="[
                   'rounded-full px-2 py-0.5 text-xs font-medium',
@@ -72,7 +72,17 @@
                 {{ t(`userSubscriptions.status.${subscription.status}`) }}
               </span>
               <button
+                v-if="subscription.status === 'active' && subscription.early_reset_enabled && (subscription.early_reset_duration_days || 0) > 0"
+                data-testid="subscription-early-reset"
+                :disabled="earlyResetting && earlyResetTarget?.id === subscription.id"
+                class="rounded-lg border border-red-300 px-3 py-1.5 text-xs font-semibold text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-950/30"
+                @click="openEarlyResetDialog(subscription)"
+              >
+                {{ t('userSubscriptions.earlyReset') }}
+              </button>
+              <button
                 v-if="subscription.status === 'active'"
+                data-testid="subscription-renew"
                 :class="['rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition-colors', platformButtonClass(subscription.group?.platform || '')]"
                 @click="router.push({ path: '/purchase', query: renewalQuery(subscription) })"
               >
@@ -84,12 +94,12 @@
           <!-- Usage Progress -->
           <div class="space-y-4 p-4">
             <!-- Expiration Info -->
-            <div v-if="subscription.expires_at" class="flex items-center justify-between text-sm">
+            <div v-if="subscriptionEffectiveExpiresAt(subscription)" class="flex items-center justify-between text-sm">
               <span class="text-content-tertiary">{{
                 t('userSubscriptions.expires')
               }}</span>
-              <span :class="getExpirationClass(subscription.expires_at)">
-                {{ formatExpirationDate(subscription.expires_at) }}
+              <span :class="getExpirationClass(subscriptionEffectiveExpiresAt(subscription)!)">
+                {{ formatExpirationDate(subscriptionEffectiveExpiresAt(subscription)!) }}
               </span>
             </div>
             <div v-else class="flex items-center justify-between text-sm">
@@ -245,22 +255,36 @@
         </div>
       </div>
     </div>
+    <ConfirmDialog
+      :show="earlyResetTarget !== null"
+      :title="t('userSubscriptions.earlyResetConfirmTitle')"
+      :message="earlyResetConfirmMessage"
+      :confirm-text="earlyResetting ? t('userSubscriptions.earlyResetting') : t('userSubscriptions.earlyResetConfirm')"
+      :confirm-disabled="earlyResetting"
+      danger
+      @cancel="closeEarlyResetDialog"
+      @confirm="confirmEarlyReset"
+    />
   </AppLayout>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
+import { useSubscriptionStore } from '@/stores/subscriptions'
 import subscriptionsAPI from '@/api/subscriptions'
 import type { UserSubscription } from '@/types'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import Icon from '@/components/icons/Icon.vue'
+import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import { formatDateOnly } from '@/utils/format'
+import { extractI18nErrorMessage } from '@/utils/apiError'
+import { createIdempotencyKey } from '@/utils/idempotency'
 import { platformBorderClass, platformBadgeClass, platformButtonClass, platformLabel } from '@/utils/platformColors'
 import { getRemainingDurationParts, isOneTimeDailyQuota, type RemainingDurationParts } from '@/utils/subscriptionQuota'
-import { subscriptionCustomMultiplier, subscriptionCustomPlanName, subscriptionCustomSourceGroupId, subscriptionCustomSourcePlanId } from '@/utils/subscriptionCustom'
+import { subscriptionCustomMultiplier, subscriptionCustomPlanName, subscriptionCustomSourceGroupId, subscriptionCustomSourcePlanId, subscriptionEffectiveExpiresAt } from '@/utils/subscriptionCustom'
 
 function platformAccentDotClass(p: string): string {
   switch (p) {
@@ -275,9 +299,21 @@ function platformAccentDotClass(p: string): string {
 const { t } = useI18n()
 const router = useRouter()
 const appStore = useAppStore()
+const subscriptionStore = useSubscriptionStore()
 
 const subscriptions = ref<UserSubscription[]>([])
 const loading = ref(true)
+const earlyResetTarget = ref<UserSubscription | null>(null)
+const earlyResetting = ref(false)
+const earlyResetIdempotencyKey = ref<string | null>(null)
+const earlyResetConfirmMessage = computed(() => {
+  const target = earlyResetTarget.value
+  if (!target) return ''
+  return t('userSubscriptions.earlyResetConfirmMessage', {
+    name: subscriptionCustomPlanName(target) || `Group #${target.group_id}`,
+    days: target.early_reset_duration_days || 0
+  })
+})
 
 async function loadSubscriptions() {
   try {
@@ -288,6 +324,50 @@ async function loadSubscriptions() {
     appStore.showError(t('userSubscriptions.failedToLoad'))
   } finally {
     loading.value = false
+  }
+}
+
+function openEarlyResetDialog(subscription: UserSubscription) {
+  earlyResetTarget.value = subscription
+  earlyResetIdempotencyKey.value = createIdempotencyKey('subscription-early-reset')
+}
+
+function closeEarlyResetDialog() {
+  if (!earlyResetting.value) {
+    earlyResetTarget.value = null
+    earlyResetIdempotencyKey.value = null
+  }
+}
+
+async function confirmEarlyReset() {
+  const target = earlyResetTarget.value
+  if (!target || earlyResetting.value) return
+  earlyResetting.value = true
+  try {
+    const idempotencyKey =
+      earlyResetIdempotencyKey.value ||
+      createIdempotencyKey('subscription-early-reset')
+    earlyResetIdempotencyKey.value = idempotencyKey
+    const updated = await subscriptionsAPI.earlyResetSubscription(target.id, idempotencyKey)
+    const index = subscriptions.value.findIndex(subscription => subscription.id === updated.id)
+    if (index >= 0) {
+      subscriptions.value[index] = updated
+    }
+    subscriptionStore.syncActiveSubscription(updated)
+    appStore.showSuccess(t('userSubscriptions.earlyResetSuccess'))
+    earlyResetTarget.value = null
+    earlyResetIdempotencyKey.value = null
+  } catch (error: unknown) {
+    appStore.showError(
+      extractI18nErrorMessage(
+        error,
+        t,
+        'userSubscriptions.earlyResetErrors',
+        t('userSubscriptions.earlyResetFailed'),
+      ),
+    )
+  } finally {
+    earlyResetting.value = false
   }
 }
 
@@ -376,8 +456,9 @@ function formatDurationParts(parts: RemainingDurationParts): string {
 }
 
 function formatDailyUsageWindow(subscription: UserSubscription): string {
-  if (isOneTimeDailyQuota(subscription) && subscription.expires_at) {
-    const parts = getRemainingDurationParts(subscription.expires_at)
+  const effectiveExpiresAt = subscriptionEffectiveExpiresAt(subscription)
+  if (isOneTimeDailyQuota(subscription) && effectiveExpiresAt) {
+    const parts = getRemainingDurationParts(effectiveExpiresAt)
     if (!parts) return t('userSubscriptions.windowNotActive')
     return t('userSubscriptions.quotaEndsIn', { time: formatDurationParts(parts) })
   }

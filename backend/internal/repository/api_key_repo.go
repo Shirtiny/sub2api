@@ -13,7 +13,9 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/group"
 	"github.com/Wei-Shaw/sub2api/ent/predicate"
 	"github.com/Wei-Shaw/sub2api/ent/schema/mixins"
+	"github.com/Wei-Shaw/sub2api/ent/subscriptionconcurrencyentitlement"
 	"github.com/Wei-Shaw/sub2api/ent/user"
+	"github.com/Wei-Shaw/sub2api/ent/usersubscription"
 	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/google/uuid"
 
@@ -171,6 +173,7 @@ func (r *apiKeyRepository) GetByKeyForAuth(ctx context.Context, key string) (*se
 			apikey.FieldRateLimit7d,
 		).
 		WithUser(func(q *dbent.UserQuery) {
+			now := time.Now()
 			q.Select(
 				user.FieldID,
 				user.FieldEmail,
@@ -188,7 +191,42 @@ func (r *apiKeyRepository) GetByKeyForAuth(ctx context.Context, key string) (*se
 				user.FieldLastLoginAt,
 				user.FieldLastActiveAt,
 				user.FieldRpmLimit,
-			)
+			).WithSubscriptions(func(sq *dbent.UserSubscriptionQuery) {
+				sq.Where(
+					usersubscription.StatusEQ(service.SubscriptionStatusActive),
+					usersubscription.ExpiresAtGT(now),
+					usersubscription.DeletedAtIsNil(),
+					usersubscription.PlanConcurrencyNotNil(),
+					usersubscription.Or(
+						usersubscription.PlanConcurrencyExpiresAtIsNil(),
+						usersubscription.PlanConcurrencyExpiresAtGT(now),
+					),
+				).Select(
+					usersubscription.FieldStartsAt,
+					usersubscription.FieldExpiresAt,
+					usersubscription.FieldPlanConcurrency,
+					usersubscription.FieldPlanConcurrencyExpiresAt,
+				)
+			}).WithSubscriptionConcurrencyEntitlements(func(eq *dbent.SubscriptionConcurrencyEntitlementQuery) {
+				eq.Where(
+					subscriptionconcurrencyentitlement.ExpiresAtGT(now),
+					subscriptionconcurrencyentitlement.HasSubscriptionWith(
+						usersubscription.StatusEQ(service.SubscriptionStatusActive),
+						usersubscription.ExpiresAtGT(now),
+						usersubscription.DeletedAtIsNil(),
+					),
+				).Select(
+					subscriptionconcurrencyentitlement.FieldSubscriptionID,
+					subscriptionconcurrencyentitlement.FieldConcurrency,
+					subscriptionconcurrencyentitlement.FieldStartsAt,
+					subscriptionconcurrencyentitlement.FieldExpiresAt,
+				).WithSubscription(func(sq *dbent.UserSubscriptionQuery) {
+					sq.Select(
+						usersubscription.FieldExpiresAt,
+						usersubscription.FieldCustomExpiresAt,
+					)
+				})
+			})
 		}).
 		WithGroup(func(q *dbent.GroupQuery) {
 			q.Select(
@@ -982,6 +1020,32 @@ func userEntityToService(u *dbent.User) *service.User {
 	// Parse extra emails JSON (supports both old []string and new []NotifyEmailEntry format)
 	if u.BalanceNotifyExtraEmails != "" && u.BalanceNotifyExtraEmails != "[]" {
 		out.BalanceNotifyExtraEmails = service.ParseNotifyEmails(u.BalanceNotifyExtraEmails)
+	}
+	for _, sub := range u.Edges.Subscriptions {
+		if sub.PlanConcurrency == nil || *sub.PlanConcurrency <= 0 {
+			continue
+		}
+		expiresAt := normalizeSubscriptionExpiresAt(sub.ExpiresAt)
+		if sub.PlanConcurrencyExpiresAt != nil && sub.PlanConcurrencyExpiresAt.Before(expiresAt) {
+			expiresAt = *sub.PlanConcurrencyExpiresAt
+		}
+		if sub.CustomExpiresAt != nil && sub.CustomExpiresAt.Before(expiresAt) {
+			expiresAt = *sub.CustomExpiresAt
+		}
+		if !sub.StartsAt.Before(expiresAt) {
+			continue
+		}
+		out.PlanConcurrencyEntitlements = append(out.PlanConcurrencyEntitlements, service.PlanConcurrencyEntitlement{
+			SubscriptionID: sub.ID,
+			Concurrency:    *sub.PlanConcurrency,
+			StartsAt:       sub.StartsAt,
+			ExpiresAt:      expiresAt,
+		})
+	}
+	for _, entitlement := range u.Edges.SubscriptionConcurrencyEntitlements {
+		if mapped, ok := planConcurrencyEntitlementToService(entitlement); ok {
+			out.PlanConcurrencyEntitlements = append(out.PlanConcurrencyEntitlements, mapped)
+		}
 	}
 	return out
 }

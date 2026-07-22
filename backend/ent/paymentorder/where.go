@@ -155,6 +155,21 @@ func SubscriptionDays(v int) predicate.PaymentOrder {
 	return predicate.PaymentOrder(sql.FieldEQ(FieldSubscriptionDays, v))
 }
 
+// SubscriptionConcurrency applies equality check predicate on the "subscription_concurrency" field. It's identical to SubscriptionConcurrencyEQ.
+func SubscriptionConcurrency(v int) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldEQ(FieldSubscriptionConcurrency, v))
+}
+
+// SubscriptionEarlyResetEnabled applies equality check predicate on the "subscription_early_reset_enabled" field. It's identical to SubscriptionEarlyResetEnabledEQ.
+func SubscriptionEarlyResetEnabled(v bool) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldEQ(FieldSubscriptionEarlyResetEnabled, v))
+}
+
+// SubscriptionEarlyResetDurationDays applies equality check predicate on the "subscription_early_reset_duration_days" field. It's identical to SubscriptionEarlyResetDurationDaysEQ.
+func SubscriptionEarlyResetDurationDays(v int) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldEQ(FieldSubscriptionEarlyResetDurationDays, v))
+}
+
 // SubscriptionMultiplier applies equality check predicate on the "subscription_multiplier" field. It's identical to SubscriptionMultiplierEQ.
 func SubscriptionMultiplier(v int) predicate.PaymentOrder {
 	return predicate.PaymentOrder(sql.FieldEQ(FieldSubscriptionMultiplier, v))
@@ -1433,6 +1448,106 @@ func SubscriptionDaysIsNil() predicate.PaymentOrder {
 // SubscriptionDaysNotNil applies the NotNil predicate on the "subscription_days" field.
 func SubscriptionDaysNotNil() predicate.PaymentOrder {
 	return predicate.PaymentOrder(sql.FieldNotNull(FieldSubscriptionDays))
+}
+
+// SubscriptionConcurrencyEQ applies the EQ predicate on the "subscription_concurrency" field.
+func SubscriptionConcurrencyEQ(v int) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldEQ(FieldSubscriptionConcurrency, v))
+}
+
+// SubscriptionConcurrencyNEQ applies the NEQ predicate on the "subscription_concurrency" field.
+func SubscriptionConcurrencyNEQ(v int) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldNEQ(FieldSubscriptionConcurrency, v))
+}
+
+// SubscriptionConcurrencyIn applies the In predicate on the "subscription_concurrency" field.
+func SubscriptionConcurrencyIn(vs ...int) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldIn(FieldSubscriptionConcurrency, vs...))
+}
+
+// SubscriptionConcurrencyNotIn applies the NotIn predicate on the "subscription_concurrency" field.
+func SubscriptionConcurrencyNotIn(vs ...int) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldNotIn(FieldSubscriptionConcurrency, vs...))
+}
+
+// SubscriptionConcurrencyGT applies the GT predicate on the "subscription_concurrency" field.
+func SubscriptionConcurrencyGT(v int) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldGT(FieldSubscriptionConcurrency, v))
+}
+
+// SubscriptionConcurrencyGTE applies the GTE predicate on the "subscription_concurrency" field.
+func SubscriptionConcurrencyGTE(v int) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldGTE(FieldSubscriptionConcurrency, v))
+}
+
+// SubscriptionConcurrencyLT applies the LT predicate on the "subscription_concurrency" field.
+func SubscriptionConcurrencyLT(v int) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldLT(FieldSubscriptionConcurrency, v))
+}
+
+// SubscriptionConcurrencyLTE applies the LTE predicate on the "subscription_concurrency" field.
+func SubscriptionConcurrencyLTE(v int) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldLTE(FieldSubscriptionConcurrency, v))
+}
+
+// SubscriptionConcurrencyIsNil applies the IsNil predicate on the "subscription_concurrency" field.
+func SubscriptionConcurrencyIsNil() predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldIsNull(FieldSubscriptionConcurrency))
+}
+
+// SubscriptionConcurrencyNotNil applies the NotNil predicate on the "subscription_concurrency" field.
+func SubscriptionConcurrencyNotNil() predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldNotNull(FieldSubscriptionConcurrency))
+}
+
+// SubscriptionEarlyResetEnabledEQ applies the EQ predicate on the "subscription_early_reset_enabled" field.
+func SubscriptionEarlyResetEnabledEQ(v bool) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldEQ(FieldSubscriptionEarlyResetEnabled, v))
+}
+
+// SubscriptionEarlyResetEnabledNEQ applies the NEQ predicate on the "subscription_early_reset_enabled" field.
+func SubscriptionEarlyResetEnabledNEQ(v bool) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldNEQ(FieldSubscriptionEarlyResetEnabled, v))
+}
+
+// SubscriptionEarlyResetDurationDaysEQ applies the EQ predicate on the "subscription_early_reset_duration_days" field.
+func SubscriptionEarlyResetDurationDaysEQ(v int) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldEQ(FieldSubscriptionEarlyResetDurationDays, v))
+}
+
+// SubscriptionEarlyResetDurationDaysNEQ applies the NEQ predicate on the "subscription_early_reset_duration_days" field.
+func SubscriptionEarlyResetDurationDaysNEQ(v int) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldNEQ(FieldSubscriptionEarlyResetDurationDays, v))
+}
+
+// SubscriptionEarlyResetDurationDaysIn applies the In predicate on the "subscription_early_reset_duration_days" field.
+func SubscriptionEarlyResetDurationDaysIn(vs ...int) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldIn(FieldSubscriptionEarlyResetDurationDays, vs...))
+}
+
+// SubscriptionEarlyResetDurationDaysNotIn applies the NotIn predicate on the "subscription_early_reset_duration_days" field.
+func SubscriptionEarlyResetDurationDaysNotIn(vs ...int) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldNotIn(FieldSubscriptionEarlyResetDurationDays, vs...))
+}
+
+// SubscriptionEarlyResetDurationDaysGT applies the GT predicate on the "subscription_early_reset_duration_days" field.
+func SubscriptionEarlyResetDurationDaysGT(v int) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldGT(FieldSubscriptionEarlyResetDurationDays, v))
+}
+
+// SubscriptionEarlyResetDurationDaysGTE applies the GTE predicate on the "subscription_early_reset_duration_days" field.
+func SubscriptionEarlyResetDurationDaysGTE(v int) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldGTE(FieldSubscriptionEarlyResetDurationDays, v))
+}
+
+// SubscriptionEarlyResetDurationDaysLT applies the LT predicate on the "subscription_early_reset_duration_days" field.
+func SubscriptionEarlyResetDurationDaysLT(v int) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldLT(FieldSubscriptionEarlyResetDurationDays, v))
+}
+
+// SubscriptionEarlyResetDurationDaysLTE applies the LTE predicate on the "subscription_early_reset_duration_days" field.
+func SubscriptionEarlyResetDurationDaysLTE(v int) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldLTE(FieldSubscriptionEarlyResetDurationDays, v))
 }
 
 // SubscriptionMultiplierEQ applies the EQ predicate on the "subscription_multiplier" field.
