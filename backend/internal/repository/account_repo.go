@@ -134,6 +134,12 @@ func (r *accountRepository) Create(ctx context.Context, account *service.Account
 	if account.OverloadUntil != nil {
 		builder.SetOverloadUntil(*account.OverloadUntil)
 	}
+	if account.TempUnschedulableUntil != nil {
+		builder.SetTempUnschedulableUntil(*account.TempUnschedulableUntil)
+	}
+	if account.TempUnschedulableReason != "" {
+		builder.SetTempUnschedulableReason(account.TempUnschedulableReason)
+	}
 	if account.SessionWindowStart != nil {
 		builder.SetSessionWindowStart(*account.SessionWindowStart)
 	}
@@ -930,6 +936,16 @@ func (r *accountRepository) saveAccount(ctx context.Context, client *dbent.Clien
 		builder.SetOverloadUntil(*account.OverloadUntil)
 	} else {
 		builder.ClearOverloadUntil()
+	}
+	if account.TempUnschedulableUntil != nil {
+		builder.SetTempUnschedulableUntil(*account.TempUnschedulableUntil)
+	} else {
+		builder.ClearTempUnschedulableUntil()
+	}
+	if account.TempUnschedulableReason != "" {
+		builder.SetTempUnschedulableReason(account.TempUnschedulableReason)
+	} else {
+		builder.ClearTempUnschedulableReason()
 	}
 	if account.SessionWindowStart != nil {
 		builder.SetSessionWindowStart(*account.SessionWindowStart)

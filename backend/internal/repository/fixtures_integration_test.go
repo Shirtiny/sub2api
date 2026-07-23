@@ -218,6 +218,12 @@ func mustCreateAccount(t *testing.T, client *dbent.Client, a *service.Account) *
 	if a.OverloadUntil != nil {
 		create.SetOverloadUntil(*a.OverloadUntil)
 	}
+	if a.TempUnschedulableUntil != nil {
+		create.SetTempUnschedulableUntil(*a.TempUnschedulableUntil)
+	}
+	if a.TempUnschedulableReason != "" {
+		create.SetTempUnschedulableReason(a.TempUnschedulableReason)
+	}
 	if a.SessionWindowStart != nil {
 		create.SetSessionWindowStart(*a.SessionWindowStart)
 	}
