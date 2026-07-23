@@ -117,7 +117,7 @@ func (s *RateLimitService) SetAccountRuntimeBlocker(blocker AccountRuntimeBlocke
 }
 
 func (s *RateLimitService) notifyAccountSchedulingBlocked(account *Account, until time.Time, reason string) {
-	if s == nil || s.runtimeBlocker == nil || account == nil || account.IsPoolMode() {
+	if s == nil || s.runtimeBlocker == nil || account == nil || shouldSkipPoolModeAutomaticState(account) {
 		return
 	}
 	s.runtimeBlocker.BlockAccountScheduling(account, until, reason)

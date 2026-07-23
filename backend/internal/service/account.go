@@ -894,6 +894,12 @@ func (a *Account) IsPoolMode() bool {
 	return false
 }
 
+// shouldSkipPoolModeAutomaticState reports whether automatic upstream state
+// changes must be ignored. Explicit custom error-code policy remains opt-in.
+func shouldSkipPoolModeAutomaticState(a *Account) bool {
+	return a != nil && a.IsPoolMode() && !a.IsCustomErrorCodesEnabled()
+}
+
 const (
 	defaultPoolModeRetryCount = 3
 	maxPoolModeRetryCount     = 10

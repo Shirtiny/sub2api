@@ -62,6 +62,22 @@ func TestOpenAIRuntimeBlock_PoolModeIsIgnoredAndStaleBlockIsCleared(t *testing.T
 	require.False(t, exists)
 }
 
+func TestOpenAIRuntimeBlock_PoolModeCustomErrorPolicyRemainsExplicit(t *testing.T) {
+	svc := &OpenAIGatewayService{}
+	account := &Account{
+		ID:       453,
+		Platform: PlatformOpenAI,
+		Type:     AccountTypeAPIKey,
+		Credentials: map[string]any{
+			"pool_mode":                  true,
+			"custom_error_codes_enabled": true,
+		},
+	}
+
+	svc.BlockAccountScheduling(account, time.Now().Add(time.Minute), "custom_error_code")
+	require.True(t, svc.isOpenAIAccountRuntimeBlocked(account))
+}
+
 func TestOpenAITransportError_PoolModeDoesNotCreateTemporaryState(t *testing.T) {
 	repo := &modelNotFoundAccountRepoStub{}
 	svc := &OpenAIGatewayService{accountRepo: repo}
