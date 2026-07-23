@@ -55,6 +55,8 @@ func TestAPIContracts(t *testing.T) {
 					"role": "user",
 					"balance": 12.5,
 					"concurrency": 5,
+					"base_concurrency": 5,
+					"effective_concurrency": 5,
 					"rpm_limit": 0,
 					"status": "active",
 					"allowed_groups": null,
@@ -421,6 +423,8 @@ func TestAPIContracts(t *testing.T) {
 						"daily_usage_usd": 1.23,
 						"weekly_usage_usd": 2.34,
 						"monthly_usage_usd": 3.45,
+						"early_reset_enabled": false,
+						"early_reset_duration_days": 0,
 						"created_at": "2025-01-02T03:04:05Z",
 						"updated_at": "2025-01-02T03:04:05Z"
 					}
