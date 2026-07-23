@@ -234,9 +234,13 @@ func AccountFromServiceShallow(a *service.Account) *Account {
 	extra := accountExtraForResponse(a.Extra, poolMode)
 	rateLimitedAt := a.RateLimitedAt
 	rateLimitResetAt := a.RateLimitResetAt
+	tempUnschedulableUntil := a.TempUnschedulableUntil
+	tempUnschedulableReason := a.TempUnschedulableReason
 	if poolMode {
 		rateLimitedAt = nil
 		rateLimitResetAt = nil
+		tempUnschedulableUntil = nil
+		tempUnschedulableReason = ""
 	}
 	out := &Account{
 		ID:                a.ID,
@@ -273,8 +277,8 @@ func AccountFromServiceShallow(a *service.Account) *Account {
 			}
 			return a.OverloadUntil
 		}(),
-		TempUnschedulableUntil:  a.TempUnschedulableUntil,
-		TempUnschedulableReason: a.TempUnschedulableReason,
+		TempUnschedulableUntil:  tempUnschedulableUntil,
+		TempUnschedulableReason: tempUnschedulableReason,
 		SessionWindowStart:      a.SessionWindowStart,
 		SessionWindowEnd:        a.SessionWindowEnd,
 		SessionWindowStatus:     a.SessionWindowStatus,

@@ -366,7 +366,60 @@ func TestAccountTestService_OpenAI429PoolModeSkipsRateLimitPersistence(t *testin
 	require.NotEmpty(t, repo.updatedExtra)
 	require.Equal(t, int64(0), repo.rateLimitedID)
 	require.Nil(t, repo.rateLimitedAt)
-	require.NotNil(t, account.RateLimitResetAt)
+	require.Nil(t, account.RateLimitResetAt)
+}
+
+func TestAccountTestService_OpenAI401PoolModeSkipsPermanentError(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	ctx, _ := newTestContext()
+
+	repo := &openAIAccountTestRepo{}
+	upstream := &queuedHTTPUpstream{responses: []*http.Response{
+		newJSONResponse(http.StatusUnauthorized, `{"error":"aether rejected request"}`),
+	}}
+	svc := &AccountTestService{accountRepo: repo, httpUpstream: upstream, cfg: &config.Config{}}
+	account := &Account{
+		ID:          86,
+		Platform:    PlatformOpenAI,
+		Type:        AccountTypeAPIKey,
+		Concurrency: 1,
+		Credentials: map[string]any{"api_key": "aether-key", "pool_mode": true},
+	}
+
+	err := svc.testOpenAIAccountConnection(ctx, account, "gpt-5.4", "", "")
+
+	require.Error(t, err)
+	require.Zero(t, repo.setErrorID)
+}
+
+func TestAccountTestService_OpenAIChatCompletions401PoolModeSkipsPermanentError(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	ctx, _ := newTestContext()
+
+	repo := &openAIAccountTestRepo{}
+	upstream := &httpUpstreamRecorder{resp: newJSONResponse(http.StatusUnauthorized, `{"error":"aether rejected request"}`)}
+	svc := &AccountTestService{
+		accountRepo:  repo,
+		httpUpstream: upstream,
+		cfg:          &config.Config{Security: config.SecurityConfig{URLAllowlist: config.URLAllowlistConfig{Enabled: false}}},
+	}
+	account := &Account{
+		ID:          85,
+		Platform:    PlatformOpenAI,
+		Type:        AccountTypeAPIKey,
+		Concurrency: 1,
+		Credentials: map[string]any{
+			"api_key":   "aether-key",
+			"base_url":  "https://aether.example/v1",
+			"pool_mode": true,
+		},
+		Extra: map[string]any{openai_compat.ExtraKeyResponsesSupported: false},
+	}
+
+	err := svc.testOpenAIAccountConnection(ctx, account, "gpt-5.4", "", "")
+
+	require.Error(t, err)
+	require.Zero(t, repo.setErrorID)
 }
 
 func TestAccountTestService_OpenAIAPIKeyResponsesUnsupportedUsesChatCompletionsPath(t *testing.T) {

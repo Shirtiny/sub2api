@@ -1116,13 +1116,7 @@ func (r *accountRepository) ListWithFilters(ctx context.Context, params paginati
 		case "temp_unschedulable":
 			q = q.Where(
 				dbaccount.StatusEQ(service.StatusActive),
-				dbpredicate.Account(func(s *entsql.Selector) {
-					col := s.C("temp_unschedulable_until")
-					s.Where(entsql.And(
-						entsql.Not(entsql.IsNull(col)),
-						entsql.GT(col, entsql.Expr("NOW()")),
-					))
-				}),
+				activeNonPoolModeTempUnschedulablePredicate(),
 			)
 		case "unschedulable":
 			q = q.Where(
@@ -1132,13 +1126,7 @@ func (r *accountRepository) ListWithFilters(ctx context.Context, params paginati
 					dbaccount.RateLimitResetAtIsNil(),
 					dbaccount.RateLimitResetAtLTE(time.Now()),
 				),
-				dbpredicate.Account(func(s *entsql.Selector) {
-					col := s.C("temp_unschedulable_until")
-					s.Where(entsql.Or(
-						entsql.IsNull(col),
-						entsql.LTE(col, entsql.Expr("NOW()")),
-					))
-				}),
+				tempUnschedulablePredicate(),
 			)
 		default:
 			if status == service.StatusError {
@@ -2601,9 +2589,31 @@ func (r *accountRepository) accountsToService(ctx context.Context, accounts []*d
 func tempUnschedulablePredicate() dbpredicate.Account {
 	return dbpredicate.Account(func(s *entsql.Selector) {
 		col := s.C("temp_unschedulable_until")
+		poolModePath := sqljson.Path("pool_mode")
+		poolModeEnabled := entsql.Or(
+			sqljson.ValueEQ(dbaccount.FieldCredentials, true, poolModePath),
+			sqljson.ValueEQ(dbaccount.FieldCredentials, "true", poolModePath),
+		)
 		s.Where(entsql.Or(
 			entsql.IsNull(col),
 			entsql.LTE(col, entsql.Expr("NOW()")),
+			poolModeEnabled,
+		))
+	})
+}
+
+func activeNonPoolModeTempUnschedulablePredicate() dbpredicate.Account {
+	return dbpredicate.Account(func(s *entsql.Selector) {
+		col := s.C("temp_unschedulable_until")
+		poolModePath := sqljson.Path("pool_mode")
+		s.Where(entsql.And(
+			entsql.Not(entsql.IsNull(col)),
+			entsql.GT(col, entsql.Expr("NOW()")),
+			entsql.Or(
+				entsql.Not(sqljson.HasKey(dbaccount.FieldCredentials, poolModePath)),
+				sqljson.ValueEQ(dbaccount.FieldCredentials, false, poolModePath),
+				sqljson.ValueEQ(dbaccount.FieldCredentials, "false", poolModePath),
+			),
 		))
 	})
 }
@@ -2656,7 +2666,10 @@ func activeOrPoolModeErrorStatusPredicate() dbpredicate.Account {
 			entsql.EQ(statusCol, service.StatusActive),
 			entsql.And(
 				entsql.EQ(statusCol, service.StatusError),
-				sqljson.ValueEQ(dbaccount.FieldCredentials, true, poolModePath),
+				entsql.Or(
+					sqljson.ValueEQ(dbaccount.FieldCredentials, true, poolModePath),
+					sqljson.ValueEQ(dbaccount.FieldCredentials, "true", poolModePath),
+				),
 			),
 		))
 	})

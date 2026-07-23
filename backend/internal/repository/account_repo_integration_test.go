@@ -1035,13 +1035,19 @@ func (s *AccountRepoSuite) TestListSchedulable() {
 	future := now.Add(10 * time.Minute)
 	overloaded := mustCreateAccount(s.T(), s.client, &service.Account{Name: "over", Schedulable: true, OverloadUntil: &future})
 	mustBindAccountToGroup(s.T(), s.client, overloaded.ID, group.ID, 1)
+	tempUnschedulable := mustCreateAccount(s.T(), s.client, &service.Account{Name: "temp", Schedulable: true, TempUnschedulableUntil: &future})
+	mustBindAccountToGroup(s.T(), s.client, tempUnschedulable.ID, group.ID, 1)
 
 	poolModeOverloaded := mustCreateAccount(s.T(), s.client, &service.Account{
-		Name:          "pool-over",
-		Schedulable:   true,
-		Status:        service.StatusError,
-		Credentials:   map[string]any{"pool_mode": true},
-		OverloadUntil: &future,
+		Name:                    "pool-over",
+		Schedulable:             true,
+		Status:                  service.StatusError,
+		Type:                    service.AccountTypeAPIKey,
+		Platform:                service.PlatformOpenAI,
+		Credentials:             map[string]any{"pool_mode": "true"},
+		OverloadUntil:           &future,
+		TempUnschedulableUntil:  &future,
+		TempUnschedulableReason: "stale pool state",
 	})
 	mustBindAccountToGroup(s.T(), s.client, poolModeOverloaded.ID, group.ID, 1)
 
@@ -1051,6 +1057,7 @@ func (s *AccountRepoSuite) TestListSchedulable() {
 	s.Require().Contains(ids, okAcc.ID)
 	s.Require().Contains(ids, poolModeOverloaded.ID)
 	s.Require().NotContains(ids, overloaded.ID)
+	s.Require().NotContains(ids, tempUnschedulable.ID)
 }
 
 func (s *AccountRepoSuite) TestListWithFilters_PoolModeErrorExcludedFromErrorStatus() {

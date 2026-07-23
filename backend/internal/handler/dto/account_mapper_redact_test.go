@@ -67,17 +67,19 @@ func TestAccountFromServiceShallow_NilCredentialsOmitsStatus(t *testing.T) {
 	require.Nil(t, got.CredentialsStatus)
 }
 
-func TestAccountFromServiceShallow_PoolModeHidesStaleRateLimits(t *testing.T) {
+func TestAccountFromServiceShallow_PoolModeHidesStaleRuntimeState(t *testing.T) {
 	now := time.Now()
 	resetAt := now.Add(30 * time.Minute)
 	src := &service.Account{
-		ID:               40,
-		Name:             "aether-pool",
-		Platform:         service.PlatformOpenAI,
-		Type:             service.AccountTypeAPIKey,
-		Credentials:      map[string]any{"pool_mode": true},
-		RateLimitedAt:    &now,
-		RateLimitResetAt: &resetAt,
+		ID:                      40,
+		Name:                    "aether-pool",
+		Platform:                service.PlatformOpenAI,
+		Type:                    service.AccountTypeAPIKey,
+		Credentials:             map[string]any{"pool_mode": true},
+		RateLimitedAt:           &now,
+		RateLimitResetAt:        &resetAt,
+		TempUnschedulableUntil:  &resetAt,
+		TempUnschedulableReason: "stale temporary state",
 		Extra: map[string]any{
 			"openai_passthrough": true,
 			"model_rate_limits": map[string]any{
@@ -92,6 +94,8 @@ func TestAccountFromServiceShallow_PoolModeHidesStaleRateLimits(t *testing.T) {
 
 	require.Nil(t, got.RateLimitedAt)
 	require.Nil(t, got.RateLimitResetAt)
+	require.Nil(t, got.TempUnschedulableUntil)
+	require.Empty(t, got.TempUnschedulableReason)
 	require.NotContains(t, got.Extra, "model_rate_limits")
 	require.Equal(t, true, got.Extra["openai_passthrough"])
 	require.Contains(t, src.Extra, "model_rate_limits", "mapping must not mutate the service account")

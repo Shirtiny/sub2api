@@ -680,7 +680,7 @@ func (s *OpenAIGatewayService) handleGrokAccountUpstreamError(ctx context.Contex
 }
 
 func (s *OpenAIGatewayService) tempUnscheduleGrok(ctx context.Context, account *Account, cooldown time.Duration, reason string) {
-	if s == nil || account == nil {
+	if s == nil || account == nil || account.IsPoolMode() {
 		return
 	}
 	until := time.Now().Add(cooldown)

@@ -1014,6 +1014,25 @@ func TestHandleGrokAccountUpstreamErrorDoesNotShortenExistingPause(t *testing.T)
 	require.WithinDuration(t, existingUntil, runtimeUntil, time.Second)
 }
 
+func TestHandleGrokAccountUpstreamErrorPoolModeSkipsTemporaryState(t *testing.T) {
+	account := &Account{
+		ID:       63,
+		Platform: PlatformGrok,
+		Type:     AccountTypeAPIKey,
+		Credentials: map[string]any{
+			"api_key":   "aether-key",
+			"pool_mode": true,
+		},
+	}
+	repo := &grokQuotaAccountRepo{}
+	svc := &OpenAIGatewayService{accountRepo: repo}
+
+	svc.handleGrokAccountUpstreamError(context.Background(), account, http.StatusTooManyRequests, http.Header{"Retry-After": []string{"45"}}, nil)
+
+	require.Zero(t, repo.tempUnschedCalls)
+	require.False(t, svc.isOpenAIAccountRuntimeBlocked(account))
+}
+
 func TestGrokPoolPassthroughUsesConfiguredAetherResponsesEndpoint(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	rec := httptest.NewRecorder()

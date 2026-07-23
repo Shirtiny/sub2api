@@ -621,11 +621,9 @@ func (s *AccountTestService) testOpenAIAccountConnection(c *gin.Context, account
 				_ = s.accountRepo.UpdateExtra(ctx, account.ID, updates)
 				mergeAccountExtra(account, updates)
 			}
-			if resetAt != nil {
+			if resetAt != nil && !account.IsPoolMode() {
 				account.RateLimitResetAt = resetAt
-				if !account.IsPoolMode() {
-					_ = s.accountRepo.SetRateLimited(ctx, account.ID, *resetAt)
-				}
+				_ = s.accountRepo.SetRateLimited(ctx, account.ID, *resetAt)
 			}
 		}
 	}
@@ -636,7 +634,7 @@ func (s *AccountTestService) testOpenAIAccountConnection(c *gin.Context, account
 			s.reconcileOpenAI429State(ctx, account, resp.Header, body)
 		}
 		// 401 Unauthorized: 标记账号为永久错误
-		if resp.StatusCode == http.StatusUnauthorized && s.accountRepo != nil {
+		if resp.StatusCode == http.StatusUnauthorized && s.accountRepo != nil && !account.IsPoolMode() {
 			errMsg := fmt.Sprintf("Authentication failed (401): %s", string(body))
 			_ = s.accountRepo.SetError(ctx, account.ID, errMsg)
 		}
@@ -780,7 +778,7 @@ func (s *AccountTestService) testOpenAIChatCompletionsConnection(
 		if resp.StatusCode == http.StatusTooManyRequests {
 			s.reconcileOpenAI429State(ctx, account, resp.Header, body)
 		}
-		if resp.StatusCode == http.StatusUnauthorized && s.accountRepo != nil {
+		if resp.StatusCode == http.StatusUnauthorized && s.accountRepo != nil && !account.IsPoolMode() {
 			errMsg := fmt.Sprintf("Chat Completions authentication failed (401): %s", string(body))
 			_ = s.accountRepo.SetError(ctx, account.ID, errMsg)
 		}
@@ -894,7 +892,7 @@ func (s *AccountTestService) testOpenAICompactConnection(c *gin.Context, account
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		if resp.StatusCode == http.StatusUnauthorized && s.accountRepo != nil {
+		if resp.StatusCode == http.StatusUnauthorized && s.accountRepo != nil && !account.IsPoolMode() {
 			errMsg := fmt.Sprintf("Authentication failed (401): %s", string(body))
 			_ = s.accountRepo.SetError(ctx, account.ID, errMsg)
 		}
@@ -930,8 +928,8 @@ func (s *AccountTestService) reconcileOpenAI429State(ctx context.Context, accoun
 		}
 		now := time.Now()
 		account.RateLimitedAt = &now
+		account.RateLimitResetAt = resetAt
 	}
-	account.RateLimitResetAt = resetAt
 
 	if account.Status == StatusError {
 		if err := s.accountRepo.ClearError(ctx, account.ID); err != nil {

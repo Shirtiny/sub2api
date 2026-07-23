@@ -84,7 +84,7 @@ func (s *OpenAIGatewayService) markOpenAIOAuth429RateLimited(ctx context.Context
 }
 
 func (s *OpenAIGatewayService) BlockAccountScheduling(account *Account, until time.Time, reason string) {
-	if s == nil || !isOpenAIAccount(account) {
+	if s == nil || !isOpenAIAccount(account) || account.IsPoolMode() {
 		return
 	}
 	now := time.Now()
@@ -128,6 +128,12 @@ func (s *OpenAIGatewayService) ClearAccountSchedulingBlock(accountID int64) {
 
 func (s *OpenAIGatewayService) isOpenAIAccountRuntimeBlocked(account *Account) bool {
 	if s == nil || !isOpenAIAccount(account) {
+		return false
+	}
+	if account.IsPoolMode() {
+		// A pool account may have been blocked before its mode was enabled.
+		// Drop that stale in-memory state instead of letting it affect selection.
+		s.ClearAccountSchedulingBlock(account.ID)
 		return false
 	}
 	value, ok := s.openaiAccountRuntimeBlockUntil.Load(account.ID)

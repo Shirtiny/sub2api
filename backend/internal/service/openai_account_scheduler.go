@@ -976,9 +976,11 @@ func (s *defaultOpenAIAccountScheduler) selectByLoadBalance(
 		}
 		// require_privacy_set: 跳过 privacy 未设置的账号并标记异常
 		if schedGroup != nil && schedGroup.RequirePrivacySet && !account.IsPrivacySet() {
-			s.service.BlockAccountScheduling(account, time.Time{}, "privacy_not_set")
-			_ = s.service.accountRepo.SetError(ctx, account.ID,
-				fmt.Sprintf("Privacy not set, required by group [%s]", schedGroup.Name))
+			if !account.IsPoolMode() {
+				s.service.BlockAccountScheduling(account, time.Time{}, "privacy_not_set")
+				_ = s.service.accountRepo.SetError(ctx, account.ID,
+					fmt.Sprintf("Privacy not set, required by group [%s]", schedGroup.Name))
+			}
 			continue
 		}
 		if !s.isAccountRequestCompatible(ctx, account, req) {

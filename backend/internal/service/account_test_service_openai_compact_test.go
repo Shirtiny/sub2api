@@ -2,6 +2,7 @@ package service
 
 import (
 	"bytes"
+	"context"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -13,6 +14,16 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
 )
+
+type openAICompactPoolStateRepo struct {
+	snapshotUpdateAccountRepo
+	setErrorCalls int
+}
+
+func (r *openAICompactPoolStateRepo) SetError(_ context.Context, _ int64, _ string) error {
+	r.setErrorCalls++
+	return nil
+}
 
 func TestAccountTestService_TestAccountConnection_OpenAICompactOAuthSuccessPersistsSupport(t *testing.T) {
 	gin.SetMode(gin.TestMode)
@@ -197,4 +208,43 @@ func TestAccountTestService_TestAccountConnection_OpenAICompactAPIKeyDefaultBase
 	require.NoError(t, err)
 	require.Equal(t, "https://api.openai.com/v1/responses/compact", upstream.lastReq.URL.String())
 	<-updateCalls
+}
+
+func TestAccountTestService_OpenAICompact401PoolModeSkipsPermanentError(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	account := Account{
+		ID:          184,
+		Platform:    PlatformOpenAI,
+		Type:        AccountTypeAPIKey,
+		Status:      StatusActive,
+		Schedulable: true,
+		Concurrency: 1,
+		Credentials: map[string]any{
+			"api_key":   "aether-key",
+			"base_url":  "https://aether.example/v1",
+			"pool_mode": true,
+		},
+	}
+	repo := &openAICompactPoolStateRepo{snapshotUpdateAccountRepo: snapshotUpdateAccountRepo{
+		stubOpenAIAccountRepo: stubOpenAIAccountRepo{accounts: []Account{account}},
+		updateExtraCalls:      make(chan map[string]any, 1),
+	}}
+	upstream := &httpUpstreamRecorder{resp: &http.Response{
+		StatusCode: http.StatusUnauthorized,
+		Header:     http.Header{"Content-Type": []string{"application/json"}},
+		Body:       io.NopCloser(strings.NewReader(`{"error":"aether rejected request"}`)),
+	}}
+	svc := &AccountTestService{
+		accountRepo:  repo,
+		httpUpstream: upstream,
+		cfg:          &config.Config{Security: config.SecurityConfig{URLAllowlist: config.URLAllowlistConfig{Enabled: false}}},
+	}
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request = httptest.NewRequest(http.MethodPost, "/api/v1/admin/accounts/184/test", bytes.NewReader(nil))
+
+	err := svc.TestAccountConnection(c, account.ID, "gpt-5.4", "", AccountTestModeCompact)
+
+	require.Error(t, err)
+	require.Zero(t, repo.setErrorCalls)
 }

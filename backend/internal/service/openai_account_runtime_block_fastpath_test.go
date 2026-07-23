@@ -44,6 +44,40 @@ func TestOpenAIRuntimeBlock_DoesNotApplyToOtherPlatforms(t *testing.T) {
 	require.False(t, svc.isOpenAIAccountRuntimeBlocked(account))
 }
 
+func TestOpenAIRuntimeBlock_PoolModeIsIgnoredAndStaleBlockIsCleared(t *testing.T) {
+	svc := &OpenAIGatewayService{}
+	account := &Account{
+		ID:          451,
+		Platform:    PlatformOpenAI,
+		Type:        AccountTypeAPIKey,
+		Credentials: map[string]any{"pool_mode": true},
+	}
+
+	svc.BlockAccountScheduling(account, time.Now().Add(time.Minute), "transport_error")
+	require.False(t, svc.isOpenAIAccountRuntimeBlocked(account))
+
+	svc.openaiAccountRuntimeBlockUntil.Store(account.ID, time.Now().Add(time.Minute))
+	require.False(t, svc.isOpenAIAccountRuntimeBlocked(account))
+	_, exists := svc.openaiAccountRuntimeBlockUntil.Load(account.ID)
+	require.False(t, exists)
+}
+
+func TestOpenAITransportError_PoolModeDoesNotCreateTemporaryState(t *testing.T) {
+	repo := &modelNotFoundAccountRepoStub{}
+	svc := &OpenAIGatewayService{accountRepo: repo}
+	account := &Account{
+		ID:          452,
+		Platform:    PlatformOpenAI,
+		Type:        AccountTypeAPIKey,
+		Credentials: map[string]any{"pool_mode": true},
+	}
+
+	svc.tempUnscheduleOpenAITransportError(context.Background(), account, "connection refused")
+
+	require.Zero(t, repo.tempCalls)
+	require.False(t, svc.isOpenAIAccountRuntimeBlocked(account))
+}
+
 func TestOpenAIRuntimeBlocker_IgnoresNonOpenAIFromRateLimitService(t *testing.T) {
 	gateway := &OpenAIGatewayService{}
 	repo := &rateLimitAccountRepoStub{}

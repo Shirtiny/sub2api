@@ -129,7 +129,7 @@ func (a *Account) IsSchedulable() bool {
 	if a.IsRateLimited() {
 		return false
 	}
-	if a.TempUnschedulableUntil != nil && now.Before(*a.TempUnschedulableUntil) {
+	if !a.IsPoolMode() && a.TempUnschedulableUntil != nil && now.Before(*a.TempUnschedulableUntil) {
 		return false
 	}
 	if a.IsAPIKeyOrBedrock() && a.IsQuotaExceeded() {
@@ -884,8 +884,11 @@ func (a *Account) IsPoolMode() bool {
 		return false
 	}
 	if v, ok := a.Credentials["pool_mode"]; ok {
-		if enabled, ok := v.(bool); ok {
+		switch enabled := v.(type) {
+		case bool:
 			return enabled
+		case string:
+			return strings.TrimSpace(enabled) == "true"
 		}
 	}
 	return false

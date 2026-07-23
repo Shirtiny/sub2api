@@ -5,9 +5,26 @@ package service
 import (
 	"encoding/json"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 )
+
+func TestIsPoolModeSupportsLegacyStringFlag(t *testing.T) {
+	future := time.Now().Add(time.Minute)
+	account := &Account{
+		Platform:                PlatformOpenAI,
+		Type:                    AccountTypeAPIKey,
+		Status:                  StatusActive,
+		Schedulable:             true,
+		TempUnschedulableUntil:  &future,
+		TempUnschedulableReason: "stale state",
+		Credentials:             map[string]any{"pool_mode": "true"},
+	}
+
+	require.True(t, account.IsPoolMode())
+	require.True(t, account.IsSchedulable(), "legacy pool mode must ignore stale temporary state")
+}
 
 func TestGetPoolModeRetryCount(t *testing.T) {
 	tests := []struct {

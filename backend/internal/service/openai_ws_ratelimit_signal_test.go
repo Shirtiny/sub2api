@@ -350,6 +350,11 @@ func TestOpenAIGatewayService_ProxyResponsesWebSocketFromClient_ErrorEventUsageL
 
 func TestOpenAIGatewayService_UpdateCodexUsageSnapshot_ExhaustedSnapshotSetsRateLimit(t *testing.T) {
 	repo := &openAICodexSnapshotAsyncRepo{
+		stubOpenAIAccountRepo: stubOpenAIAccountRepo{accounts: []Account{{
+			ID:       601,
+			Platform: PlatformOpenAI,
+			Type:     AccountTypeOAuth,
+		}}},
 		updateExtraCh: make(chan map[string]any, 1),
 		rateLimitCh:   make(chan time.Time, 1),
 	}
@@ -376,6 +381,24 @@ func TestOpenAIGatewayService_UpdateCodexUsageSnapshot_ExhaustedSnapshotSetsRate
 		require.WithinDuration(t, time.Now().Add(time.Hour), resetAt, 2*time.Second)
 	case <-time.After(2 * time.Second):
 		t.Fatal("等待 exhausted codex 快照写入运行时限流状态超时")
+	}
+}
+
+func TestOpenAIGatewayService_UpdateCodexUsageSnapshot_LookupFailureSkipsRateLimit(t *testing.T) {
+	repo := &openAICodexSnapshotAsyncRepo{rateLimitCh: make(chan time.Time, 1)}
+	svc := &OpenAIGatewayService{accountRepo: repo}
+	snapshot := &OpenAICodexUsageSnapshot{
+		PrimaryUsedPercent:       ptrFloat64WS(100),
+		PrimaryResetAfterSeconds: ptrIntWS(3600),
+		PrimaryWindowMinutes:     ptrIntWS(10080),
+	}
+
+	svc.updateCodexUsageSnapshot(context.Background(), 603, snapshot)
+
+	select {
+	case resetAt := <-repo.rateLimitCh:
+		t.Fatalf("account lookup failure must not create local rate state: %v", resetAt)
+	case <-time.After(200 * time.Millisecond):
 	}
 }
 

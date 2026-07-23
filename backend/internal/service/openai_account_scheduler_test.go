@@ -25,6 +25,28 @@ type schedulerTestOpenAIAccountRepo struct {
 	defaultGroupID int64
 }
 
+type schedulerStateTrackingRepo struct {
+	schedulerTestOpenAIAccountRepo
+	setErrorCalls int
+}
+
+func (r *schedulerStateTrackingRepo) SetError(_ context.Context, _ int64, _ string) error {
+	r.setErrorCalls++
+	return nil
+}
+
+type schedulerTestGroupRepo struct {
+	GroupRepository
+	group *Group
+}
+
+func (r schedulerTestGroupRepo) GetByID(_ context.Context, id int64) (*Group, error) {
+	if r.group != nil && r.group.ID == id {
+		return r.group, nil
+	}
+	return nil, errors.New("group not found")
+}
+
 func (r schedulerTestOpenAIAccountRepo) GetByID(ctx context.Context, id int64) (*Account, error) {
 	for i := range r.accounts {
 		if r.accounts[i].ID == id {
@@ -249,6 +271,43 @@ func (s *openAISnapshotCacheStub) GetAccount(ctx context.Context, accountID int6
 	}
 	cloned := *account
 	return &cloned, nil
+}
+
+func TestOpenAIAccountScheduler_PoolModePrivacyMismatchDoesNotWriteLocalError(t *testing.T) {
+	groupID := int64(10101)
+	account := Account{
+		ID:          40101,
+		Platform:    PlatformOpenAI,
+		Type:        AccountTypeAPIKey,
+		Status:      StatusActive,
+		Schedulable: true,
+		Concurrency: 1,
+		Credentials: map[string]any{"api_key": "aether-key", "pool_mode": true},
+	}
+	repo := &schedulerStateTrackingRepo{schedulerTestOpenAIAccountRepo: schedulerTestOpenAIAccountRepo{
+		accounts:       []Account{account},
+		defaultGroupID: groupID,
+	}}
+	svc := &OpenAIGatewayService{
+		accountRepo: repo,
+		schedulerSnapshot: &SchedulerSnapshotService{groupRepo: schedulerTestGroupRepo{group: &Group{
+			ID:                groupID,
+			Name:              "privacy-required",
+			RequirePrivacySet: true,
+		}}},
+	}
+	scheduler := &defaultOpenAIAccountScheduler{service: svc}
+
+	selection, _, _, _, err := scheduler.selectByLoadBalance(context.Background(), OpenAIAccountScheduleRequest{
+		GroupID:        &groupID,
+		Platform:       PlatformOpenAI,
+		RequestedModel: "gpt-5.4",
+	})
+
+	require.Error(t, err)
+	require.Nil(t, selection)
+	require.Zero(t, repo.setErrorCalls)
+	require.False(t, svc.isOpenAIAccountRuntimeBlocked(&account))
 }
 
 func TestOpenAIGatewayService_SelectAccountWithScheduler_DefaultDisabledUsesLegacyLoadAwareness(t *testing.T) {

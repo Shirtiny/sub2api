@@ -149,6 +149,13 @@ func (s *OpenAIGatewayService) tempUnscheduleOpenAITransportError(ctx context.Co
 	if s == nil || account == nil {
 		return
 	}
+	if account.IsPoolMode() {
+		logger.L().With(zap.String("component", "service.openai_gateway")).Info(
+			"openai.pool_mode_transport_error_skipped",
+			zap.Int64("account_id", account.ID),
+		)
+		return
+	}
 	until := time.Now().Add(openAITransportErrorTempUnschedDuration)
 	reason := "upstream transport error (proxy/network): " + safeErr
 

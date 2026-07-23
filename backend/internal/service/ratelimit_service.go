@@ -117,7 +117,7 @@ func (s *RateLimitService) SetAccountRuntimeBlocker(blocker AccountRuntimeBlocke
 }
 
 func (s *RateLimitService) notifyAccountSchedulingBlocked(account *Account, until time.Time, reason string) {
-	if s == nil || s.runtimeBlocker == nil || account == nil {
+	if s == nil || s.runtimeBlocker == nil || account == nil || account.IsPoolMode() {
 		return
 	}
 	s.runtimeBlocker.BlockAccountScheduling(account, until, reason)
@@ -1581,7 +1581,19 @@ func hasNonEmptyMapValue(extra map[string]any, key string) bool {
 }
 
 func (s *RateLimitService) GetTempUnschedStatus(ctx context.Context, accountID int64) (*TempUnschedState, error) {
+	if s == nil || s.accountRepo == nil || accountID <= 0 {
+		return nil, nil
+	}
 	now := time.Now().Unix()
+	// Pool mode ignores provider-side temporary state. Check the account before
+	// consulting the cache so a stale cached state cannot be surfaced or acted on.
+	account, err := s.accountRepo.GetByID(ctx, accountID)
+	if err != nil {
+		return nil, err
+	}
+	if account == nil || account.IsPoolMode() {
+		return nil, nil
+	}
 	if s.tempUnschedCache != nil {
 		state, err := s.tempUnschedCache.GetTempUnsched(ctx, accountID)
 		if err != nil {
@@ -1592,10 +1604,6 @@ func (s *RateLimitService) GetTempUnschedStatus(ctx context.Context, accountID i
 		}
 	}
 
-	account, err := s.accountRepo.GetByID(ctx, accountID)
-	if err != nil {
-		return nil, err
-	}
 	if account.TempUnschedulableUntil == nil {
 		return nil, nil
 	}
@@ -1629,7 +1637,7 @@ func (s *RateLimitService) GetTempUnschedStatus(ctx context.Context, accountID i
 }
 
 func (s *RateLimitService) HandleTempUnschedulable(ctx context.Context, account *Account, statusCode int, responseBody []byte) bool {
-	if account == nil {
+	if account == nil || account.IsPoolMode() {
 		return false
 	}
 	if !account.ShouldHandleErrorCode(statusCode) {
@@ -1882,7 +1890,7 @@ func matchTempUnschedKeyword(bodyLower string, keywords []string) string {
 }
 
 func (s *RateLimitService) triggerTempUnschedulable(ctx context.Context, account *Account, rule TempUnschedulableRule, ruleIndex int, statusCode int, matchedKeyword string, responseBody []byte) bool {
-	if account == nil {
+	if account == nil || account.IsPoolMode() {
 		return false
 	}
 	if rule.DurationMinutes <= 0 {
@@ -1942,6 +1950,10 @@ func (s *RateLimitService) HandleStreamTimeout(ctx context.Context, account *Acc
 	if account == nil {
 		return false
 	}
+	if account.IsPoolMode() {
+		slog.Info("pool_mode_stream_timeout_skipped", "account_id", account.ID, "model", model)
+		return false
+	}
 
 	// 获取系统设置
 	if s.settingService == nil {
@@ -1994,6 +2006,9 @@ func (s *RateLimitService) HandleStreamTimeout(ctx context.Context, account *Acc
 
 // triggerStreamTimeoutTempUnsched 触发流超时临时不可调度
 func (s *RateLimitService) triggerStreamTimeoutTempUnsched(ctx context.Context, account *Account, settings *StreamTimeoutSettings, model string) bool {
+	if account == nil || account.IsPoolMode() {
+		return false
+	}
 	now := time.Now()
 	until := now.Add(time.Duration(settings.TempUnschedMinutes) * time.Minute)
 
@@ -2039,13 +2054,12 @@ func (s *RateLimitService) triggerStreamTimeoutTempUnsched(ctx context.Context, 
 
 // triggerStreamTimeoutError 触发流超时错误状态
 func (s *RateLimitService) triggerStreamTimeoutError(ctx context.Context, account *Account, model string) bool {
+	if account == nil || account.IsPoolMode() {
+		return false
+	}
 	errorMsg := "Stream data interval timeout (repeated failures) for model: " + model
 
 	s.notifyAccountSchedulingBlocked(account, time.Time{}, "stream_timeout_error")
-	if account != nil && account.IsPoolMode() {
-		slog.Warn("pool_mode_stream_timeout_error_skipped", "account_id", account.ID, "model", model)
-		return false
-	}
 
 	if err := s.accountRepo.SetError(ctx, account.ID, errorMsg); err != nil {
 		slog.Warn("stream_timeout_set_error_failed", "account_id", account.ID, "error", err)

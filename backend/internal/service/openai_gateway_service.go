@@ -7176,21 +7176,23 @@ func (s *OpenAIGatewayService) updateCodexUsageSnapshot(ctx context.Context, acc
 		if shouldPersistUpdates {
 			_ = s.accountRepo.UpdateExtra(updateCtx, accountID, updates)
 		}
-		if resetAt != nil && !accountIsPoolMode(updateCtx, s.accountRepo, accountID) {
+		if resetAt != nil && accountAllowsLocalRateLimit(updateCtx, s.accountRepo, accountID) {
 			_ = s.accountRepo.SetRateLimited(updateCtx, accountID, *resetAt)
 		}
 	}()
 }
 
-func accountIsPoolMode(ctx context.Context, repo AccountRepository, accountID int64) bool {
+func accountAllowsLocalRateLimit(ctx context.Context, repo AccountRepository, accountID int64) bool {
 	if repo == nil || accountID <= 0 {
 		return false
 	}
 	account, err := repo.GetByID(ctx, accountID)
 	if err != nil || account == nil {
+		// Do not turn a failed state lookup into a local rate-limit write. The
+		// next successful snapshot can persist the state for non-pool accounts.
 		return false
 	}
-	return account.IsPoolMode()
+	return !account.IsPoolMode()
 }
 
 func (s *OpenAIGatewayService) UpdateCodexUsageSnapshotFromHeaders(ctx context.Context, accountID int64, headers http.Header) {
