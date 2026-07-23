@@ -510,16 +510,20 @@ func TestAccountRepositoryMutationFenceRejectsImplicitTransactionalClient(t *tes
 // --- Create / GetByID / Update / Delete ---
 
 func (s *AccountRepoSuite) TestCreate() {
+	tempUntil := time.Now().Add(10 * time.Minute).UTC().Truncate(time.Second)
+	tempReason := "temporary upstream failure"
 	account := &service.Account{
-		Name:        "test-create",
-		Platform:    service.PlatformAnthropic,
-		Type:        service.AccountTypeOAuth,
-		Status:      service.StatusActive,
-		Credentials: map[string]any{},
-		Extra:       map[string]any{},
-		Concurrency: 3,
-		Priority:    50,
-		Schedulable: true,
+		Name:                    "test-create",
+		Platform:                service.PlatformAnthropic,
+		Type:                    service.AccountTypeOAuth,
+		Status:                  service.StatusActive,
+		Credentials:             map[string]any{},
+		Extra:                   map[string]any{},
+		Concurrency:             3,
+		Priority:                50,
+		Schedulable:             true,
+		TempUnschedulableUntil:  &tempUntil,
+		TempUnschedulableReason: tempReason,
 	}
 
 	err := s.repo.Create(s.ctx, account)
@@ -529,6 +533,9 @@ func (s *AccountRepoSuite) TestCreate() {
 	got, err := s.repo.GetByID(s.ctx, account.ID)
 	s.Require().NoError(err, "GetByID")
 	s.Require().Equal("test-create", got.Name)
+	s.Require().NotNil(got.TempUnschedulableUntil)
+	s.Require().WithinDuration(tempUntil, *got.TempUnschedulableUntil, time.Second)
+	s.Require().Equal(tempReason, got.TempUnschedulableReason)
 }
 
 func (s *AccountRepoSuite) TestGetByID_NotFound() {
@@ -538,14 +545,29 @@ func (s *AccountRepoSuite) TestGetByID_NotFound() {
 
 func (s *AccountRepoSuite) TestUpdate() {
 	account := mustCreateAccount(s.T(), s.client, &service.Account{Name: "original"})
+	tempUntil := time.Now().Add(10 * time.Minute).UTC().Truncate(time.Second)
+	tempReason := "temporary transport failure"
 
 	account.Name = "updated"
+	account.TempUnschedulableUntil = &tempUntil
+	account.TempUnschedulableReason = tempReason
 	err := s.repo.Update(s.ctx, account)
 	s.Require().NoError(err, "Update")
 
 	got, err := s.repo.GetByID(s.ctx, account.ID)
 	s.Require().NoError(err, "GetByID after update")
 	s.Require().Equal("updated", got.Name)
+	s.Require().NotNil(got.TempUnschedulableUntil)
+	s.Require().WithinDuration(tempUntil, *got.TempUnschedulableUntil, time.Second)
+	s.Require().Equal(tempReason, got.TempUnschedulableReason)
+
+	got.TempUnschedulableUntil = nil
+	got.TempUnschedulableReason = ""
+	s.Require().NoError(s.repo.Update(s.ctx, got), "clear temporary state")
+	cleared, err := s.repo.GetByID(s.ctx, account.ID)
+	s.Require().NoError(err, "GetByID after clearing temporary state")
+	s.Require().Nil(cleared.TempUnschedulableUntil)
+	s.Require().Empty(cleared.TempUnschedulableReason)
 }
 
 func (s *AccountRepoSuite) TestUpdate_SyncSchedulerSnapshotOnDisabled() {
