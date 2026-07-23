@@ -1645,6 +1645,10 @@ func (s *RateLimitService) HandleOpenAIImageRateLimit(ctx context.Context, accou
 	if account.Platform != PlatformOpenAI {
 		return false
 	}
+	if account.IsPoolMode() {
+		slog.Info("pool_mode_image_rate_limit_skipped", "account_id", account.ID, "status_code", statusCode)
+		return false
+	}
 	if !account.ShouldHandleErrorCode(statusCode) {
 		slog.Info("openai_image_rate_limit_skipped_by_error_code_policy", "account_id", account.ID, "status_code", statusCode)
 		return false
@@ -1748,6 +1752,10 @@ const tempUnschedMessageMaxBytes = 2048
 
 func (s *RateLimitService) HandleUpstreamModelNotFound(ctx context.Context, account *Account, requestedModel string, statusCode int, responseBody []byte) bool {
 	if s == nil || account == nil || s.accountRepo == nil {
+		return false
+	}
+	if account.IsPoolMode() {
+		slog.Info("pool_mode_model_not_found_skipped", "account_id", account.ID, "status_code", statusCode)
 		return false
 	}
 	if !account.ShouldHandleErrorCode(statusCode) {

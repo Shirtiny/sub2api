@@ -255,6 +255,25 @@ func TestIsModelRateLimited_OpenAIImageGenerationIntentBlocksTextModelImageTool(
 	require.True(t, account.isModelRateLimitedWithContext(WithOpenAIImageGenerationIntent(context.Background()), "gpt-5.4"))
 }
 
+func TestPoolModeIgnoresPersistedModelRateLimits(t *testing.T) {
+	future := time.Now().Add(10 * time.Minute).Format(time.RFC3339)
+	account := &Account{
+		Platform:    PlatformOpenAI,
+		Type:        AccountTypeAPIKey,
+		Credentials: map[string]any{"pool_mode": true},
+		Extra: map[string]any{
+			modelRateLimitsKey: map[string]any{
+				"gpt-5.4": map[string]any{
+					"rate_limit_reset_at": future,
+				},
+			},
+		},
+	}
+
+	require.False(t, account.isModelRateLimitedWithContext(context.Background(), "gpt-5.4"))
+	require.Zero(t, account.GetModelRateLimitRemainingTime("gpt-5.4"))
+}
+
 func TestIsModelRateLimited_Antigravity_ThinkingAffectsModelKey(t *testing.T) {
 	now := time.Now()
 	future := now.Add(10 * time.Minute).Format(time.RFC3339)

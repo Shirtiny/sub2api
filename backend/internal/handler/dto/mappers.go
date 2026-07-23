@@ -230,6 +230,14 @@ func AccountFromServiceShallow(a *service.Account) *Account {
 		return nil
 	}
 	redactedCreds, credsStatus := RedactCredentials(a.Credentials)
+	poolMode := a.IsPoolMode()
+	extra := accountExtraForResponse(a.Extra, poolMode)
+	rateLimitedAt := a.RateLimitedAt
+	rateLimitResetAt := a.RateLimitResetAt
+	if poolMode {
+		rateLimitedAt = nil
+		rateLimitResetAt = nil
+	}
 	out := &Account{
 		ID:                a.ID,
 		Name:              a.Name,
@@ -238,7 +246,7 @@ func AccountFromServiceShallow(a *service.Account) *Account {
 		Type:              a.Type,
 		Credentials:       redactedCreds,
 		CredentialsStatus: credsStatus,
-		Extra:             a.Extra,
+		Extra:             extra,
 		ProxyID:           a.ProxyID,
 		Concurrency:       a.Concurrency,
 		LoadFactor:        a.LoadFactor,
@@ -257,8 +265,8 @@ func AccountFromServiceShallow(a *service.Account) *Account {
 		CreatedAt:          a.CreatedAt,
 		UpdatedAt:          a.UpdatedAt,
 		Schedulable:        a.Schedulable,
-		RateLimitedAt:      a.RateLimitedAt,
-		RateLimitResetAt:   a.RateLimitResetAt,
+		RateLimitedAt:      rateLimitedAt,
+		RateLimitResetAt:   rateLimitResetAt,
 		OverloadUntil: func() *time.Time {
 			if a.IsPoolMode() {
 				return nil
@@ -399,6 +407,19 @@ func AccountFromServiceShallow(a *service.Account) *Account {
 		}
 	}
 
+	return out
+}
+
+func accountExtraForResponse(extra map[string]any, poolMode bool) map[string]any {
+	if !poolMode || extra == nil {
+		return extra
+	}
+	out := make(map[string]any, len(extra))
+	for key, value := range extra {
+		if key != "model_rate_limits" {
+			out[key] = value
+		}
+	}
 	return out
 }
 

@@ -59,7 +59,7 @@ func (a *Account) GetModelRateLimitRemainingTimeWithContext(ctx context.Context,
 }
 
 func (a *Account) modelRateLimitKeysForRequest(ctx context.Context, requestedModel string) []string {
-	if a == nil {
+	if a == nil || a.IsPoolMode() {
 		return nil
 	}
 

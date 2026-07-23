@@ -3,6 +3,7 @@ package dto
 import (
 	"encoding/json"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -64,4 +65,34 @@ func TestAccountFromServiceShallow_NilCredentialsOmitsStatus(t *testing.T) {
 	require.NotNil(t, got)
 	require.Nil(t, got.Credentials)
 	require.Nil(t, got.CredentialsStatus)
+}
+
+func TestAccountFromServiceShallow_PoolModeHidesStaleRateLimits(t *testing.T) {
+	now := time.Now()
+	resetAt := now.Add(30 * time.Minute)
+	src := &service.Account{
+		ID:               40,
+		Name:             "aether-pool",
+		Platform:         service.PlatformOpenAI,
+		Type:             service.AccountTypeAPIKey,
+		Credentials:      map[string]any{"pool_mode": true},
+		RateLimitedAt:    &now,
+		RateLimitResetAt: &resetAt,
+		Extra: map[string]any{
+			"openai_passthrough": true,
+			"model_rate_limits": map[string]any{
+				"gpt-5.4": map[string]any{
+					"rate_limit_reset_at": resetAt.Format(time.RFC3339),
+				},
+			},
+		},
+	}
+
+	got := AccountFromServiceShallow(src)
+
+	require.Nil(t, got.RateLimitedAt)
+	require.Nil(t, got.RateLimitResetAt)
+	require.NotContains(t, got.Extra, "model_rate_limits")
+	require.Equal(t, true, got.Extra["openai_passthrough"])
+	require.Contains(t, src.Extra, "model_rate_limits", "mapping must not mutate the service account")
 }
