@@ -216,19 +216,20 @@ type CreateGroupInput struct {
 	CustomSourceGroupID       *int64
 	CustomMultiplier          *int
 	// 图片生成计费配置（仅 antigravity 平台使用）
-	AllowImageGeneration bool
-	ImageRateIndependent bool
-	ImageRateMultiplier  *float64
-	VideoRateIndependent bool
-	VideoRateMultiplier  *float64
-	ImagePrice1K         *float64
-	ImagePrice2K         *float64
-	ImagePrice4K         *float64
-	VideoPrice480P       *float64
-	VideoPrice720P       *float64
-	VideoPrice1080P      *float64
-	ClaudeCodeOnly       bool   // 仅允许 Claude Code 客户端
-	FallbackGroupID      *int64 // 降级分组 ID
+	AllowImageGeneration  bool
+	ImageRateIndependent  bool
+	ImageRateMultiplier   *float64
+	VideoRateIndependent  bool
+	VideoRateMultiplier   *float64
+	ImagePrice1K          *float64
+	ImagePrice2K          *float64
+	ImagePrice4K          *float64
+	VideoPrice480P        *float64
+	VideoPrice720P        *float64
+	VideoPrice1080P       *float64
+	WebSearchPricePerCall *float64 // Codex alpha/search 网页搜索单次价格；nil 表示默认价 0.01
+	ClaudeCodeOnly        bool     // 仅允许 Claude Code 客户端
+	FallbackGroupID       *int64   // 降级分组 ID
 	// 无效请求兜底分组 ID（仅 anthropic 平台使用）
 	FallbackGroupIDOnInvalidRequest *int64
 	// 模型路由配置（仅 anthropic 平台使用）
@@ -267,19 +268,20 @@ type UpdateGroupInput struct {
 	CustomSourceGroupID       *int64
 	CustomMultiplier          *int
 	// 图片生成计费配置（仅 antigravity 平台使用）
-	AllowImageGeneration *bool
-	ImageRateIndependent *bool
-	ImageRateMultiplier  *float64
-	VideoRateIndependent *bool
-	VideoRateMultiplier  *float64
-	ImagePrice1K         *float64
-	ImagePrice2K         *float64
-	ImagePrice4K         *float64
-	VideoPrice480P       *float64
-	VideoPrice720P       *float64
-	VideoPrice1080P      *float64
-	ClaudeCodeOnly       *bool  // 仅允许 Claude Code 客户端
-	FallbackGroupID      *int64 // 降级分组 ID
+	AllowImageGeneration  *bool
+	ImageRateIndependent  *bool
+	ImageRateMultiplier   *float64
+	VideoRateIndependent  *bool
+	VideoRateMultiplier   *float64
+	ImagePrice1K          *float64
+	ImagePrice2K          *float64
+	ImagePrice4K          *float64
+	VideoPrice480P        *float64
+	VideoPrice720P        *float64
+	VideoPrice1080P       *float64
+	WebSearchPricePerCall *float64 // nil 表示不修改，负数表示清除并回退默认价 0.01
+	ClaudeCodeOnly        *bool    // 仅允许 Claude Code 客户端
+	FallbackGroupID       *int64   // 降级分组 ID
 	// 无效请求兜底分组 ID（仅 anthropic 平台使用）
 	FallbackGroupIDOnInvalidRequest *int64
 	// 模型路由配置（仅 anthropic 平台使用）
@@ -1934,6 +1936,7 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 	videoPrice480P := normalizePrice(input.VideoPrice480P)
 	videoPrice720P := normalizePrice(input.VideoPrice720P)
 	videoPrice1080P := normalizePrice(input.VideoPrice1080P)
+	webSearchPricePerCall := normalizePrice(input.WebSearchPricePerCall)
 	imageRateMultiplier := 1.0
 	if input.ImageRateMultiplier != nil {
 		if *input.ImageRateMultiplier < 0 {
@@ -2031,6 +2034,7 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 		VideoPrice480P:                  videoPrice480P,
 		VideoPrice720P:                  videoPrice720P,
 		VideoPrice1080P:                 videoPrice1080P,
+		WebSearchPricePerCall:           webSearchPricePerCall,
 		ClaudeCodeOnly:                  input.ClaudeCodeOnly,
 		FallbackGroupID:                 input.FallbackGroupID,
 		FallbackGroupIDOnInvalidRequest: fallbackOnInvalidRequest,
@@ -2261,6 +2265,9 @@ func (s *adminServiceImpl) UpdateGroup(ctx context.Context, id int64, input *Upd
 	}
 	if input.VideoPrice1080P != nil {
 		group.VideoPrice1080P = normalizePrice(input.VideoPrice1080P)
+	}
+	if input.WebSearchPricePerCall != nil {
+		group.WebSearchPricePerCall = normalizePrice(input.WebSearchPricePerCall)
 	}
 
 	// Claude Code 客户端限制

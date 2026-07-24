@@ -738,6 +738,7 @@ var (
 		{Name: "video_price_480p", Type: field.TypeFloat64, Nullable: true, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
 		{Name: "video_price_720p", Type: field.TypeFloat64, Nullable: true, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
 		{Name: "video_price_1080p", Type: field.TypeFloat64, Nullable: true, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
+		{Name: "web_search_price_per_call", Type: field.TypeFloat64, Nullable: true, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
 		{Name: "claude_code_only", Type: field.TypeBool, Default: false},
 		{Name: "fallback_group_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "fallback_group_id_on_invalid_request", Type: field.TypeInt64, Nullable: true},
@@ -793,17 +794,17 @@ var (
 			{
 				Name:    "group_sort_order",
 				Unique:  false,
-				Columns: []*schema.Column{GroupsColumns[33]},
+				Columns: []*schema.Column{GroupsColumns[34]},
 			},
 			{
 				Name:    "group_is_custom_subscription_group",
 				Unique:  false,
-				Columns: []*schema.Column{GroupsColumns[41]},
+				Columns: []*schema.Column{GroupsColumns[42]},
 			},
 			{
 				Name:    "group_custom_owner_user_id_custom_source_plan_id",
 				Unique:  false,
-				Columns: []*schema.Column{GroupsColumns[42], GroupsColumns[43]},
+				Columns: []*schema.Column{GroupsColumns[43], GroupsColumns[44]},
 				Annotation: &entsql.IndexAnnotation{
 					Where: "deleted_at IS NULL AND is_custom_subscription_group = TRUE AND custom_owner_user_id IS NOT NULL AND custom_source_plan_id IS NOT NULL",
 				},

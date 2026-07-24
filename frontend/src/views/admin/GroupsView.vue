@@ -878,6 +878,16 @@
           <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">{{ t(videoPricingI18nKey("modeHint")) }}</p>
         </div>
 
+        <div v-if="createForm.platform === 'openai'" class="border-t pt-4">
+          <label class="block mb-2 font-medium text-content-secondary">{{ t("admin.groups.webSearchPricing.title") }}</label>
+          <label class="input-label">{{ t("admin.groups.webSearchPricing.pricePerCall") }}</label>
+          <input v-model.number="createForm.web_search_price_per_call" type="number" step="0.001" min="0" class="input" placeholder="0.01" />
+          <p class="input-hint">{{ t("admin.groups.webSearchPricing.pricePerCallHint") }}</p>
+          <div class="mt-2 rounded-lg bg-gray-50 p-3 text-xs text-gray-700 dark:bg-gray-800 dark:text-gray-300">
+            {{ t("admin.groups.webSearchPricing.finalPricePreview", { price: createWebSearchFinalPricePreview }) }}
+          </div>
+        </div>
+
         <!-- 支持的模型系列（仅 antigravity 平台） -->
         <div v-if="createForm.platform === 'antigravity'" class="border-t pt-4">
           <div class="mb-1.5 flex items-center gap-1">
@@ -2081,6 +2091,16 @@
             <div><label class="input-label">1080p ($/s)</label><input v-model.number="editForm.video_price_1080p" type="number" step="0.001" min="0" class="input" placeholder="0.25" /></div>
           </div>
           <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">{{ t(videoPricingI18nKey("modeHint")) }}</p>
+        </div>
+
+        <div v-if="editForm.platform === 'openai'" class="border-t pt-4">
+          <label class="block mb-2 font-medium text-content-secondary">{{ t("admin.groups.webSearchPricing.title") }}</label>
+          <label class="input-label">{{ t("admin.groups.webSearchPricing.pricePerCall") }}</label>
+          <input v-model.number="editForm.web_search_price_per_call" type="number" step="0.001" min="0" class="input" placeholder="0.01" />
+          <p class="input-hint">{{ t("admin.groups.webSearchPricing.pricePerCallHint") }}</p>
+          <div class="mt-2 rounded-lg bg-gray-50 p-3 text-xs text-gray-700 dark:bg-gray-800 dark:text-gray-300">
+            {{ t("admin.groups.webSearchPricing.finalPricePreview", { price: editWebSearchFinalPricePreview }) }}
+          </div>
         </div>
 
         <div
@@ -3432,6 +3452,7 @@ const createForm = reactive({
   video_price_480p: null as number | null,
   video_price_720p: null as number | null,
   video_price_1080p: null as number | null,
+  web_search_price_per_call: null as number | null,
   // Claude Code 客户端限制（仅 anthropic 平台使用）
   claude_code_only: false,
   fallback_group_id: null as number | null,
@@ -3769,6 +3790,7 @@ const editForm = reactive({
   video_price_480p: null as number | null,
   video_price_720p: null as number | null,
   video_price_1080p: null as number | null,
+  web_search_price_per_call: null as number | null,
   // Claude Code 客户端限制（仅 anthropic 平台使用）
   claude_code_only: false,
   fallback_group_id: null as number | null,
@@ -3850,6 +3872,17 @@ const createImageFinalPricePreview = computed(() =>
 const editImageFinalPricePreview = computed(() =>
   buildImageFinalPricePreview(editForm),
 );
+
+const DEFAULT_WEB_SEARCH_PRICE_PER_CALL = 0.01;
+const buildWebSearchFinalPricePreview = (form: {
+  web_search_price_per_call: number | string | null;
+  rate_multiplier: number | string | null;
+}) => formatImagePricePreview(
+  normalizePreviewNumber(form.web_search_price_per_call, DEFAULT_WEB_SEARCH_PRICE_PER_CALL) *
+    normalizePreviewNumber(form.rate_multiplier, 1),
+);
+const createWebSearchFinalPricePreview = computed(() => buildWebSearchFinalPricePreview(createForm));
+const editWebSearchFinalPricePreview = computed(() => buildWebSearchFinalPricePreview(editForm));
 
 // 根据分组类型返回不同的删除确认消息
 const deleteConfirmMessage = computed(() => {
@@ -4025,6 +4058,7 @@ const closeCreateModal = () => {
   createForm.video_price_480p = null;
   createForm.video_price_720p = null;
   createForm.video_price_1080p = null;
+  createForm.web_search_price_per_call = null;
   createForm.claude_code_only = false;
   createForm.fallback_group_id = null;
   createForm.fallback_group_id_on_invalid_request = null;
@@ -4121,6 +4155,7 @@ const handleCreateGroup = async () => {
     requestData.video_price_480p = emptyToNull(requestData.video_price_480p);
     requestData.video_price_720p = emptyToNull(requestData.video_price_720p);
     requestData.video_price_1080p = emptyToNull(requestData.video_price_1080p);
+    requestData.web_search_price_per_call = emptyToNull(requestData.web_search_price_per_call);
     await adminAPI.groups.create(requestData);
     appStore.showSuccess(t("admin.groups.groupCreated"));
     closeCreateModal();
@@ -4164,6 +4199,7 @@ const handleEdit = async (group: AdminGroup) => {
   editForm.video_price_480p = group.video_price_480p;
   editForm.video_price_720p = group.video_price_720p;
   editForm.video_price_1080p = group.video_price_1080p;
+  editForm.web_search_price_per_call = group.web_search_price_per_call ?? null;
   editForm.claude_code_only = group.claude_code_only || false;
   editForm.fallback_group_id = group.fallback_group_id;
   editForm.fallback_group_id_on_invalid_request =
@@ -4276,6 +4312,7 @@ const handleUpdateGroup = async () => {
     payload.video_price_480p = clearedToMinusOne(payload.video_price_480p);
     payload.video_price_720p = clearedToMinusOne(payload.video_price_720p);
     payload.video_price_1080p = clearedToMinusOne(payload.video_price_1080p);
+    payload.web_search_price_per_call = clearedToMinusOne(payload.web_search_price_per_call);
     if (!editingGroup.value.is_custom_subscription_group) {
       delete (payload as Partial<typeof payload>).custom_multiplier;
     }

@@ -2469,6 +2469,12 @@ export default {
         finalPricePreview: '视频生成计费',
         notConfigured: '未配置'
       },
+      webSearchPricing: {
+        title: 'Codex 网页搜索按次计费',
+        pricePerCall: '每次成功搜索单价（USD）',
+        pricePerCallHint: '留空使用默认价 $0.01/次；填写 0 表示免费。仅成功的 alpha/search 请求计费。',
+        finalPricePreview: '应用分组倍率后的最终单价：{price}'
+      },
       modelsList: {
         title: '自定义 /v1/models 模型列表',
         hint: '仅影响 /v1/models 展示结果，不影响白名单模型调用和账号调度。',

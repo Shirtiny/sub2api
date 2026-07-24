@@ -107,17 +107,18 @@ type Group struct {
 	CustomMultiplier          *int   `json:"custom_multiplier,omitempty"`
 
 	// 图片生成计费配置（仅 antigravity 平台使用）
-	AllowImageGeneration bool     `json:"allow_image_generation"`
-	ImageRateIndependent bool     `json:"image_rate_independent"`
-	ImageRateMultiplier  float64  `json:"image_rate_multiplier"`
-	ImagePrice1K         *float64 `json:"image_price_1k"`
-	ImagePrice2K         *float64 `json:"image_price_2k"`
-	ImagePrice4K         *float64 `json:"image_price_4k"`
-	VideoRateIndependent bool     `json:"video_rate_independent"`
-	VideoRateMultiplier  float64  `json:"video_rate_multiplier"`
-	VideoPrice480P       *float64 `json:"video_price_480p"`
-	VideoPrice720P       *float64 `json:"video_price_720p"`
-	VideoPrice1080P      *float64 `json:"video_price_1080p"`
+	AllowImageGeneration  bool     `json:"allow_image_generation"`
+	ImageRateIndependent  bool     `json:"image_rate_independent"`
+	ImageRateMultiplier   float64  `json:"image_rate_multiplier"`
+	ImagePrice1K          *float64 `json:"image_price_1k"`
+	ImagePrice2K          *float64 `json:"image_price_2k"`
+	ImagePrice4K          *float64 `json:"image_price_4k"`
+	VideoRateIndependent  bool     `json:"video_rate_independent"`
+	VideoRateMultiplier   float64  `json:"video_rate_multiplier"`
+	VideoPrice480P        *float64 `json:"video_price_480p"`
+	VideoPrice720P        *float64 `json:"video_price_720p"`
+	VideoPrice1080P       *float64 `json:"video_price_1080p"`
+	WebSearchPricePerCall *float64 `json:"web_search_price_per_call"`
 
 	// Claude Code 客户端限制
 	ClaudeCodeOnly  bool   `json:"claude_code_only"`

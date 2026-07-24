@@ -2188,7 +2188,7 @@ func runOpenAIWSUsageRecordWithRetry(ctx context.Context, record func(context.Co
 }
 
 func (h *OpenAIGatewayHandler) submitOpenAIUsageRecordTask(parent context.Context, result *service.OpenAIForwardResult, task service.UsageRecordTask) {
-	if result != nil && result.ImageCount > 0 {
+	if result != nil && (result.ImageCount > 0 || result.WebSearchCalls > 0) {
 		h.submitMandatoryUsageRecordTask(parent, task)
 		return
 	}

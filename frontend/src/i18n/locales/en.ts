@@ -2473,6 +2473,12 @@ export default {
         finalPricePreview: 'Video Generation Pricing',
         notConfigured: 'Not configured'
       },
+      webSearchPricing: {
+        title: 'Codex Web Search Pricing',
+        pricePerCall: 'Price per successful search (USD)',
+        pricePerCallHint: 'Leave empty to use $0.01 per successful alpha/search call. Set 0 to make it free.',
+        finalPricePreview: 'Final price after group multiplier: {price}'
+      },
       modelsList: {
         title: 'Custom /v1/models Model List',
         hint: 'Only changes the /v1/models response. Whitelist model calls and account routing are unchanged.',

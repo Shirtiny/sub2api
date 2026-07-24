@@ -265,6 +265,9 @@ type OpenAIForwardResult struct {
 	VideoResolution    string
 	// VideoDurationSeconds 是提交时请求的生成时长（xAI 按输出秒数计费），已归一化到 1-15 秒。
 	VideoDurationSeconds int
+	// WebSearchCalls 是 Codex alpha/search 网页搜索调用次数（每次成功请求为 1）。
+	// 上游不返回 usage 字段，>0 时走按次计费（分组单价 × 次数 × 倍率）。
+	WebSearchCalls int
 
 	wsReplayInput       []json.RawMessage
 	wsReplayInputExists bool
@@ -6730,6 +6733,10 @@ func (s *OpenAIGatewayService) calculateOpenAIRecordUsageCost(
 	serviceTier string,
 ) (*CostBreakdown, error) {
 	billingModel := firstUsageBillingModel(billingModels)
+	if result != nil && result.WebSearchCalls > 0 {
+		// alpha/search 不按 token/image 计费，只按成功的网页搜索调用次数计费。
+		return s.billingService.CalculateWebSearchCost(result.WebSearchCalls, webSearchPricePerCallFromAPIKey(apiKey), multiplier), nil
+	}
 	if isGrokVideoUsageResult(result, billingModels) {
 		if resolved := s.resolveOpenAIChannelPricing(ctx, billingModel, apiKey); resolved == nil || resolved.Mode != BillingModeToken {
 			return s.calculateOpenAIVideoCost(ctx, billingModel, apiKey, result, videoMultiplier), nil
