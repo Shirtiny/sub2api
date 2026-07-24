@@ -9,12 +9,62 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
 )
+
+type alphaSearchTimingUpstream struct {
+	*httpUpstreamRecorder
+}
+
+func (u *alphaSearchTimingUpstream) Do(req *http.Request, proxyURL string, accountID int64, accountConcurrency int) (*http.Response, error) {
+	resp, err := u.httpUpstreamRecorder.Do(req, proxyURL, accountID, accountConcurrency)
+	if err == nil && resp != nil {
+		resp.Body = WrapUsageResponseTimingBody(req.Context(), resp.Body)
+	}
+	return resp, err
+}
+
+func TestForwardAlphaSearchObservesUpstreamBodyTiming(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	body := []byte(`{"model":"gpt-5.6-sol","commands":{"search_query":[{"q":"news"}]}}`)
+	recorder := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(recorder)
+	c.Request = httptest.NewRequest(http.MethodPost, "/v1/alpha/search", bytes.NewReader(body))
+
+	upstream := &alphaSearchTimingUpstream{httpUpstreamRecorder: &httpUpstreamRecorder{resp: &http.Response{
+		StatusCode: http.StatusOK,
+		Header:     http.Header{"Content-Type": []string{"application/json"}},
+		Body:       io.NopCloser(strings.NewReader(`{"output":"search result"}`)),
+	}}}
+	service := &OpenAIGatewayService{cfg: &config.Config{}, httpUpstream: upstream}
+	account := &Account{
+		ID:       41,
+		Platform: PlatformOpenAI,
+		Type:     AccountTypeAPIKey,
+		Credentials: map[string]any{
+			"api_key": "sk-test",
+		},
+	}
+
+	startedAt := time.Now().Add(-25 * time.Millisecond)
+	timing := NewUsageResponseTiming(startedAt)
+	ctx := WithUsageResponseTiming(context.Background(), timing)
+	result, err := service.ForwardAlphaSearch(ctx, c, account, body)
+
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	firstByteMs := timing.FirstByteMs()
+	require.NotNil(t, firstByteMs)
+	require.GreaterOrEqual(t, *firstByteMs, 0)
+	duration, ok := timing.UpstreamDuration()
+	require.True(t, ok)
+	require.GreaterOrEqual(t, duration.Milliseconds(), int64(*firstByteMs))
+}
 
 func TestForwardAlphaSearchOAuthPreservesWire(t *testing.T) {
 	gin.SetMode(gin.TestMode)
