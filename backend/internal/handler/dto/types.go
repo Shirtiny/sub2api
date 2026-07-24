@@ -474,6 +474,7 @@ type UsageLog struct {
 	OpenAIWSMode bool   `json:"openai_ws_mode"`
 	DurationMs   *int   `json:"duration_ms"`
 	FirstTokenMs *int   `json:"first_token_ms"`
+	FirstByteMs  *int   `json:"first_byte_ms"`
 
 	// 图片生成字段
 	ImageCount         int            `json:"image_count"`

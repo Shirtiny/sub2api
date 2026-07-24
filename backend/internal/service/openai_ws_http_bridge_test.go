@@ -210,6 +210,8 @@ func TestOpenAIWSHTTPBridgeRelaysSSEFramesAsWebSocketMessages(t *testing.T) {
 		require.Equal(t, 3, bridge.result.Usage.InputTokens)
 		require.Equal(t, 2, bridge.result.Usage.OutputTokens)
 		require.True(t, bridge.result.OpenAIWSMode)
+		require.NotNil(t, bridge.result.FirstByteMs)
+		require.GreaterOrEqual(t, *bridge.result.FirstByteMs, 0)
 	case <-time.After(3 * time.Second):
 		t.Fatal("timed out waiting for bridge result")
 	}
@@ -219,6 +221,196 @@ func TestOpenAIWSHTTPBridgeRelaysSSEFramesAsWebSocketMessages(t *testing.T) {
 	require.False(t, gjson.GetBytes(upstream.lastBody, "type").Exists())
 	require.False(t, gjson.GetBytes(upstream.lastBody, "generate").Exists())
 	require.True(t, gjson.GetBytes(upstream.lastBody, "stream").Bool())
+}
+
+func TestOpenAIWSHTTPBridgeTimingExcludesTerminalClientWrite(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	sseBody := "data: {\"type\":\"response.failed\",\"response\":{\"id\":\"resp_terminal_timing\"}}\n\n"
+	upstream := &httpUpstreamRecorder{resp: &http.Response{
+		StatusCode: http.StatusOK,
+		Header:     http.Header{"Content-Type": []string{"text/event-stream"}},
+		Body:       io.NopCloser(strings.NewReader(sseBody)),
+	}}
+	svc := &OpenAIGatewayService{
+		cfg:           &config.Config{},
+		httpUpstream:  upstream,
+		toolCorrector: NewCodexToolCorrector(),
+	}
+	account := &Account{
+		ID:          8,
+		Platform:    PlatformOpenAI,
+		Type:        AccountTypeAPIKey,
+		Concurrency: 1,
+	}
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request = httptest.NewRequest(http.MethodPost, "/v1/responses", nil)
+	payload := []byte(`{"type":"response.create","model":"gpt-5","stream":true,"input":"hi"}`)
+	const clientWriteDelay = 200 * time.Millisecond
+	const providerFenceDelay = 30 * time.Millisecond
+
+	startedAt := time.Now()
+	result, err := svc.proxyOpenAIWSHTTPBridgeTurn(
+		context.Background(),
+		c,
+		account,
+		"sk-test",
+		payload,
+		len(payload),
+		"gpt-5",
+		"",
+		"",
+		"",
+		1,
+		&OpenAIWSIngressHooks{
+			BeforeProviderWrite: func(int, []byte, string) error {
+				time.Sleep(providerFenceDelay)
+				return nil
+			},
+		},
+		func([]byte) error {
+			time.Sleep(clientWriteDelay)
+			return nil
+		},
+	)
+	wallDuration := time.Since(startedAt)
+
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	require.NotNil(t, result.FirstByteMs)
+	require.GreaterOrEqual(
+		t,
+		*result.FirstByteMs,
+		int((providerFenceDelay - 5*time.Millisecond).Milliseconds()),
+	)
+	require.GreaterOrEqual(t, wallDuration-result.Duration, clientWriteDelay)
+	require.Equal(t, result.Duration.Milliseconds(), int64(*result.FirstByteMs))
+}
+
+func TestOpenAIWSHTTPBridgeWriteDeadlineStillSettlesTerminalUsage(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	sseBody := strings.Join([]string{
+		`data: {"type":"response.created","response":{"id":"resp_deadline"}}`,
+		"",
+		`data: {"type":"response.completed","response":{"id":"resp_deadline","usage":{"input_tokens":4,"output_tokens":3}}}`,
+		"",
+	}, "\n")
+	upstream := &httpUpstreamRecorder{resp: &http.Response{
+		StatusCode: http.StatusOK,
+		Header: http.Header{
+			"Content-Type": []string{"text/event-stream"},
+		},
+		Body: io.NopCloser(strings.NewReader(sseBody)),
+	}}
+	svc := &OpenAIGatewayService{
+		cfg:           &config.Config{},
+		httpUpstream:  upstream,
+		toolCorrector: NewCodexToolCorrector(),
+	}
+	account := &Account{
+		ID:          9,
+		Platform:    PlatformOpenAI,
+		Type:        AccountTypeAPIKey,
+		Concurrency: 1,
+	}
+	recorder := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(recorder)
+	c.Request = httptest.NewRequest(http.MethodPost, "/v1/responses", nil)
+	payload := []byte(`{"type":"response.create","model":"gpt-5","stream":true}`)
+	writeCalls := 0
+
+	result, err := svc.proxyOpenAIWSHTTPBridgeTurn(
+		context.Background(),
+		c,
+		account,
+		"sk-test",
+		payload,
+		len(payload),
+		"gpt-5",
+		"",
+		"",
+		"",
+		1,
+		nil,
+		func([]byte) error {
+			writeCalls++
+			return context.DeadlineExceeded
+		},
+	)
+
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	require.Equal(t, "resp_deadline", result.RequestID)
+	require.Equal(t, 4, result.Usage.InputTokens)
+	require.Equal(t, 3, result.Usage.OutputTokens)
+	require.True(t, result.ClientDisconnect)
+	require.Equal(t, 1, writeCalls)
+}
+
+func TestOpenAIWSHTTPBridgeTerminalWriteErrorStillSettlesUsage(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	sseBody := strings.Join([]string{
+		`data: {"type":"response.created","response":{"id":"resp_terminal_write"}}`,
+		"",
+		`data: {"type":"response.completed","response":{"id":"resp_terminal_write","usage":{"input_tokens":5,"output_tokens":2}}}`,
+		"",
+	}, "\n")
+	upstream := &httpUpstreamRecorder{resp: &http.Response{
+		StatusCode: http.StatusOK,
+		Header: http.Header{
+			"Content-Type": []string{"text/event-stream"},
+		},
+		Body: io.NopCloser(strings.NewReader(sseBody)),
+	}}
+	svc := &OpenAIGatewayService{
+		cfg:           &config.Config{},
+		httpUpstream:  upstream,
+		toolCorrector: NewCodexToolCorrector(),
+	}
+	account := &Account{
+		ID:          10,
+		Platform:    PlatformOpenAI,
+		Type:        AccountTypeAPIKey,
+		Concurrency: 1,
+	}
+	recorder := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(recorder)
+	c.Request = httptest.NewRequest(http.MethodPost, "/v1/responses", nil)
+	payload := []byte(`{"type":"response.create","model":"gpt-5","stream":true}`)
+	writeCalls := 0
+
+	result, err := svc.proxyOpenAIWSHTTPBridgeTurn(
+		context.Background(),
+		c,
+		account,
+		"sk-test",
+		payload,
+		len(payload),
+		"gpt-5",
+		"",
+		"",
+		"",
+		1,
+		nil,
+		func([]byte) error {
+			writeCalls++
+			if writeCalls == 1 {
+				return nil
+			}
+			return errors.New("terminal client write failed")
+		},
+	)
+
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	require.Equal(t, "resp_terminal_write", result.RequestID)
+	require.Equal(t, 5, result.Usage.InputTokens)
+	require.Equal(t, 2, result.Usage.OutputTokens)
+	require.True(t, result.ClientDisconnect)
+	require.Equal(t, 2, writeCalls)
 }
 
 func TestProxyResponsesWebSocketFromClientForGrokUsesXAIHTTPBridge(t *testing.T) {

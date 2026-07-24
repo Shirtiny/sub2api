@@ -35,6 +35,7 @@ type RelayResult struct {
 	RequestID               string
 	TerminalEventType       string
 	FirstTokenMs            *int
+	FirstByteMs             *int
 	Duration                time.Duration
 	ClientToUpstreamFrames  int64
 	UpstreamToClientFrames  int64
@@ -48,6 +49,7 @@ type RelayTurnResult struct {
 	TerminalEventType string
 	Duration          time.Duration
 	FirstTokenMs      *int
+	FirstByteMs       *int
 }
 
 type RelayExit struct {
@@ -272,8 +274,11 @@ func (g *responseStepGate) observe(observed observedUpstreamEvent) responseStepE
 	if observed.protocolErr != nil {
 		return responseStepEventDecision{err: observed.protocolErr}
 	}
-	if g == nil || observed.eventType == "" {
+	if g == nil {
 		return responseStepEventDecision{}
+	}
+	if observed.eventType == "" {
+		return g.currentInFlightDecision()
 	}
 	responseID := strings.TrimSpace(observed.responseID)
 	responseIDRaw := observed.responseIDRaw
@@ -407,7 +412,7 @@ func (g *responseStepGate) observeIncrementalResponseIDBytes(responseID []byte) 
 
 func (g *responseStepGate) observeIncrementalResponseID(responseID string) responseStepEventDecision {
 	if responseID == "" {
-		return responseStepEventDecision{}
+		return g.currentInFlightDecision()
 	}
 	phase := responseStepPhase(g.phaseSnapshot.Load())
 	if phase != responseStepInFlight {
@@ -421,6 +426,22 @@ func (g *responseStepGate) observeIncrementalResponseID(responseID string) respo
 		return responseStepEventDecision{err: errResponseStepIDMismatch}
 	}
 	return responseStepEventDecision{}
+}
+
+func (g *responseStepGate) currentInFlightDecision() responseStepEventDecision {
+	if g == nil {
+		return responseStepEventDecision{}
+	}
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	if g.phase != responseStepInFlight {
+		return responseStepEventDecision{}
+	}
+	return responseStepEventDecision{
+		generation:    g.generation,
+		requestModel:  g.activeRequestModel,
+		turnStartedAt: g.activeStartedAt,
+	}
 }
 
 func (g *responseStepGate) finishTerminal(closeGate bool) {
@@ -484,6 +505,7 @@ type relayState struct {
 	lastResponseID          string
 	terminalEventType       string
 	firstTokenMs            *int
+	firstByteMs             *int
 	turnTimingByID          map[string]*relayTurnTiming
 	activeTurn              *relayTurnTiming
 	terminalWrittenToClient atomic.Bool
@@ -513,12 +535,15 @@ type observedUpstreamEvent struct {
 	usage            Usage
 	duration         time.Duration
 	firstToken       *int
+	firstByte        *int
+	turnTiming       *relayTurnTiming
 	protocolErr      error
 }
 
 type relayTurnTiming struct {
 	startAt      time.Time
 	firstTokenMs *int
+	firstByteMs  *int
 }
 
 func Relay(
@@ -659,6 +684,10 @@ func Relay(
 				return err
 			}
 		}
+		dispatchStartedAt := time.Time{}
+		if begin.started {
+			dispatchStartedAt = nowFn()
+		}
 		if begin.started && options.BeforeDispatchResponseCreate != nil {
 			if err := options.BeforeDispatchResponseCreate(msgType, payload, begin.originalModel); err != nil {
 				stepGate.abortBegin()
@@ -666,7 +695,7 @@ func Relay(
 			}
 		}
 		if begin.started {
-			if err := stepGate.dispatchPrepared(nowFn()); err != nil {
+			if err := stepGate.dispatchPrepared(dispatchStartedAt); err != nil {
 				stepGate.abortBegin()
 				return err
 			}
@@ -1033,13 +1062,21 @@ func runUpstreamToClient(
 				continue
 			}
 		}
-		observedEvent := observedUpstreamEvent{}
+		observedAt := nowFn()
+		observedEvent := observedUpstreamEvent{observedAt: observedAt}
 		switch msgType {
 		case coderws.MessageText:
-			observedEvent = observeUpstreamMessage(state, payload, startAt, nowFn, onUsageParseFailure)
+			observedEvent = observeUpstreamMessage(
+				state,
+				payload,
+				startAt,
+				func() time.Time { return observedAt },
+				onUsageParseFailure,
+			)
 		case coderws.MessageBinary:
 			// binary frame 直接透传，不进入 JSON 观测路径（避免无效解析开销）。
 		}
+		observedEvent.observedAt = observedAt
 		decision := stepGate.observe(observedEvent)
 		if decision.err != nil {
 			emitRelayTrace(onTrace, RelayTraceEvent{
@@ -1072,6 +1109,7 @@ func runUpstreamToClient(
 		observedEvent.requestModel = decision.requestModel
 		observedEvent.timingResponseID = decision.timingResponseID
 		observedEvent.turnStartedAt = decision.turnStartedAt
+		markFirstUpstreamEvent(state, &observedEvent, startAt, observedAt)
 		if beforeWriteClient != nil && (!decision.closeConnection || decision.terminalClaimed) {
 			if err := beforeWriteClient(msgType, payload, stepWroteDownstream); err != nil {
 				if decision.terminalClaimed {
@@ -1377,13 +1415,20 @@ func applyObservedUpstreamEvent(
 	}
 
 	var turnTiming *relayTurnTiming
-	if observed.responseID != "" && !observed.terminal {
+	timingResponseID := strings.TrimSpace(observed.timingResponseID)
+	if timingResponseID == "" {
+		timingResponseID = strings.TrimSpace(observed.responseID)
+	}
+	if timingResponseID != "" {
 		turnStartedAt := observed.turnStartedAt
 		if turnStartedAt.IsZero() {
 			turnStartedAt = now
 		}
-		turnTiming = openAIWSRelayGetOrInitTurnTiming(state, observed.responseID, turnStartedAt)
+		turnTiming = openAIWSRelayGetOrInitTurnTiming(state, timingResponseID, turnStartedAt)
+	} else if state.activeTurn != nil {
+		turnTiming = state.activeTurn
 	}
+	observed.turnTiming = turnTiming
 	if observed.tokenEvent {
 		if state.firstTokenMs == nil {
 			ms := int(now.Sub(startAt).Milliseconds())
@@ -1393,6 +1438,7 @@ func applyObservedUpstreamEvent(
 		}
 		if turnTiming == nil {
 			turnTiming = state.activeTurn
+			observed.turnTiming = turnTiming
 		}
 		if turnTiming != nil && turnTiming.firstTokenMs == nil {
 			ms := int(now.Sub(turnTiming.startAt).Milliseconds())
@@ -1410,7 +1456,6 @@ func applyObservedUpstreamEvent(
 	state.requestModel = observed.requestModel
 	state.terminalEventType = observed.eventType
 	state.lastResponseID = strings.TrimSpace(observed.responseID)
-	timingResponseID := strings.TrimSpace(observed.timingResponseID)
 	if timingResponseID == "" {
 		timingResponseID = state.lastResponseID
 	}
@@ -1422,6 +1467,7 @@ func applyObservedUpstreamEvent(
 			}
 			observed.duration = duration
 			observed.firstToken = openAIWSRelayCloneIntPtr(completedTiming.firstTokenMs)
+			observed.firstByte = openAIWSRelayCloneIntPtr(completedTiming.firstByteMs)
 		}
 	} else if !observed.turnStartedAt.IsZero() {
 		duration := now.Sub(observed.turnStartedAt)
@@ -1429,6 +1475,55 @@ func applyObservedUpstreamEvent(
 			duration = 0
 		}
 		observed.duration = duration
+	}
+}
+
+// markFirstUpstreamEvent records the first attributable provider frame when it
+// is observed. Client delivery time is intentionally excluded from upstream
+// TTFB, matching Aether's stream telemetry boundary.
+func markFirstUpstreamEvent(state *relayState, observed *observedUpstreamEvent, relayStartedAt, observedAt time.Time) {
+	if state == nil || observed == nil || observedAt.IsZero() {
+		return
+	}
+	turnStartedAt := observed.turnStartedAt
+	if observed.turnTiming != nil && !observed.turnTiming.startAt.IsZero() {
+		turnStartedAt = observed.turnTiming.startAt
+	}
+	if turnStartedAt.IsZero() {
+		return
+	}
+	if observed.turnTiming == nil {
+		timing := state.activeTurn
+		if timing == nil || timing.startAt.IsZero() || !timing.startAt.Equal(turnStartedAt) {
+			timing = &relayTurnTiming{startAt: turnStartedAt}
+			state.activeTurn = timing
+		}
+		observed.turnTiming = timing
+	}
+	turnElapsed := observedAt.Sub(turnStartedAt)
+	if turnElapsed < 0 {
+		turnElapsed = 0
+	}
+	if observed.turnTiming != nil && observed.turnTiming.firstByteMs == nil {
+		ms := int(turnElapsed.Milliseconds())
+		observed.turnTiming.firstByteMs = &ms
+	}
+	if observed.firstByte == nil {
+		if observed.turnTiming != nil {
+			observed.firstByte = openAIWSRelayCloneIntPtr(observed.turnTiming.firstByteMs)
+		}
+		if observed.firstByte == nil {
+			ms := int(turnElapsed.Milliseconds())
+			observed.firstByte = &ms
+		}
+	}
+	if state.firstByteMs == nil {
+		relayElapsed := observedAt.Sub(relayStartedAt)
+		if relayElapsed < 0 {
+			relayElapsed = 0
+		}
+		ms := int(relayElapsed.Milliseconds())
+		state.firstByteMs = &ms
 	}
 }
 
@@ -1455,6 +1550,7 @@ func emitTurnComplete(
 		TerminalEventType: observed.eventType,
 		Duration:          observed.duration,
 		FirstTokenMs:      openAIWSRelayCloneIntPtr(observed.firstToken),
+		FirstByteMs:       openAIWSRelayCloneIntPtr(observed.firstByte),
 	})
 }
 
@@ -1467,7 +1563,10 @@ func openAIWSRelayGetOrInitTurnTiming(state *relayState, responseID string, now 
 	}
 	timing, ok := state.turnTimingByID[responseID]
 	if !ok || timing == nil || timing.startAt.IsZero() {
-		timing = &relayTurnTiming{startAt: now}
+		timing = state.activeTurn
+		if timing == nil || timing.startAt.IsZero() || !timing.startAt.Equal(now) {
+			timing = &relayTurnTiming{startAt: now}
+		}
 		state.turnTimingByID[responseID] = timing
 		state.activeTurn = timing
 		return timing
@@ -1630,6 +1729,7 @@ func enrichResult(result *RelayResult, state *relayState, duration time.Duration
 	result.RequestID = state.lastResponseID
 	result.TerminalEventType = state.terminalEventType
 	result.FirstTokenMs = state.firstTokenMs
+	result.FirstByteMs = state.firstByteMs
 }
 
 func isDisconnectError(err error) bool {

@@ -421,6 +421,20 @@ func (_c *UsageLogCreate) SetNillableFirstTokenMs(v *int) *UsageLogCreate {
 	return _c
 }
 
+// SetFirstByteMs sets the "first_byte_ms" field.
+func (_c *UsageLogCreate) SetFirstByteMs(v int) *UsageLogCreate {
+	_c.mutation.SetFirstByteMs(v)
+	return _c
+}
+
+// SetNillableFirstByteMs sets the "first_byte_ms" field if the given value is not nil.
+func (_c *UsageLogCreate) SetNillableFirstByteMs(v *int) *UsageLogCreate {
+	if v != nil {
+		_c.SetFirstByteMs(*v)
+	}
+	return _c
+}
+
 // SetUserAgent sets the "user_agent" field.
 func (_c *UsageLogCreate) SetUserAgent(v string) *UsageLogCreate {
 	_c.mutation.SetUserAgent(v)
@@ -1016,6 +1030,10 @@ func (_c *UsageLogCreate) createSpec() (*UsageLog, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.FirstTokenMs(); ok {
 		_spec.SetField(usagelog.FieldFirstTokenMs, field.TypeInt, value)
 		_node.FirstTokenMs = &value
+	}
+	if value, ok := _c.mutation.FirstByteMs(); ok {
+		_spec.SetField(usagelog.FieldFirstByteMs, field.TypeInt, value)
+		_node.FirstByteMs = &value
 	}
 	if value, ok := _c.mutation.UserAgent(); ok {
 		_spec.SetField(usagelog.FieldUserAgent, field.TypeString, value)
@@ -1749,6 +1767,30 @@ func (u *UsageLogUpsert) AddFirstTokenMs(v int) *UsageLogUpsert {
 // ClearFirstTokenMs clears the value of the "first_token_ms" field.
 func (u *UsageLogUpsert) ClearFirstTokenMs() *UsageLogUpsert {
 	u.SetNull(usagelog.FieldFirstTokenMs)
+	return u
+}
+
+// SetFirstByteMs sets the "first_byte_ms" field.
+func (u *UsageLogUpsert) SetFirstByteMs(v int) *UsageLogUpsert {
+	u.Set(usagelog.FieldFirstByteMs, v)
+	return u
+}
+
+// UpdateFirstByteMs sets the "first_byte_ms" field to the value that was provided on create.
+func (u *UsageLogUpsert) UpdateFirstByteMs() *UsageLogUpsert {
+	u.SetExcluded(usagelog.FieldFirstByteMs)
+	return u
+}
+
+// AddFirstByteMs adds v to the "first_byte_ms" field.
+func (u *UsageLogUpsert) AddFirstByteMs(v int) *UsageLogUpsert {
+	u.Add(usagelog.FieldFirstByteMs, v)
+	return u
+}
+
+// ClearFirstByteMs clears the value of the "first_byte_ms" field.
+func (u *UsageLogUpsert) ClearFirstByteMs() *UsageLogUpsert {
+	u.SetNull(usagelog.FieldFirstByteMs)
 	return u
 }
 
@@ -2647,6 +2689,34 @@ func (u *UsageLogUpsertOne) UpdateFirstTokenMs() *UsageLogUpsertOne {
 func (u *UsageLogUpsertOne) ClearFirstTokenMs() *UsageLogUpsertOne {
 	return u.Update(func(s *UsageLogUpsert) {
 		s.ClearFirstTokenMs()
+	})
+}
+
+// SetFirstByteMs sets the "first_byte_ms" field.
+func (u *UsageLogUpsertOne) SetFirstByteMs(v int) *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.SetFirstByteMs(v)
+	})
+}
+
+// AddFirstByteMs adds v to the "first_byte_ms" field.
+func (u *UsageLogUpsertOne) AddFirstByteMs(v int) *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.AddFirstByteMs(v)
+	})
+}
+
+// UpdateFirstByteMs sets the "first_byte_ms" field to the value that was provided on create.
+func (u *UsageLogUpsertOne) UpdateFirstByteMs() *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.UpdateFirstByteMs()
+	})
+}
+
+// ClearFirstByteMs clears the value of the "first_byte_ms" field.
+func (u *UsageLogUpsertOne) ClearFirstByteMs() *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.ClearFirstByteMs()
 	})
 }
 
@@ -3747,6 +3817,34 @@ func (u *UsageLogUpsertBulk) UpdateFirstTokenMs() *UsageLogUpsertBulk {
 func (u *UsageLogUpsertBulk) ClearFirstTokenMs() *UsageLogUpsertBulk {
 	return u.Update(func(s *UsageLogUpsert) {
 		s.ClearFirstTokenMs()
+	})
+}
+
+// SetFirstByteMs sets the "first_byte_ms" field.
+func (u *UsageLogUpsertBulk) SetFirstByteMs(v int) *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.SetFirstByteMs(v)
+	})
+}
+
+// AddFirstByteMs adds v to the "first_byte_ms" field.
+func (u *UsageLogUpsertBulk) AddFirstByteMs(v int) *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.AddFirstByteMs(v)
+	})
+}
+
+// UpdateFirstByteMs sets the "first_byte_ms" field to the value that was provided on create.
+func (u *UsageLogUpsertBulk) UpdateFirstByteMs() *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.UpdateFirstByteMs()
+	})
+}
+
+// ClearFirstByteMs clears the value of the "first_byte_ms" field.
+func (u *UsageLogUpsertBulk) ClearFirstByteMs() *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.ClearFirstByteMs()
 	})
 }
 

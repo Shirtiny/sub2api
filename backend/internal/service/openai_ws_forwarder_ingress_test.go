@@ -22,6 +22,7 @@ func TestIsOpenAIWSClientDisconnectError(t *testing.T) {
 		err  error
 		want bool
 	}{
+		{name: "context_deadline", err: context.DeadlineExceeded, want: false},
 		{name: "nil", err: nil, want: false},
 		{name: "io_eof", err: io.EOF, want: true},
 		{name: "net_closed", err: net.ErrClosed, want: true},
@@ -44,6 +45,14 @@ func TestIsOpenAIWSClientDisconnectError(t *testing.T) {
 			require.Equal(t, tt.want, isOpenAIWSClientDisconnectError(tt.err))
 		})
 	}
+}
+
+func TestIsOpenAIWSClientWriteDisconnectError(t *testing.T) {
+	t.Parallel()
+
+	require.True(t, isOpenAIWSClientWriteDisconnectError(context.DeadlineExceeded))
+	require.True(t, isOpenAIWSClientWriteDisconnectError(io.EOF))
+	require.False(t, isOpenAIWSClientWriteDisconnectError(errors.New("write failed")))
 }
 
 func TestIsOpenAIWSIngressPreviousResponseNotFound(t *testing.T) {

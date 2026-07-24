@@ -559,7 +559,8 @@ type ForwardResult struct {
 	UpstreamModel    string
 	Stream           bool
 	Duration         time.Duration
-	FirstTokenMs     *int // 首字时间（流式请求）
+	FirstTokenMs     *int // 首 Token 时间（流式请求）
+	FirstByteMs      *int // 首次观察到上游响应字节的时间
 	ClientDisconnect bool // 客户端是否在流式传输过程中断开
 	ReasoningEffort  *string
 
@@ -9198,6 +9199,7 @@ func (s *GatewayService) buildRecordUsageLog(
 		Stream:                result.Stream,
 		DurationMs:            &durationMs,
 		FirstTokenMs:          result.FirstTokenMs,
+		FirstByteMs:           result.FirstByteMs,
 		ImageCount:            result.ImageCount,
 		ImageSize:             optionalTrimmedStringPtr(result.ImageSize),
 		ImageInputSize:        optionalTrimmedStringPtr(result.ImageInputSize),

@@ -172,13 +172,13 @@
           </div>
         </template>
 
-        <template #cell-first_token="{ row }">
-          <span v-if="row.first_token_ms != null" class="text-sm text-content-secondary">{{ formatDuration(row.first_token_ms) }}</span>
-          <span v-else class="text-sm text-gray-400 dark:text-gray-500">-</span>
-        </template>
-
-        <template #cell-duration="{ row }">
-          <span class="text-sm text-content-secondary">{{ formatDuration(row.duration_ms) }}</span>
+        <template #cell-latency="{ row }">
+          <UsageLatencyCell
+            :first-byte-ms="row.first_byte_ms"
+            :duration-ms="row.duration_ms"
+            :output-tokens="row.output_tokens"
+            :stream="row.stream || row.request_type === 'stream' || row.request_type === 'ws_v2'"
+          />
         </template>
 
         <template #cell-created_at="{ value }">
@@ -441,6 +441,7 @@ function accountBilled(row: { total_cost?: number | null; account_stats_cost?: n
 
 import DataTable from '@/components/common/DataTable.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
+import UsageLatencyCell from '@/components/common/UsageLatencyCell.vue'
 import Icon from '@/components/icons/Icon.vue'
 import type { AdminUsageLog } from '@/types'
 import type { Column } from '@/components/common/types'
@@ -496,12 +497,6 @@ const getRequestTypeBadgeClass = (row: AdminUsageLog): string => {
 
 const formatUserAgent = (ua: string): string => {
   return ua
-}
-
-const formatDuration = (ms: number | null | undefined): string => {
-  if (ms == null) return '-'
-  if (ms < 1000) return `${ms}ms`
-  return `${(ms / 1000).toFixed(2)}s`
 }
 
 // Cost tooltip functions

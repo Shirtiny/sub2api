@@ -257,6 +257,8 @@ func (s *OpenAIGatewayService) proxyOpenAIWSHTTPBridgeTurn(
 	usage := OpenAIUsage{}
 	imageCounter := newOpenAIImageOutputCounter()
 	var firstTokenMs *int
+	var firstByteMs *int
+	var upstreamCompletedAt time.Time
 	reqStream := openAIWSPayloadBoolFromRaw(body, "stream", true)
 	eventCount := 0
 	tokenEventCount := 0
@@ -279,6 +281,14 @@ func (s *OpenAIGatewayService) proxyOpenAIWSHTTPBridgeTurn(
 	}
 
 	resultWithUsage := func() *OpenAIForwardResult {
+		completedAt := upstreamCompletedAt
+		if completedAt.IsZero() {
+			completedAt = time.Now()
+		}
+		duration := completedAt.Sub(turnStart)
+		if duration < 0 {
+			duration = 0
+		}
 		imageCount := imageCounter.Count()
 		result := &OpenAIForwardResult{
 			RequestID:       responseID,
@@ -290,8 +300,10 @@ func (s *OpenAIGatewayService) proxyOpenAIWSHTTPBridgeTurn(
 			Stream:          reqStream,
 			OpenAIWSMode:    true,
 			ResponseHeaders: cloneHeader(resp.Header),
-			Duration:        time.Since(turnStart),
+			Duration:        duration,
 			FirstTokenMs:    firstTokenMs,
+			FirstByteMs:     firstByteMs,
+			ClientDisconnect: clientDisconnected,
 		}
 		if replayInput := replayCollector.Items(); len(replayInput) > 0 {
 			result.wsReplayInput = replayInput
@@ -328,9 +340,19 @@ func (s *OpenAIGatewayService) proxyOpenAIWSHTTPBridgeTurn(
 		}
 		if trimmedData == "[DONE]" {
 			sawDone = true
+			upstreamCompletedAt = time.Now()
 			continue
 		}
 
+		eventObservedAt := time.Now()
+		if firstByteMs == nil {
+			elapsed := eventObservedAt.Sub(turnStart)
+			if elapsed < 0 {
+				elapsed = 0
+			}
+			ms := int(elapsed.Milliseconds())
+			firstByteMs = &ms
+		}
 		upstreamMessage := []byte(trimmedData)
 		eventType, eventResponseID, _ := parseOpenAIWSEventEnvelope(upstreamMessage)
 		if responseID == "" && eventResponseID != "" {
@@ -346,7 +368,11 @@ func (s *OpenAIGatewayService) proxyOpenAIWSHTTPBridgeTurn(
 		if isOpenAIWSTokenEvent(eventType) {
 			tokenEventCount++
 			if firstTokenMs == nil {
-				ms := int(time.Since(turnStart).Milliseconds())
+				elapsed := eventObservedAt.Sub(turnStart)
+				if elapsed < 0 {
+					elapsed = 0
+				}
+				ms := int(elapsed.Milliseconds())
 				firstTokenMs = &ms
 			}
 		}
@@ -364,10 +390,11 @@ func (s *OpenAIGatewayService) proxyOpenAIWSHTTPBridgeTurn(
 			}
 		}
 		replayCollector.AddEvent(eventType, upstreamMessage)
+		isTerminalEvent := isOpenAIWSTerminalEvent(eventType)
 
 		if !clientDisconnected {
 			if err := writeClientMessage(upstreamMessage); err != nil {
-				if isOpenAIWSClientDisconnectError(err) {
+				if isTerminalEvent || isOpenAIWSClientWriteDisconnectError(err) {
 					clientDisconnected = true
 					closeStatus, closeReason := summarizeOpenAIWSReadCloseError(err)
 					logOpenAIWSModeInfo(
@@ -390,6 +417,7 @@ func (s *OpenAIGatewayService) proxyOpenAIWSHTTPBridgeTurn(
 		}
 
 		if eventType == "error" {
+			upstreamCompletedAt = eventObservedAt
 			errCodeRaw, errTypeRaw, errMsgRaw := parseOpenAIWSErrorEventFields(upstreamMessage)
 			s.persistOpenAIWSRateLimitSignal(ctx, account, resp.Header, upstreamMessage, errCodeRaw, errTypeRaw, errMsgRaw)
 			errMessage := strings.TrimSpace(errMsgRaw)
@@ -398,7 +426,12 @@ func (s *OpenAIGatewayService) proxyOpenAIWSHTTPBridgeTurn(
 			}
 			return resultWithUsage(), errors.New(errMessage)
 		}
-		if isOpenAIWSTerminalEvent(eventType) {
+		if isTerminalEvent {
+			upstreamCompletedAt = eventObservedAt
+			turnDuration := upstreamCompletedAt.Sub(turnStart)
+			if turnDuration < 0 {
+				turnDuration = 0
+			}
 			terminalEventCount++
 			firstTokenMsValue := -1
 			if firstTokenMs != nil {
@@ -410,7 +443,7 @@ func (s *OpenAIGatewayService) proxyOpenAIWSHTTPBridgeTurn(
 				turn,
 				truncateOpenAIWSLogValue(responseID, openAIWSIDValueMaxLen),
 				payloadBytes,
-				time.Since(turnStart).Milliseconds(),
+				turnDuration.Milliseconds(),
 				eventCount,
 				tokenEventCount,
 				terminalEventCount,
@@ -423,10 +456,12 @@ func (s *OpenAIGatewayService) proxyOpenAIWSHTTPBridgeTurn(
 		}
 	}
 	if err := scanner.Err(); err != nil {
+		upstreamCompletedAt = time.Now()
 		return resultWithUsage(), fmt.Errorf("read upstream http bridge stream: %w", err)
 	}
 	if sawDone && eventCount > 0 {
 		return resultWithUsage(), nil
 	}
+	upstreamCompletedAt = time.Now()
 	return resultWithUsage(), errors.New("upstream http bridge stream ended before terminal event")
 }

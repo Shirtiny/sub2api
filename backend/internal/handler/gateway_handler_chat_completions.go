@@ -240,6 +240,8 @@ func (h *GatewayHandler) ChatCompletions(c *gin.Context) {
 		}
 
 		// 5. Forward request
+		forwardStart := time.Now()
+		beginUsageResponseTiming(c, forwardStart)
 		writerSizeBeforeForward := c.Writer.Size()
 		forwardBody := body
 		if channelMapping.Mapped {
@@ -258,6 +260,7 @@ func (h *GatewayHandler) ChatCompletions(c *gin.Context) {
 		} else {
 			result, err = h.gatewayService.ForwardAsChatCompletions(c.Request.Context(), c, account, forwardBody, parsedReq)
 		}
+		finishUsageResponseTiming(c, forwardStart, result)
 
 		if accountReleaseFunc != nil {
 			accountReleaseFunc()

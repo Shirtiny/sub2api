@@ -352,20 +352,13 @@
             </div>
           </template>
 
-          <template #cell-first_token="{ row }">
-            <span
-              v-if="row.first_token_ms != null"
-              class="text-sm text-content-secondary"
-            >
-              {{ formatDuration(row.first_token_ms) }}
-            </span>
-            <span v-else class="text-sm text-gray-400 dark:text-gray-500">-</span>
-          </template>
-
-          <template #cell-duration="{ row }">
-            <span class="text-sm text-content-secondary">{{
-              formatDuration(row.duration_ms)
-            }}</span>
+          <template #cell-latency="{ row }">
+            <UsageLatencyCell
+              :first-byte-ms="row.first_byte_ms"
+              :duration-ms="row.duration_ms"
+              :output-tokens="row.output_tokens"
+              :stream="row.stream || row.request_type === 'stream' || row.request_type === 'ws_v2'"
+            />
           </template>
 
           <template #cell-created_at="{ value }">
@@ -630,6 +623,7 @@ import TablePageLayout from '@/components/layout/TablePageLayout.vue'
 import DataTable from '@/components/common/DataTable.vue'
 import Pagination from '@/components/common/Pagination.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
+import UsageLatencyCell from '@/components/common/UsageLatencyCell.vue'
 import Select from '@/components/common/Select.vue'
 import DateRangePicker from '@/components/common/DateRangePicker.vue'
 import Icon from '@/components/icons/Icon.vue'
@@ -707,8 +701,7 @@ const columns = computed<Column[]>(() => [
   { key: 'billing_mode', label: t('admin.usage.billingMode'), sortable: false },
   { key: 'tokens', label: t('usage.tokens'), sortable: false },
   { key: 'cost', label: t('usage.cost'), sortable: false },
-  { key: 'first_token', label: t('usage.firstToken'), sortable: false },
-  { key: 'duration', label: t('usage.duration'), sortable: false },
+  { key: 'latency', label: t('usage.latency'), sortable: false },
   { key: 'created_at', label: t('usage.time'), sortable: true },
   { key: 'user_agent', label: t('usage.userAgent'), sortable: false }
 ])
@@ -1007,7 +1000,7 @@ const exportToCSV = async () => {
       'Rate Multiplier',
       'Billed Cost',
       'Original Cost',
-      'First Token (ms)',
+      'TTFB (ms)',
       'Duration (ms)'
     ]
     const rows = allLogs.map((log) =>
@@ -1026,7 +1019,7 @@ const exportToCSV = async () => {
         log.rate_multiplier,
         (log.actual_cost ?? 0).toFixed(8),
         (log.total_cost ?? 0).toFixed(8),
-        log.first_token_ms ?? '',
+        log.first_byte_ms ?? '',
         log.duration_ms
       ].map(escapeCSVValue)
     )

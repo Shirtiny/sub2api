@@ -424,6 +424,7 @@ func TestRelay_CloseControlForSecondTurnWaitsForSecondTerminal(t *testing.T) {
 	controlPayload := []byte(`{"type":"aether.route_control","action":"close_after_terminal"}`)
 	firstTerminal := []byte(`{"type":"response.completed","response":{"id":"resp_first","usage":{"input_tokens":1,"output_tokens":1}}}`)
 	secondTerminal := []byte(`{"type":"response.completed","response":{"id":"resp_second","usage":{"input_tokens":2,"output_tokens":1}}}`)
+	const providerFenceDelay = 30 * time.Millisecond
 	clientConn := newPassthroughTestFrameConn(nil, false)
 	upstreamConn := newPassthroughTestFrameConn(nil, false)
 	secondDispatched := make(chan struct{})
@@ -461,6 +462,7 @@ func TestRelay_CloseControlForSecondTurnWaitsForSecondTerminal(t *testing.T) {
 		}
 	}()
 
+	var secondTurn RelayTurnResult
 	result, relayExit := Relay(
 		ctx,
 		clientConn,
@@ -468,6 +470,7 @@ func TestRelay_CloseControlForSecondTurnWaitsForSecondTerminal(t *testing.T) {
 		[]byte(`{"type":"response.create","model":"gpt-5","input":"first"}`),
 		RelayOptions{
 			BeforeDispatchResponseCreate: func(_ coderws.MessageType, _ []byte, _ string) error {
+				time.Sleep(providerFenceDelay)
 				close(secondDispatched)
 				return nil
 			},
@@ -478,6 +481,10 @@ func TestRelay_CloseControlForSecondTurnWaitsForSecondTerminal(t *testing.T) {
 				return UpstreamFrameDirective{Consume: true, CloseAfterTerminal: true}
 			},
 			OnTurnComplete: func(turn RelayTurnResult) {
+				if turn.RequestID == "resp_second" {
+					secondTurn = turn
+					return
+				}
 				if turn.RequestID != "resp_first" {
 					return
 				}
@@ -493,6 +500,12 @@ func TestRelay_CloseControlForSecondTurnWaitsForSecondTerminal(t *testing.T) {
 	require.Nil(t, relayExit)
 	require.Equal(t, "response.completed", result.TerminalEventType)
 	require.Equal(t, "resp_second", result.RequestID)
+	require.NotNil(t, secondTurn.FirstByteMs)
+	require.GreaterOrEqual(
+		t,
+		*secondTurn.FirstByteMs,
+		int((providerFenceDelay - 5*time.Millisecond).Milliseconds()),
+	)
 	require.Equal(t, int64(4), result.UpstreamToClientFrames)
 	clientWrites := clientConn.Writes()
 	require.Len(t, clientWrites, 4)
@@ -1211,6 +1224,10 @@ func TestRelay_OnTurnComplete_UsesGenerationRequestModel(t *testing.T) {
 		turns[1].RequestID,
 		turns[2].RequestID,
 	})
+	for _, turn := range turns {
+		require.NotNil(t, turn.FirstByteMs)
+		require.GreaterOrEqual(t, *turn.FirstByteMs, 0)
+	}
 	require.Equal(t, "model-b", result.RequestModel)
 	require.Equal(t, 6, result.Usage.InputTokens)
 	require.Len(t, upstreamConn.Writes(), 3)
@@ -1258,9 +1275,43 @@ func TestRelay_OnTurnComplete_ProvidesTurnMetrics(t *testing.T) {
 	require.Equal(t, "response.completed", turn.TerminalEventType)
 	require.NotNil(t, turn.FirstTokenMs)
 	require.GreaterOrEqual(t, *turn.FirstTokenMs, 0)
+	require.NotNil(t, turn.FirstByteMs)
+	require.GreaterOrEqual(t, *turn.FirstByteMs, 0)
 	require.Greater(t, turn.Duration.Milliseconds(), int64(0))
 	require.NotNil(t, result.FirstTokenMs)
+	require.NotNil(t, result.FirstByteMs)
 	require.Greater(t, result.Duration.Milliseconds(), int64(0))
+}
+
+func TestRelay_OnTurnComplete_FirstByteSurvivesClientWriteFailure(t *testing.T) {
+	t.Parallel()
+
+	clientConn := &errorOnWriteFrameConn{}
+	upstreamConn := newPassthroughTestFrameConn([]passthroughTestFrame{
+		{
+			msgType: coderws.MessageText,
+			payload: []byte(`{"type":"response.failed","response":{"id":"resp_write_failed"}}`),
+		},
+	}, true)
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	var callbacks int
+	var turn RelayTurnResult
+	result, relayExit := Relay(ctx, clientConn, upstreamConn, []byte(`{"type":"response.create","model":"gpt-5.3-codex","input":[]}`), RelayOptions{
+		OnTurnComplete: func(current RelayTurnResult) {
+			callbacks++
+			turn = current
+		},
+	})
+
+	require.NotNil(t, relayExit)
+	require.Equal(t, "write_client", relayExit.Stage)
+	require.Equal(t, 1, callbacks)
+	require.NotNil(t, turn.FirstByteMs)
+	require.GreaterOrEqual(t, *turn.FirstByteMs, 0)
+	require.NotNil(t, result.FirstByteMs)
+	require.GreaterOrEqual(t, *result.FirstByteMs, 0)
 }
 
 func TestRelay_BinaryFramePassthrough(t *testing.T) {
@@ -1272,12 +1323,12 @@ func TestRelay_BinaryFramePassthrough(t *testing.T) {
 	clientConn := newPassthroughTestFrameConn(nil, false)
 	upstreamConn := newPassthroughTestFrameConn([]passthroughTestFrame{
 		{
-			msgType: coderws.MessageText,
-			payload: createdPayload,
-		},
-		{
 			msgType: coderws.MessageBinary,
 			payload: binaryPayload,
+		},
+		{
+			msgType: coderws.MessageText,
+			payload: createdPayload,
 		},
 		{
 			msgType: coderws.MessageText,
@@ -1289,15 +1340,19 @@ func TestRelay_BinaryFramePassthrough(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
-	result, relayExit := Relay(ctx, clientConn, upstreamConn, firstPayload, RelayOptions{})
+	var turn RelayTurnResult
+	result, relayExit := Relay(ctx, clientConn, upstreamConn, firstPayload, RelayOptions{
+		OnTurnComplete: func(current RelayTurnResult) { turn = current },
+	})
 	require.Nil(t, relayExit)
 	require.Equal(t, 0, result.Usage.InputTokens)
+	require.NotNil(t, turn.FirstByteMs)
 
 	clientWrites := clientConn.Writes()
 	require.Len(t, clientWrites, 3)
-	require.Equal(t, createdPayload, clientWrites[0].payload)
-	require.Equal(t, coderws.MessageBinary, clientWrites[1].msgType)
-	require.Equal(t, binaryPayload, clientWrites[1].payload)
+	require.Equal(t, coderws.MessageBinary, clientWrites[0].msgType)
+	require.Equal(t, binaryPayload, clientWrites[0].payload)
+	require.Equal(t, createdPayload, clientWrites[1].payload)
 	require.Equal(t, terminalPayload, clientWrites[2].payload)
 }
 

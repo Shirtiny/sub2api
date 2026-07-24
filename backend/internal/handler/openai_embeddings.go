@@ -150,6 +150,7 @@ func (h *OpenAIGatewayHandler) Embeddings(c *gin.Context) {
 
 		service.SetOpsLatencyMs(c, service.OpsRoutingLatencyMsKey, time.Since(routingStart).Milliseconds())
 		forwardStart := time.Now()
+		beginUsageResponseTiming(c, forwardStart)
 
 		forwardBody := body
 		if channelMapping.Mapped {
@@ -164,6 +165,7 @@ func (h *OpenAIGatewayHandler) Embeddings(c *gin.Context) {
 			}()
 			return h.gatewayService.ForwardEmbeddings(c.Request.Context(), c, account, forwardBody, "")
 		}()
+		finishOpenAIUsageResponseTiming(c, forwardStart, result)
 
 		forwardDurationMs := time.Since(forwardStart).Milliseconds()
 		upstreamLatencyMs, _ := getContextInt64(c, service.OpsUpstreamLatencyMsKey)

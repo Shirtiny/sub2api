@@ -184,6 +184,9 @@ func (s *httpUpstreamService) Do(req *http.Request, proxyURL string, accountID i
 	}
 	s.recordOpenAIHTTP2Success(profile, entry.protocolMode, entry.proxyKey)
 
+	// 在解压前包装原始响应体，确保压缩头读取也计入真实上游首字。
+	attachUsageResponseTiming(req, resp)
+
 	// 如果上游返回了压缩内容，解压后再交给业务层
 	decompressResponseBody(resp)
 
@@ -238,6 +241,7 @@ func (s *httpUpstreamService) DoWithTLS(req *http.Request, proxyURL string, acco
 		return nil, err
 	}
 
+	attachUsageResponseTiming(req, resp)
 	decompressResponseBody(resp)
 
 	resp.Body = wrapTrackedBody(resp.Body, func() {
@@ -1164,6 +1168,13 @@ func wrapTrackedBody(body io.ReadCloser, onClose func()) io.ReadCloser {
 		return body
 	}
 	return &trackedBody{ReadCloser: body, onClose: onClose}
+}
+
+func attachUsageResponseTiming(req *http.Request, resp *http.Response) {
+	if req == nil || resp == nil || resp.Body == nil {
+		return
+	}
+	resp.Body = service.WrapUsageResponseTimingBody(req.Context(), resp.Body)
 }
 
 // decompressResponseBody 根据 Content-Encoding 解压响应体。

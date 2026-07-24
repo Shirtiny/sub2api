@@ -389,6 +389,7 @@ func (h *OpenAIGatewayHandler) Responses(c *gin.Context) {
 		// Forward request
 		service.SetOpsLatencyMs(c, service.OpsRoutingLatencyMsKey, time.Since(routingStart).Milliseconds())
 		forwardStart := time.Now()
+		beginUsageResponseTiming(c, forwardStart)
 		// 搴旂敤娓犻亾妯″瀷鏄犲皠鍒拌姹備綋
 		forwardBody := body
 		if channelMapping.Mapped {
@@ -403,6 +404,7 @@ func (h *OpenAIGatewayHandler) Responses(c *gin.Context) {
 			}()
 			return h.gatewayService.Forward(c.Request.Context(), c, account, forwardBody)
 		}()
+		finishOpenAIUsageResponseTiming(c, forwardStart, result)
 		forwardDurationMs := time.Since(forwardStart).Milliseconds()
 		upstreamLatencyMs, _ := getContextInt64(c, service.OpsUpstreamLatencyMsKey)
 		responseLatencyMs := forwardDurationMs
@@ -837,6 +839,7 @@ func (h *OpenAIGatewayHandler) Messages(c *gin.Context) {
 
 		service.SetOpsLatencyMs(c, service.OpsRoutingLatencyMsKey, time.Since(routingStart).Milliseconds())
 		forwardStart := time.Now()
+		beginUsageResponseTiming(c, forwardStart)
 
 		defaultMappedModel := strings.TrimSpace(effectiveMappedModel)
 		// 搴旂敤娓犻亾妯″瀷鏄犲皠鍒拌姹備綋
@@ -853,6 +856,7 @@ func (h *OpenAIGatewayHandler) Messages(c *gin.Context) {
 			}()
 			return h.gatewayService.ForwardAsAnthropic(c.Request.Context(), c, account, forwardBody, promptCacheKey, defaultMappedModel)
 		}()
+		finishOpenAIUsageResponseTiming(c, forwardStart, result)
 
 		forwardDurationMs := time.Since(forwardStart).Milliseconds()
 		upstreamLatencyMs, _ := getContextInt64(c, service.OpsUpstreamLatencyMsKey)

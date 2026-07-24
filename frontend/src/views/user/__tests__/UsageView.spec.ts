@@ -44,6 +44,10 @@ const messages: Record<string, string> = {
   'usage.cost': 'Cost',
   'usage.firstToken': 'First Token',
   'usage.duration': 'Duration',
+  'usage.latency': 'Latency',
+  'usage.latencyFirstByte': 'TTFB',
+  'usage.latencyDuration': 'Total',
+  'usage.latencyTps': 'TPS',
   'usage.time': 'Time',
   'usage.userAgent': 'User Agent',
   'usage.imageUnit': ' images',
@@ -105,6 +109,7 @@ const DataTableStub = {
         <slot name="cell-billing_mode" :row="row" />
         <slot name="cell-tokens" :row="row" />
         <slot name="cell-cost" :row="row" />
+        <slot name="cell-latency" :row="row" />
       </div>
     </div>
   `,
@@ -136,6 +141,71 @@ describe('user UsageView tooltip', () => {
       observe() {}
       disconnect() {}
     }
+  })
+
+  it('shows merged latency values and integer TPS', async () => {
+    query.mockResolvedValue({
+      items: [
+        {
+          request_id: 'req-user-latency',
+          actual_cost: 0,
+          total_cost: 0,
+          rate_multiplier: 1,
+          input_cost: 0,
+          output_cost: 0,
+          cache_creation_cost: 0,
+          cache_read_cost: 0,
+          input_tokens: 0,
+          output_tokens: 90,
+		  stream: true,
+          cache_creation_tokens: 0,
+          cache_read_tokens: 0,
+          cache_creation_5m_tokens: 0,
+          cache_creation_1h_tokens: 0,
+          first_token_ms: 250,
+          first_byte_ms: 1_000,
+          duration_ms: 4_000,
+          created_at: '2026-03-08T00:00:00Z',
+        },
+      ],
+      total: 1,
+      pages: 1,
+    })
+    getStatsByDateRange.mockResolvedValue({
+      total_requests: 1,
+      total_tokens: 90,
+      total_cost: 0,
+      avg_duration_ms: 4_000,
+    })
+    list.mockResolvedValue({ items: [] })
+
+    const wrapper = mount(UsageView, {
+      global: {
+        stubs: {
+          AppLayout: AppLayoutStub,
+          TablePageLayout: TablePageLayoutStub,
+          Pagination: true,
+          EmptyState: true,
+          Select: true,
+          DateRangePicker: true,
+          DataTable: DataTableStub,
+          Icon: true,
+          Teleport: true,
+        },
+      },
+    })
+
+    await flushPromises()
+    await nextTick()
+
+    const text = wrapper.text()
+    expect(text).toContain('TTFB')
+    expect(text).toContain('1.00s')
+    expect(text).not.toContain('250ms')
+    expect(text).toContain('Total')
+    expect(text).toContain('4.00s')
+    expect(text).toContain('TPS')
+	expect(text).toContain('30')
   })
 
   it('shows fast service tier and unit prices in user tooltip', async () => {
@@ -430,6 +500,7 @@ describe('user UsageView tooltip', () => {
         image_count: 0,
         image_size: null,
         first_token_ms: 12,
+        first_byte_ms: 34,
         duration_ms: 345,
         created_at: '2026-03-08T00:00:00Z',
         model: 'gpt-5.4',

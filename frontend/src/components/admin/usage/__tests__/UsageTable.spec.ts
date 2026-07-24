@@ -19,6 +19,9 @@ const messages: Record<string, string> = {
   'usage.serviceTierFlex': 'Flex',
   'usage.serviceTierStandard': 'Standard',
   'usage.ws': 'WS',
+  'usage.latencyFirstByte': 'TTFB',
+  'usage.latencyDuration': 'Total',
+  'usage.latencyTps': 'TPS',
   'usage.rate': 'Rate',
   'usage.accountMultiplier': 'Account rate',
   'usage.original': 'Original',
@@ -66,6 +69,7 @@ const DataTableStub = {
         <slot name="cell-billing_mode" :row="row" />
         <slot name="cell-tokens" :row="row" />
         <slot name="cell-cost" :row="row" />
+        <slot name="cell-latency" :row="row" />
       </div>
     </div>
   `,
@@ -112,6 +116,53 @@ describe('admin UsageTable tooltip', () => {
       height: 20,
       toJSON: () => ({}),
     } as DOMRect)
+  })
+
+  it('shows merged latency values and integer TPS', () => {
+    const wrapper = mount(UsageTable, {
+      props: {
+        data: [
+          {
+            request_id: 'req-admin-latency',
+            model: 'gpt-5',
+            actual_cost: 0,
+            total_cost: 0,
+            account_rate_multiplier: 1,
+            rate_multiplier: 1,
+            input_cost: 0,
+            output_cost: 0,
+            cache_creation_cost: 0,
+            cache_read_cost: 0,
+            input_tokens: 0,
+            output_tokens: 90,
+			stream: true,
+			first_token_ms: 250,
+			first_byte_ms: 1_000,
+            duration_ms: 4_000,
+          },
+        ],
+        loading: false,
+        columns: [],
+      },
+      global: {
+        stubs: {
+          DataTable: DataTableStub,
+          EmptyState: true,
+          Icon: true,
+          Teleport: true,
+        },
+      },
+    })
+
+    const text = wrapper.text()
+    expect(text).toContain('TTFB')
+	expect(text).toContain('1.00s')
+	expect(text).not.toContain('250ms')
+    expect(text).toContain('Total')
+	expect(text).toContain('4.00s')
+    expect(text).toContain('TPS')
+	expect(text).toContain('30')
+    expect(wrapper.find('.bg-gradient-to-b').exists()).toBe(true)
   })
 
   it('shows service tier and billing breakdown in cost tooltip', async () => {

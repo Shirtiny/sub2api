@@ -688,10 +688,10 @@ func (s *OpenAIGatewayService) proxyResponsesWebSocketV2Passthrough(
 			return NewOpenAIWSClientCloseError(coderws.StatusMessageTooBig, "websocket request payload is too large", sizeErr)
 		}
 	}
+	firstMessageStartedAt := time.Now()
 	if err := runOpenAIWSBeforeProviderWrite(hooks, 1, firstClientMessage, originalRequestModel); err != nil {
 		return err
 	}
-	firstMessageStartedAt := time.Now()
 	firstWriteCtx, cancelFirstWrite := context.WithTimeout(ctx, s.openAIWSWriteTimeout())
 	firstWriteErr := upstreamFrameConn.WriteFrame(firstWriteCtx, coderws.MessageText, firstClientMessage)
 	cancelFirstWrite()
@@ -920,6 +920,7 @@ func (s *OpenAIGatewayService) proxyResponsesWebSocketV2Passthrough(
 					ResponseHeaders:   cloneHeader(handshakeHeaders),
 					Duration:          turn.Duration,
 					FirstTokenMs:      turn.FirstTokenMs,
+					FirstByteMs:       turn.FirstByteMs,
 				}
 				logOpenAIWSV2Passthrough(
 					"relay_turn_completed account_id=%d turn=%d request_id=%s terminal_event=%s duration_ms=%d first_token_ms=%d input_tokens=%d output_tokens=%d cache_read_tokens=%d",
@@ -1014,6 +1015,7 @@ func (s *OpenAIGatewayService) proxyResponsesWebSocketV2Passthrough(
 		ResponseHeaders:   cloneHeader(handshakeHeaders),
 		Duration:          relayResult.Duration,
 		FirstTokenMs:      relayResult.FirstTokenMs,
+		FirstByteMs:       relayResult.FirstByteMs,
 	}
 
 	turnCount := int(completedTurns.Load())

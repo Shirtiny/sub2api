@@ -230,12 +230,15 @@ func (h *GatewayHandler) Responses(c *gin.Context) {
 		accountReleaseFunc = wrapReleaseOnDone(c.Request.Context(), accountReleaseFunc)
 
 		// 5. Forward request
+		forwardStart := time.Now()
+		requestCtx = beginUsageResponseTiming(c, forwardStart, requestCtx)
 		writerSizeBeforeForward := c.Writer.Size()
 		forwardBody := body
 		if channelMapping.Mapped {
 			forwardBody = h.gatewayService.ReplaceModelInBody(body, channelMapping.MappedModel)
 		}
 		result, err := h.gatewayService.ForwardAsResponses(requestCtx, c, account, forwardBody, parsedReq)
+		finishUsageResponseTiming(c, forwardStart, result)
 
 		if accountReleaseFunc != nil {
 			accountReleaseFunc()

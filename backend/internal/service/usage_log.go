@@ -155,6 +155,7 @@ type UsageLog struct {
 	OpenAIWSMode bool
 	DurationMs   *int
 	FirstTokenMs *int
+	FirstByteMs  *int
 	UserAgent    *string
 	IPAddress    *string
 

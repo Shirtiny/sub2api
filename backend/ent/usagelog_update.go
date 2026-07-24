@@ -658,6 +658,33 @@ func (_u *UsageLogUpdate) ClearFirstTokenMs() *UsageLogUpdate {
 	return _u
 }
 
+// SetFirstByteMs sets the "first_byte_ms" field.
+func (_u *UsageLogUpdate) SetFirstByteMs(v int) *UsageLogUpdate {
+	_u.mutation.ResetFirstByteMs()
+	_u.mutation.SetFirstByteMs(v)
+	return _u
+}
+
+// SetNillableFirstByteMs sets the "first_byte_ms" field if the given value is not nil.
+func (_u *UsageLogUpdate) SetNillableFirstByteMs(v *int) *UsageLogUpdate {
+	if v != nil {
+		_u.SetFirstByteMs(*v)
+	}
+	return _u
+}
+
+// AddFirstByteMs adds value to the "first_byte_ms" field.
+func (_u *UsageLogUpdate) AddFirstByteMs(v int) *UsageLogUpdate {
+	_u.mutation.AddFirstByteMs(v)
+	return _u
+}
+
+// ClearFirstByteMs clears the value of the "first_byte_ms" field.
+func (_u *UsageLogUpdate) ClearFirstByteMs() *UsageLogUpdate {
+	_u.mutation.ClearFirstByteMs()
+	return _u
+}
+
 // SetUserAgent sets the "user_agent" field.
 func (_u *UsageLogUpdate) SetUserAgent(v string) *UsageLogUpdate {
 	_u.mutation.SetUserAgent(v)
@@ -1234,6 +1261,15 @@ func (_u *UsageLogUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.FirstTokenMsCleared() {
 		_spec.ClearField(usagelog.FieldFirstTokenMs, field.TypeInt)
+	}
+	if value, ok := _u.mutation.FirstByteMs(); ok {
+		_spec.SetField(usagelog.FieldFirstByteMs, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedFirstByteMs(); ok {
+		_spec.AddField(usagelog.FieldFirstByteMs, field.TypeInt, value)
+	}
+	if _u.mutation.FirstByteMsCleared() {
+		_spec.ClearField(usagelog.FieldFirstByteMs, field.TypeInt)
 	}
 	if value, ok := _u.mutation.UserAgent(); ok {
 		_spec.SetField(usagelog.FieldUserAgent, field.TypeString, value)
@@ -2098,6 +2134,33 @@ func (_u *UsageLogUpdateOne) ClearFirstTokenMs() *UsageLogUpdateOne {
 	return _u
 }
 
+// SetFirstByteMs sets the "first_byte_ms" field.
+func (_u *UsageLogUpdateOne) SetFirstByteMs(v int) *UsageLogUpdateOne {
+	_u.mutation.ResetFirstByteMs()
+	_u.mutation.SetFirstByteMs(v)
+	return _u
+}
+
+// SetNillableFirstByteMs sets the "first_byte_ms" field if the given value is not nil.
+func (_u *UsageLogUpdateOne) SetNillableFirstByteMs(v *int) *UsageLogUpdateOne {
+	if v != nil {
+		_u.SetFirstByteMs(*v)
+	}
+	return _u
+}
+
+// AddFirstByteMs adds value to the "first_byte_ms" field.
+func (_u *UsageLogUpdateOne) AddFirstByteMs(v int) *UsageLogUpdateOne {
+	_u.mutation.AddFirstByteMs(v)
+	return _u
+}
+
+// ClearFirstByteMs clears the value of the "first_byte_ms" field.
+func (_u *UsageLogUpdateOne) ClearFirstByteMs() *UsageLogUpdateOne {
+	_u.mutation.ClearFirstByteMs()
+	return _u
+}
+
 // SetUserAgent sets the "user_agent" field.
 func (_u *UsageLogUpdateOne) SetUserAgent(v string) *UsageLogUpdateOne {
 	_u.mutation.SetUserAgent(v)
@@ -2704,6 +2767,15 @@ func (_u *UsageLogUpdateOne) sqlSave(ctx context.Context) (_node *UsageLog, err 
 	}
 	if _u.mutation.FirstTokenMsCleared() {
 		_spec.ClearField(usagelog.FieldFirstTokenMs, field.TypeInt)
+	}
+	if value, ok := _u.mutation.FirstByteMs(); ok {
+		_spec.SetField(usagelog.FieldFirstByteMs, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedFirstByteMs(); ok {
+		_spec.AddField(usagelog.FieldFirstByteMs, field.TypeInt, value)
+	}
+	if _u.mutation.FirstByteMsCleared() {
+		_spec.ClearField(usagelog.FieldFirstByteMs, field.TypeInt)
 	}
 	if value, ok := _u.mutation.UserAgent(); ok {
 		_spec.SetField(usagelog.FieldUserAgent, field.TypeString, value)

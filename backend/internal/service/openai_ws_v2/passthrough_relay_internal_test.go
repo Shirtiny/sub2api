@@ -706,6 +706,138 @@ func TestEmitTurnCompleteCoverage(t *testing.T) {
 	require.Equal(t, "gpt-5", got.RequestModel)
 }
 
+func TestMarkFirstUpstreamEventKeepsTurnTimingIndependent(t *testing.T) {
+	t.Parallel()
+
+	base := time.Unix(0, 0)
+	firstTiming := &relayTurnTiming{startAt: base}
+	secondTiming := &relayTurnTiming{startAt: base.Add(40 * time.Millisecond)}
+	state := &relayState{}
+
+	first := observedUpstreamEvent{
+		eventType:     "response.created",
+		turnStartedAt: firstTiming.startAt,
+		turnTiming:    firstTiming,
+	}
+	markFirstUpstreamEvent(state, &first, base, base.Add(10*time.Millisecond))
+	require.NotNil(t, firstTiming.firstByteMs)
+	require.Equal(t, 10, *firstTiming.firstByteMs)
+
+	second := observedUpstreamEvent{
+		eventType:     "response.created",
+		turnStartedAt: secondTiming.startAt,
+		turnTiming:    secondTiming,
+	}
+	markFirstUpstreamEvent(state, &second, base, base.Add(50*time.Millisecond))
+	require.NotNil(t, secondTiming.firstByteMs)
+	require.Equal(t, 10, *secondTiming.firstByteMs)
+	require.NotNil(t, state.firstByteMs)
+	require.Equal(t, 10, *state.firstByteMs)
+
+	markFirstUpstreamEvent(state, &second, base, base.Add(100*time.Millisecond))
+	require.Equal(t, 10, *secondTiming.firstByteMs)
+}
+
+func TestRunUpstreamToClient_BinaryFirstFrameSetsTurnFirstByte(t *testing.T) {
+	t.Parallel()
+
+	base := time.Unix(100, 0)
+	upstreamConn := newPassthroughTestFrameConn([]passthroughTestFrame{
+		{msgType: coderws.MessageBinary, payload: []byte{0x00, 0x01}},
+		{msgType: coderws.MessageText, payload: []byte(`{"type":"response.created","response":{"id":"resp_binary_first"}}`)},
+		{msgType: coderws.MessageText, payload: []byte(`{"type":"response.completed","response":{"id":"resp_binary_first"}}`)},
+	}, true)
+	clientConn := newPassthroughTestFrameConn(nil, false)
+	state := &relayState{}
+	gate := newResponseStepGateWithModel("gpt-binary")
+	gate.activeStartedAt = base
+	drop := &atomic.Bool{}
+	exitCh := make(chan relayExitSignal, 1)
+	now := base
+	nowFn := func() time.Time {
+		now = now.Add(5 * time.Millisecond)
+		return now
+	}
+	var turn RelayTurnResult
+
+	runUpstreamToClient(
+		context.Background(),
+		upstreamConn,
+		func(msgType coderws.MessageType, payload []byte) error {
+			return clientConn.WriteFrame(context.Background(), msgType, payload)
+		},
+		base,
+		nowFn,
+		state,
+		nil,
+		func(current RelayTurnResult) { turn = current },
+		nil,
+		nil,
+		drop,
+		nil,
+		nil,
+		func() {},
+		nil,
+		gate,
+		exitCh,
+	)
+
+	exit := <-exitCh
+	require.Equal(t, "read_upstream", exit.stage)
+	require.NotNil(t, turn.FirstByteMs)
+	require.Equal(t, 5, *turn.FirstByteMs)
+	require.Equal(t, 15*time.Millisecond, turn.Duration)
+	require.Len(t, clientConn.Writes(), 3)
+	require.Equal(t, coderws.MessageBinary, clientConn.Writes()[0].msgType)
+}
+
+func TestRunUpstreamToClient_TerminalFirstUsesUpstreamObservation(t *testing.T) {
+	t.Parallel()
+
+	base := time.Unix(100, 0)
+	upstreamConn := newPassthroughTestFrameConn([]passthroughTestFrame{
+		{msgType: coderws.MessageText, payload: []byte(`{"type":"response.failed","response":{"id":"resp_terminal_first"}}`)},
+	}, true)
+	state := &relayState{}
+	gate := newResponseStepGateWithModel("gpt-terminal")
+	gate.activeStartedAt = base
+	drop := &atomic.Bool{}
+	exitCh := make(chan relayExitSignal, 1)
+	now := base
+	nowFn := func() time.Time {
+		now = now.Add(5 * time.Millisecond)
+		return now
+	}
+	var turn RelayTurnResult
+
+	runUpstreamToClient(
+		context.Background(),
+		upstreamConn,
+		func(_ coderws.MessageType, _ []byte) error { return nil },
+		base,
+		nowFn,
+		state,
+		nil,
+		func(current RelayTurnResult) { turn = current },
+		nil,
+		nil,
+		drop,
+		nil,
+		nil,
+		func() {},
+		nil,
+		gate,
+		exitCh,
+	)
+
+	exit := <-exitCh
+	require.Equal(t, "terminal_failure", exit.stage)
+	require.NotNil(t, turn.FirstByteMs)
+	require.Equal(t, 5, *turn.FirstByteMs)
+	require.Equal(t, 5*time.Millisecond, turn.Duration)
+	require.GreaterOrEqual(t, turn.Duration.Milliseconds(), int64(*turn.FirstByteMs))
+}
+
 func TestIsDisconnectErrorCoverage_CloseStatusesAndMessageBranches(t *testing.T) {
 	t.Parallel()
 

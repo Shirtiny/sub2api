@@ -73,7 +73,9 @@ func TestOpenAIGatewayService_ProxyResponsesWebSocketFromClient_KeepLeaseAcrossT
 
 	serverErrCh := make(chan error, 1)
 	turnWSModeCh := make(chan bool, 2)
+	turnFirstByteCh := make(chan *int, 2)
 	providerFenceTurns := make([]int, 0, 2)
+	const providerFenceDelay = 30 * time.Millisecond
 	hooks := &OpenAIWSIngressHooks{
 		BeforeProviderWrite: func(turn int, _ []byte, _ string) error {
 			captureConn.mu.Lock()
@@ -83,11 +85,13 @@ func TestOpenAIGatewayService_ProxyResponsesWebSocketFromClient_KeepLeaseAcrossT
 				return errors.New("ctx-pool provider fence did not run immediately before turn dispatch")
 			}
 			providerFenceTurns = append(providerFenceTurns, turn)
+			time.Sleep(providerFenceDelay)
 			return nil
 		},
 		AfterTurn: func(_ int, result *OpenAIForwardResult, turnErr error) {
 			if turnErr == nil && result != nil {
 				turnWSModeCh <- result.OpenAIWSMode
+				turnFirstByteCh <- result.FirstByteMs
 			}
 		},
 	}
@@ -168,6 +172,16 @@ func TestOpenAIGatewayService_ProxyResponsesWebSocketFromClient_KeepLeaseAcrossT
 	case <-time.After(5 * time.Second):
 		t.Fatal("等待 ingress websocket 结束超时")
 	}
+
+	firstTurnFirstByte := <-turnFirstByteCh
+	secondTurnFirstByte := <-turnFirstByteCh
+	require.NotNil(t, firstTurnFirstByte)
+	require.NotNil(t, secondTurnFirstByte)
+	minimumFirstByteMs := int(
+		(providerFenceDelay - 5*time.Millisecond).Milliseconds(),
+	)
+	require.GreaterOrEqual(t, *firstTurnFirstByte, minimumFirstByteMs)
+	require.GreaterOrEqual(t, *secondTurnFirstByte, minimumFirstByteMs)
 
 	metrics := svc.SnapshotOpenAIWSPoolMetrics()
 	require.Equal(t, int64(1), metrics.AcquireTotal, "同一 ingress 会话多 turn 应只获取一次上游 lease")
@@ -633,6 +647,7 @@ func TestOpenAIGatewayService_ProxyResponsesWebSocketFromClient_PassthroughModeR
 
 	serverErrCh := make(chan error, 1)
 	resultCh := make(chan *OpenAIForwardResult, 1)
+	const providerFenceDelay = 30 * time.Millisecond
 	var admissionMu sync.Mutex
 	admissionOrder := make([]string, 0, 3)
 	hooks := &OpenAIWSIngressHooks{
@@ -672,6 +687,7 @@ func TestOpenAIGatewayService_ProxyResponsesWebSocketFromClient_PassthroughModeR
 			admissionMu.Lock()
 			admissionOrder = append(admissionOrder, "provider_write")
 			admissionMu.Unlock()
+			time.Sleep(providerFenceDelay)
 			return nil
 		},
 		AfterTurn: func(_ int, result *OpenAIForwardResult, turnErr error) {
@@ -758,6 +774,12 @@ func TestOpenAIGatewayService_ProxyResponsesWebSocketFromClient_PassthroughModeR
 		require.True(t, result.OpenAIWSMode)
 		require.Equal(t, 2, result.Usage.InputTokens)
 		require.Equal(t, 3, result.Usage.OutputTokens)
+		require.NotNil(t, result.FirstByteMs)
+		require.GreaterOrEqual(
+			t,
+			*result.FirstByteMs,
+			int((providerFenceDelay - 5*time.Millisecond).Milliseconds()),
+		)
 		require.NotNil(t, result.ServiceTier)
 		require.Equal(t, "priority", *result.ServiceTier)
 		require.NotNil(t, result.ReasoningEffort)
@@ -3936,6 +3958,9 @@ func TestOpenAIGatewayService_ProxyResponsesWebSocketFromClient_ClientDisconnect
 		require.Equal(t, "resp_ingress_disconnect", result.RequestID)
 		require.Equal(t, 2, result.Usage.InputTokens)
 		require.Equal(t, 1, result.Usage.OutputTokens)
+		require.True(t, result.ClientDisconnect)
+		require.NotNil(t, result.FirstByteMs)
+		require.GreaterOrEqual(t, *result.FirstByteMs, 0)
 		require.NotNil(t, result.ServiceTier)
 		require.Equal(t, "flex", *result.ServiceTier)
 	case <-time.After(2 * time.Second):
