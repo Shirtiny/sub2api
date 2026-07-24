@@ -760,6 +760,17 @@ func (s *GroupRepoSuite) TestListWithFilters_RateLimitedAccountCount() {
 		[]any{"acc-expired", service.PlatformAnthropic, service.AccountTypeOAuth},
 		&expiredID))
 
+	var poolModeID int64
+	s.Require().NoError(scanSingleRow(s.ctx, s.tx,
+		`INSERT INTO accounts (
+			name, platform, type, status, schedulable, credentials,
+			rate_limit_reset_at, overload_until, temp_unschedulable_until
+		) VALUES ($1, $2, $3, $4, TRUE, '{"pool_mode":"true"}'::jsonb,
+			NOW() + INTERVAL '1 hour', NOW() + INTERVAL '1 hour', NOW() + INTERVAL '1 hour'
+		) RETURNING id`,
+		[]any{"acc-pool-mode-stale-state", service.PlatformOpenAI, service.AccountTypeAPIKey, service.StatusError},
+		&poolModeID))
+
 	_, err := s.tx.ExecContext(s.ctx,
 		"INSERT INTO account_groups (account_id, group_id, priority, created_at) VALUES ($1, $2, $3, NOW())",
 		normalID, g.ID, 1)
@@ -780,6 +791,10 @@ func (s *GroupRepoSuite) TestListWithFilters_RateLimitedAccountCount() {
 		"INSERT INTO account_groups (account_id, group_id, priority, created_at) VALUES ($1, $2, $3, NOW())",
 		expiredID, g.ID, 5)
 	s.Require().NoError(err)
+	_, err = s.tx.ExecContext(s.ctx,
+		"INSERT INTO account_groups (account_id, group_id, priority, created_at) VALUES ($1, $2, $3, NOW())",
+		poolModeID, g.ID, 6)
+	s.Require().NoError(err)
 
 	isExclusive := false
 	groups, _, err := s.repo.ListWithFilters(s.ctx,
@@ -795,8 +810,8 @@ func (s *GroupRepoSuite) TestListWithFilters_RateLimitedAccountCount() {
 		}
 	}
 	s.Require().NotNil(found, "created group must appear in ListWithFilters result")
-	s.Assert().Equal(int64(5), found.AccountCount, "AccountCount must include all linked accounts")
-	s.Assert().Equal(int64(1), found.ActiveAccountCount, "ActiveAccountCount must include only currently schedulable accounts")
+	s.Assert().Equal(int64(6), found.AccountCount, "AccountCount must include all linked accounts")
+	s.Assert().Equal(int64(2), found.ActiveAccountCount, "ActiveAccountCount must include pool accounts with stale runtime state")
 	s.Assert().Equal(int64(3), found.RateLimitedAccountCount, "RateLimitedAccountCount must include temporarily limited accounts")
 
 	total, active, err := s.repo.GetAccountCount(s.ctx, g.ID)

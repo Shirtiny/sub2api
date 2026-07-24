@@ -50,22 +50,23 @@ func (s *OpsService) GetAccountAvailabilityStats(ctx context.Context, platformFi
 			continue
 		}
 
-		isTempUnsched := false
-		if acc.TempUnschedulableUntil != nil && now.Before(*acc.TempUnschedulableUntil) {
-			isTempUnsched = true
-		}
-
-		isRateLimited := acc.RateLimitResetAt != nil && now.Before(*acc.RateLimitResetAt)
-		isOverloaded := acc.OverloadUntil != nil && now.Before(*acc.OverloadUntil)
-		hasError := acc.Status == StatusError
+		isTempUnsched := !acc.IsPoolMode() && acc.TempUnschedulableUntil != nil && now.Before(*acc.TempUnschedulableUntil)
+		isRateLimited := acc.IsRateLimited()
+		isOverloaded := acc.IsOverloaded()
+		hasError := acc.HasBlockingError()
+		effectiveStatus := acc.EffectiveStatus()
 
 		// Normalize exclusive status flags so the UI doesn't show conflicting badges.
 		if hasError {
 			isRateLimited = false
 			isOverloaded = false
 		}
+		errorMessage := ""
+		if hasError {
+			errorMessage = acc.ErrorMessage
+		}
 
-		isAvailable := acc.Status == StatusActive && acc.Schedulable && !isRateLimited && !isOverloaded && !isTempUnsched
+		isAvailable := effectiveStatus == StatusActive && acc.Schedulable && !isRateLimited && !isOverloaded && !isTempUnsched
 
 		if acc.Platform != "" {
 			if _, ok := platform[acc.Platform]; !ok {
@@ -123,14 +124,14 @@ func (s *OpsService) GetAccountAvailabilityStats(ctx context.Context, platformFi
 			Platform:    acc.Platform,
 			GroupID:     displayGroupID,
 			GroupName:   displayGroupName,
-			Status:      acc.Status,
+			Status:      effectiveStatus,
 
 			IsAvailable:   isAvailable,
 			IsRateLimited: isRateLimited,
 			IsOverloaded:  isOverloaded,
 			HasError:      hasError,
 
-			ErrorMessage: acc.ErrorMessage,
+			ErrorMessage: errorMessage,
 		}
 
 		if isRateLimited && acc.RateLimitResetAt != nil {

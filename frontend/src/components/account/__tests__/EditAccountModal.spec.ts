@@ -330,6 +330,31 @@ describe('EditAccountModal', () => {
     })
   })
 
+  it('preserves legacy string pool mode when saving an OpenAI API key account', async () => {
+    const account = buildAccount()
+    account.credentials = {
+      ...account.credentials,
+      pool_mode: 'true',
+      pool_mode_retry_count: 4,
+      pool_mode_retry_status_codes: [401, 429]
+    }
+    updateAccountMock.mockReset()
+    checkMixedChannelRiskMock.mockReset()
+    checkMixedChannelRiskMock.mockResolvedValue({ has_risk: false })
+    updateAccountMock.mockResolvedValue(account)
+
+    const wrapper = mountModal(account)
+
+    await wrapper.get('form#edit-account-form').trigger('submit.prevent')
+
+    expect(updateAccountMock).toHaveBeenCalledTimes(1)
+    expect(updateAccountMock.mock.calls[0]?.[1]?.credentials).toMatchObject({
+      pool_mode: true,
+      pool_mode_retry_count: 4,
+      pool_mode_retry_status_codes: [401, 429]
+    })
+  })
+
   it('submits the OpenAI account passthrough toggle in extra', async () => {
     const account = buildAccount()
     updateAccountMock.mockReset()

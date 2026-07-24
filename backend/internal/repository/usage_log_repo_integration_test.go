@@ -677,6 +677,17 @@ func (s *UsageLogRepoSuite) TestDashboardStats_TodayTotalsAndPerformance() {
 	mustCreateAccount(s.T(), s.client, &service.Account{Name: "a-error", Status: service.StatusError, Schedulable: true})
 	mustCreateAccount(s.T(), s.client, &service.Account{Name: "a-rl", RateLimitedAt: &now, RateLimitResetAt: &resetAt, Schedulable: true})
 	mustCreateAccount(s.T(), s.client, &service.Account{Name: "a-ov", OverloadUntil: &resetAt, Schedulable: true})
+	mustCreateAccount(s.T(), s.client, &service.Account{
+		Name:             "a-pool-stale-state",
+		Platform:         service.PlatformOpenAI,
+		Type:             service.AccountTypeAPIKey,
+		Status:           service.StatusError,
+		Schedulable:      true,
+		Credentials:      map[string]any{"pool_mode": "true"},
+		RateLimitedAt:    &now,
+		RateLimitResetAt: &resetAt,
+		OverloadUntil:    &resetAt,
+	})
 
 	d1, d2, d3 := 100, 200, 300
 	logToday := &service.UsageLog{
@@ -740,7 +751,8 @@ func (s *UsageLogRepoSuite) TestDashboardStats_TodayTotalsAndPerformance() {
 	s.Require().Equal(baseStats.ActiveUsers+1, stats.ActiveUsers, "ActiveUsers mismatch")
 	s.Require().Equal(baseStats.TotalAPIKeys+2, stats.TotalAPIKeys, "TotalAPIKeys mismatch")
 	s.Require().Equal(baseStats.ActiveAPIKeys+1, stats.ActiveAPIKeys, "ActiveAPIKeys mismatch")
-	s.Require().Equal(baseStats.TotalAccounts+4, stats.TotalAccounts, "TotalAccounts mismatch")
+	s.Require().Equal(baseStats.TotalAccounts+5, stats.TotalAccounts, "TotalAccounts mismatch")
+	s.Require().Equal(baseStats.NormalAccounts+4, stats.NormalAccounts, "NormalAccounts mismatch")
 	s.Require().Equal(baseStats.ErrorAccounts+1, stats.ErrorAccounts, "ErrorAccounts mismatch")
 	s.Require().Equal(baseStats.RateLimitAccounts+1, stats.RateLimitAccounts, "RateLimitAccounts mismatch")
 	s.Require().Equal(baseStats.OverloadAccounts+1, stats.OverloadAccounts, "OverloadAccounts mismatch")

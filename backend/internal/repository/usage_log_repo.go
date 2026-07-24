@@ -1622,16 +1622,16 @@ func (r *usageLogRepository) fillDashboardEntityStats(ctx context.Context, stats
 		return err
 	}
 
-	accountStatsQuery := `
+	accountStatsQuery := fmt.Sprintf(`
 		SELECT
 			COUNT(*) as total_accounts,
-			COUNT(CASE WHEN status = $1 AND schedulable = true THEN 1 END) as normal_accounts,
-			COUNT(CASE WHEN status = $2 THEN 1 END) as error_accounts,
-			COUNT(CASE WHEN rate_limited_at IS NOT NULL AND rate_limit_reset_at > $3 THEN 1 END) as ratelimit_accounts,
-			COUNT(CASE WHEN overload_until IS NOT NULL AND overload_until > $4 THEN 1 END) as overload_accounts
-		FROM accounts
-		WHERE deleted_at IS NULL
-	`
+			COUNT(CASE WHEN (a.status = $1 OR (a.status = $2 AND %s)) AND a.schedulable = true THEN 1 END) as normal_accounts,
+			COUNT(CASE WHEN a.status = $2 AND NOT (%s) THEN 1 END) as error_accounts,
+			COUNT(CASE WHEN a.rate_limited_at IS NOT NULL AND a.rate_limit_reset_at > $3 AND NOT (%s) THEN 1 END) as ratelimit_accounts,
+			COUNT(CASE WHEN a.overload_until IS NOT NULL AND a.overload_until > $4 AND NOT (%s) THEN 1 END) as overload_accounts
+		FROM accounts a
+		WHERE a.deleted_at IS NULL
+	`, accountAliasPoolModeEnabledSQL, accountAliasPoolModeEnabledSQL, accountAliasPoolModeEnabledSQL, accountAliasPoolModeEnabledSQL)
 	if err := scanSingleRow(
 		ctx,
 		r.sql,

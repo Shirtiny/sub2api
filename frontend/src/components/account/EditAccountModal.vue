@@ -2608,6 +2608,10 @@ function formatPoolModeRetryStatusCodes(value: unknown): string {
   }
   return out.sort((a, b) => a - b).join(', ')
 }
+
+function isEnabledCredentialFlag(value: unknown): boolean {
+  return value === true || (typeof value === 'string' && value.trim() === 'true')
+}
 const customErrorCodesEnabled = ref(false)
 const selectedErrorCodes = ref<number[]>([])
 const customErrorCodeInput = ref<number | null>(null)
@@ -3221,7 +3225,7 @@ const syncFormFromAccount = (newAccount: Account | null) => {
     loadModelRestrictionFromMapping(credentials.model_mapping as Record<string, unknown> | undefined)
 
     // Load pool mode
-    poolModeEnabled.value = credentials.pool_mode === true
+    poolModeEnabled.value = isEnabledCredentialFlag(credentials.pool_mode)
     poolModeRetryCount.value = normalizePoolModeRetryCount(
       Number(credentials.pool_mode_retry_count ?? DEFAULT_POOL_MODE_RETRY_COUNT)
     )
@@ -3250,7 +3254,7 @@ const syncFormFromAccount = (newAccount: Account | null) => {
     }
 
     // Load pool mode for bedrock
-    poolModeEnabled.value = bedrockCreds.pool_mode === true
+    poolModeEnabled.value = isEnabledCredentialFlag(bedrockCreds.pool_mode)
     const retryCount = bedrockCreds.pool_mode_retry_count
     poolModeRetryCount.value = (typeof retryCount === 'number' && retryCount >= 0) ? retryCount : DEFAULT_POOL_MODE_RETRY_COUNT
     poolModeRetryStatusCodesInput.value = formatPoolModeRetryStatusCodes(bedrockCreds.pool_mode_retry_status_codes)
