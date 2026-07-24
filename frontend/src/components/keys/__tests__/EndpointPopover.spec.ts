@@ -67,6 +67,28 @@ describe('EndpointPopover', () => {
     wrapper.unmount()
   })
 
+  it('当自定义端点与 api_base_url 相同时不重复渲染默认卡片', () => {
+    const wrapper = mount(EndpointPopover, {
+      props: {
+        apiBaseUrl: 'https://lax.example.com',
+        customEndpoints: [
+          { name: '首选', endpoint: 'https://lax.example.com', description: '优化线路' },
+          { name: '次选', endpoint: 'https://www.example.com', description: 'CF 端点' },
+        ],
+      },
+    })
+
+    const cards = wrapper.findAll('.flex-wrap > div')
+    expect(cards).toHaveLength(2)
+    // 默认标签只出现一次，且挂在与 api_base_url 相同的"首选"卡片上
+    const defaultBadges = wrapper.findAll('span').filter((span) => span.text() === '默认')
+    expect(defaultBadges).toHaveLength(1)
+    const preferredCard = cards[0]
+    expect(preferredCard.text()).toContain('首选')
+    expect(preferredCard.text()).toContain('默认')
+    wrapper.unmount()
+  })
+
   it('使用主题语义颜色并保持复制提示高对比可读', () => {
     const wrapper = mount(EndpointPopover, {
       props: {

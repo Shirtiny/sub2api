@@ -26,7 +26,14 @@ const LATENCY_REFRESH_DELAYS_MS = [30_000, 90_000] as const
 
 const allEndpoints = computed(() => {
   const items: Array<{ name: string; endpoint: string; description: string; isDefault: boolean }> = []
-  if (props.apiBaseUrl) {
+  const baseUrl = props.apiBaseUrl.trim()
+  // When a custom endpoint points at the same URL as the site's api_base_url,
+  // don't render a separate "default" card — just tag that custom endpoint.
+  const matchedCustom = baseUrl
+    ? props.customEndpoints.find((ep) => ep.endpoint.trim() === baseUrl)
+    : undefined
+
+  if (baseUrl && !matchedCustom) {
     items.push({
       name: t('keys.endpoints.title'),
       endpoint: props.apiBaseUrl,
@@ -35,7 +42,7 @@ const allEndpoints = computed(() => {
     })
   }
   for (const ep of props.customEndpoints) {
-    items.push({ ...ep, isDefault: false })
+    items.push({ ...ep, isDefault: ep === matchedCustom })
   }
   return items
 })
