@@ -183,6 +183,7 @@ func stripOpenAIAlphaSearchResponsesHeaders(headers http.Header) {
 		"Conversation_ID",
 		"X-Codex-Beta-Features",
 		"X-Codex-Turn-State",
+		"X-OpenAI-Internal-Codex-Responses-Lite",
 	} {
 		headers.Del(key)
 	}
@@ -212,6 +213,53 @@ func sanitizeOpenAIAlphaSearchBody(body []byte) ([]byte, error) {
 		return body, nil
 	}
 	return json.Marshal(obj)
+}
+
+// AlphaSearchRequiresBoundAffinity reports whether the request references a
+// prior search result by opaque ref_id. Absolute HTTP(S) URLs are stateless,
+// while opaque references must stay on the account that created them.
+func AlphaSearchRequiresBoundAffinity(body []byte) bool {
+	var root any
+	if err := json.Unmarshal(body, &root); err != nil {
+		// The handler already rejects ordinary invalid JSON. If this stricter
+		// decoder still cannot inspect a body (for example, pathological depth),
+		// fail closed and prevent cross-account replay.
+		return true
+	}
+
+	// Use an iterative walk so deeply nested, forward-compatible request fields
+	// cannot bypass the affinity guard or cause recursion proportional to input.
+	pending := []any{root}
+	for len(pending) > 0 {
+		last := len(pending) - 1
+		value := pending[last]
+		pending = pending[:last]
+		switch typed := value.(type) {
+		case map[string]any:
+			for key, child := range typed {
+				if strings.EqualFold(key, "ref_id") {
+					if refID, ok := child.(string); ok {
+						refID = strings.TrimSpace(refID)
+						if refID != "" && !alphaSearchRefIsAbsoluteHTTPURL(refID) {
+							return true
+						}
+					}
+				}
+				pending = append(pending, child)
+			}
+		case []any:
+			pending = append(pending, typed...)
+		}
+	}
+	return false
+}
+
+func alphaSearchRefIsAbsoluteHTTPURL(value string) bool {
+	parsed, err := url.Parse(value)
+	if err != nil {
+		return false
+	}
+	return (strings.EqualFold(parsed.Scheme, "http") || strings.EqualFold(parsed.Scheme, "https")) && parsed.Host != ""
 }
 
 func isOpenAIAlphaSearchEndpointUnsupported(account *Account, statusCode int) bool {
@@ -246,8 +294,26 @@ func (s *OpenAIGatewayService) openAIAlphaSearchURL(account *Account) (string, e
 		if err != nil {
 			return "", err
 		}
-		return buildOpenAIEndpointURL(validatedURL, "/v1/alpha/search"), nil
+		return buildOpenAIAlphaSearchEndpointURL(validatedURL), nil
 	default:
 		return "", fmt.Errorf("unsupported OpenAI account type: %s", account.Type)
 	}
+}
+
+func buildOpenAIAlphaSearchEndpointURL(base string) string {
+	parsedBase, err := url.Parse(base)
+	if err != nil || parsedBase.Scheme == "" || parsedBase.Host == "" {
+		return buildOpenAIEndpointURL(base, "/v1/alpha/search")
+	}
+	baseQuery := parsedBase.RawQuery
+	parsedBase.RawQuery = ""
+	parsedBase.ForceQuery = false
+	parsedBase.Fragment = ""
+
+	target, err := url.Parse(buildOpenAIEndpointURL(parsedBase.String(), "/v1/alpha/search"))
+	if err != nil {
+		return buildOpenAIEndpointURL(base, "/v1/alpha/search")
+	}
+	target.RawQuery = baseQuery
+	return target.String()
 }

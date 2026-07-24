@@ -75,6 +75,7 @@ func (h *OpenAIGatewayHandler) AlphaSearch(c *gin.Context) {
 		return
 	}
 	requestedModel := strings.TrimSpace(modelResult.String())
+	requiresBoundAffinity := service.AlphaSearchRequiresBoundAffinity(body)
 	reqLog = reqLog.With(zap.String("model", requestedModel))
 	setOpsRequestContext(c, requestedModel, false)
 	setOpsEndpointContext(c, "", int16(service.RequestTypeSync))
@@ -182,6 +183,14 @@ func (h *OpenAIGatewayHandler) AlphaSearch(c *gin.Context) {
 		h.gatewayService.ReportOpenAIAccountScheduleResult(account.ID, false, nil)
 		if c.Writer.Size() != writerSizeBeforeForward {
 			h.handleFailoverExhausted(c, failoverErr, true)
+			return
+		}
+		if requiresBoundAffinity {
+			reqLog.Warn("openai_alpha_search.stateful_failover_blocked",
+				zap.Int64("account_id", account.ID),
+				zap.Int("upstream_status", failoverErr.StatusCode),
+			)
+			h.handleFailoverExhausted(c, failoverErr, false)
 			return
 		}
 		h.gatewayService.RecordOpenAIAccountSwitch()

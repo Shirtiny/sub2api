@@ -547,6 +547,7 @@ func (s *PricingService) useFallbackPricing() error {
 	}
 
 	pricingFile := s.getPricingFilePath()
+	// #nosec G703 -- pricingFile is an operator-controlled application data path from trusted configuration.
 	if err := os.WriteFile(pricingFile, data, 0644); err != nil {
 		logger.LegacyPrintf("service.pricing", "[Pricing] Failed to copy fallback: %v", err)
 	}

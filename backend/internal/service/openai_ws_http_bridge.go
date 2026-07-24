@@ -291,18 +291,18 @@ func (s *OpenAIGatewayService) proxyOpenAIWSHTTPBridgeTurn(
 		}
 		imageCount := imageCounter.Count()
 		result := &OpenAIForwardResult{
-			RequestID:       responseID,
-			Usage:           usage,
-			Model:           originalModel,
-			UpstreamModel:   mappedModel,
-			ServiceTier:     extractOpenAIServiceTierFromBody(body),
-			ReasoningEffort: extractOpenAIReasoningEffortFromBody(body, originalModel),
-			Stream:          reqStream,
-			OpenAIWSMode:    true,
-			ResponseHeaders: cloneHeader(resp.Header),
-			Duration:        duration,
-			FirstTokenMs:    firstTokenMs,
-			FirstByteMs:     firstByteMs,
+			RequestID:        responseID,
+			Usage:            usage,
+			Model:            originalModel,
+			UpstreamModel:    mappedModel,
+			ServiceTier:      extractOpenAIServiceTierFromBody(body),
+			ReasoningEffort:  extractOpenAIReasoningEffortFromBody(body, originalModel),
+			Stream:           reqStream,
+			OpenAIWSMode:     true,
+			ResponseHeaders:  cloneHeader(resp.Header),
+			Duration:         duration,
+			FirstTokenMs:     firstTokenMs,
+			FirstByteMs:      firstByteMs,
 			ClientDisconnect: clientDisconnected,
 		}
 		if replayInput := replayCollector.Items(); len(replayInput) > 0 {

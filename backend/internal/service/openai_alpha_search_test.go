@@ -3,6 +3,7 @@ package service
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -74,7 +75,7 @@ func TestForwardAlphaSearchAPIKeyMapsModelAndPassesThroughError(t *testing.T) {
 	body := []byte(`{"id":"search-session","model":"gpt-5.6-sol","commands":{"search_query":[{"q":"news"}]}}`)
 	recorder := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(recorder)
-	c.Request = httptest.NewRequest(http.MethodPost, "/alpha/search", bytes.NewReader(body))
+	c.Request = httptest.NewRequest(http.MethodPost, "/alpha/search?feature=standalone", bytes.NewReader(body))
 	c.Request.Header.Set("Content-Type", "application/json")
 
 	upstreamBody := `{"error":{"type":"invalid_request_error","message":"bad search"}}`
@@ -90,7 +91,7 @@ func TestForwardAlphaSearchAPIKeyMapsModelAndPassesThroughError(t *testing.T) {
 		Type:     AccountTypeAPIKey,
 		Credentials: map[string]any{
 			"api_key":  "sk-test",
-			"base_url": "https://compat.example/v4",
+			"base_url": "https://compat.example/v4?tenant=demo",
 			"model_mapping": map[string]any{
 				"gpt-5.6-sol": "upstream-5.6",
 			},
@@ -103,7 +104,7 @@ func TestForwardAlphaSearchAPIKeyMapsModelAndPassesThroughError(t *testing.T) {
 	require.Nil(t, result)
 	require.Equal(t, http.StatusBadRequest, recorder.Code)
 	require.JSONEq(t, upstreamBody, recorder.Body.String())
-	require.Equal(t, "https://compat.example/v4/alpha/search", upstream.lastReq.URL.String())
+	require.Equal(t, "https://compat.example/v4/alpha/search?feature=standalone&tenant=demo", upstream.lastReq.URL.String())
 	require.Equal(t, "Bearer sk-test", upstream.lastReq.Header.Get("Authorization"))
 	require.Equal(t, "upstream-5.6", gjson.GetBytes(upstream.lastBody, "model").String())
 	require.True(t, gjson.GetBytes(upstream.lastBody, "commands.search_query").IsArray())
@@ -159,6 +160,7 @@ func TestForwardAlphaSearchAPIKeyAetherWireContract(t *testing.T) {
 	c.Request.Header.Set("OpenAI-Beta", "responses=experimental")
 	c.Request.Header.Set("Session_ID", "responses-session")
 	c.Request.Header.Set("Conversation_ID", "responses-conversation")
+	c.Request.Header.Set("X-OpenAI-Internal-Codex-Responses-Lite", "true")
 
 	upstream := &httpUpstreamRecorder{resp: &http.Response{
 		StatusCode: http.StatusOK,
@@ -189,6 +191,7 @@ func TestForwardAlphaSearchAPIKeyAetherWireContract(t *testing.T) {
 	require.Empty(t, upstream.lastReq.Header.Get("OpenAI-Beta"))
 	require.Empty(t, upstream.lastReq.Header.Get("Session_ID"))
 	require.Empty(t, upstream.lastReq.Header.Get("Conversation_ID"))
+	require.Empty(t, upstream.lastReq.Header.Get("X-OpenAI-Internal-Codex-Responses-Lite"))
 	require.False(t, gjson.GetBytes(upstream.lastBody, "prompt_cache_key").Exists())
 	require.False(t, gjson.GetBytes(upstream.lastBody, "prompt_cache_retention").Exists())
 	require.True(t, gjson.GetBytes(upstream.lastBody, "future_field.keep").Bool())
@@ -248,4 +251,60 @@ func TestForwardAlphaSearchAPIKeyUnsupportedEndpointTriggersFailover(t *testing.
 	require.ErrorAs(t, err, &failoverErr)
 	require.Equal(t, http.StatusNotFound, failoverErr.StatusCode)
 	require.False(t, c.Writer.Written())
+}
+
+func TestAlphaSearchRequiresBoundAffinity(t *testing.T) {
+	tests := []struct {
+		name string
+		body string
+		want bool
+	}{
+		{
+			name: "opaque open ref",
+			body: `{"commands":{"open":[{"ref_id":"turn0search0"}]}}`,
+			want: true,
+		},
+		{
+			name: "case insensitive ref field",
+			body: `{"commands":{"click":[{"REF_ID":"turn0search0","id":3}]}}`,
+			want: true,
+		},
+		{
+			name: "absolute https URL",
+			body: `{"commands":{"open":[{"ref_id":"https://example.com/source"}]}}`,
+			want: false,
+		},
+		{
+			name: "invalid absolute URL",
+			body: `{"commands":{"open":[{"ref_id":"https://"}]}}`,
+			want: true,
+		},
+		{
+			name: "stateless query",
+			body: `{"commands":{"search_query":[{"q":"primary source"}]}}`,
+			want: false,
+		},
+		{
+			name: "uninspectable body fails closed",
+			body: `{"commands":`,
+			want: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			require.Equal(t, tt.want, AlphaSearchRequiresBoundAffinity([]byte(tt.body)))
+		})
+	}
+}
+
+func TestAlphaSearchDeeplyNestedRefCannotBypassAffinity(t *testing.T) {
+	var nested any = map[string]any{"ref_id": "turn0search0"}
+	for range 64 {
+		nested = map[string]any{"future_wrapper": []any{nested}}
+	}
+	body, err := json.Marshal(nested)
+	require.NoError(t, err)
+
+	require.True(t, AlphaSearchRequiresBoundAffinity(body))
 }
