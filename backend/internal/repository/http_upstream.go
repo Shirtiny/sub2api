@@ -1175,6 +1175,8 @@ func attachUsageResponseTiming(req *http.Request, resp *http.Response) {
 		return
 	}
 	resp.Body = service.WrapUsageResponseTimingBody(req.Context(), resp.Body)
+	// Must follow the wrap: it resets any timing carried over from a prior attempt.
+	service.ObserveUpstreamReportedTiming(req.Context(), resp.Header)
 }
 
 // decompressResponseBody 根据 Content-Encoding 解压响应体。
