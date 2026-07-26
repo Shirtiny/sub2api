@@ -46,7 +46,8 @@ describe('UseKeyModal', () => {
     expect(configToml).not.toContain('model = "gpt-5.4"')
     expect(configToml).not.toContain('model_context_window')
     expect(configToml).not.toContain('model_auto_compact_token_limit')
-    expect(configToml).toContain('[features]\ngoals = true')
+    expect(configToml).toContain('supports_standalone_web_search = true')
+    expect(configToml).toContain('[features]\nstandalone_web_search = true\ngoals = true')
   })
 
   it('renders GPT-5.5 and goals feature in OpenAI Codex WebSocket config', async () => {
@@ -86,7 +87,8 @@ describe('UseKeyModal', () => {
     expect(configToml).not.toContain('model = "gpt-5.4"')
     expect(configToml).not.toContain('model_context_window')
     expect(configToml).not.toContain('model_auto_compact_token_limit')
-    expect(configToml).toContain('[features]\nresponses_websockets_v2 = true\ngoals = true')
+    expect(configToml).toContain('supports_standalone_web_search = true')
+    expect(configToml).toContain('[features]\nresponses_websockets_v2 = true\nstandalone_web_search = true\ngoals = true')
   })
 
   it('renders custom title and placeholder key in OpenAI auth config', () => {
