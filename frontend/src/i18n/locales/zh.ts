@@ -7689,7 +7689,7 @@ export default {
       price: '价格',
       validityDays: '有效期（天）',
       concurrency: '并发数量',
-      concurrencyHint: '套餐有效期内的最大并发请求数；定制倍数不会放大并发，套餐到期后恢复用户的基础并发数。',
+      concurrencyHint: '套餐有效期内的保底并发请求数；用户基础并发更高时按基础并发生效，定制倍数不会放大并发，套餐到期后恢复用户的基础并发数。',
       validityUnit: '有效期单位',
       sortOrder: '排序',
       forSale: '上架状态',

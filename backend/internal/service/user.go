@@ -21,8 +21,9 @@ type User struct {
 	Balance        float64
 	Concurrency    int
 	// PlanConcurrencyEntitlements are transient auth-time snapshots. They are
-	// not stored on users; active subscription terms override Concurrency and
-	// automatically stop applying at their own expiration time.
+	// not stored on users; active subscription terms raise the effective limit
+	// above Concurrency and automatically stop applying at their own expiration
+	// time. They never lower it — see EffectiveConcurrencyAt.
 	PlanConcurrencyEntitlements []PlanConcurrencyEntitlement
 	Status                      string
 	AllowedGroups               []int64
@@ -75,8 +76,10 @@ type PlanConcurrencyEntitlement struct {
 	ExpiresAt      time.Time `json:"expires_at"`
 }
 
-// EffectiveConcurrencyAt returns the highest active plan entitlement. When no
-// plan entitlement is active, the user's persisted concurrency is the fallback.
+// EffectiveConcurrencyAt returns the highest of the user's persisted
+// concurrency and every active plan entitlement. Plan entitlements are a floor,
+// not a cap: admin adjustments and concurrency redeem codes write the persisted
+// value, so a plan must never shrink a limit that was granted per user.
 func (u *User) EffectiveConcurrencyAt(now time.Time) int {
 	if u == nil {
 		return 1
@@ -111,11 +114,11 @@ func (u *User) EffectiveConcurrencyAt(now time.Time) int {
 			effective = entitlement.concurrency
 		}
 	}
+	if u.Concurrency > effective {
+		effective = u.Concurrency
+	}
 	if effective > 0 {
 		return effective
-	}
-	if u.Concurrency > 0 {
-		return u.Concurrency
 	}
 	return 1
 }

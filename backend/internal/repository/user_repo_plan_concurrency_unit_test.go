@@ -105,4 +105,19 @@ func TestUserRepositoryLoadsEffectivePlanConcurrencyForDetailAndList(t *testing.
 	require.Len(t, descending, 2)
 	require.Equal(t, baseOnlyUser.ID, descending[0].ID)
 	require.Equal(t, user.ID, descending[1].ID)
+
+	// Base concurrency above the active plan entitlement must drive both the
+	// effective value and the sort order.
+	_, err = client.User.UpdateOneID(user.ID).SetConcurrency(32).Save(ctx)
+	require.NoError(t, err)
+
+	boosted, err := repo.GetByID(ctx, user.ID)
+	require.NoError(t, err)
+	require.Equal(t, 32, boosted.EffectiveConcurrencyAt(now))
+
+	descending, _, err = repo.List(ctx, pagination.PaginationParams{Page: 1, PageSize: 10, SortBy: "concurrency", SortOrder: "desc"})
+	require.NoError(t, err)
+	require.Len(t, descending, 2)
+	require.Equal(t, user.ID, descending[0].ID)
+	require.Equal(t, baseOnlyUser.ID, descending[1].ID)
 }

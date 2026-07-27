@@ -22,6 +22,18 @@ func TestUserEffectiveConcurrencyAtUsesHighestActivePlan(t *testing.T) {
 	require.Equal(t, 8, user.EffectiveConcurrencyAt(now))
 }
 
+func TestUserEffectiveConcurrencyAtKeepsHigherUserConcurrency(t *testing.T) {
+	now := time.Date(2026, 7, 21, 12, 0, 0, 0, time.UTC)
+	user := &User{
+		Concurrency: 32,
+		PlanConcurrencyEntitlements: []PlanConcurrencyEntitlement{
+			{SubscriptionID: 812, Concurrency: 4, StartsAt: now.Add(-time.Hour), ExpiresAt: now.Add(time.Hour)},
+		},
+	}
+
+	require.Equal(t, 32, user.EffectiveConcurrencyAt(now))
+}
+
 func TestUserEffectiveConcurrencyAtUsesLatestTermPerSubscription(t *testing.T) {
 	now := time.Date(2026, 7, 21, 12, 0, 0, 0, time.UTC)
 	user := &User{

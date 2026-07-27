@@ -89,8 +89,8 @@ export interface User {
   total_recharged?: number // Membership points
   membership_level?: number // Membership level derived from points
   concurrency: number // Current allowed concurrent requests
-  base_concurrency?: number // Persisted fallback used when no plan entitlement is active
-  effective_concurrency?: number // Current limit after applying active plan entitlements
+  base_concurrency?: number // Persisted per-user limit set by admins or concurrency redeem codes
+  effective_concurrency?: number // Current limit: max of base_concurrency and active plan entitlements
   rpm_limit?: number // User-level RPM cap (0 = unlimited); effective as fallback when group has no rpm_limit
   status: 'active' | 'disabled' // Account status
   allowed_groups: number[] | null // Allowed group IDs (null = all non-exclusive groups)

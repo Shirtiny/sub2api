@@ -7663,7 +7663,7 @@ export default {
       price: 'Price',
       validityDays: 'Validity (days)',
       concurrency: 'Concurrency',
-      concurrencyHint: 'Maximum concurrent requests while the plan is active. Custom multipliers do not increase concurrency; the user base limit is restored after expiration.',
+      concurrencyHint: 'Minimum concurrent requests while the plan is active. A higher user base limit still wins; custom multipliers do not increase concurrency, and the user base limit is restored after expiration.',
       validityUnit: 'Validity Unit',
       sortOrder: 'Sort Order',
       forSale: 'For Sale',

@@ -790,7 +790,10 @@ func userEffectiveConcurrencyOrder(sortOrder string) []func(*entsql.Selector) {
 			direction = "ASC"
 			tieOrder = entsql.Asc
 		}
-		s.OrderExpr(entsql.Expr(fmt.Sprintf("COALESCE(NULLIF(%s, 0), %s) %s", activePlanConcurrency, baseConcurrency, direction)))
+		// Mirrors service.User.EffectiveConcurrencyAt: plan entitlements raise the
+		// limit but never lower the per-user value, so sorting takes the maximum
+		// instead of letting an active plan replace the base concurrency.
+		s.OrderExpr(entsql.Expr(fmt.Sprintf("%s(%s, COALESCE(%s, 0)) %s", greatest, activePlanConcurrency, baseConcurrency, direction)))
 		s.OrderBy(tieOrder(userID))
 	}}
 }
