@@ -192,9 +192,18 @@ type UpdatePlanRequest struct {
 // PaymentConfigService manages payment configuration and CRUD for
 // provider instances, channels, and subscription plans.
 type PaymentConfigService struct {
-	entClient     *dbent.Client
-	settingRepo   SettingRepository
-	encryptionKey []byte
+	entClient            *dbent.Client
+	settingRepo          SettingRepository
+	encryptionKey        []byte
+	authCacheInvalidator APIKeyAuthCacheInvalidator
+}
+
+// SetAuthCacheInvalidator wires auth cache invalidation, needed when a plan edit
+// changes concurrency entitlements that auth snapshots already cached.
+func (s *PaymentConfigService) SetAuthCacheInvalidator(invalidator APIKeyAuthCacheInvalidator) {
+	if s != nil {
+		s.authCacheInvalidator = invalidator
+	}
 }
 
 // NewPaymentConfigService creates a new PaymentConfigService.

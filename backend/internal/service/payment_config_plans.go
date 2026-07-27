@@ -3,11 +3,15 @@ package service
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strings"
+	"time"
 
 	dbent "github.com/Wei-Shaw/sub2api/ent"
 	"github.com/Wei-Shaw/sub2api/ent/group"
+	"github.com/Wei-Shaw/sub2api/ent/subscriptionconcurrencyentitlement"
 	"github.com/Wei-Shaw/sub2api/ent/subscriptionplan"
+	"github.com/Wei-Shaw/sub2api/ent/usersubscription"
 	"github.com/Wei-Shaw/sub2api/internal/payment"
 	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 )
@@ -325,7 +329,91 @@ func (s *PaymentConfigService) UpdatePlan(ctx context.Context, id int64, req Upd
 		u.SetCustomMultiplierMin(minValue)
 		u.SetCustomMultiplierMax(maxValue)
 	}
-	return u.Save(ctx)
+	plan, err := u.Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if req.Concurrency != nil && *req.Concurrency != current.Concurrency {
+		s.raiseActiveConcurrencyEntitlements(ctx, plan)
+	}
+	return plan, nil
+}
+
+// raiseActiveConcurrencyEntitlements lifts unexpired concurrency entitlements of
+// the plan's group up to the plan's new value.
+//
+// Entitlements are snapshots taken when a subscription is created or extended, so
+// editing a plan alone would leave existing subscribers on the value they bought
+// until their next renewal. Terms that have not started yet are included as well:
+// an early renewal queues its term behind the current one, and that term would
+// otherwise drop the user back to the old value once it takes over.
+//
+// Snapshots already at or above the new value are left alone: a higher limit is
+// either a deliberate grant or a richer purchase, and a plan edit must not claw it
+// back. Failures are logged rather than returned — the plan itself is already
+// persisted, so the edit must not appear to have failed.
+func (s *PaymentConfigService) raiseActiveConcurrencyEntitlements(ctx context.Context, plan *dbent.SubscriptionPlan) {
+	if s == nil || s.entClient == nil || plan == nil || plan.Concurrency <= 0 {
+		return
+	}
+	now := time.Now()
+	pending, err := s.entClient.SubscriptionConcurrencyEntitlement.Query().
+		Where(
+			subscriptionconcurrencyentitlement.ConcurrencyLT(plan.Concurrency),
+			subscriptionconcurrencyentitlement.ExpiresAtGT(now),
+			subscriptionconcurrencyentitlement.HasSubscriptionWith(
+				usersubscription.GroupIDEQ(plan.GroupID),
+				usersubscription.StatusEQ(SubscriptionStatusActive),
+				usersubscription.ExpiresAtGT(now),
+				usersubscription.DeletedAtIsNil(),
+			),
+		).
+		Select(
+			subscriptionconcurrencyentitlement.FieldID,
+			subscriptionconcurrencyentitlement.FieldUserID,
+		).
+		All(ctx)
+	if err != nil {
+		slog.Error("failed to load concurrency entitlements for plan update",
+			"plan_id", plan.ID, "group_id", plan.GroupID, "error", err)
+		return
+	}
+	if len(pending) == 0 {
+		return
+	}
+
+	ids := make([]int64, 0, len(pending))
+	userIDs := make([]int64, 0, len(pending))
+	seen := make(map[int64]struct{}, len(pending))
+	for _, entitlement := range pending {
+		ids = append(ids, entitlement.ID)
+		if _, ok := seen[entitlement.UserID]; ok {
+			continue
+		}
+		seen[entitlement.UserID] = struct{}{}
+		userIDs = append(userIDs, entitlement.UserID)
+	}
+
+	affected, err := s.entClient.SubscriptionConcurrencyEntitlement.Update().
+		Where(subscriptionconcurrencyentitlement.IDIn(ids...)).
+		SetConcurrency(plan.Concurrency).
+		Save(ctx)
+	if err != nil {
+		slog.Error("failed to raise concurrency entitlements for plan update",
+			"plan_id", plan.ID, "group_id", plan.GroupID, "concurrency", plan.Concurrency, "error", err)
+		return
+	}
+	slog.Info("raised concurrency entitlements after plan update",
+		"plan_id", plan.ID, "group_id", plan.GroupID, "concurrency", plan.Concurrency,
+		"entitlements", affected, "users", len(userIDs))
+
+	// Auth snapshots cache the entitlement list, so without this the new limit
+	// only applies once the cached snapshot expires.
+	if s.authCacheInvalidator != nil {
+		for _, userID := range userIDs {
+			s.authCacheInvalidator.InvalidateAuthCacheByUserID(ctx, userID)
+		}
+	}
 }
 
 func (s *PaymentConfigService) DeletePlan(ctx context.Context, id int64) error {
