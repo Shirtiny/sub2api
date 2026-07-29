@@ -1,0 +1,43 @@
+{
+  "id": "codex-ws-upstream-failure-observability",
+  "name": "codex-ws-upstream-failure-observability",
+  "title": "Fix Aether Codex WebSocket upstream failure observability",
+  "description": "Classify Aether Codex WebSocket client, upstream, and timeout failures correctly; preserve transport and close details in structured logs; and let the official Codex client own retries without Aether replaying requests.",
+  "status": "completed",
+  "dev_type": "fix",
+  "scope": "backend",
+  "package": "aether",
+  "priority": "P1",
+  "creator": "codex-agent",
+  "assignee": "codex-agent",
+  "createdAt": "2026-07-29",
+  "completedAt": "2026-07-29",
+  "branch": "custom",
+  "base_branch": "custom",
+  "worktree_path": null,
+  "commit": "2786588a14c546e36e2494266168f15cd0fb2f9b",
+  "pr_url": null,
+  "subtasks": [
+    "diagnose the official Codex WebSocket 502 and retry behavior",
+    "record exact upstream protocol and transport failure details",
+    "separate client 400, upstream 502, and timeout 504 responses",
+    "preserve official WebSocket close code and reason",
+    "cover binding, active-response, idle, timeout, and close paths with tests"
+  ],
+  "children": [],
+  "parent": "codex-websocket-transport",
+  "relatedFiles": [
+    ".trellis/tasks/07-29-codex-ws-upstream-failure-observability/prd.md",
+    ".trellis/tasks/07-17-codex-websocket-transport/task.json",
+    "/opt/stacks/aether/apps/aether-gateway/src/codex_ws/runtime.rs",
+    "/opt/stacks/aether/apps/aether-gateway/src/codex_ws/session.rs"
+  ],
+  "notes": "Aether commit 2786588a1 was pushed to origin/custom. Aether performs no request retry in these paths; the official Codex client receives retryable upstream status or a closed idle connection. cargo check and the complete 100-test Codex WebSocket suite passed. No production deployment or service restart was performed.",
+  "meta": {
+    "incident_request_id": "ws-606bfba9-0574-54d1-ae6b-26d8c98e25fc",
+    "aether_branch": "custom",
+    "aether_commit": "2786588a14c546e36e2494266168f15cd0fb2f9b",
+    "aether_remote": "origin/custom",
+    "production_deployed": false
+  }
+}

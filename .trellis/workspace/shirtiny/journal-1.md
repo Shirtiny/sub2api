@@ -343,3 +343,43 @@ Added three admin capabilities: filter-scoped bulk shifting of subscription rese
 - Investigate raising `SUB2API_KEEP_DAYS` from 1 to about 3, so a container outage longer than a day cannot lose usage before the rollup captures it.
 - Decide whether the shift-window double-click guard should move from the frontend in-flight check into a handler-held idempotency key.
 - Consider consolidating the three remaining duplicate `createIdempotencyKey` copies in `api/keys.ts`, `api/user.ts` and `api/payment.ts` onto the new shared util.
+
+---
+
+## Session 8: Aether Codex WS upstream failure observability
+
+**Date**: 2026-07-29
+**Task**: Correct Aether Codex WebSocket upstream failure signaling and diagnostics
+
+### Summary
+
+Diagnosed an Aether Codex WebSocket request that exposed only a generic 502 protocol failure. Corrected failure ownership so client protocol violations remain 400, active upstream failures become retryable 502 responses, timeouts become retryable 504 responses, and idle upstream failures close the binding without leaving a stale error for the next turn. Aether does not replay the provider request.
+
+### Main Changes
+
+- Added structured warning logs with request, key, model, phase, protocol reason, and underlying transport detail.
+- Preserved official Close code/reason and Tungstenite receive/send/flush/close errors.
+- Removed the intermediary name from public `type:error` codes.
+- Added binding, active-response, idle, timeout, and Close-detail regression coverage.
+- Added the detailed task record at `.trellis/tasks/07-29-codex-ws-upstream-failure-observability/`.
+
+### Git Commit
+
+- Aether: `2786588a14c546e36e2494266168f15cd0fb2f9b` - `fix(gateway): classify Codex WebSocket upstream failures`
+
+### Testing
+
+- [OK] `cargo check -p aether-gateway --lib`
+- [OK] Aether Codex WS session tests: 35/35
+- [OK] Aether Codex WS runtime tests: 16/16
+- [OK] Complete Aether Codex WS module tests: 100/100
+- [OK] `git diff --check`
+
+### Status
+
+[OK] **Completed, committed, and pushed to Aether `origin/custom`; no production deployment or service restart performed**
+
+### Next Steps
+
+- Monitor `codex_ws_official_protocol_failed` and `codex_ws_official_timeout` after a user-approved deployment.
+- Consider imposing a small hard cap on `transport_detail` as additional log-size defense.
