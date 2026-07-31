@@ -88,6 +88,25 @@ func RegisterGatewayRoutes(
 			},
 		})
 	}
+	// /responses/*subpath 的子路径会被转发到上游同名端点之后，因此在入口就拒掉
+	// 不可转发的子路径，不让它进入调度与转发流程。可转发的判定见
+	// service.IsForwardableOpenAIResponsesRequestPath 及 upstream_path_guard.go。
+	guardResponsesSubpath := func(next gin.HandlerFunc) gin.HandlerFunc {
+		return func(c *gin.Context) {
+			if !service.IsForwardableOpenAIResponsesRequestPath(c) {
+				service.MarkOpsClientBusinessLimited(c, service.OpsClientBusinessLimitedReasonLocalPolicyDenied)
+				c.AbortWithStatusJSON(http.StatusNotFound, gin.H{
+					"error": gin.H{
+						"type":    "not_found_error",
+						"message": "Unsupported responses subpath",
+					},
+				})
+				return
+			}
+			next(c)
+		}
+	}
+
 	// API网关（Claude API兼容）
 	gateway := r.Group("/v1")
 	gateway.Use(bodyLimit)
@@ -130,13 +149,13 @@ func RegisterGatewayRoutes(
 			}
 			h.Gateway.Responses(c)
 		})
-		gateway.POST("/responses/*subpath", func(c *gin.Context) {
+		gateway.POST("/responses/*subpath", guardResponsesSubpath(func(c *gin.Context) {
 			if isOpenAIResponsesCompatibleGatewayPlatform(c) {
 				h.OpenAIGateway.Responses(c)
 				return
 			}
 			h.Gateway.Responses(c)
-		})
+		}))
 		gateway.POST("/alpha/search", h.OpenAIGateway.AlphaSearch)
 		gateway.GET("/responses", func(c *gin.Context) {
 			h.OpenAIGateway.ResponsesWebSocket(c)
@@ -193,7 +212,7 @@ func RegisterGatewayRoutes(
 		h.Gateway.Responses(c)
 	}
 	r.POST("/responses", bodyLimit, clientRequestID, usageResponseTiming, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), requireGroupAnthropic, responsesHandler)
-	r.POST("/responses/*subpath", bodyLimit, clientRequestID, usageResponseTiming, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), requireGroupAnthropic, responsesHandler)
+	r.POST("/responses/*subpath", bodyLimit, clientRequestID, usageResponseTiming, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), requireGroupAnthropic, guardResponsesSubpath(responsesHandler))
 	r.POST("/alpha/search", bodyLimit, clientRequestID, usageResponseTiming, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), requireGroupAnthropic, h.OpenAIGateway.AlphaSearch)
 	r.GET("/responses", bodyLimit, clientRequestID, usageResponseTiming, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), requireGroupAnthropic, func(c *gin.Context) {
 		h.OpenAIGateway.ResponsesWebSocket(c)
@@ -202,7 +221,7 @@ func RegisterGatewayRoutes(
 	codexDirect.Use(bodyLimit, clientRequestID, usageResponseTiming, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), requireGroupAnthropic)
 	{
 		codexDirect.POST("/responses", responsesHandler)
-		codexDirect.POST("/responses/*subpath", responsesHandler)
+		codexDirect.POST("/responses/*subpath", guardResponsesSubpath(responsesHandler))
 		codexDirect.POST("/alpha/search", h.OpenAIGateway.AlphaSearch)
 		codexDirect.GET("/responses", func(c *gin.Context) {
 			h.OpenAIGateway.ResponsesWebSocket(c)
