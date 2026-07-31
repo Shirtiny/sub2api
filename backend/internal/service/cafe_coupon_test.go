@@ -841,6 +841,30 @@ func TestCafeCouponAdminUpdateStatusAndResetClaimPeriod(t *testing.T) {
 	require.True(t, status.CanClaim)
 }
 
+// TestAdminCafeCouponResetClaimStartElapsedAcrossMonthBoundaries 用固定日期锁定不变式:
+// AdminResetCafeCouponClaimPeriod 计算出的 period_start,其领取冷却必须落在 now 之前
+// (领取窗口已过期),CanClaim 才能恢复为 true。历史上月周期用 now.AddDate(0,-1,0),
+// 在月末(如 2026-07-31 → "2026-06-31" → 2026-07-01)会前滚导致回退不足一个自然月,
+// 使该测试仅在月末边界日失败(与业务时钟耦合)。此处不依赖 time.Now(),确定性验证。
+func TestAdminCafeCouponResetClaimStartElapsedAcrossMonthBoundaries(t *testing.T) {
+	cases := []time.Time{
+		time.Date(2026, 7, 31, 11, 25, 20, 0, time.UTC), // 6 月 30 天:"6/31"→7/1
+		time.Date(2026, 3, 31, 0, 0, 0, 0, time.UTC),    // 2 月 28 天:"2/31"→3/3
+		time.Date(2026, 10, 31, 23, 59, 0, 0, time.UTC), // "9/31"→10/1
+		time.Date(2026, 5, 31, 12, 0, 0, 0, time.UTC),   // "4/31"→5/1
+		time.Date(2026, 12, 31, 6, 0, 0, 0, time.UTC),   // "11/31"→12/1
+		time.Date(2026, 1, 31, 0, 0, 0, 0, time.UTC),    // 上月 31 天:常规
+		time.Date(2026, 6, 15, 9, 0, 0, 0, time.UTC),    // 月中:常规
+	}
+	for _, period := range []string{CafeCouponPeriodDay, CafeCouponPeriodWeek, CafeCouponPeriodMonth} {
+		for _, now := range cases {
+			start := adminCafeCouponResetClaimStart(now, period)
+			require.Falsef(t, cafeCouponClaimCooldownAt(start, period).After(now),
+				"period=%s now=%s: reset 后领取窗口须已过期(cooldown<=now)", period, now.Format(time.RFC3339))
+		}
+	}
+}
+
 func TestCafeCouponAdminRestoresAppliedCouponForPendingOrder(t *testing.T) {
 	ctx := context.Background()
 	client := newCafeCouponTestClient(t)
