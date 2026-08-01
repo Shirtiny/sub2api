@@ -72,6 +72,15 @@ type PromoCode func(*sql.Selector)
 // PromoCodeUsage is the predicate function for promocodeusage builders.
 type PromoCodeUsage func(*sql.Selector)
 
+// PromotionActivity is the predicate function for promotionactivity builders.
+type PromotionActivity func(*sql.Selector)
+
+// PromotionActivityParticipation is the predicate function for promotionactivityparticipation builders.
+type PromotionActivityParticipation func(*sql.Selector)
+
+// PromotionActivityPlan is the predicate function for promotionactivityplan builders.
+type PromotionActivityPlan func(*sql.Selector)
+
 // Proxy is the predicate function for proxy builders.
 type Proxy func(*sql.Selector)
 

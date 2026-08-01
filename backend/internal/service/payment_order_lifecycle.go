@@ -127,11 +127,16 @@ func (s *PaymentService) cancelCore(ctx context.Context, o *dbent.PaymentOrder, 
 			return checkPaidResultAlreadyPaid, nil
 		}
 	}
-	c, err := s.entClient.PaymentOrder.Update().Where(paymentorder.IDEQ(o.ID), paymentorder.StatusEQ(OrderStatusPending)).SetStatus(fs).Save(ctx)
+	changed, err := s.transitionPendingOrderWithBonusRelease(ctx, o, fs, func() string {
+		if fs == OrderStatusExpired {
+			return "ORDER_EXPIRED"
+		}
+		return "ORDER_CANCELLED"
+	}())
 	if err != nil {
-		return "", fmt.Errorf("update order status: %w", err)
+		return "", err
 	}
-	if c > 0 {
+	if changed {
 		auditAction := "ORDER_CANCELLED"
 		if fs == OrderStatusExpired {
 			auditAction = "ORDER_EXPIRED"

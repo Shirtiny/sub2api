@@ -17,6 +17,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/group"
 	"github.com/Wei-Shaw/sub2api/ent/paymentorder"
 	"github.com/Wei-Shaw/sub2api/ent/predicate"
+	"github.com/Wei-Shaw/sub2api/ent/subscriptionplan"
 	entuser "github.com/Wei-Shaw/sub2api/ent/user"
 	"github.com/Wei-Shaw/sub2api/ent/usersubscription"
 	"github.com/Wei-Shaw/sub2api/internal/payment"
@@ -143,10 +144,13 @@ func (s *PaymentService) CreateOrder(ctx context.Context, req CreateOrderRequest
 	}
 	resp, err := s.invokeProvider(ctx, order, req, cfg, limitAmount, payAmountStr, payAmount, plan, sel)
 	if err != nil {
-		_, _ = s.entClient.PaymentOrder.UpdateOneID(order.ID).
-			SetStatus(OrderStatusFailed).
-			Save(ctx)
-		s.releaseCafeCouponForOrder(ctx, order.ID, "PROVIDER_CREATE_FAILED")
+		changed, cleanupErr := s.transitionPendingOrderWithBonusRelease(ctx, order, OrderStatusFailed, "PROVIDER_CREATE_FAILED")
+		if cleanupErr != nil {
+			return nil, errors.Join(err, cleanupErr)
+		}
+		if changed {
+			s.releaseCafeCouponForOrder(ctx, order.ID, "PROVIDER_CREATE_FAILED")
+		}
 		return nil, err
 	}
 	return resp, nil
@@ -383,21 +387,41 @@ func lockPaymentUserForUpdate(ctx context.Context, tx *dbent.Tx, userID int64) e
 	if userID <= 0 {
 		return infraerrors.BadRequest("INVALID_USER", "invalid user")
 	}
-	_, err := tx.User.Query().Where(entuser.IDEQ(userID)).ForUpdate().OnlyID(ctx)
+	userQuery := tx.User.Query().Where(entuser.IDEQ(userID))
+	if supportsForUpdate(tx.Client()) {
+		userQuery = userQuery.ForUpdate()
+	}
+	_, err := userQuery.OnlyID(ctx)
 	if err != nil {
-		// SQLite unit-test driver does not support SELECT ... FOR UPDATE. Production
-		// PostgreSQL keeps the row lock; fallback only for the exact SQLite syntax
-		// error so real locking failures are not hidden.
-		if strings.Contains(err.Error(), `near "FOR": syntax error`) {
-			_, fallbackErr := tx.User.Query().Where(entuser.IDEQ(userID)).OnlyID(ctx)
-			if fallbackErr != nil {
-				return fmt.Errorf("lock payment user: %w", fallbackErr)
-			}
-			return nil
-		}
 		return fmt.Errorf("lock payment user: %w", err)
 	}
 	return nil
+}
+
+func lockPaymentSubscriptionPlanForOrder(ctx context.Context, tx *dbent.Tx, planID int64, expectedUpdatedAt time.Time) (*dbent.SubscriptionPlan, error) {
+	if tx == nil {
+		return nil, fmt.Errorf("lock payment subscription plan: nil transaction")
+	}
+	if planID <= 0 {
+		return nil, infraerrors.BadRequest("PLAN_REQUIRED", "subscription plan is required")
+	}
+	planQuery := tx.SubscriptionPlan.Query().Where(subscriptionplan.IDEQ(planID))
+	if supportsForUpdate(tx.Client()) {
+		// A shared lock keeps the plan snapshot stable against edits/deletion
+		// without serializing every purchaser of the same plan.
+		planQuery = planQuery.ForShare()
+	}
+	lockedPlan, err := planQuery.Only(ctx)
+	if err != nil {
+		if dbent.IsNotFound(err) {
+			return nil, infraerrors.Conflict("SUBSCRIPTION_PLAN_CHANGED", "subscription plan is no longer available; refresh and retry")
+		}
+		return nil, fmt.Errorf("lock payment subscription plan: %w", err)
+	}
+	if !expectedUpdatedAt.IsZero() && !lockedPlan.UpdatedAt.Equal(expectedUpdatedAt) {
+		return nil, infraerrors.Conflict("SUBSCRIPTION_PLAN_CHANGED", "subscription plan changed while creating the order; refresh and retry")
+	}
+	return lockedPlan, nil
 }
 
 func (s *PaymentService) createOrderInTx(ctx context.Context, req CreateOrderRequest, user *User, plan *dbent.SubscriptionPlan, cfg *PaymentConfig, orderAmount, limitAmount, feeRate, payAmount float64, sel *payment.InstanceSelection) (*dbent.PaymentOrder, error) {
@@ -410,6 +434,8 @@ func (s *PaymentService) createOrderInTx(ctx context.Context, req CreateOrderReq
 	if err := lockPaymentUserForUpdate(txCtx, tx, req.UserID); err != nil {
 		return nil, err
 	}
+	var subscriptionBonus *SubscriptionBonusBenefit
+	subscriptionDays := 0
 	if plan != nil {
 		txSvc := s.withEntClient(tx.Client())
 		resolvedMultiplier, err := txSvc.resolveSubscriptionOrderMultiplier(txCtx, req.UserID, plan, req.Multiplier)
@@ -418,6 +444,22 @@ func (s *PaymentService) createOrderInTx(ctx context.Context, req CreateOrderReq
 		}
 		if resolvedMultiplier != req.Multiplier {
 			return nil, infraerrors.Conflict("SUBSCRIPTION_STATE_CHANGED", "subscription state changed, please retry")
+		}
+		subscriptionBonus, err = resolveSubscriptionBonusForOrder(txCtx, tx.Client(), req.UserID, plan.ID, req.ExpectedSubscriptionBonusActivityID, time.Now())
+		if err != nil {
+			return nil, err
+		}
+		lockedPlan, err := lockPaymentSubscriptionPlanForOrder(txCtx, tx, plan.ID, plan.UpdatedAt)
+		if err != nil {
+			return nil, err
+		}
+		plan = lockedPlan
+		subscriptionDays, err = validateSubscriptionPlanValidity(plan.ValidityDays, plan.ValidityUnit)
+		if err != nil {
+			return nil, err
+		}
+		if subscriptionBonus != nil && subscriptionBonus.Days > MaxValidityDays-subscriptionDays {
+			return nil, infraerrors.Conflict("ACTIVITY_BENEFIT_CHANGED", "subscription bonus exceeds the maximum subscription validity; refresh and retry")
 		}
 	}
 	if err := s.checkPendingLimit(txCtx, tx, req.UserID, cfg.MaxPendingOrders); err != nil {
@@ -488,7 +530,7 @@ func (s *PaymentService) createOrderInTx(ctx context.Context, req CreateOrderReq
 		if concurrencyErr != nil {
 			return nil, concurrencyErr
 		}
-		b.SetPlanID(plan.ID).SetSubscriptionGroupID(plan.GroupID).SetSubscriptionDays(psComputeValidityDays(plan.ValidityDays, plan.ValidityUnit)).
+		b.SetPlanID(plan.ID).SetSubscriptionGroupID(plan.GroupID).SetSubscriptionDays(subscriptionDays).
 			SetSubscriptionConcurrency(concurrency).
 			SetSubscriptionEarlyResetEnabled(plan.EarlyResetEnabled).
 			SetSubscriptionEarlyResetDurationDays(plan.EarlyResetDurationDays).
@@ -496,10 +538,19 @@ func (s *PaymentService) createOrderInTx(ctx context.Context, req CreateOrderReq
 			SetSubscriptionSourceGroupID(plan.GroupID).
 			SetSubscriptionSourcePrice(plan.Price).
 			SetNillableSubscriptionSourceOriginalPrice(subscriptionOrderOriginalPrice(plan))
+		if subscriptionBonus != nil {
+			b.SetSubscriptionBonusActivityID(subscriptionBonus.ActivityID).
+				SetSubscriptionBonusDays(subscriptionBonus.Days)
+		}
 	}
-	order, err := b.Save(ctx)
+	order, err := b.Save(txCtx)
 	if err != nil {
 		return nil, fmt.Errorf("create order: %w", err)
+	}
+	if subscriptionBonus != nil {
+		if err := s.reserveSubscriptionBonusForOrderTx(txCtx, tx.Client(), order.ID, req.UserID, plan.ID, subscriptionBonus); err != nil {
+			return nil, err
+		}
 	}
 	couponCode := ""
 	couponDiscount := 0.0
@@ -956,15 +1007,16 @@ func (s *PaymentService) buildWeChatOAuthRequiredResponse(ctx context.Context, r
 		resumeAmount = strconv.FormatFloat(req.Amount, 'f', -1, 64)
 	}
 	contextToken, err := s.paymentResume().CreateWeChatPaymentOAuthContextToken(WeChatPaymentOAuthContextClaims{
-		UserID:         req.UserID,
-		PaymentType:    req.PaymentType,
-		Amount:         resumeAmount,
-		OrderType:      req.OrderType,
-		PlanID:         req.PlanID,
-		Multiplier:     req.Multiplier,
-		CafeCouponCode: req.CafeCouponCode,
-		RedirectTo:     paymentRedirectPathFromURL(req.SrcURL),
-		Scope:          "snsapi_base",
+		UserID:                              req.UserID,
+		PaymentType:                         req.PaymentType,
+		Amount:                              resumeAmount,
+		OrderType:                           req.OrderType,
+		PlanID:                              req.PlanID,
+		Multiplier:                          req.Multiplier,
+		CafeCouponCode:                      req.CafeCouponCode,
+		ExpectedSubscriptionBonusActivityID: req.ExpectedSubscriptionBonusActivityID,
+		RedirectTo:                          paymentRedirectPathFromURL(req.SrcURL),
+		Scope:                               "snsapi_base",
 	})
 	if err != nil {
 		return nil, fmt.Errorf("create wechat payment oauth context token: %w", err)

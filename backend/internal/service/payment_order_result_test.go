@@ -246,14 +246,15 @@ func TestMaybeBuildWeChatOAuthRequiredResponseSubscriptionContextOmitsZeroAmount
 	})
 
 	resp, err := svc.maybeBuildWeChatOAuthRequiredResponse(context.Background(), CreateOrderRequest{
-		UserID:          99,
-		Amount:          0,
-		PaymentType:     payment.TypeWxpay,
-		IsWeChatBrowser: true,
-		SrcURL:          "https://merchant.example/purchase?plan=7",
-		OrderType:       payment.OrderTypeSubscription,
-		PlanID:          7,
-		Multiplier:      3,
+		UserID:                              99,
+		Amount:                              0,
+		PaymentType:                         payment.TypeWxpay,
+		IsWeChatBrowser:                     true,
+		SrcURL:                              "https://merchant.example/purchase?plan=7",
+		OrderType:                           payment.OrderTypeSubscription,
+		PlanID:                              7,
+		Multiplier:                          3,
+		ExpectedSubscriptionBonusActivityID: 91,
 	}, 300, 300, 0)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -270,7 +271,7 @@ func TestMaybeBuildWeChatOAuthRequiredResponseSubscriptionContextOmitsZeroAmount
 	if err != nil {
 		t.Fatalf("parse context token: %v", err)
 	}
-	if claims.UserID != 99 || claims.Amount != "" || claims.OrderType != payment.OrderTypeSubscription || claims.PlanID != 7 || claims.Multiplier != 3 {
+	if claims.UserID != 99 || claims.Amount != "" || claims.OrderType != payment.OrderTypeSubscription || claims.PlanID != 7 || claims.Multiplier != 3 || claims.ExpectedSubscriptionBonusActivityID != 91 {
 		t.Fatalf("unexpected context claims: %+v", claims)
 	}
 }

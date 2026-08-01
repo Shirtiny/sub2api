@@ -261,16 +261,17 @@ func TestWeChatPaymentResumeTokenRoundTrip(t *testing.T) {
 
 	svc := NewPaymentResumeService([]byte("0123456789abcdef0123456789abcdef"))
 	token, err := svc.CreateWeChatPaymentResumeToken(WeChatPaymentResumeClaims{
-		OpenID:      "openid-123",
-		UserID:      42,
-		PaymentType: payment.TypeWxpay,
-		Amount:      "12.50",
-		OrderType:   payment.OrderTypeSubscription,
-		PlanID:      7,
-		Multiplier:  3,
-		RedirectTo:  "/purchase?from=wechat",
-		Scope:       "snsapi_base",
-		IssuedAt:    1234567890,
+		OpenID:                              "openid-123",
+		UserID:                              42,
+		PaymentType:                         payment.TypeWxpay,
+		Amount:                              "12.50",
+		OrderType:                           payment.OrderTypeSubscription,
+		PlanID:                              7,
+		Multiplier:                          3,
+		ExpectedSubscriptionBonusActivityID: 91,
+		RedirectTo:                          "/purchase?from=wechat",
+		Scope:                               "snsapi_base",
+		IssuedAt:                            1234567890,
 	})
 	if err != nil {
 		t.Fatalf("CreateWeChatPaymentResumeToken returned error: %v", err)
@@ -285,6 +286,9 @@ func TestWeChatPaymentResumeTokenRoundTrip(t *testing.T) {
 	}
 	if claims.Amount != "12.50" || claims.OrderType != payment.OrderTypeSubscription || claims.PlanID != 7 || claims.Multiplier != 3 {
 		t.Fatalf("claims payment context mismatch: %+v", claims)
+	}
+	if claims.ExpectedSubscriptionBonusActivityID != 91 {
+		t.Fatalf("claims expected bonus activity = %d, want 91", claims.ExpectedSubscriptionBonusActivityID)
 	}
 	if claims.RedirectTo != "/purchase?from=wechat" || claims.Scope != "snsapi_base" {
 		t.Fatalf("claims redirect/scope mismatch: %+v", claims)

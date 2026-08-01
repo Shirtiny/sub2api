@@ -54,6 +54,10 @@ const (
 	FieldSubscriptionGroupID = "subscription_group_id"
 	// FieldSubscriptionDays holds the string denoting the subscription_days field in the database.
 	FieldSubscriptionDays = "subscription_days"
+	// FieldSubscriptionBonusActivityID holds the string denoting the subscription_bonus_activity_id field in the database.
+	FieldSubscriptionBonusActivityID = "subscription_bonus_activity_id"
+	// FieldSubscriptionBonusDays holds the string denoting the subscription_bonus_days field in the database.
+	FieldSubscriptionBonusDays = "subscription_bonus_days"
 	// FieldSubscriptionConcurrency holds the string denoting the subscription_concurrency field in the database.
 	FieldSubscriptionConcurrency = "subscription_concurrency"
 	// FieldSubscriptionEarlyResetEnabled holds the string denoting the subscription_early_reset_enabled field in the database.
@@ -146,6 +150,8 @@ var Columns = []string{
 	FieldPlanID,
 	FieldSubscriptionGroupID,
 	FieldSubscriptionDays,
+	FieldSubscriptionBonusActivityID,
+	FieldSubscriptionBonusDays,
 	FieldSubscriptionConcurrency,
 	FieldSubscriptionEarlyResetEnabled,
 	FieldSubscriptionEarlyResetDurationDays,
@@ -211,6 +217,10 @@ var (
 	DefaultOrderType string
 	// OrderTypeValidator is a validator for the "order_type" field. It is called by the builders before save.
 	OrderTypeValidator func(string) error
+	// DefaultSubscriptionBonusDays holds the default value on creation for the "subscription_bonus_days" field.
+	DefaultSubscriptionBonusDays int
+	// SubscriptionBonusDaysValidator is a validator for the "subscription_bonus_days" field. It is called by the builders before save.
+	SubscriptionBonusDaysValidator func(int) error
 	// SubscriptionConcurrencyValidator is a validator for the "subscription_concurrency" field. It is called by the builders before save.
 	SubscriptionConcurrencyValidator func(int) error
 	// DefaultSubscriptionEarlyResetEnabled holds the default value on creation for the "subscription_early_reset_enabled" field.
@@ -351,6 +361,16 @@ func BySubscriptionGroupID(opts ...sql.OrderTermOption) OrderOption {
 // BySubscriptionDays orders the results by the subscription_days field.
 func BySubscriptionDays(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSubscriptionDays, opts...).ToFunc()
+}
+
+// BySubscriptionBonusActivityID orders the results by the subscription_bonus_activity_id field.
+func BySubscriptionBonusActivityID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSubscriptionBonusActivityID, opts...).ToFunc()
+}
+
+// BySubscriptionBonusDays orders the results by the subscription_bonus_days field.
+func BySubscriptionBonusDays(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSubscriptionBonusDays, opts...).ToFunc()
 }
 
 // BySubscriptionConcurrency orders the results by the subscription_concurrency field.

@@ -27,6 +27,9 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/pendingauthsession"
 	"github.com/Wei-Shaw/sub2api/ent/promocode"
 	"github.com/Wei-Shaw/sub2api/ent/promocodeusage"
+	"github.com/Wei-Shaw/sub2api/ent/promotionactivity"
+	"github.com/Wei-Shaw/sub2api/ent/promotionactivityparticipation"
+	"github.com/Wei-Shaw/sub2api/ent/promotionactivityplan"
 	"github.com/Wei-Shaw/sub2api/ent/proxy"
 	"github.com/Wei-Shaw/sub2api/ent/redeemcode"
 	"github.com/Wei-Shaw/sub2api/ent/schema"
@@ -1095,8 +1098,28 @@ func init() {
 	paymentorder.DefaultOrderType = paymentorderDescOrderType.Default.(string)
 	// paymentorder.OrderTypeValidator is a validator for the "order_type" field. It is called by the builders before save.
 	paymentorder.OrderTypeValidator = paymentorderDescOrderType.Validators[0].(func(string) error)
+	// paymentorderDescSubscriptionBonusDays is the schema descriptor for subscription_bonus_days field.
+	paymentorderDescSubscriptionBonusDays := paymentorderFields[21].Descriptor()
+	// paymentorder.DefaultSubscriptionBonusDays holds the default value on creation for the subscription_bonus_days field.
+	paymentorder.DefaultSubscriptionBonusDays = paymentorderDescSubscriptionBonusDays.Default.(int)
+	// paymentorder.SubscriptionBonusDaysValidator is a validator for the "subscription_bonus_days" field. It is called by the builders before save.
+	paymentorder.SubscriptionBonusDaysValidator = func() func(int) error {
+		validators := paymentorderDescSubscriptionBonusDays.Validators
+		fns := [...]func(int) error{
+			validators[0].(func(int) error),
+			validators[1].(func(int) error),
+		}
+		return func(subscription_bonus_days int) error {
+			for _, fn := range fns {
+				if err := fn(subscription_bonus_days); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
 	// paymentorderDescSubscriptionConcurrency is the schema descriptor for subscription_concurrency field.
-	paymentorderDescSubscriptionConcurrency := paymentorderFields[20].Descriptor()
+	paymentorderDescSubscriptionConcurrency := paymentorderFields[22].Descriptor()
 	// paymentorder.SubscriptionConcurrencyValidator is a validator for the "subscription_concurrency" field. It is called by the builders before save.
 	paymentorder.SubscriptionConcurrencyValidator = func() func(int) error {
 		validators := paymentorderDescSubscriptionConcurrency.Validators
@@ -1114,11 +1137,11 @@ func init() {
 		}
 	}()
 	// paymentorderDescSubscriptionEarlyResetEnabled is the schema descriptor for subscription_early_reset_enabled field.
-	paymentorderDescSubscriptionEarlyResetEnabled := paymentorderFields[21].Descriptor()
+	paymentorderDescSubscriptionEarlyResetEnabled := paymentorderFields[23].Descriptor()
 	// paymentorder.DefaultSubscriptionEarlyResetEnabled holds the default value on creation for the subscription_early_reset_enabled field.
 	paymentorder.DefaultSubscriptionEarlyResetEnabled = paymentorderDescSubscriptionEarlyResetEnabled.Default.(bool)
 	// paymentorderDescSubscriptionEarlyResetDurationDays is the schema descriptor for subscription_early_reset_duration_days field.
-	paymentorderDescSubscriptionEarlyResetDurationDays := paymentorderFields[22].Descriptor()
+	paymentorderDescSubscriptionEarlyResetDurationDays := paymentorderFields[24].Descriptor()
 	// paymentorder.DefaultSubscriptionEarlyResetDurationDays holds the default value on creation for the subscription_early_reset_duration_days field.
 	paymentorder.DefaultSubscriptionEarlyResetDurationDays = paymentorderDescSubscriptionEarlyResetDurationDays.Default.(int)
 	// paymentorder.SubscriptionEarlyResetDurationDaysValidator is a validator for the "subscription_early_reset_duration_days" field. It is called by the builders before save.
@@ -1138,45 +1161,45 @@ func init() {
 		}
 	}()
 	// paymentorderDescProviderInstanceID is the schema descriptor for provider_instance_id field.
-	paymentorderDescProviderInstanceID := paymentorderFields[27].Descriptor()
+	paymentorderDescProviderInstanceID := paymentorderFields[29].Descriptor()
 	// paymentorder.ProviderInstanceIDValidator is a validator for the "provider_instance_id" field. It is called by the builders before save.
 	paymentorder.ProviderInstanceIDValidator = paymentorderDescProviderInstanceID.Validators[0].(func(string) error)
 	// paymentorderDescProviderKey is the schema descriptor for provider_key field.
-	paymentorderDescProviderKey := paymentorderFields[28].Descriptor()
+	paymentorderDescProviderKey := paymentorderFields[30].Descriptor()
 	// paymentorder.ProviderKeyValidator is a validator for the "provider_key" field. It is called by the builders before save.
 	paymentorder.ProviderKeyValidator = paymentorderDescProviderKey.Validators[0].(func(string) error)
 	// paymentorderDescStatus is the schema descriptor for status field.
-	paymentorderDescStatus := paymentorderFields[30].Descriptor()
+	paymentorderDescStatus := paymentorderFields[32].Descriptor()
 	// paymentorder.DefaultStatus holds the default value on creation for the status field.
 	paymentorder.DefaultStatus = paymentorderDescStatus.Default.(string)
 	// paymentorder.StatusValidator is a validator for the "status" field. It is called by the builders before save.
 	paymentorder.StatusValidator = paymentorderDescStatus.Validators[0].(func(string) error)
 	// paymentorderDescRefundAmount is the schema descriptor for refund_amount field.
-	paymentorderDescRefundAmount := paymentorderFields[31].Descriptor()
+	paymentorderDescRefundAmount := paymentorderFields[33].Descriptor()
 	// paymentorder.DefaultRefundAmount holds the default value on creation for the refund_amount field.
 	paymentorder.DefaultRefundAmount = paymentorderDescRefundAmount.Default.(float64)
 	// paymentorderDescForceRefund is the schema descriptor for force_refund field.
-	paymentorderDescForceRefund := paymentorderFields[34].Descriptor()
+	paymentorderDescForceRefund := paymentorderFields[36].Descriptor()
 	// paymentorder.DefaultForceRefund holds the default value on creation for the force_refund field.
 	paymentorder.DefaultForceRefund = paymentorderDescForceRefund.Default.(bool)
 	// paymentorderDescRefundRequestedBy is the schema descriptor for refund_requested_by field.
-	paymentorderDescRefundRequestedBy := paymentorderFields[37].Descriptor()
+	paymentorderDescRefundRequestedBy := paymentorderFields[39].Descriptor()
 	// paymentorder.RefundRequestedByValidator is a validator for the "refund_requested_by" field. It is called by the builders before save.
 	paymentorder.RefundRequestedByValidator = paymentorderDescRefundRequestedBy.Validators[0].(func(string) error)
 	// paymentorderDescClientIP is the schema descriptor for client_ip field.
-	paymentorderDescClientIP := paymentorderFields[43].Descriptor()
+	paymentorderDescClientIP := paymentorderFields[45].Descriptor()
 	// paymentorder.ClientIPValidator is a validator for the "client_ip" field. It is called by the builders before save.
 	paymentorder.ClientIPValidator = paymentorderDescClientIP.Validators[0].(func(string) error)
 	// paymentorderDescSrcHost is the schema descriptor for src_host field.
-	paymentorderDescSrcHost := paymentorderFields[44].Descriptor()
+	paymentorderDescSrcHost := paymentorderFields[46].Descriptor()
 	// paymentorder.SrcHostValidator is a validator for the "src_host" field. It is called by the builders before save.
 	paymentorder.SrcHostValidator = paymentorderDescSrcHost.Validators[0].(func(string) error)
 	// paymentorderDescCreatedAt is the schema descriptor for created_at field.
-	paymentorderDescCreatedAt := paymentorderFields[46].Descriptor()
+	paymentorderDescCreatedAt := paymentorderFields[48].Descriptor()
 	// paymentorder.DefaultCreatedAt holds the default value on creation for the created_at field.
 	paymentorder.DefaultCreatedAt = paymentorderDescCreatedAt.Default.(func() time.Time)
 	// paymentorderDescUpdatedAt is the schema descriptor for updated_at field.
-	paymentorderDescUpdatedAt := paymentorderFields[47].Descriptor()
+	paymentorderDescUpdatedAt := paymentorderFields[49].Descriptor()
 	// paymentorder.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	paymentorder.DefaultUpdatedAt = paymentorderDescUpdatedAt.Default.(func() time.Time)
 	// paymentorder.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
@@ -1410,6 +1433,168 @@ func init() {
 	promocodeusageDescUsedAt := promocodeusageFields[3].Descriptor()
 	// promocodeusage.DefaultUsedAt holds the default value on creation for the used_at field.
 	promocodeusage.DefaultUsedAt = promocodeusageDescUsedAt.Default.(func() time.Time)
+	promotionactivityFields := schema.PromotionActivity{}.Fields()
+	_ = promotionactivityFields
+	// promotionactivityDescName is the schema descriptor for name field.
+	promotionactivityDescName := promotionactivityFields[0].Descriptor()
+	// promotionactivity.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	promotionactivity.NameValidator = func() func(string) error {
+		validators := promotionactivityDescName.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(name string) error {
+			for _, fn := range fns {
+				if err := fn(name); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// promotionactivityDescActivityType is the schema descriptor for activity_type field.
+	promotionactivityDescActivityType := promotionactivityFields[1].Descriptor()
+	// promotionactivity.ActivityTypeValidator is a validator for the "activity_type" field. It is called by the builders before save.
+	promotionactivity.ActivityTypeValidator = func() func(string) error {
+		validators := promotionactivityDescActivityType.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(activity_type string) error {
+			for _, fn := range fns {
+				if err := fn(activity_type); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// promotionactivityDescEnabled is the schema descriptor for enabled field.
+	promotionactivityDescEnabled := promotionactivityFields[2].Descriptor()
+	// promotionactivity.DefaultEnabled holds the default value on creation for the enabled field.
+	promotionactivity.DefaultEnabled = promotionactivityDescEnabled.Default.(bool)
+	// promotionactivityDescMaxUsesPerUser is the schema descriptor for max_uses_per_user field.
+	promotionactivityDescMaxUsesPerUser := promotionactivityFields[5].Descriptor()
+	// promotionactivity.MaxUsesPerUserValidator is a validator for the "max_uses_per_user" field. It is called by the builders before save.
+	promotionactivity.MaxUsesPerUserValidator = func() func(int) error {
+		validators := promotionactivityDescMaxUsesPerUser.Validators
+		fns := [...]func(int) error{
+			validators[0].(func(int) error),
+			validators[1].(func(int) error),
+		}
+		return func(max_uses_per_user int) error {
+			for _, fn := range fns {
+				if err := fn(max_uses_per_user); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// promotionactivityDescCreatedAt is the schema descriptor for created_at field.
+	promotionactivityDescCreatedAt := promotionactivityFields[6].Descriptor()
+	// promotionactivity.DefaultCreatedAt holds the default value on creation for the created_at field.
+	promotionactivity.DefaultCreatedAt = promotionactivityDescCreatedAt.Default.(func() time.Time)
+	// promotionactivityDescUpdatedAt is the schema descriptor for updated_at field.
+	promotionactivityDescUpdatedAt := promotionactivityFields[7].Descriptor()
+	// promotionactivity.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	promotionactivity.DefaultUpdatedAt = promotionactivityDescUpdatedAt.Default.(func() time.Time)
+	// promotionactivity.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	promotionactivity.UpdateDefaultUpdatedAt = promotionactivityDescUpdatedAt.UpdateDefault.(func() time.Time)
+	promotionactivityparticipationFields := schema.PromotionActivityParticipation{}.Fields()
+	_ = promotionactivityparticipationFields
+	// promotionactivityparticipationDescActivityID is the schema descriptor for activity_id field.
+	promotionactivityparticipationDescActivityID := promotionactivityparticipationFields[0].Descriptor()
+	// promotionactivityparticipation.ActivityIDValidator is a validator for the "activity_id" field. It is called by the builders before save.
+	promotionactivityparticipation.ActivityIDValidator = promotionactivityparticipationDescActivityID.Validators[0].(func(int64) error)
+	// promotionactivityparticipationDescUserID is the schema descriptor for user_id field.
+	promotionactivityparticipationDescUserID := promotionactivityparticipationFields[1].Descriptor()
+	// promotionactivityparticipation.UserIDValidator is a validator for the "user_id" field. It is called by the builders before save.
+	promotionactivityparticipation.UserIDValidator = promotionactivityparticipationDescUserID.Validators[0].(func(int64) error)
+	// promotionactivityparticipationDescOrderID is the schema descriptor for order_id field.
+	promotionactivityparticipationDescOrderID := promotionactivityparticipationFields[2].Descriptor()
+	// promotionactivityparticipation.OrderIDValidator is a validator for the "order_id" field. It is called by the builders before save.
+	promotionactivityparticipation.OrderIDValidator = promotionactivityparticipationDescOrderID.Validators[0].(func(int64) error)
+	// promotionactivityparticipationDescPlanID is the schema descriptor for plan_id field.
+	promotionactivityparticipationDescPlanID := promotionactivityparticipationFields[3].Descriptor()
+	// promotionactivityparticipation.PlanIDValidator is a validator for the "plan_id" field. It is called by the builders before save.
+	promotionactivityparticipation.PlanIDValidator = promotionactivityparticipationDescPlanID.Validators[0].(func(int64) error)
+	// promotionactivityparticipationDescBonusDays is the schema descriptor for bonus_days field.
+	promotionactivityparticipationDescBonusDays := promotionactivityparticipationFields[4].Descriptor()
+	// promotionactivityparticipation.BonusDaysValidator is a validator for the "bonus_days" field. It is called by the builders before save.
+	promotionactivityparticipation.BonusDaysValidator = func() func(int) error {
+		validators := promotionactivityparticipationDescBonusDays.Validators
+		fns := [...]func(int) error{
+			validators[0].(func(int) error),
+			validators[1].(func(int) error),
+		}
+		return func(bonus_days int) error {
+			for _, fn := range fns {
+				if err := fn(bonus_days); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// promotionactivityparticipationDescStatus is the schema descriptor for status field.
+	promotionactivityparticipationDescStatus := promotionactivityparticipationFields[5].Descriptor()
+	// promotionactivityparticipation.StatusValidator is a validator for the "status" field. It is called by the builders before save.
+	promotionactivityparticipation.StatusValidator = promotionactivityparticipationDescStatus.Validators[0].(func(string) error)
+	// promotionactivityparticipationDescReleaseReason is the schema descriptor for release_reason field.
+	promotionactivityparticipationDescReleaseReason := promotionactivityparticipationFields[9].Descriptor()
+	// promotionactivityparticipation.ReleaseReasonValidator is a validator for the "release_reason" field. It is called by the builders before save.
+	promotionactivityparticipation.ReleaseReasonValidator = promotionactivityparticipationDescReleaseReason.Validators[0].(func(string) error)
+	// promotionactivityparticipationDescCreatedAt is the schema descriptor for created_at field.
+	promotionactivityparticipationDescCreatedAt := promotionactivityparticipationFields[10].Descriptor()
+	// promotionactivityparticipation.DefaultCreatedAt holds the default value on creation for the created_at field.
+	promotionactivityparticipation.DefaultCreatedAt = promotionactivityparticipationDescCreatedAt.Default.(func() time.Time)
+	// promotionactivityparticipationDescUpdatedAt is the schema descriptor for updated_at field.
+	promotionactivityparticipationDescUpdatedAt := promotionactivityparticipationFields[11].Descriptor()
+	// promotionactivityparticipation.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	promotionactivityparticipation.DefaultUpdatedAt = promotionactivityparticipationDescUpdatedAt.Default.(func() time.Time)
+	// promotionactivityparticipation.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	promotionactivityparticipation.UpdateDefaultUpdatedAt = promotionactivityparticipationDescUpdatedAt.UpdateDefault.(func() time.Time)
+	promotionactivityplanFields := schema.PromotionActivityPlan{}.Fields()
+	_ = promotionactivityplanFields
+	// promotionactivityplanDescActivityID is the schema descriptor for activity_id field.
+	promotionactivityplanDescActivityID := promotionactivityplanFields[0].Descriptor()
+	// promotionactivityplan.ActivityIDValidator is a validator for the "activity_id" field. It is called by the builders before save.
+	promotionactivityplan.ActivityIDValidator = promotionactivityplanDescActivityID.Validators[0].(func(int64) error)
+	// promotionactivityplanDescPlanID is the schema descriptor for plan_id field.
+	promotionactivityplanDescPlanID := promotionactivityplanFields[1].Descriptor()
+	// promotionactivityplan.PlanIDValidator is a validator for the "plan_id" field. It is called by the builders before save.
+	promotionactivityplan.PlanIDValidator = promotionactivityplanDescPlanID.Validators[0].(func(int64) error)
+	// promotionactivityplanDescBonusDays is the schema descriptor for bonus_days field.
+	promotionactivityplanDescBonusDays := promotionactivityplanFields[2].Descriptor()
+	// promotionactivityplan.BonusDaysValidator is a validator for the "bonus_days" field. It is called by the builders before save.
+	promotionactivityplan.BonusDaysValidator = func() func(int) error {
+		validators := promotionactivityplanDescBonusDays.Validators
+		fns := [...]func(int) error{
+			validators[0].(func(int) error),
+			validators[1].(func(int) error),
+		}
+		return func(bonus_days int) error {
+			for _, fn := range fns {
+				if err := fn(bonus_days); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// promotionactivityplanDescCreatedAt is the schema descriptor for created_at field.
+	promotionactivityplanDescCreatedAt := promotionactivityplanFields[3].Descriptor()
+	// promotionactivityplan.DefaultCreatedAt holds the default value on creation for the created_at field.
+	promotionactivityplan.DefaultCreatedAt = promotionactivityplanDescCreatedAt.Default.(func() time.Time)
+	// promotionactivityplanDescUpdatedAt is the schema descriptor for updated_at field.
+	promotionactivityplanDescUpdatedAt := promotionactivityplanFields[4].Descriptor()
+	// promotionactivityplan.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	promotionactivityplan.DefaultUpdatedAt = promotionactivityplanDescUpdatedAt.Default.(func() time.Time)
+	// promotionactivityplan.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	promotionactivityplan.UpdateDefaultUpdatedAt = promotionactivityplanDescUpdatedAt.UpdateDefault.(func() time.Time)
 	proxyMixin := schema.Proxy{}.Mixin()
 	proxyMixinHooks1 := proxyMixin[1].Hooks()
 	proxy.Hooks[0] = proxyMixinHooks1[0]

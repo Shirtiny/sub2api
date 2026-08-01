@@ -936,6 +936,8 @@ var (
 		{Name: "plan_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "subscription_group_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "subscription_days", Type: field.TypeInt, Nullable: true},
+		{Name: "subscription_bonus_activity_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "subscription_bonus_days", Type: field.TypeInt, Default: 0},
 		{Name: "subscription_concurrency", Type: field.TypeInt, Nullable: true},
 		{Name: "subscription_early_reset_enabled", Type: field.TypeBool, Default: false},
 		{Name: "subscription_early_reset_duration_days", Type: field.TypeInt, Default: 0},
@@ -974,7 +976,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "payment_orders_users_payment_orders",
-				Columns:    []*schema.Column{PaymentOrdersColumns[48]},
+				Columns:    []*schema.Column{PaymentOrdersColumns[50]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -991,32 +993,32 @@ var (
 			{
 				Name:    "paymentorder_user_id",
 				Unique:  false,
-				Columns: []*schema.Column{PaymentOrdersColumns[48]},
+				Columns: []*schema.Column{PaymentOrdersColumns[50]},
 			},
 			{
 				Name:    "paymentorder_status",
 				Unique:  false,
-				Columns: []*schema.Column{PaymentOrdersColumns[30]},
+				Columns: []*schema.Column{PaymentOrdersColumns[32]},
 			},
 			{
 				Name:    "paymentorder_expires_at",
 				Unique:  false,
-				Columns: []*schema.Column{PaymentOrdersColumns[38]},
+				Columns: []*schema.Column{PaymentOrdersColumns[40]},
 			},
 			{
 				Name:    "paymentorder_created_at",
 				Unique:  false,
-				Columns: []*schema.Column{PaymentOrdersColumns[46]},
+				Columns: []*schema.Column{PaymentOrdersColumns[48]},
 			},
 			{
 				Name:    "paymentorder_paid_at",
 				Unique:  false,
-				Columns: []*schema.Column{PaymentOrdersColumns[39]},
+				Columns: []*schema.Column{PaymentOrdersColumns[41]},
 			},
 			{
 				Name:    "paymentorder_payment_type_paid_at",
 				Unique:  false,
-				Columns: []*schema.Column{PaymentOrdersColumns[11], PaymentOrdersColumns[39]},
+				Columns: []*schema.Column{PaymentOrdersColumns[11], PaymentOrdersColumns[41]},
 			},
 			{
 				Name:    "paymentorder_order_type",
@@ -1026,7 +1028,7 @@ var (
 			{
 				Name:    "paymentorder_user_id_plan_id_status_expires_at",
 				Unique:  false,
-				Columns: []*schema.Column{PaymentOrdersColumns[48], PaymentOrdersColumns[17], PaymentOrdersColumns[30], PaymentOrdersColumns[38]},
+				Columns: []*schema.Column{PaymentOrdersColumns[50], PaymentOrdersColumns[17], PaymentOrdersColumns[32], PaymentOrdersColumns[40]},
 				Annotation: &entsql.IndexAnnotation{
 					Where: "subscription_multiplier >= 1",
 				},
@@ -1206,6 +1208,113 @@ var (
 				Name:    "promocodeusage_promo_code_id_user_id",
 				Unique:  true,
 				Columns: []*schema.Column{PromoCodeUsagesColumns[3], PromoCodeUsagesColumns[4]},
+			},
+		},
+	}
+	// PromotionActivitiesColumns holds the columns for the "promotion_activities" table.
+	PromotionActivitiesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "name", Type: field.TypeString, Size: 100},
+		{Name: "activity_type", Type: field.TypeString, Size: 50},
+		{Name: "enabled", Type: field.TypeBool, Default: false},
+		{Name: "starts_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "ends_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "max_uses_per_user", Type: field.TypeInt},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+	}
+	// PromotionActivitiesTable holds the schema information for the "promotion_activities" table.
+	PromotionActivitiesTable = &schema.Table{
+		Name:       "promotion_activities",
+		Columns:    PromotionActivitiesColumns,
+		PrimaryKey: []*schema.Column{PromotionActivitiesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "promotionactivity_activity_type_enabled_starts_at_ends_at",
+				Unique:  false,
+				Columns: []*schema.Column{PromotionActivitiesColumns[2], PromotionActivitiesColumns[3], PromotionActivitiesColumns[4], PromotionActivitiesColumns[5]},
+			},
+		},
+	}
+	// PromotionActivityParticipationsColumns holds the columns for the "promotion_activity_participations" table.
+	PromotionActivityParticipationsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "user_id", Type: field.TypeInt64},
+		{Name: "order_id", Type: field.TypeInt64},
+		{Name: "plan_id", Type: field.TypeInt64},
+		{Name: "bonus_days", Type: field.TypeInt},
+		{Name: "status", Type: field.TypeString, Size: 20},
+		{Name: "reserved_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "granted_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "released_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "release_reason", Type: field.TypeString, Nullable: true, Size: 100},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "activity_id", Type: field.TypeInt64},
+	}
+	// PromotionActivityParticipationsTable holds the schema information for the "promotion_activity_participations" table.
+	PromotionActivityParticipationsTable = &schema.Table{
+		Name:       "promotion_activity_participations",
+		Columns:    PromotionActivityParticipationsColumns,
+		PrimaryKey: []*schema.Column{PromotionActivityParticipationsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "promotion_activity_participations_promotion_activities_participations",
+				Columns:    []*schema.Column{PromotionActivityParticipationsColumns[12]},
+				RefColumns: []*schema.Column{PromotionActivitiesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "promotionactivityparticipation_order_id",
+				Unique:  true,
+				Columns: []*schema.Column{PromotionActivityParticipationsColumns[2]},
+			},
+			{
+				Name:    "promotionactivityparticipation_activity_id_user_id_status",
+				Unique:  false,
+				Columns: []*schema.Column{PromotionActivityParticipationsColumns[12], PromotionActivityParticipationsColumns[1], PromotionActivityParticipationsColumns[5]},
+			},
+			{
+				Name:    "promotionactivityparticipation_user_id_status",
+				Unique:  false,
+				Columns: []*schema.Column{PromotionActivityParticipationsColumns[1], PromotionActivityParticipationsColumns[5]},
+			},
+		},
+	}
+	// PromotionActivityPlansColumns holds the columns for the "promotion_activity_plans" table.
+	PromotionActivityPlansColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "plan_id", Type: field.TypeInt64},
+		{Name: "bonus_days", Type: field.TypeInt},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "activity_id", Type: field.TypeInt64},
+	}
+	// PromotionActivityPlansTable holds the schema information for the "promotion_activity_plans" table.
+	PromotionActivityPlansTable = &schema.Table{
+		Name:       "promotion_activity_plans",
+		Columns:    PromotionActivityPlansColumns,
+		PrimaryKey: []*schema.Column{PromotionActivityPlansColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "promotion_activity_plans_promotion_activities_plan_bonuses",
+				Columns:    []*schema.Column{PromotionActivityPlansColumns[5]},
+				RefColumns: []*schema.Column{PromotionActivitiesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "promotionactivityplan_activity_id_plan_id",
+				Unique:  true,
+				Columns: []*schema.Column{PromotionActivityPlansColumns[5], PromotionActivityPlansColumns[1]},
+			},
+			{
+				Name:    "promotionactivityplan_plan_id",
+				Unique:  false,
+				Columns: []*schema.Column{PromotionActivityPlansColumns[1]},
 			},
 		},
 	}
@@ -1996,6 +2105,9 @@ var (
 		PendingAuthSessionsTable,
 		PromoCodesTable,
 		PromoCodeUsagesTable,
+		PromotionActivitiesTable,
+		PromotionActivityParticipationsTable,
+		PromotionActivityPlansTable,
 		ProxiesTable,
 		RedeemCodesTable,
 		SecuritySecretsTable,
@@ -2100,6 +2212,17 @@ func init() {
 	PromoCodeUsagesTable.ForeignKeys[1].RefTable = UsersTable
 	PromoCodeUsagesTable.Annotation = &entsql.Annotation{
 		Table: "promo_code_usages",
+	}
+	PromotionActivitiesTable.Annotation = &entsql.Annotation{
+		Table: "promotion_activities",
+	}
+	PromotionActivityParticipationsTable.ForeignKeys[0].RefTable = PromotionActivitiesTable
+	PromotionActivityParticipationsTable.Annotation = &entsql.Annotation{
+		Table: "promotion_activity_participations",
+	}
+	PromotionActivityPlansTable.ForeignKeys[0].RefTable = PromotionActivitiesTable
+	PromotionActivityPlansTable.Annotation = &entsql.Annotation{
+		Table: "promotion_activity_plans",
 	}
 	ProxiesTable.Annotation = &entsql.Annotation{
 		Table: "proxies",

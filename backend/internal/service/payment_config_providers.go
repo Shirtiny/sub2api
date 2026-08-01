@@ -164,7 +164,10 @@ func (s *PaymentConfigService) countPendingOrders(ctx context.Context, providerI
 	return s.entClient.PaymentOrder.Query().
 		Where(
 			paymentorder.ProviderInstanceIDEQ(strconv.FormatInt(providerInstanceID, 10)),
-			paymentorder.StatusIn(pendingOrderStatuses...),
+			paymentorder.Or(
+				paymentorder.StatusIn(pendingOrderStatuses...),
+				paymentorder.And(paymentorder.StatusEQ(payment.OrderStatusFailed), paymentorder.PaidAtNotNil()),
+			),
 		).Count(ctx)
 }
 
@@ -172,7 +175,10 @@ func (s *PaymentConfigService) countPendingOrdersByPlan(ctx context.Context, pla
 	return s.entClient.PaymentOrder.Query().
 		Where(
 			paymentorder.PlanIDEQ(planID),
-			paymentorder.StatusIn(pendingOrderStatuses...),
+			paymentorder.Or(
+				paymentorder.StatusIn(pendingOrderStatuses...),
+				paymentorder.And(paymentorder.StatusEQ(payment.OrderStatusFailed), paymentorder.PaidAtNotNil()),
+			),
 		).Count(ctx)
 }
 

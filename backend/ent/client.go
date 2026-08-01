@@ -37,6 +37,9 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/pendingauthsession"
 	"github.com/Wei-Shaw/sub2api/ent/promocode"
 	"github.com/Wei-Shaw/sub2api/ent/promocodeusage"
+	"github.com/Wei-Shaw/sub2api/ent/promotionactivity"
+	"github.com/Wei-Shaw/sub2api/ent/promotionactivityparticipation"
+	"github.com/Wei-Shaw/sub2api/ent/promotionactivityplan"
 	"github.com/Wei-Shaw/sub2api/ent/proxy"
 	"github.com/Wei-Shaw/sub2api/ent/redeemcode"
 	"github.com/Wei-Shaw/sub2api/ent/securitysecret"
@@ -106,6 +109,12 @@ type Client struct {
 	PromoCode *PromoCodeClient
 	// PromoCodeUsage is the client for interacting with the PromoCodeUsage builders.
 	PromoCodeUsage *PromoCodeUsageClient
+	// PromotionActivity is the client for interacting with the PromotionActivity builders.
+	PromotionActivity *PromotionActivityClient
+	// PromotionActivityParticipation is the client for interacting with the PromotionActivityParticipation builders.
+	PromotionActivityParticipation *PromotionActivityParticipationClient
+	// PromotionActivityPlan is the client for interacting with the PromotionActivityPlan builders.
+	PromotionActivityPlan *PromotionActivityPlanClient
 	// Proxy is the client for interacting with the Proxy builders.
 	Proxy *ProxyClient
 	// RedeemCode is the client for interacting with the RedeemCode builders.
@@ -171,6 +180,9 @@ func (c *Client) init() {
 	c.PendingAuthSession = NewPendingAuthSessionClient(c.config)
 	c.PromoCode = NewPromoCodeClient(c.config)
 	c.PromoCodeUsage = NewPromoCodeUsageClient(c.config)
+	c.PromotionActivity = NewPromotionActivityClient(c.config)
+	c.PromotionActivityParticipation = NewPromotionActivityParticipationClient(c.config)
+	c.PromotionActivityPlan = NewPromotionActivityPlanClient(c.config)
 	c.Proxy = NewProxyClient(c.config)
 	c.RedeemCode = NewRedeemCodeClient(c.config)
 	c.SecuritySecret = NewSecuritySecretClient(c.config)
@@ -301,6 +313,9 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		PendingAuthSession:                 NewPendingAuthSessionClient(cfg),
 		PromoCode:                          NewPromoCodeClient(cfg),
 		PromoCodeUsage:                     NewPromoCodeUsageClient(cfg),
+		PromotionActivity:                  NewPromotionActivityClient(cfg),
+		PromotionActivityParticipation:     NewPromotionActivityParticipationClient(cfg),
+		PromotionActivityPlan:              NewPromotionActivityPlanClient(cfg),
 		Proxy:                              NewProxyClient(cfg),
 		RedeemCode:                         NewRedeemCodeClient(cfg),
 		SecuritySecret:                     NewSecuritySecretClient(cfg),
@@ -358,6 +373,9 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		PendingAuthSession:                 NewPendingAuthSessionClient(cfg),
 		PromoCode:                          NewPromoCodeClient(cfg),
 		PromoCodeUsage:                     NewPromoCodeUsageClient(cfg),
+		PromotionActivity:                  NewPromotionActivityClient(cfg),
+		PromotionActivityParticipation:     NewPromotionActivityParticipationClient(cfg),
+		PromotionActivityPlan:              NewPromotionActivityPlanClient(cfg),
 		Proxy:                              NewProxyClient(cfg),
 		RedeemCode:                         NewRedeemCodeClient(cfg),
 		SecuritySecret:                     NewSecuritySecretClient(cfg),
@@ -409,7 +427,8 @@ func (c *Client) Use(hooks ...Hook) {
 		c.ChannelMonitorRequestTemplate, c.ErrorPassthroughRule, c.Group,
 		c.IdempotencyRecord, c.IdentityAdoptionDecision, c.PaymentAuditLog,
 		c.PaymentOrder, c.PaymentProviderInstance, c.PendingAuthSession, c.PromoCode,
-		c.PromoCodeUsage, c.Proxy, c.RedeemCode, c.SecuritySecret, c.Setting,
+		c.PromoCodeUsage, c.PromotionActivity, c.PromotionActivityParticipation,
+		c.PromotionActivityPlan, c.Proxy, c.RedeemCode, c.SecuritySecret, c.Setting,
 		c.SubscriptionConcurrencyEntitlement, c.SubscriptionEarlyResetEntitlement,
 		c.SubscriptionPlan, c.TLSFingerprintProfile, c.UsageCleanupTask, c.UsageLog,
 		c.User, c.UserAllowedGroup, c.UserAttributeDefinition, c.UserAttributeValue,
@@ -429,7 +448,8 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.ChannelMonitorRequestTemplate, c.ErrorPassthroughRule, c.Group,
 		c.IdempotencyRecord, c.IdentityAdoptionDecision, c.PaymentAuditLog,
 		c.PaymentOrder, c.PaymentProviderInstance, c.PendingAuthSession, c.PromoCode,
-		c.PromoCodeUsage, c.Proxy, c.RedeemCode, c.SecuritySecret, c.Setting,
+		c.PromoCodeUsage, c.PromotionActivity, c.PromotionActivityParticipation,
+		c.PromotionActivityPlan, c.Proxy, c.RedeemCode, c.SecuritySecret, c.Setting,
 		c.SubscriptionConcurrencyEntitlement, c.SubscriptionEarlyResetEntitlement,
 		c.SubscriptionPlan, c.TLSFingerprintProfile, c.UsageCleanupTask, c.UsageLog,
 		c.User, c.UserAllowedGroup, c.UserAttributeDefinition, c.UserAttributeValue,
@@ -486,6 +506,12 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.PromoCode.mutate(ctx, m)
 	case *PromoCodeUsageMutation:
 		return c.PromoCodeUsage.mutate(ctx, m)
+	case *PromotionActivityMutation:
+		return c.PromotionActivity.mutate(ctx, m)
+	case *PromotionActivityParticipationMutation:
+		return c.PromotionActivityParticipation.mutate(ctx, m)
+	case *PromotionActivityPlanMutation:
+		return c.PromotionActivityPlan.mutate(ctx, m)
 	case *ProxyMutation:
 		return c.Proxy.mutate(ctx, m)
 	case *RedeemCodeMutation:
@@ -4030,6 +4056,469 @@ func (c *PromoCodeUsageClient) mutate(ctx context.Context, m *PromoCodeUsageMuta
 	}
 }
 
+// PromotionActivityClient is a client for the PromotionActivity schema.
+type PromotionActivityClient struct {
+	config
+}
+
+// NewPromotionActivityClient returns a client for the PromotionActivity from the given config.
+func NewPromotionActivityClient(c config) *PromotionActivityClient {
+	return &PromotionActivityClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `promotionactivity.Hooks(f(g(h())))`.
+func (c *PromotionActivityClient) Use(hooks ...Hook) {
+	c.hooks.PromotionActivity = append(c.hooks.PromotionActivity, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `promotionactivity.Intercept(f(g(h())))`.
+func (c *PromotionActivityClient) Intercept(interceptors ...Interceptor) {
+	c.inters.PromotionActivity = append(c.inters.PromotionActivity, interceptors...)
+}
+
+// Create returns a builder for creating a PromotionActivity entity.
+func (c *PromotionActivityClient) Create() *PromotionActivityCreate {
+	mutation := newPromotionActivityMutation(c.config, OpCreate)
+	return &PromotionActivityCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of PromotionActivity entities.
+func (c *PromotionActivityClient) CreateBulk(builders ...*PromotionActivityCreate) *PromotionActivityCreateBulk {
+	return &PromotionActivityCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *PromotionActivityClient) MapCreateBulk(slice any, setFunc func(*PromotionActivityCreate, int)) *PromotionActivityCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &PromotionActivityCreateBulk{err: fmt.Errorf("calling to PromotionActivityClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*PromotionActivityCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &PromotionActivityCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for PromotionActivity.
+func (c *PromotionActivityClient) Update() *PromotionActivityUpdate {
+	mutation := newPromotionActivityMutation(c.config, OpUpdate)
+	return &PromotionActivityUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *PromotionActivityClient) UpdateOne(_m *PromotionActivity) *PromotionActivityUpdateOne {
+	mutation := newPromotionActivityMutation(c.config, OpUpdateOne, withPromotionActivity(_m))
+	return &PromotionActivityUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *PromotionActivityClient) UpdateOneID(id int64) *PromotionActivityUpdateOne {
+	mutation := newPromotionActivityMutation(c.config, OpUpdateOne, withPromotionActivityID(id))
+	return &PromotionActivityUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for PromotionActivity.
+func (c *PromotionActivityClient) Delete() *PromotionActivityDelete {
+	mutation := newPromotionActivityMutation(c.config, OpDelete)
+	return &PromotionActivityDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *PromotionActivityClient) DeleteOne(_m *PromotionActivity) *PromotionActivityDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *PromotionActivityClient) DeleteOneID(id int64) *PromotionActivityDeleteOne {
+	builder := c.Delete().Where(promotionactivity.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &PromotionActivityDeleteOne{builder}
+}
+
+// Query returns a query builder for PromotionActivity.
+func (c *PromotionActivityClient) Query() *PromotionActivityQuery {
+	return &PromotionActivityQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypePromotionActivity},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a PromotionActivity entity by its id.
+func (c *PromotionActivityClient) Get(ctx context.Context, id int64) (*PromotionActivity, error) {
+	return c.Query().Where(promotionactivity.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *PromotionActivityClient) GetX(ctx context.Context, id int64) *PromotionActivity {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryPlanBonuses queries the plan_bonuses edge of a PromotionActivity.
+func (c *PromotionActivityClient) QueryPlanBonuses(_m *PromotionActivity) *PromotionActivityPlanQuery {
+	query := (&PromotionActivityPlanClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(promotionactivity.Table, promotionactivity.FieldID, id),
+			sqlgraph.To(promotionactivityplan.Table, promotionactivityplan.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, promotionactivity.PlanBonusesTable, promotionactivity.PlanBonusesColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryParticipations queries the participations edge of a PromotionActivity.
+func (c *PromotionActivityClient) QueryParticipations(_m *PromotionActivity) *PromotionActivityParticipationQuery {
+	query := (&PromotionActivityParticipationClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(promotionactivity.Table, promotionactivity.FieldID, id),
+			sqlgraph.To(promotionactivityparticipation.Table, promotionactivityparticipation.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, promotionactivity.ParticipationsTable, promotionactivity.ParticipationsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *PromotionActivityClient) Hooks() []Hook {
+	return c.hooks.PromotionActivity
+}
+
+// Interceptors returns the client interceptors.
+func (c *PromotionActivityClient) Interceptors() []Interceptor {
+	return c.inters.PromotionActivity
+}
+
+func (c *PromotionActivityClient) mutate(ctx context.Context, m *PromotionActivityMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&PromotionActivityCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&PromotionActivityUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&PromotionActivityUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&PromotionActivityDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown PromotionActivity mutation op: %q", m.Op())
+	}
+}
+
+// PromotionActivityParticipationClient is a client for the PromotionActivityParticipation schema.
+type PromotionActivityParticipationClient struct {
+	config
+}
+
+// NewPromotionActivityParticipationClient returns a client for the PromotionActivityParticipation from the given config.
+func NewPromotionActivityParticipationClient(c config) *PromotionActivityParticipationClient {
+	return &PromotionActivityParticipationClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `promotionactivityparticipation.Hooks(f(g(h())))`.
+func (c *PromotionActivityParticipationClient) Use(hooks ...Hook) {
+	c.hooks.PromotionActivityParticipation = append(c.hooks.PromotionActivityParticipation, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `promotionactivityparticipation.Intercept(f(g(h())))`.
+func (c *PromotionActivityParticipationClient) Intercept(interceptors ...Interceptor) {
+	c.inters.PromotionActivityParticipation = append(c.inters.PromotionActivityParticipation, interceptors...)
+}
+
+// Create returns a builder for creating a PromotionActivityParticipation entity.
+func (c *PromotionActivityParticipationClient) Create() *PromotionActivityParticipationCreate {
+	mutation := newPromotionActivityParticipationMutation(c.config, OpCreate)
+	return &PromotionActivityParticipationCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of PromotionActivityParticipation entities.
+func (c *PromotionActivityParticipationClient) CreateBulk(builders ...*PromotionActivityParticipationCreate) *PromotionActivityParticipationCreateBulk {
+	return &PromotionActivityParticipationCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *PromotionActivityParticipationClient) MapCreateBulk(slice any, setFunc func(*PromotionActivityParticipationCreate, int)) *PromotionActivityParticipationCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &PromotionActivityParticipationCreateBulk{err: fmt.Errorf("calling to PromotionActivityParticipationClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*PromotionActivityParticipationCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &PromotionActivityParticipationCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for PromotionActivityParticipation.
+func (c *PromotionActivityParticipationClient) Update() *PromotionActivityParticipationUpdate {
+	mutation := newPromotionActivityParticipationMutation(c.config, OpUpdate)
+	return &PromotionActivityParticipationUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *PromotionActivityParticipationClient) UpdateOne(_m *PromotionActivityParticipation) *PromotionActivityParticipationUpdateOne {
+	mutation := newPromotionActivityParticipationMutation(c.config, OpUpdateOne, withPromotionActivityParticipation(_m))
+	return &PromotionActivityParticipationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *PromotionActivityParticipationClient) UpdateOneID(id int64) *PromotionActivityParticipationUpdateOne {
+	mutation := newPromotionActivityParticipationMutation(c.config, OpUpdateOne, withPromotionActivityParticipationID(id))
+	return &PromotionActivityParticipationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for PromotionActivityParticipation.
+func (c *PromotionActivityParticipationClient) Delete() *PromotionActivityParticipationDelete {
+	mutation := newPromotionActivityParticipationMutation(c.config, OpDelete)
+	return &PromotionActivityParticipationDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *PromotionActivityParticipationClient) DeleteOne(_m *PromotionActivityParticipation) *PromotionActivityParticipationDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *PromotionActivityParticipationClient) DeleteOneID(id int64) *PromotionActivityParticipationDeleteOne {
+	builder := c.Delete().Where(promotionactivityparticipation.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &PromotionActivityParticipationDeleteOne{builder}
+}
+
+// Query returns a query builder for PromotionActivityParticipation.
+func (c *PromotionActivityParticipationClient) Query() *PromotionActivityParticipationQuery {
+	return &PromotionActivityParticipationQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypePromotionActivityParticipation},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a PromotionActivityParticipation entity by its id.
+func (c *PromotionActivityParticipationClient) Get(ctx context.Context, id int64) (*PromotionActivityParticipation, error) {
+	return c.Query().Where(promotionactivityparticipation.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *PromotionActivityParticipationClient) GetX(ctx context.Context, id int64) *PromotionActivityParticipation {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryActivity queries the activity edge of a PromotionActivityParticipation.
+func (c *PromotionActivityParticipationClient) QueryActivity(_m *PromotionActivityParticipation) *PromotionActivityQuery {
+	query := (&PromotionActivityClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(promotionactivityparticipation.Table, promotionactivityparticipation.FieldID, id),
+			sqlgraph.To(promotionactivity.Table, promotionactivity.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, promotionactivityparticipation.ActivityTable, promotionactivityparticipation.ActivityColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *PromotionActivityParticipationClient) Hooks() []Hook {
+	return c.hooks.PromotionActivityParticipation
+}
+
+// Interceptors returns the client interceptors.
+func (c *PromotionActivityParticipationClient) Interceptors() []Interceptor {
+	return c.inters.PromotionActivityParticipation
+}
+
+func (c *PromotionActivityParticipationClient) mutate(ctx context.Context, m *PromotionActivityParticipationMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&PromotionActivityParticipationCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&PromotionActivityParticipationUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&PromotionActivityParticipationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&PromotionActivityParticipationDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown PromotionActivityParticipation mutation op: %q", m.Op())
+	}
+}
+
+// PromotionActivityPlanClient is a client for the PromotionActivityPlan schema.
+type PromotionActivityPlanClient struct {
+	config
+}
+
+// NewPromotionActivityPlanClient returns a client for the PromotionActivityPlan from the given config.
+func NewPromotionActivityPlanClient(c config) *PromotionActivityPlanClient {
+	return &PromotionActivityPlanClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `promotionactivityplan.Hooks(f(g(h())))`.
+func (c *PromotionActivityPlanClient) Use(hooks ...Hook) {
+	c.hooks.PromotionActivityPlan = append(c.hooks.PromotionActivityPlan, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `promotionactivityplan.Intercept(f(g(h())))`.
+func (c *PromotionActivityPlanClient) Intercept(interceptors ...Interceptor) {
+	c.inters.PromotionActivityPlan = append(c.inters.PromotionActivityPlan, interceptors...)
+}
+
+// Create returns a builder for creating a PromotionActivityPlan entity.
+func (c *PromotionActivityPlanClient) Create() *PromotionActivityPlanCreate {
+	mutation := newPromotionActivityPlanMutation(c.config, OpCreate)
+	return &PromotionActivityPlanCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of PromotionActivityPlan entities.
+func (c *PromotionActivityPlanClient) CreateBulk(builders ...*PromotionActivityPlanCreate) *PromotionActivityPlanCreateBulk {
+	return &PromotionActivityPlanCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *PromotionActivityPlanClient) MapCreateBulk(slice any, setFunc func(*PromotionActivityPlanCreate, int)) *PromotionActivityPlanCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &PromotionActivityPlanCreateBulk{err: fmt.Errorf("calling to PromotionActivityPlanClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*PromotionActivityPlanCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &PromotionActivityPlanCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for PromotionActivityPlan.
+func (c *PromotionActivityPlanClient) Update() *PromotionActivityPlanUpdate {
+	mutation := newPromotionActivityPlanMutation(c.config, OpUpdate)
+	return &PromotionActivityPlanUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *PromotionActivityPlanClient) UpdateOne(_m *PromotionActivityPlan) *PromotionActivityPlanUpdateOne {
+	mutation := newPromotionActivityPlanMutation(c.config, OpUpdateOne, withPromotionActivityPlan(_m))
+	return &PromotionActivityPlanUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *PromotionActivityPlanClient) UpdateOneID(id int64) *PromotionActivityPlanUpdateOne {
+	mutation := newPromotionActivityPlanMutation(c.config, OpUpdateOne, withPromotionActivityPlanID(id))
+	return &PromotionActivityPlanUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for PromotionActivityPlan.
+func (c *PromotionActivityPlanClient) Delete() *PromotionActivityPlanDelete {
+	mutation := newPromotionActivityPlanMutation(c.config, OpDelete)
+	return &PromotionActivityPlanDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *PromotionActivityPlanClient) DeleteOne(_m *PromotionActivityPlan) *PromotionActivityPlanDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *PromotionActivityPlanClient) DeleteOneID(id int64) *PromotionActivityPlanDeleteOne {
+	builder := c.Delete().Where(promotionactivityplan.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &PromotionActivityPlanDeleteOne{builder}
+}
+
+// Query returns a query builder for PromotionActivityPlan.
+func (c *PromotionActivityPlanClient) Query() *PromotionActivityPlanQuery {
+	return &PromotionActivityPlanQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypePromotionActivityPlan},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a PromotionActivityPlan entity by its id.
+func (c *PromotionActivityPlanClient) Get(ctx context.Context, id int64) (*PromotionActivityPlan, error) {
+	return c.Query().Where(promotionactivityplan.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *PromotionActivityPlanClient) GetX(ctx context.Context, id int64) *PromotionActivityPlan {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryActivity queries the activity edge of a PromotionActivityPlan.
+func (c *PromotionActivityPlanClient) QueryActivity(_m *PromotionActivityPlan) *PromotionActivityQuery {
+	query := (&PromotionActivityClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(promotionactivityplan.Table, promotionactivityplan.FieldID, id),
+			sqlgraph.To(promotionactivity.Table, promotionactivity.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, promotionactivityplan.ActivityTable, promotionactivityplan.ActivityColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *PromotionActivityPlanClient) Hooks() []Hook {
+	return c.hooks.PromotionActivityPlan
+}
+
+// Interceptors returns the client interceptors.
+func (c *PromotionActivityPlanClient) Interceptors() []Interceptor {
+	return c.inters.PromotionActivityPlan
+}
+
+func (c *PromotionActivityPlanClient) mutate(ctx context.Context, m *PromotionActivityPlanMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&PromotionActivityPlanCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&PromotionActivityPlanUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&PromotionActivityPlanUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&PromotionActivityPlanDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown PromotionActivityPlan mutation op: %q", m.Op())
+	}
+}
+
 // ProxyClient is a client for the Proxy schema.
 type ProxyClient struct {
 	config
@@ -6719,7 +7208,8 @@ type (
 		ChannelMonitorHistory, ChannelMonitorRequestTemplate, ErrorPassthroughRule,
 		Group, IdempotencyRecord, IdentityAdoptionDecision, PaymentAuditLog,
 		PaymentOrder, PaymentProviderInstance, PendingAuthSession, PromoCode,
-		PromoCodeUsage, Proxy, RedeemCode, SecuritySecret, Setting,
+		PromoCodeUsage, PromotionActivity, PromotionActivityParticipation,
+		PromotionActivityPlan, Proxy, RedeemCode, SecuritySecret, Setting,
 		SubscriptionConcurrencyEntitlement, SubscriptionEarlyResetEntitlement,
 		SubscriptionPlan, TLSFingerprintProfile, UsageCleanupTask, UsageLog, User,
 		UserAllowedGroup, UserAttributeDefinition, UserAttributeValue,
@@ -6731,7 +7221,8 @@ type (
 		ChannelMonitorHistory, ChannelMonitorRequestTemplate, ErrorPassthroughRule,
 		Group, IdempotencyRecord, IdentityAdoptionDecision, PaymentAuditLog,
 		PaymentOrder, PaymentProviderInstance, PendingAuthSession, PromoCode,
-		PromoCodeUsage, Proxy, RedeemCode, SecuritySecret, Setting,
+		PromoCodeUsage, PromotionActivity, PromotionActivityParticipation,
+		PromotionActivityPlan, Proxy, RedeemCode, SecuritySecret, Setting,
 		SubscriptionConcurrencyEntitlement, SubscriptionEarlyResetEntitlement,
 		SubscriptionPlan, TLSFingerprintProfile, UsageCleanupTask, UsageLog, User,
 		UserAllowedGroup, UserAttributeDefinition, UserAttributeValue,

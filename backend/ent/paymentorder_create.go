@@ -239,6 +239,34 @@ func (_c *PaymentOrderCreate) SetNillableSubscriptionDays(v *int) *PaymentOrderC
 	return _c
 }
 
+// SetSubscriptionBonusActivityID sets the "subscription_bonus_activity_id" field.
+func (_c *PaymentOrderCreate) SetSubscriptionBonusActivityID(v int64) *PaymentOrderCreate {
+	_c.mutation.SetSubscriptionBonusActivityID(v)
+	return _c
+}
+
+// SetNillableSubscriptionBonusActivityID sets the "subscription_bonus_activity_id" field if the given value is not nil.
+func (_c *PaymentOrderCreate) SetNillableSubscriptionBonusActivityID(v *int64) *PaymentOrderCreate {
+	if v != nil {
+		_c.SetSubscriptionBonusActivityID(*v)
+	}
+	return _c
+}
+
+// SetSubscriptionBonusDays sets the "subscription_bonus_days" field.
+func (_c *PaymentOrderCreate) SetSubscriptionBonusDays(v int) *PaymentOrderCreate {
+	_c.mutation.SetSubscriptionBonusDays(v)
+	return _c
+}
+
+// SetNillableSubscriptionBonusDays sets the "subscription_bonus_days" field if the given value is not nil.
+func (_c *PaymentOrderCreate) SetNillableSubscriptionBonusDays(v *int) *PaymentOrderCreate {
+	if v != nil {
+		_c.SetSubscriptionBonusDays(*v)
+	}
+	return _c
+}
+
 // SetSubscriptionConcurrency sets the "subscription_concurrency" field.
 func (_c *PaymentOrderCreate) SetSubscriptionConcurrency(v int) *PaymentOrderCreate {
 	_c.mutation.SetSubscriptionConcurrency(v)
@@ -655,6 +683,10 @@ func (_c *PaymentOrderCreate) defaults() {
 		v := paymentorder.DefaultOrderType
 		_c.mutation.SetOrderType(v)
 	}
+	if _, ok := _c.mutation.SubscriptionBonusDays(); !ok {
+		v := paymentorder.DefaultSubscriptionBonusDays
+		_c.mutation.SetSubscriptionBonusDays(v)
+	}
 	if _, ok := _c.mutation.SubscriptionEarlyResetEnabled(); !ok {
 		v := paymentorder.DefaultSubscriptionEarlyResetEnabled
 		_c.mutation.SetSubscriptionEarlyResetEnabled(v)
@@ -761,6 +793,14 @@ func (_c *PaymentOrderCreate) check() error {
 	if v, ok := _c.mutation.OrderType(); ok {
 		if err := paymentorder.OrderTypeValidator(v); err != nil {
 			return &ValidationError{Name: "order_type", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.order_type": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.SubscriptionBonusDays(); !ok {
+		return &ValidationError{Name: "subscription_bonus_days", err: errors.New(`ent: missing required field "PaymentOrder.subscription_bonus_days"`)}
+	}
+	if v, ok := _c.mutation.SubscriptionBonusDays(); ok {
+		if err := paymentorder.SubscriptionBonusDaysValidator(v); err != nil {
+			return &ValidationError{Name: "subscription_bonus_days", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.subscription_bonus_days": %w`, err)}
 		}
 	}
 	if v, ok := _c.mutation.SubscriptionConcurrency(); ok {
@@ -938,6 +978,14 @@ func (_c *PaymentOrderCreate) createSpec() (*PaymentOrder, *sqlgraph.CreateSpec)
 	if value, ok := _c.mutation.SubscriptionDays(); ok {
 		_spec.SetField(paymentorder.FieldSubscriptionDays, field.TypeInt, value)
 		_node.SubscriptionDays = &value
+	}
+	if value, ok := _c.mutation.SubscriptionBonusActivityID(); ok {
+		_spec.SetField(paymentorder.FieldSubscriptionBonusActivityID, field.TypeInt64, value)
+		_node.SubscriptionBonusActivityID = &value
+	}
+	if value, ok := _c.mutation.SubscriptionBonusDays(); ok {
+		_spec.SetField(paymentorder.FieldSubscriptionBonusDays, field.TypeInt, value)
+		_node.SubscriptionBonusDays = value
 	}
 	if value, ok := _c.mutation.SubscriptionConcurrency(); ok {
 		_spec.SetField(paymentorder.FieldSubscriptionConcurrency, field.TypeInt, value)
@@ -1447,6 +1495,48 @@ func (u *PaymentOrderUpsert) AddSubscriptionDays(v int) *PaymentOrderUpsert {
 // ClearSubscriptionDays clears the value of the "subscription_days" field.
 func (u *PaymentOrderUpsert) ClearSubscriptionDays() *PaymentOrderUpsert {
 	u.SetNull(paymentorder.FieldSubscriptionDays)
+	return u
+}
+
+// SetSubscriptionBonusActivityID sets the "subscription_bonus_activity_id" field.
+func (u *PaymentOrderUpsert) SetSubscriptionBonusActivityID(v int64) *PaymentOrderUpsert {
+	u.Set(paymentorder.FieldSubscriptionBonusActivityID, v)
+	return u
+}
+
+// UpdateSubscriptionBonusActivityID sets the "subscription_bonus_activity_id" field to the value that was provided on create.
+func (u *PaymentOrderUpsert) UpdateSubscriptionBonusActivityID() *PaymentOrderUpsert {
+	u.SetExcluded(paymentorder.FieldSubscriptionBonusActivityID)
+	return u
+}
+
+// AddSubscriptionBonusActivityID adds v to the "subscription_bonus_activity_id" field.
+func (u *PaymentOrderUpsert) AddSubscriptionBonusActivityID(v int64) *PaymentOrderUpsert {
+	u.Add(paymentorder.FieldSubscriptionBonusActivityID, v)
+	return u
+}
+
+// ClearSubscriptionBonusActivityID clears the value of the "subscription_bonus_activity_id" field.
+func (u *PaymentOrderUpsert) ClearSubscriptionBonusActivityID() *PaymentOrderUpsert {
+	u.SetNull(paymentorder.FieldSubscriptionBonusActivityID)
+	return u
+}
+
+// SetSubscriptionBonusDays sets the "subscription_bonus_days" field.
+func (u *PaymentOrderUpsert) SetSubscriptionBonusDays(v int) *PaymentOrderUpsert {
+	u.Set(paymentorder.FieldSubscriptionBonusDays, v)
+	return u
+}
+
+// UpdateSubscriptionBonusDays sets the "subscription_bonus_days" field to the value that was provided on create.
+func (u *PaymentOrderUpsert) UpdateSubscriptionBonusDays() *PaymentOrderUpsert {
+	u.SetExcluded(paymentorder.FieldSubscriptionBonusDays)
+	return u
+}
+
+// AddSubscriptionBonusDays adds v to the "subscription_bonus_days" field.
+func (u *PaymentOrderUpsert) AddSubscriptionBonusDays(v int) *PaymentOrderUpsert {
+	u.Add(paymentorder.FieldSubscriptionBonusDays, v)
 	return u
 }
 
@@ -2351,6 +2441,55 @@ func (u *PaymentOrderUpsertOne) UpdateSubscriptionDays() *PaymentOrderUpsertOne 
 func (u *PaymentOrderUpsertOne) ClearSubscriptionDays() *PaymentOrderUpsertOne {
 	return u.Update(func(s *PaymentOrderUpsert) {
 		s.ClearSubscriptionDays()
+	})
+}
+
+// SetSubscriptionBonusActivityID sets the "subscription_bonus_activity_id" field.
+func (u *PaymentOrderUpsertOne) SetSubscriptionBonusActivityID(v int64) *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.SetSubscriptionBonusActivityID(v)
+	})
+}
+
+// AddSubscriptionBonusActivityID adds v to the "subscription_bonus_activity_id" field.
+func (u *PaymentOrderUpsertOne) AddSubscriptionBonusActivityID(v int64) *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.AddSubscriptionBonusActivityID(v)
+	})
+}
+
+// UpdateSubscriptionBonusActivityID sets the "subscription_bonus_activity_id" field to the value that was provided on create.
+func (u *PaymentOrderUpsertOne) UpdateSubscriptionBonusActivityID() *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.UpdateSubscriptionBonusActivityID()
+	})
+}
+
+// ClearSubscriptionBonusActivityID clears the value of the "subscription_bonus_activity_id" field.
+func (u *PaymentOrderUpsertOne) ClearSubscriptionBonusActivityID() *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.ClearSubscriptionBonusActivityID()
+	})
+}
+
+// SetSubscriptionBonusDays sets the "subscription_bonus_days" field.
+func (u *PaymentOrderUpsertOne) SetSubscriptionBonusDays(v int) *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.SetSubscriptionBonusDays(v)
+	})
+}
+
+// AddSubscriptionBonusDays adds v to the "subscription_bonus_days" field.
+func (u *PaymentOrderUpsertOne) AddSubscriptionBonusDays(v int) *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.AddSubscriptionBonusDays(v)
+	})
+}
+
+// UpdateSubscriptionBonusDays sets the "subscription_bonus_days" field to the value that was provided on create.
+func (u *PaymentOrderUpsertOne) UpdateSubscriptionBonusDays() *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.UpdateSubscriptionBonusDays()
 	})
 }
 
@@ -3500,6 +3639,55 @@ func (u *PaymentOrderUpsertBulk) UpdateSubscriptionDays() *PaymentOrderUpsertBul
 func (u *PaymentOrderUpsertBulk) ClearSubscriptionDays() *PaymentOrderUpsertBulk {
 	return u.Update(func(s *PaymentOrderUpsert) {
 		s.ClearSubscriptionDays()
+	})
+}
+
+// SetSubscriptionBonusActivityID sets the "subscription_bonus_activity_id" field.
+func (u *PaymentOrderUpsertBulk) SetSubscriptionBonusActivityID(v int64) *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.SetSubscriptionBonusActivityID(v)
+	})
+}
+
+// AddSubscriptionBonusActivityID adds v to the "subscription_bonus_activity_id" field.
+func (u *PaymentOrderUpsertBulk) AddSubscriptionBonusActivityID(v int64) *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.AddSubscriptionBonusActivityID(v)
+	})
+}
+
+// UpdateSubscriptionBonusActivityID sets the "subscription_bonus_activity_id" field to the value that was provided on create.
+func (u *PaymentOrderUpsertBulk) UpdateSubscriptionBonusActivityID() *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.UpdateSubscriptionBonusActivityID()
+	})
+}
+
+// ClearSubscriptionBonusActivityID clears the value of the "subscription_bonus_activity_id" field.
+func (u *PaymentOrderUpsertBulk) ClearSubscriptionBonusActivityID() *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.ClearSubscriptionBonusActivityID()
+	})
+}
+
+// SetSubscriptionBonusDays sets the "subscription_bonus_days" field.
+func (u *PaymentOrderUpsertBulk) SetSubscriptionBonusDays(v int) *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.SetSubscriptionBonusDays(v)
+	})
+}
+
+// AddSubscriptionBonusDays adds v to the "subscription_bonus_days" field.
+func (u *PaymentOrderUpsertBulk) AddSubscriptionBonusDays(v int) *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.AddSubscriptionBonusDays(v)
+	})
+}
+
+// UpdateSubscriptionBonusDays sets the "subscription_bonus_days" field to the value that was provided on create.
+func (u *PaymentOrderUpsertBulk) UpdateSubscriptionBonusDays() *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.UpdateSubscriptionBonusDays()
 	})
 }
 

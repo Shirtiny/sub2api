@@ -94,6 +94,15 @@ func (PaymentOrder) Fields() []ent.Field {
 		field.Int("subscription_days").
 			Optional().
 			Nillable(),
+		field.Int64("subscription_bonus_activity_id").
+			Optional().
+			Nillable().
+			Comment("promotion activity snapshot for subscription bonus days"),
+		field.Int("subscription_bonus_days").
+			Default(0).
+			Min(0).
+			Max(36500).
+			Comment("extra subscription days reserved at order creation"),
 		field.Int("subscription_concurrency").
 			Optional().
 			Nillable().

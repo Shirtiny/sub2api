@@ -82,6 +82,7 @@ export interface BuildCreateOrderPayloadInput {
   planId?: number
   origin?: string
   cafeCouponCode?: string
+  expectedSubscriptionBonusActivityId?: number
   multiplier?: number
   isMobile: boolean
   isWechatBrowser: boolean
@@ -140,6 +141,9 @@ export function buildCreateOrderPayload(input: BuildCreateOrderPayloadInput): Cr
   }
   if (input.cafeCouponCode) {
     payload.cafe_coupon_code = input.cafeCouponCode
+  }
+  if (input.expectedSubscriptionBonusActivityId) {
+    payload.expected_subscription_bonus_activity_id = input.expectedSubscriptionBonusActivityId
   }
   if (input.multiplier && input.multiplier >= 1) {
     payload.multiplier = input.multiplier

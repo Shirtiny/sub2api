@@ -80,22 +80,23 @@ func generateRandomString(n int) string {
 }
 
 type CreateOrderRequest struct {
-	UserID          int64
-	Amount          float64
-	PaymentType     string
-	OpenID          string
-	ClientIP        string
-	IsMobile        bool
-	IsWeChatBrowser bool
-	SrcHost         string
-	SrcURL          string
-	ReturnURL       string
-	PaymentSource   string
-	OrderType       string
-	PlanID          int64
-	Multiplier      int
-	CafeCouponCode  string
-	Locale          string
+	UserID                              int64
+	Amount                              float64
+	PaymentType                         string
+	OpenID                              string
+	ClientIP                            string
+	IsMobile                            bool
+	IsWeChatBrowser                     bool
+	SrcHost                             string
+	SrcURL                              string
+	ReturnURL                           string
+	PaymentSource                       string
+	OrderType                           string
+	PlanID                              int64
+	Multiplier                          int
+	CafeCouponCode                      string
+	ExpectedSubscriptionBonusActivityID int64
+	Locale                              string
 }
 
 type CreateOrderResponse struct {
@@ -412,10 +413,10 @@ const (
 )
 
 func psComputeValidityDays(days int, unit string) int {
-	switch unit {
-	case validityUnitWeek:
+	switch strings.ToLower(strings.TrimSpace(unit)) {
+	case validityUnitWeek, "weeks":
 		return days * 7
-	case validityUnitMonth:
+	case validityUnitMonth, "months":
 		return days * 30
 	default:
 		return days

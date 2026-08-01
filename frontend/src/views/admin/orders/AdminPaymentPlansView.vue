@@ -6,6 +6,9 @@
         <button @click="loadPlans" :disabled="plansLoading" class="btn btn-secondary" :title="t('common.refresh')">
           <Icon name="refresh" size="md" :class="plansLoading ? 'animate-spin' : ''" />
         </button>
+        <button @click="showActivityDialog = true" class="btn btn-secondary">
+          {{ t('payment.admin.activityConfig') }}
+        </button>
         <button @click="openPlanEdit(null)" class="btn btn-primary">{{ t('payment.admin.createPlan') }}</button>
       </div>
 
@@ -75,6 +78,13 @@
     <!-- Plan Edit Dialog -->
     <PlanEditDialog :show="showPlanDialog" :plan="editingPlan" :groups="groups" @close="showPlanDialog = false" @saved="loadPlans" />
 
+    <ActivityManagementDialog
+      :show="showActivityDialog"
+      :plans="plans"
+      @close="showActivityDialog = false"
+      @changed="loadPlans"
+    />
+
     <ConfirmDialog :show="showDeletePlanDialog" :title="t('payment.admin.deletePlan')" :message="t('payment.admin.deletePlanConfirm')" :confirm-text="t('common.delete')" danger @confirm="handleDeletePlan" @cancel="showDeletePlanDialog = false" />
   </AppLayout>
 </template>
@@ -95,6 +105,7 @@ import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import Icon from '@/components/icons/Icon.vue'
 import GroupBadge from '@/components/common/GroupBadge.vue'
 import PlanEditDialog from './PlanEditDialog.vue'
+import ActivityManagementDialog from './ActivityManagementDialog.vue'
 import { platformTextClass } from '@/utils/platformColors'
 
 const { t } = useI18n()
@@ -129,6 +140,7 @@ function getPlanNameClass(groupId: number): string {
 const plansLoading = ref(false)
 const plans = ref<SubscriptionPlan[]>([])
 const showPlanDialog = ref(false)
+const showActivityDialog = ref(false)
 const showDeletePlanDialog = ref(false)
 const editingPlan = ref<SubscriptionPlan | null>(null)
 const deletingPlanId = ref<number | null>(null)

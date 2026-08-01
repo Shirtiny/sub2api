@@ -105,6 +105,16 @@ func RegisterPaymentRoutes(
 			plans.DELETE("/:id", adminPaymentHandler.DeletePlan)
 		}
 
+		// Promotion Activities
+		activities := adminGroup.Group("/activities")
+		{
+			activities.GET("", adminPaymentHandler.ListPromotionActivities)
+			activities.GET("/:id", adminPaymentHandler.GetPromotionActivity)
+			activities.POST("", adminPaymentHandler.CreatePromotionActivity)
+			activities.PUT("/:id", adminPaymentHandler.UpdatePromotionActivity)
+			activities.DELETE("/:id", adminPaymentHandler.DeletePromotionActivity)
+		}
+
 		// Provider Instances
 		providers := adminGroup.Group("/providers")
 		{

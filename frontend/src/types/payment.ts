@@ -89,6 +89,8 @@ export interface PaymentOrder {
   created_at: string
   expires_at: string
   paid_at?: string
+  failed_at?: string
+  failed_reason?: string
   completed_at?: string
   refund_amount: number
   refund_reason?: string
@@ -133,6 +135,45 @@ export interface SubscriptionPlan {
   custom_multiplier_enabled?: boolean
   custom_multiplier_min?: number
   custom_multiplier_max?: number
+  subscription_bonus?: SubscriptionBonusBenefit
+}
+
+export interface SubscriptionBonusBenefit {
+  activity_id: number
+  days: number
+  ends_at: string
+}
+
+export type PromotionActivityStatus = 'disabled' | 'scheduled' | 'active' | 'ended'
+
+export interface PromotionActivityPlanBonus {
+  id?: number
+  plan_id: number
+  bonus_days: number
+}
+
+export interface PromotionActivity {
+  id: number
+  name: string
+  type: 'subscription_bonus_days'
+  enabled: boolean
+  status: PromotionActivityStatus
+  starts_at: string
+  ends_at: string
+  max_uses_per_user: number
+  plan_bonuses: PromotionActivityPlanBonus[]
+  created_at: string
+  updated_at: string
+}
+
+export interface UpsertPromotionActivityRequest {
+  name: string
+  type: 'subscription_bonus_days'
+  enabled: boolean
+  starts_at: string
+  ends_at: string
+  max_uses_per_user: number
+  plan_bonuses: Array<Pick<PromotionActivityPlanBonus, 'plan_id' | 'bonus_days'>>
 }
 
 export interface PaymentChannel {
@@ -173,6 +214,7 @@ export interface CreateOrderRequest {
   return_url?: string
   payment_source?: string
   cafe_coupon_code?: string
+  expected_subscription_bonus_activity_id?: number
   openid?: string
   wechat_resume_token?: string
   is_mobile?: boolean

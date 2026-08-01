@@ -31,6 +31,9 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/predicate"
 	"github.com/Wei-Shaw/sub2api/ent/promocode"
 	"github.com/Wei-Shaw/sub2api/ent/promocodeusage"
+	"github.com/Wei-Shaw/sub2api/ent/promotionactivity"
+	"github.com/Wei-Shaw/sub2api/ent/promotionactivityparticipation"
+	"github.com/Wei-Shaw/sub2api/ent/promotionactivityplan"
 	"github.com/Wei-Shaw/sub2api/ent/proxy"
 	"github.com/Wei-Shaw/sub2api/ent/redeemcode"
 	"github.com/Wei-Shaw/sub2api/ent/securitysecret"
@@ -699,6 +702,87 @@ func (f TraversePromoCodeUsage) Traverse(ctx context.Context, q ent.Query) error
 	return fmt.Errorf("unexpected query type %T. expect *ent.PromoCodeUsageQuery", q)
 }
 
+// The PromotionActivityFunc type is an adapter to allow the use of ordinary function as a Querier.
+type PromotionActivityFunc func(context.Context, *ent.PromotionActivityQuery) (ent.Value, error)
+
+// Query calls f(ctx, q).
+func (f PromotionActivityFunc) Query(ctx context.Context, q ent.Query) (ent.Value, error) {
+	if q, ok := q.(*ent.PromotionActivityQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *ent.PromotionActivityQuery", q)
+}
+
+// The TraversePromotionActivity type is an adapter to allow the use of ordinary function as Traverser.
+type TraversePromotionActivity func(context.Context, *ent.PromotionActivityQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraversePromotionActivity) Intercept(next ent.Querier) ent.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraversePromotionActivity) Traverse(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.PromotionActivityQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *ent.PromotionActivityQuery", q)
+}
+
+// The PromotionActivityParticipationFunc type is an adapter to allow the use of ordinary function as a Querier.
+type PromotionActivityParticipationFunc func(context.Context, *ent.PromotionActivityParticipationQuery) (ent.Value, error)
+
+// Query calls f(ctx, q).
+func (f PromotionActivityParticipationFunc) Query(ctx context.Context, q ent.Query) (ent.Value, error) {
+	if q, ok := q.(*ent.PromotionActivityParticipationQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *ent.PromotionActivityParticipationQuery", q)
+}
+
+// The TraversePromotionActivityParticipation type is an adapter to allow the use of ordinary function as Traverser.
+type TraversePromotionActivityParticipation func(context.Context, *ent.PromotionActivityParticipationQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraversePromotionActivityParticipation) Intercept(next ent.Querier) ent.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraversePromotionActivityParticipation) Traverse(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.PromotionActivityParticipationQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *ent.PromotionActivityParticipationQuery", q)
+}
+
+// The PromotionActivityPlanFunc type is an adapter to allow the use of ordinary function as a Querier.
+type PromotionActivityPlanFunc func(context.Context, *ent.PromotionActivityPlanQuery) (ent.Value, error)
+
+// Query calls f(ctx, q).
+func (f PromotionActivityPlanFunc) Query(ctx context.Context, q ent.Query) (ent.Value, error) {
+	if q, ok := q.(*ent.PromotionActivityPlanQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *ent.PromotionActivityPlanQuery", q)
+}
+
+// The TraversePromotionActivityPlan type is an adapter to allow the use of ordinary function as Traverser.
+type TraversePromotionActivityPlan func(context.Context, *ent.PromotionActivityPlanQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraversePromotionActivityPlan) Intercept(next ent.Querier) ent.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraversePromotionActivityPlan) Traverse(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.PromotionActivityPlanQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *ent.PromotionActivityPlanQuery", q)
+}
+
 // The ProxyFunc type is an adapter to allow the use of ordinary function as a Querier.
 type ProxyFunc func(context.Context, *ent.ProxyQuery) (ent.Value, error)
 
@@ -1178,6 +1262,12 @@ func NewQuery(q ent.Query) (Query, error) {
 		return &query[*ent.PromoCodeQuery, predicate.PromoCode, promocode.OrderOption]{typ: ent.TypePromoCode, tq: q}, nil
 	case *ent.PromoCodeUsageQuery:
 		return &query[*ent.PromoCodeUsageQuery, predicate.PromoCodeUsage, promocodeusage.OrderOption]{typ: ent.TypePromoCodeUsage, tq: q}, nil
+	case *ent.PromotionActivityQuery:
+		return &query[*ent.PromotionActivityQuery, predicate.PromotionActivity, promotionactivity.OrderOption]{typ: ent.TypePromotionActivity, tq: q}, nil
+	case *ent.PromotionActivityParticipationQuery:
+		return &query[*ent.PromotionActivityParticipationQuery, predicate.PromotionActivityParticipation, promotionactivityparticipation.OrderOption]{typ: ent.TypePromotionActivityParticipation, tq: q}, nil
+	case *ent.PromotionActivityPlanQuery:
+		return &query[*ent.PromotionActivityPlanQuery, predicate.PromotionActivityPlan, promotionactivityplan.OrderOption]{typ: ent.TypePromotionActivityPlan, tq: q}, nil
 	case *ent.ProxyQuery:
 		return &query[*ent.ProxyQuery, predicate.Proxy, proxy.OrderOption]{typ: ent.TypeProxy, tq: q}, nil
 	case *ent.RedeemCodeQuery:

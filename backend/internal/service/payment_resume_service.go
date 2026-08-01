@@ -57,34 +57,36 @@ type ResumeTokenClaims struct {
 }
 
 type WeChatPaymentResumeClaims struct {
-	TokenType      string `json:"tk,omitempty"`
-	OpenID         string `json:"openid"`
-	UserID         int64  `json:"uid,omitempty"`
-	PaymentType    string `json:"pt,omitempty"`
-	Amount         string `json:"amt,omitempty"`
-	OrderType      string `json:"ot,omitempty"`
-	PlanID         int64  `json:"pid,omitempty"`
-	Multiplier     int    `json:"mul,omitempty"`
-	CafeCouponCode string `json:"cc,omitempty"`
-	RedirectTo     string `json:"rd,omitempty"`
-	Scope          string `json:"scp,omitempty"`
-	IssuedAt       int64  `json:"iat"`
-	ExpiresAt      int64  `json:"exp,omitempty"`
+	TokenType                           string `json:"tk,omitempty"`
+	OpenID                              string `json:"openid"`
+	UserID                              int64  `json:"uid,omitempty"`
+	PaymentType                         string `json:"pt,omitempty"`
+	Amount                              string `json:"amt,omitempty"`
+	OrderType                           string `json:"ot,omitempty"`
+	PlanID                              int64  `json:"pid,omitempty"`
+	Multiplier                          int    `json:"mul,omitempty"`
+	CafeCouponCode                      string `json:"cc,omitempty"`
+	ExpectedSubscriptionBonusActivityID int64  `json:"ba,omitempty"`
+	RedirectTo                          string `json:"rd,omitempty"`
+	Scope                               string `json:"scp,omitempty"`
+	IssuedAt                            int64  `json:"iat"`
+	ExpiresAt                           int64  `json:"exp,omitempty"`
 }
 
 type WeChatPaymentOAuthContextClaims struct {
-	TokenType      string `json:"tk,omitempty"`
-	UserID         int64  `json:"uid,omitempty"`
-	PaymentType    string `json:"pt,omitempty"`
-	Amount         string `json:"amt,omitempty"`
-	OrderType      string `json:"ot,omitempty"`
-	PlanID         int64  `json:"pid,omitempty"`
-	Multiplier     int    `json:"mul,omitempty"`
-	CafeCouponCode string `json:"cc,omitempty"`
-	RedirectTo     string `json:"rd,omitempty"`
-	Scope          string `json:"scp,omitempty"`
-	IssuedAt       int64  `json:"iat"`
-	ExpiresAt      int64  `json:"exp,omitempty"`
+	TokenType                           string `json:"tk,omitempty"`
+	UserID                              int64  `json:"uid,omitempty"`
+	PaymentType                         string `json:"pt,omitempty"`
+	Amount                              string `json:"amt,omitempty"`
+	OrderType                           string `json:"ot,omitempty"`
+	PlanID                              int64  `json:"pid,omitempty"`
+	Multiplier                          int    `json:"mul,omitempty"`
+	CafeCouponCode                      string `json:"cc,omitempty"`
+	ExpectedSubscriptionBonusActivityID int64  `json:"ba,omitempty"`
+	RedirectTo                          string `json:"rd,omitempty"`
+	Scope                               string `json:"scp,omitempty"`
+	IssuedAt                            int64  `json:"iat"`
+	ExpiresAt                           int64  `json:"exp,omitempty"`
 }
 
 type PaymentResumeService struct {

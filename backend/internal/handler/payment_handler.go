@@ -184,6 +184,10 @@ func (h *PaymentHandler) GetChannels(c *gin.Context) {
 // payment methods with limits, subscription plans, and configuration.
 // GET /api/v1/payment/checkout-info
 func (h *PaymentHandler) GetCheckoutInfo(c *gin.Context) {
+	subject, ok := requireAuth(c)
+	if !ok {
+		return
+	}
 	ctx := c.Request.Context()
 
 	// Fetch limits (methods + global range)
@@ -201,8 +205,21 @@ func (h *PaymentHandler) GetCheckoutInfo(c *gin.Context) {
 	}
 
 	// Fetch plans with group info
-	plans, _ := h.configService.ListPlansForSale(ctx)
+	plans, err := h.configService.ListPlansForSale(ctx)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
 	groupInfo := h.configService.GetGroupInfoMap(ctx, plans)
+	planIDs := make([]int64, 0, len(plans))
+	for _, plan := range plans {
+		planIDs = append(planIDs, plan.ID)
+	}
+	bonuses, err := h.configService.GetEligibleSubscriptionBonuses(ctx, subject.UserID, planIDs)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
 	planList := make([]checkoutPlan, 0, len(plans))
 	for _, p := range plans {
 		gi := groupInfo[p.GroupID]
@@ -218,6 +235,7 @@ func (h *PaymentHandler) GetCheckoutInfo(c *gin.Context) {
 			CustomMultiplierEnabled: p.CustomMultiplierEnabled,
 			CustomMultiplierMin:     p.CustomMultiplierMin,
 			CustomMultiplierMax:     p.CustomMultiplierMax,
+			SubscriptionBonus:       bonuses[p.ID],
 		})
 	}
 
@@ -265,27 +283,28 @@ type checkoutInfoResponse struct {
 }
 
 type checkoutPlan struct {
-	ID                      int64    `json:"id"`
-	GroupID                 int64    `json:"group_id"`
-	GroupPlatform           string   `json:"group_platform"`
-	GroupName               string   `json:"group_name"`
-	RateMultiplier          float64  `json:"rate_multiplier"`
-	DailyLimitUSD           *float64 `json:"daily_limit_usd"`
-	WeeklyLimitUSD          *float64 `json:"weekly_limit_usd"`
-	MonthlyLimitUSD         *float64 `json:"monthly_limit_usd"`
-	ModelScopes             []string `json:"supported_model_scopes"`
-	Name                    string   `json:"name"`
-	Description             string   `json:"description"`
-	Price                   float64  `json:"price"`
-	OriginalPrice           *float64 `json:"original_price,omitempty"`
-	ValidityDays            int      `json:"validity_days"`
-	Concurrency             int      `json:"concurrency"`
-	ValidityUnit            string   `json:"validity_unit"`
-	Features                []string `json:"features"`
-	ProductName             string   `json:"product_name"`
-	CustomMultiplierEnabled bool     `json:"custom_multiplier_enabled"`
-	CustomMultiplierMin     int      `json:"custom_multiplier_min"`
-	CustomMultiplierMax     int      `json:"custom_multiplier_max"`
+	ID                      int64                             `json:"id"`
+	GroupID                 int64                             `json:"group_id"`
+	GroupPlatform           string                            `json:"group_platform"`
+	GroupName               string                            `json:"group_name"`
+	RateMultiplier          float64                           `json:"rate_multiplier"`
+	DailyLimitUSD           *float64                          `json:"daily_limit_usd"`
+	WeeklyLimitUSD          *float64                          `json:"weekly_limit_usd"`
+	MonthlyLimitUSD         *float64                          `json:"monthly_limit_usd"`
+	ModelScopes             []string                          `json:"supported_model_scopes"`
+	Name                    string                            `json:"name"`
+	Description             string                            `json:"description"`
+	Price                   float64                           `json:"price"`
+	OriginalPrice           *float64                          `json:"original_price,omitempty"`
+	ValidityDays            int                               `json:"validity_days"`
+	Concurrency             int                               `json:"concurrency"`
+	ValidityUnit            string                            `json:"validity_unit"`
+	Features                []string                          `json:"features"`
+	ProductName             string                            `json:"product_name"`
+	CustomMultiplierEnabled bool                              `json:"custom_multiplier_enabled"`
+	CustomMultiplierMin     int                               `json:"custom_multiplier_min"`
+	CustomMultiplierMax     int                               `json:"custom_multiplier_max"`
+	SubscriptionBonus       *service.SubscriptionBonusBenefit `json:"subscription_bonus,omitempty"`
 }
 
 // parseFeatures splits a newline-separated features string into a string slice.
@@ -537,16 +556,17 @@ func cafeCouponDisplayName(couponType string, value float64) string {
 
 // CreateOrderRequest is the request body for creating a payment order.
 type CreateOrderRequest struct {
-	Amount            float64 `json:"amount"`
-	PaymentType       string  `json:"payment_type" binding:"required"`
-	OpenID            string  `json:"openid"`
-	WechatResumeToken string  `json:"wechat_resume_token"`
-	ReturnURL         string  `json:"return_url"`
-	PaymentSource     string  `json:"payment_source"`
-	OrderType         string  `json:"order_type"`
-	PlanID            int64   `json:"plan_id"`
-	Multiplier        int     `json:"multiplier"`
-	CafeCouponCode    string  `json:"cafe_coupon_code"`
+	Amount                              float64 `json:"amount"`
+	PaymentType                         string  `json:"payment_type" binding:"required"`
+	OpenID                              string  `json:"openid"`
+	WechatResumeToken                   string  `json:"wechat_resume_token"`
+	ReturnURL                           string  `json:"return_url"`
+	PaymentSource                       string  `json:"payment_source"`
+	OrderType                           string  `json:"order_type"`
+	PlanID                              int64   `json:"plan_id"`
+	Multiplier                          int     `json:"multiplier"`
+	CafeCouponCode                      string  `json:"cafe_coupon_code"`
+	ExpectedSubscriptionBonusActivityID int64   `json:"expected_subscription_bonus_activity_id"`
 	// IsMobile lets the frontend declare its mobile status directly. When
 	// nil we fall back to User-Agent heuristics (which miss iPadOS / some
 	// embedded browsers that strip the "Mobile" keyword).
@@ -601,22 +621,23 @@ func (h *PaymentHandler) CreateOrder(c *gin.Context) {
 		mobile = *req.IsMobile
 	}
 	svcReq := service.CreateOrderRequest{
-		UserID:          subject.UserID,
-		Amount:          req.Amount,
-		PaymentType:     req.PaymentType,
-		OpenID:          req.OpenID,
-		ClientIP:        c.ClientIP(),
-		IsMobile:        mobile,
-		IsWeChatBrowser: isWeChatBrowser(c),
-		SrcHost:         c.Request.Host,
-		SrcURL:          c.Request.Referer(),
-		ReturnURL:       req.ReturnURL,
-		PaymentSource:   req.PaymentSource,
-		OrderType:       req.OrderType,
-		PlanID:          req.PlanID,
-		Multiplier:      req.Multiplier,
-		CafeCouponCode:  req.CafeCouponCode,
-		Locale:          c.GetHeader("Accept-Language"),
+		UserID:                              subject.UserID,
+		Amount:                              req.Amount,
+		PaymentType:                         req.PaymentType,
+		OpenID:                              req.OpenID,
+		ClientIP:                            c.ClientIP(),
+		IsMobile:                            mobile,
+		IsWeChatBrowser:                     isWeChatBrowser(c),
+		SrcHost:                             c.Request.Host,
+		SrcURL:                              c.Request.Referer(),
+		ReturnURL:                           req.ReturnURL,
+		PaymentSource:                       req.PaymentSource,
+		OrderType:                           req.OrderType,
+		PlanID:                              req.PlanID,
+		Multiplier:                          req.Multiplier,
+		CafeCouponCode:                      req.CafeCouponCode,
+		ExpectedSubscriptionBonusActivityID: req.ExpectedSubscriptionBonusActivityID,
+		Locale:                              c.GetHeader("Accept-Language"),
 	}
 
 	executeUserIdempotentJSONWithRawStoredResponse(
@@ -631,32 +652,34 @@ func (h *PaymentHandler) CreateOrder(c *gin.Context) {
 }
 
 type paymentCreateOrderIdempotencyRequest struct {
-	Amount          float64 `json:"amount"`
-	PaymentType     string  `json:"payment_type"`
-	OpenID          string  `json:"openid,omitempty"`
-	IsMobile        bool    `json:"is_mobile"`
-	IsWeChatBrowser bool    `json:"is_wechat_browser"`
-	ReturnURL       string  `json:"return_url,omitempty"`
-	PaymentSource   string  `json:"payment_source,omitempty"`
-	OrderType       string  `json:"order_type,omitempty"`
-	PlanID          int64   `json:"plan_id,omitempty"`
-	Multiplier      int     `json:"multiplier,omitempty"`
-	CafeCouponCode  string  `json:"cafe_coupon_code,omitempty"`
+	Amount                              float64 `json:"amount"`
+	PaymentType                         string  `json:"payment_type"`
+	OpenID                              string  `json:"openid,omitempty"`
+	IsMobile                            bool    `json:"is_mobile"`
+	IsWeChatBrowser                     bool    `json:"is_wechat_browser"`
+	ReturnURL                           string  `json:"return_url,omitempty"`
+	PaymentSource                       string  `json:"payment_source,omitempty"`
+	OrderType                           string  `json:"order_type,omitempty"`
+	PlanID                              int64   `json:"plan_id,omitempty"`
+	Multiplier                          int     `json:"multiplier,omitempty"`
+	CafeCouponCode                      string  `json:"cafe_coupon_code,omitempty"`
+	ExpectedSubscriptionBonusActivityID int64   `json:"expected_subscription_bonus_activity_id,omitempty"`
 }
 
 func paymentCreateOrderIdempotencyPayload(req service.CreateOrderRequest) paymentCreateOrderIdempotencyRequest {
 	return paymentCreateOrderIdempotencyRequest{
-		Amount:          req.Amount,
-		PaymentType:     req.PaymentType,
-		OpenID:          req.OpenID,
-		IsMobile:        req.IsMobile,
-		IsWeChatBrowser: req.IsWeChatBrowser,
-		ReturnURL:       req.ReturnURL,
-		PaymentSource:   req.PaymentSource,
-		OrderType:       req.OrderType,
-		PlanID:          req.PlanID,
-		Multiplier:      req.Multiplier,
-		CafeCouponCode:  req.CafeCouponCode,
+		Amount:                              req.Amount,
+		PaymentType:                         req.PaymentType,
+		OpenID:                              req.OpenID,
+		IsMobile:                            req.IsMobile,
+		IsWeChatBrowser:                     req.IsWeChatBrowser,
+		ReturnURL:                           req.ReturnURL,
+		PaymentSource:                       req.PaymentSource,
+		OrderType:                           req.OrderType,
+		PlanID:                              req.PlanID,
+		Multiplier:                          req.Multiplier,
+		CafeCouponCode:                      req.CafeCouponCode,
+		ExpectedSubscriptionBonusActivityID: req.ExpectedSubscriptionBonusActivityID,
 	}
 }
 
@@ -706,6 +729,7 @@ func applyWeChatPaymentResumeClaims(req *CreateOrderRequest, claims *service.WeC
 		req.Multiplier = claims.Multiplier
 	}
 	req.CafeCouponCode = strings.TrimSpace(claims.CafeCouponCode)
+	req.ExpectedSubscriptionBonusActivityID = claims.ExpectedSubscriptionBonusActivityID
 	return nil
 }
 

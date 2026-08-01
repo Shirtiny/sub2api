@@ -204,6 +204,12 @@ func (s *PaymentService) PrepareRefund(ctx context.Context, oid int64, amt float
 		return nil, nil, infraerrors.NotFound("NOT_FOUND", "order not found")
 	}
 	ok := []string{OrderStatusCompleted, OrderStatusRefundRequested, OrderStatusRefundFailed}
+	if o.Status == OrderStatusFailed && o.PaidAt != nil {
+		// A provider can confirm payment after fulfillment failed (for example,
+		// when a reserved promotion can no longer be reacquired). Keep the paid
+		// facts and allow the administrator to refund that money.
+		ok = append(ok, OrderStatusFailed)
+	}
 	if !psSliceContains(ok, o.Status) {
 		return nil, nil, infraerrors.BadRequest("INVALID_STATUS", "order status does not allow refund")
 	}
@@ -248,10 +254,34 @@ func (s *PaymentService) PrepareRefund(ctx context.Context, oid int64, amt float
 }
 
 func (s *PaymentService) prepDeduct(ctx context.Context, o *dbent.PaymentOrder, p *RefundPlan, force bool) *RefundResult {
+	if isPaymentAfterExpiryFailure(o) {
+		// The expiry-only failure is recorded before fulfillment starts. Even
+		// when the administrator requested deduction, there is no balance or
+		// subscription grant from this order to reverse.
+		return nil
+	}
 	if o.OrderType == payment.OrderTypeSubscription {
+		if o.Status == OrderStatusFailed {
+			assigned, err := hasPaymentSubscriptionAssignmentAudit(ctx, s.entClient, o.ID)
+			if err != nil {
+				if !force {
+					return &RefundResult{Success: false, Warning: "cannot verify whether the subscription was assigned, use force", RequireForce: true}
+				}
+			} else if !assigned {
+				// Paid-but-unfulfilled failures (including promotion reservation
+				// conflicts) did not grant subscription days, so refunding them
+				// must not deduct an unrelated active subscription.
+				return nil
+			}
+		}
 		p.DeductionType = payment.DeductionTypeSubscription
 		if o.SubscriptionGroupID != nil && o.SubscriptionDays != nil {
 			p.SubDaysToDeduct = *o.SubscriptionDays
+			if totalDays, err := subscriptionOrderTotalDays(o); err == nil {
+				p.SubDaysToDeduct = totalDays
+			} else if !force {
+				return &RefundResult{Success: false, Warning: "cannot determine subscription days for deduction, use force", RequireForce: true}
+			}
 			sub, err := s.subscriptionSvc.GetActiveSubscription(ctx, o.UserID, *o.SubscriptionGroupID)
 			if err == nil && sub != nil {
 				customOrder, verifyResult := s.isCustomSubscriptionPaymentOrderForRefund(ctx, o, force)
@@ -284,7 +314,13 @@ func (s *PaymentService) prepDeduct(ctx context.Context, o *dbent.PaymentOrder, 
 }
 
 func (s *PaymentService) ExecuteRefund(ctx context.Context, p *RefundPlan) (*RefundResult, error) {
-	c, err := s.entClient.PaymentOrder.Update().Where(paymentorder.IDEQ(p.OrderID), paymentorder.StatusIn(OrderStatusCompleted, OrderStatusRefundRequested, OrderStatusRefundFailed)).SetStatus(OrderStatusRefunding).Save(ctx)
+	c, err := s.entClient.PaymentOrder.Update().Where(
+		paymentorder.IDEQ(p.OrderID),
+		paymentorder.Or(
+			paymentorder.StatusIn(OrderStatusCompleted, OrderStatusRefundRequested, OrderStatusRefundFailed),
+			paymentorder.And(paymentorder.StatusEQ(OrderStatusFailed), paymentorder.PaidAtNotNil()),
+		),
+	).SetStatus(OrderStatusRefunding).Save(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("lock: %w", err)
 	}
@@ -412,7 +448,7 @@ func (s *PaymentService) markRefundOk(ctx context.Context, p *RefundPlan) (*Refu
 		fs = OrderStatusPartiallyRefunded
 	}
 	now := time.Now()
-	_, err := s.entClient.PaymentOrder.UpdateOneID(p.OrderID).SetStatus(fs).SetRefundAmount(p.RefundAmount).SetRefundReason(p.Reason).SetRefundAt(now).SetForceRefund(p.Force).Save(ctx)
+	releasedBonus, err := s.finalizeSuccessfulRefund(ctx, p, fs, now)
 	if err != nil {
 		return nil, fmt.Errorf("mark refund: %w", err)
 	}
@@ -426,8 +462,66 @@ func (s *PaymentService) markRefundOk(ctx context.Context, p *RefundPlan) (*Refu
 		}
 	}
 
-	s.writeAuditLog(ctx, p.OrderID, "REFUND_SUCCESS", "admin", map[string]any{"refundAmount": p.RefundAmount, "reason": p.Reason, "balanceDeducted": p.BalanceToDeduct, "force": p.Force, "affiliateRebateClawedBack": clawedBack})
+	s.writeAuditLog(ctx, p.OrderID, "REFUND_SUCCESS", "admin", map[string]any{"refundAmount": p.RefundAmount, "reason": p.Reason, "balanceDeducted": p.BalanceToDeduct, "force": p.Force, "affiliateRebateClawedBack": clawedBack, "subscriptionBonusReleased": releasedBonus})
 	return &RefundResult{Success: true, BalanceDeducted: p.BalanceToDeduct, SubDaysDeducted: p.SubDaysToDeduct, AffiliateRebateClawedBack: clawedBack}, nil
+}
+
+// finalizeSuccessfulRefund commits the terminal refund state together with
+// releasing a reservation that never reached subscription fulfillment. The
+// user lock matches order creation and bonus reacquisition, so a refund cannot
+// race a new order into consuming the same per-user activity slot.
+func (s *PaymentService) finalizeSuccessfulRefund(ctx context.Context, p *RefundPlan, status string, refundedAt time.Time) (bool, error) {
+	if s == nil || s.entClient == nil || p == nil || p.Order == nil {
+		return false, errors.New("invalid refund plan")
+	}
+	tx, err := s.entClient.Tx(ctx)
+	if err != nil {
+		return false, fmt.Errorf("begin successful refund transaction: %w", err)
+	}
+	defer func() { _ = tx.Rollback() }()
+	txCtx := dbent.NewTxContext(ctx, tx)
+	hasBonusSnapshot := p.Order.OrderType == payment.OrderTypeSubscription && p.Order.SubscriptionBonusActivityID != nil
+	if hasBonusSnapshot {
+		if err := lockPaymentUserForUpdate(txCtx, tx, p.Order.UserID); err != nil {
+			return false, err
+		}
+	}
+	updated, err := tx.PaymentOrder.Update().
+		Where(paymentorder.IDEQ(p.OrderID), paymentorder.StatusEQ(OrderStatusRefunding)).
+		SetStatus(status).
+		SetRefundAmount(p.RefundAmount).
+		SetRefundReason(p.Reason).
+		SetRefundAt(refundedAt).
+		SetForceRefund(p.Force).
+		Save(txCtx)
+	if err != nil {
+		return false, fmt.Errorf("persist successful refund: %w", err)
+	}
+	if updated == 0 {
+		return false, infraerrors.Conflict("CONFLICT", "order status changed while marking refund")
+	}
+	releasedBonus := false
+	if hasBonusSnapshot {
+		assigned, err := hasPaymentSubscriptionAssignmentAudit(txCtx, tx.Client(), p.OrderID)
+		if err != nil {
+			return false, fmt.Errorf("check refunded subscription assignment: %w", err)
+		}
+		if !assigned {
+			releasedBonus, err = releaseSubscriptionBonusForOrderTx(txCtx, tx.Client(), p.OrderID, "ORDER_REFUNDED_UNFULFILLED")
+			if err != nil {
+				return false, err
+			}
+			if releasedBonus {
+				if err := s.writeAuditLogStrict(txCtx, p.OrderID, "SUBSCRIPTION_BONUS_RELEASED", "admin", map[string]any{"reason": "ORDER_REFUNDED_UNFULFILLED"}); err != nil {
+					return false, err
+				}
+			}
+		}
+	}
+	if err := tx.Commit(); err != nil {
+		return false, fmt.Errorf("commit successful refund: %w", err)
+	}
+	return releasedBonus, nil
 }
 
 func (s *PaymentService) RollbackRefund(ctx context.Context, p *RefundPlan, gErr error) bool {
@@ -449,9 +543,9 @@ func (s *PaymentService) RollbackRefund(ctx context.Context, p *RefundPlan, gErr
 }
 
 func (s *PaymentService) restoreStatus(ctx context.Context, p *RefundPlan) {
-	rs := OrderStatusCompleted
-	if p.Order.Status == OrderStatusRefundRequested {
-		rs = OrderStatusRefundRequested
+	rs := p.Order.Status
+	if rs != OrderStatusRefundRequested && rs != OrderStatusFailed {
+		rs = OrderStatusCompleted
 	}
 	_, _ = s.entClient.PaymentOrder.UpdateOneID(p.OrderID).SetStatus(rs).Save(ctx)
 }

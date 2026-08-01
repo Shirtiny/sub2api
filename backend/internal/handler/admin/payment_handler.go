@@ -238,6 +238,84 @@ func (h *PaymentHandler) DeletePlan(c *gin.Context) {
 	response.Success(c, gin.H{"message": "deleted"})
 }
 
+// --- Promotion Activities ---
+
+// ListPromotionActivities returns all configured payment promotion activities.
+// GET /api/v1/admin/payment/activities
+func (h *PaymentHandler) ListPromotionActivities(c *gin.Context) {
+	activities, err := h.configService.ListPromotionActivities(c.Request.Context())
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, activities)
+}
+
+// GetPromotionActivity returns one payment promotion activity.
+// GET /api/v1/admin/payment/activities/:id
+func (h *PaymentHandler) GetPromotionActivity(c *gin.Context) {
+	id, ok := parseIDParam(c, "id")
+	if !ok {
+		return
+	}
+	activity, err := h.configService.GetPromotionActivity(c.Request.Context(), id)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, activity)
+}
+
+// CreatePromotionActivity creates a payment promotion activity.
+// POST /api/v1/admin/payment/activities
+func (h *PaymentHandler) CreatePromotionActivity(c *gin.Context) {
+	var req service.UpsertPromotionActivityRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+	activity, err := h.configService.CreatePromotionActivity(c.Request.Context(), req)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Created(c, activity)
+}
+
+// UpdatePromotionActivity updates a payment promotion activity.
+// PUT /api/v1/admin/payment/activities/:id
+func (h *PaymentHandler) UpdatePromotionActivity(c *gin.Context) {
+	id, ok := parseIDParam(c, "id")
+	if !ok {
+		return
+	}
+	var req service.UpsertPromotionActivityRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+	activity, err := h.configService.UpdatePromotionActivity(c.Request.Context(), id, req)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, activity)
+}
+
+// DeletePromotionActivity deletes a payment promotion activity without order participation.
+// DELETE /api/v1/admin/payment/activities/:id
+func (h *PaymentHandler) DeletePromotionActivity(c *gin.Context) {
+	id, ok := parseIDParam(c, "id")
+	if !ok {
+		return
+	}
+	if err := h.configService.DeletePromotionActivity(c.Request.Context(), id); err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, gin.H{"message": "deleted"})
+}
+
 // --- Provider Instances ---
 
 // ListProviders returns all payment provider instances.

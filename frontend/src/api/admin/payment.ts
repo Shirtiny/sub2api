@@ -9,7 +9,9 @@ import type {
   PaymentOrder,
   PaymentChannel,
   SubscriptionPlan,
-  ProviderInstance
+  ProviderInstance,
+  PromotionActivity,
+  UpsertPromotionActivityRequest
 } from '@/types/payment'
 import type { BasePaginationResponse } from '@/types'
 
@@ -150,6 +152,24 @@ export const adminPaymentAPI = {
   /** Delete a subscription plan */
   deletePlan(id: number) {
     return apiClient.delete(`/admin/payment/plans/${id}`)
+  },
+
+  // ==================== Promotion Activities ====================
+
+  getActivities() {
+    return apiClient.get<PromotionActivity[]>('/admin/payment/activities')
+  },
+
+  createActivity(data: UpsertPromotionActivityRequest) {
+    return apiClient.post<PromotionActivity>('/admin/payment/activities', data)
+  },
+
+  updateActivity(id: number, data: UpsertPromotionActivityRequest) {
+    return apiClient.put<PromotionActivity>(`/admin/payment/activities/${id}`, data)
+  },
+
+  deleteActivity(id: number) {
+    return apiClient.delete(`/admin/payment/activities/${id}`)
   },
 
   // ==================== Provider Instances ====================

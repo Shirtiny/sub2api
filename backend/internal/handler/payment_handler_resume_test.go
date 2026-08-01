@@ -36,12 +36,13 @@ func TestApplyWeChatPaymentResumeClaims(t *testing.T) {
 	}
 
 	err := applyWeChatPaymentResumeClaims(&req, &service.WeChatPaymentResumeClaims{
-		OpenID:      "openid-123",
-		PaymentType: payment.TypeWxpay,
-		Amount:      "12.50",
-		OrderType:   payment.OrderTypeSubscription,
-		PlanID:      7,
-		Multiplier:  3,
+		OpenID:                              "openid-123",
+		PaymentType:                         payment.TypeWxpay,
+		Amount:                              "12.50",
+		OrderType:                           payment.OrderTypeSubscription,
+		PlanID:                              7,
+		Multiplier:                          3,
+		ExpectedSubscriptionBonusActivityID: 91,
 	}, 0)
 	if err != nil {
 		t.Fatalf("applyWeChatPaymentResumeClaims returned error: %v", err)
@@ -60,6 +61,9 @@ func TestApplyWeChatPaymentResumeClaims(t *testing.T) {
 	}
 	if req.Multiplier != 3 {
 		t.Fatalf("multiplier = %d, want 3", req.Multiplier)
+	}
+	if req.ExpectedSubscriptionBonusActivityID != 91 {
+		t.Fatalf("expected bonus activity = %d, want 91", req.ExpectedSubscriptionBonusActivityID)
 	}
 }
 
@@ -99,22 +103,24 @@ func TestApplyWeChatPaymentResumeClaimsTreatsTokenContextAsAuthoritative(t *test
 	t.Parallel()
 
 	req := CreateOrderRequest{
-		Amount:         999,
-		PaymentType:    payment.TypeWxpay,
-		OrderType:      payment.OrderTypeBalance,
-		PlanID:         88,
-		Multiplier:     9,
-		CafeCouponCode: "ATTACKER-COUPON",
+		Amount:                              999,
+		PaymentType:                         payment.TypeWxpay,
+		OrderType:                           payment.OrderTypeBalance,
+		PlanID:                              88,
+		Multiplier:                          9,
+		CafeCouponCode:                      "ATTACKER-COUPON",
+		ExpectedSubscriptionBonusActivityID: 999,
 	}
 	err := applyWeChatPaymentResumeClaims(&req, &service.WeChatPaymentResumeClaims{
-		OpenID:         "openid-123",
-		UserID:         42,
-		PaymentType:    payment.TypeWxpay,
-		Amount:         "12.50",
-		OrderType:      payment.OrderTypeSubscription,
-		PlanID:         7,
-		Multiplier:     3,
-		CafeCouponCode: "SIGNED-COUPON",
+		OpenID:                              "openid-123",
+		UserID:                              42,
+		PaymentType:                         payment.TypeWxpay,
+		Amount:                              "12.50",
+		OrderType:                           payment.OrderTypeSubscription,
+		PlanID:                              7,
+		Multiplier:                          3,
+		CafeCouponCode:                      "SIGNED-COUPON",
+		ExpectedSubscriptionBonusActivityID: 91,
 	}, 42)
 	require.NoError(t, err)
 	require.Equal(t, 12.5, req.Amount)
@@ -122,6 +128,7 @@ func TestApplyWeChatPaymentResumeClaimsTreatsTokenContextAsAuthoritative(t *test
 	require.Equal(t, int64(7), req.PlanID)
 	require.Equal(t, 3, req.Multiplier)
 	require.Equal(t, "SIGNED-COUPON", req.CafeCouponCode)
+	require.Equal(t, int64(91), req.ExpectedSubscriptionBonusActivityID)
 }
 
 func TestCreateOrderRejectsUnknownSensitiveFields(t *testing.T) {

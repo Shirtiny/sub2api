@@ -86,15 +86,16 @@ type wechatOAuthUserInfoResponse struct {
 }
 
 type wechatPaymentOAuthContext struct {
-	UserID         int64  `json:"user_id,omitempty"`
-	PaymentType    string `json:"payment_type"`
-	Amount         string `json:"amount,omitempty"`
-	OrderType      string `json:"order_type,omitempty"`
-	PlanID         int64  `json:"plan_id,omitempty"`
-	Multiplier     int    `json:"multiplier,omitempty"`
-	CafeCouponCode string `json:"cafe_coupon_code,omitempty"`
-	RedirectTo     string `json:"redirect_to,omitempty"`
-	Scope          string `json:"scope,omitempty"`
+	UserID                              int64  `json:"user_id,omitempty"`
+	PaymentType                         string `json:"payment_type"`
+	Amount                              string `json:"amount,omitempty"`
+	OrderType                           string `json:"order_type,omitempty"`
+	PlanID                              int64  `json:"plan_id,omitempty"`
+	Multiplier                          int    `json:"multiplier,omitempty"`
+	CafeCouponCode                      string `json:"cafe_coupon_code,omitempty"`
+	ExpectedSubscriptionBonusActivityID int64  `json:"expected_subscription_bonus_activity_id,omitempty"`
+	RedirectTo                          string `json:"redirect_to,omitempty"`
+	Scope                               string `json:"scope,omitempty"`
 }
 
 // WeChatOAuthStart starts the WeChat OAuth login flow and stores the short-lived
@@ -370,15 +371,16 @@ func (h *AuthHandler) WeChatPaymentOAuthStart(c *gin.Context) {
 		paymentScope = "snsapi_base"
 	}
 	paymentContext := wechatPaymentOAuthContext{
-		UserID:         contextClaims.UserID,
-		PaymentType:    paymentType,
-		Amount:         strings.TrimSpace(contextClaims.Amount),
-		OrderType:      strings.TrimSpace(contextClaims.OrderType),
-		PlanID:         contextClaims.PlanID,
-		Multiplier:     contextClaims.Multiplier,
-		CafeCouponCode: strings.TrimSpace(contextClaims.CafeCouponCode),
-		RedirectTo:     redirectTo,
-		Scope:          paymentScope,
+		UserID:                              contextClaims.UserID,
+		PaymentType:                         paymentType,
+		Amount:                              strings.TrimSpace(contextClaims.Amount),
+		OrderType:                           strings.TrimSpace(contextClaims.OrderType),
+		PlanID:                              contextClaims.PlanID,
+		Multiplier:                          contextClaims.Multiplier,
+		CafeCouponCode:                      strings.TrimSpace(contextClaims.CafeCouponCode),
+		ExpectedSubscriptionBonusActivityID: contextClaims.ExpectedSubscriptionBonusActivityID,
+		RedirectTo:                          redirectTo,
+		Scope:                               paymentScope,
 	}
 	if paymentContext.OrderType == "" {
 		paymentContext.OrderType = payment.OrderTypeBalance
@@ -444,15 +446,16 @@ func (h *AuthHandler) WeChatPaymentOAuthCallback(c *gin.Context) {
 	}
 	scope := normalizeWeChatPaymentScope(contextClaims.Scope)
 	paymentContext := wechatPaymentOAuthContext{
-		UserID:         contextClaims.UserID,
-		PaymentType:    normalizeWeChatPaymentType(contextClaims.PaymentType),
-		Amount:         strings.TrimSpace(contextClaims.Amount),
-		OrderType:      strings.TrimSpace(contextClaims.OrderType),
-		PlanID:         contextClaims.PlanID,
-		Multiplier:     contextClaims.Multiplier,
-		CafeCouponCode: strings.TrimSpace(contextClaims.CafeCouponCode),
-		RedirectTo:     redirectTo,
-		Scope:          scope,
+		UserID:                              contextClaims.UserID,
+		PaymentType:                         normalizeWeChatPaymentType(contextClaims.PaymentType),
+		Amount:                              strings.TrimSpace(contextClaims.Amount),
+		OrderType:                           strings.TrimSpace(contextClaims.OrderType),
+		PlanID:                              contextClaims.PlanID,
+		Multiplier:                          contextClaims.Multiplier,
+		CafeCouponCode:                      strings.TrimSpace(contextClaims.CafeCouponCode),
+		ExpectedSubscriptionBonusActivityID: contextClaims.ExpectedSubscriptionBonusActivityID,
+		RedirectTo:                          redirectTo,
+		Scope:                               scope,
 	}
 	if paymentContext.PaymentType == "" {
 		paymentContext.PaymentType = payment.TypeWxpay
@@ -483,16 +486,17 @@ func (h *AuthHandler) WeChatPaymentOAuthCallback(c *gin.Context) {
 	}
 
 	resumeToken, err := h.wechatPaymentResumeService().CreateWeChatPaymentResumeToken(service.WeChatPaymentResumeClaims{
-		OpenID:         openid,
-		UserID:         paymentContext.UserID,
-		PaymentType:    paymentContext.PaymentType,
-		Amount:         paymentContext.Amount,
-		OrderType:      paymentContext.OrderType,
-		PlanID:         paymentContext.PlanID,
-		Multiplier:     paymentContext.Multiplier,
-		CafeCouponCode: paymentContext.CafeCouponCode,
-		RedirectTo:     redirectTo,
-		Scope:          scope,
+		OpenID:                              openid,
+		UserID:                              paymentContext.UserID,
+		PaymentType:                         paymentContext.PaymentType,
+		Amount:                              paymentContext.Amount,
+		OrderType:                           paymentContext.OrderType,
+		PlanID:                              paymentContext.PlanID,
+		Multiplier:                          paymentContext.Multiplier,
+		CafeCouponCode:                      paymentContext.CafeCouponCode,
+		ExpectedSubscriptionBonusActivityID: paymentContext.ExpectedSubscriptionBonusActivityID,
+		RedirectTo:                          redirectTo,
+		Scope:                               scope,
 	})
 	if err != nil {
 		redirectOAuthError(c, frontendCallback, "invalid_context", "failed to encode payment resume context", "")

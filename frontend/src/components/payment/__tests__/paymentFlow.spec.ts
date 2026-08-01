@@ -341,6 +341,21 @@ describe('buildCreateOrderPayload', () => {
     })
   })
 
+  it('preserves the expected subscription bonus activity in create order payloads', () => {
+    expect(buildCreateOrderPayload({
+      amount: 128,
+      paymentType: 'alipay',
+      orderType: 'subscription',
+      planId: 7,
+      expectedSubscriptionBonusActivityId: 19,
+      isMobile: false,
+      isWechatBrowser: false,
+    })).toMatchObject({
+      plan_id: 7,
+      expected_subscription_bonus_activity_id: 19,
+    })
+  })
+
   it('passes is_mobile: false when forceQRCode is enabled for alipay', () => {
     expect(buildCreateOrderPayload({
       amount: 50,

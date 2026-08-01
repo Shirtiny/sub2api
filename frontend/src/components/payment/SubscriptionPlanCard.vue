@@ -39,7 +39,12 @@
             <span class="text-xs text-content-tertiary">&yen;</span>
             <span :class="['text-2xl font-extrabold tracking-tight', textClass]">{{ formatPlanAmount(effectivePrice) }}</span>
           </div>
-          <span class="text-[11px] text-content-tertiary">/ {{ validitySuffix }}</span>
+          <div class="flex items-center justify-end gap-1">
+            <span class="text-[11px] text-content-tertiary">/ {{ validitySuffix }}</span>
+            <span v-if="subscriptionBonusDays(plan) > 0" data-testid="subscription-bonus-days" class="text-[11px] font-semibold text-[#3D2E2A] dark:text-[#F5C66B]">
+              +{{ subscriptionBonusDays(plan) }}{{ t('payment.bonusDaysSuffix') }}
+            </span>
+          </div>
           <div v-if="effectiveOriginalPrice" class="mt-0.5 flex items-center justify-end gap-1.5">
             <span class="text-xs text-gray-400 line-through dark:text-dark-500">&yen;{{ formatPlanAmount(effectiveOriginalPrice) }}</span>
             <span :class="['rounded px-1 py-0.5 text-[10px] font-semibold', discountClass]">{{ discountText }}</span>
@@ -141,6 +146,10 @@ const emit = defineEmits<{
   'multiplier-change': [plan: SubscriptionPlan, multiplier: number]
 }>()
 const { t } = useI18n()
+
+function subscriptionBonusDays(plan: SubscriptionPlan): number {
+  return plan.subscription_bonus?.days ?? 0
+}
 
 const platform = computed(() => props.plan.group_platform || '')
 

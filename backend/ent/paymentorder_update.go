@@ -406,6 +406,54 @@ func (_u *PaymentOrderUpdate) ClearSubscriptionDays() *PaymentOrderUpdate {
 	return _u
 }
 
+// SetSubscriptionBonusActivityID sets the "subscription_bonus_activity_id" field.
+func (_u *PaymentOrderUpdate) SetSubscriptionBonusActivityID(v int64) *PaymentOrderUpdate {
+	_u.mutation.ResetSubscriptionBonusActivityID()
+	_u.mutation.SetSubscriptionBonusActivityID(v)
+	return _u
+}
+
+// SetNillableSubscriptionBonusActivityID sets the "subscription_bonus_activity_id" field if the given value is not nil.
+func (_u *PaymentOrderUpdate) SetNillableSubscriptionBonusActivityID(v *int64) *PaymentOrderUpdate {
+	if v != nil {
+		_u.SetSubscriptionBonusActivityID(*v)
+	}
+	return _u
+}
+
+// AddSubscriptionBonusActivityID adds value to the "subscription_bonus_activity_id" field.
+func (_u *PaymentOrderUpdate) AddSubscriptionBonusActivityID(v int64) *PaymentOrderUpdate {
+	_u.mutation.AddSubscriptionBonusActivityID(v)
+	return _u
+}
+
+// ClearSubscriptionBonusActivityID clears the value of the "subscription_bonus_activity_id" field.
+func (_u *PaymentOrderUpdate) ClearSubscriptionBonusActivityID() *PaymentOrderUpdate {
+	_u.mutation.ClearSubscriptionBonusActivityID()
+	return _u
+}
+
+// SetSubscriptionBonusDays sets the "subscription_bonus_days" field.
+func (_u *PaymentOrderUpdate) SetSubscriptionBonusDays(v int) *PaymentOrderUpdate {
+	_u.mutation.ResetSubscriptionBonusDays()
+	_u.mutation.SetSubscriptionBonusDays(v)
+	return _u
+}
+
+// SetNillableSubscriptionBonusDays sets the "subscription_bonus_days" field if the given value is not nil.
+func (_u *PaymentOrderUpdate) SetNillableSubscriptionBonusDays(v *int) *PaymentOrderUpdate {
+	if v != nil {
+		_u.SetSubscriptionBonusDays(*v)
+	}
+	return _u
+}
+
+// AddSubscriptionBonusDays adds value to the "subscription_bonus_days" field.
+func (_u *PaymentOrderUpdate) AddSubscriptionBonusDays(v int) *PaymentOrderUpdate {
+	_u.mutation.AddSubscriptionBonusDays(v)
+	return _u
+}
+
 // SetSubscriptionConcurrency sets the "subscription_concurrency" field.
 func (_u *PaymentOrderUpdate) SetSubscriptionConcurrency(v int) *PaymentOrderUpdate {
 	_u.mutation.ResetSubscriptionConcurrency()
@@ -1019,6 +1067,11 @@ func (_u *PaymentOrderUpdate) check() error {
 			return &ValidationError{Name: "order_type", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.order_type": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.SubscriptionBonusDays(); ok {
+		if err := paymentorder.SubscriptionBonusDaysValidator(v); err != nil {
+			return &ValidationError{Name: "subscription_bonus_days", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.subscription_bonus_days": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.SubscriptionConcurrency(); ok {
 		if err := paymentorder.SubscriptionConcurrencyValidator(v); err != nil {
 			return &ValidationError{Name: "subscription_concurrency", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.subscription_concurrency": %w`, err)}
@@ -1178,6 +1231,21 @@ func (_u *PaymentOrderUpdate) sqlSave(ctx context.Context) (_node int, err error
 	}
 	if _u.mutation.SubscriptionDaysCleared() {
 		_spec.ClearField(paymentorder.FieldSubscriptionDays, field.TypeInt)
+	}
+	if value, ok := _u.mutation.SubscriptionBonusActivityID(); ok {
+		_spec.SetField(paymentorder.FieldSubscriptionBonusActivityID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedSubscriptionBonusActivityID(); ok {
+		_spec.AddField(paymentorder.FieldSubscriptionBonusActivityID, field.TypeInt64, value)
+	}
+	if _u.mutation.SubscriptionBonusActivityIDCleared() {
+		_spec.ClearField(paymentorder.FieldSubscriptionBonusActivityID, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.SubscriptionBonusDays(); ok {
+		_spec.SetField(paymentorder.FieldSubscriptionBonusDays, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedSubscriptionBonusDays(); ok {
+		_spec.AddField(paymentorder.FieldSubscriptionBonusDays, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.SubscriptionConcurrency(); ok {
 		_spec.SetField(paymentorder.FieldSubscriptionConcurrency, field.TypeInt, value)
@@ -1758,6 +1826,54 @@ func (_u *PaymentOrderUpdateOne) AddSubscriptionDays(v int) *PaymentOrderUpdateO
 // ClearSubscriptionDays clears the value of the "subscription_days" field.
 func (_u *PaymentOrderUpdateOne) ClearSubscriptionDays() *PaymentOrderUpdateOne {
 	_u.mutation.ClearSubscriptionDays()
+	return _u
+}
+
+// SetSubscriptionBonusActivityID sets the "subscription_bonus_activity_id" field.
+func (_u *PaymentOrderUpdateOne) SetSubscriptionBonusActivityID(v int64) *PaymentOrderUpdateOne {
+	_u.mutation.ResetSubscriptionBonusActivityID()
+	_u.mutation.SetSubscriptionBonusActivityID(v)
+	return _u
+}
+
+// SetNillableSubscriptionBonusActivityID sets the "subscription_bonus_activity_id" field if the given value is not nil.
+func (_u *PaymentOrderUpdateOne) SetNillableSubscriptionBonusActivityID(v *int64) *PaymentOrderUpdateOne {
+	if v != nil {
+		_u.SetSubscriptionBonusActivityID(*v)
+	}
+	return _u
+}
+
+// AddSubscriptionBonusActivityID adds value to the "subscription_bonus_activity_id" field.
+func (_u *PaymentOrderUpdateOne) AddSubscriptionBonusActivityID(v int64) *PaymentOrderUpdateOne {
+	_u.mutation.AddSubscriptionBonusActivityID(v)
+	return _u
+}
+
+// ClearSubscriptionBonusActivityID clears the value of the "subscription_bonus_activity_id" field.
+func (_u *PaymentOrderUpdateOne) ClearSubscriptionBonusActivityID() *PaymentOrderUpdateOne {
+	_u.mutation.ClearSubscriptionBonusActivityID()
+	return _u
+}
+
+// SetSubscriptionBonusDays sets the "subscription_bonus_days" field.
+func (_u *PaymentOrderUpdateOne) SetSubscriptionBonusDays(v int) *PaymentOrderUpdateOne {
+	_u.mutation.ResetSubscriptionBonusDays()
+	_u.mutation.SetSubscriptionBonusDays(v)
+	return _u
+}
+
+// SetNillableSubscriptionBonusDays sets the "subscription_bonus_days" field if the given value is not nil.
+func (_u *PaymentOrderUpdateOne) SetNillableSubscriptionBonusDays(v *int) *PaymentOrderUpdateOne {
+	if v != nil {
+		_u.SetSubscriptionBonusDays(*v)
+	}
+	return _u
+}
+
+// AddSubscriptionBonusDays adds value to the "subscription_bonus_days" field.
+func (_u *PaymentOrderUpdateOne) AddSubscriptionBonusDays(v int) *PaymentOrderUpdateOne {
+	_u.mutation.AddSubscriptionBonusDays(v)
 	return _u
 }
 
@@ -2387,6 +2503,11 @@ func (_u *PaymentOrderUpdateOne) check() error {
 			return &ValidationError{Name: "order_type", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.order_type": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.SubscriptionBonusDays(); ok {
+		if err := paymentorder.SubscriptionBonusDaysValidator(v); err != nil {
+			return &ValidationError{Name: "subscription_bonus_days", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.subscription_bonus_days": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.SubscriptionConcurrency(); ok {
 		if err := paymentorder.SubscriptionConcurrencyValidator(v); err != nil {
 			return &ValidationError{Name: "subscription_concurrency", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.subscription_concurrency": %w`, err)}
@@ -2563,6 +2684,21 @@ func (_u *PaymentOrderUpdateOne) sqlSave(ctx context.Context) (_node *PaymentOrd
 	}
 	if _u.mutation.SubscriptionDaysCleared() {
 		_spec.ClearField(paymentorder.FieldSubscriptionDays, field.TypeInt)
+	}
+	if value, ok := _u.mutation.SubscriptionBonusActivityID(); ok {
+		_spec.SetField(paymentorder.FieldSubscriptionBonusActivityID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedSubscriptionBonusActivityID(); ok {
+		_spec.AddField(paymentorder.FieldSubscriptionBonusActivityID, field.TypeInt64, value)
+	}
+	if _u.mutation.SubscriptionBonusActivityIDCleared() {
+		_spec.ClearField(paymentorder.FieldSubscriptionBonusActivityID, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.SubscriptionBonusDays(); ok {
+		_spec.SetField(paymentorder.FieldSubscriptionBonusDays, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedSubscriptionBonusDays(); ok {
+		_spec.AddField(paymentorder.FieldSubscriptionBonusDays, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.SubscriptionConcurrency(); ok {
 		_spec.SetField(paymentorder.FieldSubscriptionConcurrency, field.TypeInt, value)

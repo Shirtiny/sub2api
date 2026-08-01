@@ -160,6 +160,9 @@
                     <span :class="['text-3xl font-bold', planTextClass]">{{ formatSelectedPaymentAmount(effectiveSelectedPlanPrice) }}</span>
                   </template>
                   <span class="text-sm text-gray-500 dark:text-gray-400">/ {{ planValiditySuffix }}</span>
+                  <span v-if="selectedSubscriptionBonusDays > 0" class="text-sm font-semibold text-[#3D2E2A] dark:text-[#F5C66B]">
+                    +{{ selectedSubscriptionBonusDays }}{{ t('payment.days') }}
+                  </span>
                 </div>
                 <!-- Description -->
                 <p v-if="selectedPlan.description" class="mt-2 text-sm leading-relaxed text-gray-500 dark:text-gray-400">
@@ -418,6 +421,7 @@ const amount = ref<number | null>(null)
 const selectedMethod = ref('')
 const selectedPlan = ref<SubscriptionPlan | null>(null)
 const selectedSubscriptionMultiplier = ref(1)
+const selectedSubscriptionBonusDays = computed(() => selectedPlan.value?.subscription_bonus?.days ?? 0)
 const previewImage = ref('')
 const cafeCouponCode = ref('')
 const cafeCouponAppliedCode = ref('')
@@ -1308,6 +1312,9 @@ async function createOrder(orderAmount: number, orderType: OrderType, planId?: n
       forceQRCode: !!(checkout.value.alipay_force_qrcode && normalizeVisibleMethod(requestType) === 'alipay'),
       cafeCouponCode: cafeCouponCodeForOrder(options.isResume === true),
       multiplier: orderType === 'subscription' ? effectiveSelectedMultiplier.value : undefined,
+      expectedSubscriptionBonusActivityId: orderType === 'subscription'
+        ? selectedPlan.value?.subscription_bonus?.activity_id
+        : undefined,
     })
     if (options.openid) {
       payload.openid = options.openid
@@ -1537,6 +1544,9 @@ async function attemptMobileQrFallback(err: unknown, context: MobileQrFallbackCo
       isWechatBrowser: false,
       cafeCouponCode: cafeCouponCodeForOrder(false),
       multiplier: context.orderType === 'subscription' ? effectiveSelectedMultiplier.value : undefined,
+      expectedSubscriptionBonusActivityId: context.orderType === 'subscription'
+        ? selectedPlan.value?.subscription_bonus?.activity_id
+        : undefined,
     })
     const result = await paymentStore.createOrder(payload) as CreateOrderResult & { resume_token?: string }
     const stripeMethod = visibleMethod === 'wxpay' ? 'wechat_pay' : 'alipay'

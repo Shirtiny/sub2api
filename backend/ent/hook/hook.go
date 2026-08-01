@@ -273,6 +273,42 @@ func (f PromoCodeUsageFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Val
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.PromoCodeUsageMutation", m)
 }
 
+// The PromotionActivityFunc type is an adapter to allow the use of ordinary
+// function as PromotionActivity mutator.
+type PromotionActivityFunc func(context.Context, *ent.PromotionActivityMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f PromotionActivityFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.PromotionActivityMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.PromotionActivityMutation", m)
+}
+
+// The PromotionActivityParticipationFunc type is an adapter to allow the use of ordinary
+// function as PromotionActivityParticipation mutator.
+type PromotionActivityParticipationFunc func(context.Context, *ent.PromotionActivityParticipationMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f PromotionActivityParticipationFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.PromotionActivityParticipationMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.PromotionActivityParticipationMutation", m)
+}
+
+// The PromotionActivityPlanFunc type is an adapter to allow the use of ordinary
+// function as PromotionActivityPlan mutator.
+type PromotionActivityPlanFunc func(context.Context, *ent.PromotionActivityPlanMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f PromotionActivityPlanFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.PromotionActivityPlanMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.PromotionActivityPlanMutation", m)
+}
+
 // The ProxyFunc type is an adapter to allow the use of ordinary
 // function as Proxy mutator.
 type ProxyFunc func(context.Context, *ent.ProxyMutation) (ent.Value, error)

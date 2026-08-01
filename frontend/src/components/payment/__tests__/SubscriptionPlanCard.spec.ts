@@ -12,6 +12,7 @@ const i18n = createI18n({
     en: {
       payment: {
         days: "days",
+        bonusDaysSuffix: " days",
         renewNow: "Renew",
         subscribeNow: "Subscribe now",
         planCard: {
@@ -100,6 +101,31 @@ const mountCustomPlanCard = (props = {}) =>
   });
 
 describe("SubscriptionPlanCard", () => {
+  it("shows eligible subscription bonus days next to validity", () => {
+    const wrapper = mount(SubscriptionPlanCard, {
+      props: {
+        plan: {
+          ...customPlan(),
+          custom_multiplier_enabled: false,
+          subscription_bonus: {
+            activity_id: 8,
+            days: 5,
+            ends_at: new Date(Date.now() + 86400000).toISOString(),
+          },
+        },
+      },
+      global: { plugins: [i18n], stubs: { Select: SelectStub } },
+    });
+
+    expect(wrapper.find('[data-testid="subscription-bonus-days"]').text()).toContain("+5");
+  });
+
+  it("does not show bonus days without an eligible checkout benefit", () => {
+    const wrapper = mountCustomPlanCard();
+
+    expect(wrapper.find('[data-testid="subscription-bonus-days"]').exists()).toBe(false);
+  });
+
   it("does not show Antigravity model scopes for OpenAI plans", () => {
     const text = mountPlanCard("openai").text();
 

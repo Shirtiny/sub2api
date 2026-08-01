@@ -4,11 +4,15 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"sort"
 	"strings"
 	"time"
 
 	dbent "github.com/Wei-Shaw/sub2api/ent"
 	"github.com/Wei-Shaw/sub2api/ent/group"
+	"github.com/Wei-Shaw/sub2api/ent/paymentorder"
+	"github.com/Wei-Shaw/sub2api/ent/promotionactivity"
+	"github.com/Wei-Shaw/sub2api/ent/promotionactivityplan"
 	"github.com/Wei-Shaw/sub2api/ent/subscriptionconcurrencyentitlement"
 	"github.com/Wei-Shaw/sub2api/ent/subscriptionplan"
 	"github.com/Wei-Shaw/sub2api/ent/usersubscription"
@@ -17,6 +21,52 @@ import (
 )
 
 const maxPlanConcurrency = int(^uint32(0) >> 1)
+
+func validateSubscriptionPlanValidity(validityDays int, validityUnit string) (int, error) {
+	if validityDays <= 0 {
+		return 0, infraerrors.BadRequest("PLAN_VALIDITY_REQUIRED", "validity days must be > 0")
+	}
+	multiplier := 1
+	switch strings.ToLower(strings.TrimSpace(validityUnit)) {
+	case "day", "days":
+	case "week", "weeks":
+		multiplier = 7
+	case "month", "months":
+		multiplier = 30
+	default:
+		return 0, infraerrors.BadRequest("PLAN_VALIDITY_UNIT_INVALID", "validity unit must be days, weeks, or months")
+	}
+	if validityDays > MaxValidityDays/multiplier {
+		return 0, infraerrors.BadRequest("PLAN_VALIDITY_TOO_LONG", "subscription plan validity exceeds the maximum")
+	}
+	return validityDays * multiplier, nil
+}
+
+func validatePlanPromotionBonusValidity(ctx context.Context, client *dbent.Client, planID int64, baseDays int) error {
+	if client == nil || planID <= 0 {
+		return nil
+	}
+	if baseDays <= 0 || baseDays > MaxValidityDays {
+		return infraerrors.BadRequest("PLAN_VALIDITY_TOO_LONG", "subscription plan validity exceeds the maximum")
+	}
+	invalid, err := client.PromotionActivityPlan.Query().
+		Where(
+			promotionactivityplan.PlanIDEQ(planID),
+			promotionactivityplan.BonusDaysGT(MaxValidityDays-baseDays),
+			promotionactivityplan.HasActivityWith(
+				promotionactivity.EnabledEQ(true),
+				promotionactivity.EndsAtGT(time.Now()),
+			),
+		).
+		Exist(ctx)
+	if err != nil {
+		return fmt.Errorf("validate plan promotion bonus validity: %w", err)
+	}
+	if invalid {
+		return infraerrors.Conflict("PLAN_ACTIVITY_VALIDITY_TOO_LONG", "plan validity plus an enabled promotion bonus exceeds the maximum subscription validity")
+	}
+	return nil
+}
 
 // validatePlanRequired checks that all required fields for a plan are provided.
 func validatePlanRequired(name string, groupID int64, price float64, validityDays int, concurrency int, validityUnit string, originalPrice *float64) error {
@@ -37,6 +87,9 @@ func validatePlanRequired(name string, groupID int64, price float64, validityDay
 	}
 	if strings.TrimSpace(validityUnit) == "" {
 		return infraerrors.BadRequest("PLAN_VALIDITY_UNIT_REQUIRED", "validity unit is required")
+	}
+	if _, err := validateSubscriptionPlanValidity(validityDays, validityUnit); err != nil {
+		return err
 	}
 	if originalPrice != nil && *originalPrice < 0 {
 		return infraerrors.BadRequest("PLAN_ORIGINAL_PRICE_INVALID", "original price must be >= 0")
@@ -130,6 +183,13 @@ func validatePlanPatch(req UpdatePlanRequest) error {
 	}
 	if req.ValidityUnit != nil && strings.TrimSpace(*req.ValidityUnit) == "" {
 		return infraerrors.BadRequest("PLAN_VALIDITY_UNIT_REQUIRED", "validity unit is required")
+	}
+	if req.ValidityUnit != nil {
+		switch strings.ToLower(strings.TrimSpace(*req.ValidityUnit)) {
+		case "day", "days", "week", "weeks", "month", "months":
+		default:
+			return infraerrors.BadRequest("PLAN_VALIDITY_UNIT_INVALID", "validity unit must be days, weeks, or months")
+		}
 	}
 	if req.OriginalPrice != nil && *req.OriginalPrice < 0 {
 		return infraerrors.BadRequest("PLAN_ORIGINAL_PRICE_INVALID", "original price must be >= 0")
@@ -249,9 +309,22 @@ func (s *PaymentConfigService) UpdatePlan(ctx context.Context, id int64, req Upd
 			return nil, err
 		}
 	}
-	current, err := s.entClient.SubscriptionPlan.Get(ctx, id)
+	tx, err := s.entClient.Tx(ctx)
 	if err != nil {
-		return nil, infraerrors.NotFound("PLAN_NOT_FOUND", "subscription plan not found")
+		return nil, fmt.Errorf("begin plan update: %w", err)
+	}
+	defer func() { _ = tx.Rollback() }()
+	txCtx := dbent.NewTxContext(ctx, tx)
+	currentQuery := tx.SubscriptionPlan.Query().Where(subscriptionplan.IDEQ(id))
+	if supportsForUpdate(tx.Client()) {
+		currentQuery = currentQuery.ForUpdate()
+	}
+	current, err := currentQuery.Only(txCtx)
+	if err != nil {
+		if dbent.IsNotFound(err) {
+			return nil, infraerrors.NotFound("PLAN_NOT_FOUND", "subscription plan not found")
+		}
+		return nil, fmt.Errorf("lock subscription plan: %w", err)
 	}
 	enabled := current.CustomMultiplierEnabled
 	minValue := current.CustomMultiplierMin
@@ -281,7 +354,22 @@ func (s *PaymentConfigService) UpdatePlan(ctx context.Context, id int64, req Upd
 	if err != nil {
 		return nil, err
 	}
-	u := s.entClient.SubscriptionPlan.UpdateOneID(id)
+	validityDays := current.ValidityDays
+	validityUnit := current.ValidityUnit
+	if req.ValidityDays != nil {
+		validityDays = *req.ValidityDays
+	}
+	if req.ValidityUnit != nil {
+		validityUnit = *req.ValidityUnit
+	}
+	baseDays, err := validateSubscriptionPlanValidity(validityDays, validityUnit)
+	if err != nil {
+		return nil, err
+	}
+	if err := validatePlanPromotionBonusValidity(txCtx, tx.Client(), id, baseDays); err != nil {
+		return nil, err
+	}
+	u := tx.SubscriptionPlan.UpdateOneID(id)
 	if req.GroupID != nil {
 		u.SetGroupID(*req.GroupID)
 	}
@@ -329,9 +417,12 @@ func (s *PaymentConfigService) UpdatePlan(ctx context.Context, id int64, req Upd
 		u.SetCustomMultiplierMin(minValue)
 		u.SetCustomMultiplierMax(maxValue)
 	}
-	plan, err := u.Save(ctx)
+	plan, err := u.Save(txCtx)
 	if err != nil {
 		return nil, err
+	}
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("commit plan update: %w", err)
 	}
 	if req.Concurrency != nil && *req.Concurrency != current.Concurrency {
 		s.raiseActiveConcurrencyEntitlements(ctx, plan)
@@ -417,7 +508,61 @@ func (s *PaymentConfigService) raiseActiveConcurrencyEntitlements(ctx context.Co
 }
 
 func (s *PaymentConfigService) DeletePlan(ctx context.Context, id int64) error {
-	count, err := s.countPendingOrdersByPlan(ctx, id)
+	tx, err := s.entClient.Tx(ctx)
+	if err != nil {
+		return fmt.Errorf("begin plan deletion: %w", err)
+	}
+	defer func() { _ = tx.Rollback() }()
+	txCtx := dbent.NewTxContext(ctx, tx)
+	// Activity updates and order creation lock activity rows before plan rows.
+	// Follow the same order here to prevent an enabled activity from being
+	// detached while its update is waiting on the plan lock.
+	refs, err := tx.PromotionActivityPlan.Query().
+		Where(promotionactivityplan.PlanIDEQ(id)).
+		All(txCtx)
+	if err != nil {
+		return fmt.Errorf("load plan promotion activity references: %w", err)
+	}
+	activityIDs := make([]int64, 0, len(refs))
+	seenActivityIDs := make(map[int64]struct{}, len(refs))
+	for _, ref := range refs {
+		if _, seen := seenActivityIDs[ref.ActivityID]; seen {
+			continue
+		}
+		seenActivityIDs[ref.ActivityID] = struct{}{}
+		activityIDs = append(activityIDs, ref.ActivityID)
+	}
+	if len(activityIDs) > 0 {
+		sort.Slice(activityIDs, func(i, j int) bool { return activityIDs[i] < activityIDs[j] })
+		activityQuery := tx.PromotionActivity.Query().
+			Where(promotionactivity.IDIn(activityIDs...)).
+			Order(dbent.Asc(promotionactivity.FieldID))
+		if supportsForUpdate(tx.Client()) {
+			activityQuery = activityQuery.ForUpdate()
+		}
+		if _, err := activityQuery.All(txCtx); err != nil {
+			return fmt.Errorf("lock plan promotion activities: %w", err)
+		}
+	}
+	planQuery := tx.SubscriptionPlan.Query().Where(subscriptionplan.IDEQ(id))
+	if supportsForUpdate(tx.Client()) {
+		planQuery = planQuery.ForUpdate()
+	}
+	if _, err := planQuery.Only(txCtx); err != nil {
+		if dbent.IsNotFound(err) {
+			return infraerrors.NotFound("PLAN_NOT_FOUND", "subscription plan not found")
+		}
+		return fmt.Errorf("lock subscription plan: %w", err)
+	}
+	count, err := tx.PaymentOrder.Query().
+		Where(
+			paymentorder.PlanIDEQ(id),
+			paymentorder.Or(
+				paymentorder.StatusIn(pendingOrderStatuses...),
+				paymentorder.And(paymentorder.StatusEQ(payment.OrderStatusFailed), paymentorder.PaidAtNotNil()),
+			),
+		).
+		Count(txCtx)
 	if err != nil {
 		return fmt.Errorf("check pending orders: %w", err)
 	}
@@ -425,7 +570,32 @@ func (s *PaymentConfigService) DeletePlan(ctx context.Context, id int64) error {
 		return infraerrors.Conflict("PENDING_ORDERS",
 			fmt.Sprintf("this plan has %d in-progress orders and cannot be deleted — wait for orders to complete first", count))
 	}
-	return s.entClient.SubscriptionPlan.DeleteOneID(id).Exec(ctx)
+	refs, err = tx.PromotionActivityPlan.Query().
+		Where(promotionactivityplan.PlanIDEQ(id)).
+		WithActivity().
+		All(txCtx)
+	if err != nil {
+		return fmt.Errorf("load plan promotion activities: %w", err)
+	}
+	now := time.Now()
+	for _, ref := range refs {
+		activity := ref.Edges.Activity
+		if activity != nil && activity.Enabled && now.Before(activity.EndsAt) {
+			return infraerrors.Conflict("PLAN_ACTIVITY_IN_USE", "this plan is used by an active or scheduled promotion activity; disable or wait for it before deleting the plan")
+		}
+	}
+	if len(refs) > 0 {
+		if _, err := tx.PromotionActivityPlan.Delete().Where(promotionactivityplan.PlanIDEQ(id)).Exec(txCtx); err != nil {
+			return fmt.Errorf("detach plan promotion activities: %w", err)
+		}
+	}
+	if err := tx.SubscriptionPlan.DeleteOneID(id).Exec(txCtx); err != nil {
+		return err
+	}
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("commit plan deletion: %w", err)
+	}
+	return nil
 }
 
 // GetPlan returns a subscription plan by ID.

@@ -26,7 +26,12 @@ import (
 // misconfigured to point at us, or when our orders table has been wiped).
 var ErrOrderNotFound = errors.New("payment order not found")
 
-const paymentFulfillmentLeaseDuration = 5 * time.Minute
+const (
+	paymentFulfillmentLeaseDuration = 5 * time.Minute
+	// A payment received after the expiry grace window is recorded for
+	// reconciliation/refund, but must never be retried into fulfillment.
+	paymentFailureReasonAfterExpiry = "PAYMENT_AFTER_EXPIRY"
+)
 
 type paymentFulfillmentLease struct {
 	version time.Time
@@ -146,9 +151,6 @@ func expectedNotificationProviderKey(registry *payment.Registry, orderPaymentTyp
 }
 
 func (s *PaymentService) toPaid(ctx context.Context, o *dbent.PaymentOrder, tradeNo string, paid float64, pk string) error {
-	if err := s.ensureCafeCouponAppliedForPaidOrder(ctx, o); err != nil {
-		return err
-	}
 	previousStatus := o.Status
 	now := time.Now()
 	grace := now.Add(-paymentGraceMinutes * time.Minute)
@@ -157,6 +159,13 @@ func (s *PaymentService) toPaid(ctx context.Context, o *dbent.PaymentOrder, trad
 		paymentorder.Or(
 			paymentorder.StatusEQ(OrderStatusPending),
 			paymentorder.StatusEQ(OrderStatusCancelled),
+			paymentorder.And(
+				paymentorder.StatusEQ(OrderStatusFailed),
+				paymentorder.Or(
+					paymentorder.FailedReasonIsNil(),
+					paymentorder.FailedReasonNEQ(paymentFailureReasonAfterExpiry),
+				),
+			),
 			paymentorder.And(
 				paymentorder.StatusEQ(OrderStatusExpired),
 				paymentorder.UpdatedAtGTE(grace),
@@ -167,6 +176,13 @@ func (s *PaymentService) toPaid(ctx context.Context, o *dbent.PaymentOrder, trad
 		return fmt.Errorf("update to PAID: %w", err)
 	}
 	if c == 0 {
+		recorded, recordErr := s.recordPaymentAfterExpiry(ctx, o.ID, tradeNo, paid, now)
+		if recordErr != nil {
+			return recordErr
+		}
+		if recorded {
+			return nil
+		}
 		return s.alreadyProcessed(ctx, o)
 	}
 	if previousStatus == OrderStatusCancelled || previousStatus == OrderStatusExpired {
@@ -195,7 +211,12 @@ func (s *PaymentService) alreadyProcessed(ctx context.Context, o *dbent.PaymentO
 	switch cur.Status {
 	case OrderStatusCompleted, OrderStatusRefunded:
 		return nil
-	case OrderStatusFailed, OrderStatusPaid, OrderStatusRecharging:
+	case OrderStatusFailed:
+		if isPaymentAfterExpiryFailure(cur) {
+			return nil
+		}
+		return s.executeFulfillment(ctx, o.ID)
+	case OrderStatusPaid, OrderStatusRecharging:
 		return s.executeFulfillment(ctx, o.ID)
 	case OrderStatusExpired:
 		slog.Warn("webhook payment success for expired order beyond grace period",
@@ -212,6 +233,37 @@ func (s *PaymentService) alreadyProcessed(ctx context.Context, o *dbent.PaymentO
 	default:
 		return nil
 	}
+}
+
+func isPaymentAfterExpiryFailure(order *dbent.PaymentOrder) bool {
+	return order != nil && order.Status == OrderStatusFailed && order.FailedReason != nil && *order.FailedReason == paymentFailureReasonAfterExpiry
+}
+
+func (s *PaymentService) recordPaymentAfterExpiry(ctx context.Context, orderID int64, tradeNo string, paid float64, paidAt time.Time) (bool, error) {
+	if orderID <= 0 {
+		return false, nil
+	}
+	updated, err := s.entClient.PaymentOrder.Update().
+		Where(paymentorder.IDEQ(orderID), paymentorder.StatusEQ(OrderStatusExpired)).
+		SetStatus(OrderStatusFailed).
+		SetPayAmount(paid).
+		SetPaymentTradeNo(tradeNo).
+		SetPaidAt(paidAt).
+		SetFailedAt(paidAt).
+		SetFailedReason(paymentFailureReasonAfterExpiry).
+		Save(ctx)
+	if err != nil {
+		return false, fmt.Errorf("record payment after expiry: %w", err)
+	}
+	if updated == 0 {
+		return false, nil
+	}
+	s.writeAuditLog(ctx, orderID, "PAYMENT_AFTER_EXPIRY", "system", map[string]any{
+		"tradeNo":    tradeNo,
+		"paidAmount": paid,
+		"reason":     "payment arrived after order expiry grace period",
+	})
+	return true, nil
 }
 
 func (s *PaymentService) executeFulfillment(ctx context.Context, oid int64) error {
@@ -245,6 +297,10 @@ func (s *PaymentService) ExecuteBalanceFulfillment(ctx context.Context, oid int6
 	}
 	if lease == nil {
 		return nil
+	}
+	if err := s.ensureCafeCouponAppliedForPaidOrder(ctx, o); err != nil {
+		s.markFailed(ctx, oid, lease, err)
+		return err
 	}
 	if err := s.doBalance(ctx, o, lease); err != nil {
 		s.markFailed(ctx, oid, lease, err)
@@ -448,7 +504,9 @@ func (s *PaymentService) sendSubscriptionPurchaseSuccessNotification(ctx context
 		"expiry_time":        "",
 		"order_id":           strconv.FormatInt(o.ID, 10),
 	}
-	if o.SubscriptionDays != nil {
+	if totalDays, err := subscriptionOrderTotalDays(o); err == nil {
+		variables["subscription_days"] = strconv.Itoa(totalDays)
+	} else if o.SubscriptionDays != nil {
 		variables["subscription_days"] = strconv.Itoa(*o.SubscriptionDays)
 	}
 	if o.SubscriptionGroupID != nil {
@@ -509,6 +567,14 @@ func (s *PaymentService) ExecuteSubscriptionFulfillment(ctx context.Context, oid
 	if lease == nil {
 		return nil
 	}
+	if err := s.ensureCafeCouponAppliedForPaidOrder(ctx, o); err != nil {
+		s.markFailed(ctx, oid, lease, err)
+		return err
+	}
+	if err := s.ensureSubscriptionBonusReservedForPaidOrder(ctx, o); err != nil {
+		s.markFailed(ctx, oid, lease, err)
+		return err
+	}
 	if err := s.doSub(ctx, o, lease); err != nil {
 		s.markFailed(ctx, oid, lease, err)
 		return err
@@ -518,7 +584,10 @@ func (s *PaymentService) ExecuteSubscriptionFulfillment(ctx context.Context, oid
 
 func (s *PaymentService) doSub(ctx context.Context, o *dbent.PaymentOrder, lease *paymentFulfillmentLease) error {
 	gid := *o.SubscriptionGroupID
-	days := *o.SubscriptionDays
+	days, err := subscriptionOrderTotalDays(o)
+	if err != nil {
+		return err
+	}
 	customOrder, err := s.isCustomSubscriptionPaymentOrder(ctx, o)
 	if err != nil {
 		return err
@@ -609,6 +678,10 @@ func (s *PaymentService) doSub(ctx context.Context, o *dbent.PaymentOrder, lease
 	// Prevents double-extension on retry after markCompleted fails.
 	if txSvc.hasAuditLog(txCtx, o.ID, "SUBSCRIPTION_SUCCESS") {
 		slog.Info("subscription already assigned for order, skipping", "orderID", o.ID, "groupID", gid)
+		if err := txSvc.grantSubscriptionBonusForOrderTx(txCtx, tx.Client(), o); err != nil {
+			_ = tx.Rollback()
+			return err
+		}
 		if err := tx.Commit(); err != nil {
 			return fmt.Errorf("commit transaction: %w", err)
 		}
@@ -650,12 +723,21 @@ func (s *PaymentService) doSub(ctx context.Context, o *dbent.PaymentOrder, lease
 			return fmt.Errorf("update membership points: %w", err)
 		}
 	}
+	if err := txSvc.grantSubscriptionBonusForOrderTx(txCtx, tx.Client(), o); err != nil {
+		_ = tx.Rollback()
+		return err
+	}
 	auditDetail := map[string]any{
 		"subscriptionGroupID":     gid,
 		"subscriptionDays":        days,
 		"subscriptionConcurrency": o.SubscriptionConcurrency,
 		"creditedAmount":          o.Amount,
 		"payAmount":               o.PayAmount,
+		"subscriptionBaseDays":    *o.SubscriptionDays,
+		"subscriptionBonusDays":   o.SubscriptionBonusDays,
+	}
+	if o.SubscriptionBonusActivityID != nil {
+		auditDetail["subscriptionBonusActivityID"] = *o.SubscriptionBonusActivityID
 	}
 	if virtualEntitlement != nil {
 		auditDetail["customMultiplier"] = virtualEntitlement.Multiplier
@@ -768,9 +850,14 @@ func (s *PaymentService) ensurePaymentSubscriptionAssigned(ctx context.Context, 
 		auditDetail := map[string]any{
 			"subscriptionGroupID":     groupID,
 			"subscriptionDays":        days,
+			"subscriptionBaseDays":    *o.SubscriptionDays,
+			"subscriptionBonusDays":   o.SubscriptionBonusDays,
 			"subscriptionConcurrency": o.SubscriptionConcurrency,
 			"creditedAmount":          o.Amount,
 			"payAmount":               o.PayAmount,
+		}
+		if o.SubscriptionBonusActivityID != nil {
+			auditDetail["subscriptionBonusActivityID"] = *o.SubscriptionBonusActivityID
 		}
 		if coupon := cafeCouponOrderSnapshot(o); coupon != nil {
 			auditDetail["cafeCoupon"] = coupon
@@ -780,6 +867,9 @@ func (s *PaymentService) ensurePaymentSubscriptionAssigned(ctx context.Context, 
 		}
 	} else {
 		slog.Info("subscription already assigned for order, skipping", "orderID", o.ID, "groupID", groupID)
+	}
+	if err := s.grantSubscriptionBonusForOrderTx(txCtx, txClient, o); err != nil {
+		return err
 	}
 
 	if err := tx.Commit(); err != nil {
@@ -999,6 +1089,9 @@ func (s *PaymentService) RetryFulfillment(ctx context.Context, oid int64) error 
 	}
 	if o.Status == OrderStatusCompleted {
 		return infraerrors.BadRequest("INVALID_STATUS", "order already completed")
+	}
+	if isPaymentAfterExpiryFailure(o) {
+		return infraerrors.BadRequest("PAYMENT_AFTER_EXPIRY_REFUND_REQUIRED", "this payment arrived after the expiry grace period and must be refunded")
 	}
 	if o.Status != OrderStatusFailed && o.Status != OrderStatusPaid && o.Status != OrderStatusRecharging {
 		return infraerrors.BadRequest("INVALID_STATUS", "only paid, failed, and recoverable recharging orders can retry")
