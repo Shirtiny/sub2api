@@ -11,6 +11,9 @@ import type {
   SubscriptionPlan,
   ProviderInstance,
   PromotionActivity,
+  PromotionActivityParticipant,
+  PromotionActivityParticipationRecord,
+  PromotionActivityRecord,
   UpsertPromotionActivityRequest
 } from '@/types/payment'
 import type { BasePaginationResponse } from '@/types'
@@ -170,6 +173,18 @@ export const adminPaymentAPI = {
 
   deleteActivity(id: number) {
     return apiClient.delete(`/admin/payment/activities/${id}`)
+  },
+
+  getActivityRecords(params?: { page?: number; page_size?: number; keyword?: string; status?: string }) {
+    return apiClient.get<BasePaginationResponse<PromotionActivityRecord>>('/admin/payment/activity-records', { params })
+  },
+
+  getActivityParticipants(id: number, params?: { page?: number; page_size?: number; keyword?: string }) {
+    return apiClient.get<BasePaginationResponse<PromotionActivityParticipant>>(`/admin/payment/activities/${id}/participants`, { params })
+  },
+
+  getActivityParticipations(id: number, params?: { page?: number; page_size?: number; user_id?: number; keyword?: string; status?: string }) {
+    return apiClient.get<BasePaginationResponse<PromotionActivityParticipationRecord>>(`/admin/payment/activities/${id}/participations`, { params })
   },
 
   // ==================== Provider Instances ====================

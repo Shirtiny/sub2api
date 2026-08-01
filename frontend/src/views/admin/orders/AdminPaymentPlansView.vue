@@ -9,6 +9,9 @@
         <button @click="showActivityDialog = true" class="btn btn-secondary">
           {{ t('payment.admin.activityConfig') }}
         </button>
+        <button @click="showActivityRecordsDialog = true" class="btn btn-secondary">
+          {{ t('payment.admin.activityRecords') }}
+        </button>
         <button @click="openPlanEdit(null)" class="btn btn-primary">{{ t('payment.admin.createPlan') }}</button>
       </div>
 
@@ -85,6 +88,8 @@
       @changed="loadPlans"
     />
 
+    <ActivityRecordsDialog :show="showActivityRecordsDialog" @close="showActivityRecordsDialog = false" />
+
     <ConfirmDialog :show="showDeletePlanDialog" :title="t('payment.admin.deletePlan')" :message="t('payment.admin.deletePlanConfirm')" :confirm-text="t('common.delete')" danger @confirm="handleDeletePlan" @cancel="showDeletePlanDialog = false" />
   </AppLayout>
 </template>
@@ -106,6 +111,7 @@ import Icon from '@/components/icons/Icon.vue'
 import GroupBadge from '@/components/common/GroupBadge.vue'
 import PlanEditDialog from './PlanEditDialog.vue'
 import ActivityManagementDialog from './ActivityManagementDialog.vue'
+import ActivityRecordsDialog from './ActivityRecordsDialog.vue'
 import { platformTextClass } from '@/utils/platformColors'
 
 const { t } = useI18n()
@@ -141,6 +147,7 @@ const plansLoading = ref(false)
 const plans = ref<SubscriptionPlan[]>([])
 const showPlanDialog = ref(false)
 const showActivityDialog = ref(false)
+const showActivityRecordsDialog = ref(false)
 const showDeletePlanDialog = ref(false)
 const editingPlan = ref<SubscriptionPlan | null>(null)
 const deletingPlanId = ref<number | null>(null)

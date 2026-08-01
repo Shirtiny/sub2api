@@ -166,6 +166,62 @@ export interface PromotionActivity {
   updated_at: string
 }
 
+export interface PromotionActivityRecord extends PromotionActivity {
+  participant_count: number
+  participation_count: number
+  reserved_count: number
+  granted_count: number
+  released_count: number
+  granted_bonus_days: number
+}
+
+export interface PromotionActivityParticipant {
+  user_id: number
+  user_email: string
+  user_name: string
+  participation_count: number
+  reserved_count: number
+  granted_count: number
+  released_count: number
+  granted_bonus_days: number
+  first_participated_at: string
+  last_participated_at: string
+}
+
+export type PromotionParticipationStatus = 'reserved' | 'granted' | 'released'
+
+export interface PromotionActivityParticipationRecord {
+  id: number
+  activity_id: number
+  user_id: number
+  user_email: string
+  user_name: string
+  order_id: number
+  out_trade_no: string
+  order_status: OrderStatus
+  payment_type: string
+  amount: number
+  pay_amount: number
+  plan_id: number
+  plan_name: string
+  subscription_days?: number
+  subscription_bonus_days: number
+  status: PromotionParticipationStatus
+  bonus_days: number
+  reserved_at: string
+  granted_at?: string
+  released_at?: string
+  release_reason?: string
+  created_at: string
+  order_created_at?: string
+  paid_at?: string
+  completed_at?: string
+  failed_at?: string
+  failed_reason?: string
+  refund_amount: number
+  refund_at?: string
+}
+
 export interface UpsertPromotionActivityRequest {
   name: string
   type: 'subscription_bonus_days'

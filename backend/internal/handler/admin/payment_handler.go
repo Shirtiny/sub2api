@@ -240,6 +240,65 @@ func (h *PaymentHandler) DeletePlan(c *gin.Context) {
 
 // --- Promotion Activities ---
 
+// ListPromotionActivityRecords returns paginated promotion activity history summaries.
+// GET /api/v1/admin/payment/activity-records
+func (h *PaymentHandler) ListPromotionActivityRecords(c *gin.Context) {
+	page, pageSize := response.ParsePagination(c)
+	records, total, err := h.configService.AdminListPromotionActivityRecords(c.Request.Context(), service.PromotionActivityRecordListParams{
+		Page: page, PageSize: pageSize, Keyword: c.Query("keyword"), Status: c.Query("status"),
+	})
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Paginated(c, records, int64(total), page, pageSize)
+}
+
+// ListPromotionActivityParticipants returns unique users that participated in an activity.
+// GET /api/v1/admin/payment/activities/:id/participants
+func (h *PaymentHandler) ListPromotionActivityParticipants(c *gin.Context) {
+	id, ok := parseIDParam(c, "id")
+	if !ok {
+		return
+	}
+	page, pageSize := response.ParsePagination(c)
+	participants, total, err := h.configService.AdminListPromotionActivityParticipants(c.Request.Context(), id, service.PromotionActivityParticipantListParams{
+		Page: page, PageSize: pageSize, Keyword: c.Query("keyword"),
+	})
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Paginated(c, participants, int64(total), page, pageSize)
+}
+
+// ListPromotionActivityParticipations returns order-level participation records.
+// GET /api/v1/admin/payment/activities/:id/participations
+func (h *PaymentHandler) ListPromotionActivityParticipations(c *gin.Context) {
+	id, ok := parseIDParam(c, "id")
+	if !ok {
+		return
+	}
+	var userID int64
+	if raw := c.Query("user_id"); raw != "" {
+		parsed, err := strconv.ParseInt(raw, 10, 64)
+		if err != nil || parsed <= 0 {
+			response.BadRequest(c, "Invalid user_id")
+			return
+		}
+		userID = parsed
+	}
+	page, pageSize := response.ParsePagination(c)
+	records, total, err := h.configService.AdminListPromotionActivityParticipations(c.Request.Context(), id, service.PromotionActivityParticipationListParams{
+		Page: page, PageSize: pageSize, UserID: userID, Keyword: c.Query("keyword"), Status: c.Query("status"),
+	})
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Paginated(c, records, int64(total), page, pageSize)
+}
+
 // ListPromotionActivities returns all configured payment promotion activities.
 // GET /api/v1/admin/payment/activities
 func (h *PaymentHandler) ListPromotionActivities(c *gin.Context) {
@@ -302,7 +361,7 @@ func (h *PaymentHandler) UpdatePromotionActivity(c *gin.Context) {
 	response.Success(c, activity)
 }
 
-// DeletePromotionActivity deletes a payment promotion activity without order participation.
+// DeletePromotionActivity deletes a payment promotion activity without participation history.
 // DELETE /api/v1/admin/payment/activities/:id
 func (h *PaymentHandler) DeletePromotionActivity(c *gin.Context) {
 	id, ok := parseIDParam(c, "id")

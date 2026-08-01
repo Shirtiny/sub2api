@@ -120,10 +120,26 @@ Validation rules:
 - Plan validity units accept both historical singular values (`day`, `week`, `month`) and the current UI values (`days`, `weeks`, `months`); the server normalizes them before applying the limit.
 - Enabled activities of the same type cannot have overlapping time ranges for the same plan.
 - While an activity has a `reserved` or `granted` participation, its type, limits, time range, plan set, and benefit values are immutable. It may still be disabled to stop new orders.
-- An activity whose participations are all `released` may be edited or hard-deleted. Hard deletion removes those released tracking rows; payment-order snapshots and audit logs retain the historical benefit.
+- An activity whose participations are all `released` may still be edited, but any activity with participation history cannot be hard-deleted. Administrators must disable it instead so activity, participant, and order-level history remain connected.
 - A subscription plan cannot be deleted while it is referenced by an enabled, active, or scheduled activity. After an activity is disabled or ended, its association is detached transactionally before the plan is deleted; participation rows keep their plan and bonus snapshots for history.
 - If a detached activity still has a reserved or granted participation, its immutable fields remain locked, but its name and enabled state can still be maintained without reattaching a deleted plan.
 - A plan validity edit is rejected when it would make any enabled, active, or scheduled activity exceed the maximum after its configured bonus days are added.
+
+## Admin Activity Records
+
+The plan page exposes an **Activity Records** dialog beside **Activity Configuration**. History is retained and can be inspected in three levels:
+
+1. Activity summaries with distinct participant count, total participation count, lifecycle-status counts, and total granted bonus days.
+2. Participants grouped by user, including first/last participation and per-status totals.
+3. Order-level participation records with order snapshots, plan, bonus days, reservation/grant/release times, and release reason.
+
+Paginated admin endpoints:
+
+- `GET /api/v1/admin/payment/activity-records`
+- `GET /api/v1/admin/payment/activities/:id/participants`
+- `GET /api/v1/admin/payment/activities/:id/participations`
+
+The activity and participation endpoints accept `keyword`; activity summaries accept activity `status`; order-level records accept `user_id` and participation `status`.
 
 ## Checkout Contract
 

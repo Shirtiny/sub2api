@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	dbent "github.com/Wei-Shaw/sub2api/ent"
 	"github.com/Wei-Shaw/sub2api/ent/promotionactivityparticipation"
 	"github.com/stretchr/testify/require"
 )
@@ -83,7 +82,7 @@ func TestPromotionActivityRejectsOverlappingPlanWindow(t *testing.T) {
 	require.Contains(t, err.Error(), "overlaps")
 }
 
-func TestPromotionActivityReleasedParticipationAllowsUpdateAndDelete(t *testing.T) {
+func TestPromotionActivityReleasedParticipationAllowsUpdateButPreservesHistory(t *testing.T) {
 	ctx := context.Background()
 	client := newPaymentConfigServiceTestClient(t)
 	svc := &PaymentConfigService{entClient: client, settingRepo: &paymentConfigSettingRepoStub{}}
@@ -121,14 +120,15 @@ func TestPromotionActivityReleasedParticipationAllowsUpdateAndDelete(t *testing.
 	require.Equal(t, 2, updated.MaxUsesPerUser)
 	require.Equal(t, 7, updated.PlanBonuses[0].BonusDays)
 
-	require.NoError(t, svc.DeletePromotionActivity(ctx, activity.ID))
+	err = svc.DeletePromotionActivity(ctx, activity.ID)
+	require.ErrorContains(t, err, "participation history")
 	_, err = client.PromotionActivity.Get(ctx, activity.ID)
-	require.True(t, dbent.IsNotFound(err))
+	require.NoError(t, err)
 	remaining, err := client.PromotionActivityParticipation.Query().
 		Where(promotionactivityparticipation.ActivityIDEQ(activity.ID)).
 		Count(ctx)
 	require.NoError(t, err)
-	require.Zero(t, remaining)
+	require.Equal(t, 1, remaining)
 }
 
 func TestPromotionActivityReservedOrGrantedParticipationBlocksMutation(t *testing.T) {

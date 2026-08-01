@@ -267,25 +267,14 @@ func (s *PaymentConfigService) DeletePromotionActivity(ctx context.Context, id i
 		}
 		return fmt.Errorf("lock promotion activity: %w", err)
 	}
-	hasBlockingParticipation, err := tx.PromotionActivityParticipation.Query().
-		Where(
-			promotionactivityparticipation.ActivityIDEQ(id),
-			promotionactivityparticipation.StatusIn(PromotionParticipationStatusReserved, PromotionParticipationStatusGranted),
-		).
+	hasParticipation, err := tx.PromotionActivityParticipation.Query().
+		Where(promotionactivityparticipation.ActivityIDEQ(id)).
 		Exist(txCtx)
 	if err != nil {
-		return fmt.Errorf("check blocking promotion activity participation: %w", err)
+		return fmt.Errorf("check promotion activity participation: %w", err)
 	}
-	if hasBlockingParticipation {
-		return infraerrors.Conflict("PROMOTION_ACTIVITY_IN_USE", "an activity with a reserved or granted participation cannot be deleted")
-	}
-	// Released rows no longer consume the per-user limit. Order snapshots and
-	// payment audit logs retain the historical benefit after explicit deletion.
-	if _, err := tx.PromotionActivityParticipation.Delete().Where(
-		promotionactivityparticipation.ActivityIDEQ(id),
-		promotionactivityparticipation.StatusEQ(PromotionParticipationStatusReleased),
-	).Exec(txCtx); err != nil {
-		return fmt.Errorf("delete released promotion activity participations: %w", err)
+	if hasParticipation {
+		return infraerrors.Conflict("PROMOTION_ACTIVITY_IN_USE", "an activity with participation history cannot be deleted; disable it instead")
 	}
 	if _, err := tx.PromotionActivityPlan.Delete().Where(promotionactivityplan.ActivityIDEQ(id)).Exec(txCtx); err != nil {
 		return fmt.Errorf("delete promotion activity plans: %w", err)

@@ -1026,6 +1026,14 @@ var (
 				Columns: []*schema.Column{PaymentOrdersColumns[16]},
 			},
 			{
+				Name:    "paymentorder_subscription_bonus_activity_id",
+				Unique:  false,
+				Columns: []*schema.Column{PaymentOrdersColumns[20]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "subscription_bonus_activity_id IS NOT NULL",
+				},
+			},
+			{
 				Name:    "paymentorder_user_id_plan_id_status_expires_at",
 				Unique:  false,
 				Columns: []*schema.Column{PaymentOrdersColumns[50], PaymentOrdersColumns[17], PaymentOrdersColumns[32], PaymentOrdersColumns[40]},
@@ -1275,6 +1283,11 @@ var (
 				Name:    "promotionactivityparticipation_activity_id_user_id_status",
 				Unique:  false,
 				Columns: []*schema.Column{PromotionActivityParticipationsColumns[12], PromotionActivityParticipationsColumns[1], PromotionActivityParticipationsColumns[5]},
+			},
+			{
+				Name:    "promotionactivityparticipation_activity_id_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{PromotionActivityParticipationsColumns[12], PromotionActivityParticipationsColumns[10]},
 			},
 			{
 				Name:    "promotionactivityparticipation_user_id_status",

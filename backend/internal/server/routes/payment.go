@@ -106,9 +106,12 @@ func RegisterPaymentRoutes(
 		}
 
 		// Promotion Activities
+		adminGroup.GET("/activity-records", adminPaymentHandler.ListPromotionActivityRecords)
 		activities := adminGroup.Group("/activities")
 		{
 			activities.GET("", adminPaymentHandler.ListPromotionActivities)
+			activities.GET("/:id/participants", adminPaymentHandler.ListPromotionActivityParticipants)
+			activities.GET("/:id/participations", adminPaymentHandler.ListPromotionActivityParticipations)
 			activities.GET("/:id", adminPaymentHandler.GetPromotionActivity)
 			activities.POST("", adminPaymentHandler.CreatePromotionActivity)
 			activities.PUT("/:id", adminPaymentHandler.UpdatePromotionActivity)

@@ -243,6 +243,8 @@ func (PaymentOrder) Indexes() []ent.Index {
 		index.Fields("paid_at"),
 		index.Fields("payment_type", "paid_at"),
 		index.Fields("order_type"),
+		index.Fields("subscription_bonus_activity_id").
+			Annotations(entsql.IndexWhere("subscription_bonus_activity_id IS NOT NULL")),
 		index.Fields("user_id", "plan_id", "status", "expires_at").
 			Annotations(entsql.IndexWhere("subscription_multiplier >= 1")),
 	}

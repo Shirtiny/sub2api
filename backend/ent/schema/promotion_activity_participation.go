@@ -52,6 +52,7 @@ func (PromotionActivityParticipation) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("order_id").Unique(),
 		index.Fields("activity_id", "user_id", "status"),
+		index.Fields("activity_id", "created_at"),
 		index.Fields("user_id", "status"),
 	}
 }
