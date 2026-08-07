@@ -569,6 +569,42 @@ func TestCafeCouponPreviewAllowsTransferableCoupon(t *testing.T) {
 	require.Equal(t, 5.0, preview.DiscountAmount)
 }
 
+func TestCafeCouponPreviewAllowsTransferableCouponForLowerLevelReceiver(t *testing.T) {
+	ctx := context.Background()
+	client := newCafeCouponTestClient(t)
+	owner, err := client.User.Create().SetEmail("l3-owner@example.com").SetPasswordHash("hash").SetUsername("l3-owner").Save(ctx)
+	require.NoError(t, err)
+	start, end := cafeCouponRollingPeriodWindow(time.Now(), CafeCouponPeriodMonth)
+	coupon, err := client.CafeCoupon.Create().
+		SetCode("CAFE-TRANSFER-L3").SetUserID(owner.ID).SetMembershipLevel(3).SetCouponType(CafeCouponTypeDiscount).SetValue(20).
+		SetPeriod(CafeCouponPeriodMonth).SetPeriodStart(start).SetPeriodEnd(end).SetStatus(CafeCouponStatusIssued).
+		Save(ctx)
+	require.NoError(t, err)
+	settings := cafeCouponSettingsRepo(map[string]string{SettingKeyCafeCouponConfig: `{"levels":{"3":{"enabled":true,"type":"discount","value":20,"period":"month","transferable":true}}}`})
+	// Receiver has never recharged, so its own membership level is 0.
+	svc := &PaymentService{
+		entClient:     client,
+		userRepo:      &mockUserRepo{getByIDUser: &User{ID: owner.ID + 1, Status: payment.EntityStatusActive, TotalRecharged: 0}},
+		configService: &PaymentConfigService{settingRepo: settings},
+	}
+
+	preview, err := svc.PreviewCafeCoupon(ctx, owner.ID+1, coupon.Code, 100)
+	require.NoError(t, err)
+	require.True(t, preview.Transferable)
+	require.Equal(t, 20.0, preview.DiscountAmount)
+	require.Equal(t, 80.0, preview.PayableAmount)
+
+	// The owner itself still has to satisfy the level it was issued at.
+	ownerSvc := &PaymentService{
+		entClient:     client,
+		userRepo:      &mockUserRepo{getByIDUser: &User{ID: owner.ID, Status: payment.EntityStatusActive, TotalRecharged: 0}},
+		configService: &PaymentConfigService{settingRepo: settings},
+	}
+	_, err = ownerSvc.PreviewCafeCoupon(ctx, owner.ID, coupon.Code, 100)
+	require.Error(t, err)
+	require.Equal(t, "CAFE_COUPON_NOT_ELIGIBLE", infraerrors.Reason(err))
+}
+
 func TestCafeCouponCreateOrderUsesIssuedCouponSnapshotAfterConfigChange(t *testing.T) {
 	ctx := context.Background()
 	client := newCafeCouponTestClient(t)

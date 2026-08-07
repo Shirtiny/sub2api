@@ -1008,7 +1008,10 @@ func (s *PaymentService) validateCafeCouponEntityForStatus(ctx context.Context, 
 		if user.Status != payment.EntityStatusActive {
 			return CafeCouponLevelConfig{}, infraerrors.Forbidden("USER_INACTIVE", "user account is disabled")
 		}
-		if CalculateMembershipLevel(user.TotalRecharged) < coupon.MembershipLevel {
+		// Only the owner has to still satisfy the level. A transferable coupon
+		// carries its own entitlement snapshot, so the receiving account is not
+		// required to reach the issuing level itself.
+		if coupon.UserID == userID && CalculateMembershipLevel(user.TotalRecharged) < coupon.MembershipLevel {
 			return CafeCouponLevelConfig{}, infraerrors.Forbidden("CAFE_COUPON_NOT_ELIGIBLE", "membership level no longer satisfies this coupon")
 		}
 	}
