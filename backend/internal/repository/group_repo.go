@@ -768,6 +768,9 @@ func (r *groupRepository) DeleteCascade(ctx context.Context, id int64) ([]int64,
 			return nil, err
 		}
 	}
+	if err := removeContentModerationGroupIDs(opCtx, exec, cascadeGroupIDs); err != nil {
+		return nil, fmt.Errorf("remove deleted groups from content moderation config: %w", err)
+	}
 
 	if tx != nil {
 		if err := tx.Commit(); err != nil {
@@ -785,6 +788,40 @@ func (r *groupRepository) DeleteCascade(ctx context.Context, id int64) ([]int64,
 		affectedUserIDs = append(affectedUserIDs, userID)
 	}
 	return affectedUserIDs, nil
+}
+
+func removeContentModerationGroupIDs(ctx context.Context, exec sqlExecutor, groupIDs []int64) error {
+	if exec == nil || len(groupIDs) == 0 {
+		return nil
+	}
+	_, err := exec.ExecContext(ctx, `
+UPDATE settings
+SET value = jsonb_set(
+		value::jsonb,
+		'{group_ids}',
+		COALESCE(
+			(
+				SELECT jsonb_agg(item ORDER BY ordinality)
+				FROM jsonb_array_elements(value::jsonb->'group_ids')
+					WITH ORDINALITY AS configured(item, ordinality)
+				WHERE jsonb_typeof(item) <> 'number'
+					OR NOT ((item #>> '{}')::bigint = ANY($1::bigint[]))
+			),
+			'[]'::jsonb
+		),
+		false
+	),
+	updated_at = NOW()
+WHERE key = $2
+	AND jsonb_typeof(value::jsonb) = 'object'
+	AND jsonb_typeof(value::jsonb->'group_ids') = 'array'
+	AND EXISTS (
+		SELECT 1
+		FROM jsonb_array_elements(value::jsonb->'group_ids') AS configured(item)
+		WHERE jsonb_typeof(item) = 'number'
+			AND (item #>> '{}')::bigint = ANY($1::bigint[])
+	)`, pq.Array(groupIDs), service.SettingKeyContentModerationConfig)
+	return err
 }
 
 func (r *groupRepository) customSubscriptionGroupIDsForCascade(ctx context.Context, groupSvc *service.Group) ([]int64, error) {

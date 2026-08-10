@@ -4,6 +4,7 @@ package repository
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"testing"
@@ -144,4 +145,47 @@ func TestGroupRepository_DeleteCascade_PreservesApiKeyGroupID(t *testing.T) {
 	require.NotNil(t, keyAfter.GroupID)
 	require.Equal(t, targetGroup.ID, *keyAfter.GroupID)
 	require.Nil(t, keyAfter.Group)
+}
+
+func TestGroupRepository_DeleteCascade_RemovesContentModerationGroupReference(t *testing.T) {
+	ctx := context.Background()
+	tx := testEntTx(t)
+	entClient := tx.Client()
+
+	targetGroup, err := entClient.Group.Create().
+		SetName(uniqueTestValue(t, "moderation-delete-target")).
+		SetStatus(service.StatusActive).
+		Save(ctx)
+	require.NoError(t, err)
+	otherGroup, err := entClient.Group.Create().
+		SetName(uniqueTestValue(t, "moderation-delete-other")).
+		SetStatus(service.StatusActive).
+		Save(ctx)
+	require.NoError(t, err)
+
+	rawConfig := fmt.Sprintf(`{"enabled":true,"api_key":"sk-test-preserved","group_ids":[%d,%d]}`, targetGroup.ID, otherGroup.ID)
+	_, err = tx.ExecContext(ctx, `
+INSERT INTO settings (key, value, updated_at)
+VALUES ($1, $2, NOW())
+ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = EXCLUDED.updated_at`,
+		service.SettingKeyContentModerationConfig, rawConfig)
+	require.NoError(t, err)
+
+	groupRepo := newGroupRepositoryWithSQL(entClient, tx)
+	_, err = groupRepo.DeleteCascade(ctx, targetGroup.ID)
+	require.NoError(t, err)
+
+	var savedRaw string
+	rows, err := tx.QueryContext(ctx, "SELECT value FROM settings WHERE key = $1", service.SettingKeyContentModerationConfig)
+	require.NoError(t, err)
+	require.True(t, rows.Next())
+	require.NoError(t, rows.Scan(&savedRaw))
+	require.NoError(t, rows.Close())
+	var saved struct {
+		APIKey   string  `json:"api_key"`
+		GroupIDs []int64 `json:"group_ids"`
+	}
+	require.NoError(t, json.Unmarshal([]byte(savedRaw), &saved))
+	require.Equal(t, "sk-test-preserved", saved.APIKey)
+	require.Equal(t, []int64{otherGroup.ID}, saved.GroupIDs)
 }

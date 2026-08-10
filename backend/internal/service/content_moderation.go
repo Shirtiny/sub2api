@@ -856,6 +856,7 @@ func (s *ContentModerationService) UpdateConfig(ctx context.Context, input Updat
 	if err != nil {
 		return nil, err
 	}
+	persistedGroupIDs := append([]int64(nil), cfg.GroupIDs...)
 	if input.Enabled != nil {
 		cfg.Enabled = *input.Enabled
 	}
@@ -965,6 +966,9 @@ func (s *ContentModerationService) UpdateConfig(ctx context.Context, input Updat
 			cfg.APIKey = ""
 		}
 	}
+	if err := s.reconcileContentModerationGroupIDs(ctx, cfg, persistedGroupIDs, input.GroupIDs != nil); err != nil {
+		return nil, err
+	}
 	if err := s.validateConfig(ctx, cfg); err != nil {
 		return nil, err
 	}
@@ -982,6 +986,45 @@ func (s *ContentModerationService) UpdateConfig(ctx context.Context, input Updat
 	}
 	s.runtimeConfigMu.Unlock()
 	return s.configView(cfg), nil
+}
+
+func (s *ContentModerationService) reconcileContentModerationGroupIDs(
+	ctx context.Context,
+	cfg *ContentModerationConfig,
+	persistedGroupIDs []int64,
+	groupIDsExplicitlySet bool,
+) error {
+	if cfg == nil || cfg.AllGroups || len(cfg.GroupIDs) == 0 || s.groupRepo == nil {
+		return nil
+	}
+
+	persisted := make(map[int64]struct{}, len(persistedGroupIDs))
+	for _, groupID := range persistedGroupIDs {
+		persisted[groupID] = struct{}{}
+	}
+
+	valid := make([]int64, 0, len(cfg.GroupIDs))
+	stale := make([]int64, 0)
+	for _, groupID := range cfg.GroupIDs {
+		if _, err := s.groupRepo.GetByIDLite(ctx, groupID); err == nil {
+			valid = append(valid, groupID)
+			continue
+		} else if !errors.Is(err, ErrGroupNotFound) {
+			return fmt.Errorf("validate content moderation group %d: %w", groupID, err)
+		}
+
+		_, wasPersisted := persisted[groupID]
+		if groupIDsExplicitlySet && !wasPersisted {
+			return infraerrors.BadRequest("INVALID_CONTENT_MODERATION_GROUP", fmt.Sprintf("审计分组不存在: %d", groupID))
+		}
+		stale = append(stale, groupID)
+	}
+
+	cfg.GroupIDs = valid
+	if len(stale) > 0 {
+		slog.Warn("content_moderation.removed_stale_group_ids", "group_ids", stale)
+	}
+	return nil
 }
 
 // UpdateRiskControlEnabled refreshes the process-local snapshot after the

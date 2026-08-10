@@ -41,6 +41,22 @@ type contentModerationTestSettingRepo struct {
 	getValueCalls int
 }
 
+type contentModerationGroupRepoStub struct {
+	GroupRepository
+	existing map[int64]struct{}
+	errors   map[int64]error
+}
+
+func (r *contentModerationGroupRepoStub) GetByIDLite(_ context.Context, id int64) (*Group, error) {
+	if err := r.errors[id]; err != nil {
+		return nil, err
+	}
+	if _, ok := r.existing[id]; !ok {
+		return nil, ErrGroupNotFound
+	}
+	return &Group{ID: id}, nil
+}
+
 func (r *contentModerationTestSettingRepo) Get(ctx context.Context, key string) (*Setting, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -1380,6 +1396,64 @@ func TestContentModerationUpdateConfig_AppendsAndDeletesAPIKeys(t *testing.T) {
 	var saved ContentModerationConfig
 	require.NoError(t, json.Unmarshal([]byte(repo.values[SettingKeyContentModerationConfig]), &saved))
 	require.Equal(t, []string{"sk-old-b", "sk-new-c"}, saved.apiKeys())
+}
+
+func TestContentModerationUpdateConfig_RemovesPersistedStaleGroupIDs(t *testing.T) {
+	for _, tc := range []struct {
+		name             string
+		explicitGroupIDs bool
+	}{
+		{name: "partial update"},
+		{name: "full form submission", explicitGroupIDs: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			cfg := defaultContentModerationConfig()
+			cfg.AllGroups = false
+			cfg.GroupIDs = []int64{10, 20}
+			rawCfg, err := json.Marshal(cfg)
+			require.NoError(t, err)
+
+			settingRepo := &contentModerationTestSettingRepo{values: map[string]string{
+				SettingKeyContentModerationConfig: string(rawCfg),
+			}}
+			groupRepo := &contentModerationGroupRepoStub{existing: map[int64]struct{}{10: {}}}
+			svc := NewContentModerationService(settingRepo, nil, nil, groupRepo, nil, nil, nil)
+			input := UpdateContentModerationConfigInput{}
+			if tc.explicitGroupIDs {
+				groupIDs := []int64{10, 20}
+				input.GroupIDs = &groupIDs
+			}
+
+			view, err := svc.UpdateConfig(context.Background(), input)
+
+			require.NoError(t, err)
+			require.Equal(t, []int64{10}, view.GroupIDs)
+			var saved ContentModerationConfig
+			require.NoError(t, json.Unmarshal([]byte(settingRepo.values[SettingKeyContentModerationConfig]), &saved))
+			require.Equal(t, []int64{10}, saved.GroupIDs)
+		})
+	}
+}
+
+func TestContentModerationUpdateConfig_RejectsNewInvalidGroupID(t *testing.T) {
+	cfg := defaultContentModerationConfig()
+	cfg.AllGroups = false
+	cfg.GroupIDs = []int64{10}
+	rawCfg, err := json.Marshal(cfg)
+	require.NoError(t, err)
+
+	settingRepo := &contentModerationTestSettingRepo{values: map[string]string{
+		SettingKeyContentModerationConfig: string(rawCfg),
+	}}
+	groupRepo := &contentModerationGroupRepoStub{existing: map[int64]struct{}{10: {}}}
+	svc := NewContentModerationService(settingRepo, nil, nil, groupRepo, nil, nil, nil)
+	groupIDs := []int64{10, 30}
+
+	_, err = svc.UpdateConfig(context.Background(), UpdateContentModerationConfigInput{GroupIDs: &groupIDs})
+
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "审计分组不存在: 30")
+	require.Equal(t, string(rawCfg), settingRepo.values[SettingKeyContentModerationConfig])
 }
 
 func TestContentModerationUpdateConfig_ReplacesAPIKeysWhenRequested(t *testing.T) {
