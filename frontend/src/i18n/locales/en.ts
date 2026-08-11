@@ -277,7 +277,7 @@ export default {
       period: {
         day: 'day',
         week: 'week',
-        month: 'month'
+        month: '30 days'
       },
       claimSuccess: 'Café coupon claimed',
       claimFailed: 'Failed to claim café coupon',
@@ -6013,7 +6013,7 @@ export default {
           period: 'Claim Period',
           periodDay: 'Daily',
           periodWeek: 'Weekly',
-          periodMonth: 'Monthly',
+          periodMonth: 'Every 30 days',
           allowTransfer: 'Allow others to use',
           allowTransferHint: 'When enabled, a user other than the claimant can use the coupon.',
           monthEndValidityTitle: 'Validity is fixed to month end',

@@ -41,6 +41,7 @@ const (
 	cafeCouponCodePrefix       = "CAFE-"
 	cafeCouponMaxValue         = 1000000.0
 	cafeCouponValidityMonthEnd = "month_end"
+	cafeCouponMonthCooldown    = 30 * 24 * time.Hour
 )
 
 var cafeCouponUserClaimLocks sync.Map
@@ -270,7 +271,7 @@ func cafeCouponClaimCooldownAt(claimedAt time.Time, period string) time.Time {
 	case CafeCouponPeriodWeek:
 		return claimedAt.AddDate(0, 0, 7)
 	default:
-		return claimedAt.AddDate(0, 1, 0)
+		return claimedAt.Add(cafeCouponMonthCooldown)
 	}
 }
 
@@ -518,15 +519,7 @@ func adminCafeCouponResetClaimStart(now time.Time, period string) time.Time {
 	case CafeCouponPeriodWeek:
 		return now.AddDate(0, 0, -7).Add(-time.Minute)
 	default:
-		// reset 后须保证领取窗口已过期,即 cooldown(period_start) <= now,CanClaim 才会恢复为 true。
-		// now.AddDate(0, -1, 0) 在月末会前滚(如 2026-07-31 → "2026-06-31" → 2026-07-01),
-		// 回退不足一个自然月,使 cooldown 仍晚于 now、CanClaim 停留在 false。逐日回退直到
-		// 不变式成立(前滚至多数天,必然快速终止)。
-		start := now.AddDate(0, -1, 0).Add(-time.Minute)
-		for cafeCouponClaimCooldownAt(start, period).After(now) {
-			start = start.AddDate(0, 0, -1)
-		}
-		return start
+		return now.Add(-cafeCouponMonthCooldown).Add(-time.Minute)
 	}
 }
 
@@ -732,6 +725,8 @@ func (s *PaymentService) claimCafeCouponTx(ctx context.Context, userID int64, le
 			SetPeriodStart(periodStart).
 			SetPeriodEnd(periodEnd).
 			SetStatus(CafeCouponStatusIssued).
+			SetCreatedAt(now).
+			SetUpdatedAt(now).
 			Save(ctx)
 		if err == nil {
 			if err := tx.Commit(); err != nil {

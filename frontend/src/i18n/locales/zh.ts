@@ -277,7 +277,7 @@ export default {
       period: {
         day: '天',
         week: '周',
-        month: '月'
+        month: '30天'
       },
       claimSuccess: 'Café券领取成功',
       claimFailed: 'Café券领取失败',
@@ -6021,7 +6021,7 @@ export default {
           period: '领取周期',
           periodDay: '每天',
           periodWeek: '每周',
-          periodMonth: '每月',
+          periodMonth: '每30天',
           allowTransfer: '允许他人使用',
           allowTransferHint: '开启后券可由非领取人使用。',
           monthEndValidityTitle: '有效期固定到当月月底',

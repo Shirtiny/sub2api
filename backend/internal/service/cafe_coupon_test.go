@@ -123,6 +123,9 @@ func TestCafeCouponClaimEligibilityAndIdempotency(t *testing.T) {
 	require.False(t, first.AlreadyClaimed)
 	require.Equal(t, CafeCouponTypeCash, first.CouponType)
 	require.Equal(t, 12.5, first.Value)
+	require.Equal(t, 30, first.RemainingDays)
+	require.Equal(t, cafeCouponMonthCooldown, first.NextClaimAt.Sub(first.ClaimedAt))
+	require.Equal(t, cafeCouponMonthCooldown, first.PeriodEnd.Sub(first.PeriodStart))
 
 	second, err := svc.ClaimCafeCoupon(ctx, user.ID)
 	require.NoError(t, err)
@@ -338,9 +341,32 @@ func TestCafeCouponStatusUsesLatestClaimIDTie(t *testing.T) {
 	require.Equal(t, latest.Code, status.Coupon.Code)
 }
 
-func TestCafeCouponMonthlyCooldownUsesRollingClaimDate(t *testing.T) {
-	claimAt := time.Date(2026, 6, 30, 12, 0, 0, 0, time.UTC)
-	require.Equal(t, time.Date(2026, 7, 30, 12, 0, 0, 0, time.UTC), cafeCouponClaimCooldownAt(claimAt, CafeCouponPeriodMonth))
+func TestCafeCouponMonthlyCooldownUsesFixedThirtyDays(t *testing.T) {
+	cases := []struct {
+		name    string
+		claimAt time.Time
+	}{
+		{name: "31 day span", claimAt: time.Date(2026, 8, 11, 12, 0, 0, 0, time.UTC)},
+		{name: "30 day span", claimAt: time.Date(2026, 6, 11, 12, 0, 0, 0, time.UTC)},
+		{name: "february", claimAt: time.Date(2026, 2, 1, 12, 0, 0, 0, time.UTC)},
+		{name: "month end", claimAt: time.Date(2026, 1, 31, 12, 0, 0, 0, time.UTC)},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			nextClaimAt := cafeCouponClaimCooldownAt(tc.claimAt, CafeCouponPeriodMonth)
+			require.Equal(t, cafeCouponMonthCooldown, nextClaimAt.Sub(tc.claimAt))
+		})
+	}
+}
+
+func TestCafeCouponThirtyDayCooldownDoesNotOutlastSameDayThirtyDaySubscription(t *testing.T) {
+	claimAt := time.Date(2026, 8, 11, 0, 0, 0, 0, time.UTC)
+	nextClaimAt := cafeCouponClaimCooldownAt(claimAt, CafeCouponPeriodMonth)
+
+	for _, purchaseDelay := range []time.Duration{0, time.Second, 12 * time.Hour, 24*time.Hour - time.Second} {
+		subscriptionExpiresAt := claimAt.Add(purchaseDelay).AddDate(0, 0, 30)
+		require.Falsef(t, nextClaimAt.After(subscriptionExpiresAt), "purchase delay %s must not create a coupon gap", purchaseDelay)
+	}
 }
 
 func TestCafeCouponExpiresAtUsesThirtyPercentFloor(t *testing.T) {
@@ -877,11 +903,8 @@ func TestCafeCouponAdminUpdateStatusAndResetClaimPeriod(t *testing.T) {
 	require.True(t, status.CanClaim)
 }
 
-// TestAdminCafeCouponResetClaimStartElapsedAcrossMonthBoundaries 用固定日期锁定不变式:
-// AdminResetCafeCouponClaimPeriod 计算出的 period_start,其领取冷却必须落在 now 之前
-// (领取窗口已过期),CanClaim 才能恢复为 true。历史上月周期用 now.AddDate(0,-1,0),
-// 在月末(如 2026-07-31 → "2026-06-31" → 2026-07-01)会前滚导致回退不足一个自然月,
-// 使该测试仅在月末边界日失败(与业务时钟耦合)。此处不依赖 time.Now(),确定性验证。
+// Admin reset must move the claim timestamp far enough back for every period,
+// including fixed 30-day monthly cooldowns at calendar-month boundaries.
 func TestAdminCafeCouponResetClaimStartElapsedAcrossMonthBoundaries(t *testing.T) {
 	cases := []time.Time{
 		time.Date(2026, 7, 31, 11, 25, 20, 0, time.UTC), // 6 月 30 天:"6/31"→7/1
