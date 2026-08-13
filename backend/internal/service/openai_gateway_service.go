@@ -73,8 +73,8 @@ const (
 
 // OpenAI allowed headers whitelist (for non-passthrough).
 var openaiAllowedHeaders = map[string]bool{
-	"accept-language":       true,
-	"content-type":          true,
+	"accept-language":          true,
+	"content-type":             true,
 	"conversation_id":          true,
 	"user-agent":               true,
 	"originator":               true,
