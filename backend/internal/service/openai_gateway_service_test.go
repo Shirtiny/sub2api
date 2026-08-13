@@ -2112,6 +2112,56 @@ func TestOpenAIBuildUpstreamRequestPreservesCompactPathForAPIKeyBaseURL(t *testi
 	require.Equal(t, "https://example.com/v1/responses/compact", req.URL.String())
 }
 
+func TestOpenAIBuildUpstreamRequestForwardsCompactV2HeadersOnResponses(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	body := []byte(`{"model":"gpt-5.6-sol","stream":true,"input":[{"type":"message","role":"user","content":"hello"},{"type":"compaction_trigger"}]}`)
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request = httptest.NewRequest(http.MethodPost, "/v1/responses", bytes.NewReader(body))
+	c.Request.Header.Set("x-codex-beta-features", "remote_compaction_v2")
+	c.Request.Header.Set("x-codex-turn-metadata", `{"request_kind":"compaction","compaction":{"implementation":"responses_compaction_v2"}}`)
+	c.Request.Header.Set("x-codex-window-id", "window-v2")
+	c.Request.Header.Set("x-codex-installation-id", "install-v2")
+	c.Request.Header.Set("x-codex-parent-thread-id", "parent-v2")
+	c.Request.Header.Set("x-codex-routing-hint", "hint-v2")
+
+	svc := &OpenAIGatewayService{}
+	account := &Account{Type: AccountTypeOAuth}
+
+	req, err := svc.buildUpstreamRequest(c.Request.Context(), c, account, body, "token", true, "", true)
+	require.NoError(t, err)
+	require.Equal(t, chatgptCodexURL, req.URL.String())
+	require.Equal(t, "text/event-stream", req.Header.Get("Accept"))
+	require.Equal(t, "remote_compaction_v2", req.Header.Get("x-codex-beta-features"))
+	require.Contains(t, req.Header.Get("x-codex-turn-metadata"), "responses_compaction_v2")
+	require.Equal(t, "window-v2", req.Header.Get("x-codex-window-id"))
+	require.Equal(t, "install-v2", req.Header.Get("x-codex-installation-id"))
+	require.Equal(t, "parent-v2", req.Header.Get("x-codex-parent-thread-id"))
+	require.Equal(t, "hint-v2", req.Header.Get("x-codex-routing-hint"))
+}
+
+func TestOpenAIBuildUpstreamRequestOpenAIPassthroughForwardsCompactV2Headers(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	body := []byte(`{"model":"gpt-5.6-sol","stream":true,"input":[{"type":"compaction_trigger"}]}`)
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request = httptest.NewRequest(http.MethodPost, "/v1/responses", bytes.NewReader(body))
+	c.Request.Header.Set("x-codex-beta-features", "remote_compaction_v2")
+	c.Request.Header.Set("x-codex-turn-metadata", `{"request_kind":"compaction"}`)
+	c.Request.Header.Set("x-codex-window-id", "window-v2")
+
+	svc := &OpenAIGatewayService{}
+	account := &Account{Type: AccountTypeOAuth}
+
+	req, err := svc.buildUpstreamRequestOpenAIPassthrough(c.Request.Context(), c, account, body, "token")
+	require.NoError(t, err)
+	require.Equal(t, chatgptCodexURL, req.URL.String())
+	require.NotEqual(t, "application/json", req.Header.Get("Accept"))
+	require.Equal(t, "remote_compaction_v2", req.Header.Get("x-codex-beta-features"))
+	require.Equal(t, `{"request_kind":"compaction"}`, req.Header.Get("x-codex-turn-metadata"))
+	require.Equal(t, "window-v2", req.Header.Get("x-codex-window-id"))
+}
+
 func TestOpenAIBuildUpstreamRequestOAuthOfficialClientOriginatorCompatibility(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 

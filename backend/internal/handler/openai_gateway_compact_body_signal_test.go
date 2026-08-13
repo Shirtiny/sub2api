@@ -23,7 +23,7 @@ func newCompactBodySignalTestContext(t *testing.T, path string, body []byte) *gi
 	return c
 }
 
-func TestNormalizeOpenAIResponsesCompactRequest_BodySignalPromoted(t *testing.T) {
+func TestNormalizeOpenAIResponsesCompactRequest_BodySignalNotPromoted(t *testing.T) {
 	h := &OpenAIGatewayHandler{}
 	body := []byte(`{
 		"model":"gpt-5.5",
@@ -41,23 +41,23 @@ func TestNormalizeOpenAIResponsesCompactRequest_BodySignalPromoted(t *testing.T)
 	normalized, ok := h.normalizeOpenAIResponsesCompactRequest(c, zap.NewNop(), body)
 	require.True(t, ok)
 
-	require.Equal(t, "/v1/responses/compact", c.Request.URL.Path)
-	require.True(t, isOpenAIRemoteCompactPath(c))
-	require.Equal(t, EndpointResponsesCompact, GetInboundEndpoint(c))
+	require.Equal(t, "/v1/responses", c.Request.URL.Path)
+	require.False(t, isOpenAIRemoteCompactPath(c))
+	require.Equal(t, EndpointResponses, GetInboundEndpoint(c))
+	require.Equal(t, body, normalized)
 
 	require.True(t, gjson.GetBytes(normalized, "stream").Bool())
-	require.False(t, gjson.GetBytes(normalized, "store").Exists())
-	require.False(t, gjson.GetBytes(normalized, "prompt_cache_key").Exists())
+	require.True(t, gjson.GetBytes(normalized, "store").Bool())
+	require.Equal(t, "pck-signal-1", gjson.GetBytes(normalized, "prompt_cache_key").String())
 	require.Equal(t, "gpt-5.5", gjson.GetBytes(normalized, "model").String())
-	require.True(t, gjson.GetBytes(normalized, "input").IsArray())
+	require.Equal(t, "compaction_trigger", gjson.GetBytes(normalized, "input.1.type").String())
 
 	reqStream, streamOK := parseOpenAICompatibleStream(normalized)
 	require.True(t, streamOK)
 	require.True(t, reqStream)
 
-	seed, exists := c.Get(service.OpenAICompactSessionSeedKeyForTest())
-	require.True(t, exists)
-	require.Equal(t, "pck-signal-1", seed)
+	_, exists := c.Get(service.OpenAICompactSessionSeedKeyForTest())
+	require.False(t, exists)
 }
 
 func TestNormalizeOpenAIResponsesCompactRequest_BodySignalTrailingSlash(t *testing.T) {
@@ -65,19 +65,23 @@ func TestNormalizeOpenAIResponsesCompactRequest_BodySignalTrailingSlash(t *testi
 	body := []byte(`{"model":"gpt-5.5","input":[{"type":"compaction_trigger"}]}`)
 	c := newCompactBodySignalTestContext(t, "/v1/responses/", body)
 
-	_, ok := h.normalizeOpenAIResponsesCompactRequest(c, zap.NewNop(), body)
+	normalized, ok := h.normalizeOpenAIResponsesCompactRequest(c, zap.NewNop(), body)
 	require.True(t, ok)
-	require.Equal(t, "/v1/responses/compact", c.Request.URL.Path)
+	require.Equal(t, "/v1/responses/", c.Request.URL.Path)
+	require.False(t, isOpenAIRemoteCompactPath(c))
+	require.Equal(t, body, normalized)
 }
 
-func TestNormalizeOpenAIResponsesCompactRequest_CodexDirectAliasPromoted(t *testing.T) {
+func TestNormalizeOpenAIResponsesCompactRequest_CodexDirectAliasNotPromoted(t *testing.T) {
 	h := &OpenAIGatewayHandler{}
 	body := []byte(`{"model":"gpt-5.5","input":[{"type":"compaction_trigger"}]}`)
 	c := newCompactBodySignalTestContext(t, "/backend-api/codex/responses", body)
 
-	_, ok := h.normalizeOpenAIResponsesCompactRequest(c, zap.NewNop(), body)
+	normalized, ok := h.normalizeOpenAIResponsesCompactRequest(c, zap.NewNop(), body)
 	require.True(t, ok)
-	require.Equal(t, "/backend-api/codex/responses/compact", c.Request.URL.Path)
+	require.Equal(t, "/backend-api/codex/responses", c.Request.URL.Path)
+	require.False(t, isOpenAIRemoteCompactPath(c))
+	require.Equal(t, body, normalized)
 }
 
 func TestNormalizeOpenAIResponsesCompactRequest_NoTriggerUntouched(t *testing.T) {

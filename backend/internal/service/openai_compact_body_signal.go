@@ -3,11 +3,10 @@ package service
 import "github.com/tidwall/gjson"
 
 // HasCompactionTriggerInInput detects the Codex remote compact v2 body signal:
-// an input item with type "compaction_trigger". When the client sends this
-// inside a normal POST /v1/responses instead of POST /v1/responses/compact, the
-// request must still be handled as a compact request so upstream path, model
-// mapping, body normalization, and compact-capable account scheduling all stay
-// aligned with the path-based compact flow.
+// an input item with type "compaction_trigger". Official Codex now sends this
+// on a normal POST /v1/responses (plus x-codex-beta-features /
+// x-codex-turn-metadata). That request must stay on /responses and must not
+// be rewritten onto the legacy POST /v1/responses/compact V1 path.
 func HasCompactionTriggerInInput(body []byte) bool {
 	if len(body) == 0 {
 		return false

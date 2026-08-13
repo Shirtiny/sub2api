@@ -548,7 +548,7 @@ func isOpenAIRemoteCompactPath(c *gin.Context) bool {
 }
 
 // isBareOpenAIResponsesPath only matches the bare /responses endpoint, without
-// /compact or other sub-paths. Body-signal promotion is limited to this shape
+// /compact or other sub-paths. V2 compact detection is limited to this shape
 // so it does not affect /responses/{id}/... requests.
 func isBareOpenAIResponsesPath(c *gin.Context) bool {
 	if c == nil || c.Request == nil || c.Request.URL == nil {
@@ -558,22 +558,18 @@ func isBareOpenAIResponsesPath(c *gin.Context) bool {
 	return strings.HasSuffix(normalizedPath, "/responses")
 }
 
-// normalizeOpenAIResponsesCompactRequest unifies the two inbound compact forms:
-// path-based POST /v1/responses/compact and Codex remote compact v2's body
-// signal, where a regular POST /v1/responses input contains an item with
-// type=compaction_trigger. Body-signal requests are promoted by rewriting the
-// URL path before stream parsing, compact body normalization, account
-// scheduling, passthrough routing, and upstream URL construction.
+// normalizeOpenAIResponsesCompactRequest applies V1 compact-only
+// normalization to path-based POST .../responses/compact.
+//
+// Codex remote compact v2 stays on the inbound /responses path: the client
+// appends a compaction_trigger input item and streams a normal Responses
+// request. Rewriting that onto /compact would force the legacy unary V1
+// schema (and a now-404 chatgpt.com compact URL).
 func (h *OpenAIGatewayHandler) normalizeOpenAIResponsesCompactRequest(c *gin.Context, reqLog *zap.Logger, body []byte) ([]byte, bool) {
-	isCompactRequest := service.IsOpenAIResponsesCompactPathForTest(c)
-	if !isCompactRequest && isBareOpenAIResponsesPath(c) && service.HasCompactionTriggerInInput(body) {
-		c.Request.URL.Path = strings.TrimRight(c.Request.URL.Path, "/") + "/compact"
-		isCompactRequest = true
-		if reqLog != nil {
-			reqLog.Info("codex.remote_compact.detected_body_signal")
+	if !service.IsOpenAIResponsesCompactPathForTest(c) {
+		if isBareOpenAIResponsesPath(c) && service.HasCompactionTriggerInInput(body) && reqLog != nil {
+			reqLog.Info("codex.remote_compact.v2_passthrough")
 		}
-	}
-	if !isCompactRequest {
 		return body, true
 	}
 	c.Set(ctxKeyInboundEndpoint, EndpointResponsesCompact)
