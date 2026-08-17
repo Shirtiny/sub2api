@@ -2610,16 +2610,6 @@ func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, acco
 		return nil, errors.New("codex_cli_only restriction: only codex official clients are allowed")
 	}
 
-	// Remote compaction v2 is carried on the normal /responses endpoint and is
-	// identified by its input control item. Keep this marker independent of
-	// legacy /responses/compact path handling so response compatibility still
-	// applies after normal request normalization.
-	remoteCompactionV2 := HasCompactionTriggerInInput(body)
-	if expandedBody, expanded, expandErr := expandOpenAICompactionV2CompatInput(body); expandErr != nil {
-		return nil, expandErr
-	} else if expanded {
-		body = expandedBody
-	}
 	originalBody := body
 	requestView := newOpenAIRequestView(body)
 	reqModel, reqStream, promptCacheKey := requestView.Model, requestView.Stream, requestView.PromptCacheKey
@@ -3315,11 +3305,6 @@ func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, acco
 			}
 			return s.handleErrorResponse(ctx, resp, c, account, body, billingModel)
 		}
-		if remoteCompactionV2 {
-			if err := s.normalizeOpenAICompactionV2Response(resp, reqStream); err != nil {
-				return nil, err
-			}
-		}
 		defer func() { _ = resp.Body.Close() }()
 
 		reasoningEffort := extractOpenAIReasoningEffortFromBody(body, originalModel)
@@ -3400,7 +3385,6 @@ func (s *OpenAIGatewayService) forwardOpenAIPassthrough(
 	reqStream bool,
 	startTime time.Time,
 ) (*OpenAIForwardResult, error) {
-	remoteCompactionV2 := HasCompactionTriggerInInput(body)
 	upstreamPassthroughModel := ""
 	if account != nil && account.IsGrok() && account.Type == AccountTypeAPIKey {
 		mappedModel := strings.TrimSpace(account.GetMappedModel(reqModel))
@@ -3625,11 +3609,6 @@ func (s *OpenAIGatewayService) forwardOpenAIPassthrough(
 			return nil, s.handleFailoverErrorResponsePassthrough(ctx, resp, c, account, body)
 		}
 		return nil, s.handleErrorResponsePassthrough(ctx, resp, c, account, body)
-	}
-	if remoteCompactionV2 {
-		if err := s.normalizeOpenAICompactionV2Response(resp, reqStream); err != nil {
-			return nil, err
-		}
 	}
 
 	serviceTier := extractOpenAIServiceTierFromBody(body)
