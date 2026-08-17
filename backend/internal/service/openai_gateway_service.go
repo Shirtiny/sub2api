@@ -2592,8 +2592,9 @@ func (s *OpenAIGatewayService) handleFailoverSideEffects(ctx context.Context, re
 	s.handleOpenAIAccountUpstreamError(ctx, account, resp.StatusCode, resp.Header, body)
 }
 
-// Forward forwards request to OpenAI API
-func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, account *Account, body []byte) (*OpenAIForwardResult, error) {
+// forward performs one upstream account attempt. Forward owns the response
+// transaction used by protocol-sensitive requests.
+func (s *OpenAIGatewayService) forward(ctx context.Context, c *gin.Context, account *Account, body []byte) (*OpenAIForwardResult, error) {
 	startTime := time.Now()
 
 	restrictionResult := s.detectCodexClientRestriction(c, account)
@@ -2627,6 +2628,10 @@ func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, acco
 	}
 
 	if account.Type == AccountTypeAPIKey && !openai_compat.ShouldUseResponsesAPI(account.Extra) {
+		if remoteCompactionV2 && account.IsOpenAIPassthroughEnabled() {
+			reasoningEffort := extractOpenAIReasoningEffortFromBody(body, reqModel)
+			return s.forwardOpenAIPassthrough(ctx, c, account, originalBody, reqModel, reasoningEffort, reqStream, startTime)
+		}
 		return s.forwardResponsesViaRawChatCompletions(ctx, c, account, body)
 	}
 
@@ -3215,6 +3220,12 @@ func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, acco
 	for {
 		// Build upstream request
 		upstreamCtx, releaseUpstreamCtx := detachUpstreamContext(ctx)
+		if remoteCompactionV2 {
+			upstreamCtx = ctx
+			if upstreamCtx == nil {
+				upstreamCtx = context.Background()
+			}
+		}
 		upstreamReq, err := s.buildUpstreamRequest(upstreamCtx, c, account, body, token, reqStream, promptCacheKey, isCodexCLI)
 		releaseUpstreamCtx()
 		if err != nil {
@@ -3307,7 +3318,7 @@ func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, acco
 			return s.handleErrorResponse(ctx, resp, c, account, body, billingModel)
 		}
 		if remoteCompactionV2 {
-			responseBody, validationErr := s.readAndValidateOpenAICompactionV2Response(resp, reqStream)
+			responseBody, validationErr := s.readAndValidateOpenAICompactionV2Response(ctx, resp, reqStream)
 			if validationErr != nil {
 				return nil, s.newOpenAICompactionV2FailoverError(c, account, resp, responseBody, validationErr, false)
 			}
@@ -3569,6 +3580,12 @@ func (s *OpenAIGatewayService) forwardOpenAIPassthrough(
 	}
 
 	upstreamCtx, releaseUpstreamCtx := detachUpstreamContext(ctx)
+	if remoteCompactionV2 {
+		upstreamCtx = ctx
+		if upstreamCtx == nil {
+			upstreamCtx = context.Background()
+		}
+	}
 	upstreamReq, err := s.buildUpstreamRequestOpenAIPassthrough(upstreamCtx, c, account, body, token)
 	releaseUpstreamCtx()
 	if err != nil {
@@ -3619,7 +3636,7 @@ func (s *OpenAIGatewayService) forwardOpenAIPassthrough(
 		return nil, s.handleErrorResponsePassthrough(ctx, resp, c, account, body)
 	}
 	if remoteCompactionV2 {
-		responseBody, validationErr := s.readAndValidateOpenAICompactionV2Response(resp, reqStream)
+		responseBody, validationErr := s.readAndValidateOpenAICompactionV2Response(ctx, resp, reqStream)
 		if validationErr != nil {
 			return nil, s.newOpenAICompactionV2FailoverError(c, account, resp, responseBody, validationErr, true)
 		}
