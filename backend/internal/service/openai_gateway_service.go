@@ -2610,6 +2610,7 @@ func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, acco
 		return nil, errors.New("codex_cli_only restriction: only codex official clients are allowed")
 	}
 
+	remoteCompactionV2 := HasCompactionTriggerInInput(body)
 	originalBody := body
 	requestView := newOpenAIRequestView(body)
 	reqModel, reqStream, promptCacheKey := requestView.Model, requestView.Stream, requestView.PromptCacheKey
@@ -3305,6 +3306,12 @@ func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, acco
 			}
 			return s.handleErrorResponse(ctx, resp, c, account, body, billingModel)
 		}
+		if remoteCompactionV2 {
+			responseBody, validationErr := s.readAndValidateOpenAICompactionV2Response(resp, reqStream)
+			if validationErr != nil {
+				return nil, s.newOpenAICompactionV2FailoverError(c, account, resp, responseBody, validationErr, false)
+			}
+		}
 		defer func() { _ = resp.Body.Close() }()
 
 		reasoningEffort := extractOpenAIReasoningEffortFromBody(body, originalModel)
@@ -3385,6 +3392,7 @@ func (s *OpenAIGatewayService) forwardOpenAIPassthrough(
 	reqStream bool,
 	startTime time.Time,
 ) (*OpenAIForwardResult, error) {
+	remoteCompactionV2 := HasCompactionTriggerInInput(body)
 	upstreamPassthroughModel := ""
 	if account != nil && account.IsGrok() && account.Type == AccountTypeAPIKey {
 		mappedModel := strings.TrimSpace(account.GetMappedModel(reqModel))
@@ -3609,6 +3617,12 @@ func (s *OpenAIGatewayService) forwardOpenAIPassthrough(
 			return nil, s.handleFailoverErrorResponsePassthrough(ctx, resp, c, account, body)
 		}
 		return nil, s.handleErrorResponsePassthrough(ctx, resp, c, account, body)
+	}
+	if remoteCompactionV2 {
+		responseBody, validationErr := s.readAndValidateOpenAICompactionV2Response(resp, reqStream)
+		if validationErr != nil {
+			return nil, s.newOpenAICompactionV2FailoverError(c, account, resp, responseBody, validationErr, true)
+		}
 	}
 
 	serviceTier := extractOpenAIServiceTierFromBody(body)
