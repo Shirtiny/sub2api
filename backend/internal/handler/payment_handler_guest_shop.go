@@ -1,10 +1,13 @@
 package handler
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
@@ -21,6 +24,8 @@ const (
 	guestShopMaxRequestBodyBytes    = 16 << 10
 	guestShopRequestTooLargeReason  = "GUEST_SHOP_REQUEST_TOO_LARGE"
 	guestShopRequestTooLargeMessage = "checkout request is too large"
+	guestShopRouteCookiePrefix      = "cafe_guest_route_"
+	guestShopRouteCookiePath        = "/api/v1/payment/public/shop/payments/status"
 )
 
 type guestShopCreateRequest struct {
@@ -31,6 +36,7 @@ type guestShopCreateRequest struct {
 
 type guestShopStatusRequest struct {
 	PaymentIntentID string `json:"payment_intent_id"`
+	CheckoutToken   string `json:"checkout_token,omitempty"`
 }
 
 func (h *PaymentHandler) allowGuestShopPublic(c *gin.Context, limiter *cafeCouponLookupLimiter) bool {
@@ -79,6 +85,7 @@ func (h *PaymentHandler) CreateGuestShopPayment(c *gin.Context) {
 		response.ErrorFrom(c, err)
 		return
 	}
+	setGuestShopRouteCookie(c, resp.PaymentIntentID, resp.CheckoutToken)
 	response.Success(c, resp)
 }
 
@@ -93,12 +100,51 @@ func (h *PaymentHandler) GetGuestShopPaymentStatus(c *gin.Context) {
 		writeGuestShopJSONError(c, err)
 		return
 	}
-	status, err := h.paymentService.GetGuestShopPaymentStatus(c.Request.Context(), req.PaymentIntentID)
+	checkoutToken := req.CheckoutToken
+	if checkoutToken == "" {
+		checkoutToken = guestShopRouteTokenFromCookie(c, req.PaymentIntentID)
+	}
+	status, err := h.paymentService.GetGuestShopPaymentStatus(c.Request.Context(), req.PaymentIntentID, checkoutToken)
 	if err != nil {
 		response.ErrorFrom(c, err)
 		return
 	}
 	response.Success(c, status)
+}
+
+func guestShopRouteCookieName(paymentIntentID string) string {
+	digest := sha256.Sum256([]byte(strings.TrimSpace(paymentIntentID)))
+	return guestShopRouteCookiePrefix + hex.EncodeToString(digest[:12])
+}
+
+func setGuestShopRouteCookie(c *gin.Context, paymentIntentID, token string) {
+	paymentIntentID = strings.TrimSpace(paymentIntentID)
+	token = strings.TrimSpace(token)
+	if c == nil || paymentIntentID == "" || token == "" {
+		return
+	}
+	http.SetCookie(c.Writer, &http.Cookie{
+		Name:     guestShopRouteCookieName(paymentIntentID),
+		Value:    token,
+		Path:     guestShopRouteCookiePath,
+		MaxAge:   int(service.GuestShopRouteTokenTTL.Seconds()),
+		Expires:  time.Now().Add(service.GuestShopRouteTokenTTL),
+		HttpOnly: true,
+		Secure:   isRequestHTTPS(c),
+		SameSite: http.SameSiteLaxMode,
+	})
+}
+
+func guestShopRouteTokenFromCookie(c *gin.Context, paymentIntentID string) string {
+	paymentIntentID = strings.TrimSpace(paymentIntentID)
+	if c == nil || paymentIntentID == "" {
+		return ""
+	}
+	token, err := c.Cookie(guestShopRouteCookieName(paymentIntentID))
+	if err != nil {
+		return ""
+	}
+	return token
 }
 
 func bindStrictGuestShopJSON(c *gin.Context, dest any) error {

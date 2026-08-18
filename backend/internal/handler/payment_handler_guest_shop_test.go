@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
 )
@@ -103,4 +104,31 @@ func TestBindStrictGuestShopJSONRejectsUnknownAndTrailingObjects(t *testing.T) {
 		var req guestShopStatusRequest
 		require.Error(t, bindStrictGuestShopJSON(ctx, &req))
 	}
+}
+
+func TestGuestShopRouteCookieBindsTokenToPaymentIntent(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	const intentID = "pi_cookie_guest_shop"
+	const token = "eyJ2IjoxfQ.signature"
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	ctx.Request = httptest.NewRequest(http.MethodPost, guestShopRouteCookiePath, nil)
+	ctx.Request.Header.Set("X-Forwarded-Proto", "https")
+
+	setGuestShopRouteCookie(ctx, " "+intentID+" ", " "+token+" ")
+	cookies := recorder.Result().Cookies()
+	require.Len(t, cookies, 1)
+	require.Equal(t, guestShopRouteCookieName(intentID), cookies[0].Name)
+	require.Equal(t, token, cookies[0].Value)
+	require.Equal(t, guestShopRouteCookiePath, cookies[0].Path)
+	require.True(t, cookies[0].HttpOnly)
+	require.True(t, cookies[0].Secure)
+	require.Equal(t, http.SameSiteLaxMode, cookies[0].SameSite)
+	require.Equal(t, int(service.GuestShopRouteTokenTTL.Seconds()), cookies[0].MaxAge)
+
+	readRecorder := httptest.NewRecorder()
+	readCtx, _ := gin.CreateTestContext(readRecorder)
+	readCtx.Request = httptest.NewRequest(http.MethodPost, guestShopRouteCookiePath, nil)
+	readCtx.Request.AddCookie(cookies[0])
+	require.Equal(t, token, guestShopRouteTokenFromCookie(readCtx, " "+intentID+" "))
 }

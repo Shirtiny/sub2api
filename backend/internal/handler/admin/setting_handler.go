@@ -637,7 +637,7 @@ type UpdateSettingsRequest struct {
 	AccountQuotaNotifyEnabled       *bool                   `json:"account_quota_notify_enabled"`
 	AccountQuotaNotifyEmails        *[]dto.NotifyEmailEntry `json:"account_quota_notify_emails"`
 
-	// Payment configuration (integrated into settings, full replace)
+	// Payment configuration (integrated into settings, patch semantics)
 	PaymentEnabled                   *bool    `json:"payment_enabled"`
 	PaymentMinAmount                 *float64 `json:"payment_min_amount"`
 	PaymentMaxAmount                 *float64 `json:"payment_max_amount"`
@@ -1959,7 +1959,18 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		},
 		ForceEmailOnThirdPartySignup: boolValueOrDefault(req.ForceEmailOnThirdPartySignup, previousAuthSourceDefaults.ForceEmailOnThirdPartySignup),
 	}
-	if err := h.settingService.UpdateSettingsWithAuthSourceDefaults(c.Request.Context(), settings, authSourceDefaults); err != nil {
+	var paymentReq *service.UpdatePaymentConfigRequest
+	if h.paymentConfigService != nil && hasPaymentFields(req) {
+		prepared := paymentConfigUpdateRequest(req)
+		paymentReq = &prepared
+	}
+	if err := h.settingService.UpdateSettingsWithAuthSourceDefaultsAndPaymentConfig(
+		c.Request.Context(),
+		settings,
+		authSourceDefaults,
+		h.paymentConfigService,
+		paymentReq,
+	); err != nil {
 		response.ErrorFrom(c, err)
 		return
 	}
@@ -1969,44 +1980,6 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		if err := h.settingService.SetOpenAIFastPolicySettings(c.Request.Context(), openaiFastPolicySettingsFromDTO(req.OpenAIFastPolicySettings)); err != nil {
 			response.BadRequest(c, err.Error())
 			return
-		}
-	}
-
-	// Update payment configuration (integrated into system settings).
-	// Skip if no payment fields were provided (prevents accidental wipe).
-	if h.paymentConfigService != nil && hasPaymentFields(req) {
-		paymentReq := service.UpdatePaymentConfigRequest{
-			Enabled:                   req.PaymentEnabled,
-			MinAmount:                 req.PaymentMinAmount,
-			MaxAmount:                 req.PaymentMaxAmount,
-			DailyLimit:                req.PaymentDailyLimit,
-			OrderTimeoutMin:           req.PaymentOrderTimeoutMin,
-			MaxPendingOrders:          req.PaymentMaxPendingOrders,
-			EnabledTypes:              req.PaymentEnabledTypes,
-			BalanceDisabled:           req.PaymentBalanceDisabled,
-			BalanceRechargeMultiplier: req.PaymentBalanceRechargeMultiplier,
-			RechargeFeeRate:           req.PaymentRechargeFeeRate,
-			LoadBalanceStrategy:       req.PaymentLoadBalanceStrat,
-			ProductNamePrefix:         req.PaymentProductNamePrefix,
-			ProductNameSuffix:         req.PaymentProductNameSuffix,
-			HelpImageURL:              req.PaymentHelpImageURL,
-			HelpText:                  req.PaymentHelpText,
-			GuestShopEnabled:          req.PaymentGuestShopEnabled,
-			GuestShopStripeInstanceID: req.PaymentGuestShopStripeInstanceID,
-			CancelRateLimitEnabled:    req.PaymentCancelRateLimitEnabled,
-			CancelRateLimitMax:        req.PaymentCancelRateLimitMax,
-			CancelRateLimitWindow:     req.PaymentCancelRateLimitWindow,
-			CancelRateLimitUnit:       req.PaymentCancelRateLimitUnit,
-			CancelRateLimitMode:       req.PaymentCancelRateLimitMode,
-			AlipayForceQRCode:         req.PaymentAlipayForceQRCode,
-		}
-		if err := h.paymentConfigService.UpdatePaymentConfig(c.Request.Context(), paymentReq); err != nil {
-			response.ErrorFrom(c, err)
-			return
-		}
-		// Refresh in-memory provider registry so config changes take effect immediately
-		if h.paymentService != nil {
-			h.paymentService.RefreshProviders(c.Request.Context())
 		}
 	}
 
@@ -2279,6 +2252,34 @@ func hasPaymentFields(req UpdateSettingsRequest) bool {
 		req.PaymentCancelRateLimitMax != nil || req.PaymentCancelRateLimitWindow != nil ||
 		req.PaymentCancelRateLimitUnit != nil || req.PaymentCancelRateLimitMode != nil ||
 		req.PaymentAlipayForceQRCode != nil
+}
+
+func paymentConfigUpdateRequest(req UpdateSettingsRequest) service.UpdatePaymentConfigRequest {
+	return service.UpdatePaymentConfigRequest{
+		Enabled:                   req.PaymentEnabled,
+		MinAmount:                 req.PaymentMinAmount,
+		MaxAmount:                 req.PaymentMaxAmount,
+		DailyLimit:                req.PaymentDailyLimit,
+		OrderTimeoutMin:           req.PaymentOrderTimeoutMin,
+		MaxPendingOrders:          req.PaymentMaxPendingOrders,
+		EnabledTypes:              req.PaymentEnabledTypes,
+		BalanceDisabled:           req.PaymentBalanceDisabled,
+		BalanceRechargeMultiplier: req.PaymentBalanceRechargeMultiplier,
+		RechargeFeeRate:           req.PaymentRechargeFeeRate,
+		LoadBalanceStrategy:       req.PaymentLoadBalanceStrat,
+		ProductNamePrefix:         req.PaymentProductNamePrefix,
+		ProductNameSuffix:         req.PaymentProductNameSuffix,
+		HelpImageURL:              req.PaymentHelpImageURL,
+		HelpText:                  req.PaymentHelpText,
+		GuestShopEnabled:          req.PaymentGuestShopEnabled,
+		GuestShopStripeInstanceID: req.PaymentGuestShopStripeInstanceID,
+		CancelRateLimitEnabled:    req.PaymentCancelRateLimitEnabled,
+		CancelRateLimitMax:        req.PaymentCancelRateLimitMax,
+		CancelRateLimitWindow:     req.PaymentCancelRateLimitWindow,
+		CancelRateLimitUnit:       req.PaymentCancelRateLimitUnit,
+		CancelRateLimitMode:       req.PaymentCancelRateLimitMode,
+		AlipayForceQRCode:         req.PaymentAlipayForceQRCode,
+	}
 }
 
 func (h *SettingHandler) auditSettingsUpdate(c *gin.Context, before *service.SystemSettings, after *service.SystemSettings, beforeAuthSourceDefaults *service.AuthSourceDefaultSettings, afterAuthSourceDefaults *service.AuthSourceDefaultSettings, req UpdateSettingsRequest) {

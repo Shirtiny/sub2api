@@ -655,6 +655,11 @@ describe("admin SettingsView payment visible method controls", () => {
       guestCard.get('[data-testid="guest-shop-stripe-select"] select').element
         .value,
     ).toBe("73");
+    expect(
+      wrapper.findComponent({ name: "PaymentProviderList" }).props(
+        "enabledPaymentTypes",
+      ),
+    ).toContain("stripe");
 
     await wrapper.find("form").trigger("submit.prevent");
     await flushPromises();
@@ -684,6 +689,25 @@ describe("admin SettingsView payment visible method controls", () => {
       "启用游客支付前必须选择 Stripe 实例。",
     );
     expect(updateSettings).not.toHaveBeenCalled();
+  });
+
+  it("does not clear guest checkout when an older settings response omits its fields", async () => {
+    const {
+      payment_guest_shop_enabled: _guestEnabled,
+      payment_guest_shop_stripe_instance_id: _guestInstanceID,
+      ...legacySettings
+    } = baseSettingsResponse;
+    getSettings.mockResolvedValueOnce(legacySettings);
+
+    const wrapper = mountView();
+    await flushPromises();
+    await wrapper.find("form").trigger("submit.prevent");
+    await flushPromises();
+
+    expect(updateSettings).toHaveBeenCalledTimes(1);
+    const payload = updateSettings.mock.calls[0]?.[0];
+    expect(payload).not.toHaveProperty("payment_guest_shop_enabled");
+    expect(payload).not.toHaveProperty("payment_guest_shop_stripe_instance_id");
   });
 
   it("submits Anthropic cache TTL injection gateway setting", async () => {

@@ -7557,6 +7557,8 @@ export default {
       WXPAY_CONFIG_INVALID_KEY_LENGTH: 'WeChat Pay {key} length is invalid (expected {expected} bytes, got {actual}).',
       WXPAY_CONFIG_INVALID_KEY: 'WeChat Pay {key} is malformed. Make sure you copied the full PEM content.',
       PENDING_ORDERS: 'This provider has pending orders. Please wait for them to complete before making changes.',
+      INVALID_GUEST_SHOP_STRIPE_INSTANCE: 'The guest checkout Stripe instance must keep a secret key, publishable key, and valid currency.',
+      GUEST_SHOP_PROVIDER_IN_USE: 'This Stripe instance is still protecting guest payments. Disable guest checkout or select another instance, then wait up to 24 hours before changing its secret key or deleting it.',
       PLAN_NOT_FOUND: 'Subscription plan not found.',
       PLAN_ACTIVITY_IN_USE: 'This plan is still used by an enabled active or scheduled activity. Disable it or wait for it to end.',
       SUBSCRIPTION_PLAN_CHANGED: 'The subscription plan changed or is no longer available. Refresh and retry.',

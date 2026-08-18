@@ -37,7 +37,7 @@ func (s *PaymentService) GetWebhookProviders(ctx context.Context, providerKey, o
 	// instance usable for the storefront without changing normal sub2api
 	// webhook routing.
 	if strings.TrimSpace(providerKey) == payment.TypeStripe && isGuestShopPaymentReference(outTradeNo) {
-		prov, err := s.getGuestShopWebhookProvider(ctx)
+		prov, err := s.getGuestShopWebhookProvider(ctx, outTradeNo)
 		if err != nil {
 			return nil, err
 		}
@@ -98,15 +98,21 @@ func (s *PaymentService) GetWebhookProviders(ctx context.Context, providerKey, o
 	return []payment.Provider{prov}, nil
 }
 
-func (s *PaymentService) getGuestShopWebhookProvider(ctx context.Context) (payment.Provider, error) {
+func (s *PaymentService) getGuestShopWebhookProvider(ctx context.Context, paymentReference string) (payment.Provider, error) {
 	if s == nil || s.configService == nil {
 		return nil, payment.ErrProviderNotFound
 	}
-	settings, err := s.configService.guestShopSettings(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("load guest shop payment settings: %w", err)
+	instanceID, routed := guestShopPaymentReferenceInstanceID(paymentReference)
+	if !routed {
+		// References created before instance-aware routing remain bound to the
+		// currently selected guest instance for backward compatibility.
+		settings, err := s.configService.guestShopSettings(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("load guest shop payment settings: %w", err)
+		}
+		instanceID = settings.StripeInstanceID
 	}
-	sel, err := s.configService.guestShopStripeInstance(ctx, settings.StripeInstanceID)
+	sel, err := s.configService.guestShopStripeInstance(ctx, instanceID)
 	if err != nil {
 		return nil, fmt.Errorf("load guest shop Stripe webhook provider: %w", err)
 	}

@@ -6462,11 +6462,10 @@
 
           <!-- Provider Management -->
           <PaymentProviderList
-            v-if="form.payment_enabled"
             :providers="providers"
             :loading="providersLoading"
-            :can-create="hasAnyPaymentTypeEnabled"
-            :enabled-payment-types="form.payment_enabled_types"
+            :can-create="enabledProviderKeyOptions.length > 0"
+            :enabled-payment-types="providerManagementTypes"
             :all-payment-types="allPaymentTypes"
             :redirect-label="t('admin.settings.payment.easypayRedirect')"
             @refresh="loadProviders"
@@ -7139,6 +7138,10 @@ const { copyToClipboard } = useClipboard();
 const loading = ref(true);
 const loadFailed = ref(false);
 const saving = ref(false);
+// Keep guest checkout fields out of a save when an older/partial settings
+// response did not include them; default form values must never clear the
+// separately owned guest payment configuration.
+const guestShopSettingsLoaded = ref(false);
 const testingSmtp = ref(false);
 const sendingTestEmail = ref(false);
 const smtpPasswordManuallyEdited = ref(false);
@@ -8159,6 +8162,9 @@ async function loadSettings() {
   loadFailed.value = false;
   try {
     const settings = await adminAPI.settings.getSettings();
+    guestShopSettingsLoaded.value =
+      settings.payment_guest_shop_enabled != null &&
+      settings.payment_guest_shop_stripe_instance_id != null;
     settings.payment_load_balance_strategy =
       settings.payment_load_balance_strategy || "round-robin";
     // Only assign non-null values from backend (null means unconfigured, keep defaults)
@@ -8751,6 +8757,11 @@ async function saveSettings() {
       allow_user_view_error_requests: form.allow_user_view_error_requests,
     };
 
+    if (!guestShopSettingsLoaded.value) {
+      delete payload.payment_guest_shop_enabled;
+      delete payload.payment_guest_shop_stripe_instance_id;
+    }
+
     // 仅当 openai_fast_policy_settings 已成功从后端加载时才回写，
     // 否则省略整个字段，让后端保留既有规则（含默认值）。
     if (openaiFastPolicyLoaded.value) {
@@ -8783,6 +8794,12 @@ async function saveSettings() {
     appendAuthSourceDefaultsToUpdateRequest(payload, authSourceDefaults);
 
     const updated = await adminAPI.settings.updateSettings(payload);
+    if (
+      updated.payment_guest_shop_enabled != null &&
+      updated.payment_guest_shop_stripe_instance_id != null
+    ) {
+      guestShopSettingsLoaded.value = true;
+    }
     for (const [key, value] of Object.entries(updated)) {
       if (key === "openai_fast_policy_settings") continue;
       if (value !== null && value !== undefined) {
@@ -9325,10 +9342,6 @@ function isPaymentTypeEnabled(type: string): boolean {
   return form.payment_enabled_types.includes(type);
 }
 
-const hasAnyPaymentTypeEnabled = computed(
-  () => form.payment_enabled_types.length > 0,
-);
-
 function togglePaymentType(type: string) {
   if (form.payment_enabled_types.includes(type)) {
     form.payment_enabled_types = form.payment_enabled_types.filter(
@@ -9418,8 +9431,16 @@ const providerKeyOptions = computed(() => [
 
 const enabledProviderKeyOptions = computed(() => {
   const enabled = form.payment_enabled_types;
-  return providerKeyOptions.value.filter((opt) => enabled.includes(opt.value));
+  return providerKeyOptions.value.filter(
+    (opt) => enabled.includes(opt.value) || opt.value === "stripe",
+  );
 });
+
+// Stripe instances remain editable even when Stripe is disabled for the main
+// site's payment flow because the independent guest checkout may use one.
+const providerManagementTypes = computed(() => [
+  ...new Set([...form.payment_enabled_types, "stripe"]),
+]);
 
 const loadBalanceOptions = computed(() => [
   {
@@ -9555,9 +9576,13 @@ async function loadProviders() {
 
 function openCreateProvider() {
   editingProvider.value = null;
-  providerDialogRef.value?.reset(
-    enabledProviderKeyOptions.value[0]?.value || "easypay",
-  );
+  const defaultProviderKey = form.payment_enabled
+    ? enabledProviderKeyOptions.value[0]?.value || "stripe"
+    : "stripe";
+  const defaultEnabled =
+    form.payment_enabled &&
+    form.payment_enabled_types.includes(defaultProviderKey);
+  providerDialogRef.value?.reset(defaultProviderKey, defaultEnabled);
   showProviderDialog.value = true;
 }
 

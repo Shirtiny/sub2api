@@ -591,6 +591,76 @@ func TestUpdateProviderInstanceClearsAirwallexAccountID(t *testing.T) {
 	require.Equal(t, "client-id-test", cfg["clientId"])
 }
 
+func TestGuestShopProtectsActiveStripeCredentialsAndDeletion(t *testing.T) {
+	ctx := context.Background()
+	client := newPaymentConfigServiceTestClient(t)
+	instanceID := createGuestShopStripeInstance(t, client, "Stripe storefront", "pk_storefront", "sk_storefront", "USD", 1, false)
+	repo := &paymentConfigSettingRepoStub{values: map[string]string{
+		SettingGuestShopEnabled:  "true",
+		SettingGuestShopStripeID: strconv.FormatInt(instanceID, 10),
+	}}
+	svc := &PaymentConfigService{entClient: client, settingRepo: repo}
+
+	_, err := svc.UpdateProviderInstance(ctx, instanceID, UpdateProviderInstanceRequest{
+		Config: map[string]string{"secretKey": "sk_replacement"},
+	})
+	require.Error(t, err)
+	require.Equal(t, "GUEST_SHOP_PROVIDER_IN_USE", infraerrors.Reason(err))
+
+	err = svc.DeleteProviderInstance(ctx, instanceID)
+	require.Error(t, err)
+	require.Equal(t, "GUEST_SHOP_PROVIDER_IN_USE", infraerrors.Reason(err))
+
+	// Non-routing fields only affect future PaymentIntents and remain editable.
+	updated, err := svc.UpdateProviderInstance(ctx, instanceID, UpdateProviderInstanceRequest{
+		Config: map[string]string{"currency": "EUR"},
+	})
+	require.NoError(t, err)
+	require.NotNil(t, updated)
+
+	_, err = svc.UpdateProviderInstance(ctx, instanceID, UpdateProviderInstanceRequest{
+		Config: map[string]string{"publishableKey": ""},
+	})
+	require.Error(t, err)
+	require.Equal(t, "INVALID_GUEST_SHOP_STRIPE_INSTANCE", infraerrors.Reason(err))
+
+	// Empty sensitive fields mean "leave unchanged" in the admin dialog and
+	// therefore do not invalidate an in-flight checkout token.
+	updated, err = svc.UpdateProviderInstance(ctx, instanceID, UpdateProviderInstanceRequest{
+		Config: map[string]string{"secretKey": ""},
+	})
+	require.NoError(t, err)
+	require.NotNil(t, updated)
+}
+
+func TestGuestShopStripeProtectionExpiresAfterDisable(t *testing.T) {
+	ctx := context.Background()
+	client := newPaymentConfigServiceTestClient(t)
+	instanceID := createGuestShopStripeInstance(t, client, "Stripe previous", "pk_previous", "sk_previous", "USD", 1, false)
+	repo := &paymentConfigSettingRepoStub{values: map[string]string{
+		SettingGuestShopEnabled:  "false",
+		SettingGuestShopStripeID: strconv.FormatInt(instanceID, 10),
+		SettingGuestShopProtection: `[{"instance_id":` + strconv.FormatInt(instanceID, 10) +
+			`,"until":` + strconv.FormatInt(time.Now().Add(time.Hour).Unix(), 10) + `}]`,
+	}}
+	svc := &PaymentConfigService{entClient: client, settingRepo: repo}
+
+	_, err := svc.UpdateProviderInstance(ctx, instanceID, UpdateProviderInstanceRequest{
+		Config: map[string]string{"secretKey": "sk_replacement"},
+	})
+	require.Error(t, err)
+	require.Equal(t, "GUEST_SHOP_PROVIDER_IN_USE", infraerrors.Reason(err))
+
+	repo.values[SettingGuestShopProtection] = `[{"instance_id":` + strconv.FormatInt(instanceID, 10) +
+		`,"until":` + strconv.FormatInt(time.Now().Add(-time.Hour).Unix(), 10) + `}]`
+	updated, err := svc.UpdateProviderInstance(ctx, instanceID, UpdateProviderInstanceRequest{
+		Config: map[string]string{"secretKey": "sk_replacement"},
+	})
+	require.NoError(t, err)
+	require.NotNil(t, updated)
+	require.NoError(t, svc.DeleteProviderInstance(ctx, instanceID))
+}
+
 func createPendingProviderConfigOrder(t *testing.T, ctx context.Context, client *dbent.Client, instance *dbent.PaymentProviderInstance) {
 	t.Helper()
 

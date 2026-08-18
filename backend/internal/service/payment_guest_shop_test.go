@@ -6,12 +6,15 @@ import (
 	"context"
 	"strconv"
 	"testing"
+	"time"
 
 	dbent "github.com/Wei-Shaw/sub2api/ent"
 	"github.com/Wei-Shaw/sub2api/internal/payment"
 	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 	"github.com/stretchr/testify/require"
 )
+
+const guestShopLegacyTestReference = "shop_0123456789abcdef0123456789abcdef"
 
 type guestShopTestProvider struct {
 	created     []payment.CreatePaymentRequest
@@ -50,7 +53,7 @@ func (p *guestShopTestProvider) QueryOrder(_ context.Context, tradeNo string) (*
 		TradeNo:  tradeNo,
 		Status:   payment.ProviderStatusPaid,
 		Amount:   107,
-		Metadata: map[string]string{"currency": "USD", guestShopStripeOrderIDMeta: "shop_test"},
+		Metadata: map[string]string{"currency": "USD", guestShopStripeOrderIDMeta: guestShopLegacyTestReference},
 	}, nil
 }
 func (p *guestShopTestProvider) VerifyNotification(context.Context, string, map[string]string) (*payment.PaymentNotification, error) {
@@ -58,26 +61,6 @@ func (p *guestShopTestProvider) VerifyNotification(context.Context, string, map[
 }
 func (p *guestShopTestProvider) Refund(context.Context, payment.RefundRequest) (*payment.RefundResponse, error) {
 	panic("unexpected Refund")
-}
-
-func createGuestShopStripeInstance(
-	t *testing.T,
-	client *dbent.Client,
-	name, publishableKey, secretKey, currency string,
-	sortOrder int,
-	enabled bool,
-) int64 {
-	t.Helper()
-	instance, err := client.PaymentProviderInstance.Create().
-		SetProviderKey(payment.TypeStripe).
-		SetName(name).
-		SetConfig(`{"publishableKey":"` + publishableKey + `","secretKey":"` + secretKey + `","currency":"` + currency + `"}`).
-		SetSupportedTypes("card,alipay").
-		SetSortOrder(sortOrder).
-		SetEnabled(enabled).
-		Save(context.Background())
-	require.NoError(t, err)
-	return instance.ID
 }
 
 func newGuestShopTestService(client *dbent.Client, enabled bool, instanceID int64) *PaymentService {
@@ -205,8 +188,14 @@ func TestCreateGuestShopPaymentUsesPinnedStripeAndDoesNotPersistOrders(t *testin
 	require.Equal(t, "107.00", prov.created[0].Amount)
 	require.Contains(t, prov.created[0].Subject, "Café Apparel Shop")
 	require.Contains(t, prov.created[0].Subject, "Espresso Emerald Classic")
-	require.Regexp(t, `^shop_[0-9a-f]{32}$`, prov.created[0].OrderID)
+	require.Regexp(t, `^shop_v1_`+strconv.FormatInt(primaryID, 10)+`_[0-9a-f]{32}$`, prov.created[0].OrderID)
 	require.Equal(t, "card,alipay", prov.created[0].InstanceSubMethods)
+	require.NotEmpty(t, resp.CheckoutToken)
+	claims, payload, signature, err := decodeGuestShopRouteToken(resp.CheckoutToken, resp.PaymentIntentID, time.Now())
+	require.NoError(t, err)
+	require.Equal(t, primaryID, claims.InstanceID)
+	require.Equal(t, prov.created[0].OrderID, claims.PaymentReference)
+	require.True(t, verifyGuestShopRouteSignature(payload, signature, "sk_storefront"))
 
 	count, err := client.PaymentOrder.Query().Count(ctx)
 	require.NoError(t, err)
@@ -263,13 +252,76 @@ func TestGetGuestShopPaymentStatusUsesPinnedDisabledStripeInstance(t *testing.T)
 	}
 	t.Cleanup(func() { newGuestShopProvider = orig })
 
-	status, err := newGuestShopTestService(client, false, pinnedID).GetGuestShopPaymentStatus(ctx, "pi_test_guest_shop")
+	status, err := newGuestShopTestService(client, false, pinnedID).GetGuestShopPaymentStatus(ctx, "pi_test_guest_shop", "")
 	require.NoError(t, err)
 	require.Equal(t, "pi_test_guest_shop", status.PaymentIntentID)
 	require.Equal(t, payment.ProviderStatusPaid, status.Status)
 	require.Equal(t, 107.0, status.Amount)
 	require.Equal(t, "USD", status.Currency)
 	require.Equal(t, "pi_test_guest_shop", pinned.queryID)
+}
+
+func TestGetGuestShopPaymentStatusUsesCreationInstanceAfterSelectionChanges(t *testing.T) {
+	ctx := context.Background()
+	client := newPaymentConfigServiceTestClient(t)
+	creationID := createGuestShopStripeInstance(t, client, "Stripe creation", "pk_creation", "sk_creation", "USD", 1, false)
+	currentID := createGuestShopStripeInstance(t, client, "Stripe current", "pk_current", "sk_current", "USD", 2, false)
+	reference, err := newGuestShopPaymentReference(creationID)
+	require.NoError(t, err)
+	token, err := createGuestShopRouteToken(guestShopRouteClaims{
+		Version:          guestShopRouteTokenVersion,
+		InstanceID:       creationID,
+		PaymentIntentID:  "pi_routed_guest_shop",
+		PaymentReference: reference,
+		ExpiresAt:        time.Now().Add(time.Hour).Unix(),
+	}, "sk_creation")
+	require.NoError(t, err)
+
+	creationProvider := &guestShopTestProvider{queryResult: &payment.QueryOrderResponse{
+		TradeNo:  "pi_routed_guest_shop",
+		Status:   payment.ProviderStatusPaid,
+		Amount:   89,
+		Metadata: map[string]string{"currency": "USD", guestShopStripeOrderIDMeta: reference},
+	}}
+	orig := newGuestShopProvider
+	newGuestShopProvider = func(_ string, instanceID string, _ map[string]string) (payment.Provider, error) {
+		require.Equal(t, strconv.FormatInt(creationID, 10), instanceID)
+		return creationProvider, nil
+	}
+	t.Cleanup(func() { newGuestShopProvider = orig })
+
+	status, err := newGuestShopTestService(client, true, currentID).
+		GetGuestShopPaymentStatus(ctx, "pi_routed_guest_shop", token)
+	require.NoError(t, err)
+	require.Equal(t, payment.ProviderStatusPaid, status.Status)
+	require.Equal(t, 89.0, status.Amount)
+	require.Equal(t, "pi_routed_guest_shop", creationProvider.queryID)
+}
+
+func TestGetGuestShopPaymentStatusRejectsTamperedRouteToken(t *testing.T) {
+	ctx := context.Background()
+	client := newPaymentConfigServiceTestClient(t)
+	instanceID := createGuestShopStripeInstance(t, client, "Stripe storefront", "pk_storefront", "sk_storefront", "USD", 1, false)
+	reference, err := newGuestShopPaymentReference(instanceID)
+	require.NoError(t, err)
+	token, err := createGuestShopRouteToken(guestShopRouteClaims{
+		Version:          guestShopRouteTokenVersion,
+		InstanceID:       instanceID,
+		PaymentIntentID:  "pi_tampered_guest_shop",
+		PaymentReference: reference,
+		ExpiresAt:        time.Now().Add(time.Hour).Unix(),
+	}, "sk_storefront")
+	require.NoError(t, err)
+	last := byte('A')
+	if token[len(token)-1] == last {
+		last = 'B'
+	}
+	tampered := token[:len(token)-1] + string(last)
+
+	_, err = newGuestShopTestService(client, true, instanceID).
+		GetGuestShopPaymentStatus(ctx, "pi_tampered_guest_shop", tampered)
+	require.Error(t, err)
+	require.Equal(t, "INVALID_GUEST_SHOP_PAYMENT_TOKEN", infraerrors.Reason(err))
 }
 
 func TestGetGuestShopPaymentStatusRejectsNonGuestIntent(t *testing.T) {
@@ -288,7 +340,7 @@ func TestGetGuestShopPaymentStatusRejectsNonGuestIntent(t *testing.T) {
 	}
 	t.Cleanup(func() { newGuestShopProvider = orig })
 
-	_, err := newGuestShopTestService(client, true, pinnedID).GetGuestShopPaymentStatus(ctx, "pi_normal_order")
+	_, err := newGuestShopTestService(client, true, pinnedID).GetGuestShopPaymentStatus(ctx, "pi_normal_order", "")
 	require.Error(t, err)
 	require.Equal(t, "PAYMENT_NOT_FOUND", infraerrors.Reason(err))
 }
@@ -359,11 +411,11 @@ func TestGetGuestShopPaymentStatusRejectsInvalidIntent(t *testing.T) {
 	t.Parallel()
 
 	svc := &PaymentService{}
-	_, err := svc.GetGuestShopPaymentStatus(context.Background(), "not-an-intent")
+	_, err := svc.GetGuestShopPaymentStatus(context.Background(), "not-an-intent", "")
 	require.Error(t, err)
 	require.Equal(t, "INVALID_PAYMENT_INTENT", infraerrors.Reason(err))
 
-	_, err = svc.GetGuestShopPaymentStatus(context.Background(), "pi_"+string(make([]byte, guestShopMaxIntentIDLength)))
+	_, err = svc.GetGuestShopPaymentStatus(context.Background(), "pi_"+string(make([]byte, guestShopMaxIntentIDLength)), "")
 	require.Error(t, err)
 	require.Equal(t, "INVALID_PAYMENT_INTENT", infraerrors.Reason(err))
 }

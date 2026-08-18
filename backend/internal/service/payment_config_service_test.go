@@ -4,13 +4,16 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	dbent "github.com/Wei-Shaw/sub2api/ent"
 	"github.com/Wei-Shaw/sub2api/ent/enttest"
 	"github.com/Wei-Shaw/sub2api/internal/payment"
 	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
+	"github.com/stretchr/testify/require"
 
 	"entgo.io/ent/dialect"
 	entsql "entgo.io/ent/dialect/sql"
@@ -385,7 +388,14 @@ func (s *paymentConfigSettingRepoStub) Get(context.Context, string) (*Setting, e
 	return nil, nil
 }
 func (s *paymentConfigSettingRepoStub) GetValue(_ context.Context, key string) (string, error) {
-	return s.values[key], nil
+	value, ok := s.values[key]
+	if ok {
+		return value, nil
+	}
+	if key == SettingGuestShopProtection {
+		return "", ErrSettingNotFound
+	}
+	return "", nil
 }
 func (s *paymentConfigSettingRepoStub) Set(context.Context, string, string) error { return nil }
 func (s *paymentConfigSettingRepoStub) GetMultiple(_ context.Context, keys []string) (map[string]string, error) {
@@ -456,7 +466,12 @@ func TestUpdatePaymentConfig_PersistsValidatedGuestShopSettings(t *testing.T) {
 		t.Fatalf("create Stripe instance: %v", err)
 	}
 	instanceID := instance.ID
-	repo := &paymentConfigSettingRepoStub{values: map[string]string{}}
+	repo := &paymentConfigSettingRepoStub{values: map[string]string{
+		SettingPaymentEnabled:      "false",
+		SettingMinRechargeAmount:   "12.50",
+		SettingEnabledPaymentTypes: "alipay,wxpay",
+		SettingProductNamePrefix:   "original-prefix",
+	}}
 	svc := &PaymentConfigService{entClient: client, settingRepo: repo}
 	enabled := true
 
@@ -472,6 +487,19 @@ func TestUpdatePaymentConfig_PersistsValidatedGuestShopSettings(t *testing.T) {
 	}
 	if repo.values[SettingGuestShopStripeID] != fmt.Sprintf("%d", instanceID) {
 		t.Fatalf("guest shop Stripe ID = %q, want %d", repo.values[SettingGuestShopStripeID], instanceID)
+	}
+	for key, want := range map[string]string{
+		SettingPaymentEnabled:      "false",
+		SettingMinRechargeAmount:   "12.50",
+		SettingEnabledPaymentTypes: "alipay,wxpay",
+		SettingProductNamePrefix:   "original-prefix",
+	} {
+		if got := repo.values[key]; got != want {
+			t.Fatalf("guest-only update changed %s: got %q, want %q", key, got, want)
+		}
+		if _, written := repo.updates[key]; written {
+			t.Fatalf("guest-only update unexpectedly wrote %s: %v", key, repo.updates)
+		}
 	}
 }
 
@@ -558,6 +586,53 @@ func TestUpdatePaymentConfig_CanDisableGuestShopAfterInstanceDisappears(t *testi
 	if repo.values[SettingGuestShopEnabled] != "false" {
 		t.Fatalf("guest shop enabled = %q, want false", repo.values[SettingGuestShopEnabled])
 	}
+}
+
+func TestUpdatePaymentConfig_ProtectsPreviousGuestStripeInstance(t *testing.T) {
+	ctx := context.Background()
+	client := newPaymentConfigServiceTestClient(t)
+	previousID := createGuestShopStripeInstance(t, client, "Stripe previous", "pk_previous", "sk_previous", "USD", 1, false)
+	nextID := createGuestShopStripeInstance(t, client, "Stripe next", "pk_next", "sk_next", "USD", 2, false)
+	repo := &paymentConfigSettingRepoStub{values: map[string]string{
+		SettingGuestShopEnabled:  "true",
+		SettingGuestShopStripeID: strconv.FormatInt(previousID, 10),
+	}}
+	svc := &PaymentConfigService{entClient: client, settingRepo: repo}
+	now := time.Now()
+
+	updates, err := svc.buildPaymentConfigUpdates(ctx, UpdatePaymentConfigRequest{
+		GuestShopStripeInstanceID: &nextID,
+	}, now)
+	require.NoError(t, err)
+	require.Equal(t, strconv.FormatInt(nextID, 10), updates[SettingGuestShopStripeID])
+	protections, err := parseGuestShopInstanceProtections(updates[SettingGuestShopProtection])
+	require.NoError(t, err)
+	require.Equal(t, []guestShopInstanceProtection{{
+		InstanceID: previousID,
+		Until:      now.Add(GuestShopRouteTokenTTL).Unix(),
+	}}, protections)
+}
+
+func TestUpdatePaymentConfig_DisablingGuestShopStartsProtectionGracePeriod(t *testing.T) {
+	ctx := context.Background()
+	client := newPaymentConfigServiceTestClient(t)
+	instanceID := createGuestShopStripeInstance(t, client, "Stripe storefront", "pk_storefront", "sk_storefront", "USD", 1, false)
+	repo := &paymentConfigSettingRepoStub{values: map[string]string{
+		SettingGuestShopEnabled:  "true",
+		SettingGuestShopStripeID: strconv.FormatInt(instanceID, 10),
+	}}
+	svc := &PaymentConfigService{entClient: client, settingRepo: repo}
+	enabled := false
+	now := time.Now()
+
+	updates, err := svc.buildPaymentConfigUpdates(ctx, UpdatePaymentConfigRequest{GuestShopEnabled: &enabled}, now)
+	require.NoError(t, err)
+	protections, err := parseGuestShopInstanceProtections(updates[SettingGuestShopProtection])
+	require.NoError(t, err)
+	require.Equal(t, []guestShopInstanceProtection{{
+		InstanceID: instanceID,
+		Until:      now.Add(GuestShopRouteTokenTTL).Unix(),
+	}}, protections)
 }
 
 func paymentConfigStrPtr(value string) *string {

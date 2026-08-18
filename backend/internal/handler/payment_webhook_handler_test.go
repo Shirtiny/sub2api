@@ -181,8 +181,8 @@ func TestExtractOutTradeNo(t *testing.T) {
 		{
 			name:        "stripe guest payment intent metadata",
 			providerKey: payment.TypeStripe,
-			rawBody:     `{"type":"payment_intent.succeeded","data":{"object":{"metadata":{"orderId":"shop_0123456789abcdef"}}}}`,
-			want:        "shop_0123456789abcdef",
+			rawBody:     `{"type":"payment_intent.succeeded","data":{"object":{"metadata":{"orderId":"shop_0123456789abcdef0123456789abcdef"}}}}`,
+			want:        "shop_0123456789abcdef0123456789abcdef",
 		},
 		{
 			name:        "stripe normal order keeps original fallback",

@@ -643,11 +643,11 @@ function emitValidationError(msg: string) {
 }
 
 // --- Public API for parent to call ---
-function reset(defaultKey: string) {
+function reset(defaultKey: string, enabled = true) {
   form.name = ''
   form.provider_key = defaultKey
   form.supported_types = [...(PROVIDER_SUPPORTED_TYPES[defaultKey] || [])]
-  form.enabled = true
+  form.enabled = enabled
   form.payment_mode = defaultPaymentMode(defaultKey)
   form.refund_enabled = false
   form.allow_user_refund = false

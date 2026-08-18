@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"strconv"
 	"strings"
+	"time"
 
 	dbent "github.com/Wei-Shaw/sub2api/ent"
 	"github.com/Wei-Shaw/sub2api/ent/paymentorder"
@@ -253,6 +254,24 @@ func (s *PaymentConfigService) UpdateProviderInstance(ctx context.Context, id in
 		if err != nil {
 			return nil, err
 		}
+		if current.ProviderKey == payment.TypeStripe {
+			protected, until, err := s.guestShopProviderProtection(ctx, id, time.Now())
+			if err != nil {
+				return nil, fmt.Errorf("check guest shop Stripe protection: %w", err)
+			}
+			if protected && hasGuestShopRouteKeyChange(currentConfig, mergedConfig) {
+				appErr := infraerrors.Conflict("GUEST_SHOP_PROVIDER_IN_USE", "Stripe instance is protected by guest checkout; select another instance and wait for redirected payments before changing its secret key")
+				if until > 0 {
+					appErr = appErr.WithMetadata(map[string]string{"protected_until": strconv.FormatInt(until, 10)})
+				}
+				return nil, appErr
+			}
+			if protected {
+				if _, _, _, complete := guestShopStripeConfigValues(mergedConfig); !complete {
+					return nil, infraerrors.BadRequest("INVALID_GUEST_SHOP_STRIPE_INSTANCE", "protected guest Stripe instance must keep a secret key, publishable key, and valid currency")
+				}
+			}
+		}
 		if hasPendingOrderProtectedConfigChange(current.ProviderKey, currentConfig, mergedConfig) {
 			count, err := getPendingOrderCount()
 			if err != nil {
@@ -372,6 +391,11 @@ func (s *PaymentConfigService) UpdateProviderInstance(ctx context.Context, id in
 	return u.Save(ctx)
 }
 
+func hasGuestShopRouteKeyChange(currentConfig, nextConfig map[string]string) bool {
+	return providerConfigFieldValue(currentConfig, guestShopStripeSecretKey) !=
+		providerConfigFieldValue(nextConfig, guestShopStripeSecretKey)
+}
+
 // GetUserRefundEligibleInstanceIDs returns provider instance IDs that allow user refund.
 func (s *PaymentConfigService) GetUserRefundEligibleInstanceIDs(ctx context.Context) ([]string, error) {
 	instances, err := s.entClient.PaymentProviderInstance.Query().
@@ -444,6 +468,23 @@ func (s *PaymentConfigService) decryptConfig(stored string) (map[string]string, 
 }
 
 func (s *PaymentConfigService) DeleteProviderInstance(ctx context.Context, id int64) error {
+	instance, err := s.entClient.PaymentProviderInstance.Get(ctx, id)
+	if err != nil {
+		return fmt.Errorf("load provider instance: %w", err)
+	}
+	if instance.ProviderKey == payment.TypeStripe {
+		protected, until, err := s.guestShopProviderProtection(ctx, id, time.Now())
+		if err != nil {
+			return fmt.Errorf("check guest shop Stripe protection: %w", err)
+		}
+		if protected {
+			appErr := infraerrors.Conflict("GUEST_SHOP_PROVIDER_IN_USE", "Stripe instance is protected by guest checkout; select another instance and wait for redirected payments before deleting it")
+			if until > 0 {
+				appErr = appErr.WithMetadata(map[string]string{"protected_until": strconv.FormatInt(until, 10)})
+			}
+			return appErr
+		}
+	}
 	count, err := s.countPendingOrders(ctx, id)
 	if err != nil {
 		return fmt.Errorf("check pending orders: %w", err)

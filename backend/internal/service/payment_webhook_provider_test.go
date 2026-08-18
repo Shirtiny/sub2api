@@ -541,8 +541,41 @@ func TestGetWebhookProvidersUsesPinnedDisabledGuestStripeInstance(t *testing.T) 
 			}},
 		},
 	}
-	providers, err := svc.GetWebhookProviders(ctx, payment.TypeStripe, "shop_0123456789abcdef")
+	providers, err := svc.GetWebhookProviders(ctx, payment.TypeStripe, guestShopLegacyTestReference)
 	require.NoError(t, err)
 	require.Len(t, providers, 1)
 	require.Equal(t, strconv.FormatInt(instance.ID, 10), gotInstanceID)
+}
+
+func TestGetWebhookProvidersRoutesNewGuestReferenceToCreationInstance(t *testing.T) {
+	ctx := context.Background()
+	client := newPaymentConfigServiceTestClient(t)
+	creationID := createGuestShopStripeInstance(t, client, "Stripe creation", "pk_creation", "sk_creation", "USD", 1, false)
+	currentID := createGuestShopStripeInstance(t, client, "Stripe current", "pk_current", "sk_current", "USD", 2, false)
+	reference, err := newGuestShopPaymentReference(creationID)
+	require.NoError(t, err)
+
+	var gotInstanceID string
+	orig := newGuestShopProvider
+	newGuestShopProvider = func(providerKey, instanceID string, _ map[string]string) (payment.Provider, error) {
+		require.Equal(t, payment.TypeStripe, providerKey)
+		gotInstanceID = instanceID
+		return webhookProviderTestDouble{key: payment.TypeStripe, types: []payment.PaymentType{payment.TypeStripe}}, nil
+	}
+	t.Cleanup(func() { newGuestShopProvider = orig })
+
+	svc := &PaymentService{
+		entClient: client,
+		configService: &PaymentConfigService{
+			entClient: client,
+			settingRepo: &paymentConfigSettingRepoStub{values: map[string]string{
+				SettingGuestShopEnabled:  "true",
+				SettingGuestShopStripeID: strconv.FormatInt(currentID, 10),
+			}},
+		},
+	}
+	providers, err := svc.GetWebhookProviders(ctx, payment.TypeStripe, reference)
+	require.NoError(t, err)
+	require.Len(t, providers, 1)
+	require.Equal(t, strconv.FormatInt(creationID, 10), gotInstanceID)
 }

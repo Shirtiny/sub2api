@@ -1673,6 +1673,20 @@ func (s *SettingService) OIDCSecurityWriteDefaults(ctx context.Context) (bool, b
 
 // UpdateSettingsWithAuthSourceDefaults persists system settings and auth-source defaults in a single write.
 func (s *SettingService) UpdateSettingsWithAuthSourceDefaults(ctx context.Context, settings *SystemSettings, authDefaults *AuthSourceDefaultSettings) error {
+	return s.UpdateSettingsWithAuthSourceDefaultsAndPaymentConfig(ctx, settings, authDefaults, nil, nil)
+}
+
+// UpdateSettingsWithAuthSourceDefaultsAndPaymentConfig validates and persists
+// the system, auth-source, and optional payment settings in one bulk upsert.
+// Payment settings live in the same repository, so splitting these writes would
+// allow a late payment validation error to leave the settings form half-saved.
+func (s *SettingService) UpdateSettingsWithAuthSourceDefaultsAndPaymentConfig(
+	ctx context.Context,
+	settings *SystemSettings,
+	authDefaults *AuthSourceDefaultSettings,
+	paymentConfigService *PaymentConfigService,
+	paymentReq *UpdatePaymentConfigRequest,
+) error {
 	updates, err := s.buildSystemSettingsUpdates(ctx, settings)
 	if err != nil {
 		return err
@@ -1684,6 +1698,18 @@ func (s *SettingService) UpdateSettingsWithAuthSourceDefaults(ctx context.Contex
 	}
 	for key, value := range authSourceUpdates {
 		updates[key] = value
+	}
+	if paymentReq != nil {
+		if paymentConfigService == nil {
+			return fmt.Errorf("payment config service is not configured")
+		}
+		paymentUpdates, err := paymentConfigService.buildPaymentConfigUpdates(ctx, *paymentReq, time.Now())
+		if err != nil {
+			return err
+		}
+		for key, value := range paymentUpdates {
+			updates[key] = value
+		}
 	}
 
 	err = s.settingRepo.SetMultiple(ctx, updates)

@@ -7584,6 +7584,8 @@ export default {
       WXPAY_CONFIG_INVALID_KEY_LENGTH: '微信支付 {key} 长度错误，应为 {expected} 字节（实际 {actual}）',
       WXPAY_CONFIG_INVALID_KEY: '微信支付 {key} 格式错误，请确认复制了完整的 PEM 内容',
       PENDING_ORDERS: '该服务商有未完成的订单，请等待订单完成后再操作',
+      INVALID_GUEST_SHOP_STRIPE_INSTANCE: '游客支付 Stripe 实例必须保留 secretKey、publishableKey 和合法币种',
+      GUEST_SHOP_PROVIDER_IN_USE: '该 Stripe 实例仍在保护游客支付，请先关闭游客支付或选择其他实例，并等待最多 24 小时后再修改 secretKey 或删除',
       PLAN_NOT_FOUND: '订阅套餐不存在',
       PLAN_ACTIVITY_IN_USE: '该套餐仍被启用中或尚未结束的活动使用，请先停用活动或等待活动结束',
       SUBSCRIPTION_PLAN_CHANGED: '订阅套餐已变更或下架，请刷新后重试',

@@ -5,6 +5,7 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"strconv"
 	"testing"
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
@@ -14,7 +15,8 @@ import (
 )
 
 type settingUpdateRepoStub struct {
-	updates map[string]string
+	updates          map[string]string
+	setMultipleCalls int
 }
 
 func (s *settingUpdateRepoStub) Get(ctx context.Context, key string) (*Setting, error) {
@@ -34,11 +36,73 @@ func (s *settingUpdateRepoStub) GetMultiple(ctx context.Context, keys []string) 
 }
 
 func (s *settingUpdateRepoStub) SetMultiple(ctx context.Context, settings map[string]string) error {
+	s.setMultipleCalls++
 	s.updates = make(map[string]string, len(settings))
 	for k, v := range settings {
 		s.updates[k] = v
 	}
 	return nil
+}
+
+func TestSettingService_PaymentValidationFailureDoesNotPartiallySaveSettings(t *testing.T) {
+	repo := &settingUpdateRepoStub{}
+	settingsService := NewSettingService(repo, &config.Config{})
+	paymentRepo := &paymentConfigSettingRepoStub{values: map[string]string{}}
+	paymentService := &PaymentConfigService{settingRepo: paymentRepo}
+	enabled := true
+	invalidInstanceID := int64(-1)
+
+	err := settingsService.UpdateSettingsWithAuthSourceDefaultsAndPaymentConfig(
+		context.Background(),
+		&SystemSettings{SiteName: "must-not-be-written"},
+		nil,
+		paymentService,
+		&UpdatePaymentConfigRequest{
+			GuestShopEnabled:          &enabled,
+			GuestShopStripeInstanceID: &invalidInstanceID,
+		},
+	)
+	require.Error(t, err)
+	require.Equal(t, "INVALID_GUEST_SHOP_STRIPE_INSTANCE", infraerrors.Reason(err))
+	require.Zero(t, repo.setMultipleCalls)
+	require.Nil(t, repo.updates)
+}
+
+func TestSettingService_SavesSystemAndGuestPaymentSettingsAtomically(t *testing.T) {
+	ctx := context.Background()
+	client := newPaymentConfigServiceTestClient(t)
+	instanceID := createGuestShopStripeInstance(t, client, "Stripe storefront", "pk_storefront", "sk_storefront", "USD", 1, false)
+	repo := &settingUpdateRepoStub{}
+	settingsService := NewSettingService(repo, &config.Config{})
+	paymentService := &PaymentConfigService{
+		entClient: client,
+		settingRepo: &paymentConfigSettingRepoStub{values: map[string]string{
+			SettingPaymentEnabled:      "true",
+			SettingMinRechargeAmount:   "88",
+			SettingEnabledPaymentTypes: "alipay",
+		}},
+	}
+	enabled := true
+
+	err := settingsService.UpdateSettingsWithAuthSourceDefaultsAndPaymentConfig(
+		ctx,
+		&SystemSettings{SiteName: "Cafe"},
+		nil,
+		paymentService,
+		&UpdatePaymentConfigRequest{
+			GuestShopEnabled:          &enabled,
+			GuestShopStripeInstanceID: &instanceID,
+		},
+	)
+	require.NoError(t, err)
+	require.Equal(t, 1, repo.setMultipleCalls)
+	require.Equal(t, "Cafe", repo.updates[SettingKeySiteName])
+	require.Equal(t, "true", repo.updates[SettingGuestShopEnabled])
+	require.Equal(t, strconv.FormatInt(instanceID, 10), repo.updates[SettingGuestShopStripeID])
+	for _, key := range []string{SettingPaymentEnabled, SettingMinRechargeAmount, SettingEnabledPaymentTypes} {
+		_, written := repo.updates[key]
+		require.False(t, written, "guest-only patch unexpectedly wrote %s", key)
+	}
 }
 
 func (s *settingUpdateRepoStub) GetAll(ctx context.Context) (map[string]string, error) {

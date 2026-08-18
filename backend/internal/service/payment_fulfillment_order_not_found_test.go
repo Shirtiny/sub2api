@@ -94,7 +94,7 @@ func TestHandlePaymentNotification_NonSuccessStatus_Skips(t *testing.T) {
 
 func TestHandlePaymentNotification_GuestShopStripePaymentSkipsFulfillment(t *testing.T) {
 	notification := &payment.PaymentNotification{
-		OrderID: guestShopPaymentRefPref + "test",
+		OrderID: guestShopLegacyTestReference,
 		TradeNo: "pi_guest_shop_test",
 		Status:  payment.NotificationStatusSuccess,
 		Amount:  107,
