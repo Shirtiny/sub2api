@@ -43,6 +43,11 @@ func (s *PaymentService) HandlePaymentNotification(ctx context.Context, n *payme
 	if n.Status != payment.NotificationStatusSuccess {
 		return nil
 	}
+	// Guest storefront payments have no local order and must never enter the
+	// account fulfillment path. The verified webhook only needs a successful ack.
+	if strings.EqualFold(strings.TrimSpace(pk), payment.TypeStripe) && isGuestShopPaymentReference(n.OrderID) {
+		return nil
+	}
 	// Look up order by out_trade_no (the external order ID we sent to the provider)
 	order, err := s.entClient.PaymentOrder.Query().Where(paymentorder.OutTradeNo(n.OrderID)).Only(ctx)
 	if err != nil {

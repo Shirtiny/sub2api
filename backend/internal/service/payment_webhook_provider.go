@@ -30,6 +30,22 @@ func (s *PaymentService) GetWebhookProvider(ctx context.Context, providerKey, ou
 // Official WeChat Pay may require multiple candidates because the callback body
 // cannot be bound to a merchant before decryption.
 func (s *PaymentService) GetWebhookProviders(ctx context.Context, providerKey, outTradeNo string) ([]payment.Provider, error) {
+	// Guest storefront PaymentIntents are intentionally not persisted as local
+	// orders. Their Stripe metadata is the only safe routing signal, so resolve
+	// them against the explicitly pinned guest instance before any normal order
+	// or enabled-instance fallback logic. This keeps a disabled original-site
+	// instance usable for the storefront without changing normal sub2api
+	// webhook routing.
+	if strings.TrimSpace(providerKey) == payment.TypeStripe && isGuestShopPaymentReference(outTradeNo) {
+		prov, err := s.getGuestShopWebhookProvider(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if prov == nil {
+			return nil, payment.ErrProviderNotFound
+		}
+		return []payment.Provider{prov}, nil
+	}
 	if outTradeNo != "" {
 		order, err := s.entClient.PaymentOrder.Query().Where(paymentorder.OutTradeNo(outTradeNo)).Only(ctx)
 		if err == nil {
@@ -80,6 +96,24 @@ func (s *PaymentService) GetWebhookProviders(ctx context.Context, providerKey, o
 		return nil, err
 	}
 	return []payment.Provider{prov}, nil
+}
+
+func (s *PaymentService) getGuestShopWebhookProvider(ctx context.Context) (payment.Provider, error) {
+	if s == nil || s.configService == nil {
+		return nil, payment.ErrProviderNotFound
+	}
+	sel, err := s.configService.guestShopStripeInstance(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("load guest shop Stripe webhook provider: %w", err)
+	}
+	if sel == nil {
+		return nil, payment.ErrProviderNotFound
+	}
+	prov, err := newGuestShopProvider(sel.ProviderKey, sel.InstanceID, sel.Config)
+	if err != nil {
+		return nil, fmt.Errorf("create guest shop Stripe webhook provider: %w", err)
+	}
+	return prov, nil
 }
 
 func (s *PaymentService) getPinnedOrderProvider(ctx context.Context, o *dbent.PaymentOrder) (payment.Provider, error) {

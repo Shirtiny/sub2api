@@ -92,6 +92,21 @@ func TestHandlePaymentNotification_NonSuccessStatus_Skips(t *testing.T) {
 		"non-success notifications must short-circuit before the DB lookup")
 }
 
+func TestHandlePaymentNotification_GuestShopStripePaymentSkipsFulfillment(t *testing.T) {
+	notification := &payment.PaymentNotification{
+		OrderID: guestShopPaymentRefPref + "test",
+		TradeNo: "pi_guest_shop_test",
+		Status:  payment.NotificationStatusSuccess,
+		Amount:  107,
+	}
+
+	require.NoError(t, (&PaymentService{}).HandlePaymentNotification(context.Background(), notification, payment.TypeStripe))
+
+	client := newOrderNotFoundTestClient(t)
+	err := (&PaymentService{entClient: client}).HandlePaymentNotification(context.Background(), notification, payment.TypeAlipay)
+	require.ErrorIs(t, err, ErrOrderNotFound, "only Stripe guest notifications may bypass order lookup")
+}
+
 // TestErrOrderNotFound_DistinctFromOtherErrors guards against an accidental
 // collapse where a generic wrapped error would start matching ErrOrderNotFound
 // (which would silently mask real DB failures).

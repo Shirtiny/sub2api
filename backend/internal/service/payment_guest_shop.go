@@ -2,23 +2,38 @@ package service
 
 import (
 	"context"
+	cryptorand "crypto/rand"
+	"encoding/hex"
 	"errors"
 	"fmt"
+	"log/slog"
 	"math"
+	"net/http"
+	"os"
 	"regexp"
+	"strconv"
 	"strings"
 
+	dbent "github.com/Wei-Shaw/sub2api/ent"
 	"github.com/Wei-Shaw/sub2api/ent/paymentproviderinstance"
 	"github.com/Wei-Shaw/sub2api/internal/payment"
 	"github.com/Wei-Shaw/sub2api/internal/payment/provider"
 	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
+	stripe "github.com/stripe/stripe-go/v85"
 )
 
 const (
-	guestShopMinQty         = 1
-	guestShopMaxQty         = 5
-	guestShopSubjectPrefix  = "Café Apparel Shop"
-	guestShopPaymentRefPref = "shop_"
+	guestShopMinQty              = 1
+	guestShopMaxQty              = 5
+	guestShopMinPaymentAmount    = 1.0
+	guestShopMaxIntentIDLength   = 128
+	guestShopSubjectPrefix       = "Café Apparel Shop"
+	guestShopPaymentRefPref      = "shop_"
+	guestShopEnabledEnv          = "CAFE_GUEST_SHOP_ENABLED"
+	guestShopStripeInstanceIDEnv = "CAFE_GUEST_SHOP_STRIPE_INSTANCE_ID"
+	guestShopStripeOrderIDMeta   = "orderId"
+	guestShopStripeSecretKey     = "secretKey"
+	guestShopReferenceRandomSize = 16
 )
 
 var (
@@ -116,6 +131,9 @@ func quoteGuestShopCart(items []GuestShopItemInput, shipping string) (*GuestShop
 	if len(items) == 0 {
 		return nil, infraerrors.BadRequest("INVALID_CART", "cart must contain at least one item")
 	}
+	if len(items) > len(guestShopCatalog) {
+		return nil, infraerrors.BadRequest("INVALID_CART", "cart contains too many distinct items")
+	}
 	ship, ok := guestShopShipping[strings.TrimSpace(shipping)]
 	if !ok {
 		return nil, infraerrors.BadRequest("INVALID_SHIPPING", "unsupported shipping method")
@@ -170,86 +188,127 @@ func (s *PaymentService) GetGuestShopConfig(ctx context.Context) (*GuestShopConf
 	if s == nil || s.configService == nil {
 		return nil, infraerrors.ServiceUnavailable("PAYMENT_GATEWAY_ERROR", "payment is not configured")
 	}
-	cfg, err := s.configService.GetPaymentConfig(ctx)
-	if err != nil {
-		return nil, err
+	minAmount, maxAmount := guestShopPaymentBounds()
+	resp := &GuestShopConfig{
+		MinAmount: minAmount,
+		MaxAmount: maxAmount,
+		Currency:  payment.DefaultPaymentCurrency,
 	}
-	publishableKey := strings.TrimSpace(cfg.StripePublishableKey)
-	currency := s.configService.firstEnabledStripeCurrency(ctx)
-	enabled := cfg.Enabled && publishableKey != ""
-	return &GuestShopConfig{
-		Enabled:              enabled,
-		StripePublishableKey: publishableKey,
-		MinAmount:            cfg.MinAmount,
-		MaxAmount:            cfg.MaxAmount,
-		Currency:             currency,
+	if !guestShopFeatureEnabled() {
+		return resp, nil
+	}
+	selected, err := s.configService.guestShopStripeInstance(ctx)
+	if err != nil {
+		slog.Error("guest shop Stripe config lookup failed", "error", err)
+		return nil, infraerrors.ServiceUnavailable("PAYMENT_GATEWAY_ERROR", "payment is not configured")
+	}
+	if selected == nil {
+		return resp, nil
+	}
+	resp.Enabled = true
+	resp.StripePublishableKey = strings.TrimSpace(selected.Config[payment.ConfigKeyPublishableKey])
+	resp.Currency = paymentProviderConfigCurrency(selected.ProviderKey, selected.Config)
+	return resp, nil
+}
+
+// guestShopStripeInstance returns the explicitly pinned, read-only Stripe instance
+// for the standalone storefront. The original site's enabled flag is intentionally
+// ignored; CAFE_GUEST_SHOP_ENABLED is the storefront's independent kill switch.
+func (s *PaymentConfigService) guestShopStripeInstance(ctx context.Context) (*payment.InstanceSelection, error) {
+	if s == nil || s.entClient == nil {
+		return nil, nil
+	}
+	instanceID, ok := guestShopStripeInstanceID()
+	if !ok {
+		return nil, nil
+	}
+	instance, err := s.entClient.PaymentProviderInstance.Query().
+		Where(
+			paymentproviderinstance.IDEQ(instanceID),
+			paymentproviderinstance.ProviderKeyEQ(payment.TypeStripe),
+		).
+		Only(ctx)
+	if err != nil {
+		if dbent.IsNotFound(err) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("query pinned guest shop Stripe instance: %w", err)
+	}
+	cfg, err := s.decryptConfig(instance.Config)
+	if err != nil {
+		return nil, fmt.Errorf("decrypt pinned guest shop Stripe instance: %w", err)
+	}
+	if cfg == nil {
+		return nil, nil
+	}
+	secretKey := strings.TrimSpace(cfg[guestShopStripeSecretKey])
+	publishableKey := strings.TrimSpace(cfg[payment.ConfigKeyPublishableKey])
+	currency, currencyErr := payment.NormalizePaymentCurrency(cfg["currency"])
+	if secretKey == "" || publishableKey == "" || currencyErr != nil {
+		return nil, nil
+	}
+	cfg[guestShopStripeSecretKey] = secretKey
+	cfg[payment.ConfigKeyPublishableKey] = publishableKey
+	cfg["currency"] = currency
+	return &payment.InstanceSelection{
+		InstanceID:     strconv.FormatInt(instance.ID, 10),
+		ProviderKey:    payment.TypeStripe,
+		Config:         cfg,
+		SupportedTypes: instance.SupportedTypes,
+		PaymentMode:    instance.PaymentMode,
 	}, nil
 }
 
-func (s *PaymentConfigService) firstEnabledStripeCurrency(ctx context.Context) string {
-	if s == nil || s.entClient == nil {
-		return payment.DefaultPaymentCurrency
-	}
-	instances, err := s.entClient.PaymentProviderInstance.Query().
-		Where(
-			paymentproviderinstance.EnabledEQ(true),
-			paymentproviderinstance.ProviderKeyEQ(payment.TypeStripe),
-		).Limit(1).All(ctx)
-	if err != nil || len(instances) == 0 {
-		return payment.DefaultPaymentCurrency
-	}
-	cfg, err := s.decryptConfig(instances[0].Config)
-	if err != nil || cfg == nil {
-		return payment.DefaultPaymentCurrency
-	}
-	return paymentProviderConfigCurrency(payment.TypeStripe, cfg)
-}
-
 func (s *PaymentService) CreateGuestShopPayment(ctx context.Context, req CreateGuestShopPaymentRequest) (*GuestShopPayment, error) {
-	if s == nil || s.configService == nil || s.loadBalancer == nil {
+	if s == nil || s.configService == nil {
 		return nil, infraerrors.ServiceUnavailable("PAYMENT_GATEWAY_ERROR", "payment is not configured")
+	}
+	if !guestShopFeatureEnabled() {
+		return nil, infraerrors.Forbidden("GUEST_SHOP_DISABLED", "guest checkout is disabled")
 	}
 	if err := validateGuestShopCustomer(req.Customer); err != nil {
 		return nil, err
-	}
-	cfg, err := s.configService.GetPaymentConfig(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if !cfg.Enabled {
-		return nil, infraerrors.Forbidden("PAYMENT_DISABLED", "payment system is disabled")
 	}
 	quote, err := quoteGuestShopCart(req.Items, req.Shipping)
 	if err != nil {
 		return nil, err
 	}
-	if (cfg.MinAmount > 0 && quote.Total < cfg.MinAmount) || (cfg.MaxAmount > 0 && quote.Total > cfg.MaxAmount) {
+	if err := validateGuestShopShippingCountry(quote.Shipping, req.Customer.Country); err != nil {
+		return nil, err
+	}
+	minAmount, maxAmount := guestShopPaymentBounds()
+	if quote.Total < minAmount || quote.Total > maxAmount {
 		return nil, infraerrors.BadRequest("INVALID_AMOUNT", "amount out of range").
 			WithMetadata(map[string]string{
-				"min": fmt.Sprintf("%.2f", cfg.MinAmount),
-				"max": fmt.Sprintf("%.2f", cfg.MaxAmount),
+				"min": fmt.Sprintf("%.2f", minAmount),
+				"max": fmt.Sprintf("%.2f", maxAmount),
 			})
 	}
-	sel, err := s.selectGuestShopStripeInstance(ctx, cfg, quote.Total)
+	sel, err := s.configService.guestShopStripeInstance(ctx)
 	if err != nil {
-		return nil, err
+		slog.Error("guest shop Stripe config lookup failed", "error", err)
+		return nil, infraerrors.ServiceUnavailable("PAYMENT_GATEWAY_ERROR", "payment is not configured")
 	}
+	if sel == nil {
+		return nil, infraerrors.ServiceUnavailable("PAYMENT_GATEWAY_ERROR", "payment is not configured")
+	}
+	publishableKey := strings.TrimSpace(sel.Config[payment.ConfigKeyPublishableKey])
 	currency := paymentProviderConfigCurrency(sel.ProviderKey, sel.Config)
 	payAmountStr := payment.FormatAmountForCurrency(quote.Total, currency)
-	if err := validateSelectedCreateOrderAmountCurrency(payAmountStr, sel); err != nil {
-		return nil, err
-	}
-	if quote.Total < minCreateOrderPayAmount {
-		minAmount := payment.FormatAmountForCurrency(minCreateOrderPayAmount, currency)
-		return nil, infraerrors.BadRequest("PAYMENT_AMOUNT_BELOW_MINIMUM", "payment amount must be at least "+minAmount).
-			WithMetadata(map[string]string{"min": minAmount, "currency": currency})
+	if _, err := payment.AmountToMinorUnit(payAmountStr, currency); err != nil {
+		slog.Error("guest shop payment amount conversion failed", "currency", currency, "error", err)
+		return nil, infraerrors.ServiceUnavailable("PAYMENT_GATEWAY_ERROR", "unable to start payment")
 	}
 	prov, err := newGuestShopProvider(sel.ProviderKey, sel.InstanceID, sel.Config)
 	if err != nil {
-		return nil, infraerrors.ServiceUnavailable("PAYMENT_PROVIDER_MISCONFIGURED", "provider_misconfigured").
-			WithMetadata(map[string]string{"provider": sel.ProviderKey, "instance_id": sel.InstanceID})
+		slog.Error("guest shop Stripe provider initialization failed", "instance_id", sel.InstanceID, "error", err)
+		return nil, infraerrors.ServiceUnavailable("PAYMENT_GATEWAY_ERROR", "payment is not configured")
 	}
-	shopRef := guestShopPaymentRefPref + generateRandomString(16)
+	shopRef, err := newGuestShopPaymentReference()
+	if err != nil {
+		slog.Error("guest shop payment reference generation failed", "error", err)
+		return nil, infraerrors.ServiceUnavailable("PAYMENT_GATEWAY_ERROR", "unable to start payment")
+	}
 	pr, err := prov.CreatePayment(ctx, payment.CreatePaymentRequest{
 		OrderID:            shopRef,
 		Amount:             payAmountStr,
@@ -259,10 +318,8 @@ func (s *PaymentService) CreateGuestShopPayment(ctx context.Context, req CreateG
 		InstanceSubMethods: selectedInstanceSupportedTypes(sel),
 	})
 	if err != nil {
-		if appErr := new(infraerrors.ApplicationError); errors.As(err, &appErr) {
-			return nil, appErr
-		}
-		return nil, infraerrors.ServiceUnavailable("PAYMENT_GATEWAY_ERROR", fmt.Sprintf("payment gateway error: %s", err.Error()))
+		slog.Error("guest shop Stripe payment creation failed", "instance_id", sel.InstanceID, "error", err)
+		return nil, infraerrors.ServiceUnavailable("PAYMENT_GATEWAY_ERROR", "unable to start payment")
 	}
 	if pr == nil || strings.TrimSpace(pr.ClientSecret) == "" {
 		return nil, infraerrors.ServiceUnavailable("PAYMENT_GATEWAY_ERROR", "payment gateway did not return a client secret")
@@ -271,21 +328,13 @@ func (s *PaymentService) CreateGuestShopPayment(ctx context.Context, req CreateG
 	if intentID == "" {
 		intentID = strings.TrimSpace(pr.IntentID)
 	}
-	publishableKey := strings.TrimSpace(cfg.StripePublishableKey)
-	if publishableKey == "" {
-		publishableKey = strings.TrimSpace(sel.Config[payment.ConfigKeyPublishableKey])
-	}
-	if publishableKey == "" {
-		return nil, infraerrors.ServiceUnavailable("PAYMENT_GATEWAY_ERROR", "stripe publishable key is not configured")
-	}
-	respCurrency := strings.TrimSpace(pr.Currency)
-	if respCurrency == "" {
-		respCurrency = currency
+	if !guestShopIntentIDRe.MatchString(intentID) || len(intentID) > guestShopMaxIntentIDLength {
+		return nil, infraerrors.ServiceUnavailable("PAYMENT_GATEWAY_ERROR", "payment gateway did not return a valid payment intent")
 	}
 	return &GuestShopPayment{
 		Quote:           *quote,
 		Amount:          quote.Total,
-		Currency:        respCurrency,
+		Currency:        currency,
 		ClientSecret:    pr.ClientSecret,
 		PublishableKey:  publishableKey,
 		PaymentIntentID: intentID,
@@ -294,57 +343,111 @@ func (s *PaymentService) CreateGuestShopPayment(ctx context.Context, req CreateG
 
 func (s *PaymentService) GetGuestShopPaymentStatus(ctx context.Context, paymentIntentID string) (*GuestShopPaymentStatus, error) {
 	intentID := strings.TrimSpace(paymentIntentID)
-	if !guestShopIntentIDRe.MatchString(intentID) {
+	if len(intentID) > guestShopMaxIntentIDLength || !guestShopIntentIDRe.MatchString(intentID) {
 		return nil, infraerrors.BadRequest("INVALID_PAYMENT_INTENT", "invalid payment intent")
 	}
-	if s == nil || s.configService == nil || s.loadBalancer == nil {
+	if s == nil || s.configService == nil {
 		return nil, infraerrors.ServiceUnavailable("PAYMENT_GATEWAY_ERROR", "payment is not configured")
 	}
-	cfg, err := s.configService.GetPaymentConfig(ctx)
+	sel, err := s.configService.guestShopStripeInstance(ctx)
 	if err != nil {
-		return nil, err
+		slog.Error("guest shop Stripe config lookup failed", "error", err)
+		return nil, infraerrors.ServiceUnavailable("PAYMENT_GATEWAY_ERROR", "payment is not configured")
 	}
-	sel, err := s.selectGuestShopStripeInstance(ctx, cfg, minCreateOrderPayAmount)
-	if err != nil {
-		return nil, err
+	if sel == nil {
+		return nil, infraerrors.ServiceUnavailable("PAYMENT_GATEWAY_ERROR", "payment is not configured")
 	}
 	prov, err := newGuestShopProvider(sel.ProviderKey, sel.InstanceID, sel.Config)
 	if err != nil {
-		return nil, infraerrors.ServiceUnavailable("PAYMENT_PROVIDER_MISCONFIGURED", "provider_misconfigured")
+		slog.Warn("guest shop Stripe provider initialization failed", "instance_id", sel.InstanceID, "error", err)
+		return nil, infraerrors.ServiceUnavailable("PAYMENT_GATEWAY_ERROR", "unable to query payment status")
 	}
 	result, err := prov.QueryOrder(ctx, intentID)
 	if err != nil {
+		if isGuestShopStripeNotFound(err) {
+			return nil, infraerrors.NotFound("PAYMENT_NOT_FOUND", "payment not found")
+		}
+		slog.Warn("guest shop Stripe status query failed", "instance_id", sel.InstanceID, "error", err)
 		return nil, infraerrors.ServiceUnavailable("PAYMENT_GATEWAY_ERROR", "unable to query payment status")
 	}
-	if result == nil {
+	if result == nil || strings.TrimSpace(result.TradeNo) != intentID || !isGuestShopStripeResult(result) {
 		return nil, infraerrors.NotFound("PAYMENT_NOT_FOUND", "payment not found")
 	}
-	currency := strings.TrimSpace(result.Metadata["currency"])
-	if currency == "" {
-		currency = paymentProviderConfigCurrency(sel.ProviderKey, sel.Config)
+	currency := paymentProviderConfigCurrency(sel.ProviderKey, sel.Config)
+	if resultCurrency, currencyErr := payment.NormalizePaymentCurrency(result.Metadata["currency"]); currencyErr == nil {
+		currency = resultCurrency
 	}
 	return &GuestShopPaymentStatus{
-		PaymentIntentID: result.TradeNo,
+		PaymentIntentID: intentID,
 		Status:          result.Status,
 		Amount:          result.Amount,
 		Currency:        currency,
 	}, nil
 }
 
-func (s *PaymentService) selectGuestShopStripeInstance(ctx context.Context, cfg *PaymentConfig, payAmount float64) (*payment.InstanceSelection, error) {
-	if s == nil || s.loadBalancer == nil {
-		return nil, infraerrors.ServiceUnavailable("PAYMENT_GATEWAY_ERROR", "method_not_configured")
+func guestShopFeatureEnabled() bool {
+	raw := strings.TrimSpace(os.Getenv(guestShopEnabledEnv))
+	if raw == "" {
+		return false
 	}
-	strategy := payment.DefaultLoadBalanceStrategy
-	if cfg != nil && strings.TrimSpace(cfg.LoadBalanceStrategy) != "" {
-		strategy = cfg.LoadBalanceStrategy
+	enabled, err := strconv.ParseBool(raw)
+	return err == nil && enabled
+}
+
+func guestShopStripeInstanceID() (int64, bool) {
+	raw := strings.TrimSpace(os.Getenv(guestShopStripeInstanceIDEnv))
+	instanceID, err := strconv.ParseInt(raw, 10, 64)
+	return instanceID, err == nil && instanceID > 0
+}
+
+func guestShopPaymentBounds() (float64, float64) {
+	maxAmount := 0.0
+	for _, product := range guestShopCatalog {
+		maxAmount += product.Price * guestShopMaxQty
 	}
-	sel, err := s.loadBalancer.SelectInstance(ctx, payment.TypeStripe, payment.TypeStripe, payment.Strategy(strategy), payAmount)
-	if err != nil || sel == nil || sel.ProviderKey != payment.TypeStripe {
-		return nil, infraerrors.ServiceUnavailable("PAYMENT_GATEWAY_ERROR", "method_not_configured").
-			WithMetadata(map[string]string{"payment_type": payment.TypeStripe})
+	maxShipping := 0.0
+	for _, option := range guestShopShipping {
+		if option.Price > maxShipping {
+			maxShipping = option.Price
+		}
 	}
-	return sel, nil
+	return guestShopMinPaymentAmount, guestShopMoney(maxAmount + maxShipping)
+}
+
+func newGuestShopPaymentReference() (string, error) {
+	random := make([]byte, guestShopReferenceRandomSize)
+	if _, err := cryptorand.Read(random); err != nil {
+		return "", err
+	}
+	return guestShopPaymentRefPref + hex.EncodeToString(random), nil
+}
+
+func validateGuestShopShippingCountry(shipping, country string) error {
+	if strings.TrimSpace(shipping) != "domestic" {
+		return nil
+	}
+	switch strings.ToLower(strings.TrimSpace(country)) {
+	case "united states", "united states of america", "us", "usa":
+		return nil
+	default:
+		return infraerrors.BadRequest("INVALID_SHIPPING", "US domestic shipping requires a United States address")
+	}
+}
+
+func isGuestShopStripeNotFound(err error) bool {
+	stripeErr := new(stripe.Error)
+	return errors.As(err, &stripeErr) && stripeErr.HTTPStatusCode == http.StatusNotFound
+}
+
+func isGuestShopStripeResult(result *payment.QueryOrderResponse) bool {
+	if result == nil || result.Metadata == nil {
+		return false
+	}
+	return isGuestShopPaymentReference(result.Metadata[guestShopStripeOrderIDMeta])
+}
+
+func isGuestShopPaymentReference(reference string) bool {
+	return strings.HasPrefix(strings.TrimSpace(reference), guestShopPaymentRefPref)
 }
 
 func buildGuestShopSubject(quote *GuestShopQuote) string {

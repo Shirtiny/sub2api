@@ -29,6 +29,8 @@ const maxWebhookBodySize = 1 << 20
 // webhookLogTruncateLen is the maximum length of raw body logged on verify failure.
 const webhookLogTruncateLen = 200
 
+const guestShopWebhookOrderPrefix = "shop_"
+
 // NewPaymentWebhookHandler creates a new PaymentWebhookHandler.
 func NewPaymentWebhookHandler(paymentService *service.PaymentService, registry *payment.Registry) *PaymentWebhookHandler {
 	return &PaymentWebhookHandler{
@@ -164,9 +166,27 @@ func extractOutTradeNo(rawBody, providerKey string) string {
 		if err := json.Unmarshal([]byte(rawBody), &payload); err == nil {
 			return strings.TrimSpace(payload.Data.Object.MerchantOrderID)
 		}
+	case payment.TypeStripe:
+		// Stripe guest-shop PaymentIntents carry the local-only reference in
+		// metadata. Returning it lets the service select the explicitly pinned
+		// guest Stripe instance, even when that instance is disabled for the
+		// original sub2api payment flow.
+		var payload struct {
+			Data struct {
+				Object struct {
+					Metadata map[string]string `json:"metadata"`
+				} `json:"object"`
+			} `json:"data"`
+		}
+		if err := json.Unmarshal([]byte(rawBody), &payload); err == nil {
+			orderID := strings.TrimSpace(payload.Data.Object.Metadata["orderId"])
+			if strings.HasPrefix(orderID, guestShopWebhookOrderPrefix) {
+				return orderID
+			}
+		}
 	}
-	// For other providers (Stripe, Alipay direct, WxPay direct), the registry
-	// typically has only one instance, so no instance lookup is needed.
+	// For other providers (Alipay direct, WxPay direct), the registry typically
+	// has only one instance, so no instance lookup is needed.
 	return ""
 }
 

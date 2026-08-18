@@ -178,6 +178,18 @@ func TestExtractOutTradeNo(t *testing.T) {
 			rawBody:     `{"name":"payment_intent.succeeded","data":{"object":{"merchant_order_id":"sub2_awx_123"}}}`,
 			want:        "sub2_awx_123",
 		},
+		{
+			name:        "stripe guest payment intent metadata",
+			providerKey: payment.TypeStripe,
+			rawBody:     `{"type":"payment_intent.succeeded","data":{"object":{"metadata":{"orderId":"shop_0123456789abcdef"}}}}`,
+			want:        "shop_0123456789abcdef",
+		},
+		{
+			name:        "stripe normal order keeps original fallback",
+			providerKey: payment.TypeStripe,
+			rawBody:     `{"type":"payment_intent.succeeded","data":{"object":{"metadata":{"orderId":"sub2_123"}}}}`,
+			want:        "",
+		},
 	}
 
 	for _, tt := range tests {

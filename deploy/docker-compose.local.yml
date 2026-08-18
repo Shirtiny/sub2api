@@ -94,6 +94,9 @@ services:
       - JWT_SECRET=${JWT_SECRET:-}
       # Shared parent-domain browser-history cookie secret for CafeCode/LDC Shop
       - CAFE_BROWSER_COOKIE_SECRET=${CAFE_BROWSER_COOKIE_SECRET:-}
+      # Dedicated guest storefront; instance ID pins an existing Stripe config.
+      - CAFE_GUEST_SHOP_ENABLED=${CAFE_GUEST_SHOP_ENABLED:-false}
+      - CAFE_GUEST_SHOP_STRIPE_INSTANCE_ID=${CAFE_GUEST_SHOP_STRIPE_INSTANCE_ID:-}
       - SECURITY_API_KEY_HASH_SECRET=${SECURITY_API_KEY_HASH_SECRET:-}
       - JWT_EXPIRE_HOUR=${JWT_EXPIRE_HOUR:-24}
 

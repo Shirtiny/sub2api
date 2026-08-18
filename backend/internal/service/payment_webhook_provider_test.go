@@ -508,3 +508,38 @@ func TestGetWebhookProviderUsesProviderSnapshotBeforeWxpayFallback(t *testing.T)
 	require.Len(t, providers, 1)
 	require.Equal(t, payment.TypeWxpay, providers[0].ProviderKey())
 }
+
+func TestGetWebhookProvidersUsesPinnedDisabledGuestStripeInstance(t *testing.T) {
+	ctx := context.Background()
+	client := newPaymentConfigServiceTestClient(t)
+	instance, err := client.PaymentProviderInstance.Create().
+		SetProviderKey(payment.TypeStripe).
+		SetName("stripe-guest-disabled").
+		SetConfig(`{"secretKey":"sk_guest","publishableKey":"pk_guest","currency":"USD"}`).
+		SetSupportedTypes("card,alipay").
+		SetEnabled(false).
+		Save(ctx)
+	require.NoError(t, err)
+	t.Setenv(guestShopStripeInstanceIDEnv, strconv.FormatInt(instance.ID, 10))
+
+	var gotInstanceID string
+	orig := newGuestShopProvider
+	newGuestShopProvider = func(providerKey, instanceID string, config map[string]string) (payment.Provider, error) {
+		require.Equal(t, payment.TypeStripe, providerKey)
+		gotInstanceID = instanceID
+		require.Equal(t, "sk_guest", config["secretKey"])
+		return webhookProviderTestDouble{key: payment.TypeStripe, types: []payment.PaymentType{payment.TypeStripe}}, nil
+	}
+	t.Cleanup(func() { newGuestShopProvider = orig })
+
+	svc := &PaymentService{
+		entClient: client,
+		configService: &PaymentConfigService{
+			entClient: client,
+		},
+	}
+	providers, err := svc.GetWebhookProviders(ctx, payment.TypeStripe, "shop_0123456789abcdef")
+	require.NoError(t, err)
+	require.Len(t, providers, 1)
+	require.Equal(t, strconv.FormatInt(instance.ID, 10), gotInstanceID)
+}

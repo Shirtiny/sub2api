@@ -165,6 +165,7 @@ func (s *Stripe) QueryOrder(ctx context.Context, tradeNo string) (*payment.Query
 		Amount:  payment.MinorUnitToAmount(pi.Amount, currency),
 		Metadata: map[string]string{
 			"currency": currency,
+			"orderId":  strings.TrimSpace(pi.Metadata["orderId"]),
 		},
 	}, nil
 }
