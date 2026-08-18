@@ -61,6 +61,9 @@ func RegisterPaymentRoutes(
 	{
 		public.POST("/orders/verify", paymentHandler.VerifyOrderPublic)
 		public.POST("/orders/resolve", paymentHandler.ResolveOrderPublicByResumeToken)
+		public.GET("/shop/config", paymentHandler.GetGuestShopConfig)
+		public.POST("/shop/payments", paymentHandler.CreateGuestShopPayment)
+		public.POST("/shop/payments/status", paymentHandler.GetGuestShopPaymentStatus)
 	}
 
 	// --- Webhook endpoints (no auth) ---

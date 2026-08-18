@@ -27,6 +27,7 @@ type PaymentHandler struct {
 	paymentService          *service.PaymentService
 	configService           *service.PaymentConfigService
 	cafeCouponLookupLimiter *cafeCouponLookupLimiter
+	guestShopLimiter        *cafeCouponLookupLimiter
 }
 
 // NewPaymentHandler creates a new PaymentHandler.
@@ -36,6 +37,7 @@ func NewPaymentHandler(paymentService *service.PaymentService, configService *se
 		paymentService:          paymentService,
 		configService:           configService,
 		cafeCouponLookupLimiter: newCafeCouponLookupLimiter(defaultCafeCouponLookupLimit, defaultCafeCouponLookupWindow),
+		guestShopLimiter:        newCafeCouponLookupLimiter(defaultGuestShopPublicLimit, defaultGuestShopPublicWindow),
 	}
 }
 
