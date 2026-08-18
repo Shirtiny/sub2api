@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
-	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
 )
@@ -130,30 +129,9 @@ func TestLogOpenAIRemoteCompactOutcome_Succeeded(t *testing.T) {
 	require.True(t, logSink.ContainsFieldValue("compact_outcome", "succeeded"))
 	require.True(t, logSink.ContainsFieldValue("status_code", "200"))
 	require.True(t, logSink.ContainsFieldValue("path", "/v1/responses/compact"))
-	require.True(t, logSink.ContainsFieldValue("compact_version", "v1"))
 	require.True(t, logSink.ContainsFieldValue("request_model", "gpt-5.3-codex"))
 	require.True(t, logSink.ContainsFieldValue("account_id", "123"))
 	require.True(t, logSink.ContainsFieldValue("upstream_request_id", "rid-compact-ok"))
-}
-
-func TestLogOpenAIRemoteCompactOutcome_V2FailureAfterStreamingStarted(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-	logSink, restore := captureHandlerStructuredLog(t)
-	defer restore()
-
-	rec := httptest.NewRecorder()
-	c, _ := gin.CreateTestContext(rec)
-	c.Request = httptest.NewRequest(http.MethodPost, "/v1/responses", nil)
-	service.SetOpenAIRequestKind(c, service.OpenAIRequestKindRemoteCompactionV2)
-	markOpenAIRemoteCompactFailed(c)
-	c.Status(http.StatusOK)
-
-	h := &OpenAIGatewayHandler{}
-	h.logOpenAIRemoteCompactOutcome(c, time.Now())
-
-	require.True(t, logSink.ContainsMessageAtLevel("codex.remote_compact.failed", "warn"))
-	require.True(t, logSink.ContainsFieldValue("compact_version", "v2"))
-	require.True(t, logSink.ContainsFieldValue("status_code", "200"))
 }
 
 func TestLogOpenAIRemoteCompactOutcome_Failed(t *testing.T) {

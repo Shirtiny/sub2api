@@ -177,15 +177,8 @@ func (s *OpenAIGatewayService) proxyOpenAIWSHTTPBridgeTurn(
 	if err != nil {
 		return nil, fmt.Errorf("prepare http bridge body: %w", err)
 	}
-	remoteCompactionV2 := HasCompactionTriggerInInput(body)
 
 	upstreamCtx, releaseUpstreamCtx := detachUpstreamContext(ctx)
-	if remoteCompactionV2 {
-		upstreamCtx = ctx
-		if upstreamCtx == nil {
-			upstreamCtx = context.Background()
-		}
-	}
 	var upstreamReq *http.Request
 	if account.IsGrokPoolPassthrough() {
 		// Pool-mode Grok accounts point at Aether's OpenAI-compatible endpoint.
@@ -245,9 +238,6 @@ func (s *OpenAIGatewayService) proxyOpenAIWSHTTPBridgeTurn(
 	resp, err := s.httpUpstream.Do(upstreamReq, proxyURL, account.ID, account.Concurrency)
 	if err != nil {
 		safeErr := sanitizeUpstreamErrorMessage(err.Error())
-		if remoteCompactionV2 {
-			return nil, s.newOpenAIStreamFailoverError(c, account, account.IsOpenAIPassthroughEnabled(), "", nil, "remote compaction v2 upstream request failed: "+safeErr)
-		}
 		_ = writeClientMessage(buildOpenAIWSHTTPBridgeErrorEvent(http.StatusBadGateway, "Upstream request failed"))
 		return nil, fmt.Errorf("upstream http bridge request failed: %s", safeErr)
 	}
@@ -259,20 +249,8 @@ func (s *OpenAIGatewayService) proxyOpenAIWSHTTPBridgeTurn(
 		if upstreamMsg == "" {
 			upstreamMsg = http.StatusText(resp.StatusCode)
 		}
-		if remoteCompactionV2 {
-			validationErr := fmt.Errorf("upstream returned HTTP %d: %s", resp.StatusCode, upstreamMsg)
-			passthrough := account.IsOpenAIPassthroughEnabled() || account.IsGrokPoolPassthrough()
-			return nil, s.newOpenAICompactionV2FailoverError(c, account, resp, respBody, validationErr, passthrough)
-		}
 		_ = writeClientMessage(buildOpenAIWSHTTPBridgeErrorEvent(resp.StatusCode, upstreamMsg))
 		return nil, fmt.Errorf("upstream http bridge error: status=%d message=%s", resp.StatusCode, upstreamMsg)
-	}
-	if remoteCompactionV2 {
-		responseBody, validationErr := s.readAndValidateOpenAICompactionV2Response(ctx, resp, true)
-		if validationErr != nil {
-			passthrough := account.IsOpenAIPassthroughEnabled() || account.IsGrokPoolPassthrough()
-			return nil, s.newOpenAICompactionV2FailoverError(c, account, resp, responseBody, validationErr, passthrough)
-		}
 	}
 
 	responseID := ""

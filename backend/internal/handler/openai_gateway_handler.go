@@ -211,7 +211,6 @@ func (h *OpenAIGatewayHandler) Responses(c *gin.Context) {
 		h.errorResponse(c, http.StatusBadRequest, "invalid_request_error", "Failed to parse request body")
 		return
 	}
-	service.SetOpenAIRequestKind(c, service.ClassifyOpenAIRequest(body))
 
 	// 浣跨敤 gjson 鍙鎻愬彇瀛楁鍋氭牎楠岋紝閬垮厤瀹屾暣 Unmarshal
 	modelResult := gjson.GetBytes(body, "model")
@@ -426,18 +425,9 @@ func (h *OpenAIGatewayHandler) Responses(c *gin.Context) {
 			} else {
 				var failoverErr *service.UpstreamFailoverError
 				if errors.As(err, &failoverErr) {
-					if c.Writer.Size() != writerSizeBeforeForward && !service.IsOpenAIRemoteCompactionV2(c) {
+					if c.Writer.Size() != writerSizeBeforeForward {
 						h.handleFailoverExhausted(c, failoverErr, true)
 						return
-					}
-					if failoverErr.DoNotPenalizeAccount {
-						failedAccountIDs[account.ID] = struct{}{}
-						lastFailoverErr = failoverErr
-						reqLog.Info("openai.upstream_capability_failover",
-							zap.Int64("account_id", account.ID),
-							zap.Int("excluded_account_count", len(failedAccountIDs)),
-						)
-						continue
 					}
 					h.gatewayService.ReportOpenAIAccountScheduleResult(account.ID, false, nil)
 					// 姹犳ā寮忥細鍚岃处鍙烽噸璇?
@@ -480,9 +470,6 @@ func (h *OpenAIGatewayHandler) Responses(c *gin.Context) {
 					continue
 				}
 				h.gatewayService.ReportOpenAIAccountScheduleResult(account.ID, false, nil)
-				if service.IsOpenAIRemoteCompactionV2(c) {
-					markOpenAIRemoteCompactFailed(c)
-				}
 				upstreamErrorAlreadyCommunicated := openAIForwardErrorAlreadyCommunicated(c, writerSizeBeforeForward, err)
 				wroteFallback := false
 				if !upstreamErrorAlreadyCommunicated {
@@ -560,14 +547,6 @@ func isOpenAIRemoteCompactPath(c *gin.Context) bool {
 	return strings.HasSuffix(normalizedPath, "/responses/compact")
 }
 
-const openAIRemoteCompactFailedContextKey = "openai_remote_compact_failed"
-
-func markOpenAIRemoteCompactFailed(c *gin.Context) {
-	if c != nil {
-		c.Set(openAIRemoteCompactFailedContextKey, true)
-	}
-}
-
 // isBareOpenAIResponsesPath only matches the bare /responses endpoint, without
 // /compact or other sub-paths. V2 compact detection is limited to this shape
 // so it does not affect /responses/{id}/... requests.
@@ -609,10 +588,7 @@ func (h *OpenAIGatewayHandler) normalizeOpenAIResponsesCompactRequest(c *gin.Con
 }
 
 func (h *OpenAIGatewayHandler) logOpenAIRemoteCompactOutcome(c *gin.Context, startedAt time.Time) {
-	compactVersion := "v1"
-	if service.IsOpenAIRemoteCompactionV2(c) {
-		compactVersion = "v2"
-	} else if !isOpenAIRemoteCompactPath(c) {
+	if !isOpenAIRemoteCompactPath(c) {
 		return
 	}
 
@@ -634,11 +610,7 @@ func (h *OpenAIGatewayHandler) logOpenAIRemoteCompactOutcome(c *gin.Context, sta
 	}
 
 	outcome := "failed"
-	markedFailed := false
-	if c != nil {
-		markedFailed = c.GetBool(openAIRemoteCompactFailedContextKey)
-	}
-	if status >= 200 && status < 300 && !markedFailed {
+	if status >= 200 && status < 300 {
 		outcome = "succeeded"
 	}
 	latencyMs := time.Since(startedAt).Milliseconds()
@@ -649,7 +621,6 @@ func (h *OpenAIGatewayHandler) logOpenAIRemoteCompactOutcome(c *gin.Context, sta
 	fields := []zap.Field{
 		zap.String("component", "handler.openai_gateway.responses"),
 		zap.Bool("remote_compact", true),
-		zap.String("compact_version", compactVersion),
 		zap.String("compact_outcome", outcome),
 		zap.Int("status_code", status),
 		zap.Int64("latency_ms", latencyMs),
@@ -2286,12 +2257,6 @@ func (h *OpenAIGatewayHandler) handleConcurrencyError(c *gin.Context, err error,
 }
 
 func (h *OpenAIGatewayHandler) handleFailoverExhausted(c *gin.Context, failoverErr *service.UpstreamFailoverError, streamStarted bool) {
-	if service.IsOpenAIRemoteCompactionV2(c) {
-		markOpenAIRemoteCompactFailed(c)
-	}
-	if c != nil && c.Writer != nil && c.Writer.Written() {
-		streamStarted = true
-	}
 	statusCode := failoverErr.StatusCode
 	responseBody := failoverErr.ResponseBody
 	if service.IsOpenAISilentRefusalErrorBody(responseBody) {

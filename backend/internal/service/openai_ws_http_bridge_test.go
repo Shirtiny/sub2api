@@ -1,7 +1,6 @@
 package service
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"io"
@@ -287,63 +286,6 @@ func TestOpenAIWSHTTPBridgeTimingExcludesTerminalClientWrite(t *testing.T) {
 	)
 	require.GreaterOrEqual(t, wallDuration-result.Duration, clientWriteDelay)
 	require.Equal(t, result.Duration.Milliseconds(), int64(*result.FirstByteMs))
-}
-
-func TestOpenAIWSHTTPBridgeRemoteCompactionV2RejectsInvalidResponseBeforeClientWrite(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-
-	upstream := &httpUpstreamRecorder{resp: &http.Response{
-		StatusCode: http.StatusOK,
-		Header: http.Header{
-			"Content-Type": []string{"text/event-stream"},
-			"X-Request-Id": []string{"req_ws_bad_compaction"},
-		},
-		Body: io.NopCloser(bytes.NewReader(ordinaryRemoteCompactionV2SSEFixture())),
-	}}
-	svc := &OpenAIGatewayService{
-		cfg:          &config.Config{},
-		httpUpstream: upstream,
-	}
-	account := &Account{
-		ID:          81,
-		Name:        "ws-compaction",
-		Platform:    PlatformOpenAI,
-		Type:        AccountTypeAPIKey,
-		Concurrency: 1,
-	}
-	recorder := httptest.NewRecorder()
-	c, _ := gin.CreateTestContext(recorder)
-	c.Request = httptest.NewRequest(http.MethodGet, "/v1/responses", nil)
-	payload := []byte(`{"type":"response.create","model":"gpt-5.6-sol","stream":true,"input":[{"type":"compaction_trigger"}]}`)
-	writeCalls := 0
-
-	result, err := svc.proxyOpenAIWSHTTPBridgeTurn(
-		context.Background(),
-		c,
-		account,
-		"sk-test",
-		payload,
-		len(payload),
-		"gpt-5.6-sol",
-		"",
-		"",
-		"",
-		1,
-		nil,
-		func([]byte) error {
-			writeCalls++
-			return nil
-		},
-	)
-
-	require.Nil(t, result)
-	var failoverErr *UpstreamFailoverError
-	require.ErrorAs(t, err, &failoverErr)
-	require.Contains(t, gjson.GetBytes(failoverErr.ResponseBody, "error.message").String(), "got 0 from 4 output items")
-	require.Zero(t, writeCalls)
-	require.NotNil(t, upstream.lastReq)
-	require.Equal(t, "compaction_trigger", gjson.GetBytes(upstream.lastBody, "input.0.type").String())
-	require.NotContains(t, recorder.Body.String(), "summary text")
 }
 
 func TestOpenAIWSHTTPBridgeWriteDeadlineStillSettlesTerminalUsage(t *testing.T) {

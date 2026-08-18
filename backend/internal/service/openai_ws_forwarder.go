@@ -2575,11 +2575,7 @@ func (s *OpenAIGatewayService) ProxyResponsesWebSocketFromClient(
 	ctx = withOpenAIFastPolicyContext(ctx, fastPolicySettings)
 
 	wsDecision := s.getOpenAIWSProtocolResolver().Resolve(account)
-	remoteCompactionV2 := HasCompactionTriggerInInput(firstClientMessage)
-	// Remote compaction needs attempt-level response validation before any
-	// provider event reaches Codex. The HTTP bridge provides that transaction
-	// boundary for websocket ingress as well.
-	forceHTTPBridge := account.Platform == PlatformGrok || remoteCompactionV2
+	forceHTTPBridge := account.Platform == PlatformGrok
 	modeRouterV2Enabled := s != nil && s.cfg != nil && s.cfg.Gateway.OpenAIWS.ModeRouterV2Enabled
 	ingressMode := OpenAIWSIngressModeCtxPool
 	if modeRouterV2Enabled && !forceHTTPBridge {
@@ -2625,10 +2621,7 @@ func (s *OpenAIGatewayService) ProxyResponsesWebSocketFromClient(
 	wsHost := "-"
 	wsPath := "-"
 	if forceHTTPBridge {
-		wsHost = "responses-http-bridge"
-		if account.Platform == PlatformGrok {
-			wsHost = "xai-http-bridge"
-		}
+		wsHost = "xai-http-bridge"
 		wsPath = "/v1/responses"
 	} else {
 		var err error
@@ -2915,7 +2908,7 @@ func (s *OpenAIGatewayService) ProxyResponsesWebSocketFromClient(
 	}
 	refreshIngressRouteState(firstPayload)
 
-	if remoteCompactionV2 || s.shouldBridgeOpenAIWSHTTP(account, firstPayload.payloadBytes, firstPayload.previousResponseID) {
+	if s.shouldBridgeOpenAIWSHTTP(account, firstPayload.payloadBytes, firstPayload.previousResponseID) {
 		logOpenAIWSModeInfo(
 			"ingress_ws_http_bridge_start account_id=%d account_type=%s payload_bytes=%d threshold_bytes=%d has_session_hash=%v store_disabled=%v",
 			account.ID,
