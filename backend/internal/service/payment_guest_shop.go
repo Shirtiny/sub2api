@@ -9,7 +9,6 @@ import (
 	"log/slog"
 	"math"
 	"net/http"
-	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -29,8 +28,6 @@ const (
 	guestShopMaxIntentIDLength   = 128
 	guestShopSubjectPrefix       = "Café Apparel Shop"
 	guestShopPaymentRefPref      = "shop_"
-	guestShopEnabledEnv          = "CAFE_GUEST_SHOP_ENABLED"
-	guestShopStripeInstanceIDEnv = "CAFE_GUEST_SHOP_STRIPE_INSTANCE_ID"
 	guestShopStripeOrderIDMeta   = "orderId"
 	guestShopStripeSecretKey     = "secretKey"
 	guestShopReferenceRandomSize = 16
@@ -127,6 +124,11 @@ type GuestShopPaymentStatus struct {
 	Currency        string  `json:"currency"`
 }
 
+type guestShopSettings struct {
+	Enabled          bool
+	StripeInstanceID int64
+}
+
 func quoteGuestShopCart(items []GuestShopItemInput, shipping string) (*GuestShopQuote, error) {
 	if len(items) == 0 {
 		return nil, infraerrors.BadRequest("INVALID_CART", "cart must contain at least one item")
@@ -194,10 +196,15 @@ func (s *PaymentService) GetGuestShopConfig(ctx context.Context) (*GuestShopConf
 		MaxAmount: maxAmount,
 		Currency:  payment.DefaultPaymentCurrency,
 	}
-	if !guestShopFeatureEnabled() {
+	settings, err := s.configService.guestShopSettings(ctx)
+	if err != nil {
+		slog.Error("guest shop settings lookup failed", "error", err)
+		return nil, infraerrors.ServiceUnavailable("PAYMENT_GATEWAY_ERROR", "payment is not configured")
+	}
+	if !settings.Enabled {
 		return resp, nil
 	}
-	selected, err := s.configService.guestShopStripeInstance(ctx)
+	selected, err := s.configService.guestShopStripeInstance(ctx, settings.StripeInstanceID)
 	if err != nil {
 		slog.Error("guest shop Stripe config lookup failed", "error", err)
 		return nil, infraerrors.ServiceUnavailable("PAYMENT_GATEWAY_ERROR", "payment is not configured")
@@ -211,15 +218,29 @@ func (s *PaymentService) GetGuestShopConfig(ctx context.Context) (*GuestShopConf
 	return resp, nil
 }
 
-// guestShopStripeInstance returns the explicitly pinned, read-only Stripe instance
-// for the standalone storefront. The original site's enabled flag is intentionally
-// ignored; CAFE_GUEST_SHOP_ENABLED is the storefront's independent kill switch.
-func (s *PaymentConfigService) guestShopStripeInstance(ctx context.Context) (*payment.InstanceSelection, error) {
+func (s *PaymentConfigService) guestShopSettings(ctx context.Context) (guestShopSettings, error) {
+	if s == nil || s.settingRepo == nil {
+		return guestShopSettings{}, nil
+	}
+	values, err := s.settingRepo.GetMultiple(ctx, []string{SettingGuestShopEnabled, SettingGuestShopStripeID})
+	if err != nil {
+		return guestShopSettings{}, fmt.Errorf("get guest shop payment settings: %w", err)
+	}
+	return guestShopSettings{
+		Enabled:          values[SettingGuestShopEnabled] == "true",
+		StripeInstanceID: pcParsePositiveInt64(values[SettingGuestShopStripeID]),
+	}, nil
+}
+
+// guestShopStripeInstance returns the explicitly pinned, read-only Stripe
+// instance for the standalone storefront. The original site's enabled flag is
+// intentionally ignored; the database-backed guest setting is the independent
+// storefront kill switch.
+func (s *PaymentConfigService) guestShopStripeInstance(ctx context.Context, instanceID int64) (*payment.InstanceSelection, error) {
 	if s == nil || s.entClient == nil {
 		return nil, nil
 	}
-	instanceID, ok := guestShopStripeInstanceID()
-	if !ok {
+	if instanceID <= 0 {
 		return nil, nil
 	}
 	instance, err := s.entClient.PaymentProviderInstance.Query().
@@ -259,11 +280,52 @@ func (s *PaymentConfigService) guestShopStripeInstance(ctx context.Context) (*pa
 	}, nil
 }
 
+func (s *PaymentConfigService) validateGuestShopSettingsUpdate(ctx context.Context, enabled *bool, instanceID *int64) error {
+	current, err := s.guestShopSettings(ctx)
+	if err != nil {
+		return err
+	}
+	previousInstanceID := current.StripeInstanceID
+	if enabled != nil {
+		current.Enabled = *enabled
+	}
+	if instanceID != nil {
+		if *instanceID < 0 {
+			return infraerrors.BadRequest("INVALID_GUEST_SHOP_STRIPE_INSTANCE", "guest shop Stripe instance ID cannot be negative")
+		}
+		current.StripeInstanceID = *instanceID
+	}
+	if current.Enabled && current.StripeInstanceID <= 0 {
+		return infraerrors.BadRequest("INVALID_GUEST_SHOP_STRIPE_INSTANCE", "select a Stripe instance before enabling guest checkout")
+	}
+	// The kill switch must remain usable even if the selected instance was
+	// deleted or became unreadable. Revalidate when enabling or changing IDs.
+	if !current.Enabled && (instanceID == nil || current.StripeInstanceID == previousInstanceID) {
+		return nil
+	}
+	if current.StripeInstanceID <= 0 {
+		return nil
+	}
+	selected, err := s.guestShopStripeInstance(ctx, current.StripeInstanceID)
+	if err != nil {
+		return err
+	}
+	if selected == nil {
+		return infraerrors.BadRequest("INVALID_GUEST_SHOP_STRIPE_INSTANCE", "selected Stripe instance is missing or incomplete")
+	}
+	return nil
+}
+
 func (s *PaymentService) CreateGuestShopPayment(ctx context.Context, req CreateGuestShopPaymentRequest) (*GuestShopPayment, error) {
 	if s == nil || s.configService == nil {
 		return nil, infraerrors.ServiceUnavailable("PAYMENT_GATEWAY_ERROR", "payment is not configured")
 	}
-	if !guestShopFeatureEnabled() {
+	settings, err := s.configService.guestShopSettings(ctx)
+	if err != nil {
+		slog.Error("guest shop settings lookup failed", "error", err)
+		return nil, infraerrors.ServiceUnavailable("PAYMENT_GATEWAY_ERROR", "payment is not configured")
+	}
+	if !settings.Enabled {
 		return nil, infraerrors.Forbidden("GUEST_SHOP_DISABLED", "guest checkout is disabled")
 	}
 	if err := validateGuestShopCustomer(req.Customer); err != nil {
@@ -284,7 +346,7 @@ func (s *PaymentService) CreateGuestShopPayment(ctx context.Context, req CreateG
 				"max": fmt.Sprintf("%.2f", maxAmount),
 			})
 	}
-	sel, err := s.configService.guestShopStripeInstance(ctx)
+	sel, err := s.configService.guestShopStripeInstance(ctx, settings.StripeInstanceID)
 	if err != nil {
 		slog.Error("guest shop Stripe config lookup failed", "error", err)
 		return nil, infraerrors.ServiceUnavailable("PAYMENT_GATEWAY_ERROR", "payment is not configured")
@@ -349,7 +411,12 @@ func (s *PaymentService) GetGuestShopPaymentStatus(ctx context.Context, paymentI
 	if s == nil || s.configService == nil {
 		return nil, infraerrors.ServiceUnavailable("PAYMENT_GATEWAY_ERROR", "payment is not configured")
 	}
-	sel, err := s.configService.guestShopStripeInstance(ctx)
+	settings, err := s.configService.guestShopSettings(ctx)
+	if err != nil {
+		slog.Error("guest shop settings lookup failed", "error", err)
+		return nil, infraerrors.ServiceUnavailable("PAYMENT_GATEWAY_ERROR", "payment is not configured")
+	}
+	sel, err := s.configService.guestShopStripeInstance(ctx, settings.StripeInstanceID)
 	if err != nil {
 		slog.Error("guest shop Stripe config lookup failed", "error", err)
 		return nil, infraerrors.ServiceUnavailable("PAYMENT_GATEWAY_ERROR", "payment is not configured")
@@ -383,21 +450,6 @@ func (s *PaymentService) GetGuestShopPaymentStatus(ctx context.Context, paymentI
 		Amount:          result.Amount,
 		Currency:        currency,
 	}, nil
-}
-
-func guestShopFeatureEnabled() bool {
-	raw := strings.TrimSpace(os.Getenv(guestShopEnabledEnv))
-	if raw == "" {
-		return false
-	}
-	enabled, err := strconv.ParseBool(raw)
-	return err == nil && enabled
-}
-
-func guestShopStripeInstanceID() (int64, bool) {
-	raw := strings.TrimSpace(os.Getenv(guestShopStripeInstanceIDEnv))
-	instanceID, err := strconv.ParseInt(raw, 10, 64)
-	return instanceID, err == nil && instanceID > 0
 }
 
 func guestShopPaymentBounds() (float64, float64) {

@@ -80,11 +80,19 @@ func createGuestShopStripeInstance(
 	return instance.ID
 }
 
-func newGuestShopTestService(client *dbent.Client) *PaymentService {
+func newGuestShopTestService(client *dbent.Client, enabled bool, instanceID int64) *PaymentService {
+	return newGuestShopTestServiceWithSettings(client, map[string]string{
+		SettingGuestShopEnabled:  strconv.FormatBool(enabled),
+		SettingGuestShopStripeID: strconv.FormatInt(instanceID, 10),
+	})
+}
+
+func newGuestShopTestServiceWithSettings(client *dbent.Client, values map[string]string) *PaymentService {
 	return &PaymentService{
 		entClient: client,
 		configService: &PaymentConfigService{
-			entClient: client,
+			entClient:   client,
+			settingRepo: &paymentConfigSettingRepoStub{values: values},
 		},
 	}
 }
@@ -164,12 +172,10 @@ func TestValidateOrderInputStillRejectsUnknownTypes(t *testing.T) {
 }
 
 func TestCreateGuestShopPaymentUsesPinnedStripeAndDoesNotPersistOrders(t *testing.T) {
-	t.Setenv(guestShopEnabledEnv, "true")
 	ctx := context.Background()
 	client := newPaymentConfigServiceTestClient(t)
 	_ = createGuestShopStripeInstance(t, client, "Stripe secondary", "pk_secondary", "sk_secondary", "USD", 1, true)
 	primaryID := createGuestShopStripeInstance(t, client, "Stripe storefront", "pk_storefront", "sk_storefront", "USD", 20, false)
-	t.Setenv(guestShopStripeInstanceIDEnv, strconv.FormatInt(primaryID, 10))
 	prov := &guestShopTestProvider{}
 	orig := newGuestShopProvider
 	newGuestShopProvider = func(providerKey, instanceID string, config map[string]string) (payment.Provider, error) {
@@ -182,7 +188,7 @@ func TestCreateGuestShopPaymentUsesPinnedStripeAndDoesNotPersistOrders(t *testin
 	}
 	t.Cleanup(func() { newGuestShopProvider = orig })
 
-	svc := newGuestShopTestService(client)
+	svc := newGuestShopTestService(client, true, primaryID)
 	resp, err := svc.CreateGuestShopPayment(ctx, CreateGuestShopPaymentRequest{
 		Items:    []GuestShopItemInput{{ID: "blazer", Qty: 1}},
 		Shipping: "air",
@@ -211,19 +217,18 @@ func TestCreateGuestShopPaymentUsesPinnedStripeAndDoesNotPersistOrders(t *testin
 }
 
 func TestGetGuestShopConfigIsIndependentFromOriginalPaymentSettings(t *testing.T) {
-	t.Setenv(guestShopEnabledEnv, "true")
 	ctx := context.Background()
 	client := newPaymentConfigServiceTestClient(t)
 	_ = createGuestShopStripeInstance(t, client, "Stripe secondary", "pk_usd", "sk_usd", "USD", 1, true)
 	pinnedID := createGuestShopStripeInstance(t, client, "Stripe storefront", "pk_eur", "sk_eur", "EUR", 20, false)
-	t.Setenv(guestShopStripeInstanceIDEnv, strconv.FormatInt(pinnedID, 10))
 
-	svc := newGuestShopTestService(client)
-	svc.configService.settingRepo = &paymentConfigSettingRepoStub{values: map[string]string{
+	svc := newGuestShopTestServiceWithSettings(client, map[string]string{
 		SettingPaymentEnabled:    "false",
 		SettingMinRechargeAmount: "999",
 		SettingMaxRechargeAmount: "1000",
-	}}
+		SettingGuestShopEnabled:  "true",
+		SettingGuestShopStripeID: strconv.FormatInt(pinnedID, 10),
+	})
 	cfg, err := svc.GetGuestShopConfig(ctx)
 	require.NoError(t, err)
 	require.True(t, cfg.Enabled)
@@ -234,26 +239,22 @@ func TestGetGuestShopConfigIsIndependentFromOriginalPaymentSettings(t *testing.T
 }
 
 func TestGetGuestShopConfigDoesNotFallbackFromIncompletePinnedInstance(t *testing.T) {
-	t.Setenv(guestShopEnabledEnv, "true")
 	ctx := context.Background()
 	client := newPaymentConfigServiceTestClient(t)
 	incompleteID := createGuestShopStripeInstance(t, client, "Stripe incomplete", "", "sk_incomplete", "USD", 1, false)
 	_ = createGuestShopStripeInstance(t, client, "Stripe storefront", "pk_storefront", "sk_storefront", "USD", 2, true)
-	t.Setenv(guestShopStripeInstanceIDEnv, strconv.FormatInt(incompleteID, 10))
 
-	cfg, err := newGuestShopTestService(client).GetGuestShopConfig(ctx)
+	cfg, err := newGuestShopTestService(client, true, incompleteID).GetGuestShopConfig(ctx)
 	require.NoError(t, err)
 	require.False(t, cfg.Enabled)
 	require.Empty(t, cfg.StripePublishableKey)
 }
 
 func TestGetGuestShopPaymentStatusUsesPinnedDisabledStripeInstance(t *testing.T) {
-	t.Setenv(guestShopEnabledEnv, "true")
 	ctx := context.Background()
 	client := newPaymentConfigServiceTestClient(t)
 	_ = createGuestShopStripeInstance(t, client, "Stripe first", "pk_first", "sk_first", "USD", 1, true)
 	pinnedID := createGuestShopStripeInstance(t, client, "Stripe pinned", "pk_pinned", "sk_pinned", "USD", 2, false)
-	t.Setenv(guestShopStripeInstanceIDEnv, strconv.FormatInt(pinnedID, 10))
 	pinned := &guestShopTestProvider{}
 	orig := newGuestShopProvider
 	newGuestShopProvider = func(_ string, instanceID string, _ map[string]string) (payment.Provider, error) {
@@ -262,7 +263,7 @@ func TestGetGuestShopPaymentStatusUsesPinnedDisabledStripeInstance(t *testing.T)
 	}
 	t.Cleanup(func() { newGuestShopProvider = orig })
 
-	status, err := newGuestShopTestService(client).GetGuestShopPaymentStatus(ctx, "pi_test_guest_shop")
+	status, err := newGuestShopTestService(client, false, pinnedID).GetGuestShopPaymentStatus(ctx, "pi_test_guest_shop")
 	require.NoError(t, err)
 	require.Equal(t, "pi_test_guest_shop", status.PaymentIntentID)
 	require.Equal(t, payment.ProviderStatusPaid, status.Status)
@@ -272,11 +273,9 @@ func TestGetGuestShopPaymentStatusUsesPinnedDisabledStripeInstance(t *testing.T)
 }
 
 func TestGetGuestShopPaymentStatusRejectsNonGuestIntent(t *testing.T) {
-	t.Setenv(guestShopEnabledEnv, "true")
 	ctx := context.Background()
 	client := newPaymentConfigServiceTestClient(t)
 	pinnedID := createGuestShopStripeInstance(t, client, "Stripe storefront", "pk_storefront", "sk_storefront", "USD", 1, false)
-	t.Setenv(guestShopStripeInstanceIDEnv, strconv.FormatInt(pinnedID, 10))
 	prov := &guestShopTestProvider{queryResult: &payment.QueryOrderResponse{
 		TradeNo:  "pi_normal_order",
 		Status:   payment.ProviderStatusPaid,
@@ -289,13 +288,12 @@ func TestGetGuestShopPaymentStatusRejectsNonGuestIntent(t *testing.T) {
 	}
 	t.Cleanup(func() { newGuestShopProvider = orig })
 
-	_, err := newGuestShopTestService(client).GetGuestShopPaymentStatus(ctx, "pi_normal_order")
+	_, err := newGuestShopTestService(client, true, pinnedID).GetGuestShopPaymentStatus(ctx, "pi_normal_order")
 	require.Error(t, err)
 	require.Equal(t, "PAYMENT_NOT_FOUND", infraerrors.Reason(err))
 }
 
 func TestGetGuestShopConfigFailsClosedWithoutValidPinnedInstance(t *testing.T) {
-	t.Setenv(guestShopEnabledEnv, "true")
 	client := newPaymentConfigServiceTestClient(t)
 	_ = createGuestShopStripeInstance(t, client, "Stripe available", "pk_available", "sk_available", "USD", 1, true)
 	wrongProvider, err := client.PaymentProviderInstance.Create().
@@ -306,8 +304,6 @@ func TestGetGuestShopConfigFailsClosedWithoutValidPinnedInstance(t *testing.T) {
 		SetEnabled(true).
 		Save(context.Background())
 	require.NoError(t, err)
-	svc := newGuestShopTestService(client)
-
 	tests := map[string]string{
 		"missing":        "",
 		"invalid":        "not-an-id",
@@ -318,7 +314,10 @@ func TestGetGuestShopConfigFailsClosedWithoutValidPinnedInstance(t *testing.T) {
 	}
 	for name, instanceID := range tests {
 		t.Run(name, func(t *testing.T) {
-			t.Setenv(guestShopStripeInstanceIDEnv, instanceID)
+			svc := newGuestShopTestServiceWithSettings(client, map[string]string{
+				SettingGuestShopEnabled:  "true",
+				SettingGuestShopStripeID: instanceID,
+			})
 			cfg, err := svc.GetGuestShopConfig(context.Background())
 			require.NoError(t, err)
 			require.False(t, cfg.Enabled)
@@ -328,8 +327,7 @@ func TestGetGuestShopConfigFailsClosedWithoutValidPinnedInstance(t *testing.T) {
 }
 
 func TestCreateGuestShopPaymentRejectsDomesticShippingOutsideUS(t *testing.T) {
-	t.Setenv(guestShopEnabledEnv, "true")
-	svc := &PaymentService{configService: &PaymentConfigService{}}
+	svc := newGuestShopTestService(nil, true, 1)
 	_, err := svc.CreateGuestShopPayment(context.Background(), CreateGuestShopPaymentRequest{
 		Items:    []GuestShopItemInput{{ID: "blazer", Qty: 1}},
 		Shipping: "domestic",
@@ -340,8 +338,7 @@ func TestCreateGuestShopPaymentRejectsDomesticShippingOutsideUS(t *testing.T) {
 }
 
 func TestGuestShopFeatureFlagOnlyDisablesGuestCheckout(t *testing.T) {
-	t.Setenv(guestShopEnabledEnv, "false")
-	svc := &PaymentService{configService: &PaymentConfigService{}}
+	svc := newGuestShopTestService(nil, false, 0)
 
 	cfg, err := svc.GetGuestShopConfig(context.Background())
 	require.NoError(t, err)

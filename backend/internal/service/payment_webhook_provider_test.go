@@ -520,7 +520,6 @@ func TestGetWebhookProvidersUsesPinnedDisabledGuestStripeInstance(t *testing.T) 
 		SetEnabled(false).
 		Save(ctx)
 	require.NoError(t, err)
-	t.Setenv(guestShopStripeInstanceIDEnv, strconv.FormatInt(instance.ID, 10))
 
 	var gotInstanceID string
 	orig := newGuestShopProvider
@@ -536,6 +535,10 @@ func TestGetWebhookProvidersUsesPinnedDisabledGuestStripeInstance(t *testing.T) 
 		entClient: client,
 		configService: &PaymentConfigService{
 			entClient: client,
+			settingRepo: &paymentConfigSettingRepoStub{values: map[string]string{
+				SettingGuestShopEnabled:  "false",
+				SettingGuestShopStripeID: strconv.FormatInt(instance.ID, 10),
+			}},
 		},
 	}
 	providers, err := svc.GetWebhookProviders(ctx, payment.TypeStripe, "shop_0123456789abcdef")

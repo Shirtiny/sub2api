@@ -102,7 +102,11 @@ func (s *PaymentService) getGuestShopWebhookProvider(ctx context.Context) (payme
 	if s == nil || s.configService == nil {
 		return nil, payment.ErrProviderNotFound
 	}
-	sel, err := s.configService.guestShopStripeInstance(ctx)
+	settings, err := s.configService.guestShopSettings(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("load guest shop payment settings: %w", err)
+	}
+	sel, err := s.configService.guestShopStripeInstance(ctx, settings.StripeInstanceID)
 	if err != nil {
 		return nil, fmt.Errorf("load guest shop Stripe webhook provider: %w", err)
 	}

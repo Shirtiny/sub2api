@@ -214,8 +214,6 @@ docker compose down -v
 | `POSTGRES_PASSWORD` | **Yes** | - | PostgreSQL password |
 | `JWT_SECRET` | **Recommended** | *(auto-generated)* | JWT secret (fixed for persistent sessions) |
 | `CAFE_BROWSER_COOKIE_SECRET` | Optional | empty | Shared HMAC secret for the `.cafecode.work` `cfw_bh` browser-history cookie. Set the same value in the `ldc-shop` Worker secret so `store.cafecode.work` can verify CafeCode browser-history signals. |
-| `CAFE_GUEST_SHOP_ENABLED` | No | `false` | Enables the isolated homepage guest checkout. Requires `CAFE_GUEST_SHOP_STRIPE_INSTANCE_ID`. |
-| `CAFE_GUEST_SHOP_STRIPE_INSTANCE_ID` | Required for guest checkout | empty | Pins an existing Stripe provider instance by database ID. Guest checkout reads its configuration even when the instance is disabled for the original sub2api payment flow. |
 | `SECURITY_API_KEY_HASH_SECRET` | **Yes** | *(auto-generated)* | Independent HMAC secret for stored user API key hashes. Keep fixed across deployments. |
 | `TOTP_ENCRYPTION_KEY` | **Recommended** | *(auto-generated)* | TOTP encryption key (fixed for persistent 2FA) |
 | `SERVER_PORT` | No | `8080` | Server port |

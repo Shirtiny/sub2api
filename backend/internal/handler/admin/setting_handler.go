@@ -299,6 +299,8 @@ func (h *SettingHandler) GetSettings(c *gin.Context) {
 		PaymentProductNameSuffix:               paymentCfg.ProductNameSuffix,
 		PaymentHelpImageURL:                    paymentCfg.HelpImageURL,
 		PaymentHelpText:                        paymentCfg.HelpText,
+		PaymentGuestShopEnabled:                paymentCfg.GuestShopEnabled,
+		PaymentGuestShopStripeInstanceID:       paymentCfg.GuestShopStripeInstanceID,
 		PaymentCancelRateLimitEnabled:          paymentCfg.CancelRateLimitEnabled,
 		PaymentCancelRateLimitMax:              paymentCfg.CancelRateLimitMax,
 		PaymentCancelRateLimitWindow:           paymentCfg.CancelRateLimitWindow,
@@ -651,6 +653,8 @@ type UpdateSettingsRequest struct {
 	PaymentProductNameSuffix         *string  `json:"payment_product_name_suffix"`
 	PaymentHelpImageURL              *string  `json:"payment_help_image_url"`
 	PaymentHelpText                  *string  `json:"payment_help_text"`
+	PaymentGuestShopEnabled          *bool    `json:"payment_guest_shop_enabled"`
+	PaymentGuestShopStripeInstanceID *int64   `json:"payment_guest_shop_stripe_instance_id"`
 
 	// Cancel rate limit
 	PaymentCancelRateLimitEnabled *bool   `json:"payment_cancel_rate_limit_enabled"`
@@ -1987,6 +1991,8 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 			ProductNameSuffix:         req.PaymentProductNameSuffix,
 			HelpImageURL:              req.PaymentHelpImageURL,
 			HelpText:                  req.PaymentHelpText,
+			GuestShopEnabled:          req.PaymentGuestShopEnabled,
+			GuestShopStripeInstanceID: req.PaymentGuestShopStripeInstanceID,
 			CancelRateLimitEnabled:    req.PaymentCancelRateLimitEnabled,
 			CancelRateLimitMax:        req.PaymentCancelRateLimitMax,
 			CancelRateLimitWindow:     req.PaymentCancelRateLimitWindow,
@@ -2213,6 +2219,8 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		PaymentProductNameSuffix:               updatedPaymentCfg.ProductNameSuffix,
 		PaymentHelpImageURL:                    updatedPaymentCfg.HelpImageURL,
 		PaymentHelpText:                        updatedPaymentCfg.HelpText,
+		PaymentGuestShopEnabled:                updatedPaymentCfg.GuestShopEnabled,
+		PaymentGuestShopStripeInstanceID:       updatedPaymentCfg.GuestShopStripeInstanceID,
 		PaymentCancelRateLimitEnabled:          updatedPaymentCfg.CancelRateLimitEnabled,
 		PaymentCancelRateLimitMax:              updatedPaymentCfg.CancelRateLimitMax,
 		PaymentCancelRateLimitWindow:           updatedPaymentCfg.CancelRateLimitWindow,
@@ -2267,6 +2275,7 @@ func hasPaymentFields(req UpdateSettingsRequest) bool {
 		req.PaymentLoadBalanceStrat != nil || req.PaymentProductNamePrefix != nil ||
 		req.PaymentProductNameSuffix != nil || req.PaymentHelpImageURL != nil ||
 		req.PaymentHelpText != nil || req.PaymentCancelRateLimitEnabled != nil ||
+		req.PaymentGuestShopEnabled != nil || req.PaymentGuestShopStripeInstanceID != nil ||
 		req.PaymentCancelRateLimitMax != nil || req.PaymentCancelRateLimitWindow != nil ||
 		req.PaymentCancelRateLimitUnit != nil || req.PaymentCancelRateLimitMode != nil ||
 		req.PaymentAlipayForceQRCode != nil

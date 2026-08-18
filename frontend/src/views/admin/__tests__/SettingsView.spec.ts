@@ -159,6 +159,22 @@ vi.mock("vue-i18n", async () => {
     "admin.settings.paymentVisibleMethods.sourceRequiredError": "{title} 已启用，请先选择支付来源。",
     "admin.settings.payment.configGuide": "查看支付配置说明",
     "admin.settings.payment.findProvider": "查看支持的支付方式",
+    "admin.settings.payment.guestShopTitle": "首页游客支付",
+    "admin.settings.payment.guestShopDescription": "独立控制首页游客结账，不影响原站支付。",
+    "admin.settings.payment.guestShopEnabled": "启用首页游客支付",
+    "admin.settings.payment.guestShopEnabledHint": "与原站支付开关完全独立。",
+    "admin.settings.payment.guestShopStripeInstance": "游客支付 Stripe 实例",
+    "admin.settings.payment.guestShopStripeInstanceHint": "可选择原站已禁用的 Stripe 实例。",
+    "admin.settings.payment.guestShopStripeNotSelected": "请选择 Stripe 实例",
+    "admin.settings.payment.guestShopStripeOption": "{name}（ID {id}）· {status}",
+    "admin.settings.payment.guestShopNoStripeInstance": "当前没有可选的 Stripe 实例。",
+    "admin.settings.payment.guestShopSelectionRequired": "启用游客支付前必须选择 Stripe 实例。",
+    "admin.settings.payment.guestShopOriginalStatus": "原站实例状态",
+    "admin.settings.payment.guestShopOriginalEnabled": "原站已启用",
+    "admin.settings.payment.guestShopOriginalDisabled": "原站已禁用",
+    "admin.settings.payment.guestShopCurrency": "币种",
+    "admin.settings.payment.guestShopMethods": "支持方式",
+    "admin.settings.payment.guestShopNotConfigured": "未配置",
     "admin.settings.openaiExperimentalScheduler.title": "OpenAI 实验调度策略",
     "admin.settings.openaiExperimentalScheduler.description": "默认关闭。开启后仅影响本网关在 OpenAI 账号间的实验性调度选择逻辑，不代表上游 OpenAI 官方能力。",
     "admin.settings.site.uploadImage": "上传图片",
@@ -397,6 +413,8 @@ const baseSettingsResponse = {
   payment_product_name_suffix: "",
   payment_help_image_url: "",
   payment_help_text: "",
+  payment_guest_shop_enabled: false,
+  payment_guest_shop_stripe_instance_id: 0,
   payment_cancel_rate_limit_enabled: false,
   payment_cancel_rate_limit_max: 10,
   payment_cancel_rate_limit_window: 1,
@@ -600,6 +618,72 @@ describe("admin SettingsView payment visible method controls", () => {
     expect(payload).not.toHaveProperty("payment_visible_method_wxpay_source");
     expect(payload).not.toHaveProperty("payment_visible_method_alipay_enabled");
     expect(payload).not.toHaveProperty("payment_visible_method_wxpay_enabled");
+  });
+
+  it("configures guest checkout independently with a disabled main-site Stripe instance", async () => {
+    const stripeProvider = {
+      id: 73,
+      provider_key: "stripe",
+      name: "Homepage Stripe",
+      config: { currency: "USD" },
+      supported_types: ["card", "link"],
+      enabled: false,
+      payment_mode: "",
+      refund_enabled: false,
+      allow_user_refund: false,
+      limits: "",
+      sort_order: 0,
+    };
+    getSettings.mockResolvedValueOnce({
+      ...baseSettingsResponse,
+      payment_enabled: false,
+      payment_guest_shop_enabled: true,
+      payment_guest_shop_stripe_instance_id: stripeProvider.id,
+    });
+    getProviders.mockResolvedValueOnce({ data: [stripeProvider] });
+
+    const wrapper = mountView();
+    await flushPromises();
+    await openPaymentTab(wrapper);
+
+    const guestCard = wrapper.get('[data-testid="guest-shop-payment-card"]');
+    expect(guestCard.text()).toContain("首页游客支付");
+    expect(guestCard.text()).toContain("Homepage Stripe（ID 73）· 原站已禁用");
+    expect(guestCard.text()).toContain("USD");
+    expect(guestCard.text()).toContain("card, link");
+    expect(
+      guestCard.get('[data-testid="guest-shop-stripe-select"] select').element
+        .value,
+    ).toBe("73");
+
+    await wrapper.find("form").trigger("submit.prevent");
+    await flushPromises();
+
+    expect(updateSettings).toHaveBeenCalledWith(
+      expect.objectContaining({
+        payment_enabled: false,
+        payment_guest_shop_enabled: true,
+        payment_guest_shop_stripe_instance_id: 73,
+      }),
+    );
+  });
+
+  it("requires a Stripe instance before enabling guest checkout", async () => {
+    getSettings.mockResolvedValueOnce({
+      ...baseSettingsResponse,
+      payment_guest_shop_enabled: true,
+      payment_guest_shop_stripe_instance_id: 0,
+    });
+
+    const wrapper = mountView();
+    await flushPromises();
+    await wrapper.find("form").trigger("submit.prevent");
+    await flushPromises();
+
+    expect(showError).toHaveBeenCalledWith(
+      "启用游客支付前必须选择 Stripe 实例。",
+    );
+    expect(updateSettings).not.toHaveBeenCalled();
   });
 
   it("submits Anthropic cache TTL injection gateway setting", async () => {

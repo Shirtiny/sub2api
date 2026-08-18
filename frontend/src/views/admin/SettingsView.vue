@@ -6358,6 +6358,108 @@
             </div>
           </div>
 
+          <!-- Standalone homepage guest checkout -->
+          <div class="card" data-testid="guest-shop-payment-card">
+            <div
+              class="border-b border-gray-100 px-6 py-4 dark:border-dark-700"
+            >
+              <h2 class="text-lg font-semibold text-content-primary">
+                {{ t("admin.settings.payment.guestShopTitle") }}
+              </h2>
+              <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                {{ t("admin.settings.payment.guestShopDescription") }}
+              </p>
+            </div>
+            <div class="space-y-5 p-6">
+              <div class="flex items-start justify-between gap-6">
+                <div>
+                  <label class="font-medium text-content-primary">
+                    {{ t("admin.settings.payment.guestShopEnabled") }}
+                  </label>
+                  <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    {{ t("admin.settings.payment.guestShopEnabledHint") }}
+                  </p>
+                </div>
+                <Toggle
+                  v-model="form.payment_guest_shop_enabled"
+                  data-testid="guest-shop-payment-toggle"
+                />
+              </div>
+
+              <div class="max-w-2xl">
+                <label class="input-label">
+                  {{ t("admin.settings.payment.guestShopStripeInstance") }}
+                </label>
+                <div data-testid="guest-shop-stripe-select">
+                  <Select
+                    v-model="form.payment_guest_shop_stripe_instance_id"
+                    :options="guestShopStripeOptions"
+                    :disabled="providersLoading"
+                    class="w-full"
+                  />
+                </div>
+                <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                  {{ t("admin.settings.payment.guestShopStripeInstanceHint") }}
+                </p>
+                <p
+                  v-if="!providersLoading && guestShopStripeProviders.length === 0"
+                  class="mt-2 text-sm text-amber-600 dark:text-amber-400"
+                >
+                  {{ t("admin.settings.payment.guestShopNoStripeInstance") }}
+                </p>
+                <p
+                  v-else-if="
+                    form.payment_guest_shop_enabled &&
+                    !selectedGuestShopStripeProvider
+                  "
+                  class="mt-2 text-sm text-red-600 dark:text-red-400"
+                >
+                  {{ t("admin.settings.payment.guestShopSelectionRequired") }}
+                </p>
+              </div>
+
+              <div
+                v-if="selectedGuestShopStripeProvider"
+                class="grid gap-4 border-t border-gray-100 pt-4 text-sm dark:border-dark-700 sm:grid-cols-3"
+                data-testid="guest-shop-stripe-summary"
+              >
+                <div>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">
+                    {{ t("admin.settings.payment.guestShopOriginalStatus") }}
+                  </p>
+                  <p class="mt-1 font-medium text-content-primary">
+                    {{
+                      t(
+                        selectedGuestShopStripeProvider.enabled
+                          ? "admin.settings.payment.guestShopOriginalEnabled"
+                          : "admin.settings.payment.guestShopOriginalDisabled",
+                      )
+                    }}
+                  </p>
+                </div>
+                <div>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">
+                    {{ t("admin.settings.payment.guestShopCurrency") }}
+                  </p>
+                  <p class="mt-1 font-medium text-content-primary">
+                    {{
+                      selectedGuestShopStripeProvider.config.currency ||
+                      t("admin.settings.payment.guestShopNotConfigured")
+                    }}
+                  </p>
+                </div>
+                <div>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">
+                    {{ t("admin.settings.payment.guestShopMethods") }}
+                  </p>
+                  <p class="mt-1 font-medium text-content-primary">
+                    {{ selectedGuestShopStripeMethods }}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Provider Management -->
           <PaymentProviderList
             v-if="form.payment_enabled"
@@ -7285,6 +7387,8 @@ const form = reactive<SettingsForm>({
   payment_enabled_types: [],
   payment_help_image_url: "",
   payment_help_text: "",
+  payment_guest_shop_enabled: false,
+  payment_guest_shop_stripe_instance_id: 0,
   payment_product_name_prefix: "",
   payment_product_name_suffix: "",
   payment_load_balance_strategy: "round-robin",
@@ -8267,6 +8371,20 @@ function findDuplicateDefaultSubscription(
 async function saveSettings() {
   saving.value = true;
   try {
+    const guestShopStripeInstanceID = Number(
+      form.payment_guest_shop_stripe_instance_id,
+    );
+    if (
+      form.payment_guest_shop_enabled &&
+      (!Number.isSafeInteger(guestShopStripeInstanceID) ||
+        guestShopStripeInstanceID <= 0)
+    ) {
+      appStore.showError(
+        t("admin.settings.payment.guestShopSelectionRequired"),
+      );
+      return;
+    }
+
     const normalizedTableDefaultPageSize = Math.floor(
       Number(form.table_default_page_size),
     );
@@ -8596,6 +8714,9 @@ async function saveSettings() {
       payment_product_name_suffix: form.payment_product_name_suffix,
       payment_help_image_url: form.payment_help_image_url,
       payment_help_text: form.payment_help_text,
+      payment_guest_shop_enabled: form.payment_guest_shop_enabled,
+      payment_guest_shop_stripe_instance_id:
+        guestShopStripeInstanceID || 0,
       payment_cancel_rate_limit_enabled: form.payment_cancel_rate_limit_enabled,
       payment_cancel_rate_limit_max:
         Number(form.payment_cancel_rate_limit_max) || 10,
@@ -9248,6 +9369,44 @@ const deletingProviderId = ref<number | null>(null);
 const providerDialogRef = ref<InstanceType<
   typeof PaymentProviderDialog
 > | null>(null);
+
+const guestShopStripeProviders = computed(() =>
+  providers.value.filter((provider) => provider.provider_key === "stripe"),
+);
+
+const guestShopStripeOptions = computed(() => [
+  {
+    value: 0,
+    label: t("admin.settings.payment.guestShopStripeNotSelected"),
+  },
+  ...guestShopStripeProviders.value.map((provider) => ({
+    value: provider.id,
+    label: t("admin.settings.payment.guestShopStripeOption", {
+      name: provider.name,
+      id: String(provider.id),
+      status: t(
+        provider.enabled
+          ? "admin.settings.payment.guestShopOriginalEnabled"
+          : "admin.settings.payment.guestShopOriginalDisabled",
+      ),
+    }),
+  })),
+]);
+
+const selectedGuestShopStripeProvider = computed(
+  () =>
+    guestShopStripeProviders.value.find(
+      (provider) =>
+        provider.id === Number(form.payment_guest_shop_stripe_instance_id),
+    ) ?? null,
+);
+
+const selectedGuestShopStripeMethods = computed(() => {
+  const methods = selectedGuestShopStripeProvider.value?.supported_types ?? [];
+  return methods.length > 0
+    ? methods.join(", ")
+    : t("admin.settings.payment.guestShopNotConfigured");
+});
 
 const providerKeyOptions = computed(() => [
   { value: "easypay", label: t("admin.settings.payment.providerEasypay") },

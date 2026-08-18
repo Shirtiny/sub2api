@@ -35,6 +35,8 @@ const (
 	SettingCancelWindowUnit    = "CANCEL_RATE_LIMIT_UNIT"
 	SettingCancelWindowMode    = "CANCEL_RATE_LIMIT_WINDOW_MODE"
 	SettingAlipayForceQRCode   = "ALIPAY_FORCE_QRCODE"
+	SettingGuestShopEnabled    = "GUEST_SHOP_PAYMENT_ENABLED"
+	SettingGuestShopStripeID   = "GUEST_SHOP_STRIPE_INSTANCE_ID"
 )
 
 // Default values for payment configuration settings.
@@ -61,6 +63,8 @@ type PaymentConfig struct {
 	HelpImageURL              string   `json:"help_image_url"`
 	HelpText                  string   `json:"help_text"`
 	StripePublishableKey      string   `json:"stripe_publishable_key,omitempty"`
+	GuestShopEnabled          bool     `json:"guest_shop_enabled"`
+	GuestShopStripeInstanceID int64    `json:"guest_shop_stripe_instance_id"`
 
 	// Cancel rate limit settings
 	CancelRateLimitEnabled bool   `json:"cancel_rate_limit_enabled"`
@@ -90,6 +94,8 @@ type UpdatePaymentConfigRequest struct {
 	ProductNameSuffix         *string  `json:"product_name_suffix"`
 	HelpImageURL              *string  `json:"help_image_url"`
 	HelpText                  *string  `json:"help_text"`
+	GuestShopEnabled          *bool    `json:"guest_shop_enabled"`
+	GuestShopStripeInstanceID *int64   `json:"guest_shop_stripe_instance_id"`
 
 	// Cancel rate limit settings
 	CancelRateLimitEnabled *bool   `json:"cancel_rate_limit_enabled"`
@@ -231,6 +237,7 @@ func (s *PaymentConfigService) GetPaymentConfig(ctx context.Context) (*PaymentCo
 		SettingCancelRateLimitOn, SettingCancelRateLimitMax,
 		SettingCancelWindowSize, SettingCancelWindowUnit, SettingCancelWindowMode,
 		SettingAlipayForceQRCode,
+		SettingGuestShopEnabled, SettingGuestShopStripeID,
 		SettingPaymentVisibleMethodAlipayEnabled, SettingPaymentVisibleMethodAlipaySource,
 		SettingPaymentVisibleMethodWxpayEnabled, SettingPaymentVisibleMethodWxpaySource,
 	}
@@ -263,6 +270,8 @@ func (s *PaymentConfigService) parsePaymentConfig(vals map[string]string) *Payme
 		ProductNameSuffix:         vals[SettingProductNameSuffix],
 		HelpImageURL:              vals[SettingHelpImageURL],
 		HelpText:                  vals[SettingHelpText],
+		GuestShopEnabled:          vals[SettingGuestShopEnabled] == "true",
+		GuestShopStripeInstanceID: pcParsePositiveInt64(vals[SettingGuestShopStripeID]),
 
 		CancelRateLimitEnabled: vals[SettingCancelRateLimitOn] == "true",
 		CancelRateLimitMax:     pcParseInt(vals[SettingCancelRateLimitMax], 10),
@@ -313,6 +322,11 @@ func (s *PaymentConfigService) getStripePublishableKey(ctx context.Context) stri
 // nil-check before serialisation — this is inherent to patch-style update patterns
 // and cannot be meaningfully decomposed without introducing unnecessary abstraction.
 func (s *PaymentConfigService) UpdatePaymentConfig(ctx context.Context, req UpdatePaymentConfigRequest) error {
+	if req.GuestShopEnabled != nil || req.GuestShopStripeInstanceID != nil {
+		if err := s.validateGuestShopSettingsUpdate(ctx, req.GuestShopEnabled, req.GuestShopStripeInstanceID); err != nil {
+			return err
+		}
+	}
 	if req.BalanceRechargeMultiplier != nil {
 		if math.IsNaN(*req.BalanceRechargeMultiplier) || math.IsInf(*req.BalanceRechargeMultiplier, 0) || *req.BalanceRechargeMultiplier <= 0 {
 			return infraerrors.BadRequest("INVALID_BALANCE_RECHARGE_MULTIPLIER", "balance recharge multiplier must be greater than 0")
@@ -359,6 +373,14 @@ func (s *PaymentConfigService) UpdatePaymentConfig(ctx context.Context, req Upda
 	} else {
 		m[SettingEnabledPaymentTypes] = ""
 	}
+	// Preserve the standalone storefront settings for older clients that do not
+	// send these optional fields when updating the original payment config.
+	if req.GuestShopEnabled != nil {
+		m[SettingGuestShopEnabled] = formatBoolOrEmpty(req.GuestShopEnabled)
+	}
+	if req.GuestShopStripeInstanceID != nil {
+		m[SettingGuestShopStripeID] = formatNonNegativeInt64(req.GuestShopStripeInstanceID)
+	}
 	return s.settingRepo.SetMultiple(ctx, m)
 }
 
@@ -388,6 +410,13 @@ func formatPositiveInt(v *int) string {
 		return ""
 	}
 	return strconv.Itoa(*v)
+}
+
+func formatNonNegativeInt64(v *int64) string {
+	if v == nil || *v < 0 {
+		return ""
+	}
+	return strconv.FormatInt(*v, 10)
 }
 
 func derefStr(v *string) string {
@@ -434,6 +463,14 @@ func pcParseInt(s string, defaultVal int) int {
 	v, err := strconv.Atoi(s)
 	if err != nil {
 		return defaultVal
+	}
+	return v
+}
+
+func pcParsePositiveInt64(s string) int64 {
+	v, err := strconv.ParseInt(strings.TrimSpace(s), 10, 64)
+	if err != nil || v <= 0 {
+		return 0
 	}
 	return v
 }

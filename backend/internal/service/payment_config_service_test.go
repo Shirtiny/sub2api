@@ -10,6 +10,7 @@ import (
 	dbent "github.com/Wei-Shaw/sub2api/ent"
 	"github.com/Wei-Shaw/sub2api/ent/enttest"
 	"github.com/Wei-Shaw/sub2api/internal/payment"
+	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 
 	"entgo.io/ent/dialect"
 	entsql "entgo.io/ent/dialect/sql"
@@ -118,6 +119,8 @@ func TestParsePaymentConfig(t *testing.T) {
 			SettingLoadBalanceStrategy: "least_amount",
 			SettingProductNamePrefix:   "PRE",
 			SettingProductNameSuffix:   "SUF",
+			SettingGuestShopEnabled:    "true",
+			SettingGuestShopStripeID:   "42",
 		}
 		cfg := svc.parsePaymentConfig(vals)
 
@@ -156,6 +159,12 @@ func TestParsePaymentConfig(t *testing.T) {
 		}
 		if cfg.ProductNameSuffix != "SUF" {
 			t.Fatalf("ProductNameSuffix = %q, want %q", cfg.ProductNameSuffix, "SUF")
+		}
+		if !cfg.GuestShopEnabled {
+			t.Fatal("expected GuestShopEnabled=true")
+		}
+		if cfg.GuestShopStripeInstanceID != 42 {
+			t.Fatalf("GuestShopStripeInstanceID = %d, want 42", cfg.GuestShopStripeInstanceID)
 		}
 	})
 
@@ -429,6 +438,125 @@ func TestUpdatePaymentConfig_PersistsVisibleMethodRouting(t *testing.T) {
 	}
 	if repo.values[SettingPaymentVisibleMethodWxpaySource] != VisibleMethodSourceOfficialWechat {
 		t.Fatalf("wxpay source = %q, want %q", repo.values[SettingPaymentVisibleMethodWxpaySource], VisibleMethodSourceOfficialWechat)
+	}
+}
+
+func TestUpdatePaymentConfig_PersistsValidatedGuestShopSettings(t *testing.T) {
+	ctx := context.Background()
+	client := newPaymentConfigServiceTestClient(t)
+	instance, err := client.PaymentProviderInstance.Create().
+		SetProviderKey(payment.TypeStripe).
+		SetName("Stripe storefront").
+		SetConfig(`{"publishableKey":"pk_storefront","secretKey":"sk_storefront","currency":"USD"}`).
+		SetSupportedTypes("card,link").
+		SetSortOrder(1).
+		SetEnabled(false).
+		Save(ctx)
+	if err != nil {
+		t.Fatalf("create Stripe instance: %v", err)
+	}
+	instanceID := instance.ID
+	repo := &paymentConfigSettingRepoStub{values: map[string]string{}}
+	svc := &PaymentConfigService{entClient: client, settingRepo: repo}
+	enabled := true
+
+	err = svc.UpdatePaymentConfig(ctx, UpdatePaymentConfigRequest{
+		GuestShopEnabled:          &enabled,
+		GuestShopStripeInstanceID: &instanceID,
+	})
+	if err != nil {
+		t.Fatalf("UpdatePaymentConfig returned error: %v", err)
+	}
+	if repo.values[SettingGuestShopEnabled] != "true" {
+		t.Fatalf("guest shop enabled = %q, want true", repo.values[SettingGuestShopEnabled])
+	}
+	if repo.values[SettingGuestShopStripeID] != fmt.Sprintf("%d", instanceID) {
+		t.Fatalf("guest shop Stripe ID = %q, want %d", repo.values[SettingGuestShopStripeID], instanceID)
+	}
+}
+
+func TestUpdatePaymentConfig_RejectsInvalidGuestShopSelection(t *testing.T) {
+	ctx := context.Background()
+	client := newPaymentConfigServiceTestClient(t)
+	wrongProvider, err := client.PaymentProviderInstance.Create().
+		SetProviderKey(payment.TypeAlipay).
+		SetName("Alipay").
+		SetConfig(`{}`).
+		SetSupportedTypes(payment.TypeAlipay).
+		SetEnabled(true).
+		Save(ctx)
+	if err != nil {
+		t.Fatalf("create non-Stripe instance: %v", err)
+	}
+	enabled := true
+
+	tests := []struct {
+		name       string
+		instanceID int64
+	}{
+		{name: "missing", instanceID: 0},
+		{name: "wrong provider", instanceID: wrongProvider.ID},
+		{name: "unknown", instanceID: 999999},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			repo := &paymentConfigSettingRepoStub{values: map[string]string{}}
+			svc := &PaymentConfigService{entClient: client, settingRepo: repo}
+			err := svc.UpdatePaymentConfig(ctx, UpdatePaymentConfigRequest{
+				GuestShopEnabled:          &enabled,
+				GuestShopStripeInstanceID: &tt.instanceID,
+			})
+			if infraerrors.Reason(err) != "INVALID_GUEST_SHOP_STRIPE_INSTANCE" {
+				t.Fatalf("reason = %q, want INVALID_GUEST_SHOP_STRIPE_INSTANCE (err=%v)", infraerrors.Reason(err), err)
+			}
+			if len(repo.updates) != 0 {
+				t.Fatalf("invalid update was persisted: %v", repo.updates)
+			}
+		})
+	}
+}
+
+func TestUpdatePaymentConfig_OmittedGuestFieldsPreserveExistingSettings(t *testing.T) {
+	repo := &paymentConfigSettingRepoStub{values: map[string]string{
+		SettingGuestShopEnabled:  "true",
+		SettingGuestShopStripeID: "42",
+	}}
+	svc := &PaymentConfigService{settingRepo: repo}
+
+	if err := svc.UpdatePaymentConfig(context.Background(), UpdatePaymentConfigRequest{}); err != nil {
+		t.Fatalf("UpdatePaymentConfig returned error: %v", err)
+	}
+	if repo.values[SettingGuestShopEnabled] != "true" || repo.values[SettingGuestShopStripeID] != "42" {
+		t.Fatalf("guest shop settings were changed: %v", repo.values)
+	}
+	if _, ok := repo.updates[SettingGuestShopEnabled]; ok {
+		t.Fatalf("omitted guest shop enabled field was written: %v", repo.updates)
+	}
+	if _, ok := repo.updates[SettingGuestShopStripeID]; ok {
+		t.Fatalf("omitted guest shop Stripe ID was written: %v", repo.updates)
+	}
+}
+
+func TestUpdatePaymentConfig_CanDisableGuestShopAfterInstanceDisappears(t *testing.T) {
+	repo := &paymentConfigSettingRepoStub{values: map[string]string{
+		SettingGuestShopEnabled:  "true",
+		SettingGuestShopStripeID: "999999",
+	}}
+	svc := &PaymentConfigService{
+		entClient:   newPaymentConfigServiceTestClient(t),
+		settingRepo: repo,
+	}
+	enabled := false
+	instanceID := int64(999999)
+
+	if err := svc.UpdatePaymentConfig(context.Background(), UpdatePaymentConfigRequest{
+		GuestShopEnabled:          &enabled,
+		GuestShopStripeInstanceID: &instanceID,
+	}); err != nil {
+		t.Fatalf("disable guest shop returned error: %v", err)
+	}
+	if repo.values[SettingGuestShopEnabled] != "false" {
+		t.Fatalf("guest shop enabled = %q, want false", repo.values[SettingGuestShopEnabled])
 	}
 }
 
