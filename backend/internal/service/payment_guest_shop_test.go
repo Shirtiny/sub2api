@@ -108,6 +108,25 @@ func TestQuoteGuestShopCartUsesServerCatalog(t *testing.T) {
 	require.Equal(t, "Espresso Emerald Classic", quote.Items[0].Name)
 }
 
+func TestQuoteGuestShopCartIncludesExpandedCatalog(t *testing.T) {
+	t.Parallel()
+
+	quote, err := quoteGuestShopCart([]GuestShopItemInput{
+		{ID: "rose", Qty: 1},
+		{ID: "midnight", Qty: 2},
+		{ID: "apron", Qty: 1},
+	}, "domestic")
+	require.NoError(t, err)
+	require.Equal(t, []GuestShopQuotedItem{
+		{ID: "rose", Name: "Rose Latte Service Dress", Price: 128, Qty: 1},
+		{ID: "midnight", Name: "Midnight Mocha Tailored Uniform", Price: 148, Qty: 2},
+		{ID: "apron", Name: "Vanilla Cream Apron Set", Price: 72, Qty: 1},
+	}, quote.Items)
+	require.Equal(t, 496.0, quote.Subtotal)
+	require.Zero(t, quote.ShippingPrice)
+	require.Equal(t, 496.0, quote.Total)
+}
+
 func TestQuoteGuestShopCartRejectsInvalidInput(t *testing.T) {
 	t.Parallel()
 
@@ -224,7 +243,7 @@ func TestGetGuestShopConfigIsIndependentFromOriginalPaymentSettings(t *testing.T
 	require.Equal(t, "pk_eur", cfg.StripePublishableKey)
 	require.Equal(t, "EUR", cfg.Currency)
 	require.Equal(t, 1.0, cfg.MinAmount)
-	require.Equal(t, 2338.0, cfg.MaxAmount)
+	require.Equal(t, 4078.0, cfg.MaxAmount)
 }
 
 func TestGetGuestShopConfigDoesNotFallbackFromIncompletePinnedInstance(t *testing.T) {
@@ -396,7 +415,7 @@ func TestGuestShopFeatureFlagOnlyDisablesGuestCheckout(t *testing.T) {
 	require.NoError(t, err)
 	require.False(t, cfg.Enabled)
 	require.Equal(t, 1.0, cfg.MinAmount)
-	require.Equal(t, 2338.0, cfg.MaxAmount)
+	require.Equal(t, 4078.0, cfg.MaxAmount)
 
 	_, err = svc.CreateGuestShopPayment(context.Background(), CreateGuestShopPaymentRequest{
 		Items:    []GuestShopItemInput{{ID: "blazer", Qty: 1}},

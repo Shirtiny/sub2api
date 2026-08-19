@@ -67,9 +67,12 @@ type guestShopShippingOption struct {
 }
 
 var guestShopCatalog = map[string]guestShopProduct{
-	"blazer": {ID: "blazer", Name: "Espresso Emerald Classic", Price: 89},
-	"skirt":  {ID: "skirt", Name: "Full Collection Style Pack", Price: 255},
-	"dress":  {ID: "dress", Name: "Matcha Lace Playful Style", Price: 120},
+	"blazer":   {ID: "blazer", Name: "Espresso Emerald Classic", Price: 89},
+	"skirt":    {ID: "skirt", Name: "Full Collection Style Pack", Price: 255},
+	"dress":    {ID: "dress", Name: "Matcha Lace Playful Style", Price: 120},
+	"rose":     {ID: "rose", Name: "Rose Latte Service Dress", Price: 128},
+	"midnight": {ID: "midnight", Name: "Midnight Mocha Tailored Uniform", Price: 148},
+	"apron":    {ID: "apron", Name: "Vanilla Cream Apron Set", Price: 72},
 }
 
 var guestShopShipping = map[string]guestShopShippingOption{
