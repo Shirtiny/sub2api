@@ -471,7 +471,8 @@ type SubscriptionUsageWeeklyPoint struct {
 	UsageRatio     float64 `json:"usage_ratio"`
 }
 
-// SubscriptionUsageCycle 是整个订阅周期的累计使用率。
+// SubscriptionUsageCycle 是一个统计周期的累计使用率。普通套餐统计整个订阅周期，
+// 限时额度套餐统计当前一次性额度周期。
 type SubscriptionUsageCycle struct {
 	Start          string  `json:"start"`
 	End            string  `json:"end"`
@@ -489,6 +490,7 @@ type SubscriptionUsageSeries struct {
 	Username       string `json:"username"`
 	GroupID        int64  `json:"group_id"`
 	GroupName      string `json:"group_name"`
+	LimitedQuota   bool   `json:"limited_quota"`
 
 	StartsAt  time.Time `json:"starts_at"`
 	ExpiresAt time.Time `json:"expires_at"`
@@ -502,12 +504,13 @@ type SubscriptionUsageSeries struct {
 
 	Daily  []SubscriptionUsageDailyPoint  `json:"daily"`
 	Weekly []SubscriptionUsageWeeklyPoint `json:"weekly"`
-	// Cycle 在分组完全没有配置任何窗口限额时为 null —— 此时「整周期使用率」没有分母，
+	// Cycle 在分组完全没有配置任何窗口限额时为 null —— 此时使用率没有分母，
 	// 返回 0 会被误读成「用了 0%」。用量本身仍可从 Daily/Weekly 看到。
 	Cycle *SubscriptionUsageCycle `json:"cycle"`
 }
 
-// GetSubscriptionUsageSeries 返回单个订阅在其周期内的每天 / 每周 / 整周期使用率。
+// GetSubscriptionUsageSeries 返回单个订阅的每天 / 每周用量，以及普通套餐的整周期
+// 或限时额度套餐的当前额度使用率。
 //
 // 数据源是 subscription_usage_daily 汇总表而非 usage_logs —— 后者受保留期裁剪，
 // 覆盖不了一个完整订阅周期。汇总表启用之前的日期没有数据，通过 DataFrom/DataComplete 显式告知前端。
@@ -539,6 +542,7 @@ func (s *SubscriptionService) GetSubscriptionUsageSeries(ctx context.Context, su
 	out := &SubscriptionUsageSeries{
 		SubscriptionID: sub.ID,
 		UserID:         sub.UserID,
+		LimitedQuota:   sub.HasLimitedQuota(),
 		StartsAt:       sub.StartsAt,
 		ExpiresAt:      sub.ExpiresAt,
 		Daily:          []SubscriptionUsageDailyPoint{},
@@ -587,7 +591,11 @@ func (s *SubscriptionService) GetSubscriptionUsageSeries(ctx context.Context, su
 	}
 
 	out.Weekly = buildWeeklyPoints(rows, weeklyAnchor(sub, cycleStart))
-	out.Cycle = buildCycle(group, cycleStart, cycleEnd, totalCost, sub.HasLimitedQuota())
+	if sub.HasLimitedQuota() {
+		out.Cycle = buildLimitedQuotaCycle(group, sub, cycleStart, cycleEnd)
+	} else {
+		out.Cycle = buildCycle(group, cycleStart, cycleEnd, totalCost)
+	}
 	return out, nil
 }
 
@@ -690,9 +698,8 @@ func derivedWeeklyLimit(row SubscriptionUsageDaily) (float64, bool) {
 }
 
 // buildCycle 用「限额 × 周期内已经历的窗口数」作为整周期总额度。
-// 限时额度不自动开启新窗口，因此整个有效期只计一个额度窗口。
 // 分组没有任何窗口限额时返回 nil：没有分母的「使用率」不该被渲染成 0%。
-func buildCycle(group *Group, cycleStart, cycleEnd time.Time, totalCost float64, limitedQuota bool) *SubscriptionUsageCycle {
+func buildCycle(group *Group, cycleStart, cycleEnd time.Time, totalCost float64) *SubscriptionUsageCycle {
 	if group == nil {
 		return nil
 	}
@@ -722,12 +729,56 @@ func buildCycle(group *Group, cycleStart, cycleEnd time.Time, totalCost float64,
 	}
 
 	cycle.WindowsElapsed = int64(elapsed/period) + 1
-	if limitedQuota {
-		cycle.WindowsElapsed = 1
-	}
 	cycle.QuotaUSD = limit * float64(cycle.WindowsElapsed)
 	if cycle.QuotaUSD > 0 {
 		cycle.UsageRatio = totalCost / cycle.QuotaUSD
+	}
+	return cycle
+}
+
+// buildLimitedQuotaCycle 只描述当前一次性额度。提前重置会清零当前计数器，
+// 但按日汇总的历史仍包含重置前用量，且同一天内的重置无法从日桶中切开，
+// 因此这里必须使用订阅当前窗口计数器，不能累加 subscription_usage_daily。
+func buildLimitedQuotaCycle(group *Group, sub *UserSubscription, fallbackStart, cycleEnd time.Time) *SubscriptionUsageCycle {
+	if group == nil || sub == nil {
+		return nil
+	}
+
+	var limit, used float64
+	var windowStart *time.Time
+	var windowKind string
+	switch {
+	case group.HasDailyLimit():
+		limit, used, windowStart, windowKind = *group.DailyLimitUSD, sub.DailyUsageUSD, sub.DailyWindowStart, "daily"
+	case group.HasWeeklyLimit():
+		limit, used, windowStart, windowKind = *group.WeeklyLimitUSD, sub.WeeklyUsageUSD, sub.WeeklyWindowStart, "weekly"
+	case group.HasMonthlyLimit():
+		limit, used, windowStart, windowKind = *group.MonthlyLimitUSD, sub.MonthlyUsageUSD, sub.MonthlyWindowStart, "monthly"
+	default:
+		return nil
+	}
+
+	cycleStart := fallbackStart
+	if windowStart != nil {
+		candidate := startOfDay(*windowStart)
+		if candidate.After(cycleStart) {
+			cycleStart = candidate
+		}
+	}
+	if cycleStart.After(cycleEnd) {
+		cycleStart = cycleEnd
+	}
+
+	cycle := &SubscriptionUsageCycle{
+		Start:          cycleStart.Format(time.DateOnly),
+		End:            cycleEnd.Format(time.DateOnly),
+		CostUSD:        used,
+		QuotaUSD:       limit,
+		WindowsElapsed: 1,
+		WindowKind:     windowKind,
+	}
+	if limit > 0 {
+		cycle.UsageRatio = used / limit
 	}
 	return cycle
 }

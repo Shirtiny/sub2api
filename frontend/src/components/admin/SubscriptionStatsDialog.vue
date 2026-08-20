@@ -243,7 +243,9 @@
           class="rounded-xl border border-gray-200 p-4 dark:border-dark-700"
         >
           <h4 class="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-200">
-            {{ t('admin.subscriptions.stats.cycleUsage') }}
+            {{ t(series.limited_quota
+              ? 'admin.subscriptions.stats.currentLimitedQuota'
+              : 'admin.subscriptions.stats.cycleUsage') }}
           </h4>
           <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <div>

@@ -3272,6 +3272,7 @@ export default {
         remainingShort: '剩余',
         back: '返回总览',
         cycleUsage: '整个订阅周期',
+        currentLimitedQuota: '当前限时额度',
         cycleCost: '周期累计用量',
         cycleQuota: '周期总额度',
         windowsElapsed: '已经历窗口',

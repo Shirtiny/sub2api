@@ -1872,6 +1872,8 @@ export interface SubscriptionUsageSeries {
   username: string
   group_id: number
   group_name: string
+  /** true 时 cycle 表示当前一次性额度，而不是整个订阅历史 */
+  limited_quota: boolean
   starts_at: string | null
   expires_at: string | null
   daily_limit_usd: number

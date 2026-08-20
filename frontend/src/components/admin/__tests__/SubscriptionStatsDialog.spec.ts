@@ -195,6 +195,7 @@ const seriesFixture: SubscriptionUsageSeries = {
   username: 'poco',
   group_id: 4,
   group_name: 'Latte (拿铁)',
+  limited_quota: false,
   starts_at: '2026-07-06T00:00:00+08:00',
   expires_at: '2026-08-05T00:00:00+08:00',
   daily_limit_usd: 0,
@@ -498,6 +499,16 @@ describe('SubscriptionStatsDialog usage series detail', () => {
     expect(text).toContain('$300.27')
     expect(text).toContain('$1200.00')
     expect(text).toContain('25%')
+  })
+
+  it('labels a limited series as the current quota instead of the whole subscription cycle', async () => {
+    getUsageSeries.mockResolvedValue({ ...seriesFixture, limited_quota: true })
+    const wrapper = await mountDialog()
+    await openDetail(wrapper)
+
+    const text = wrapper.text()
+    expect(text).toContain('admin.subscriptions.stats.currentLimitedQuota')
+    expect(text).not.toContain('admin.subscriptions.stats.cycleUsage')
   })
 
   it('still renders the cycle block when the subscription has zero usage', async () => {

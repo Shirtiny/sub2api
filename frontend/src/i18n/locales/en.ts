@@ -3281,6 +3281,7 @@ export default {
         remainingShort: 'left',
         back: 'Back to Overview',
         cycleUsage: 'Whole Subscription Cycle',
+        currentLimitedQuota: 'Current Limited Quota',
         cycleCost: 'Cycle Usage',
         cycleQuota: 'Cycle Quota',
         windowsElapsed: 'Windows Elapsed',

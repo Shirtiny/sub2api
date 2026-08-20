@@ -254,6 +254,42 @@ func TestGetSubscriptionUsageSeriesDerivesDailyLimitFromWeekly(t *testing.T) {
 	require.True(t, series.DataComplete, "汇总表首日不晚于周期起点即视为完整")
 }
 
+func TestGetSubscriptionUsageSeriesLimitedQuotaUsesCurrentWindowUsage(t *testing.T) {
+	now := time.Now()
+	start := startOfDay(now).Add(-20 * 24 * time.Hour)
+	resetAt := startOfDay(now)
+	group := &Group{ID: 13, Name: "Shaken Tea", MonthlyLimitUSD: float64Ptr(230)}
+
+	repo := &statsUserSubRepoStub{
+		sub: &UserSubscription{
+			ID: 3, UserID: 12, GroupID: 13,
+			StartsAt: start, ExpiresAt: now.Add(10 * 24 * time.Hour),
+			MonthlyWindowStart: &resetAt, MonthlyUsageUSD: 20,
+			EarlyResetEnabled: true, EarlyResetDurationDays: 31,
+			Group: group, User: &User{ID: 12, Username: "tea"},
+		},
+		// 重置当天的日桶无法区分重置前后的请求；历史图保留真实日总量，
+		// 当前限时额度卡则必须读取已清零后重新累计的 MonthlyUsageUSD。
+		dailyRows: []SubscriptionUsageDaily{
+			{BucketDate: start, CostUSD: 230, MonthlyLimitUSD: float64Ptr(230)},
+			{BucketDate: resetAt, CostUSD: 50, MonthlyLimitUSD: float64Ptr(230)},
+		},
+	}
+	svc := &SubscriptionService{userSubRepo: repo}
+
+	series, err := svc.GetSubscriptionUsageSeries(context.Background(), 3)
+	require.NoError(t, err)
+	require.True(t, series.LimitedQuota)
+	require.Len(t, series.Daily, 2, "历史趋势仍应保留重置前用量")
+	require.NotNil(t, series.Cycle)
+	require.Equal(t, resetAt.Format(time.DateOnly), series.Cycle.Start)
+	require.Equal(t, int64(1), series.Cycle.WindowsElapsed)
+	require.Equal(t, "monthly", series.Cycle.WindowKind)
+	require.InDelta(t, 20, series.Cycle.CostUSD, 0.001)
+	require.InDelta(t, 230, series.Cycle.QuotaUSD, 0.001)
+	require.InDelta(t, 20.0/230.0, series.Cycle.UsageRatio, 0.0001)
+}
+
 func TestGetSubscriptionUsageSeriesFlagsIncompleteHistory(t *testing.T) {
 	now := time.Now()
 	start := startOfDay(now).Add(-30 * 24 * time.Hour)
