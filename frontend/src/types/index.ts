@@ -1812,6 +1812,7 @@ export interface SubscriptionStatsRankingItem {
   usage_ratio: number
   window_start: string | null
   window_resets_at: string | null
+  limited_quota?: boolean
   expires_at: string | null
 }
 

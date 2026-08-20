@@ -52,7 +52,7 @@ func (SubscriptionPlan) Fields() []ent.Field {
 			Comment("maximum user concurrency while the purchased plan is active"),
 		field.Bool("early_reset_enabled").
 			Default(false).
-			Comment("whether purchased subscriptions may reset quota before the normal window"),
+			Comment("whether quota is one-time for accumulated subscription validity and may be reset early by deducting days"),
 		field.Int("early_reset_duration_days").
 			Default(1).
 			Positive().

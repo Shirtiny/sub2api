@@ -192,6 +192,28 @@ func TestGetSubscriptionStatsHandlesOneTimeDailyQuota(t *testing.T) {
 		"一次性额度的重置时刻是 expires_at，不是窗口起点 +24h")
 }
 
+func TestGetSubscriptionStatsLimitedQuotaHasNoFutureCapacity(t *testing.T) {
+	now := time.Now()
+	monthlyStart := startOfDay(now).Add(-31 * 24 * time.Hour)
+	group := &Group{ID: 21, Name: "Limited quota", Platform: "openai", MonthlyLimitUSD: float64Ptr(230)}
+
+	repo := &statsUserSubRepoStub{listSubs: []UserSubscription{{
+		ID: 1, UserID: 10, GroupID: 21, Status: SubscriptionStatusActive,
+		StartsAt: now.Add(-31 * 24 * time.Hour), ExpiresAt: now.Add(40 * 24 * time.Hour),
+		MonthlyWindowStart: &monthlyStart, MonthlyUsageUSD: 100,
+		EarlyResetEnabled: true, EarlyResetDurationDays: 31,
+		Group: group, User: &User{ID: 10},
+	}}}
+	svc := &SubscriptionService{userSubRepo: repo}
+
+	stats, err := svc.GetSubscriptionStats(context.Background(), 30, 20)
+	require.NoError(t, err)
+	require.Len(t, stats.Plans, 1)
+	require.InDelta(t, 130, stats.Plans[0].RemainingMonthUSD, 0.001)
+	require.InDelta(t, 130, stats.Totals.HorizonCapacityUSD, 0.001,
+		"限时额度即使窗口已超过 30 天且订阅仍有效，也只有当前剩余额度")
+}
+
 func TestGetSubscriptionUsageSeriesDerivesDailyLimitFromWeekly(t *testing.T) {
 	now := time.Now()
 	start := startOfDay(now).Add(-3 * 24 * time.Hour)

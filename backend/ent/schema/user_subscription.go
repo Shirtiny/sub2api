@@ -70,7 +70,7 @@ func (UserSubscription) Fields() []ent.Field {
 			Default(0),
 		field.Bool("early_reset_enabled").
 			Default(false).
-			Comment("whether the subscriber may reset quota before the normal window"),
+			Comment("whether quota is one-time and may only be refreshed through an explicit early reset"),
 		field.Int("early_reset_duration_days").
 			Default(0).
 			Min(0).

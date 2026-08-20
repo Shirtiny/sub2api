@@ -306,7 +306,7 @@
                       d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                     />
                   </svg>
-                  <span>{{ formatResetTime(row.weekly_window_start, 'weekly') }}</span>
+                  <span>{{ formatUsageWindow(row, row.weekly_window_start, 'weekly') }}</span>
                 </div>
               </div>
 
@@ -343,7 +343,7 @@
                       d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                     />
                   </svg>
-                  <span>{{ formatResetTime(row.monthly_window_start, 'monthly') }}</span>
+                  <span>{{ formatUsageWindow(row, row.monthly_window_start, 'monthly') }}</span>
                 </div>
               </div>
 
@@ -939,6 +939,7 @@ import {
   ratioToneClass,
   type RemainingDurationParts
 } from '@/utils/subscriptionQuota'
+import { subscriptionEffectiveExpiresAt } from '@/utils/subscriptionCustom'
 
 const { t } = useI18n()
 const appStore = useAppStore()
@@ -1712,12 +1713,27 @@ const formatQuotaEndDuration = (parts: RemainingDurationParts): string => {
 }
 
 const formatDailyUsageWindow = (subscription: UserSubscription): string => {
-  if (isOneTimeDailyQuota(subscription) && subscription.expires_at) {
-    const parts = getRemainingDurationParts(subscription.expires_at)
+  const expiresAt = subscriptionEffectiveExpiresAt(subscription)
+  if ((subscription.early_reset_enabled || isOneTimeDailyQuota(subscription)) && expiresAt) {
+    const parts = getRemainingDurationParts(expiresAt)
     return parts ? formatQuotaEndDuration(parts) : t('admin.subscriptions.windowNotActive')
   }
 
   return formatResetTime(subscription.daily_window_start, 'daily')
+}
+
+const formatUsageWindow = (
+  subscription: UserSubscription,
+  windowStart: string | null,
+  period: 'weekly' | 'monthly'
+): string => {
+  const expiresAt = subscriptionEffectiveExpiresAt(subscription)
+  if (subscription.early_reset_enabled && expiresAt) {
+    const parts = getRemainingDurationParts(expiresAt)
+    return parts ? formatQuotaEndDuration(parts) : t('admin.subscriptions.windowNotActive')
+  }
+
+  return formatResetTime(windowStart, period)
 }
 
 // Format reset time based on window start and period type

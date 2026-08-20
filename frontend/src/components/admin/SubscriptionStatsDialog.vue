@@ -185,7 +185,7 @@
                   ></div>
                 </div>
                 <span class="w-32 flex-shrink-0 text-right text-[10px] text-blue-600 dark:text-blue-400">
-                  {{ formatResetCountdown(item.window_resets_at) }}
+                  {{ formatWindowCountdown(item) }}
                 </span>
               </div>
             </button>
@@ -493,6 +493,20 @@ const formatResetCountdown = (resetsAt: string | null): string => {
     return t('admin.subscriptions.resetInHoursMinutes', { hours: parts.hours, minutes: parts.minutes })
   }
   return t('admin.subscriptions.resetInMinutes', { minutes: parts.minutes })
+}
+
+const formatWindowCountdown = (item: SubscriptionStatsRankingItem): string => {
+  if (!item.limited_quota) return formatResetCountdown(item.window_resets_at)
+  if (!item.window_resets_at) return t('admin.subscriptions.stats.pendingReset')
+  const parts = getRemainingDurationParts(item.window_resets_at)
+  if (!parts) return t('admin.subscriptions.stats.pendingReset')
+  if (parts.days > 0) {
+    return t('admin.subscriptions.quotaEndsInDaysHours', { days: parts.days, hours: parts.hours })
+  }
+  if (parts.hours > 0) {
+    return t('admin.subscriptions.quotaEndsInHoursMinutes', { hours: parts.hours, minutes: parts.minutes })
+  }
+  return t('admin.subscriptions.quotaEndsInMinutes', { minutes: parts.minutes })
 }
 
 const isCanceled = (error: unknown): boolean => {

@@ -163,6 +163,7 @@ type SubscriptionRankingItem struct {
 
 	WindowStart    *time.Time `json:"window_start"`
 	WindowResetsAt *time.Time `json:"window_resets_at"`
+	LimitedQuota   bool       `json:"limited_quota"`
 	ExpiresAt      time.Time  `json:"expires_at"`
 }
 
@@ -186,8 +187,8 @@ type SubscriptionStats struct {
 // 口径：
 //   - 窗口已过期的订阅按「已重置」处理，用量计 0、剩余计满额，与计费侧
 //     CheckAndResetWindows 的惰性重置语义一致；
-//   - horizonDays 天可消耗上限 = 当前窗口剩余 + 限额 × 该区间内还会发生的重置次数，
-//     区间终点被 expires_at 截断；
+//   - horizonDays 天可消耗上限 = 当前窗口剩余 + 限额 × 该区间内还会发生的自动重置次数，
+//     区间终点被 expires_at 截断；限时额度没有自动重置；
 //   - 限额取 EffectiveSubscriptionGroup 的结果，即已应用 custom_multiplier 倍率。
 func (s *SubscriptionService) GetSubscriptionStats(ctx context.Context, horizonDays, rankingLimit int) (*SubscriptionStats, error) {
 	if horizonDays <= 0 {
@@ -260,8 +261,8 @@ func (s *SubscriptionService) GetSubscriptionStats(ctx context.Context, horizonD
 			plan.RemainingTodayUSD += remaining
 
 			capacity := remaining
-			// 一次性日额度订阅（starts_at 与 expires_at 相差不超过一天）永不重置。
-			if !sub.HasOneTimeDailyQuota() {
+			// 限时额度与一次性日额度都不会按时钟自动刷新。
+			if !sub.HasLimitedQuota() && !sub.HasOneTimeDailyQuota() {
 				capacity += limit * float64(windowResetsWithin(
 					nextWindowReset(sub.DailyWindowStart, dailyWindowPeriod, now, sub.NeedsDailyReset()),
 					horizonEnd, dailyWindowPeriod))
@@ -286,9 +287,12 @@ func (s *SubscriptionService) GetSubscriptionStats(ctx context.Context, horizonD
 			plan.WeeklyUsedUSD += used
 			plan.RemainingWeekUSD += remaining
 
-			capacity := remaining + limit*float64(windowResetsWithin(
-				nextWindowReset(sub.WeeklyWindowStart, weeklyWindowPeriod, now, sub.NeedsWeeklyReset()),
-				horizonEnd, weeklyWindowPeriod))
+			capacity := remaining
+			if !sub.HasLimitedQuota() {
+				capacity += limit * float64(windowResetsWithin(
+					nextWindowReset(sub.WeeklyWindowStart, weeklyWindowPeriod, now, sub.NeedsWeeklyReset()),
+					horizonEnd, weeklyWindowPeriod))
+			}
 			plan.HorizonCapacityUSD += capacity
 			stats.Totals.HorizonCapacityUSD += capacity
 
@@ -306,9 +310,12 @@ func (s *SubscriptionService) GetSubscriptionStats(ctx context.Context, horizonD
 			plan.MonthlyUsedUSD += used
 			plan.RemainingMonthUSD += remaining
 
-			capacity := remaining + limit*float64(windowResetsWithin(
-				nextWindowReset(sub.MonthlyWindowStart, monthlyWindowPeriod, now, sub.NeedsMonthlyReset()),
-				horizonEnd, monthlyWindowPeriod))
+			capacity := remaining
+			if !sub.HasLimitedQuota() {
+				capacity += limit * float64(windowResetsWithin(
+					nextWindowReset(sub.MonthlyWindowStart, monthlyWindowPeriod, now, sub.NeedsMonthlyReset()),
+					horizonEnd, monthlyWindowPeriod))
+			}
 			plan.HorizonCapacityUSD += capacity
 			stats.Totals.HorizonCapacityUSD += capacity
 		}
@@ -351,6 +358,9 @@ func (s *SubscriptionService) listAllActiveSubscriptions(ctx context.Context) ([
 			subs = append(subs, pageSubs...)
 		}
 	}
+	if err := s.applyCurrentEarlyResetPolicies(ctx, subs, time.Now()); err != nil {
+		return nil, err
+	}
 	return subs, nil
 }
 
@@ -378,6 +388,7 @@ func buildRankingItem(sub *UserSubscription, group *Group, limit, used, remainin
 		LimitUSD:       limit,
 		UsedUSD:        used,
 		RemainingUSD:   remaining,
+		LimitedQuota:   sub.HasLimitedQuota(),
 		ExpiresAt:      sub.ExpiresAt,
 	}
 	if limit > 0 {
@@ -505,6 +516,9 @@ func (s *SubscriptionService) GetSubscriptionUsageSeries(ctx context.Context, su
 	if err != nil {
 		return nil, err
 	}
+	if _, err := s.applyCurrentEarlyResetPolicy(ctx, sub, time.Now()); err != nil {
+		return nil, err
+	}
 	group := EffectiveSubscriptionGroup(sub, sub.Group)
 
 	now := time.Now()
@@ -573,7 +587,7 @@ func (s *SubscriptionService) GetSubscriptionUsageSeries(ctx context.Context, su
 	}
 
 	out.Weekly = buildWeeklyPoints(rows, weeklyAnchor(sub, cycleStart))
-	out.Cycle = buildCycle(group, cycleStart, cycleEnd, totalCost)
+	out.Cycle = buildCycle(group, cycleStart, cycleEnd, totalCost, sub.HasLimitedQuota())
 	return out, nil
 }
 
@@ -676,8 +690,9 @@ func derivedWeeklyLimit(row SubscriptionUsageDaily) (float64, bool) {
 }
 
 // buildCycle 用「限额 × 周期内已经历的窗口数」作为整周期总额度。
+// 限时额度不自动开启新窗口，因此整个有效期只计一个额度窗口。
 // 分组没有任何窗口限额时返回 nil：没有分母的「使用率」不该被渲染成 0%。
-func buildCycle(group *Group, cycleStart, cycleEnd time.Time, totalCost float64) *SubscriptionUsageCycle {
+func buildCycle(group *Group, cycleStart, cycleEnd time.Time, totalCost float64, limitedQuota bool) *SubscriptionUsageCycle {
 	if group == nil {
 		return nil
 	}
@@ -707,6 +722,9 @@ func buildCycle(group *Group, cycleStart, cycleEnd time.Time, totalCost float64)
 	}
 
 	cycle.WindowsElapsed = int64(elapsed/period) + 1
+	if limitedQuota {
+		cycle.WindowsElapsed = 1
+	}
 	cycle.QuotaUSD = limit * float64(cycle.WindowsElapsed)
 	if cycle.QuotaUSD > 0 {
 		cycle.UsageRatio = totalCost / cycle.QuotaUSD

@@ -140,6 +140,28 @@ func TestCalculateProgress_MonthlyUsage(t *testing.T) {
 	assert.Equal(t, 80.0, progress.Monthly.Percentage)
 }
 
+func TestCalculateProgress_LimitedQuotaEndsAtSubscriptionExpiry(t *testing.T) {
+	svc := newTestSubscriptionService()
+	now := time.Now()
+	monthlyStart := now.Add(-45 * 24 * time.Hour)
+	expiresAt := now.Add(20 * 24 * time.Hour)
+
+	sub := &UserSubscription{
+		ID:                     1,
+		ExpiresAt:              expiresAt,
+		MonthlyUsageUSD:        80,
+		MonthlyWindowStart:     ptrTime(monthlyStart),
+		EarlyResetEnabled:      true,
+		EarlyResetDurationDays: 31,
+	}
+	group := &Group{Name: "Limited", MonthlyLimitUSD: ptrFloat64(100)}
+
+	progress := svc.calculateProgress(sub, group)
+
+	require.NotNil(t, progress.Monthly)
+	assert.Equal(t, expiresAt, progress.Monthly.ResetsAt)
+}
+
 func TestCalculateProgress_OverLimit_ClampedTo100Percent(t *testing.T) {
 	svc := newTestSubscriptionService()
 	now := time.Now()

@@ -176,3 +176,89 @@ func TestValidateAndCheckLimits_DailyCardDoesNotAllowSecondQuotaAfterMidnight(t 
 	require.True(t, errors.Is(err, ErrDailyLimitExceeded))
 	require.Equal(t, dailyLimit+0.01, sub.DailyUsageUSD, "热路径不应清零日卡已用额度")
 }
+
+func TestLimitedQuotaDoesNotAutoResetAfterRenewal(t *testing.T) {
+	now := time.Now()
+	windowStart := now.Add(-45 * 24 * time.Hour)
+	monthlyLimit := 230.0
+	sub := &UserSubscription{
+		ID:                     1,
+		UserID:                 10,
+		GroupID:                20,
+		Status:                 SubscriptionStatusActive,
+		StartsAt:               now.Add(-45 * 24 * time.Hour),
+		ExpiresAt:              now.Add(20 * 24 * time.Hour),
+		DailyWindowStart:       &windowStart,
+		WeeklyWindowStart:      &windowStart,
+		MonthlyWindowStart:     &windowStart,
+		DailyUsageUSD:          230,
+		WeeklyUsageUSD:         230,
+		MonthlyUsageUSD:        230.01,
+		EarlyResetEnabled:      true,
+		EarlyResetDurationDays: 31,
+	}
+	group := &Group{
+		SubscriptionType: SubscriptionTypeSubscription,
+		MonthlyLimitUSD:  &monthlyLimit,
+	}
+	svc := NewSubscriptionService(groupRepoNoop{}, userSubRepoNoop{}, nil, nil, nil)
+
+	require.True(t, sub.HasLimitedQuota())
+	require.False(t, sub.NeedsDailyResetAt(now))
+	require.False(t, sub.NeedsWeeklyReset())
+	require.False(t, sub.NeedsMonthlyReset())
+
+	needsMaintenance, err := svc.ValidateAndCheckLimits(sub, group)
+	require.False(t, needsMaintenance, "续费延长到期时间不能触发限时额度自动重置")
+	require.ErrorIs(t, err, ErrMonthlyLimitExceeded)
+	require.Equal(t, 230.01, sub.MonthlyUsageUSD)
+
+	require.Equal(t, sub.ExpiresAt, *sub.DailyResetTime())
+	require.Equal(t, sub.ExpiresAt, *sub.WeeklyResetTime())
+	require.Equal(t, sub.ExpiresAt, *sub.MonthlyResetTime())
+}
+
+func TestRegularQuotaKeepsAutomaticWindowResets(t *testing.T) {
+	now := time.Now()
+	dailyStart := now.Add(-25 * time.Hour)
+	weeklyStart := now.Add(-8 * 24 * time.Hour)
+	monthlyStart := now.Add(-31 * 24 * time.Hour)
+	sub := &UserSubscription{
+		StartsAt:               now.Add(-40 * 24 * time.Hour),
+		ExpiresAt:              now.Add(20 * 24 * time.Hour),
+		DailyWindowStart:       &dailyStart,
+		WeeklyWindowStart:      &weeklyStart,
+		MonthlyWindowStart:     &monthlyStart,
+		EarlyResetEnabled:      false,
+		EarlyResetDurationDays: 0,
+	}
+
+	require.False(t, sub.HasLimitedQuota())
+	require.True(t, sub.NeedsDailyResetAt(now))
+	require.True(t, sub.NeedsWeeklyReset())
+	require.True(t, sub.NeedsMonthlyReset())
+	require.Equal(t, dailyStart.Add(24*time.Hour), *sub.DailyResetTime())
+	require.Equal(t, weeklyStart.Add(7*24*time.Hour), *sub.WeeklyResetTime())
+	require.Equal(t, monthlyStart.Add(30*24*time.Hour), *sub.MonthlyResetTime())
+}
+
+func TestLimitedQuotaIgnoresExpiredCustomEntitlementEnd(t *testing.T) {
+	now := time.Now()
+	windowStart := now.Add(-40 * 24 * time.Hour)
+	customExpiresAt := now.Add(-24 * time.Hour)
+	baseExpiresAt := now.Add(20 * 24 * time.Hour)
+	multiplier := 2
+	sourcePlanID := int64(10)
+	sourceGroupID := int64(20)
+	sub := &UserSubscription{
+		ExpiresAt:           baseExpiresAt,
+		MonthlyWindowStart:  &windowStart,
+		EarlyResetEnabled:   true,
+		CustomMultiplier:    &multiplier,
+		CustomSourcePlanID:  &sourcePlanID,
+		CustomSourceGroupID: &sourceGroupID,
+		CustomExpiresAt:     &customExpiresAt,
+	}
+
+	require.Equal(t, baseExpiresAt, *sub.MonthlyResetTime())
+}

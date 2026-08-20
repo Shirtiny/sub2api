@@ -17,6 +17,27 @@ type earlyResetRepositoryStub struct {
 	getCalls int
 }
 
+type earlyResetExtensionRepositoryStub struct {
+	UserSubscriptionRepository
+	sub *UserSubscription
+}
+
+func (r *earlyResetExtensionRepositoryStub) GetByID(_ context.Context, id int64) (*UserSubscription, error) {
+	if r.sub == nil || r.sub.ID != id {
+		return nil, ErrSubscriptionNotFound
+	}
+	copy := *r.sub
+	return &copy, nil
+}
+
+func (r *earlyResetExtensionRepositoryStub) ExtendExpiry(_ context.Context, id int64, expiresAt time.Time) error {
+	if r.sub == nil || r.sub.ID != id {
+		return ErrSubscriptionNotFound
+	}
+	r.sub.ExpiresAt = expiresAt
+	return nil
+}
+
 func (r *earlyResetRepositoryStub) GetByID(_ context.Context, id int64) (*UserSubscription, error) {
 	r.getCalls++
 	if r.sub == nil || r.sub.ID != id {
@@ -125,6 +146,155 @@ func TestEarlyResetSubscriptionRejectsResetThatWouldExpire(t *testing.T) {
 	_, err := svc.EarlyResetSubscription(context.Background(), 20, 10)
 	require.ErrorIs(t, err, ErrEarlyResetWouldExpire)
 	require.False(t, repo.called)
+}
+
+func TestEarlyResetSubscriptionCanUseRenewedTime(t *testing.T) {
+	ctx := context.Background()
+	client := newPaymentConfigServiceTestClient(t)
+	user, err := client.User.Create().
+		SetEmail("early-reset-renewed-time@example.com").
+		SetPasswordHash("hash").
+		SetUsername("early-reset-renewed-time").
+		Save(ctx)
+	require.NoError(t, err)
+	group, err := client.Group.Create().
+		SetName("early-reset-renewed-time-group").
+		SetStatus(StatusActive).
+		SetPlatform(PlatformOpenAI).
+		SetSubscriptionType(SubscriptionTypeSubscription).
+		Save(ctx)
+	require.NoError(t, err)
+
+	now := time.Now()
+	startsAt := now.AddDate(0, 0, -27)
+	currentTermExpiresAt := startsAt.AddDate(0, 0, 28)
+	futureTermExpiresAt := currentTermExpiresAt.AddDate(0, 0, 28)
+	lastTermExpiresAt := futureTermExpiresAt.AddDate(0, 0, 28)
+	subscription, err := client.UserSubscription.Create().
+		SetUserID(user.ID).
+		SetGroupID(group.ID).
+		SetStatus(SubscriptionStatusActive).
+		SetStartsAt(startsAt).
+		SetExpiresAt(lastTermExpiresAt).
+		SetEarlyResetEnabled(true).
+		SetEarlyResetDurationDays(31).
+		Save(ctx)
+	require.NoError(t, err)
+	current, err := client.SubscriptionEarlyResetEntitlement.Create().
+		SetUserID(user.ID).
+		SetSubscriptionID(subscription.ID).
+		SetEnabled(true).
+		SetDurationDays(31).
+		SetStartsAt(startsAt).
+		SetExpiresAt(currentTermExpiresAt).
+		Save(ctx)
+	require.NoError(t, err)
+	future, err := client.SubscriptionEarlyResetEntitlement.Create().
+		SetUserID(user.ID).
+		SetSubscriptionID(subscription.ID).
+		SetEnabled(true).
+		SetDurationDays(31).
+		SetStartsAt(currentTermExpiresAt).
+		SetExpiresAt(futureTermExpiresAt).
+		Save(ctx)
+	require.NoError(t, err)
+	last, err := client.SubscriptionEarlyResetEntitlement.Create().
+		SetUserID(user.ID).
+		SetSubscriptionID(subscription.ID).
+		SetEnabled(true).
+		SetDurationDays(31).
+		SetStartsAt(futureTermExpiresAt).
+		SetExpiresAt(lastTermExpiresAt).
+		Save(ctx)
+	require.NoError(t, err)
+
+	repo := &earlyResetRepositoryStub{sub: &UserSubscription{
+		ID: subscription.ID, UserID: user.ID, GroupID: group.ID,
+		StartsAt: startsAt, ExpiresAt: lastTermExpiresAt, Status: SubscriptionStatusActive,
+		MonthlyUsageUSD: 230, EarlyResetEnabled: true, EarlyResetDurationDays: 31,
+	}}
+	svc := NewSubscriptionService(nil, repo, nil, client, nil)
+	callStartedAt := time.Now()
+
+	got, err := svc.EarlyResetSubscription(ctx, user.ID, subscription.ID)
+	require.NoError(t, err)
+	callFinishedAt := time.Now()
+	require.Equal(t, lastTermExpiresAt.AddDate(0, 0, -31), got.ExpiresAt)
+	require.Zero(t, got.MonthlyUsageUSD)
+
+	currentAfter, err := client.SubscriptionEarlyResetEntitlement.Get(ctx, current.ID)
+	require.NoError(t, err)
+	require.False(t, currentAfter.ExpiresAt.Before(callStartedAt))
+	require.False(t, currentAfter.ExpiresAt.After(callFinishedAt))
+
+	futureAfter, err := client.SubscriptionEarlyResetEntitlement.Get(ctx, future.ID)
+	require.NoError(t, err)
+	require.True(t, currentTermExpiresAt.AddDate(0, 0, -31).Equal(futureAfter.StartsAt))
+	require.True(t, futureTermExpiresAt.AddDate(0, 0, -31).Equal(futureAfter.ExpiresAt))
+	require.True(t, futureAfter.StartsAt.Before(futureAfter.ExpiresAt))
+	require.True(t, futureAfter.ExpiresAt.Before(callStartedAt), "被完全扣掉的续费期保留为已结束的审计区间")
+
+	lastAfter, err := client.SubscriptionEarlyResetEntitlement.Get(ctx, last.ID)
+	require.NoError(t, err)
+	require.Equal(t, currentAfter.ExpiresAt, lastAfter.StartsAt)
+	require.True(t, lastTermExpiresAt.AddDate(0, 0, -31).Equal(lastAfter.ExpiresAt))
+	require.True(t, lastAfter.StartsAt.Before(lastAfter.ExpiresAt))
+}
+
+func TestExtendSubscriptionKeepsLimitedQuotaPolicyThroughAdjustedExpiry(t *testing.T) {
+	ctx := context.Background()
+	client := newPaymentConfigServiceTestClient(t)
+	user, err := client.User.Create().
+		SetEmail("early-reset-adjustment@example.com").
+		SetPasswordHash("hash").
+		SetUsername("early-reset-adjustment").
+		Save(ctx)
+	require.NoError(t, err)
+	group, err := client.Group.Create().
+		SetName("early-reset-adjustment-group").
+		SetStatus(StatusActive).
+		SetPlatform(PlatformOpenAI).
+		SetSubscriptionType(SubscriptionTypeSubscription).
+		Save(ctx)
+	require.NoError(t, err)
+
+	now := time.Now()
+	originalExpiry := now.AddDate(0, 0, 10)
+	subscription, err := client.UserSubscription.Create().
+		SetUserID(user.ID).
+		SetGroupID(group.ID).
+		SetStatus(SubscriptionStatusActive).
+		SetStartsAt(now.AddDate(0, 0, -10)).
+		SetExpiresAt(originalExpiry).
+		SetEarlyResetEnabled(true).
+		SetEarlyResetDurationDays(31).
+		Save(ctx)
+	require.NoError(t, err)
+	entitlement, err := client.SubscriptionEarlyResetEntitlement.Create().
+		SetUserID(user.ID).
+		SetSubscriptionID(subscription.ID).
+		SetEnabled(true).
+		SetDurationDays(31).
+		SetStartsAt(subscription.StartsAt).
+		SetExpiresAt(originalExpiry).
+		Save(ctx)
+	require.NoError(t, err)
+
+	repo := &earlyResetExtensionRepositoryStub{sub: &UserSubscription{
+		ID: subscription.ID, UserID: user.ID, GroupID: group.ID,
+		StartsAt: subscription.StartsAt, ExpiresAt: originalExpiry, Status: SubscriptionStatusActive,
+		EarlyResetEnabled: true, EarlyResetDurationDays: 31,
+	}}
+	svc := NewSubscriptionService(nil, repo, nil, client, nil)
+
+	got, err := svc.ExtendSubscription(ctx, subscription.ID, 20)
+	require.NoError(t, err)
+	expectedExpiry := originalExpiry.AddDate(0, 0, 20)
+	require.Equal(t, expectedExpiry, got.ExpiresAt)
+
+	entitlementAfter, err := client.SubscriptionEarlyResetEntitlement.Get(ctx, entitlement.ID)
+	require.NoError(t, err)
+	require.True(t, expectedExpiry.Equal(entitlementAfter.ExpiresAt))
 }
 
 func TestEarlyResetSubscriptionShortensActiveVirtualCustomTermOnly(t *testing.T) {
@@ -242,6 +412,16 @@ func TestCurrentEarlyResetTermUsesPurchasedTermInsteadOfLatestSnapshot(t *testin
 	require.NoError(t, err)
 	require.True(t, found)
 	require.False(t, current.Enabled)
+	activeSnapshot := &UserSubscription{
+		ID: subscription.ID, StartsAt: subscription.StartsAt, ExpiresAt: subscription.ExpiresAt,
+		Status: SubscriptionStatusActive, EarlyResetEnabled: true, EarlyResetDurationDays: 5,
+	}
+	policyExpiresAt, err := svc.applyCurrentEarlyResetPolicy(ctx, activeSnapshot, now)
+	require.NoError(t, err)
+	require.False(t, activeSnapshot.EarlyResetEnabled, "下一期的限时额度策略不能提前影响当前普通套餐")
+	require.Zero(t, activeSnapshot.EarlyResetDurationDays)
+	require.NotNil(t, policyExpiresAt)
+	require.True(t, now.Add(time.Hour).Equal(*policyExpiresAt))
 
 	next, found, err := svc.currentEarlyResetTerm(ctx, &UserSubscription{
 		ID: subscription.ID, StartsAt: subscription.StartsAt, ExpiresAt: subscription.ExpiresAt,
@@ -251,9 +431,17 @@ func TestCurrentEarlyResetTermUsesPurchasedTermInsteadOfLatestSnapshot(t *testin
 	require.True(t, found)
 	require.True(t, next.Enabled)
 	require.Equal(t, 5, next.DurationDays)
+	futureSnapshot := &UserSubscription{
+		ID: subscription.ID, StartsAt: subscription.StartsAt, ExpiresAt: subscription.ExpiresAt,
+		Status: SubscriptionStatusActive,
+	}
+	_, err = svc.applyCurrentEarlyResetPolicy(ctx, futureSnapshot, now.Add(2*time.Hour))
+	require.NoError(t, err)
+	require.True(t, futureSnapshot.EarlyResetEnabled, "当前限时额度套餐不能被订阅主记录中的旧策略降级")
+	require.Equal(t, 5, futureSnapshot.EarlyResetDurationDays)
 }
 
-func TestCurrentEarlyResetTermUsesCurrentSourcePlanPolicy(t *testing.T) {
+func TestCurrentEarlyResetTermKeepsPurchasedPolicyAfterPlanEdit(t *testing.T) {
 	ctx := context.Background()
 	client := newPaymentConfigServiceTestClient(t)
 	user, err := client.User.Create().
@@ -315,8 +503,8 @@ func TestCurrentEarlyResetTermUsesCurrentSourcePlanPolicy(t *testing.T) {
 		SetUserID(user.ID).
 		SetSubscriptionID(subscription.ID).
 		SetSourceOrderID(order.ID).
-		SetEnabled(false).
-		SetDurationDays(0).
+		SetEnabled(true).
+		SetDurationDays(2).
 		SetStartsAt(subscription.StartsAt).
 		SetExpiresAt(subscription.ExpiresAt).
 		Save(ctx)
@@ -343,6 +531,6 @@ func TestCurrentEarlyResetTermUsesCurrentSourcePlanPolicy(t *testing.T) {
 	}, now)
 	require.NoError(t, err)
 	require.True(t, found)
-	require.False(t, term.Enabled)
-	require.Zero(t, term.DurationDays)
+	require.True(t, term.Enabled)
+	require.Equal(t, 2, term.DurationDays)
 }

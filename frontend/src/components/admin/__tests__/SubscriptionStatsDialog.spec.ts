@@ -379,6 +379,28 @@ describe('SubscriptionStatsDialog overview', () => {
     expect(row.text()).not.toContain('admin.subscriptions.resetIn')
   })
 
+  it('labels a limited quota countdown as quota expiry', async () => {
+    const limited: SubscriptionStats = {
+      ...statsFixture,
+      ranking: {
+        daily: [],
+        weekly: [
+          {
+            ...statsFixture.ranking.weekly[0],
+            limited_quota: true,
+            window_resets_at: '2099-01-20T00:00:00Z'
+          }
+        ]
+      }
+    }
+    getStats.mockResolvedValue(limited)
+    const wrapper = await mountDialog()
+
+    const row = wrapper.find('[data-test="ranking-row"]')
+    expect(row.text()).toContain('admin.subscriptions.quotaEndsInDaysHours')
+    expect(row.text()).not.toContain('admin.subscriptions.resetInDaysHours')
+  })
+
   it('defaults to the weekly ranking tab and switches to daily on click', async () => {
     const wrapper = await mountDialog()
 

@@ -111,7 +111,7 @@ func (PaymentOrder) Fields() []ent.Field {
 			Comment("plan concurrency snapshot used during subscription fulfillment"),
 		field.Bool("subscription_early_reset_enabled").
 			Default(false).
-			Comment("whether fulfilled subscriptions may use early reset"),
+			Comment("whether fulfilled quota is one-time and may use early reset"),
 		field.Int("subscription_early_reset_duration_days").
 			Default(0).
 			Min(0).

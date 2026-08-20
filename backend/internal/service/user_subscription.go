@@ -177,6 +177,23 @@ func (s *UserSubscription) HasOneTimeDailyQuota() bool {
 	return !s.ExpiresAt.After(s.StartsAt.AddDate(0, 0, 1))
 }
 
+// HasLimitedQuota reports whether quota is a one-time allowance for the
+// subscription term. These plans can only refresh quota through an explicit
+// early reset; extending the expiry must not create another quota allowance.
+func (s *UserSubscription) HasLimitedQuota() bool {
+	return s != nil && s.EarlyResetEnabled
+}
+
+func (s *UserSubscription) quotaExpiresAt() time.Time {
+	if s == nil {
+		return time.Time{}
+	}
+	if s.HasActiveVirtualCustomEntitlementAt(time.Now()) && s.CustomExpiresAt.Before(s.ExpiresAt) {
+		return *s.CustomExpiresAt
+	}
+	return s.ExpiresAt
+}
+
 func (s *UserSubscription) NeedsDailyReset() bool {
 	return s.NeedsDailyResetAt(time.Now())
 }
@@ -185,21 +202,21 @@ func (s *UserSubscription) NeedsDailyResetAt(now time.Time) bool {
 	if s.DailyWindowStart == nil {
 		return false
 	}
-	if s.HasOneTimeDailyQuota() {
+	if s.HasLimitedQuota() || s.HasOneTimeDailyQuota() {
 		return false
 	}
 	return !now.Before(s.DailyWindowStart.Add(24 * time.Hour))
 }
 
 func (s *UserSubscription) NeedsWeeklyReset() bool {
-	if s.WeeklyWindowStart == nil {
+	if s.WeeklyWindowStart == nil || s.HasLimitedQuota() {
 		return false
 	}
 	return time.Since(*s.WeeklyWindowStart) >= 7*24*time.Hour
 }
 
 func (s *UserSubscription) NeedsMonthlyReset() bool {
-	if s.MonthlyWindowStart == nil {
+	if s.MonthlyWindowStart == nil || s.HasLimitedQuota() {
 		return false
 	}
 	return time.Since(*s.MonthlyWindowStart) >= 30*24*time.Hour
@@ -209,8 +226,8 @@ func (s *UserSubscription) DailyResetTime() *time.Time {
 	if s.DailyWindowStart == nil {
 		return nil
 	}
-	if s.HasOneTimeDailyQuota() {
-		t := s.ExpiresAt
+	if s.HasLimitedQuota() || s.HasOneTimeDailyQuota() {
+		t := s.quotaExpiresAt()
 		return &t
 	}
 	t := s.DailyWindowStart.Add(24 * time.Hour)
@@ -221,6 +238,10 @@ func (s *UserSubscription) WeeklyResetTime() *time.Time {
 	if s.WeeklyWindowStart == nil {
 		return nil
 	}
+	if s.HasLimitedQuota() {
+		t := s.quotaExpiresAt()
+		return &t
+	}
 	t := s.WeeklyWindowStart.Add(7 * 24 * time.Hour)
 	return &t
 }
@@ -228,6 +249,10 @@ func (s *UserSubscription) WeeklyResetTime() *time.Time {
 func (s *UserSubscription) MonthlyResetTime() *time.Time {
 	if s.MonthlyWindowStart == nil {
 		return nil
+	}
+	if s.HasLimitedQuota() {
+		t := s.quotaExpiresAt()
+		return &t
 	}
 	t := s.MonthlyWindowStart.Add(30 * 24 * time.Hour)
 	return &t

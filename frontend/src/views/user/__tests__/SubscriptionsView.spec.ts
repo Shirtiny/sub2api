@@ -280,6 +280,47 @@ describe('SubscriptionsView renewal routing', () => {
     expect(wrapper.text()).toContain('2099/01/15')
   })
 
+  it('shows quota expiry instead of an automatic reset for limited quota', async () => {
+    getMySubscriptions.mockResolvedValue([
+      {
+        id: 9,
+        user_id: 7,
+        group_id: 3,
+        status: 'active',
+        starts_at: '2098-12-01T00:00:00Z',
+        expires_at: '2099-01-20T00:00:00Z',
+        early_reset_enabled: true,
+        early_reset_duration_days: 31,
+        daily_usage_usd: 0,
+        weekly_usage_usd: 0,
+        monthly_usage_usd: 100,
+        daily_window_start: null,
+        weekly_window_start: null,
+        monthly_window_start: '2098-12-01T00:00:00Z',
+        group: {
+          id: 3,
+          name: 'Limited',
+          platform: 'openai',
+          description: '',
+          monthly_limit_usd: 230,
+        },
+      },
+    ])
+
+    const wrapper = shallowMount(SubscriptionsView, {
+      global: {
+        stubs: {
+          AppLayout: { template: '<div><slot /></div>' },
+          Icon: true,
+        },
+      },
+    })
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('userSubscriptions.quotaEndsIn')
+    expect(wrapper.text()).not.toContain('userSubscriptions.resetIn')
+  })
+
   it('localizes an early reset error from its backend reason code', async () => {
     getMySubscriptions.mockResolvedValue([
       {

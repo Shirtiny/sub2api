@@ -181,11 +181,7 @@
                 v-if="subscription.weekly_window_start"
                 class="text-xs text-content-tertiary"
               >
-                {{
-                  t('userSubscriptions.resetIn', {
-                    time: formatResetTime(subscription.weekly_window_start, 168)
-                  })
-                }}
+                {{ formatUsageWindow(subscription, subscription.weekly_window_start, 168) }}
               </p>
             </div>
 
@@ -222,11 +218,7 @@
                 v-if="subscription.monthly_window_start"
                 class="text-xs text-content-tertiary"
               >
-                {{
-                  t('userSubscriptions.resetIn', {
-                    time: formatResetTime(subscription.monthly_window_start, 720)
-                  })
-                }}
+                {{ formatUsageWindow(subscription, subscription.monthly_window_start, 720) }}
               </p>
             </div>
 
@@ -457,7 +449,7 @@ function formatDurationParts(parts: RemainingDurationParts): string {
 
 function formatDailyUsageWindow(subscription: UserSubscription): string {
   const effectiveExpiresAt = subscriptionEffectiveExpiresAt(subscription)
-  if (isOneTimeDailyQuota(subscription) && effectiveExpiresAt) {
+  if ((subscription.early_reset_enabled || isOneTimeDailyQuota(subscription)) && effectiveExpiresAt) {
     const parts = getRemainingDurationParts(effectiveExpiresAt)
     if (!parts) return t('userSubscriptions.windowNotActive')
     return t('userSubscriptions.quotaEndsIn', { time: formatDurationParts(parts) })
@@ -465,6 +457,23 @@ function formatDailyUsageWindow(subscription: UserSubscription): string {
 
   return t('userSubscriptions.resetIn', {
     time: formatResetTime(subscription.daily_window_start, 24)
+  })
+}
+
+function formatUsageWindow(
+  subscription: UserSubscription,
+  windowStart: string | null,
+  windowHours: number
+): string {
+  const effectiveExpiresAt = subscriptionEffectiveExpiresAt(subscription)
+  if (subscription.early_reset_enabled && effectiveExpiresAt) {
+    const parts = getRemainingDurationParts(effectiveExpiresAt)
+    if (!parts) return t('userSubscriptions.windowNotActive')
+    return t('userSubscriptions.quotaEndsIn', { time: formatDurationParts(parts) })
+  }
+
+  return t('userSubscriptions.resetIn', {
+    time: formatResetTime(windowStart, windowHours)
   })
 }
 
