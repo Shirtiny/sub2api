@@ -771,7 +771,7 @@ const cafeTypeOptions = computed(() => [
 
 const cafeMembershipLevelOptions = computed(() => [
   { value: '', label: t('admin.promo.cafeCoupon.allLevels') },
-  ...[0, 1, 2, 3].map((level) => ({
+  ...[0, 1, 2, 3, 4, 5].map((level) => ({
     value: level,
     label: t('admin.promo.cafeCoupon.levelLabel', { level })
   }))

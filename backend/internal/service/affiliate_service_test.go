@@ -23,6 +23,10 @@ func TestResolveRebateRatePercent_PerUserOverride(t *testing.T) {
 		svc.resolveRebateRatePercent(context.Background(), &AffiliateSummary{TotalRecharged: 300.01}), 1e-9)
 	require.InDelta(t, AffiliateRebateRateLevel3Default,
 		svc.resolveRebateRatePercent(context.Background(), &AffiliateSummary{TotalRecharged: 1000.01}), 1e-9)
+	require.InDelta(t, AffiliateRebateRateLevel4Default,
+		svc.resolveRebateRatePercent(context.Background(), &AffiliateSummary{TotalRecharged: 3000.01}), 1e-9)
+	require.InDelta(t, AffiliateRebateRateLevel5Default,
+		svc.resolveRebateRatePercent(context.Background(), &AffiliateSummary{TotalRecharged: 5000.01}), 1e-9)
 
 	// exclusive rate set → overrides global
 	rate := 50.0
@@ -144,6 +148,10 @@ func TestCalculateMembershipLevel(t *testing.T) {
 		{"level two", 300.01, 2},
 		{"level three threshold is strict", 1000, 2},
 		{"level three", 1000.01, 3},
+		{"level four threshold is strict", 3000, 3},
+		{"level four", 3000.01, 4},
+		{"level five threshold is strict", 5000, 4},
+		{"level five", 5000.01, 5},
 	}
 	for _, tc := range cases {
 		tc := tc
@@ -152,6 +160,44 @@ func TestCalculateMembershipLevel(t *testing.T) {
 			require.Equal(t, tc.want, CalculateMembershipLevel(tc.total))
 		})
 	}
+}
+
+func TestAffiliateSettingsSupportMembershipLevelsFourAndFive(t *testing.T) {
+	t.Parallel()
+
+	rateCases := []struct {
+		level int
+		key   string
+	}{
+		{4, SettingKeyAffiliateRebateRateLevel4},
+		{5, SettingKeyAffiliateRebateRateLevel5},
+		{6, SettingKeyAffiliateRebateRateLevel5},
+	}
+	for _, tc := range rateCases {
+		key, _ := affiliateRebateRateKeyAndDefault(tc.level)
+		require.Equal(t, tc.key, key)
+	}
+
+	capKey, _ := affiliateRebatePerInviteeCapSettingForLevel(4)
+	require.Equal(t, SettingKeyAffiliateRebatePerInviteeCapLevel4, capKey)
+	capKey, _ = affiliateRebatePerInviteeCapSettingForLevel(5)
+	require.Equal(t, SettingKeyAffiliateRebatePerInviteeCapLevel5, capKey)
+
+	limitKey, _ := affiliateInviteLimitSettingForLevel(4)
+	require.Equal(t, SettingKeyAffiliateInviteLimitLevel4, limitKey)
+	limitKey, _ = affiliateInviteLimitSettingForLevel(5)
+	require.Equal(t, SettingKeyAffiliateInviteLimitLevel5, limitKey)
+}
+
+func TestAffiliateLevelFourAndFiveRatesUseDefaultsWhenKeysAreMissing(t *testing.T) {
+	t.Parallel()
+
+	settingSvc := NewSettingService(affiliateSettingRepoStub{values: map[string]string{
+		SettingKeyAffiliateRebateRate: "0",
+	}}, nil)
+
+	require.Equal(t, AffiliateRebateRateLevel4Default, settingSvc.GetAffiliateRebateRatePercentByLevel(context.Background(), 4))
+	require.Equal(t, AffiliateRebateRateLevel5Default, settingSvc.GetAffiliateRebateRatePercentByLevel(context.Background(), 5))
 }
 
 func TestCalculateSubscriptionRebateDaysByMembership(t *testing.T) {

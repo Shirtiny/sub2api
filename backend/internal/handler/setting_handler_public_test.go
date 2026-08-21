@@ -63,8 +63,12 @@ func TestSettingHandler_GetPublicSettings_ExposesAffiliateMembershipSettings(t *
 			service.SettingKeyAffiliateRebateRateLevel1:          "5",
 			service.SettingKeyAffiliateRebateRateLevel2:          "12",
 			service.SettingKeyAffiliateRebateRateLevel3:          "20",
+			service.SettingKeyAffiliateRebateRateLevel4:          "30",
+			service.SettingKeyAffiliateRebateRateLevel5:          "40",
 			service.SettingKeyAffiliateInviteLimitLevel2:         "3",
+			service.SettingKeyAffiliateInviteLimitLevel5:         "9",
 			service.SettingKeyAffiliateRebatePerInviteeCapLevel0: "300",
+			service.SettingKeyAffiliateRebatePerInviteeCapLevel5: "1500",
 		},
 	}
 	h := NewSettingHandler(service.NewSettingService(repo, &config.Config{}), "test-version")
@@ -85,8 +89,12 @@ func TestSettingHandler_GetPublicSettings_ExposesAffiliateMembershipSettings(t *
 			AffiliateRebateRateLevel1    float64 `json:"affiliate_rebate_rate_level1"`
 			AffiliateRebateRateLevel2    float64 `json:"affiliate_rebate_rate_level2"`
 			AffiliateRebateRateLevel3    float64 `json:"affiliate_rebate_rate_level3"`
+			AffiliateRebateRateLevel4    float64 `json:"affiliate_rebate_rate_level4"`
+			AffiliateRebateRateLevel5    float64 `json:"affiliate_rebate_rate_level5"`
 			AffiliateInviteLimitLevel2   int     `json:"affiliate_invite_limit_level2"`
+			AffiliateInviteLimitLevel5   int     `json:"affiliate_invite_limit_level5"`
 			AffiliateRebatePerInviteeCap float64 `json:"affiliate_rebate_per_invitee_cap"`
+			AffiliateRebateCapLevel5     float64 `json:"affiliate_rebate_per_invitee_cap_level5"`
 		} `json:"data"`
 	}
 	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &resp))
@@ -96,8 +104,12 @@ func TestSettingHandler_GetPublicSettings_ExposesAffiliateMembershipSettings(t *
 	require.Equal(t, 5.0, resp.Data.AffiliateRebateRateLevel1)
 	require.Equal(t, 12.0, resp.Data.AffiliateRebateRateLevel2)
 	require.Equal(t, 20.0, resp.Data.AffiliateRebateRateLevel3)
+	require.Equal(t, 30.0, resp.Data.AffiliateRebateRateLevel4)
+	require.Equal(t, 40.0, resp.Data.AffiliateRebateRateLevel5)
 	require.Equal(t, 3, resp.Data.AffiliateInviteLimitLevel2)
+	require.Equal(t, 9, resp.Data.AffiliateInviteLimitLevel5)
 	require.Equal(t, 300.0, resp.Data.AffiliateRebatePerInviteeCap)
+	require.Equal(t, 1500.0, resp.Data.AffiliateRebateCapLevel5)
 }
 
 func TestSettingHandler_GetPublicSettings_ExposesForceEmailOnThirdPartySignup(t *testing.T) {

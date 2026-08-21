@@ -27,7 +27,12 @@ func TestPromoHandlerCafeCouponAdminValidationAndErrors(t *testing.T) {
 	router := newPromoCafeCouponRouter(service.NewPaymentService(client, nil, nil, nil, nil, nil, nil, nil, nil))
 
 	rec := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodGet, "/admin/promo-codes/cafe-coupons?membership_level=4", nil)
+	req := httptest.NewRequest(http.MethodGet, "/admin/promo-codes/cafe-coupons?membership_level=5", nil)
+	router.ServeHTTP(rec, req)
+	require.Equal(t, http.StatusOK, rec.Code)
+
+	rec = httptest.NewRecorder()
+	req = httptest.NewRequest(http.MethodGet, "/admin/promo-codes/cafe-coupons?membership_level=6", nil)
 	router.ServeHTTP(rec, req)
 	require.Equal(t, http.StatusBadRequest, rec.Code)
 

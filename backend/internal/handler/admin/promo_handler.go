@@ -57,7 +57,7 @@ func (h *PromoHandler) ListCafeCoupons(c *gin.Context) {
 	}
 	if raw := strings.TrimSpace(c.Query("membership_level")); raw != "" {
 		level, err := strconv.Atoi(raw)
-		if err != nil || level < 0 || level > 3 {
+		if err != nil || level < 0 || level > service.MembershipLevelMax {
 			response.BadRequest(c, "Invalid membership level")
 			return
 		}

@@ -71,7 +71,7 @@ func TestCafeCouponAdminListRejectsInvalidFilters(t *testing.T) {
 	ctx := context.Background()
 	client := newCafeCouponTestClient(t)
 	svc := &PaymentService{entClient: client}
-	level := 4
+	level := MembershipLevelMax + 1
 
 	_, _, err := svc.AdminListCafeCoupons(ctx, pagination.PaginationParams{Page: 1, PageSize: 10}, CafeCouponAdminListFilters{Status: "bad"})
 	require.Error(t, err)
@@ -150,6 +150,112 @@ func TestCafeCouponConfigNormalizesTransferabilityAndMonthEndValidity(t *testing
 	require.Equal(t, CafeCouponPeriodWeek, level.Period)
 	require.Equal(t, cafeCouponValidityMonthEnd, level.Validity)
 	require.True(t, level.ValidUntilMonthEnd)
+	require.Len(t, cfg.Levels, MembershipLevelMax+1)
+	require.Contains(t, cfg.Levels, 4)
+	require.Contains(t, cfg.Levels, 5)
+}
+
+func TestDefaultCafeCouponConfigUsesRequestedMembershipBenefits(t *testing.T) {
+	cfg := defaultCafeCouponConfig()
+
+	require.False(t, cfg.Levels[0].Enabled)
+	require.Equal(t, CafeCouponTypeCash, cfg.Levels[1].Type)
+	require.Equal(t, 5.0, cfg.Levels[1].Value)
+	require.Equal(t, CafeCouponTypeCash, cfg.Levels[2].Type)
+	require.Equal(t, 10.0, cfg.Levels[2].Value)
+	require.Equal(t, CafeCouponTypeDiscount, cfg.Levels[3].Type)
+	require.Equal(t, 10.0, cfg.Levels[3].Value)
+	require.Equal(t, CafeCouponTypeDiscount, cfg.Levels[4].Type)
+	require.Equal(t, 15.0, cfg.Levels[4].Value)
+	require.Equal(t, CafeCouponTypeDiscount, cfg.Levels[5].Type)
+	require.Equal(t, 15.0, cfg.Levels[5].Value)
+
+	for level := 1; level < MembershipLevelMax; level++ {
+		require.True(t, cfg.Levels[level].Enabled, "LV.%d should be enabled", level)
+		require.False(t, cfg.Levels[level].Transferable, "LV.%d coupon should be owner-only", level)
+		require.Equal(t, CafeCouponPeriodMonth, cfg.Levels[level].Period)
+		require.Equal(t, cafeCouponValidityMonthEnd, cfg.Levels[level].Validity)
+		require.True(t, cfg.Levels[level].ValidUntilMonthEnd)
+	}
+	require.True(t, cfg.Levels[MembershipLevelMax].Enabled)
+	require.True(t, cfg.Levels[MembershipLevelMax].Transferable)
+	require.Equal(t, CafeCouponPeriodMonth, cfg.Levels[MembershipLevelMax].Period)
+	require.Equal(t, cafeCouponValidityMonthEnd, cfg.Levels[MembershipLevelMax].Validity)
+	require.True(t, cfg.Levels[MembershipLevelMax].ValidUntilMonthEnd)
+}
+
+func TestGetCafeCouponConfigUsesDefaultsOnlyWhenSettingIsMissing(t *testing.T) {
+	svc := &SettingService{settingRepo: cafeCouponSettingsRepo{}}
+
+	cfg, err := svc.GetCafeCouponConfig(context.Background())
+	require.NoError(t, err)
+	require.True(t, cfg.Levels[1].Enabled)
+	require.True(t, cfg.Levels[MembershipLevelMax].Enabled)
+	require.True(t, cfg.Levels[MembershipLevelMax].Transferable)
+}
+
+func TestGetCafeCouponConfigPreservesLegacyMissingLevelsAsDisabled(t *testing.T) {
+	svc := &SettingService{settingRepo: cafeCouponSettingsRepo{
+		SettingKeyCafeCouponConfig: `{"levels":{"0":{"enabled":false,"type":"cash","value":0,"period":"month"},"1":{"enabled":false,"type":"cash","value":0,"period":"month"},"2":{"enabled":false,"type":"cash","value":0,"period":"month"},"3":{"enabled":false,"type":"cash","value":0,"period":"month"}}}`,
+	}}
+
+	cfg, err := svc.GetCafeCouponConfig(context.Background())
+	require.NoError(t, err)
+	for level := 0; level <= MembershipLevelMax; level++ {
+		require.False(t, cfg.Levels[level].Enabled, "LV.%d must preserve the stored disabled state", level)
+	}
+}
+
+func TestGetCafeCouponConfigFailsClosedForInvalidStoredConfig(t *testing.T) {
+	for name, raw := range map[string]string{
+		"empty":                  "",
+		"malformed JSON":         `{"levels":`,
+		"missing levels":         `{}`,
+		"unsupported levels":     `{"levels":{"6":{"enabled":true,"type":"cash","value":100}}}`,
+		"invalid enabled type":   `{"levels":{"1":{"enabled":true,"type":"gift","value":100,"period":"month"}}}`,
+		"invalid enabled period": `{"levels":{"1":{"enabled":true,"type":"cash","value":100,"period":"year"}}}`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			svc := &SettingService{settingRepo: cafeCouponSettingsRepo{SettingKeyCafeCouponConfig: raw}}
+
+			cfg, err := svc.GetCafeCouponConfig(context.Background())
+			require.Error(t, err)
+			require.Len(t, cfg.Levels, MembershipLevelMax+1)
+			for level := 0; level <= MembershipLevelMax; level++ {
+				require.False(t, cfg.Levels[level].Enabled, "LV.%d must remain disabled", level)
+				require.False(t, cfg.Levels[level].Transferable, "LV.%d must remain owner-only", level)
+			}
+		})
+	}
+}
+
+func TestCafeCouponClaimFailsClosedForInvalidStoredConfig(t *testing.T) {
+	ctx := context.Background()
+	client := newCafeCouponTestClient(t)
+	user, err := client.User.Create().
+		SetEmail("invalid-config@example.com").
+		SetPasswordHash("hash").
+		SetUsername("invalid-config").
+		Save(ctx)
+	require.NoError(t, err)
+
+	svc := &PaymentService{
+		entClient: client,
+		userRepo: &mockUserRepo{getByIDUser: &User{
+			ID:             user.ID,
+			Status:         payment.EntityStatusActive,
+			TotalRecharged: MembershipLevel1Threshold + 1,
+		}},
+		configService: &PaymentConfigService{settingRepo: cafeCouponSettingsRepo{
+			SettingKeyCafeCouponConfig: `{"levels":`,
+		}},
+	}
+
+	_, err = svc.ClaimCafeCoupon(ctx, user.ID)
+	require.Error(t, err)
+	count, countErr := client.CafeCoupon.Query().Count(ctx)
+	require.NoError(t, countErr)
+	require.Zero(t, count)
 }
 
 func TestCafeCouponClaimRejectsCurrentPeriodUsedCoupon(t *testing.T) {

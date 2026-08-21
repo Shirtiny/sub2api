@@ -71,6 +71,7 @@ import { adminAPI } from '@/api/admin'
 import type { AdminUser } from '@/types'
 import BaseDialog from '@/components/common/BaseDialog.vue'
 import Select from '@/components/common/Select.vue'
+import { resolveMembershipLevel } from '@/utils/membership'
 
 const props = defineProps<{ show: boolean, user: AdminUser | null }>()
 
@@ -119,13 +120,6 @@ const formatPoints = (value: number) => {
   if (parts.length === 1) return formatted + '.00'
   if (parts[1].length === 1) return formatted + '0'
   return formatted
-}
-
-const resolveMembershipLevel = (points: number) => {
-  if (points > 1000) return 3
-  if (points > 300) return 2
-  if (points > 20) return 1
-  return 0
 }
 
 const membershipLabel = (level: number) => `LV.${level}`

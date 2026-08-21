@@ -767,16 +767,22 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		SettingKeyAffiliateRebateRateLevel1,
 		SettingKeyAffiliateRebateRateLevel2,
 		SettingKeyAffiliateRebateRateLevel3,
+		SettingKeyAffiliateRebateRateLevel4,
+		SettingKeyAffiliateRebateRateLevel5,
 		SettingKeyAffiliateRebatePerInviteeCap,
 		SettingKeyAffiliateRebatePerInviteeCapLevel0,
 		SettingKeyAffiliateRebatePerInviteeCapLevel1,
 		SettingKeyAffiliateRebatePerInviteeCapLevel2,
 		SettingKeyAffiliateRebatePerInviteeCapLevel3,
+		SettingKeyAffiliateRebatePerInviteeCapLevel4,
+		SettingKeyAffiliateRebatePerInviteeCapLevel5,
 		SettingKeyAffiliateInviteLimit,
 		SettingKeyAffiliateInviteLimitLevel0,
 		SettingKeyAffiliateInviteLimitLevel1,
 		SettingKeyAffiliateInviteLimitLevel2,
 		SettingKeyAffiliateInviteLimitLevel3,
+		SettingKeyAffiliateInviteLimitLevel4,
+		SettingKeyAffiliateInviteLimitLevel5,
 		SettingKeyCafeCouponConfig,
 		SettingKeyRiskControlEnabled,
 		SettingKeyAllowUserViewErrorRequests,
@@ -893,15 +899,21 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		AffiliateRebateRateLevel1:          s.getAffiliateRebateRateSetting(settings, SettingKeyAffiliateRebateRateLevel1, "", AffiliateRebateRateLevel1Default),
 		AffiliateRebateRateLevel2:          s.getAffiliateRebateRateSetting(settings, SettingKeyAffiliateRebateRateLevel2, "", AffiliateRebateRateLevel2Default),
 		AffiliateRebateRateLevel3:          s.getAffiliateRebateRateSetting(settings, SettingKeyAffiliateRebateRateLevel3, "", AffiliateRebateRateLevel3Default),
+		AffiliateRebateRateLevel4:          s.getAffiliateRebateRateSetting(settings, SettingKeyAffiliateRebateRateLevel4, "", AffiliateRebateRateLevel4Default),
+		AffiliateRebateRateLevel5:          s.getAffiliateRebateRateSetting(settings, SettingKeyAffiliateRebateRateLevel5, "", AffiliateRebateRateLevel5Default),
 		AffiliateRebatePerInviteeCap:       getAffiliateRebatePerInviteeCapSetting(settings, SettingKeyAffiliateRebatePerInviteeCapLevel0, SettingKeyAffiliateRebatePerInviteeCap, AffiliateRebatePerInviteeCapLevel0Default),
 		AffiliateRebatePerInviteeCapLevel0: getAffiliateRebatePerInviteeCapSetting(settings, SettingKeyAffiliateRebatePerInviteeCapLevel0, SettingKeyAffiliateRebatePerInviteeCap, AffiliateRebatePerInviteeCapLevel0Default),
 		AffiliateRebatePerInviteeCapLevel1: getAffiliateRebatePerInviteeCapSetting(settings, SettingKeyAffiliateRebatePerInviteeCapLevel1, "", AffiliateRebatePerInviteeCapLevel1Default),
 		AffiliateRebatePerInviteeCapLevel2: getAffiliateRebatePerInviteeCapSetting(settings, SettingKeyAffiliateRebatePerInviteeCapLevel2, "", AffiliateRebatePerInviteeCapLevel2Default),
 		AffiliateRebatePerInviteeCapLevel3: getAffiliateRebatePerInviteeCapSetting(settings, SettingKeyAffiliateRebatePerInviteeCapLevel3, "", AffiliateRebatePerInviteeCapLevel3Default),
+		AffiliateRebatePerInviteeCapLevel4: getAffiliateRebatePerInviteeCapSetting(settings, SettingKeyAffiliateRebatePerInviteeCapLevel4, "", AffiliateRebatePerInviteeCapLevel4Default),
+		AffiliateRebatePerInviteeCapLevel5: getAffiliateRebatePerInviteeCapSetting(settings, SettingKeyAffiliateRebatePerInviteeCapLevel5, "", AffiliateRebatePerInviteeCapLevel5Default),
 		AffiliateInviteLimitLevel0:         getAffiliateInviteLimitSetting(settings, SettingKeyAffiliateInviteLimitLevel0, SettingKeyAffiliateInviteLimit, AffiliateInviteLimitLevel0Default),
 		AffiliateInviteLimitLevel1:         getAffiliateInviteLimitSetting(settings, SettingKeyAffiliateInviteLimitLevel1, "", AffiliateInviteLimitLevel1Default),
 		AffiliateInviteLimitLevel2:         getAffiliateInviteLimitSetting(settings, SettingKeyAffiliateInviteLimitLevel2, "", AffiliateInviteLimitLevel2Default),
 		AffiliateInviteLimitLevel3:         getAffiliateInviteLimitSetting(settings, SettingKeyAffiliateInviteLimitLevel3, "", AffiliateInviteLimitLevel3Default),
+		AffiliateInviteLimitLevel4:         getAffiliateInviteLimitSetting(settings, SettingKeyAffiliateInviteLimitLevel4, "", AffiliateInviteLimitLevel4Default),
+		AffiliateInviteLimitLevel5:         getAffiliateInviteLimitSetting(settings, SettingKeyAffiliateInviteLimitLevel5, "", AffiliateInviteLimitLevel5Default),
 
 		RiskControlEnabled: settings[SettingKeyRiskControlEnabled] == "true",
 
@@ -1249,15 +1261,21 @@ type PublicSettingsInjectionPayload struct {
 	AffiliateRebateRateLevel1            float64 `json:"affiliate_rebate_rate_level1"`
 	AffiliateRebateRateLevel2            float64 `json:"affiliate_rebate_rate_level2"`
 	AffiliateRebateRateLevel3            float64 `json:"affiliate_rebate_rate_level3"`
+	AffiliateRebateRateLevel4            float64 `json:"affiliate_rebate_rate_level4"`
+	AffiliateRebateRateLevel5            float64 `json:"affiliate_rebate_rate_level5"`
 	AffiliateRebatePerInviteeCap         float64 `json:"affiliate_rebate_per_invitee_cap"`
 	AffiliateRebatePerInviteeCapLevel0   float64 `json:"affiliate_rebate_per_invitee_cap_level0"`
 	AffiliateRebatePerInviteeCapLevel1   float64 `json:"affiliate_rebate_per_invitee_cap_level1"`
 	AffiliateRebatePerInviteeCapLevel2   float64 `json:"affiliate_rebate_per_invitee_cap_level2"`
 	AffiliateRebatePerInviteeCapLevel3   float64 `json:"affiliate_rebate_per_invitee_cap_level3"`
+	AffiliateRebatePerInviteeCapLevel4   float64 `json:"affiliate_rebate_per_invitee_cap_level4"`
+	AffiliateRebatePerInviteeCapLevel5   float64 `json:"affiliate_rebate_per_invitee_cap_level5"`
 	AffiliateInviteLimitLevel0           int     `json:"affiliate_invite_limit_level0"`
 	AffiliateInviteLimitLevel1           int     `json:"affiliate_invite_limit_level1"`
 	AffiliateInviteLimitLevel2           int     `json:"affiliate_invite_limit_level2"`
 	AffiliateInviteLimitLevel3           int     `json:"affiliate_invite_limit_level3"`
+	AffiliateInviteLimitLevel4           int     `json:"affiliate_invite_limit_level4"`
+	AffiliateInviteLimitLevel5           int     `json:"affiliate_invite_limit_level5"`
 	RiskControlEnabled                   bool    `json:"risk_control_enabled"`
 	AllowUserViewErrorRequests           bool    `json:"allow_user_view_error_requests"`
 }
@@ -1325,15 +1343,21 @@ func (s *SettingService) GetPublicSettingsForInjection(ctx context.Context) (any
 		AffiliateRebateRateLevel1:            settings.AffiliateRebateRateLevel1,
 		AffiliateRebateRateLevel2:            settings.AffiliateRebateRateLevel2,
 		AffiliateRebateRateLevel3:            settings.AffiliateRebateRateLevel3,
+		AffiliateRebateRateLevel4:            settings.AffiliateRebateRateLevel4,
+		AffiliateRebateRateLevel5:            settings.AffiliateRebateRateLevel5,
 		AffiliateRebatePerInviteeCap:         settings.AffiliateRebatePerInviteeCap,
 		AffiliateRebatePerInviteeCapLevel0:   settings.AffiliateRebatePerInviteeCapLevel0,
 		AffiliateRebatePerInviteeCapLevel1:   settings.AffiliateRebatePerInviteeCapLevel1,
 		AffiliateRebatePerInviteeCapLevel2:   settings.AffiliateRebatePerInviteeCapLevel2,
 		AffiliateRebatePerInviteeCapLevel3:   settings.AffiliateRebatePerInviteeCapLevel3,
+		AffiliateRebatePerInviteeCapLevel4:   settings.AffiliateRebatePerInviteeCapLevel4,
+		AffiliateRebatePerInviteeCapLevel5:   settings.AffiliateRebatePerInviteeCapLevel5,
 		AffiliateInviteLimitLevel0:           settings.AffiliateInviteLimitLevel0,
 		AffiliateInviteLimitLevel1:           settings.AffiliateInviteLimitLevel1,
 		AffiliateInviteLimitLevel2:           settings.AffiliateInviteLimitLevel2,
 		AffiliateInviteLimitLevel3:           settings.AffiliateInviteLimitLevel3,
+		AffiliateInviteLimitLevel4:           settings.AffiliateInviteLimitLevel4,
+		AffiliateInviteLimitLevel5:           settings.AffiliateInviteLimitLevel5,
 		RiskControlEnabled:                   settings.RiskControlEnabled,
 		AllowUserViewErrorRequests:           settings.AllowUserViewErrorRequests,
 	}, nil
@@ -1948,11 +1972,15 @@ func (s *SettingService) buildSystemSettingsUpdates(ctx context.Context, setting
 	settings.AffiliateRebateRateLevel1 = clampAffiliateRebateRate(settings.AffiliateRebateRateLevel1)
 	settings.AffiliateRebateRateLevel2 = clampAffiliateRebateRate(settings.AffiliateRebateRateLevel2)
 	settings.AffiliateRebateRateLevel3 = clampAffiliateRebateRate(settings.AffiliateRebateRateLevel3)
+	settings.AffiliateRebateRateLevel4 = clampAffiliateRebateRate(settings.AffiliateRebateRateLevel4)
+	settings.AffiliateRebateRateLevel5 = clampAffiliateRebateRate(settings.AffiliateRebateRateLevel5)
 	updates[SettingKeyAffiliateRebateRate] = strconv.FormatFloat(settings.AffiliateRebateRateLevel0, 'f', 8, 64)
 	updates[SettingKeyAffiliateRebateRateLevel0] = strconv.FormatFloat(settings.AffiliateRebateRateLevel0, 'f', 8, 64)
 	updates[SettingKeyAffiliateRebateRateLevel1] = strconv.FormatFloat(settings.AffiliateRebateRateLevel1, 'f', 8, 64)
 	updates[SettingKeyAffiliateRebateRateLevel2] = strconv.FormatFloat(settings.AffiliateRebateRateLevel2, 'f', 8, 64)
 	updates[SettingKeyAffiliateRebateRateLevel3] = strconv.FormatFloat(settings.AffiliateRebateRateLevel3, 'f', 8, 64)
+	updates[SettingKeyAffiliateRebateRateLevel4] = strconv.FormatFloat(settings.AffiliateRebateRateLevel4, 'f', 8, 64)
+	updates[SettingKeyAffiliateRebateRateLevel5] = strconv.FormatFloat(settings.AffiliateRebateRateLevel5, 'f', 8, 64)
 	if settings.AffiliateRebateFreezeHours < 0 {
 		settings.AffiliateRebateFreezeHours = AffiliateRebateFreezeHoursDefault
 	}
@@ -1971,22 +1999,30 @@ func (s *SettingService) buildSystemSettingsUpdates(ctx context.Context, setting
 	settings.AffiliateRebatePerInviteeCapLevel1 = clampAffiliateRebatePerInviteeCap(settings.AffiliateRebatePerInviteeCapLevel1)
 	settings.AffiliateRebatePerInviteeCapLevel2 = clampAffiliateRebatePerInviteeCap(settings.AffiliateRebatePerInviteeCapLevel2)
 	settings.AffiliateRebatePerInviteeCapLevel3 = clampAffiliateRebatePerInviteeCap(settings.AffiliateRebatePerInviteeCapLevel3)
+	settings.AffiliateRebatePerInviteeCapLevel4 = clampAffiliateRebatePerInviteeCap(settings.AffiliateRebatePerInviteeCapLevel4)
+	settings.AffiliateRebatePerInviteeCapLevel5 = clampAffiliateRebatePerInviteeCap(settings.AffiliateRebatePerInviteeCapLevel5)
 	settings.AffiliateRebatePerInviteeCap = settings.AffiliateRebatePerInviteeCapLevel0
 	updates[SettingKeyAffiliateRebatePerInviteeCap] = strconv.FormatFloat(settings.AffiliateRebatePerInviteeCapLevel0, 'f', 8, 64)
 	updates[SettingKeyAffiliateRebatePerInviteeCapLevel0] = strconv.FormatFloat(settings.AffiliateRebatePerInviteeCapLevel0, 'f', 8, 64)
 	updates[SettingKeyAffiliateRebatePerInviteeCapLevel1] = strconv.FormatFloat(settings.AffiliateRebatePerInviteeCapLevel1, 'f', 8, 64)
 	updates[SettingKeyAffiliateRebatePerInviteeCapLevel2] = strconv.FormatFloat(settings.AffiliateRebatePerInviteeCapLevel2, 'f', 8, 64)
 	updates[SettingKeyAffiliateRebatePerInviteeCapLevel3] = strconv.FormatFloat(settings.AffiliateRebatePerInviteeCapLevel3, 'f', 8, 64)
+	updates[SettingKeyAffiliateRebatePerInviteeCapLevel4] = strconv.FormatFloat(settings.AffiliateRebatePerInviteeCapLevel4, 'f', 8, 64)
+	updates[SettingKeyAffiliateRebatePerInviteeCapLevel5] = strconv.FormatFloat(settings.AffiliateRebatePerInviteeCapLevel5, 'f', 8, 64)
 	settings.AffiliateInviteLimitLevel0 = clampAffiliateInviteLimit(settings.AffiliateInviteLimitLevel0)
 	settings.AffiliateInviteLimitLevel1 = clampAffiliateInviteLimit(settings.AffiliateInviteLimitLevel1)
 	settings.AffiliateInviteLimitLevel2 = clampAffiliateInviteLimit(settings.AffiliateInviteLimitLevel2)
 	settings.AffiliateInviteLimitLevel3 = clampAffiliateInviteLimit(settings.AffiliateInviteLimitLevel3)
+	settings.AffiliateInviteLimitLevel4 = clampAffiliateInviteLimit(settings.AffiliateInviteLimitLevel4)
+	settings.AffiliateInviteLimitLevel5 = clampAffiliateInviteLimit(settings.AffiliateInviteLimitLevel5)
 	settings.AffiliateInviteLimit = settings.AffiliateInviteLimitLevel0
 	updates[SettingKeyAffiliateInviteLimit] = strconv.Itoa(settings.AffiliateInviteLimitLevel0)
 	updates[SettingKeyAffiliateInviteLimitLevel0] = strconv.Itoa(settings.AffiliateInviteLimitLevel0)
 	updates[SettingKeyAffiliateInviteLimitLevel1] = strconv.Itoa(settings.AffiliateInviteLimitLevel1)
 	updates[SettingKeyAffiliateInviteLimitLevel2] = strconv.Itoa(settings.AffiliateInviteLimitLevel2)
 	updates[SettingKeyAffiliateInviteLimitLevel3] = strconv.Itoa(settings.AffiliateInviteLimitLevel3)
+	updates[SettingKeyAffiliateInviteLimitLevel4] = strconv.Itoa(settings.AffiliateInviteLimitLevel4)
+	updates[SettingKeyAffiliateInviteLimitLevel5] = strconv.Itoa(settings.AffiliateInviteLimitLevel5)
 	cafeCouponConfigJSON, err := json.Marshal(normalizeCafeCouponConfig(settings.CafeCouponConfig))
 	if err != nil {
 		return nil, fmt.Errorf("marshal cafe coupon config: %w", err)
@@ -2545,7 +2581,7 @@ func (s *SettingService) GetAffiliateRebateRatePercent(ctx context.Context) floa
 func (s *SettingService) GetAffiliateRebateRatePercentByLevel(ctx context.Context, level int) float64 {
 	key, fallback := affiliateRebateRateKeyAndDefault(level)
 	raw, err := s.settingRepo.GetValue(ctx, key)
-	if err != nil && key != SettingKeyAffiliateRebateRate {
+	if err != nil && level < 4 {
 		raw, err = s.settingRepo.GetValue(ctx, SettingKeyAffiliateRebateRate)
 	}
 	if err != nil {
@@ -2560,7 +2596,11 @@ func (s *SettingService) GetAffiliateRebateRatePercentByLevel(ctx context.Contex
 
 func affiliateRebateRateKeyAndDefault(level int) (string, float64) {
 	switch {
-	case level >= 3:
+	case level >= 5:
+		return SettingKeyAffiliateRebateRateLevel5, AffiliateRebateRateLevel5Default
+	case level == 4:
+		return SettingKeyAffiliateRebateRateLevel4, AffiliateRebateRateLevel4Default
+	case level == 3:
 		return SettingKeyAffiliateRebateRateLevel3, AffiliateRebateRateLevel3Default
 	case level == 2:
 		return SettingKeyAffiliateRebateRateLevel2, AffiliateRebateRateLevel2Default
@@ -2652,7 +2692,11 @@ func (s *SettingService) GetAffiliateInviteLimitByLevel(ctx context.Context, lev
 
 func affiliateInviteLimitSettingForLevel(level int) (string, int) {
 	switch {
-	case level >= 3:
+	case level >= 5:
+		return SettingKeyAffiliateInviteLimitLevel5, AffiliateInviteLimitLevel5Default
+	case level == 4:
+		return SettingKeyAffiliateInviteLimitLevel4, AffiliateInviteLimitLevel4Default
+	case level == 3:
 		return SettingKeyAffiliateInviteLimitLevel3, AffiliateInviteLimitLevel3Default
 	case level == 2:
 		return SettingKeyAffiliateInviteLimitLevel2, AffiliateInviteLimitLevel2Default
@@ -2665,7 +2709,11 @@ func affiliateInviteLimitSettingForLevel(level int) (string, int) {
 
 func affiliateRebatePerInviteeCapSettingForLevel(level int) (string, float64) {
 	switch {
-	case level >= 3:
+	case level >= 5:
+		return SettingKeyAffiliateRebatePerInviteeCapLevel5, AffiliateRebatePerInviteeCapLevel5Default
+	case level == 4:
+		return SettingKeyAffiliateRebatePerInviteeCapLevel4, AffiliateRebatePerInviteeCapLevel4Default
+	case level == 3:
 		return SettingKeyAffiliateRebatePerInviteeCapLevel3, AffiliateRebatePerInviteeCapLevel3Default
 	case level == 2:
 		return SettingKeyAffiliateRebatePerInviteeCapLevel2, AffiliateRebatePerInviteeCapLevel2Default
@@ -2990,6 +3038,8 @@ func (s *SettingService) InitializeDefaultSettings(ctx context.Context) error {
 		SettingKeyAffiliateRebateRateLevel1:                 strconv.FormatFloat(AffiliateRebateRateLevel1Default, 'f', 8, 64),
 		SettingKeyAffiliateRebateRateLevel2:                 strconv.FormatFloat(AffiliateRebateRateLevel2Default, 'f', 8, 64),
 		SettingKeyAffiliateRebateRateLevel3:                 strconv.FormatFloat(AffiliateRebateRateLevel3Default, 'f', 8, 64),
+		SettingKeyAffiliateRebateRateLevel4:                 strconv.FormatFloat(AffiliateRebateRateLevel4Default, 'f', 8, 64),
+		SettingKeyAffiliateRebateRateLevel5:                 strconv.FormatFloat(AffiliateRebateRateLevel5Default, 'f', 8, 64),
 		SettingKeyAffiliateRebateFreezeHours:                strconv.Itoa(AffiliateRebateFreezeHoursDefault),
 		SettingKeyAffiliateRebateDurationDays:               strconv.Itoa(AffiliateRebateDurationDaysDefault),
 		SettingKeyAffiliateRebatePerInviteeCap:              strconv.FormatFloat(AffiliateRebatePerInviteeCapLevel0Default, 'f', 2, 64),
@@ -2997,11 +3047,15 @@ func (s *SettingService) InitializeDefaultSettings(ctx context.Context) error {
 		SettingKeyAffiliateRebatePerInviteeCapLevel1:        strconv.FormatFloat(AffiliateRebatePerInviteeCapLevel1Default, 'f', 2, 64),
 		SettingKeyAffiliateRebatePerInviteeCapLevel2:        strconv.FormatFloat(AffiliateRebatePerInviteeCapLevel2Default, 'f', 2, 64),
 		SettingKeyAffiliateRebatePerInviteeCapLevel3:        strconv.FormatFloat(AffiliateRebatePerInviteeCapLevel3Default, 'f', 2, 64),
+		SettingKeyAffiliateRebatePerInviteeCapLevel4:        strconv.FormatFloat(AffiliateRebatePerInviteeCapLevel4Default, 'f', 2, 64),
+		SettingKeyAffiliateRebatePerInviteeCapLevel5:        strconv.FormatFloat(AffiliateRebatePerInviteeCapLevel5Default, 'f', 2, 64),
 		SettingKeyAffiliateInviteLimit:                      strconv.Itoa(AffiliateInviteLimitLevel0Default),
 		SettingKeyAffiliateInviteLimitLevel0:                strconv.Itoa(AffiliateInviteLimitLevel0Default),
 		SettingKeyAffiliateInviteLimitLevel1:                strconv.Itoa(AffiliateInviteLimitLevel1Default),
 		SettingKeyAffiliateInviteLimitLevel2:                strconv.Itoa(AffiliateInviteLimitLevel2Default),
 		SettingKeyAffiliateInviteLimitLevel3:                strconv.Itoa(AffiliateInviteLimitLevel3Default),
+		SettingKeyAffiliateInviteLimitLevel4:                strconv.Itoa(AffiliateInviteLimitLevel4Default),
+		SettingKeyAffiliateInviteLimitLevel5:                strconv.Itoa(AffiliateInviteLimitLevel5Default),
 		SettingKeyCafeCouponConfig:                          mustMarshalCafeCouponConfig(defaultCafeCouponConfig()),
 		SettingKeyDefaultUserRPMLimit:                       "0",
 		SettingKeyDefaultSubscriptions:                      "[]",
@@ -3218,6 +3272,8 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 	result.AffiliateRebateRateLevel1 = s.getAffiliateRebateRateSetting(settings, SettingKeyAffiliateRebateRateLevel1, "", AffiliateRebateRateLevel1Default)
 	result.AffiliateRebateRateLevel2 = s.getAffiliateRebateRateSetting(settings, SettingKeyAffiliateRebateRateLevel2, "", AffiliateRebateRateLevel2Default)
 	result.AffiliateRebateRateLevel3 = s.getAffiliateRebateRateSetting(settings, SettingKeyAffiliateRebateRateLevel3, "", AffiliateRebateRateLevel3Default)
+	result.AffiliateRebateRateLevel4 = s.getAffiliateRebateRateSetting(settings, SettingKeyAffiliateRebateRateLevel4, "", AffiliateRebateRateLevel4Default)
+	result.AffiliateRebateRateLevel5 = s.getAffiliateRebateRateSetting(settings, SettingKeyAffiliateRebateRateLevel5, "", AffiliateRebateRateLevel5Default)
 	result.AffiliateRebateRate = result.AffiliateRebateRateLevel0
 	if freezeHours, err := strconv.Atoi(settings[SettingKeyAffiliateRebateFreezeHours]); err == nil && freezeHours >= 0 {
 		if freezeHours > AffiliateRebateFreezeHoursMax {
@@ -3235,17 +3291,24 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 	result.AffiliateRebatePerInviteeCapLevel1 = getAffiliateRebatePerInviteeCapSetting(settings, SettingKeyAffiliateRebatePerInviteeCapLevel1, "", AffiliateRebatePerInviteeCapLevel1Default)
 	result.AffiliateRebatePerInviteeCapLevel2 = getAffiliateRebatePerInviteeCapSetting(settings, SettingKeyAffiliateRebatePerInviteeCapLevel2, "", AffiliateRebatePerInviteeCapLevel2Default)
 	result.AffiliateRebatePerInviteeCapLevel3 = getAffiliateRebatePerInviteeCapSetting(settings, SettingKeyAffiliateRebatePerInviteeCapLevel3, "", AffiliateRebatePerInviteeCapLevel3Default)
+	result.AffiliateRebatePerInviteeCapLevel4 = getAffiliateRebatePerInviteeCapSetting(settings, SettingKeyAffiliateRebatePerInviteeCapLevel4, "", AffiliateRebatePerInviteeCapLevel4Default)
+	result.AffiliateRebatePerInviteeCapLevel5 = getAffiliateRebatePerInviteeCapSetting(settings, SettingKeyAffiliateRebatePerInviteeCapLevel5, "", AffiliateRebatePerInviteeCapLevel5Default)
 	result.AffiliateRebatePerInviteeCap = result.AffiliateRebatePerInviteeCapLevel0
 	result.AffiliateInviteLimitLevel0 = getAffiliateInviteLimitSetting(settings, SettingKeyAffiliateInviteLimitLevel0, SettingKeyAffiliateInviteLimit, AffiliateInviteLimitLevel0Default)
 	result.AffiliateInviteLimitLevel1 = getAffiliateInviteLimitSetting(settings, SettingKeyAffiliateInviteLimitLevel1, "", AffiliateInviteLimitLevel1Default)
 	result.AffiliateInviteLimitLevel2 = getAffiliateInviteLimitSetting(settings, SettingKeyAffiliateInviteLimitLevel2, "", AffiliateInviteLimitLevel2Default)
 	result.AffiliateInviteLimitLevel3 = getAffiliateInviteLimitSetting(settings, SettingKeyAffiliateInviteLimitLevel3, "", AffiliateInviteLimitLevel3Default)
+	result.AffiliateInviteLimitLevel4 = getAffiliateInviteLimitSetting(settings, SettingKeyAffiliateInviteLimitLevel4, "", AffiliateInviteLimitLevel4Default)
+	result.AffiliateInviteLimitLevel5 = getAffiliateInviteLimitSetting(settings, SettingKeyAffiliateInviteLimitLevel5, "", AffiliateInviteLimitLevel5Default)
 	result.AffiliateInviteLimit = result.AffiliateInviteLimitLevel0
 	result.CafeCouponConfig = defaultCafeCouponConfig()
-	if raw := strings.TrimSpace(settings[SettingKeyCafeCouponConfig]); raw != "" {
-		var cfg CafeCouponConfig
-		if err := json.Unmarshal([]byte(raw), &cfg); err == nil {
-			result.CafeCouponConfig = normalizeCafeCouponConfig(cfg)
+	if raw, exists := settings[SettingKeyCafeCouponConfig]; exists {
+		cfg, err := parseCafeCouponConfig(raw)
+		if err != nil {
+			slog.Error("[Setting] invalid cafe coupon config; coupons disabled until the configuration is saved again", "error", err)
+			result.CafeCouponConfig = disabledCafeCouponConfig()
+		} else {
+			result.CafeCouponConfig = cfg
 		}
 	}
 	result.DefaultSubscriptions = parseDefaultSubscriptions(settings[SettingKeyDefaultSubscriptions])

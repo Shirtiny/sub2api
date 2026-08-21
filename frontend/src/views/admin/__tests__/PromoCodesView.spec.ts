@@ -269,8 +269,7 @@ describe('admin PromoCodesView Café coupon tab', () => {
 
     const selects = wrapper.findAll('select')
     const membershipOptions = selects[2].findAll('option').map((option) => option.element.value)
-    expect(membershipOptions).toEqual(['', '0', '1', '2', '3'])
-    expect(membershipOptions).not.toContain('4')
+    expect(membershipOptions).toEqual(['', '0', '1', '2', '3', '4', '5'])
 
     await selects[2].setValue('0')
     await flushPromises()

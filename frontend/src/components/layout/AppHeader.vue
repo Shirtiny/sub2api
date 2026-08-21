@@ -393,6 +393,12 @@ import LocaleSwitcher from '@/components/common/LocaleSwitcher.vue'
 import SubscriptionProgressMini from '@/components/common/SubscriptionProgressMini.vue'
 import HelpTooltip from '@/components/common/HelpTooltip.vue'
 import Icon from '@/components/icons/Icon.vue'
+import {
+  getMembershipPointsRemaining,
+  getMembershipProgress,
+  getNextMembershipThreshold,
+  resolveMembershipLevel
+} from '@/utils/membership'
 
 const router = useRouter()
 const route = useRoute()
@@ -425,24 +431,8 @@ const totalRecharged = computed(() => user.value?.total_recharged || 0)
 const membershipLevel = computed(() => user.value?.membership_level ?? resolveMembershipLevel(totalRecharged.value))
 const membershipLabel = computed(() => membershipLevel.value > 0 ? `LV.${membershipLevel.value}` : 'LEVEL')
 const membershipLevelLabel = computed(() => `LV.${membershipLevel.value}`)
-const nextMembershipThreshold = computed(() => {
-  if (membershipLevel.value === 0) return 20
-  if (membershipLevel.value === 1) return 300
-  if (membershipLevel.value === 2) return 1000
-  return null
-})
-const currentMembershipThreshold = computed(() => {
-  if (membershipLevel.value === 1) return 20
-  if (membershipLevel.value === 2) return 300
-  if (membershipLevel.value >= 3) return 1000
-  return 0
-})
-const membershipProgress = computed(() => {
-  const next = nextMembershipThreshold.value
-  if (!next) return 100
-  const current = currentMembershipThreshold.value
-  return Math.max(0, Math.min(((totalRecharged.value - current) / (next - current)) * 100, 100))
-})
+const nextMembershipThreshold = computed(() => getNextMembershipThreshold(membershipLevel.value))
+const membershipProgress = computed(() => getMembershipProgress(totalRecharged.value, membershipLevel.value))
 const membershipProgressWidth = computed(() => `${membershipProgress.value}%`)
 const membershipProgressTitle = computed(() => {
   const next = nextMembershipThreshold.value
@@ -454,16 +444,18 @@ const membershipProgressText = computed(() => {
 const membershipHint = computed(() => {
   const next = nextMembershipThreshold.value
   if (!next) return t('membership.highestHint')
-  const remaining = Math.max(next - totalRecharged.value, 0)
+  const remaining = getMembershipPointsRemaining(totalRecharged.value, membershipLevel.value)
   return t('membership.remainingHint', {
-    amount: remaining.toFixed(2),
+    amount: Number(remaining).toFixed(2),
     level: membershipLevel.value + 1
   })
 })
 const affiliateRebateRate = computed(() => {
   const settings = appStore.cachedPublicSettings
-  if (membershipLevel.value >= 3) return settings?.affiliate_rebate_rate_level3 ?? 25
-  if (membershipLevel.value >= 2) return settings?.affiliate_rebate_rate_level2 ?? 15
+  if (membershipLevel.value >= 5) return settings?.affiliate_rebate_rate_level5 ?? 12
+  if (membershipLevel.value >= 4) return settings?.affiliate_rebate_rate_level4 ?? 10
+  if (membershipLevel.value >= 3) return settings?.affiliate_rebate_rate_level3 ?? 8
+  if (membershipLevel.value >= 2) return settings?.affiliate_rebate_rate_level2 ?? 5
   if (membershipLevel.value >= 1) return settings?.affiliate_rebate_rate_level1 ?? 5
   return settings?.affiliate_rebate_rate_level0 ?? 0
 })
@@ -545,6 +537,8 @@ const showCafeCouponCopiedIcon = computed(() => cafeCouponCopied.value)
 
 const membershipInviteLimit = computed(() => {
   const settings = appStore.cachedPublicSettings
+  if (membershipLevel.value >= 5) return settings?.affiliate_invite_limit_level5 ?? 5
+  if (membershipLevel.value >= 4) return settings?.affiliate_invite_limit_level4 ?? 5
   if (membershipLevel.value >= 3) return settings?.affiliate_invite_limit_level3 ?? 5
   if (membershipLevel.value >= 2) return settings?.affiliate_invite_limit_level2 ?? 3
   if (membershipLevel.value >= 1) return settings?.affiliate_invite_limit_level1 ?? 1
@@ -552,12 +546,15 @@ const membershipInviteLimit = computed(() => {
 })
 const membershipInviteLimitText = computed(() => String(membershipInviteLimit.value))
 function positiveOrDefault(value: number | undefined, fallback: number): number {
-  const n = Number(value || 0)
-  return n > 0 ? n : fallback
+  if (value == null) return fallback
+  const n = Number(value)
+  return Number.isFinite(n) && n >= 0 ? n : fallback
 }
 
 const membershipRebateCap = computed(() => {
   const settings = appStore.cachedPublicSettings
+  if (membershipLevel.value >= 5) return positiveOrDefault(settings?.affiliate_rebate_per_invitee_cap_level5, 1000)
+  if (membershipLevel.value >= 4) return positiveOrDefault(settings?.affiliate_rebate_per_invitee_cap_level4, 1000)
   if (membershipLevel.value >= 3) return positiveOrDefault(settings?.affiliate_rebate_per_invitee_cap_level3, 1000)
   if (membershipLevel.value >= 2) return positiveOrDefault(settings?.affiliate_rebate_per_invitee_cap_level2, 300)
   if (membershipLevel.value >= 1) return positiveOrDefault(settings?.affiliate_rebate_per_invitee_cap_level1, 100)
@@ -744,13 +741,6 @@ function useCafeCouponCode() {
 }
 function highlightBenefitText(text: string) {
   return text.replace(/\d+(?:\.\d+)?%?/g, '<span class="font-bold text-[#7A5AE6] dark:text-[#F5C66B]">$&</span>')
-}
-
-function resolveMembershipLevel(total: number) {
-  if (total > 1000) return 3
-  if (total > 300) return 2
-  if (total > 20) return 1
-  return 0
 }
 
 async function handleLogout() {

@@ -151,6 +151,8 @@ type SystemSettings struct {
 	AffiliateRebateRateLevel1          float64
 	AffiliateRebateRateLevel2          float64
 	AffiliateRebateRateLevel3          float64
+	AffiliateRebateRateLevel4          float64
+	AffiliateRebateRateLevel5          float64
 	AffiliateRebateFreezeHours         int
 	AffiliateRebateDurationDays        int
 	AffiliateRebatePerInviteeCap       float64
@@ -158,11 +160,15 @@ type SystemSettings struct {
 	AffiliateRebatePerInviteeCapLevel1 float64
 	AffiliateRebatePerInviteeCapLevel2 float64
 	AffiliateRebatePerInviteeCapLevel3 float64
+	AffiliateRebatePerInviteeCapLevel4 float64
+	AffiliateRebatePerInviteeCapLevel5 float64
 	AffiliateInviteLimit               int
 	AffiliateInviteLimitLevel0         int
 	AffiliateInviteLimitLevel1         int
 	AffiliateInviteLimitLevel2         int
 	AffiliateInviteLimitLevel3         int
+	AffiliateInviteLimitLevel4         int
+	AffiliateInviteLimitLevel5         int
 	CafeCouponConfig                   CafeCouponConfig
 	DefaultUserRPMLimit                int
 	DefaultSubscriptions               []DefaultSubscriptionSetting
@@ -311,15 +317,21 @@ type PublicSettings struct {
 	AffiliateRebateRateLevel1          float64 `json:"affiliate_rebate_rate_level1"`
 	AffiliateRebateRateLevel2          float64 `json:"affiliate_rebate_rate_level2"`
 	AffiliateRebateRateLevel3          float64 `json:"affiliate_rebate_rate_level3"`
+	AffiliateRebateRateLevel4          float64 `json:"affiliate_rebate_rate_level4"`
+	AffiliateRebateRateLevel5          float64 `json:"affiliate_rebate_rate_level5"`
 	AffiliateRebatePerInviteeCap       float64 `json:"affiliate_rebate_per_invitee_cap"`
 	AffiliateRebatePerInviteeCapLevel0 float64 `json:"affiliate_rebate_per_invitee_cap_level0"`
 	AffiliateRebatePerInviteeCapLevel1 float64 `json:"affiliate_rebate_per_invitee_cap_level1"`
 	AffiliateRebatePerInviteeCapLevel2 float64 `json:"affiliate_rebate_per_invitee_cap_level2"`
 	AffiliateRebatePerInviteeCapLevel3 float64 `json:"affiliate_rebate_per_invitee_cap_level3"`
+	AffiliateRebatePerInviteeCapLevel4 float64 `json:"affiliate_rebate_per_invitee_cap_level4"`
+	AffiliateRebatePerInviteeCapLevel5 float64 `json:"affiliate_rebate_per_invitee_cap_level5"`
 	AffiliateInviteLimitLevel0         int     `json:"affiliate_invite_limit_level0"`
 	AffiliateInviteLimitLevel1         int     `json:"affiliate_invite_limit_level1"`
 	AffiliateInviteLimitLevel2         int     `json:"affiliate_invite_limit_level2"`
 	AffiliateInviteLimitLevel3         int     `json:"affiliate_invite_limit_level3"`
+	AffiliateInviteLimitLevel4         int     `json:"affiliate_invite_limit_level4"`
+	AffiliateInviteLimitLevel5         int     `json:"affiliate_invite_limit_level5"`
 
 	// 风控中心功能开关
 	RiskControlEnabled bool `json:"risk_control_enabled"`

@@ -234,6 +234,8 @@ func (h *SettingHandler) GetSettings(c *gin.Context) {
 		AffiliateRebateRateLevel1:              settings.AffiliateRebateRateLevel1,
 		AffiliateRebateRateLevel2:              settings.AffiliateRebateRateLevel2,
 		AffiliateRebateRateLevel3:              settings.AffiliateRebateRateLevel3,
+		AffiliateRebateRateLevel4:              settings.AffiliateRebateRateLevel4,
+		AffiliateRebateRateLevel5:              settings.AffiliateRebateRateLevel5,
 		AffiliateRebateFreezeHours:             settings.AffiliateRebateFreezeHours,
 		AffiliateRebateDurationDays:            settings.AffiliateRebateDurationDays,
 		AffiliateRebatePerInviteeCap:           settings.AffiliateRebatePerInviteeCap,
@@ -241,11 +243,15 @@ func (h *SettingHandler) GetSettings(c *gin.Context) {
 		AffiliateRebatePerInviteeCapLevel1:     settings.AffiliateRebatePerInviteeCapLevel1,
 		AffiliateRebatePerInviteeCapLevel2:     settings.AffiliateRebatePerInviteeCapLevel2,
 		AffiliateRebatePerInviteeCapLevel3:     settings.AffiliateRebatePerInviteeCapLevel3,
+		AffiliateRebatePerInviteeCapLevel4:     settings.AffiliateRebatePerInviteeCapLevel4,
+		AffiliateRebatePerInviteeCapLevel5:     settings.AffiliateRebatePerInviteeCapLevel5,
 		AffiliateInviteLimit:                   settings.AffiliateInviteLimit,
 		AffiliateInviteLimitLevel0:             settings.AffiliateInviteLimitLevel0,
 		AffiliateInviteLimitLevel1:             settings.AffiliateInviteLimitLevel1,
 		AffiliateInviteLimitLevel2:             settings.AffiliateInviteLimitLevel2,
 		AffiliateInviteLimitLevel3:             settings.AffiliateInviteLimitLevel3,
+		AffiliateInviteLimitLevel4:             settings.AffiliateInviteLimitLevel4,
+		AffiliateInviteLimitLevel5:             settings.AffiliateInviteLimitLevel5,
 		CafeCouponConfig:                       settings.CafeCouponConfig,
 		DefaultUserRPMLimit:                    settings.DefaultUserRPMLimit,
 		DefaultSubscriptions:                   defaultSubscriptions,
@@ -532,6 +538,8 @@ type UpdateSettingsRequest struct {
 	AffiliateRebateRateLevel1                 *float64                          `json:"affiliate_rebate_rate_level1"`
 	AffiliateRebateRateLevel2                 *float64                          `json:"affiliate_rebate_rate_level2"`
 	AffiliateRebateRateLevel3                 *float64                          `json:"affiliate_rebate_rate_level3"`
+	AffiliateRebateRateLevel4                 *float64                          `json:"affiliate_rebate_rate_level4"`
+	AffiliateRebateRateLevel5                 *float64                          `json:"affiliate_rebate_rate_level5"`
 	AffiliateRebateFreezeHours                *int                              `json:"affiliate_rebate_freeze_hours"`
 	AffiliateRebateDurationDays               *int                              `json:"affiliate_rebate_duration_days"`
 	AffiliateRebatePerInviteeCap              *float64                          `json:"affiliate_rebate_per_invitee_cap"`
@@ -539,11 +547,15 @@ type UpdateSettingsRequest struct {
 	AffiliateRebatePerInviteeCapLevel1        *float64                          `json:"affiliate_rebate_per_invitee_cap_level1"`
 	AffiliateRebatePerInviteeCapLevel2        *float64                          `json:"affiliate_rebate_per_invitee_cap_level2"`
 	AffiliateRebatePerInviteeCapLevel3        *float64                          `json:"affiliate_rebate_per_invitee_cap_level3"`
+	AffiliateRebatePerInviteeCapLevel4        *float64                          `json:"affiliate_rebate_per_invitee_cap_level4"`
+	AffiliateRebatePerInviteeCapLevel5        *float64                          `json:"affiliate_rebate_per_invitee_cap_level5"`
 	AffiliateInviteLimit                      *int                              `json:"affiliate_invite_limit"`
 	AffiliateInviteLimitLevel0                *int                              `json:"affiliate_invite_limit_level0"`
 	AffiliateInviteLimitLevel1                *int                              `json:"affiliate_invite_limit_level1"`
 	AffiliateInviteLimitLevel2                *int                              `json:"affiliate_invite_limit_level2"`
 	AffiliateInviteLimitLevel3                *int                              `json:"affiliate_invite_limit_level3"`
+	AffiliateInviteLimitLevel4                *int                              `json:"affiliate_invite_limit_level4"`
+	AffiliateInviteLimitLevel5                *int                              `json:"affiliate_invite_limit_level5"`
 	CafeCouponConfig                          *service.CafeCouponConfig         `json:"cafe_coupon_config"`
 	DefaultUserRPMLimit                       int                               `json:"default_user_rpm_limit"`
 	DefaultSubscriptions                      []dto.DefaultSubscriptionSetting  `json:"default_subscriptions"`
@@ -755,6 +767,16 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		affiliateRebateRateLevel3 = *req.AffiliateRebateRateLevel3
 	}
 	affiliateRebateRateLevel3 = clampAffiliateRate(affiliateRebateRateLevel3)
+	affiliateRebateRateLevel4 := previousSettings.AffiliateRebateRateLevel4
+	if req.AffiliateRebateRateLevel4 != nil {
+		affiliateRebateRateLevel4 = *req.AffiliateRebateRateLevel4
+	}
+	affiliateRebateRateLevel4 = clampAffiliateRate(affiliateRebateRateLevel4)
+	affiliateRebateRateLevel5 := previousSettings.AffiliateRebateRateLevel5
+	if req.AffiliateRebateRateLevel5 != nil {
+		affiliateRebateRateLevel5 = *req.AffiliateRebateRateLevel5
+	}
+	affiliateRebateRateLevel5 = clampAffiliateRate(affiliateRebateRateLevel5)
 	affiliateRebateFreezeHours := previousSettings.AffiliateRebateFreezeHours
 	if req.AffiliateRebateFreezeHours != nil {
 		affiliateRebateFreezeHours = *req.AffiliateRebateFreezeHours
@@ -803,6 +825,16 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		affiliateRebatePerInviteeCapLevel3 = *req.AffiliateRebatePerInviteeCapLevel3
 	}
 	affiliateRebatePerInviteeCapLevel3 = clampAffiliateCap(affiliateRebatePerInviteeCapLevel3)
+	affiliateRebatePerInviteeCapLevel4 := previousSettings.AffiliateRebatePerInviteeCapLevel4
+	if req.AffiliateRebatePerInviteeCapLevel4 != nil {
+		affiliateRebatePerInviteeCapLevel4 = *req.AffiliateRebatePerInviteeCapLevel4
+	}
+	affiliateRebatePerInviteeCapLevel4 = clampAffiliateCap(affiliateRebatePerInviteeCapLevel4)
+	affiliateRebatePerInviteeCapLevel5 := previousSettings.AffiliateRebatePerInviteeCapLevel5
+	if req.AffiliateRebatePerInviteeCapLevel5 != nil {
+		affiliateRebatePerInviteeCapLevel5 = *req.AffiliateRebatePerInviteeCapLevel5
+	}
+	affiliateRebatePerInviteeCapLevel5 = clampAffiliateCap(affiliateRebatePerInviteeCapLevel5)
 	affiliateRebatePerInviteeCap := affiliateRebatePerInviteeCapLevel0
 	clampAffiliateInviteLimit := func(value int) int {
 		if value < 0 {
@@ -835,6 +867,16 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		affiliateInviteLimitLevel3 = *req.AffiliateInviteLimitLevel3
 	}
 	affiliateInviteLimitLevel3 = clampAffiliateInviteLimit(affiliateInviteLimitLevel3)
+	affiliateInviteLimitLevel4 := previousSettings.AffiliateInviteLimitLevel4
+	if req.AffiliateInviteLimitLevel4 != nil {
+		affiliateInviteLimitLevel4 = *req.AffiliateInviteLimitLevel4
+	}
+	affiliateInviteLimitLevel4 = clampAffiliateInviteLimit(affiliateInviteLimitLevel4)
+	affiliateInviteLimitLevel5 := previousSettings.AffiliateInviteLimitLevel5
+	if req.AffiliateInviteLimitLevel5 != nil {
+		affiliateInviteLimitLevel5 = *req.AffiliateInviteLimitLevel5
+	}
+	affiliateInviteLimitLevel5 = clampAffiliateInviteLimit(affiliateInviteLimitLevel5)
 	affiliateInviteLimit := affiliateInviteLimitLevel0
 	// 通用表格配置：兼容旧客户端未传字段时保留当前值。
 	if req.TableDefaultPageSize <= 0 {
@@ -1691,6 +1733,8 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		AffiliateRebateRateLevel1:              affiliateRebateRateLevel1,
 		AffiliateRebateRateLevel2:              affiliateRebateRateLevel2,
 		AffiliateRebateRateLevel3:              affiliateRebateRateLevel3,
+		AffiliateRebateRateLevel4:              affiliateRebateRateLevel4,
+		AffiliateRebateRateLevel5:              affiliateRebateRateLevel5,
 		AffiliateRebateFreezeHours:             affiliateRebateFreezeHours,
 		AffiliateRebateDurationDays:            affiliateRebateDurationDays,
 		AffiliateRebatePerInviteeCap:           affiliateRebatePerInviteeCap,
@@ -1698,11 +1742,15 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		AffiliateRebatePerInviteeCapLevel1:     affiliateRebatePerInviteeCapLevel1,
 		AffiliateRebatePerInviteeCapLevel2:     affiliateRebatePerInviteeCapLevel2,
 		AffiliateRebatePerInviteeCapLevel3:     affiliateRebatePerInviteeCapLevel3,
+		AffiliateRebatePerInviteeCapLevel4:     affiliateRebatePerInviteeCapLevel4,
+		AffiliateRebatePerInviteeCapLevel5:     affiliateRebatePerInviteeCapLevel5,
 		AffiliateInviteLimit:                   affiliateInviteLimit,
 		AffiliateInviteLimitLevel0:             affiliateInviteLimitLevel0,
 		AffiliateInviteLimitLevel1:             affiliateInviteLimitLevel1,
 		AffiliateInviteLimitLevel2:             affiliateInviteLimitLevel2,
 		AffiliateInviteLimitLevel3:             affiliateInviteLimitLevel3,
+		AffiliateInviteLimitLevel4:             affiliateInviteLimitLevel4,
+		AffiliateInviteLimitLevel5:             affiliateInviteLimitLevel5,
 		CafeCouponConfig: func() service.CafeCouponConfig {
 			if req.CafeCouponConfig != nil {
 				return *req.CafeCouponConfig
@@ -2128,6 +2176,8 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		AffiliateRebateRateLevel1:              updatedSettings.AffiliateRebateRateLevel1,
 		AffiliateRebateRateLevel2:              updatedSettings.AffiliateRebateRateLevel2,
 		AffiliateRebateRateLevel3:              updatedSettings.AffiliateRebateRateLevel3,
+		AffiliateRebateRateLevel4:              updatedSettings.AffiliateRebateRateLevel4,
+		AffiliateRebateRateLevel5:              updatedSettings.AffiliateRebateRateLevel5,
 		AffiliateRebateFreezeHours:             updatedSettings.AffiliateRebateFreezeHours,
 		AffiliateRebateDurationDays:            updatedSettings.AffiliateRebateDurationDays,
 		AffiliateRebatePerInviteeCap:           updatedSettings.AffiliateRebatePerInviteeCap,
@@ -2135,11 +2185,15 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		AffiliateRebatePerInviteeCapLevel1:     updatedSettings.AffiliateRebatePerInviteeCapLevel1,
 		AffiliateRebatePerInviteeCapLevel2:     updatedSettings.AffiliateRebatePerInviteeCapLevel2,
 		AffiliateRebatePerInviteeCapLevel3:     updatedSettings.AffiliateRebatePerInviteeCapLevel3,
+		AffiliateRebatePerInviteeCapLevel4:     updatedSettings.AffiliateRebatePerInviteeCapLevel4,
+		AffiliateRebatePerInviteeCapLevel5:     updatedSettings.AffiliateRebatePerInviteeCapLevel5,
 		AffiliateInviteLimit:                   updatedSettings.AffiliateInviteLimit,
 		AffiliateInviteLimitLevel0:             updatedSettings.AffiliateInviteLimitLevel0,
 		AffiliateInviteLimitLevel1:             updatedSettings.AffiliateInviteLimitLevel1,
 		AffiliateInviteLimitLevel2:             updatedSettings.AffiliateInviteLimitLevel2,
 		AffiliateInviteLimitLevel3:             updatedSettings.AffiliateInviteLimitLevel3,
+		AffiliateInviteLimitLevel4:             updatedSettings.AffiliateInviteLimitLevel4,
+		AffiliateInviteLimitLevel5:             updatedSettings.AffiliateInviteLimitLevel5,
 		CafeCouponConfig:                       updatedSettings.CafeCouponConfig,
 		DefaultUserRPMLimit:                    updatedSettings.DefaultUserRPMLimit,
 		DefaultSubscriptions:                   updatedDefaultSubscriptions,
@@ -2583,6 +2637,12 @@ func diffSettings(before *service.SystemSettings, after *service.SystemSettings,
 	if before.AffiliateRebateRateLevel3 != after.AffiliateRebateRateLevel3 {
 		changed = append(changed, "affiliate_rebate_rate_level3")
 	}
+	if before.AffiliateRebateRateLevel4 != after.AffiliateRebateRateLevel4 {
+		changed = append(changed, "affiliate_rebate_rate_level4")
+	}
+	if before.AffiliateRebateRateLevel5 != after.AffiliateRebateRateLevel5 {
+		changed = append(changed, "affiliate_rebate_rate_level5")
+	}
 	if before.AffiliateRebateFreezeHours != after.AffiliateRebateFreezeHours {
 		changed = append(changed, "affiliate_rebate_freeze_hours")
 	}
@@ -2604,6 +2664,12 @@ func diffSettings(before *service.SystemSettings, after *service.SystemSettings,
 	if before.AffiliateRebatePerInviteeCapLevel3 != after.AffiliateRebatePerInviteeCapLevel3 {
 		changed = append(changed, "affiliate_rebate_per_invitee_cap_level3")
 	}
+	if before.AffiliateRebatePerInviteeCapLevel4 != after.AffiliateRebatePerInviteeCapLevel4 {
+		changed = append(changed, "affiliate_rebate_per_invitee_cap_level4")
+	}
+	if before.AffiliateRebatePerInviteeCapLevel5 != after.AffiliateRebatePerInviteeCapLevel5 {
+		changed = append(changed, "affiliate_rebate_per_invitee_cap_level5")
+	}
 	if before.AffiliateInviteLimit != after.AffiliateInviteLimit {
 		changed = append(changed, "affiliate_invite_limit")
 	}
@@ -2618,6 +2684,12 @@ func diffSettings(before *service.SystemSettings, after *service.SystemSettings,
 	}
 	if before.AffiliateInviteLimitLevel3 != after.AffiliateInviteLimitLevel3 {
 		changed = append(changed, "affiliate_invite_limit_level3")
+	}
+	if before.AffiliateInviteLimitLevel4 != after.AffiliateInviteLimitLevel4 {
+		changed = append(changed, "affiliate_invite_limit_level4")
+	}
+	if before.AffiliateInviteLimitLevel5 != after.AffiliateInviteLimitLevel5 {
+		changed = append(changed, "affiliate_invite_limit_level5")
 	}
 	if req.CafeCouponConfig != nil {
 		changed = append(changed, "cafe_coupon_config")

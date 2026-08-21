@@ -280,15 +280,21 @@ export interface PublicSettings {
   affiliate_rebate_rate_level1?: number
   affiliate_rebate_rate_level2?: number
   affiliate_rebate_rate_level3?: number
+  affiliate_rebate_rate_level4?: number
+  affiliate_rebate_rate_level5?: number
   affiliate_rebate_per_invitee_cap?: number
   affiliate_rebate_per_invitee_cap_level0?: number
   affiliate_rebate_per_invitee_cap_level1?: number
   affiliate_rebate_per_invitee_cap_level2?: number
   affiliate_rebate_per_invitee_cap_level3?: number
+  affiliate_rebate_per_invitee_cap_level4?: number
+  affiliate_rebate_per_invitee_cap_level5?: number
   affiliate_invite_limit_level0?: number
   affiliate_invite_limit_level1?: number
   affiliate_invite_limit_level2?: number
   affiliate_invite_limit_level3?: number
+  affiliate_invite_limit_level4?: number
+  affiliate_invite_limit_level5?: number
   allow_user_view_error_requests?: boolean
 }
 
@@ -2072,7 +2078,7 @@ export interface UserAttributeValuesMap {
 export type CafeCouponStatus = 'issued' | 'applied' | 'void'
 export type CafeCouponType = 'cash' | 'discount'
 export type CafeCouponPeriod = 'day' | 'week' | 'month'
-export type CafeCouponMembershipLevel = 0 | 1 | 2 | 3
+export type CafeCouponMembershipLevel = 0 | 1 | 2 | 3 | 4 | 5
 
 export interface PromoCode {
   id: number

@@ -154,12 +154,23 @@ type CafeCouponInfo struct {
 	ValidUntilMonthEnd bool      `json:"valid_until_month_end"`
 }
 
-func defaultCafeCouponConfig() CafeCouponConfig {
-	levels := make(map[int]CafeCouponLevelConfig, 4)
-	for level := 0; level <= 3; level++ {
+func disabledCafeCouponConfig() CafeCouponConfig {
+	levels := make(map[int]CafeCouponLevelConfig, MembershipLevelMax+1)
+	for level := 0; level <= MembershipLevelMax; level++ {
 		levels[level] = CafeCouponLevelConfig{Type: CafeCouponTypeCash, Period: CafeCouponPeriodMonth, Validity: cafeCouponValidityMonthEnd, ValidUntilMonthEnd: true}
 	}
 	return CafeCouponConfig{Levels: levels}
+}
+
+func defaultCafeCouponConfig() CafeCouponConfig {
+	config := disabledCafeCouponConfig()
+	levels := config.Levels
+	levels[1] = CafeCouponLevelConfig{Enabled: true, Type: CafeCouponTypeCash, Value: 5, Period: CafeCouponPeriodMonth, Validity: cafeCouponValidityMonthEnd, ValidUntilMonthEnd: true}
+	levels[2] = CafeCouponLevelConfig{Enabled: true, Type: CafeCouponTypeCash, Value: 10, Period: CafeCouponPeriodMonth, Validity: cafeCouponValidityMonthEnd, ValidUntilMonthEnd: true}
+	levels[3] = CafeCouponLevelConfig{Enabled: true, Type: CafeCouponTypeDiscount, Value: 10, Period: CafeCouponPeriodMonth, Validity: cafeCouponValidityMonthEnd, ValidUntilMonthEnd: true}
+	levels[4] = CafeCouponLevelConfig{Enabled: true, Type: CafeCouponTypeDiscount, Value: 15, Period: CafeCouponPeriodMonth, Validity: cafeCouponValidityMonthEnd, ValidUntilMonthEnd: true}
+	levels[5] = CafeCouponLevelConfig{Enabled: true, Type: CafeCouponTypeDiscount, Value: 15, Period: CafeCouponPeriodMonth, Transferable: true, Validity: cafeCouponValidityMonthEnd, ValidUntilMonthEnd: true}
+	return config
 }
 
 func normalizeCafeCouponPeriod(raw string) string {
@@ -207,16 +218,57 @@ func normalizeCafeCouponLevelConfig(cfg CafeCouponLevelConfig) CafeCouponLevelCo
 }
 
 func normalizeCafeCouponConfig(cfg CafeCouponConfig) CafeCouponConfig {
-	out := defaultCafeCouponConfig()
+	out := disabledCafeCouponConfig()
 	if cfg.Levels == nil {
 		return out
 	}
-	for level := 0; level <= 3; level++ {
+	for level := 0; level <= MembershipLevelMax; level++ {
 		if item, ok := cfg.Levels[level]; ok {
 			out.Levels[level] = normalizeCafeCouponLevelConfig(item)
 		}
 	}
 	return out
+}
+
+func parseCafeCouponConfig(raw string) (CafeCouponConfig, error) {
+	disabled := disabledCafeCouponConfig()
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return disabled, errors.New("cafe coupon config is empty")
+	}
+
+	var cfg CafeCouponConfig
+	if err := json.Unmarshal([]byte(raw), &cfg); err != nil {
+		return disabled, fmt.Errorf("parse cafe coupon config: %w", err)
+	}
+	if len(cfg.Levels) == 0 {
+		return disabled, errors.New("cafe coupon config has no levels")
+	}
+	foundSupportedLevel := false
+	for level := 0; level <= MembershipLevelMax; level++ {
+		item, ok := cfg.Levels[level]
+		if !ok {
+			continue
+		}
+		foundSupportedLevel = true
+		if !item.Enabled {
+			continue
+		}
+		switch strings.ToLower(strings.TrimSpace(item.Type)) {
+		case CafeCouponTypeCash, CafeCouponTypeDiscount:
+		default:
+			return disabled, fmt.Errorf("cafe coupon config has invalid type for level %d", level)
+		}
+		switch strings.ToLower(strings.TrimSpace(item.Period)) {
+		case CafeCouponPeriodDay, CafeCouponPeriodWeek, CafeCouponPeriodMonth:
+		default:
+			return disabled, fmt.Errorf("cafe coupon config has invalid period for level %d", level)
+		}
+	}
+	if !foundSupportedLevel {
+		return disabled, errors.New("cafe coupon config has no supported levels")
+	}
+	return normalizeCafeCouponConfig(cfg), nil
 }
 
 func (s *SettingService) GetCafeCouponConfig(ctx context.Context) (CafeCouponConfig, error) {
@@ -228,16 +280,9 @@ func (s *SettingService) GetCafeCouponConfig(ctx context.Context) (CafeCouponCon
 		if errors.Is(err, ErrSettingNotFound) {
 			return defaultCafeCouponConfig(), nil
 		}
-		return defaultCafeCouponConfig(), fmt.Errorf("get cafe coupon config: %w", err)
+		return disabledCafeCouponConfig(), fmt.Errorf("get cafe coupon config: %w", err)
 	}
-	if strings.TrimSpace(raw) == "" {
-		return defaultCafeCouponConfig(), nil
-	}
-	var cfg CafeCouponConfig
-	if err := json.Unmarshal([]byte(raw), &cfg); err != nil {
-		return defaultCafeCouponConfig(), nil
-	}
-	return normalizeCafeCouponConfig(cfg), nil
+	return parseCafeCouponConfig(raw)
 }
 
 func (s *SettingService) SetCafeCouponConfig(ctx context.Context, cfg CafeCouponConfig) error {
@@ -253,8 +298,8 @@ func (s *SettingService) cafeCouponLevelConfig(ctx context.Context, level int) (
 	if level < 0 {
 		level = 0
 	}
-	if level > 3 {
-		level = 3
+	if level > MembershipLevelMax {
+		level = MembershipLevelMax
 	}
 	cfg, err := s.GetCafeCouponConfig(ctx)
 	if err != nil {
@@ -532,7 +577,7 @@ func validateAdminCafeCouponListFilters(filters CafeCouponAdminListFilters) (Caf
 	if filters.CouponType != "" && filters.CouponType != CafeCouponTypeCash && filters.CouponType != CafeCouponTypeDiscount {
 		return filters, infraerrors.BadRequest("CAFE_COUPON_TYPE_INVALID", "invalid cafe coupon type")
 	}
-	if filters.MembershipLevel != nil && (*filters.MembershipLevel < 0 || *filters.MembershipLevel > 3) {
+	if filters.MembershipLevel != nil && (*filters.MembershipLevel < 0 || *filters.MembershipLevel > MembershipLevelMax) {
 		return filters, infraerrors.BadRequest("CAFE_COUPON_MEMBERSHIP_LEVEL_INVALID", "invalid membership level")
 	}
 	return filters, nil

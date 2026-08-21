@@ -112,8 +112,12 @@ func TestSettingService_GetPublicSettings_ExposesAffiliateRebateRates(t *testing
 			SettingKeyAffiliateRebateRateLevel1:          "5",
 			SettingKeyAffiliateRebateRateLevel2:          "12",
 			SettingKeyAffiliateRebateRateLevel3:          "20",
+			SettingKeyAffiliateRebateRateLevel4:          "30",
+			SettingKeyAffiliateRebateRateLevel5:          "40",
 			SettingKeyAffiliateInviteLimitLevel2:         "3",
+			SettingKeyAffiliateInviteLimitLevel5:         "9",
 			SettingKeyAffiliateRebatePerInviteeCapLevel2: "300",
+			SettingKeyAffiliateRebatePerInviteeCapLevel5: "1500",
 		},
 	}
 	svc := NewSettingService(repo, &config.Config{})
@@ -125,8 +129,12 @@ func TestSettingService_GetPublicSettings_ExposesAffiliateRebateRates(t *testing
 	require.Equal(t, 5.0, settings.AffiliateRebateRateLevel1)
 	require.Equal(t, 12.0, settings.AffiliateRebateRateLevel2)
 	require.Equal(t, 20.0, settings.AffiliateRebateRateLevel3)
+	require.Equal(t, 30.0, settings.AffiliateRebateRateLevel4)
+	require.Equal(t, 40.0, settings.AffiliateRebateRateLevel5)
 	require.Equal(t, 3, settings.AffiliateInviteLimitLevel2)
+	require.Equal(t, 9, settings.AffiliateInviteLimitLevel5)
 	require.Equal(t, 300.0, settings.AffiliateRebatePerInviteeCapLevel2)
+	require.Equal(t, 1500.0, settings.AffiliateRebatePerInviteeCapLevel5)
 }
 
 func TestSettingService_GetPublicSettings_EnablesPaymentInDevAutoSuccessMode(t *testing.T) {

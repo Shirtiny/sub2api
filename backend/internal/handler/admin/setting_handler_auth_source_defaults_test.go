@@ -627,11 +627,17 @@ func TestSettingHandler_UpdateSettings_RestoresAffiliateCapLevels(t *testing.T) 
 
 	body := map[string]any{
 		"promo_code_enabled":                      true,
+		"affiliate_rebate_rate_level4":            35,
+		"affiliate_rebate_rate_level5":            45,
 		"affiliate_rebate_per_invitee_cap":        0,
 		"affiliate_rebate_per_invitee_cap_level0": 0,
 		"affiliate_rebate_per_invitee_cap_level1": 100,
 		"affiliate_rebate_per_invitee_cap_level2": 300,
 		"affiliate_rebate_per_invitee_cap_level3": 1000,
+		"affiliate_rebate_per_invitee_cap_level4": 1500,
+		"affiliate_rebate_per_invitee_cap_level5": 2500,
+		"affiliate_invite_limit_level4":           8,
+		"affiliate_invite_limit_level5":           13,
 	}
 	rawBody, err := json.Marshal(body)
 	require.NoError(t, err)
@@ -648,6 +654,12 @@ func TestSettingHandler_UpdateSettings_RestoresAffiliateCapLevels(t *testing.T) 
 	require.Equal(t, "100.00000000", repo.values[service.SettingKeyAffiliateRebatePerInviteeCapLevel1])
 	require.Equal(t, "300.00000000", repo.values[service.SettingKeyAffiliateRebatePerInviteeCapLevel2])
 	require.Equal(t, "1000.00000000", repo.values[service.SettingKeyAffiliateRebatePerInviteeCapLevel3])
+	require.Equal(t, "1500.00000000", repo.values[service.SettingKeyAffiliateRebatePerInviteeCapLevel4])
+	require.Equal(t, "2500.00000000", repo.values[service.SettingKeyAffiliateRebatePerInviteeCapLevel5])
+	require.Equal(t, "35.00000000", repo.values[service.SettingKeyAffiliateRebateRateLevel4])
+	require.Equal(t, "45.00000000", repo.values[service.SettingKeyAffiliateRebateRateLevel5])
+	require.Equal(t, "8", repo.values[service.SettingKeyAffiliateInviteLimitLevel4])
+	require.Equal(t, "13", repo.values[service.SettingKeyAffiliateInviteLimitLevel5])
 
 	var putResp response.Response
 	require.NoError(t, json.Unmarshal(putRec.Body.Bytes(), &putResp))
@@ -657,6 +669,12 @@ func TestSettingHandler_UpdateSettings_RestoresAffiliateCapLevels(t *testing.T) 
 	require.Equal(t, float64(100), putData["affiliate_rebate_per_invitee_cap_level1"])
 	require.Equal(t, float64(300), putData["affiliate_rebate_per_invitee_cap_level2"])
 	require.Equal(t, float64(1000), putData["affiliate_rebate_per_invitee_cap_level3"])
+	require.Equal(t, float64(1500), putData["affiliate_rebate_per_invitee_cap_level4"])
+	require.Equal(t, float64(2500), putData["affiliate_rebate_per_invitee_cap_level5"])
+	require.Equal(t, float64(35), putData["affiliate_rebate_rate_level4"])
+	require.Equal(t, float64(45), putData["affiliate_rebate_rate_level5"])
+	require.Equal(t, float64(8), putData["affiliate_invite_limit_level4"])
+	require.Equal(t, float64(13), putData["affiliate_invite_limit_level5"])
 
 	getRec := httptest.NewRecorder()
 	getCtx, _ := gin.CreateTestContext(getRec)
@@ -673,6 +691,12 @@ func TestSettingHandler_UpdateSettings_RestoresAffiliateCapLevels(t *testing.T) 
 	require.Equal(t, float64(100), getData["affiliate_rebate_per_invitee_cap_level1"])
 	require.Equal(t, float64(300), getData["affiliate_rebate_per_invitee_cap_level2"])
 	require.Equal(t, float64(1000), getData["affiliate_rebate_per_invitee_cap_level3"])
+	require.Equal(t, float64(1500), getData["affiliate_rebate_per_invitee_cap_level4"])
+	require.Equal(t, float64(2500), getData["affiliate_rebate_per_invitee_cap_level5"])
+	require.Equal(t, float64(35), getData["affiliate_rebate_rate_level4"])
+	require.Equal(t, float64(45), getData["affiliate_rebate_rate_level5"])
+	require.Equal(t, float64(8), getData["affiliate_invite_limit_level4"])
+	require.Equal(t, float64(13), getData["affiliate_invite_limit_level5"])
 }
 
 func TestSettingHandler_UpdateSettings_PersistsAffiliateCapLevelsFromFullSettingsPayload(t *testing.T) {

@@ -27,8 +27,10 @@ const (
 	AffiliateRebateRateDefault                = 0.0
 	AffiliateRebateRateLevel0Default          = 0.0
 	AffiliateRebateRateLevel1Default          = 5.0
-	AffiliateRebateRateLevel2Default          = 15.0
-	AffiliateRebateRateLevel3Default          = 25.0
+	AffiliateRebateRateLevel2Default          = 5.0
+	AffiliateRebateRateLevel3Default          = 8.0
+	AffiliateRebateRateLevel4Default          = 10.0
+	AffiliateRebateRateLevel5Default          = 12.0
 	AffiliateRebateRateMin                    = 0.0
 	AffiliateRebateRateMax                    = 100.0
 	AffiliateEnabledDefault                   = false  // 邀请返利总开关默认关闭
@@ -41,15 +43,22 @@ const (
 	AffiliateRebatePerInviteeCapLevel1Default = 100.0  // LV.1 单人返利上限
 	AffiliateRebatePerInviteeCapLevel2Default = 300.0  // LV.2 单人返利上限
 	AffiliateRebatePerInviteeCapLevel3Default = 1000.0 // LV.3 单人返利上限
-	AffiliateInviteLimitDefault               = 0      // 普通用户默认不能邀请
+	AffiliateRebatePerInviteeCapLevel4Default = AffiliateRebatePerInviteeCapLevel3Default
+	AffiliateRebatePerInviteeCapLevel5Default = AffiliateRebatePerInviteeCapLevel3Default
+	AffiliateInviteLimitDefault               = 0 // 普通用户默认不能邀请
 	AffiliateInviteLimitLevel0Default         = 0
 	AffiliateInviteLimitLevel1Default         = 1
 	AffiliateInviteLimitLevel2Default         = 3
 	AffiliateInviteLimitLevel3Default         = 5
+	AffiliateInviteLimitLevel4Default         = AffiliateInviteLimitLevel3Default
+	AffiliateInviteLimitLevel5Default         = AffiliateInviteLimitLevel3Default
 	AffiliateInviteLimitMax                   = 100000
+	MembershipLevelMax                        = 5
 	MembershipLevel1Threshold                 = 20.0
 	MembershipLevel2Threshold                 = 300.0
 	MembershipLevel3Threshold                 = 1000.0
+	MembershipLevel4Threshold                 = 3000.0
+	MembershipLevel5Threshold                 = 5000.0
 	AffiliateSubscriptionRebateMinDays        = 29
 	AffiliateSubscriptionRebateDaysBase       = 1
 	AffiliateSubscriptionRebateDaysL2         = 3
@@ -158,6 +167,8 @@ const (
 	SettingKeyAffiliateRebateRateLevel1          = "affiliate_rebate_rate_level1"            // 1级会员邀请返利比例
 	SettingKeyAffiliateRebateRateLevel2          = "affiliate_rebate_rate_level2"            // 2级会员邀请返利比例
 	SettingKeyAffiliateRebateRateLevel3          = "affiliate_rebate_rate_level3"            // 3级会员邀请返利比例
+	SettingKeyAffiliateRebateRateLevel4          = "affiliate_rebate_rate_level4"            // 4级会员邀请返利比例
+	SettingKeyAffiliateRebateRateLevel5          = "affiliate_rebate_rate_level5"            // 5级会员邀请返利比例
 	SettingKeyAffiliateRebateFreezeHours         = "affiliate_rebate_freeze_hours"           // 返利冻结期（小时，0=不冻结）
 	SettingKeyAffiliateRebateDurationDays        = "affiliate_rebate_duration_days"          // 返利有效期（天，0=永久）
 	SettingKeyAffiliateRebatePerInviteeCap       = "affiliate_rebate_per_invitee_cap"        // 兼容旧版：普通用户单人返利上限
@@ -165,11 +176,15 @@ const (
 	SettingKeyAffiliateRebatePerInviteeCapLevel1 = "affiliate_rebate_per_invitee_cap_level1" // 1级会员单人返利上限
 	SettingKeyAffiliateRebatePerInviteeCapLevel2 = "affiliate_rebate_per_invitee_cap_level2" // 2级会员单人返利上限
 	SettingKeyAffiliateRebatePerInviteeCapLevel3 = "affiliate_rebate_per_invitee_cap_level3" // 3级会员单人返利上限
+	SettingKeyAffiliateRebatePerInviteeCapLevel4 = "affiliate_rebate_per_invitee_cap_level4" // 4级会员单人返利上限
+	SettingKeyAffiliateRebatePerInviteeCapLevel5 = "affiliate_rebate_per_invitee_cap_level5" // 5级会员单人返利上限
 	SettingKeyAffiliateInviteLimit               = "affiliate_invite_limit"                  // 兼容旧版：普通用户可邀请人数上限
 	SettingKeyAffiliateInviteLimitLevel0         = "affiliate_invite_limit_level0"           // 普通用户可邀请人数上限
 	SettingKeyAffiliateInviteLimitLevel1         = "affiliate_invite_limit_level1"           // 1级会员可邀请人数上限
 	SettingKeyAffiliateInviteLimitLevel2         = "affiliate_invite_limit_level2"           // 2级会员可邀请人数上限
 	SettingKeyAffiliateInviteLimitLevel3         = "affiliate_invite_limit_level3"           // 3级会员可邀请人数上限
+	SettingKeyAffiliateInviteLimitLevel4         = "affiliate_invite_limit_level4"           // 4级会员可邀请人数上限
+	SettingKeyAffiliateInviteLimitLevel5         = "affiliate_invite_limit_level5"           // 5级会员可邀请人数上限
 	SettingKeyCafeCouponConfig                   = "cafe_coupon_config"                      // 咖啡券会员权益配置（JSON）
 	SettingKeyRiskControlEnabled                 = "risk_control_enabled"                    // 是否启用风控中心入口与审计链路
 	SettingKeyContentModerationConfig            = "content_moderation_config"               // 内容审计配置（JSON）

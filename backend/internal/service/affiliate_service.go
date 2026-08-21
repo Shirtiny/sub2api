@@ -545,6 +545,10 @@ func (s *AffiliateService) ResolveSubscriptionInviteRebate(ctx context.Context, 
 
 func CalculateMembershipLevel(totalRecharged float64) int {
 	switch {
+	case totalRecharged > MembershipLevel5Threshold:
+		return 5
+	case totalRecharged > MembershipLevel4Threshold:
+		return 4
 	case totalRecharged > MembershipLevel3Threshold:
 		return 3
 	case totalRecharged > MembershipLevel2Threshold:
@@ -700,7 +704,11 @@ func (s *AffiliateService) affiliateRebatePerInviteeCap(ctx context.Context, inv
 
 func defaultAffiliateRebatePerInviteeCapByMembership(level int) float64 {
 	switch {
-	case level >= 3:
+	case level >= 5:
+		return AffiliateRebatePerInviteeCapLevel5Default
+	case level == 4:
+		return AffiliateRebatePerInviteeCapLevel4Default
+	case level == 3:
 		return AffiliateRebatePerInviteeCapLevel3Default
 	case level == 2:
 		return AffiliateRebatePerInviteeCapLevel2Default
@@ -725,7 +733,11 @@ func (s *AffiliateService) resolveInviteLimit(ctx context.Context, inviter *Affi
 // otherwise the membership-level default rate.
 func defaultAffiliateInviteLimitByMembership(level int) int {
 	switch {
-	case level >= 3:
+	case level >= 5:
+		return AffiliateInviteLimitLevel5Default
+	case level == 4:
+		return AffiliateInviteLimitLevel4Default
+	case level == 3:
 		return AffiliateInviteLimitLevel3Default
 	case level == 2:
 		return AffiliateInviteLimitLevel2Default
@@ -760,7 +772,11 @@ func (s *AffiliateService) membershipRebateRatePercent(ctx context.Context, invi
 
 func defaultAffiliateRebateRateByMembership(level int) float64 {
 	switch {
-	case level >= 3:
+	case level >= 5:
+		return AffiliateRebateRateLevel5Default
+	case level == 4:
+		return AffiliateRebateRateLevel4Default
+	case level == 3:
 		return AffiliateRebateRateLevel3Default
 	case level == 2:
 		return AffiliateRebateRateLevel2Default

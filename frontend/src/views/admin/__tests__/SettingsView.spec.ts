@@ -770,6 +770,52 @@ describe("admin SettingsView payment visible method controls", () => {
     );
   });
 
+  it("submits membership benefits through LV.5", async () => {
+    getSettings.mockResolvedValueOnce({
+      ...baseSettingsResponse,
+      affiliate_rebate_rate_level4: 35,
+      affiliate_rebate_rate_level5: 45,
+      affiliate_rebate_per_invitee_cap_level4: 1500,
+      affiliate_rebate_per_invitee_cap_level5: 2500,
+      affiliate_invite_limit_level4: 8,
+      affiliate_invite_limit_level5: 13,
+      cafe_coupon_config: {
+        levels: {
+          5: {
+            enabled: true,
+            type: "cash",
+            value: 50,
+            period: "month",
+            transferable: false,
+            validity: "month_end",
+            valid_until_month_end: true,
+          },
+        },
+      },
+    });
+
+    const wrapper = mountView();
+    await flushPromises();
+    await wrapper.find("form").trigger("submit.prevent");
+    await flushPromises();
+
+    expect(updateSettings).toHaveBeenCalledWith(
+      expect.objectContaining({
+        affiliate_rebate_rate_level4: 35,
+        affiliate_rebate_rate_level5: 45,
+        affiliate_rebate_per_invitee_cap_level4: 1500,
+        affiliate_rebate_per_invitee_cap_level5: 2500,
+        affiliate_invite_limit_level4: 8,
+        affiliate_invite_limit_level5: 13,
+        cafe_coupon_config: expect.objectContaining({
+          levels: expect.objectContaining({
+            5: expect.objectContaining({ enabled: true, value: 50 }),
+          }),
+        }),
+      }),
+    );
+  });
+
   it("updates provider enablement immediately and reloads providers", async () => {
     const provider = {
       id: 7,

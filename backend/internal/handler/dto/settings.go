@@ -149,6 +149,8 @@ type SystemSettings struct {
 	AffiliateRebateRateLevel1          float64                      `json:"affiliate_rebate_rate_level1"`
 	AffiliateRebateRateLevel2          float64                      `json:"affiliate_rebate_rate_level2"`
 	AffiliateRebateRateLevel3          float64                      `json:"affiliate_rebate_rate_level3"`
+	AffiliateRebateRateLevel4          float64                      `json:"affiliate_rebate_rate_level4"`
+	AffiliateRebateRateLevel5          float64                      `json:"affiliate_rebate_rate_level5"`
 	AffiliateRebateFreezeHours         int                          `json:"affiliate_rebate_freeze_hours"`
 	AffiliateRebateDurationDays        int                          `json:"affiliate_rebate_duration_days"`
 	AffiliateRebatePerInviteeCap       float64                      `json:"affiliate_rebate_per_invitee_cap"`
@@ -156,11 +158,15 @@ type SystemSettings struct {
 	AffiliateRebatePerInviteeCapLevel1 float64                      `json:"affiliate_rebate_per_invitee_cap_level1"`
 	AffiliateRebatePerInviteeCapLevel2 float64                      `json:"affiliate_rebate_per_invitee_cap_level2"`
 	AffiliateRebatePerInviteeCapLevel3 float64                      `json:"affiliate_rebate_per_invitee_cap_level3"`
+	AffiliateRebatePerInviteeCapLevel4 float64                      `json:"affiliate_rebate_per_invitee_cap_level4"`
+	AffiliateRebatePerInviteeCapLevel5 float64                      `json:"affiliate_rebate_per_invitee_cap_level5"`
 	AffiliateInviteLimit               int                          `json:"affiliate_invite_limit"`
 	AffiliateInviteLimitLevel0         int                          `json:"affiliate_invite_limit_level0"`
 	AffiliateInviteLimitLevel1         int                          `json:"affiliate_invite_limit_level1"`
 	AffiliateInviteLimitLevel2         int                          `json:"affiliate_invite_limit_level2"`
 	AffiliateInviteLimitLevel3         int                          `json:"affiliate_invite_limit_level3"`
+	AffiliateInviteLimitLevel4         int                          `json:"affiliate_invite_limit_level4"`
+	AffiliateInviteLimitLevel5         int                          `json:"affiliate_invite_limit_level5"`
 	CafeCouponConfig                   service.CafeCouponConfig     `json:"cafe_coupon_config"`
 	DefaultUserRPMLimit                int                          `json:"default_user_rpm_limit"`
 	DefaultSubscriptions               []DefaultSubscriptionSetting `json:"default_subscriptions"`
@@ -337,15 +343,21 @@ type PublicSettings struct {
 	AffiliateRebateRateLevel1          float64 `json:"affiliate_rebate_rate_level1"`
 	AffiliateRebateRateLevel2          float64 `json:"affiliate_rebate_rate_level2"`
 	AffiliateRebateRateLevel3          float64 `json:"affiliate_rebate_rate_level3"`
+	AffiliateRebateRateLevel4          float64 `json:"affiliate_rebate_rate_level4"`
+	AffiliateRebateRateLevel5          float64 `json:"affiliate_rebate_rate_level5"`
 	AffiliateRebatePerInviteeCap       float64 `json:"affiliate_rebate_per_invitee_cap"`
 	AffiliateRebatePerInviteeCapLevel0 float64 `json:"affiliate_rebate_per_invitee_cap_level0"`
 	AffiliateRebatePerInviteeCapLevel1 float64 `json:"affiliate_rebate_per_invitee_cap_level1"`
 	AffiliateRebatePerInviteeCapLevel2 float64 `json:"affiliate_rebate_per_invitee_cap_level2"`
 	AffiliateRebatePerInviteeCapLevel3 float64 `json:"affiliate_rebate_per_invitee_cap_level3"`
+	AffiliateRebatePerInviteeCapLevel4 float64 `json:"affiliate_rebate_per_invitee_cap_level4"`
+	AffiliateRebatePerInviteeCapLevel5 float64 `json:"affiliate_rebate_per_invitee_cap_level5"`
 	AffiliateInviteLimitLevel0         int     `json:"affiliate_invite_limit_level0"`
 	AffiliateInviteLimitLevel1         int     `json:"affiliate_invite_limit_level1"`
 	AffiliateInviteLimitLevel2         int     `json:"affiliate_invite_limit_level2"`
 	AffiliateInviteLimitLevel3         int     `json:"affiliate_invite_limit_level3"`
+	AffiliateInviteLimitLevel4         int     `json:"affiliate_invite_limit_level4"`
+	AffiliateInviteLimitLevel5         int     `json:"affiliate_invite_limit_level5"`
 
 	RiskControlEnabled bool `json:"risk_control_enabled"`
 
