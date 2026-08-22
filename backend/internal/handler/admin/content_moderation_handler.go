@@ -12,11 +12,24 @@ import (
 )
 
 type ContentModerationHandler struct {
-	service *service.ContentModerationService
+	service        *service.ContentModerationService
+	requestControl *service.RequestControlService
 }
 
-func NewContentModerationHandler(svc *service.ContentModerationService) *ContentModerationHandler {
-	return &ContentModerationHandler{service: svc}
+func NewContentModerationHandler(svc *service.ContentModerationService, requestControl *service.RequestControlService) *ContentModerationHandler {
+	return &ContentModerationHandler{service: svc, requestControl: requestControl}
+}
+
+type requestControlConfigRequest struct {
+	Enabled                  *bool                                 `json:"enabled"`
+	AllGroups                *bool                                 `json:"all_groups"`
+	GroupIDs                 *[]int64                              `json:"group_ids"`
+	ModelFilter              *service.ContentModerationModelFilter `json:"model_filter"`
+	AllUsers                 *bool                                 `json:"all_users"`
+	UserRules                *[]service.RequestControlUserRule     `json:"user_rules"`
+	GlobalUserAgentWhitelist *[]string                             `json:"global_user_agent_whitelist"`
+	BlockStatus              *int                                  `json:"block_status"`
+	BlockMessage             *string                               `json:"block_message"`
 }
 
 type contentModerationConfigRequest struct {
@@ -235,6 +248,102 @@ func (h *ContentModerationHandler) ClearFlaggedHashes(c *gin.Context) {
 		return
 	}
 	response.Success(c, result)
+}
+
+func (h *ContentModerationHandler) GetRequestControlConfig(c *gin.Context) {
+	if h.requestControl == nil {
+		response.Error(c, 503, "Request control is unavailable")
+		return
+	}
+	cfg, err := h.requestControl.GetConfig(c.Request.Context())
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, cfg)
+}
+
+func (h *ContentModerationHandler) UpdateRequestControlConfig(c *gin.Context) {
+	if h.requestControl == nil {
+		response.Error(c, 503, "Request control is unavailable")
+		return
+	}
+	var req requestControlConfigRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+	cfg, err := h.requestControl.UpdateConfig(c.Request.Context(), service.UpdateRequestControlConfigInput{
+		Enabled: req.Enabled, AllGroups: req.AllGroups, GroupIDs: req.GroupIDs, ModelFilter: req.ModelFilter,
+		AllUsers: req.AllUsers, UserRules: req.UserRules, GlobalUserAgentWhitelist: req.GlobalUserAgentWhitelist,
+		BlockStatus: req.BlockStatus, BlockMessage: req.BlockMessage,
+	})
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, cfg)
+}
+
+func (h *ContentModerationHandler) GetRequestControlStatus(c *gin.Context) {
+	if h.requestControl == nil {
+		response.Error(c, 503, "Request control is unavailable")
+		return
+	}
+	response.Success(c, h.requestControl.GetStatus())
+}
+
+func (h *ContentModerationHandler) ListRequestControlLogs(c *gin.Context) {
+	if h.requestControl == nil {
+		response.Error(c, 503, "Request control is unavailable")
+		return
+	}
+	page, pageSize := response.ParsePagination(c)
+	filter := service.RequestControlLogFilter{
+		Pagination: pagination.PaginationParams{Page: page, PageSize: pageSize, SortOrder: pagination.SortOrderDesc},
+		Action:     c.Query("action"), Protocol: c.Query("protocol"), Search: c.Query("search"),
+	}
+	if raw := strings.TrimSpace(c.Query("group_id")); raw != "" {
+		id, err := strconv.ParseInt(raw, 10, 64)
+		if err != nil || id <= 0 {
+			response.BadRequest(c, "Invalid group_id")
+			return
+		}
+		filter.GroupID = &id
+	}
+	if raw := strings.TrimSpace(c.Query("user_id")); raw != "" {
+		id, err := strconv.ParseInt(raw, 10, 64)
+		if err != nil || id <= 0 {
+			response.BadRequest(c, "Invalid user_id")
+			return
+		}
+		filter.UserID = &id
+	}
+	if raw := strings.TrimSpace(c.Query("from")); raw != "" {
+		t, _, err := parseContentModerationDate(raw)
+		if err != nil {
+			response.BadRequest(c, "Invalid from")
+			return
+		}
+		filter.From = &t
+	}
+	if raw := strings.TrimSpace(c.Query("to")); raw != "" {
+		t, dateOnly, err := parseContentModerationDate(raw)
+		if err != nil {
+			response.BadRequest(c, "Invalid to")
+			return
+		}
+		if dateOnly {
+			t = t.Add(24*time.Hour - time.Nanosecond)
+		}
+		filter.To = &t
+	}
+	items, pageResult, err := h.requestControl.ListLogs(c.Request.Context(), filter)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Paginated(c, items, pageResult.Total, pageResult.Page, pageResult.PageSize)
 }
 
 func parseContentModerationDate(raw string) (time.Time, bool, error) {

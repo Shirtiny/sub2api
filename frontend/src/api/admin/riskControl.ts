@@ -6,6 +6,82 @@ export type ContentModerationModelFilterType = 'all' | 'include' | 'exclude'
 export type ContentModerationBuiltinCategory = 'political' | 'pornographic' | 'violence' | 'abuse' | 'ad' | 'illegal' | 'other'
 export type ContentModerationBuiltinLevel = 'low' | 'medium' | 'high' | 'critical'
 
+export interface RequestControlUserRule {
+  user_id: number
+  participate: boolean
+  user_agent_whitelist: string[]
+}
+
+export interface RequestControlConfig {
+  enabled: boolean
+  all_groups: boolean
+  group_ids: number[]
+  model_filter: ContentModerationModelFilter
+  all_users: boolean
+  user_rules: RequestControlUserRule[]
+  global_user_agent_whitelist: string[]
+  block_status: number
+  block_message: string
+}
+
+export interface UpdateRequestControlConfig {
+  enabled?: boolean
+  all_groups?: boolean
+  group_ids?: number[]
+  model_filter?: ContentModerationModelFilter
+  all_users?: boolean
+  user_rules?: RequestControlUserRule[]
+  global_user_agent_whitelist?: string[]
+  block_status?: number
+  block_message?: string
+}
+
+export interface RequestControlStatus {
+  queue_size: number
+  queue_length: number
+  enqueued: number
+  processed: number
+  dropped: number
+  errors: number
+}
+
+export interface RequestControlLog {
+  id: number
+  request_id: string
+  user_id: number | null
+  user_email: string
+  api_key_id: number | null
+  api_key_name: string
+  group_id: number | null
+  group_name: string
+  endpoint: string
+  provider: string
+  protocol: string
+  model: string
+  action: string
+  reason: string
+  allowed: boolean
+  blocked: boolean
+  observed: boolean
+  client_kind: string
+  user_agent: string
+  originator: string
+  tls_fingerprint: string
+  tls_match: boolean | null
+  header_match: boolean | null
+  body_match: boolean | null
+  details: Record<string, string>
+  created_at: string
+}
+
+export interface RequestControlLogsResponse {
+  items: RequestControlLog[]
+  total: number
+  page: number
+  page_size: number
+  pages: number
+}
+
 export interface ContentModerationModelFilter {
   type: ContentModerationModelFilterType
   models: string[]
@@ -289,6 +365,34 @@ export async function clearFlaggedHashes(): Promise<ClearFlaggedHashesResponse> 
   return data
 }
 
+export async function getRequestControlConfig(): Promise<RequestControlConfig> {
+  const { data } = await apiClient.get<RequestControlConfig>('/admin/risk-control/request-control/config')
+  return data
+}
+
+export async function updateRequestControlConfig(payload: UpdateRequestControlConfig): Promise<RequestControlConfig> {
+  const { data } = await apiClient.put<RequestControlConfig>('/admin/risk-control/request-control/config', payload)
+  return data
+}
+
+export async function getRequestControlStatus(): Promise<RequestControlStatus> {
+  const { data } = await apiClient.get<RequestControlStatus>('/admin/risk-control/request-control/status')
+  return data
+}
+
+export async function listRequestControlLogs(params: {
+  page?: number
+  page_size?: number
+  action?: string
+  protocol?: string
+  group_id?: number
+  user_id?: number
+  search?: string
+} = {}): Promise<RequestControlLogsResponse> {
+  const { data } = await apiClient.get<RequestControlLogsResponse>('/admin/risk-control/request-control/logs', { params })
+  return data
+}
+
 export const riskControlAPI = {
   getConfig,
   updateConfig,
@@ -298,6 +402,10 @@ export const riskControlAPI = {
   unbanUser,
   deleteFlaggedHash,
   clearFlaggedHashes,
+  getRequestControlConfig,
+  updateRequestControlConfig,
+  getRequestControlStatus,
+  listRequestControlLogs,
 }
 
 export default riskControlAPI

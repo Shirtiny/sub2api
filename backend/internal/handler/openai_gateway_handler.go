@@ -58,6 +58,7 @@ type OpenAIGatewayHandler struct {
 	usageRecordWorkerPool    *service.UsageRecordWorkerPool
 	errorPassthroughService  *service.ErrorPassthroughService
 	contentModerationService *service.ContentModerationService
+	requestControlService    *service.RequestControlService
 	concurrencyHelper        *ConcurrencyHelper
 	imageLimiter             *imageConcurrencyLimiter
 	wsConnectionLimiter      *openAIWSConnectionLimiter
@@ -124,6 +125,7 @@ func NewOpenAIGatewayHandler(
 	errorPassthroughService *service.ErrorPassthroughService,
 	contentModerationService *service.ContentModerationService,
 	cfg *config.Config,
+	requestControlService *service.RequestControlService,
 ) *OpenAIGatewayHandler {
 	pingInterval := time.Duration(0)
 	maxAccountSwitches := 3
@@ -140,6 +142,7 @@ func NewOpenAIGatewayHandler(
 		usageRecordWorkerPool:    usageRecordWorkerPool,
 		errorPassthroughService:  errorPassthroughService,
 		contentModerationService: contentModerationService,
+		requestControlService:    requestControlService,
 		concurrencyHelper:        NewConcurrencyHelper(concurrencyService, SSEPingFormatComment, pingInterval),
 		imageLimiter:             &imageConcurrencyLimiter{},
 		wsConnectionLimiter:      newOpenAIWSConnectionLimiter(cfg),
@@ -250,6 +253,10 @@ func (h *OpenAIGatewayHandler) Responses(c *gin.Context) {
 
 	setOpsRequestContext(c, reqModel, reqStream)
 	setOpsEndpointContext(c, "", int16(service.RequestTypeFromLegacy(reqStream, false)))
+	if decision := h.checkRequestControl(c, reqLog, apiKey, subject, service.RequestControlProtocolResponse, reqModel, body); decision != nil && decision.Blocked {
+		h.errorResponse(c, requestControlStatus(decision), requestControlErrorCode(decision), decision.Message)
+		return
+	}
 
 	if decision := h.checkContentModeration(c, reqLog, apiKey, subject, service.ContentModerationProtocolOpenAIResponses, reqModel, body); decision != nil && decision.Blocked {
 		h.errorResponse(c, contentModerationStatus(decision), contentModerationErrorCode(decision), decision.Message)
@@ -730,6 +737,10 @@ func (h *OpenAIGatewayHandler) Messages(c *gin.Context) {
 
 	setOpsRequestContext(c, reqModel, reqStream)
 	setOpsEndpointContext(c, "", int16(service.RequestTypeFromLegacy(reqStream, false)))
+	if decision := h.checkRequestControl(c, reqLog, apiKey, subject, service.RequestControlProtocolMessages, reqModel, body); decision != nil && decision.Blocked {
+		h.anthropicErrorResponse(c, requestControlStatus(decision), requestControlErrorCode(decision), decision.Message)
+		return
+	}
 
 	if decision := h.checkContentModeration(c, reqLog, apiKey, subject, service.ContentModerationProtocolAnthropicMessages, reqModel, body); decision != nil && decision.Blocked {
 		h.anthropicErrorResponse(c, contentModerationStatus(decision), contentModerationErrorCode(decision), decision.Message)
@@ -1432,6 +1443,10 @@ func (h *OpenAIGatewayHandler) ResponsesWebSocket(c *gin.Context) {
 	)
 	setOpsRequestContext(c, reqModel, true)
 	setOpsEndpointContext(c, "", int16(service.RequestTypeWSV2))
+	if decision := h.checkRequestControl(c, reqLog, apiKey, subject, service.RequestControlProtocolResponse, reqModel, firstMessage); decision != nil && decision.Blocked {
+		closeOpenAIClientWS(wsConn, coderws.StatusPolicyViolation, decision.Message)
+		return
+	}
 
 	if decision := h.checkContentModeration(c, reqLog, apiKey, subject, service.ContentModerationProtocolOpenAIResponses, reqModel, firstMessage); decision != nil && decision.Blocked {
 		writeContentModerationWSError(ctx, wsConn, decision)
@@ -1737,6 +1752,9 @@ func (h *OpenAIGatewayHandler) ResponsesWebSocket(c *gin.Context) {
 				}
 				if model != reqModel {
 					return service.NewOpenAIWSClientCloseError(coderws.StatusPolicyViolation, "changing model requires a new websocket connection", nil)
+				}
+				if requestDecision := h.checkRequestControl(c, reqLog, apiKey, subject, service.RequestControlProtocolResponse, model, payload); requestDecision != nil && requestDecision.Blocked {
+					return service.NewOpenAIWSClientCloseError(coderws.StatusPolicyViolation, requestDecision.Message, nil)
 				}
 				decision, moderationErr := h.checkContentModerationCacheOnly(c, apiKey, subject, service.ContentModerationProtocolOpenAIResponses, model, payload)
 				if moderationErr != nil {

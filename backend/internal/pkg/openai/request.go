@@ -19,6 +19,7 @@ var CodexOfficialClientUserAgentPrefixes = []string{
 	"codex_atlas/",
 	"codex_exec/",
 	"codex_sdk_ts/",
+	"codex-tui/",
 	"codex ",
 }
 
@@ -28,6 +29,7 @@ var CodexOfficialClientUserAgentPrefixes = []string{
 var CodexOfficialClientOriginatorPrefixes = []string{
 	"codex_",
 	"codex ",
+	"codex-tui",
 }
 
 // IsBrowserUserAgent 判断 User-Agent 是否来自浏览器（Chrome/Firefox/Safari/Edge/Opera 等）。

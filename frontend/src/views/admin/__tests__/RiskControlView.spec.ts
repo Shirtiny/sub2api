@@ -214,6 +214,29 @@ describe('admin RiskControlView', () => {
     }))
   })
 
+  it('switches between content audit and request control tabs', async () => {
+    const wrapper = mount(RiskControlView, {
+      global: {
+        stubs: {
+          AppLayout: AppLayoutStub,
+          BaseDialog: BaseDialogStub,
+          Icon: true,
+          Select: true,
+          Toggle: true,
+          Pagination: true,
+          ModelWhitelistSelector: ModelWhitelistSelectorStub,
+          RequestControlPanel: { template: '<div data-test="request-control-stub" />' },
+        },
+      },
+    })
+
+    await flushPromises()
+    expect(wrapper.find('[data-test="request-control-stub"]').exists()).toBe(false)
+    await findButtonByText(wrapper, 'admin.riskControl.tabs.request').trigger('click')
+    expect(wrapper.find('[data-test="request-control-stub"]').exists()).toBe(true)
+    expect(wrapper.find('[data-test="pre-block-runtime-cards"]').exists()).toBe(false)
+  })
+
   it('saves the selected model filter mode and models', async () => {
     const wrapper = mount(RiskControlView, {
       global: {

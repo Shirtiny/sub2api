@@ -1185,6 +1185,28 @@ func (s *SettingService) SetRiskControlUpdateCallback(callback func(bool)) {
 	s.riskControlUpdate.Store(&typedCallback)
 }
 
+// AddRiskControlUpdateCallback composes another in-process listener without
+// replacing listeners already installed by other risk-control modules.
+func (s *SettingService) AddRiskControlUpdateCallback(callback func(bool)) {
+	if s == nil || callback == nil {
+		return
+	}
+	for {
+		current := s.riskControlUpdate.Load()
+		combined := riskControlUpdateCallback(callback)
+		if current != nil {
+			previous := *current
+			combined = func(enabled bool) {
+				previous(enabled)
+				callback(enabled)
+			}
+		}
+		if s.riskControlUpdate.CompareAndSwap(current, &combined) {
+			return
+		}
+	}
+}
+
 // SetVersion sets the application version for injection into public settings
 func (s *SettingService) SetVersion(version string) {
 	s.version = version

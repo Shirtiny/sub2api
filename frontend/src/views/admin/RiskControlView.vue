@@ -12,16 +12,32 @@
             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ t('admin.riskControl.description') }}</p>
           </div>
           <div class="flex flex-wrap items-center gap-2">
-            <button type="button" class="btn btn-secondary inline-flex items-center gap-2" :disabled="statusLoading" @click="loadStatus(false)">
+            <button v-if="activeRiskTab === 'content'" type="button" class="btn btn-secondary inline-flex items-center gap-2" :disabled="statusLoading" @click="loadStatus(false)">
               <Icon name="refresh" size="sm" :class="statusLoading ? 'animate-spin' : ''" />
               {{ t('admin.riskControl.refreshStatus') }}
             </button>
-            <button type="button" class="btn btn-primary inline-flex items-center gap-2" @click="openSettings">
+            <button v-if="activeRiskTab === 'content'" type="button" class="btn btn-primary inline-flex items-center gap-2" @click="openSettings">
               <Icon name="cog" size="sm" />
               {{ t('admin.riskControl.openSettings') }}
             </button>
           </div>
         </div>
+
+        <div class="flex gap-2 overflow-x-auto border-b border-gray-200 pb-1 dark:border-dark-700">
+          <button
+            v-for="tab in riskTabs"
+            :key="tab.id"
+            type="button"
+            class="inline-flex items-center gap-2 whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium transition-colors"
+            :class="activeRiskTab === tab.id ? 'border-primary-500 text-primary-700 dark:text-primary-300' : 'border-transparent text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200'"
+            @click="activeRiskTab = tab.id"
+          >
+            <Icon :name="tab.icon" size="sm" />
+            {{ tab.label }}
+          </button>
+        </div>
+
+        <template v-if="activeRiskTab === 'content'">
 
         <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
           <div
@@ -1179,6 +1195,10 @@
           </div>
         </template>
       </BaseDialog>
+
+        </template>
+
+        <RequestControlPanel v-if="activeRiskTab === 'request'" />
     </div>
   </AppLayout>
 </template>
@@ -1193,6 +1213,7 @@ import Select from '@/components/common/Select.vue'
 import Toggle from '@/components/common/Toggle.vue'
 import Pagination from '@/components/common/Pagination.vue'
 import ModelWhitelistSelector from '@/components/account/ModelWhitelistSelector.vue'
+import RequestControlPanel from '@/components/admin/RequestControlPanel.vue'
 import { adminAPI } from '@/api/admin'
 import type {
   ContentModerationAPIKeyLoad,
@@ -1215,6 +1236,7 @@ import { extractApiErrorMessage } from '@/utils/apiError'
 import { formatDateTime as formatDateTimeValue } from '@/utils/format'
 
 type SettingsTab = 'basic' | 'scope' | 'runtime' | 'response' | 'riskThresholds' | 'retention' | 'keywords'
+type RiskTab = 'content' | 'request'
 type WorkerSlotState = 'active' | 'idle' | 'disabled'
 type APIKeysWriteMode = 'append' | 'replace'
 type OverviewIcon = 'shield' | 'key' | 'users' | 'document'
@@ -1271,6 +1293,7 @@ const { t } = useI18n()
 const appStore = useAppStore()
 
 const loading = ref(true)
+const activeRiskTab = ref<RiskTab>('content')
 const saving = ref(false)
 const logsLoading = ref(false)
 const statusLoading = ref(false)
@@ -1292,6 +1315,11 @@ const moderationTestImages = ref<string[]>([])
 const moderationTestResult = ref<ContentModerationTestAuditResult | null>(null)
 const inputDetailRow = ref<ContentModerationLog | null>(null)
 let statusTimer: number | null = null
+
+const riskTabs = computed(() => [
+  { id: 'content' as RiskTab, label: t('admin.riskControl.tabs.content'), icon: 'shield' as const },
+  { id: 'request' as RiskTab, label: t('admin.riskControl.tabs.request'), icon: 'filter' as const },
+])
 
 const configForm = reactive({
   enabled: false,

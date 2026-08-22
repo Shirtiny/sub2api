@@ -188,6 +188,7 @@ const (
 	SettingKeyCafeCouponConfig                   = "cafe_coupon_config"                      // 咖啡券会员权益配置（JSON）
 	SettingKeyRiskControlEnabled                 = "risk_control_enabled"                    // 是否启用风控中心入口与审计链路
 	SettingKeyContentModerationConfig            = "content_moderation_config"               // 内容审计配置（JSON）
+	SettingKeyRequestControlConfig               = "request_control_config"                  // 请求管控配置（JSON）
 	SettingKeyLoginAgreementEnabled              = "login_agreement_enabled"                 // 登录前是否要求同意条款
 	SettingKeyLoginAgreementMode                 = "login_agreement_mode"                    // 条款确认展示模式：modal / checkbox
 	SettingKeyLoginAgreementUpdatedAt            = "login_agreement_updated_at"              // 条款更新日期（展示用）

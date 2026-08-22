@@ -606,6 +606,7 @@ var ProviderSet = wire.NewSet(
 	NewChannelService,
 	NewModelPricingResolver,
 	ProvideContentModerationService,
+	ProvideRequestControlService,
 	NewAffiliateService,
 	ProvidePaymentConfigService,
 	ProvidePaymentService,
@@ -640,7 +641,22 @@ func ProvideContentModerationService(
 		emailService,
 	)
 	if settingService != nil {
-		settingService.SetRiskControlUpdateCallback(svc.UpdateRiskControlEnabled)
+		settingService.AddRiskControlUpdateCallback(svc.UpdateRiskControlEnabled)
+	}
+	return svc
+}
+
+// ProvideRequestControlService creates the low-latency request policy service.
+// It keeps a process-local snapshot and writes only observations asynchronously.
+func ProvideRequestControlService(
+	settingRepo SettingRepository,
+	repo RequestControlRepository,
+	groupRepo GroupRepository,
+	settingService *SettingService,
+) *RequestControlService {
+	svc := NewRequestControlService(settingRepo, repo, groupRepo)
+	if settingService != nil {
+		settingService.AddRiskControlUpdateCallback(svc.UpdateRiskControlEnabled)
 	}
 	return svc
 }
