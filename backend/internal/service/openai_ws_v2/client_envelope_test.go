@@ -209,6 +209,14 @@ func TestInspectTopLevelStringFieldHandlesEscapesDuplicatesAndPartialErrors(t *t
 	require.True(t, inspection.Matched, "a later parse error must not erase the reserved-type classification")
 }
 
+func TestValidateTopLevelObjectRejectsDuplicatesAndMalformedJSON(t *testing.T) {
+	require.NoError(t, ValidateTopLevelObject([]byte(`{"model":"gpt-5","input":[{"nested":true}]}`)))
+	require.Error(t, ValidateTopLevelObject([]byte(`{"model":"a","model":"b"}`)))
+	require.Error(t, ValidateTopLevelObject([]byte(`{"model":"a","mo\u0064el":"b"}`)))
+	require.Error(t, ValidateTopLevelObject([]byte(`{"model":"a"} trailing`)))
+	require.Error(t, ValidateTopLevelObject([]byte(`[]`)))
+}
+
 func TestInspectTopLevelStringFieldDoesNotMaterializeUnknownLargeString(t *testing.T) {
 	payload := []byte(`{"type":"response.output_text.delta","delta":"` + strings.Repeat("x", 1024*1024) + `aether.route_control"}`)
 

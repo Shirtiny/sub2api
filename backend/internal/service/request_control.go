@@ -1,6 +1,7 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -15,12 +16,13 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+	"unicode/utf8"
 
 	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/openai"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
+	openaiwsv2 "github.com/Wei-Shaw/sub2api/internal/service/openai_ws_v2"
 	"github.com/google/uuid"
-	"github.com/tidwall/gjson"
 )
 
 const (
@@ -167,12 +169,14 @@ type RequestControlLogFilter struct {
 }
 
 type RequestControlRuntimeStatus struct {
-	QueueSize   int   `json:"queue_size"`
-	QueueLength int   `json:"queue_length"`
-	Enqueued    int64 `json:"enqueued"`
-	Processed   int64 `json:"processed"`
-	Dropped     int64 `json:"dropped"`
-	Errors      int64 `json:"errors"`
+	Enabled            bool  `json:"enabled"`
+	RiskControlEnabled bool  `json:"risk_control_enabled"`
+	QueueSize          int   `json:"queue_size"`
+	QueueLength        int   `json:"queue_length"`
+	Enqueued           int64 `json:"enqueued"`
+	Processed          int64 `json:"processed"`
+	Dropped            int64 `json:"dropped"`
+	Errors             int64 `json:"errors"`
 }
 
 type RequestControlRepository interface {
@@ -353,8 +357,9 @@ func (s *RequestControlService) Check(ctx context.Context, input RequestControlC
 		decision = &RequestControlDecision{Blocked: true, Action: RequestControlActionBlock, Reason: "openai_chat_completions_blocked", Message: cfg.BlockMessage, StatusCode: cfg.BlockStatus, ClientKind: "openai_chat"}
 	case RequestControlProtocolMessages:
 		headerMatched := validateClaudeCodeRequestHeaders(input.Headers, s.validator)
+		structureMatched := validateClaudeCodeRequestStructure(input.Body)
 		if input.ClaudeCodeValid != nil {
-			valid := *input.ClaudeCodeValid && headerMatched
+			valid := *input.ClaudeCodeValid && headerMatched && structureMatched
 			decision = requestControlClaudeCodeDecision(cfg, valid, headerMatched)
 		} else {
 			var body map[string]any
@@ -366,7 +371,7 @@ func (s *RequestControlService) Check(ctx context.Context, input RequestControlC
 			if validator == nil {
 				validator = NewClaudeCodeValidator()
 			}
-			valid := validator.Validate(requestForInput(input), body) && headerMatched
+			valid := validator.Validate(requestForInput(input), body) && headerMatched && structureMatched
 			decision = requestControlClaudeCodeDecision(cfg, valid, headerMatched)
 		}
 	case RequestControlProtocolResponse:
@@ -402,6 +407,16 @@ func validateClaudeCodeRequestHeaders(headers http.Header, validator *ClaudeCode
 		xAppSingle && (xApp == "cli" || xApp == "claude-code") &&
 		versionSingle && version == "2023-06-01" &&
 		betaSingle && requestControlHeaderTokenContains(beta, "claude-code-20250219")
+}
+
+func validateClaudeCodeRequestStructure(body []byte) bool {
+	err := openaiwsv2.VisitTopLevelObjectFields(body, func(key, rawValue []byte) error {
+		if string(key) != "metadata" {
+			return nil
+		}
+		return openaiwsv2.ValidateTopLevelObject(rawValue)
+	})
+	return err == nil
 }
 
 func requestControlClaudeCodeDecision(cfg *RequestControlConfig, valid, headerMatched bool) *RequestControlDecision {
@@ -442,7 +457,7 @@ func (s *RequestControlService) GetStatus() RequestControlRuntimeStatus {
 	if s == nil {
 		return RequestControlRuntimeStatus{}
 	}
-	return RequestControlRuntimeStatus{
+	status := RequestControlRuntimeStatus{
 		QueueSize:   cap(s.queue),
 		QueueLength: len(s.queue),
 		Enqueued:    s.enqueued.Load(),
@@ -450,6 +465,11 @@ func (s *RequestControlService) GetStatus() RequestControlRuntimeStatus {
 		Dropped:     s.dropped.Load(),
 		Errors:      s.errors.Load(),
 	}
+	if current := s.runtime.Load(); current != nil && current.config != nil {
+		status.Enabled = current.config.Enabled
+		status.RiskControlEnabled = current.globalEnabled
+	}
+	return status
 }
 
 func (s *RequestControlService) enqueueLog(log *RequestControlLog) {
@@ -729,6 +749,176 @@ func requestForInput(input RequestControlCheckInput) *http.Request {
 	return r
 }
 
+type requestControlJSONKind struct {
+	Present bool
+	Kind    byte
+}
+
+func parseRequestControlJSONKind(raw []byte) (requestControlJSONKind, error) {
+	trimmed := bytes.TrimSpace(raw)
+	if len(trimmed) == 0 {
+		return requestControlJSONKind{}, errors.New("empty JSON value")
+	}
+	return requestControlJSONKind{Present: true, Kind: trimmed[0]}, nil
+}
+
+type requestControlJSONString struct {
+	Present bool
+	Valid   bool
+	Value   string
+}
+
+func parseRequestControlJSONString(raw []byte, maxDecodedBytes int) (requestControlJSONString, error) {
+	value := requestControlJSONString{Present: true}
+	trimmed := bytes.TrimSpace(raw)
+	if len(trimmed) == 0 {
+		return value, errors.New("empty JSON string")
+	}
+	if trimmed[0] != '"' {
+		return value, nil
+	}
+	if maxDecodedBytes > 0 && len(trimmed) > maxDecodedBytes*6+2 {
+		return value, errors.New("JSON string is too large")
+	}
+	if err := json.Unmarshal(trimmed, &value.Value); err != nil {
+		return value, err
+	}
+	if maxDecodedBytes > 0 && len(value.Value) > maxDecodedBytes {
+		return value, errors.New("JSON string is too large")
+	}
+	value.Valid = true
+	return value, nil
+}
+
+type requestControlJSONBool struct {
+	Present bool
+	Valid   bool
+	Value   bool
+}
+
+func parseRequestControlJSONBool(raw []byte) requestControlJSONBool {
+	trimmed := bytes.TrimSpace(raw)
+	value := requestControlJSONBool{Present: true}
+	switch {
+	case bytes.Equal(trimmed, []byte("true")):
+		value.Valid = true
+		value.Value = true
+	case bytes.Equal(trimmed, []byte("false")):
+		value.Valid = true
+	}
+	return value
+}
+
+type requestControlStringArray struct {
+	Present bool
+	Valid   bool
+	Values  []string
+}
+
+func parseRequestControlStringArray(raw []byte) (requestControlStringArray, error) {
+	value := requestControlStringArray{Present: true}
+	trimmed := bytes.TrimSpace(raw)
+	if len(trimmed) == 0 || trimmed[0] != '[' {
+		return value, nil
+	}
+	if len(trimmed) > 4096 {
+		return value, errors.New("JSON string array is too large")
+	}
+	if err := json.Unmarshal(trimmed, &value.Values); err != nil {
+		return value, err
+	}
+	value.Valid = true
+	return value, nil
+}
+
+func (value requestControlStringArray) Contains(expected string) bool {
+	if !value.Valid {
+		return false
+	}
+	for _, item := range value.Values {
+		if item == expected {
+			return true
+		}
+	}
+	return false
+}
+
+type requestControlClientMetadata struct {
+	Present      bool
+	Valid        bool
+	SessionID    requestControlJSONString
+	ThreadID     requestControlJSONString
+	TurnMetadata requestControlJSONString
+}
+
+func parseRequestControlClientMetadata(raw []byte) (requestControlClientMetadata, error) {
+	metadata := requestControlClientMetadata{Present: true}
+	err := openaiwsv2.VisitTopLevelObjectFields(raw, func(key, rawValue []byte) error {
+		var err error
+		switch string(key) {
+		case "session_id":
+			metadata.SessionID, err = parseRequestControlJSONString(rawValue, openaiwsv2.ClientEnvelopeMaxRouteIDBytes)
+		case "thread_id":
+			metadata.ThreadID, err = parseRequestControlJSONString(rawValue, openaiwsv2.ClientEnvelopeMaxRouteIDBytes)
+		case "x-codex-turn-metadata":
+			metadata.TurnMetadata, err = parseRequestControlJSONString(rawValue, 0)
+		}
+		return err
+	})
+	if err != nil {
+		return metadata, err
+	}
+	metadata.Valid = true
+	return metadata, nil
+}
+
+type requestControlResponsesBody struct {
+	Model             requestControlJSONString
+	Input             requestControlJSONKind
+	ToolChoice        requestControlJSONString
+	ParallelToolCalls requestControlJSONBool
+	Reasoning         requestControlJSONKind
+	Store             requestControlJSONBool
+	Stream            requestControlJSONBool
+	Include           requestControlStringArray
+	PromptCacheKey    requestControlJSONString
+	Type              requestControlJSONString
+	ClientMetadata    requestControlClientMetadata
+}
+
+func parseRequestControlResponsesBody(raw []byte) (requestControlResponsesBody, error) {
+	var body requestControlResponsesBody
+	err := openaiwsv2.VisitTopLevelObjectFields(raw, func(key, rawValue []byte) error {
+		var err error
+		switch string(key) {
+		case "model":
+			body.Model, err = parseRequestControlJSONString(rawValue, openaiwsv2.ClientEnvelopeMaxIdentifierBytes)
+		case "input":
+			body.Input, err = parseRequestControlJSONKind(rawValue)
+		case "tool_choice":
+			body.ToolChoice, err = parseRequestControlJSONString(rawValue, openaiwsv2.ClientEnvelopeMaxOptionBytes)
+		case "parallel_tool_calls":
+			body.ParallelToolCalls = parseRequestControlJSONBool(rawValue)
+		case "reasoning":
+			body.Reasoning, err = parseRequestControlJSONKind(rawValue)
+		case "store":
+			body.Store = parseRequestControlJSONBool(rawValue)
+		case "stream":
+			body.Stream = parseRequestControlJSONBool(rawValue)
+		case "include":
+			body.Include, err = parseRequestControlStringArray(rawValue)
+		case "prompt_cache_key":
+			body.PromptCacheKey, err = parseRequestControlJSONString(rawValue, openaiwsv2.ClientEnvelopeMaxCacheKeyBytes)
+		case "type":
+			body.Type, err = parseRequestControlJSONString(rawValue, openaiwsv2.ClientEnvelopeMaxEventTypeBytes)
+		case "client_metadata":
+			body.ClientMetadata, err = parseRequestControlClientMetadata(rawValue)
+		}
+		return err
+	})
+	return body, err
+}
+
 // validateCodexResponsesRequest mirrors the stable request contract emitted by
 // Codex core/client.rs and login/auth/default_client.rs. Compact and WebSocket
 // requests intentionally have different transport fields.
@@ -739,10 +929,9 @@ func validateCodexResponsesRequest(input RequestControlCheckInput) (bool, bool, 
 	uaMatch := codexRequestUserAgentPattern.FindStringSubmatch(userAgent)
 	headerOK := uaSingle && originatorSingle && len(uaMatch) == 3 &&
 		openai.IsCodexOfficialClientRequest(userAgent) &&
-		openai.IsCodexOfficialClientOriginator(originator) &&
-		strings.EqualFold(strings.TrimSpace(uaMatch[1]), strings.TrimSpace(originator))
+		openai.IsCodexOfficialClientOriginator(originator)
 	if !headerOK {
-		details["client_headers"] = "user_agent_originator_mismatch"
+		details["client_headers"] = "missing_or_invalid_codex_identity"
 	}
 
 	compact := strings.HasSuffix(strings.ToLower(strings.TrimRight(input.Endpoint, "/")), "/responses/compact")
@@ -794,64 +983,73 @@ func validateCodexResponsesRequest(input RequestControlCheckInput) (bool, bool, 
 		details["turn_metadata"] = "missing_invalid_or_identity_mismatch"
 	}
 
-	bodyOK := gjson.ValidBytes(input.Body)
-	if !bodyOK {
+	body, err := parseRequestControlResponsesBody(input.Body)
+	bodyOK := err == nil
+	if err != nil {
 		details["body_json"] = "invalid"
 		return headerOK, false, details
 	}
-	model := gjson.GetBytes(input.Body, "model")
-	if model.Type != gjson.String || strings.TrimSpace(model.String()) == "" {
+	if !body.Model.Present || !body.Model.Valid || strings.TrimSpace(body.Model.Value) == "" {
 		bodyOK = false
 		details["model"] = "missing"
 	}
-	if !gjson.GetBytes(input.Body, "input").IsArray() {
+	if !body.Input.Present || body.Input.Kind != '[' {
 		bodyOK = false
 		details["input"] = "expected_array"
 	}
-	if !requestControlJSONBool(input.Body, "parallel_tool_calls", nil) {
+	if !body.ParallelToolCalls.Present || !body.ParallelToolCalls.Valid {
 		bodyOK = false
 		details["parallel_tool_calls"] = "expected_boolean"
 	}
 
 	if compact {
+		if body.Reasoning.Present && body.Reasoning.Kind != '{' {
+			bodyOK = false
+			details["reasoning"] = "expected_object"
+		}
+		if body.PromptCacheKey.Present && (!body.PromptCacheKey.Valid || strings.TrimSpace(body.PromptCacheKey.Value) == "") {
+			bodyOK = false
+			details["prompt_cache_key"] = "expected_non_empty_string"
+		}
 		return headerOK, bodyOK, details
 	}
-	if !gjson.GetBytes(input.Body, "reasoning").IsObject() {
+	if !body.Reasoning.Present || body.Reasoning.Kind != '{' {
 		bodyOK = false
 		details["reasoning"] = "expected_object"
 	}
-	if strings.TrimSpace(gjson.GetBytes(input.Body, "prompt_cache_key").String()) == "" {
+	if !body.PromptCacheKey.Present || !body.PromptCacheKey.Valid || strings.TrimSpace(body.PromptCacheKey.Value) == "" {
 		bodyOK = false
 		details["prompt_cache_key"] = "missing"
 	}
-	if !requestControlJSONBool(input.Body, "store", requestControlBoolPtr(false)) {
+	if !body.Store.Present || !body.Store.Valid || body.Store.Value {
 		bodyOK = false
 		details["store"] = "expected_false"
 	}
-	if !requestControlJSONBool(input.Body, "stream", requestControlBoolPtr(true)) {
+	if !body.Stream.Present || !body.Stream.Valid || !body.Stream.Value {
 		bodyOK = false
 		details["stream"] = "expected_true"
 	}
-	if strings.TrimSpace(gjson.GetBytes(input.Body, "tool_choice").String()) != "auto" {
+	if !body.ToolChoice.Valid || strings.TrimSpace(body.ToolChoice.Value) != "auto" {
 		bodyOK = false
 		details["tool_choice"] = "expected_auto"
 	}
-	if !requestControlJSONArrayContains(input.Body, "include", "reasoning.encrypted_content") {
+	if !body.Include.Contains("reasoning.encrypted_content") {
 		bodyOK = false
 		details["include"] = "missing_reasoning_encrypted_content"
 	}
-	if input.WebSocket && gjson.GetBytes(input.Body, "type").String() != "response.create" {
+	if input.WebSocket && (!body.Type.Valid || body.Type.Value != "response.create") {
 		bodyOK = false
 		details["websocket_type"] = "expected_response_create"
 	}
-	bodyTurnMetadata := strings.TrimSpace(gjson.GetBytes(input.Body, "client_metadata.x-codex-turn-metadata").String())
+	bodyTurnMetadata := strings.TrimSpace(body.ClientMetadata.TurnMetadata.Value)
 	bodyMetadata, bodyMetadataOK := parseRequestControlTurnMetadata(bodyTurnMetadata)
-	if bodyTurnMetadata == "" || !bodyMetadataOK || !requestControlTurnMetadataMatches(turnMetadata, bodyMetadata) {
+	if !body.ClientMetadata.Present || !body.ClientMetadata.Valid || !body.ClientMetadata.TurnMetadata.Valid ||
+		bodyTurnMetadata == "" || !bodyMetadataOK || !requestControlTurnMetadataMatches(turnMetadata, bodyMetadata) {
 		bodyOK = false
 		details["body_turn_metadata"] = "missing_invalid_or_header_mismatch"
 	}
-	if gjson.GetBytes(input.Body, "client_metadata.session_id").String() != sessionID ||
-		gjson.GetBytes(input.Body, "client_metadata.thread_id").String() != threadID {
+	if !body.ClientMetadata.SessionID.Valid || !body.ClientMetadata.ThreadID.Valid ||
+		body.ClientMetadata.SessionID.Value != sessionID || body.ClientMetadata.ThreadID.Value != threadID {
 		bodyOK = false
 		details["body_session_identity"] = "header_mismatch"
 	}
@@ -876,6 +1074,9 @@ type requestControlTurnMetadata struct {
 
 func parseRequestControlTurnMetadata(raw string) (requestControlTurnMetadata, bool) {
 	var metadata requestControlTurnMetadata
+	if openaiwsv2.ValidateTopLevelObject([]byte(raw)) != nil {
+		return metadata, false
+	}
 	if json.Unmarshal([]byte(raw), &metadata) != nil {
 		return metadata, false
 	}
@@ -917,29 +1118,28 @@ func requestControlUUID(value string) bool {
 	return err == nil
 }
 
-func requestControlJSONBool(body []byte, path string, expected *bool) bool {
-	value := gjson.GetBytes(body, path)
-	if !value.Exists() || (value.Type != gjson.True && value.Type != gjson.False) {
-		return false
-	}
-	return expected == nil || value.Bool() == *expected
-}
-
-func requestControlJSONArrayContains(body []byte, path, expected string) bool {
-	value := gjson.GetBytes(body, path)
-	if !value.IsArray() {
-		return false
-	}
-	for _, item := range value.Array() {
-		if item.Type == gjson.String && item.String() == expected {
-			return true
-		}
-	}
-	return false
-}
-
 func buildRequestControlLog(input RequestControlCheckInput, decision *RequestControlDecision) *RequestControlLog {
-	log := &RequestControlLog{RequestID: input.RequestID, UserEmail: input.UserEmail, APIKeyName: input.APIKeyName, GroupName: input.GroupName, Endpoint: input.Endpoint, Provider: input.Provider, Protocol: input.Protocol, Model: input.Model, Action: decision.Action, Reason: decision.Reason, Allowed: decision.Allowed, Blocked: decision.Blocked, Observed: decision.Observed, ClientKind: decision.ClientKind, UserAgent: truncateRequestControlValue(input.UserAgent, 512), Originator: truncateRequestControlValue(input.Originator, 128), TLSFingerprint: truncateRequestControlValue(input.TLSFingerprint, 128), Details: limitRequestControlDetails(decision.Details), CreatedAt: time.Now()}
+	log := &RequestControlLog{
+		RequestID:      truncateRequestControlValue(input.RequestID, 128),
+		UserEmail:      truncateRequestControlValue(input.UserEmail, 255),
+		APIKeyName:     truncateRequestControlValue(input.APIKeyName, 100),
+		GroupName:      truncateRequestControlValue(input.GroupName, 255),
+		Endpoint:       truncateRequestControlValue(input.Endpoint, 128),
+		Provider:       truncateRequestControlValue(input.Provider, 64),
+		Protocol:       truncateRequestControlValue(input.Protocol, 64),
+		Model:          truncateRequestControlValue(input.Model, 255),
+		Action:         truncateRequestControlValue(decision.Action, 32),
+		Reason:         truncateRequestControlValue(decision.Reason, 128),
+		Allowed:        decision.Allowed,
+		Blocked:        decision.Blocked,
+		Observed:       decision.Observed,
+		ClientKind:     truncateRequestControlValue(decision.ClientKind, 64),
+		UserAgent:      truncateRequestControlValue(input.UserAgent, 512),
+		Originator:     truncateRequestControlValue(input.Originator, 128),
+		TLSFingerprint: truncateRequestControlValue(input.TLSFingerprint, 128),
+		Details:        limitRequestControlDetails(decision.Details),
+		CreatedAt:      time.Now(),
+	}
 	if input.UserID > 0 {
 		log.UserID = &input.UserID
 	}
@@ -955,11 +1155,18 @@ func buildRequestControlLog(input RequestControlCheckInput, decision *RequestCon
 
 func requestControlBoolPtr(value bool) *bool { return &value }
 func truncateRequestControlValue(value string, limit int) string {
-	value = strings.TrimSpace(value)
+	value = strings.TrimSpace(strings.ReplaceAll(strings.ToValidUTF8(value, ""), "\x00", ""))
+	if limit <= 0 {
+		return ""
+	}
 	if len(value) <= limit {
 		return value
 	}
-	return value[:limit]
+	value = value[:limit]
+	for len(value) > 0 && !utf8.ValidString(value) {
+		value = value[:len(value)-1]
+	}
+	return value
 }
 func limitRequestControlDetails(in map[string]string) map[string]string {
 	out := make(map[string]string)

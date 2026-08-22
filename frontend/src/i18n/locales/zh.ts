@@ -2949,6 +2949,7 @@ export default {
         title: '请求管控',
         description: '按分组、模型和用户范围限制客户端入口，并记录不符合规则的请求。',
         enabled: '启用请求管控',
+        globalSwitchOff: '系统设置中的“风控中心”总开关当前关闭，请求管控不会实际执行。',
         save: '保存管控配置',
         saved: '请求管控配置已保存',
         loadFailed: '加载请求管控配置失败',

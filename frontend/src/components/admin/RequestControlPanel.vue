@@ -15,6 +15,11 @@
       </div>
     </div>
 
+    <div v-if="status && form.enabled && !status.risk_control_enabled" class="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-200">
+      <Icon name="exclamationTriangle" size="sm" class="mt-0.5 flex-shrink-0" />
+      <span>{{ t('admin.riskControl.requestControl.globalSwitchOff') }}</span>
+    </div>
+
     <div class="grid grid-cols-1 gap-4 md:grid-cols-4">
       <div v-for="item in statusItems" :key="item.key" class="rounded-lg border border-gray-100 bg-white p-4 shadow-sm dark:border-dark-700 dark:bg-dark-800">
         <p class="text-xs text-gray-500 dark:text-gray-400">{{ item.label }}</p>
@@ -326,6 +331,7 @@ async function save() {
     form.global_user_agent_whitelist = lines(globalUAText.value)
     const updated = await adminAPI.riskControl.updateRequestControlConfig({ ...form, group_ids: [...form.group_ids], user_rules: form.user_rules.map((rule) => ({ ...rule, user_agent_whitelist: [...rule.user_agent_whitelist] })) })
     applyConfig(updated)
+    await loadStatus()
     appStore.showSuccess(t('admin.riskControl.requestControl.saved'))
   } catch (error) { appStore.showError(extractApiErrorMessage(error, t('admin.riskControl.requestControl.saveFailed'))) }
   finally { saving.value = false }

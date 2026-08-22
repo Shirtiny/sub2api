@@ -718,20 +718,23 @@ func (h *OpenAIGatewayHandler) Messages(c *gin.Context) {
 		return
 	}
 
-	if !gjson.ValidBytes(body) {
+	parsedReq, err := service.ParseGatewayRequest(service.NewRequestBodyRef(body), "")
+	if err != nil {
 		h.anthropicErrorResponse(c, http.StatusBadRequest, "invalid_request_error", "Failed to parse request body")
 		return
 	}
-
-	modelResult := gjson.GetBytes(body, "model")
-	if !modelResult.Exists() || modelResult.Type != gjson.String || modelResult.String() == "" {
+	if parsedReq.Model == "" {
 		h.anthropicErrorResponse(c, http.StatusBadRequest, "invalid_request_error", "model is required")
 		return
 	}
-	reqModel := modelResult.String()
+	reqModel := parsedReq.Model
 	routingModel := service.NormalizeOpenAICompatRequestedModel(reqModel)
 	preferredMappedModel := resolveOpenAIMessagesDispatchMappedModel(apiKey, reqModel)
-	reqStream := gjson.GetBytes(body, "stream").Bool()
+	reqStream := parsedReq.Stream
+	if isMaxTokensOneHaikuRequest(reqModel, parsedReq.MaxTokens, reqStream) {
+		c.Request = c.Request.WithContext(service.WithIsMaxTokensOneHaikuRequest(c.Request.Context(), true, false))
+	}
+	SetClaudeCodeClientContext(c, body, parsedReq)
 
 	reqLog = reqLog.With(zap.String("model", reqModel), zap.Bool("stream", reqStream))
 
@@ -960,9 +963,7 @@ func (h *OpenAIGatewayHandler) Messages(c *gin.Context) {
 
 		// 閫忎紶璺緞涓嶅仛 Anthropic鈫扲esponses 杞崲銆佷笉浼氶璁?result.ReasoningEffort锛?		// 杩欓噷浠庡師濮嬭姹備綋鍏滃簳瑙ｆ瀽锛堜笌 Gateway.Messages 琛屼负涓€鑷达級銆?
 		if result.ReasoningEffort == nil {
-			if parsed, perr := service.ParseGatewayRequest(service.NewRequestBodyRef(body), ""); perr == nil {
-				result.ReasoningEffort = service.DeriveClaudeReasoningEffort(parsed)
-			}
+			result.ReasoningEffort = service.DeriveClaudeReasoningEffort(parsedReq)
 		}
 
 		h.submitOpenAIUsageRecordTask(c.Request.Context(), result, func(ctx context.Context) {

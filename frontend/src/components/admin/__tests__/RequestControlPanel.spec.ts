@@ -75,7 +75,7 @@ describe('RequestControlPanel', () => {
     vi.clearAllMocks()
     getConfig.mockResolvedValue(baseConfig())
     updateConfig.mockImplementation(async (payload: RequestControlConfig) => ({ ...baseConfig(), ...payload }))
-    getStatus.mockResolvedValue({ queue_size: 8192, queue_length: 0, enqueued: 0, processed: 0, dropped: 0, errors: 0 })
+    getStatus.mockResolvedValue({ enabled: true, risk_control_enabled: true, queue_size: 8192, queue_length: 0, enqueued: 0, processed: 0, dropped: 0, errors: 0 })
     listLogs.mockResolvedValue({ items: [], total: 0, page: 1, page_size: 20, pages: 1 })
     getGroups.mockResolvedValue([])
     listUsers.mockResolvedValue({
@@ -111,8 +111,17 @@ describe('RequestControlPanel', () => {
     expect(updateConfig).toHaveBeenCalledWith(expect.objectContaining({
       global_user_agent_whitelist: ['codex_cli_rs/', 'trusted-client/'],
     }))
+    expect(getStatus).toHaveBeenCalledTimes(2)
     expect(showSuccess).toHaveBeenCalled()
     expect(showError).not.toHaveBeenCalled()
+  })
+
+  it('warns when the module is enabled but the global risk-control switch is off', async () => {
+    getStatus.mockResolvedValue({ enabled: true, risk_control_enabled: false, queue_size: 8192, queue_length: 0, enqueued: 0, processed: 0, dropped: 0, errors: 0 })
+    const wrapper = mountPanel()
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('admin.riskControl.requestControl.globalSwitchOff')
   })
 
   it('searches and selects a concrete user for a rule', async () => {

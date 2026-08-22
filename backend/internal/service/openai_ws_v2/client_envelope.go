@@ -123,6 +123,91 @@ func InspectFirstTopLevelStringField(payload []byte, fieldName, expectedValue st
 	return inspectTopLevelStringField(payload, fieldName, expectedValue, true)
 }
 
+// ValidateTopLevelObject strictly scans one JSON object without retaining
+// values. It rejects duplicate decoded keys, excessive fields/depth, trailing
+// bytes, and malformed JSON while keeping work bounded for large request bodies.
+func ValidateTopLevelObject(payload []byte) error {
+	return visitTopLevelObjectFields(payload, nil)
+}
+
+// VisitTopLevelObjectFields provides each decoded key and caller-owned raw
+// value while applying the same strict validation as ValidateTopLevelObject.
+// The key slice is valid only for the duration of the callback and values must
+// not be mutated.
+func VisitTopLevelObjectFields(payload []byte, visit func(key, rawValue []byte) error) error {
+	return visitTopLevelObjectFields(payload, visit)
+}
+
+func visitTopLevelObjectFields(payload []byte, visit func(key, rawValue []byte) error) error {
+	parser := clientJSONParser{data: payload}
+	parser.skipSpace()
+	if !parser.consumeByte('{') {
+		return errClientEnvelopeInvalidJSON
+	}
+	parser.skipSpace()
+	if parser.consumeByte('}') {
+		parser.skipSpace()
+		if parser.pos != len(parser.data) {
+			return errClientEnvelopeInvalidJSON
+		}
+		return nil
+	}
+
+	var seen [ClientEnvelopeMaxTopLevelFields]clientJSONStringMeta
+	seenCount := 0
+	for {
+		if seenCount >= ClientEnvelopeMaxTopLevelFields {
+			return errClientEnvelopeTooManyFields
+		}
+		parser.skipSpace()
+		key, err := parser.scanString(ClientEnvelopeMaxKeyBytes, clientEnvelopeMaxEncodedKeyBytes)
+		if err != nil {
+			return normalizeClientKeyError(err)
+		}
+		var keyBytes [ClientEnvelopeMaxKeyBytes]byte
+		keyLen := decodeClientJSONStringInto(parser.data, key, keyBytes[:])
+		for i := 0; i < seenCount; i++ {
+			if seen[i].hash != key.hash || seen[i].decodedLen != key.decodedLen {
+				continue
+			}
+			var previous [ClientEnvelopeMaxKeyBytes]byte
+			previousLen := decodeClientJSONStringInto(parser.data, seen[i], previous[:])
+			if previousLen == keyLen && bytes.Equal(previous[:previousLen], keyBytes[:keyLen]) {
+				return errClientEnvelopeDuplicateField
+			}
+		}
+		seen[seenCount] = key
+		seenCount++
+
+		parser.skipSpace()
+		if !parser.consumeByte(':') {
+			return errClientEnvelopeInvalidJSON
+		}
+		parser.skipSpace()
+		valueStart := parser.pos
+		if err := parser.scanValue(1); err != nil {
+			return err
+		}
+		if visit != nil {
+			if err := visit(keyBytes[:keyLen], parser.data[valueStart:parser.pos]); err != nil {
+				return err
+			}
+		}
+		parser.skipSpace()
+		if parser.consumeByte('}') {
+			break
+		}
+		if !parser.consumeByte(',') {
+			return errClientEnvelopeInvalidJSON
+		}
+	}
+	parser.skipSpace()
+	if parser.pos != len(parser.data) {
+		return errClientEnvelopeInvalidJSON
+	}
+	return nil
+}
+
 func inspectTopLevelStringField(payload []byte, fieldName, expectedValue string, stopAfterFirst bool) (TopLevelStringFieldInspection, error) {
 	inspection := TopLevelStringFieldInspection{}
 	if fieldName == "" || len(fieldName) > ClientEnvelopeMaxKeyBytes || len(expectedValue) > ClientEnvelopeMaxIdentifierBytes {

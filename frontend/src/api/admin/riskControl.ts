@@ -37,6 +37,8 @@ export interface UpdateRequestControlConfig {
 }
 
 export interface RequestControlStatus {
+  enabled: boolean
+  risk_control_enabled: boolean
   queue_size: number
   queue_length: number
   enqueued: number

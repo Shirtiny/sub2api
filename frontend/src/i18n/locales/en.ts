@@ -2959,6 +2959,7 @@ export default {
         title: 'Request Control',
         description: 'Restrict client entry points by group, model, and user scope while recording non-conforming requests.',
         enabled: 'Enable Request Control',
+        globalSwitchOff: 'The global Risk Control switch in system settings is off, so request control is not currently enforced.',
         save: 'Save Policy',
         saved: 'Request control policy saved',
         loadFailed: 'Failed to load request control policy',

@@ -28,6 +28,10 @@ func (h *OpenAIGatewayHandler) checkRequestControl(c *gin.Context, reqLog *zap.L
 		return nil
 	}
 	input := buildRequestControlInput(c, apiKey, subject, protocol, model, body)
+	if protocol == service.RequestControlProtocolMessages {
+		valid := service.IsClaudeCodeClient(c.Request.Context())
+		input.ClaudeCodeValid = &valid
+	}
 	return runRequestControl(c, reqLog, h.requestControlService, input)
 }
 
