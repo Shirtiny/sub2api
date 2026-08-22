@@ -808,14 +808,6 @@ func validateCodexResponsesRequest(input RequestControlCheckInput) (bool, bool, 
 		bodyOK = false
 		details["input"] = "expected_array"
 	}
-	if !gjson.GetBytes(input.Body, "reasoning").IsObject() {
-		bodyOK = false
-		details["reasoning"] = "expected_object"
-	}
-	if strings.TrimSpace(gjson.GetBytes(input.Body, "prompt_cache_key").String()) == "" {
-		bodyOK = false
-		details["prompt_cache_key"] = "missing"
-	}
 	if !requestControlJSONBool(input.Body, "parallel_tool_calls", nil) {
 		bodyOK = false
 		details["parallel_tool_calls"] = "expected_boolean"
@@ -823,6 +815,14 @@ func validateCodexResponsesRequest(input RequestControlCheckInput) (bool, bool, 
 
 	if compact {
 		return headerOK, bodyOK, details
+	}
+	if !gjson.GetBytes(input.Body, "reasoning").IsObject() {
+		bodyOK = false
+		details["reasoning"] = "expected_object"
+	}
+	if strings.TrimSpace(gjson.GetBytes(input.Body, "prompt_cache_key").String()) == "" {
+		bodyOK = false
+		details["prompt_cache_key"] = "missing"
 	}
 	if !requestControlJSONBool(input.Body, "store", requestControlBoolPtr(false)) {
 		bodyOK = false
@@ -881,12 +881,14 @@ func parseRequestControlTurnMetadata(raw string) (requestControlTurnMetadata, bo
 	}
 	metadata.RequestKind = strings.TrimSpace(metadata.RequestKind)
 	valid := false
-	if metadata.RequestKind == "memory" {
+	switch metadata.RequestKind {
+	case "memory":
 		valid = metadata.InstallationID == "" && metadata.SessionID == "" &&
 			metadata.ThreadID == "" && metadata.TurnID == ""
-	} else {
+	case "turn", "prewarm", "compaction":
 		valid = requestControlUUID(metadata.InstallationID) && requestControlUUID(metadata.SessionID) &&
-			requestControlUUID(metadata.ThreadID) && requestControlUUID(metadata.TurnID) &&
+			requestControlUUID(metadata.ThreadID) &&
+			(strings.TrimSpace(metadata.TurnID) == "" || requestControlUUID(metadata.TurnID)) &&
 			metadata.RequestKind != ""
 	}
 	return metadata, valid

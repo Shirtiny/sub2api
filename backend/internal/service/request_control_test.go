@@ -290,6 +290,57 @@ func TestRequestControlAllowsOfficialCodexCompactShape(t *testing.T) {
 	require.True(t, decision.Allowed)
 }
 
+func TestRequestControlAllowsCodexCompactOptionalFieldsToBeAbsent(t *testing.T) {
+	svc := requestControlTestService(t, RequestControlConfig{Enabled: true, AllGroups: true, AllUsers: true})
+	headers, _ := capturedCodexRequestShape(t)
+	headers.Del("Accept")
+	headers.Del("x-client-request-id")
+	body, err := json.Marshal(map[string]any{
+		"model":               "gpt-5.6-sol",
+		"input":               []any{},
+		"parallel_tool_calls": false,
+	})
+	require.NoError(t, err)
+	decision, err := svc.Check(context.Background(), RequestControlCheckInput{
+		Protocol:   RequestControlProtocolResponse,
+		Endpoint:   "/v1/responses/compact",
+		Model:      "gpt-5.6-sol",
+		UserID:     1,
+		UserAgent:  headers.Get("User-Agent"),
+		Originator: headers.Get("originator"),
+		Headers:    headers,
+		Body:       body,
+	})
+	require.NoError(t, err)
+	require.True(t, decision.Allowed)
+}
+
+func TestRequestControlAllowsCodexPrewarmWithoutTurnID(t *testing.T) {
+	svc := requestControlTestService(t, RequestControlConfig{Enabled: true, AllGroups: true, AllUsers: true})
+	headers, body := capturedCodexRequestShape(t)
+	prewarmMetadata := `{"installation_id":"ed12c212-f894-4ba5-9f47-22a0999590bc","session_id":"01a02a99-981a-7181-992f-267a960a36a1","thread_id":"01a02a99-981a-7181-992f-267a960a36a1","request_kind":"prewarm"}`
+	headers.Set("x-codex-turn-metadata", prewarmMetadata)
+	var payload map[string]any
+	require.NoError(t, json.Unmarshal(body, &payload))
+	clientMetadata, ok := payload["client_metadata"].(map[string]any)
+	require.True(t, ok)
+	clientMetadata["x-codex-turn-metadata"] = prewarmMetadata
+	body, err := json.Marshal(payload)
+	require.NoError(t, err)
+	decision, err := svc.Check(context.Background(), RequestControlCheckInput{
+		Protocol:   RequestControlProtocolResponse,
+		Endpoint:   "/v1/responses",
+		Model:      "gpt-5.6-sol",
+		UserID:     1,
+		UserAgent:  headers.Get("User-Agent"),
+		Originator: headers.Get("originator"),
+		Headers:    headers,
+		Body:       body,
+	})
+	require.NoError(t, err)
+	require.True(t, decision.Allowed)
+}
+
 func TestRequestControlAllowsOfficialCodexWebSocketShape(t *testing.T) {
 	svc := requestControlTestService(t, RequestControlConfig{Enabled: true, AllGroups: true, AllUsers: true})
 	headers, body := capturedCodexRequestShape(t)
