@@ -37,7 +37,10 @@ func (h *OpenAIGatewayHandler) checkRequestControl(c *gin.Context, reqLog *zap.L
 	return runRequestControl(c, reqLog, h.requestControlService, input)
 }
 
-func requestControlStatus(_ *service.RequestControlDecision) int {
+func requestControlStatus(decision *service.RequestControlDecision) int {
+	if decision != nil && decision.StatusCode >= 400 && decision.StatusCode <= 599 {
+		return decision.StatusCode
+	}
 	return http.StatusForbidden
 }
 
@@ -45,7 +48,10 @@ func requestControlErrorCode(_ *service.RequestControlDecision) string {
 	return "403"
 }
 
-func requestControlClientMessage(_ *service.RequestControlDecision) string {
+func requestControlClientMessage(decision *service.RequestControlDecision) string {
+	if decision != nil && strings.TrimSpace(decision.Message) != "" {
+		return strings.TrimSpace(decision.Message)
+	}
 	return requestControlClientBlockMessage
 }
 
@@ -120,7 +126,10 @@ func projectRequestControlHeaders(source http.Header) http.Header {
 		"session-id",
 		"thread-id",
 		"x-client-request-id",
+		"x-codex-installation-id",
 		"x-codex-turn-metadata",
+		"x-codex-window-id",
+		"x-codex-parent-thread-id",
 		"x-opencode-session-id",
 		"x-opencode-agent-id",
 		"x-codex-beta-features",

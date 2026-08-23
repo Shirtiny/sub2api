@@ -84,6 +84,8 @@ export interface RequestControlLog {
   violation_count: number
   counted_violation: boolean
   email_sent: boolean
+  hit_email_sent: boolean
+  ban_email_sent: boolean
   auto_banned: boolean
   created_at: string
 }

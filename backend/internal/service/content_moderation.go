@@ -633,6 +633,7 @@ type ContentModerationLog struct {
 	UpstreamLatencyMS  *int               `json:"upstream_latency_ms,omitempty"`
 	Error              string             `json:"error"`
 	ViolationCount     int                `json:"violation_count"`
+	BlockMessage       string             `json:"block_message,omitempty"`
 	SideEffectsApplied bool               `json:"side_effects_applied"`
 	AutoBanned         bool               `json:"auto_banned"`
 	EmailSent          bool               `json:"email_sent"`
@@ -2511,6 +2512,7 @@ func contentModerationEmailVariables(log *ContentModerationLog, cfg *ContentMode
 		"moderation_score":    "0.000",
 		"violation_count":     "0",
 		"ban_threshold":       "0",
+		"block_message":       defaultContentModerationBlockMessage,
 	}
 	if log != nil {
 		if !log.CreatedAt.IsZero() {
@@ -2524,6 +2526,9 @@ func contentModerationEmailVariables(log *ContentModerationLog, cfg *ContentMode
 		}
 		variables["moderation_score"] = fmt.Sprintf("%.3f", log.HighestScore)
 		variables["violation_count"] = fmt.Sprintf("%d", log.ViolationCount)
+		if strings.TrimSpace(log.BlockMessage) != "" {
+			variables["block_message"] = strings.TrimSpace(log.BlockMessage)
+		}
 	}
 	if cfg != nil {
 		variables["ban_threshold"] = fmt.Sprintf("%d", cfg.BanThreshold)

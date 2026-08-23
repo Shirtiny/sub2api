@@ -90,16 +90,19 @@ type NotificationEmailPreviewInput struct {
 }
 
 type NotificationEmailSendInput struct {
-	Event            string
-	Locale           string
-	RecipientEmail   string
-	RecipientName    string
-	UserID           int64
-	SourceType       string
-	SourceID         string
-	ReminderKey      string
-	Variables        map[string]string
-	RawHTMLVariables map[string]string
+	Event          string
+	Locale         string
+	RecipientEmail string
+	RecipientName  string
+	UserID         int64
+	SourceType     string
+	SourceID       string
+	ReminderKey    string
+	// SkipDeliveryRecord is for callers that persist their own bounded delivery
+	// outcome and must not create an unbounded settings-row marker per event.
+	SkipDeliveryRecord bool
+	Variables          map[string]string
+	RawHTMLVariables   map[string]string
 }
 
 type NotificationEmailUnsubscribeResult struct {
@@ -380,7 +383,10 @@ func (s *NotificationEmailService) Send(ctx context.Context, input NotificationE
 		return notificationEmailTemplateErr(err)
 	}
 
-	deliveryKey := notificationEmailDeliveryKey(normalizedEvent, input.SourceType, input.SourceID, recipient, input.ReminderKey)
+	deliveryKey := ""
+	if !input.SkipDeliveryRecord {
+		deliveryKey = notificationEmailDeliveryKey(normalizedEvent, input.SourceType, input.SourceID, recipient, input.ReminderKey)
+	}
 	if deliveryKey != "" {
 		sent, err := s.deliveryExists(ctx, deliveryKey, legacyNotificationEmailDeliveryKey(normalizedEvent, input.SourceType, input.SourceID, recipient, input.ReminderKey))
 		if err != nil {
@@ -874,6 +880,7 @@ func notificationEmailSampleVariables(locale string) map[string]string {
 			"moderation_score":    "0.982",
 			"violation_count":     "2",
 			"ban_threshold":       "3",
+			"block_message":       "内容违规，多次尝试将被封禁",
 			"rule_name":           "错误率过高",
 			"severity":            "critical",
 			"alert_status":        "firing",
@@ -920,6 +927,7 @@ func notificationEmailSampleVariables(locale string) map[string]string {
 		"moderation_score":    "0.982",
 		"violation_count":     "2",
 		"ban_threshold":       "3",
+		"block_message":       "Repeated policy violations may result in account restrictions.",
 		"rule_name":           "High error rate",
 		"severity":            "critical",
 		"alert_status":        "firing",
@@ -1024,7 +1032,7 @@ var notificationEmailEventDefinitions = map[string]NotificationEmailEventInfo{
 		Category:    "risk_control",
 		Optional:    false,
 		Placeholders: append(append([]string{}, notificationEmailCommonPlaceholders...),
-			"triggered_at", "group_name", "moderation_category", "moderation_score", "violation_count", "ban_threshold"),
+			"triggered_at", "group_name", "moderation_category", "moderation_score", "violation_count", "ban_threshold", "block_message"),
 	},
 	NotificationEmailEventContentModerationDisabled: {
 		Event:       NotificationEmailEventContentModerationDisabled,
@@ -1033,7 +1041,7 @@ var notificationEmailEventDefinitions = map[string]NotificationEmailEventInfo{
 		Category:    "risk_control",
 		Optional:    false,
 		Placeholders: append(append([]string{}, notificationEmailCommonPlaceholders...),
-			"triggered_at", "group_name", "moderation_category", "moderation_score", "violation_count", "ban_threshold"),
+			"triggered_at", "group_name", "moderation_category", "moderation_score", "violation_count", "ban_threshold", "block_message"),
 	},
 	NotificationEmailEventOpsAlert: {
 		Event:       NotificationEmailEventOpsAlert,
@@ -1232,6 +1240,7 @@ var notificationEmailOfficialTemplates = map[string]map[string]notificationEmail
   <tr><td>Group</td><td>{{group_name}}</td></tr>
   <tr><td>Category / Score</td><td>{{moderation_category}} / {{moderation_score}}</td></tr>
   <tr><td>Violation count</td><td>{{violation_count}} / {{ban_threshold}}</td></tr>
+  <tr><td>Block message</td><td>{{block_message}}</td></tr>
 </table>
 <p>Please review your request content to avoid future service interruptions.</p>`),
 		},
@@ -1245,6 +1254,7 @@ var notificationEmailOfficialTemplates = map[string]map[string]notificationEmail
   <tr><td>所属分组</td><td>{{group_name}}</td></tr>
   <tr><td>命中类别 / 分数</td><td>{{moderation_category}} / {{moderation_score}}</td></tr>
   <tr><td>累计触发次数</td><td>{{violation_count}} / {{ban_threshold}}</td></tr>
+  <tr><td>拦截提示</td><td>{{block_message}}</td></tr>
 </table>
 <p>请检查请求内容，避免后续服务受到影响。</p>`),
 		},
@@ -1260,6 +1270,7 @@ var notificationEmailOfficialTemplates = map[string]map[string]notificationEmail
   <tr><td>Group</td><td>{{group_name}}</td></tr>
   <tr><td>Category / Score</td><td>{{moderation_category}} / {{moderation_score}}</td></tr>
   <tr><td>Violation count</td><td>{{violation_count}} / {{ban_threshold}}</td></tr>
+  <tr><td>Block message</td><td>{{block_message}}</td></tr>
 </table>
 <p>Please contact the administrator if you need to appeal or restore access.</p>`),
 		},
@@ -1273,6 +1284,7 @@ var notificationEmailOfficialTemplates = map[string]map[string]notificationEmail
   <tr><td>所属分组</td><td>{{group_name}}</td></tr>
   <tr><td>命中类别 / 分数</td><td>{{moderation_category}} / {{moderation_score}}</td></tr>
   <tr><td>累计触发次数</td><td>{{violation_count}} / {{ban_threshold}}</td></tr>
+  <tr><td>拦截提示</td><td>{{block_message}}</td></tr>
 </table>
 <p>如需申诉或恢复账号，请联系平台管理员处理。</p>`),
 		},

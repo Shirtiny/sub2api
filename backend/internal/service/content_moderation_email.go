@@ -19,6 +19,7 @@ func buildContentModerationViolationEmailBody(siteName string, log *ContentModer
 	if threshold <= 0 {
 		threshold = defaultContentModerationBanThreshold
 	}
+	blockMessage := contentModerationBlockMessage(log)
 	statusBlock := ""
 	if log.AutoBanned {
 		statusBlock = `<div style="margin-top:24px;padding:18px 20px;border-radius:10px;background:#ff3b30;color:#fff;font-size:18px;font-weight:700;text-align:center;line-height:1.6;">账户当前处于封禁状态，所有 API 请求将被拒绝</div>`
@@ -39,6 +40,7 @@ func buildContentModerationViolationEmailBody(siteName string, log *ContentModer
           <tr><td style="padding:12px 0;color:#888;border-bottom:1px solid #fee2e2;">触发来源</td><td style="padding:12px 0;border-bottom:1px solid #fee2e2;">内容审核</td></tr>
           <tr><td style="padding:12px 0;color:#888;border-bottom:1px solid #fee2e2;">所属分组</td><td style="padding:12px 0;border-bottom:1px solid #fee2e2;">%s</td></tr>
           <tr><td style="padding:12px 0;color:#888;border-bottom:1px solid #fee2e2;">命中类别</td><td style="padding:12px 0;border-bottom:1px solid #fee2e2;">%s / %.3f</td></tr>
+          <tr><td style="padding:12px 0;color:#888;border-bottom:1px solid #fee2e2;">拦截提示</td><td style="padding:12px 0;border-bottom:1px solid #fee2e2;">%s</td></tr>
           <tr><td style="padding:12px 0;color:#888;">累计触发次数</td><td style="padding:12px 0;color:#dc2626;font-weight:700;">%d 次（阈值 %d）</td></tr>
         </table>
       </div>
@@ -53,6 +55,7 @@ func buildContentModerationViolationEmailBody(siteName string, log *ContentModer
 		html.EscapeString(defaultContentModerationString(log.GroupName, "-")),
 		html.EscapeString(defaultContentModerationString(log.HighestCategory, "-")),
 		log.HighestScore,
+		html.EscapeString(blockMessage),
 		log.ViolationCount,
 		threshold,
 		statusBlock,
@@ -72,6 +75,7 @@ func buildContentModerationAccountDisabledEmailBody(siteName string, log *Conten
 	if threshold <= 0 {
 		threshold = defaultContentModerationBanThreshold
 	}
+	blockMessage := contentModerationBlockMessage(log)
 	return fmt.Sprintf(`<!doctype html>
 <html>
 <body style="margin:0;padding:0;background:#f5f6fb;color:#222;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;">
@@ -88,6 +92,7 @@ func buildContentModerationAccountDisabledEmailBody(siteName string, log *Conten
           <tr><td style="padding:12px 0;color:#888;border-bottom:1px solid #fee2e2;">触发来源</td><td style="padding:12px 0;border-bottom:1px solid #fee2e2;">内容审核</td></tr>
           <tr><td style="padding:12px 0;color:#888;border-bottom:1px solid #fee2e2;">所属分组</td><td style="padding:12px 0;border-bottom:1px solid #fee2e2;">%s</td></tr>
           <tr><td style="padding:12px 0;color:#888;border-bottom:1px solid #fee2e2;">命中类别</td><td style="padding:12px 0;border-bottom:1px solid #fee2e2;">%s / %.3f</td></tr>
+          <tr><td style="padding:12px 0;color:#888;border-bottom:1px solid #fee2e2;">拦截提示</td><td style="padding:12px 0;border-bottom:1px solid #fee2e2;">%s</td></tr>
           <tr><td style="padding:12px 0;color:#888;">累计触发次数</td><td style="padding:12px 0;color:#dc2626;font-weight:700;">%d 次（阈值 %d）</td></tr>
         </table>
       </div>
@@ -103,6 +108,7 @@ func buildContentModerationAccountDisabledEmailBody(siteName string, log *Conten
 		html.EscapeString(defaultContentModerationString(log.GroupName, "-")),
 		html.EscapeString(defaultContentModerationString(log.HighestCategory, "-")),
 		log.HighestScore,
+		html.EscapeString(blockMessage),
 		log.ViolationCount,
 		threshold,
 		html.EscapeString(siteName),
@@ -114,4 +120,11 @@ func defaultContentModerationString(value string, fallback string) string {
 		return fallback
 	}
 	return strings.TrimSpace(value)
+}
+
+func contentModerationBlockMessage(log *ContentModerationLog) string {
+	if log != nil && strings.TrimSpace(log.BlockMessage) != "" {
+		return strings.TrimSpace(log.BlockMessage)
+	}
+	return defaultContentModerationBlockMessage
 }

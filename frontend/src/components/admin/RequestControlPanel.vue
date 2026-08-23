@@ -66,10 +66,12 @@
             <div>
               <label class="input-label">{{ t('admin.riskControl.requestControl.blockStatus') }}</label>
               <input v-model.number="form.block_status" type="number" min="400" max="599" class="input" />
+              <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ t('admin.riskControl.requestControl.blockStatusHint') }}</p>
             </div>
             <div>
               <label class="input-label">{{ t('admin.riskControl.requestControl.blockMessage') }}</label>
               <input v-model.trim="form.block_message" type="text" class="input" />
+              <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ t('admin.riskControl.requestControl.blockMessageHint') }}</p>
             </div>
           </div>
         </div>
@@ -209,7 +211,7 @@
               <td class="px-4 py-3 text-sm text-content-secondary"><div>{{ row.endpoint || '-' }}</div><div class="text-xs text-gray-400">{{ row.model || '-' }}</div></td>
               <td class="px-4 py-3 text-sm"><span class="rounded-md px-2 py-1 text-xs font-medium" :class="actionClass(row)">{{ row.action }}</span><div class="mt-1 text-xs text-gray-400">{{ row.reason }}</div></td>
               <td class="px-4 py-3 text-sm text-content-secondary">{{ row.client_kind || '-' }}</td>
-              <td class="max-w-[300px] px-4 py-3 text-xs text-content-secondary"><div class="truncate" :title="row.user_agent">{{ row.user_agent || '-' }}</div><div v-if="row.violation_count > 0" class="mt-1 text-gray-400">{{ t('admin.riskControl.requestControl.violationCount', { count: row.violation_count }) }}<span v-if="row.email_sent"> / {{ t('admin.riskControl.requestControl.emailSent') }}</span><span v-if="row.auto_banned"> / {{ t('admin.riskControl.requestControl.autoBanned') }}</span></div><div v-if="Object.keys(row.details || {}).length" class="mt-1 truncate text-gray-400">{{ detailText(row) }}</div></td>
+              <td class="max-w-[300px] px-4 py-3 text-xs text-content-secondary"><div class="truncate" :title="row.user_agent">{{ row.user_agent || '-' }}</div><div v-if="row.violation_count > 0 || row.auto_banned" class="mt-1 text-gray-400"><span v-if="row.counted_violation">{{ t('admin.riskControl.requestControl.violationCount', { count: row.violation_count }) }}</span><span v-else>{{ t('admin.riskControl.requestControl.notCounted') }}</span><span v-if="row.hit_email_sent"> / {{ t('admin.riskControl.requestControl.hitEmailSent') }}</span><span v-if="row.ban_email_sent"> / {{ t('admin.riskControl.requestControl.banEmailSent') }}</span><span v-else-if="row.email_sent && !row.hit_email_sent"> / {{ t('admin.riskControl.requestControl.emailSent') }}</span><span v-if="row.auto_banned"> / {{ t('admin.riskControl.requestControl.autoBanned') }}</span></div><div v-if="Object.keys(row.details || {}).length" class="mt-1 truncate text-gray-400">{{ detailText(row) }}</div></td>
               <td class="max-w-[220px] px-4 py-3 text-xs text-gray-500">
                 <span class="block truncate" :title="row.tls_fingerprint">{{ row.tls_fingerprint || t('admin.riskControl.requestControl.tlsUnavailable') }}</span>
               </td>

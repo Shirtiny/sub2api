@@ -43,18 +43,19 @@ INSERT INTO request_control_logs (
     request_id, user_id, user_email, api_key_id, api_key_name, group_id, group_name,
     endpoint, provider, protocol, model, action, reason, allowed, blocked, observed,
 	client_kind, user_agent, originator, tls_fingerprint, tls_match, header_match,
-	body_match, details, violation_count, counted_violation, email_sent, auto_banned
+	body_match, details, violation_count, counted_violation, email_sent, hit_email_sent,
+	ban_email_sent, auto_banned
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7,
-    $8, $9, $10, $11, $12, $13, $14, $15, $16,
-	$17, $18, $19, $20, $21, $22, $23, $24::jsonb, $25, $26, $27, $28
+	$1, $2, $3, $4, $5, $6, $7,
+	$8, $9, $10, $11, $12, $13, $14, $15, $16,
+	$17, $18, $19, $20, $21, $22, $23, $24::jsonb, $25, $26, $27, $28, $29, $30
 ) RETURNING id, created_at`,
 		log.RequestID, userID, log.UserEmail, apiKeyID, log.APIKeyName, groupID, log.GroupName,
 		log.Endpoint, log.Provider, log.Protocol, log.Model, log.Action, log.Reason,
 		log.Allowed, log.Blocked, log.Observed, log.ClientKind, log.UserAgent, log.Originator,
 		log.TLSFingerprint, nullableBoolPtr(log.TLSMatch), nullableBoolPtr(log.HeaderMatch),
 		nullableBoolPtr(log.BodyMatch), string(details), log.ViolationCount, log.Counted,
-		log.EmailSent, log.AutoBanned,
+		log.EmailSent, log.HitEmailSent, log.BanEmailSent, log.AutoBanned,
 	).Scan(&log.ID, &log.CreatedAt)
 	if err != nil {
 		return fmt.Errorf("insert request control log: %w", err)
@@ -91,8 +92,10 @@ func (r *requestControlRepository) UpdateLogSideEffects(ctx context.Context, log
 	}
 	_, err := r.db.ExecContext(ctx, `
 UPDATE request_control_logs
-SET violation_count = $2, counted_violation = $3, email_sent = $4, auto_banned = $5
-WHERE id = $1`, log.ID, log.ViolationCount, log.Counted, log.EmailSent, log.AutoBanned)
+	SET violation_count = $2, counted_violation = $3, email_sent = $4,
+	    hit_email_sent = $5, ban_email_sent = $6, auto_banned = $7
+	WHERE id = $1`, log.ID, log.ViolationCount, log.Counted, log.EmailSent,
+		log.HitEmailSent, log.BanEmailSent, log.AutoBanned)
 	if err != nil {
 		return fmt.Errorf("update request control log side effects: %w", err)
 	}
@@ -124,7 +127,8 @@ SELECT
     l.group_id, l.group_name, l.endpoint, l.provider, l.protocol, l.model,
 	l.action, l.reason, l.allowed, l.blocked, l.observed, l.client_kind,
 	l.user_agent, l.originator, l.tls_fingerprint, l.tls_match, l.header_match,
-	l.body_match, l.details, l.violation_count, l.counted_violation, l.email_sent, l.auto_banned, l.created_at
+	 l.body_match, l.details, l.violation_count, l.counted_violation, l.email_sent,
+	 l.hit_email_sent, l.ban_email_sent, l.auto_banned, l.created_at
 FROM request_control_logs l `+whereSQL+`
 ORDER BY l.created_at DESC, l.id DESC
 LIMIT $`+fmt.Sprint(len(queryArgs)-1)+` OFFSET $`+fmt.Sprint(len(queryArgs)), queryArgs...)
@@ -138,14 +142,14 @@ LIMIT $`+fmt.Sprint(len(queryArgs)-1)+` OFFSET $`+fmt.Sprint(len(queryArgs)), qu
 		var userID, apiKeyID, groupID sql.NullInt64
 		var tlsMatch, headerMatch, bodyMatch sql.NullBool
 		var violationCount int
-		var countedViolation, emailSent, autoBanned bool
+		var countedViolation, emailSent, hitEmailSent, banEmailSent, autoBanned bool
 		var details []byte
 		if err := rows.Scan(
 			&item.ID, &item.RequestID, &userID, &item.UserEmail, &apiKeyID, &item.APIKeyName,
 			&groupID, &item.GroupName, &item.Endpoint, &item.Provider, &item.Protocol, &item.Model,
 			&item.Action, &item.Reason, &item.Allowed, &item.Blocked, &item.Observed, &item.ClientKind,
 			&item.UserAgent, &item.Originator, &item.TLSFingerprint, &tlsMatch, &headerMatch,
-			&bodyMatch, &details, &violationCount, &countedViolation, &emailSent, &autoBanned, &item.CreatedAt,
+			&bodyMatch, &details, &violationCount, &countedViolation, &emailSent, &hitEmailSent, &banEmailSent, &autoBanned, &item.CreatedAt,
 		); err != nil {
 			return nil, nil, fmt.Errorf("scan request control log: %w", err)
 		}
@@ -178,6 +182,8 @@ LIMIT $`+fmt.Sprint(len(queryArgs)-1)+` OFFSET $`+fmt.Sprint(len(queryArgs)), qu
 		item.ViolationCount = violationCount
 		item.Counted = countedViolation
 		item.EmailSent = emailSent
+		item.HitEmailSent = hitEmailSent
+		item.BanEmailSent = banEmailSent
 		item.AutoBanned = autoBanned
 		items = append(items, item)
 	}

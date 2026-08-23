@@ -356,6 +356,36 @@ func TestNotificationEmailSendDeduplicatesSubscriptionExpiryReminder(t *testing.
 	require.Equal(t, int64(1), smtpServer.messageCount())
 }
 
+func TestNotificationEmailSendCanSkipPersistentDeliveryRecord(t *testing.T) {
+	ctx := context.Background()
+	repo := newNotificationEmailMemorySettingRepo()
+	smtpServer := startNotificationEmailTestSMTPServer(t)
+	require.NoError(t, repo.SetMultiple(ctx, smtpServer.settings()))
+
+	emailSvc := NewEmailService(repo, nil)
+	svc := NewNotificationEmailService(repo, emailSvc)
+	input := NotificationEmailSendInput{
+		Event:              NotificationEmailEventContentModerationViolation,
+		RecipientEmail:     "User@Example.com",
+		RecipientName:      "User",
+		UserID:             42,
+		SourceType:         "request_control",
+		SourceID:           "unique-hit-1",
+		SkipDeliveryRecord: true,
+		Variables: map[string]string{
+			"moderation_category": "request_control",
+			"block_message":       "custom prompt",
+		},
+	}
+
+	require.NoError(t, svc.Send(ctx, input))
+	require.NoError(t, svc.Send(ctx, input))
+	require.Equal(t, int64(2), smtpServer.messageCount())
+	key := notificationEmailDeliveryKey(input.Event, input.SourceType, input.SourceID, input.RecipientEmail, input.ReminderKey)
+	_, err := repo.GetValue(ctx, key)
+	require.ErrorIs(t, err, ErrSettingNotFound)
+}
+
 func TestNotificationEmailSendRespectsLegacyDeliveryKey(t *testing.T) {
 	ctx := context.Background()
 	repo := newNotificationEmailMemorySettingRepo()

@@ -53,6 +53,14 @@ const (
 	requestControlMaxUAMarkers            = 200
 	requestControlMaxUAMarkerRunes        = 200
 	requestControlMaxDetails              = 32
+	// Captured by Aether from the official Codex CLI transport profile. TLS is
+	// diagnostic-only here: a mismatch is observed and logged, never used as a
+	// blocking predicate.
+	requestControlCodexDefaultJA3Hash = "23211f2b48104c7030b93680a2efcfd0"
+	requestControlCodexDefaultJA3     = "771,4866-4867-4865-49196-49200-159-52393-52392-52394-49195-49199-158-49188-49192-107-49187-49191-103-49162-49172-57-49161-49171-51-157-156-61-60-53-47,65281-11-10-35-22-23-13-43-45-51,4588-29-23-30-24-25-256-257,0"
+	// Captured from the official Claude Code Node.js transport profile.
+	requestControlClaudeDefaultJA3Hash = "44f88fca027f27bab4bb08d4af15f23e"
+	requestControlClaudeDefaultJA4     = "t13d1714h1_5b57614c22b0_7baf387fc6ff"
 )
 
 var codexRequestUserAgentPattern = regexp.MustCompile(`(?i)^([a-z0-9][a-z0-9_. -]*)/(\d+\.\d+\.\d+)(?:[-+][0-9a-z.-]+)?(?:\s|$)`)
@@ -177,6 +185,8 @@ type RequestControlLog struct {
 	ViolationCount int               `json:"violation_count"`
 	Counted        bool              `json:"counted_violation"`
 	EmailSent      bool              `json:"email_sent"`
+	HitEmailSent   bool              `json:"hit_email_sent"`
+	BanEmailSent   bool              `json:"ban_email_sent"`
 	AutoBanned     bool              `json:"auto_banned"`
 	CreatedAt      time.Time         `json:"created_at"`
 }
@@ -413,6 +423,7 @@ func (s *RequestControlService) Check(ctx context.Context, input RequestControlC
 			if bodyErr != nil {
 				decision.Details["request_body"] = "invalid_or_unreadable"
 			}
+			attachRequestControlTLSObservation(input, decision)
 			s.enqueueLog(buildRequestControlLog(input, decision))
 			return decision, nil
 		}
@@ -468,6 +479,7 @@ func (s *RequestControlService) Check(ctx context.Context, input RequestControlC
 	default:
 		return allow, nil
 	}
+	attachRequestControlTLSObservation(input, decision)
 	if decision.Blocked || decision.Observed {
 		s.enqueueLog(buildRequestControlLog(input, decision))
 	}
@@ -1010,12 +1022,14 @@ func (value requestControlStringArray) Contains(expected string) bool {
 }
 
 type requestControlClientMetadata struct {
-	Present      bool
-	Valid        bool
-	HasSession   bool
-	SessionID    requestControlJSONString
-	ThreadID     requestControlJSONString
-	TurnMetadata requestControlJSONString
+	Present        bool
+	Valid          bool
+	HasSession     bool
+	InstallationID requestControlJSONString
+	WindowID       requestControlJSONString
+	SessionID      requestControlJSONString
+	ThreadID       requestControlJSONString
+	TurnMetadata   requestControlJSONString
 }
 
 func parseRequestControlClientMetadata(raw []byte) (requestControlClientMetadata, error) {
@@ -1023,6 +1037,16 @@ func parseRequestControlClientMetadata(raw []byte) (requestControlClientMetadata
 	err := openaiwsv2.VisitTopLevelObjectFields(raw, func(key, rawValue []byte) error {
 		var err error
 		switch string(key) {
+		case "x-codex-installation-id", "installation_id":
+			if metadata.InstallationID.Present {
+				return errors.New("duplicate installation id metadata")
+			}
+			metadata.InstallationID, err = parseRequestControlJSONString(rawValue, openaiwsv2.ClientEnvelopeMaxRouteIDBytes)
+		case "x-codex-window-id", "window_id":
+			if metadata.WindowID.Present {
+				return errors.New("duplicate window id metadata")
+			}
+			metadata.WindowID, err = parseRequestControlJSONString(rawValue, openaiwsv2.ClientEnvelopeMaxRouteIDBytes)
 		case "session_id":
 			metadata.SessionID, err = parseRequestControlJSONString(rawValue, openaiwsv2.ClientEnvelopeMaxRouteIDBytes)
 		case "thread_id":
@@ -1258,6 +1282,28 @@ func validateCodexResponsesRequestParsed(input RequestControlCheckInput, body re
 		headerOK = false
 		details["turn_metadata"] = "missing_invalid_or_identity_mismatch"
 	}
+	installationHeader, installationHeaderSingle := requestControlSingleHeader(input.Headers, "x-codex-installation-id")
+	installationHeaderPresent := len(requestControlHeaderValues(input.Headers, "x-codex-installation-id")) > 0
+	if installationHeaderPresent && (!installationHeaderSingle || !requestControlUUID(installationHeader)) {
+		headerOK = false
+		details["installation_id"] = "missing_invalid_or_duplicate"
+	}
+	if compact {
+		// The compact endpoint emits x-codex-installation-id as a header instead
+		// of carrying client_metadata in its body. Memory requests intentionally
+		// omit identity fields from turn metadata, but still carry the UUID in
+		// this header.
+		if !installationHeaderSingle || !requestControlUUID(installationHeader) {
+			headerOK = false
+			details["installation_id"] = "missing_or_invalid"
+		} else if turnMetadata.RequestKind != "memory" && installationHeader != turnMetadata.InstallationID {
+			headerOK = false
+			details["installation_id"] = "turn_metadata_mismatch"
+		}
+	} else if installationHeaderPresent && installationHeaderSingle && turnMetadata.RequestKind != "memory" && installationHeader != turnMetadata.InstallationID {
+		headerOK = false
+		details["installation_id"] = "turn_metadata_mismatch"
+	}
 
 	bodyOK := bodyErr == nil
 	if bodyErr != nil {
@@ -1328,6 +1374,17 @@ func validateCodexResponsesRequestParsed(input RequestControlCheckInput, body re
 		bodyOK = false
 		details["body_session_identity"] = "header_mismatch"
 	}
+	if !body.ClientMetadata.InstallationID.Present || !body.ClientMetadata.InstallationID.Valid ||
+		!requestControlUUID(body.ClientMetadata.InstallationID.Value) {
+		bodyOK = false
+		details["body_installation_id"] = "missing_or_invalid"
+	} else if turnMetadata.RequestKind != "memory" && body.ClientMetadata.InstallationID.Value != turnMetadata.InstallationID {
+		bodyOK = false
+		details["body_installation_id"] = "turn_metadata_mismatch"
+	} else if installationHeaderPresent && installationHeaderSingle && body.ClientMetadata.InstallationID.Value != installationHeader {
+		bodyOK = false
+		details["body_installation_id"] = "header_mismatch"
+	}
 	return headerOK, bodyOK, details
 }
 
@@ -1371,12 +1428,30 @@ func parseRequestControlTurnMetadata(raw string) (requestControlTurnMetadata, bo
 }
 
 func requestControlSingleHeader(headers http.Header, name string) (string, bool) {
-	values := headers.Values(name)
+	values := requestControlHeaderValues(headers, name)
 	if len(values) != 1 {
 		return "", false
 	}
 	value := strings.TrimSpace(values[0])
 	return value, value != ""
+}
+
+func requestControlHeaderValues(headers http.Header, name string) []string {
+	if headers == nil {
+		return nil
+	}
+	canonical := http.CanonicalHeaderKey(name)
+	values := make([]string, 0, 1)
+	for key, candidates := range headers {
+		if key == canonical {
+			values = append(values, candidates...)
+			continue
+		}
+		if strings.EqualFold(key, name) {
+			values = append(values, candidates...)
+		}
+	}
+	return values
 }
 
 func requestControlHeaderTokenContains(value, expected string) bool {
@@ -1391,6 +1466,99 @@ func requestControlHeaderTokenContains(value, expected string) bool {
 func requestControlUUID(value string) bool {
 	_, err := uuid.Parse(strings.TrimSpace(value))
 	return err == nil
+}
+
+func attachRequestControlTLSObservation(input RequestControlCheckInput, decision *RequestControlDecision) {
+	if decision == nil {
+		return
+	}
+	var matched *bool
+	switch input.Protocol {
+	case RequestControlProtocolResponse:
+		matched = requestControlTLSMatch(input.TLSFingerprint)
+	case RequestControlProtocolMessages:
+		matched = requestControlClaudeTLSMatch(input.TLSFingerprint)
+	default:
+		return
+	}
+	decision.TLSMatched = matched
+	if matched == nil || *matched {
+		return
+	}
+	if decision.Details == nil {
+		decision.Details = make(map[string]string)
+	}
+	decision.Details["tls_fingerprint"] = "client_default_tls_mismatch"
+	// TLS remains an observation signal only. A request that passed the
+	// header/body contract is allowed, but is persisted for backend review.
+	if (decision.ClientKind == "codex" || decision.ClientKind == "claude_code") && decision.Allowed && !decision.Blocked {
+		decision.Observed = true
+		if decision.ClientKind == "claude_code" {
+			decision.Reason = "claude_code_tls_fingerprint_mismatch"
+		} else {
+			decision.Reason = "codex_tls_fingerprint_mismatch"
+		}
+	}
+}
+
+func requestControlTLSMatch(raw string) *bool {
+	return requestControlTLSMatchExpected(raw, requestControlCodexDefaultJA3Hash, requestControlCodexDefaultJA3, "")
+}
+
+func requestControlClaudeTLSMatch(raw string) *bool {
+	return requestControlTLSMatchExpected(raw, requestControlClaudeDefaultJA3Hash, "", requestControlClaudeDefaultJA4)
+}
+
+func requestControlTLSMatchExpected(raw, expectedJA3Hash, expectedJA3, expectedJA4 string) *bool {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return nil
+	}
+	lower := strings.ToLower(raw)
+	for _, key := range []string{
+		"proxy:x-aether-tls-ja3-hash=",
+		"proxy:cf-ja3-hash=",
+		"ja3_hash=",
+	} {
+		if !strings.HasPrefix(lower, key) {
+			continue
+		}
+		if expectedJA3Hash == "" {
+			return nil
+		}
+		value := strings.TrimSpace(raw[len(key):])
+		matched := strings.EqualFold(value, expectedJA3Hash)
+		return &matched
+	}
+	for _, key := range []string{
+		"proxy:x-aether-tls-ja3=",
+		"ja3=",
+	} {
+		if !strings.HasPrefix(lower, key) {
+			continue
+		}
+		if expectedJA3 == "" {
+			return nil
+		}
+		value := strings.TrimSpace(raw[len(key):])
+		matched := value == expectedJA3
+		return &matched
+	}
+	for _, key := range []string{
+		"proxy:x-aether-tls-ja4=",
+		"ja4=",
+	} {
+		if !strings.HasPrefix(lower, key) {
+			continue
+		}
+		if expectedJA4 == "" {
+			return nil
+		}
+		value := strings.TrimSpace(raw[len(key):])
+		matched := strings.EqualFold(value, expectedJA4)
+		return &matched
+	}
+	return nil
 }
 
 func buildRequestControlLog(input RequestControlCheckInput, decision *RequestControlDecision) *RequestControlLog {

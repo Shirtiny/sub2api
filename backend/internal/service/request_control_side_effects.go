@@ -18,6 +18,7 @@ func (s *RequestControlService) applyRequestControlSideEffects(ctx context.Conte
 		if err := s.sendRequestControlEmail(ctx, cfg, log, false); err != nil {
 			slog.Warn("request_control.hit_email_failed", "user_id", *log.UserID, "recipient_hash", notificationEmailHash(log.UserEmail), "error", err)
 		} else {
+			log.HitEmailSent = true
 			log.EmailSent = true
 		}
 	}
@@ -25,6 +26,7 @@ func (s *RequestControlService) applyRequestControlSideEffects(ctx context.Conte
 		if err := s.sendRequestControlEmail(ctx, cfg, log, true); err != nil {
 			slog.Warn("request_control.ban_email_failed", "user_id", *log.UserID, "recipient_hash", notificationEmailHash(log.UserEmail), "error", err)
 		} else {
+			log.BanEmailSent = true
 			log.EmailSent = true
 		}
 	}
@@ -62,7 +64,7 @@ func (s *RequestControlService) applyRequestControlAutoBan(ctx context.Context, 
 }
 
 func (s *RequestControlService) sendRequestControlEmail(ctx context.Context, cfg *RequestControlConfig, log *RequestControlLog, disabled bool) error {
-	if s == nil || s.emailService == nil || cfg == nil || log == nil {
+	if s == nil || s.emailService == nil || cfg == nil || log == nil || log.UserID == nil || *log.UserID <= 0 {
 		return nil
 	}
 	moderationLog := &ContentModerationLog{
@@ -72,6 +74,7 @@ func (s *RequestControlService) sendRequestControlEmail(ctx context.Context, cfg
 		HighestCategory: "request_control",
 		HighestScore:    0,
 		ViolationCount:  log.ViolationCount,
+		BlockMessage:    cfg.BlockMessage,
 		AutoBanned:      log.AutoBanned,
 		CreatedAt:       log.CreatedAt,
 	}
@@ -84,13 +87,14 @@ func (s *RequestControlService) sendRequestControlEmail(ctx context.Context, cfg
 	sourceID := requestControlEmailSourceID(log, disabled)
 	if s.emailService.notificationEmailService != nil {
 		err := s.emailService.notificationEmailService.Send(ctx, NotificationEmailSendInput{
-			Event:          event,
-			RecipientEmail: log.UserEmail,
-			RecipientName:  emailRecipientName(log.UserEmail),
-			UserID:         *log.UserID,
-			SourceType:     "request_control",
-			SourceID:       sourceID,
-			Variables:      variables,
+			Event:              event,
+			RecipientEmail:     log.UserEmail,
+			RecipientName:      emailRecipientName(log.UserEmail),
+			UserID:             *log.UserID,
+			SourceType:         "request_control",
+			SourceID:           sourceID,
+			SkipDeliveryRecord: true,
+			Variables:          variables,
 		})
 		if err == nil {
 			return nil

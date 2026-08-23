@@ -105,6 +105,26 @@ func TestRequestControlCheckChatBlocks(t *testing.T) {
 	require.Equal(t, "openai_chat_completions_blocked", decision.Reason)
 }
 
+func TestRequestControlUsesConfiguredBlockStatusAndMessage(t *testing.T) {
+	svc := requestControlTestService(t, RequestControlConfig{
+		Enabled:      true,
+		AllGroups:    true,
+		AllUsers:     true,
+		BlockStatus:  http.StatusTeapot,
+		BlockMessage: "custom request-control prompt",
+	})
+	decision, err := svc.Check(context.Background(), RequestControlCheckInput{
+		Protocol: RequestControlProtocolChat,
+		Model:    "gpt-5",
+		UserID:   1,
+		Headers:  http.Header{},
+	})
+	require.NoError(t, err)
+	require.True(t, decision.Blocked)
+	require.Equal(t, http.StatusTeapot, decision.StatusCode)
+	require.Equal(t, "custom request-control prompt", decision.Message)
+}
+
 func TestRequestControlConfigDefaultsNotificationAndBanSettings(t *testing.T) {
 	cfg := defaultRequestControlConfig()
 	require.True(t, cfg.EmailOnHit)
@@ -181,6 +201,26 @@ func TestRequestControlAutoBanDisablesUserAndInvalidatesAuthCache(t *testing.T) 
 	require.True(t, log.AutoBanned)
 	require.Equal(t, StatusDisabled, userRepo.user.Status)
 	require.Equal(t, []int64{userID}, cache.userIDs)
+}
+
+func TestRequestControlEmailVariablesCarryConfiguredBlockMessage(t *testing.T) {
+	userID := int64(7)
+	message := "custom request-control prompt"
+	vars := contentModerationEmailVariables(&ContentModerationLog{
+		UserID:       &userID,
+		BlockMessage: message,
+	}, &ContentModerationConfig{BanThreshold: 4})
+	require.Equal(t, message, vars["block_message"])
+}
+
+func TestRequestControlBuiltInEmailIncludesConfiguredBlockMessage(t *testing.T) {
+	message := "<custom request-control prompt>"
+	body := buildContentModerationViolationEmailBody("Sub2API", &ContentModerationLog{
+		UserEmail:    "user@example.com",
+		BlockMessage: message,
+	}, &ContentModerationConfig{BanThreshold: 4})
+	require.Contains(t, body, "&lt;custom request-control prompt&gt;")
+	require.NotContains(t, body, message)
 }
 
 func TestRequestControlQueuedLogPersistsCountedStateAfterHit(t *testing.T) {
@@ -488,6 +528,159 @@ func TestRequestControlBlocksCodexIdentityMismatch(t *testing.T) {
 	require.False(t, decision.BodyMatched)
 }
 
+func TestRequestControlBlocksCodexInstallationIDMismatch(t *testing.T) {
+	svc := requestControlTestService(t, RequestControlConfig{Enabled: true, AllGroups: true, AllUsers: true})
+	headers, body := capturedCodexRequestShape(t)
+	headers.Set("x-codex-installation-id", "8f5d7a5d-8b26-4f1a-9e3c-2c8e76c930a1")
+	decision, err := svc.Check(context.Background(), RequestControlCheckInput{
+		Protocol:   RequestControlProtocolResponse,
+		Endpoint:   "/v1/responses",
+		Model:      "gpt-5.6-sol",
+		UserID:     1,
+		UserAgent:  headers.Get("User-Agent"),
+		Originator: headers.Get("originator"),
+		Headers:    headers,
+		Body:       body,
+	})
+	require.NoError(t, err)
+	require.True(t, decision.Blocked)
+	require.False(t, decision.HeaderMatched)
+}
+
+func TestRequestControlAllowsOfficialCodexNormalRequestWithoutInstallationHeader(t *testing.T) {
+	svc := requestControlTestService(t, RequestControlConfig{Enabled: true, AllGroups: true, AllUsers: true})
+	headers, body := capturedCodexRequestShape(t)
+	headers.Del("x-codex-installation-id")
+	decision, err := svc.Check(context.Background(), RequestControlCheckInput{
+		Protocol:   RequestControlProtocolResponse,
+		Endpoint:   "/v1/responses",
+		Model:      "gpt-5.6-sol",
+		UserID:     1,
+		UserAgent:  headers.Get("User-Agent"),
+		Originator: headers.Get("originator"),
+		Headers:    headers,
+		Body:       body,
+	})
+	require.NoError(t, err)
+	require.True(t, decision.Allowed)
+	require.True(t, decision.HeaderMatched)
+	require.True(t, decision.BodyMatched)
+}
+
+func TestRequestControlBlocksCodexDuplicateInstallationHeaders(t *testing.T) {
+	svc := requestControlTestService(t, RequestControlConfig{Enabled: true, AllGroups: true, AllUsers: true})
+	headers, body := capturedCodexRequestShape(t)
+	headers.Add("x-codex-installation-id", headers.Get("x-codex-installation-id"))
+	decision, err := svc.Check(context.Background(), RequestControlCheckInput{
+		Protocol:   RequestControlProtocolResponse,
+		Endpoint:   "/v1/responses",
+		Model:      "gpt-5.6-sol",
+		UserID:     1,
+		UserAgent:  headers.Get("User-Agent"),
+		Originator: headers.Get("originator"),
+		Headers:    headers,
+		Body:       body,
+	})
+	require.NoError(t, err)
+	require.True(t, decision.Blocked)
+	require.False(t, decision.HeaderMatched)
+}
+
+func TestRequestControlBlocksCodexBodyInstallationIDMismatch(t *testing.T) {
+	svc := requestControlTestService(t, RequestControlConfig{Enabled: true, AllGroups: true, AllUsers: true})
+	headers, body := capturedCodexRequestShape(t)
+	var payload map[string]any
+	require.NoError(t, json.Unmarshal(body, &payload))
+	clientMetadata, ok := payload["client_metadata"].(map[string]any)
+	require.True(t, ok)
+	clientMetadata["x-codex-installation-id"] = "8f5d7a5d-8b26-4f1a-9e3c-2c8e76c930a1"
+	body, err := json.Marshal(payload)
+	require.NoError(t, err)
+	decision, err := svc.Check(context.Background(), RequestControlCheckInput{
+		Protocol:   RequestControlProtocolResponse,
+		Endpoint:   "/v1/responses",
+		Model:      "gpt-5.6-sol",
+		UserID:     1,
+		UserAgent:  headers.Get("User-Agent"),
+		Originator: headers.Get("originator"),
+		Headers:    headers,
+		Body:       body,
+	})
+	require.NoError(t, err)
+	require.True(t, decision.Blocked)
+	require.False(t, decision.BodyMatched)
+}
+
+func TestRequestControlBlocksCodexInstallationIDAliasDuplicate(t *testing.T) {
+	svc := requestControlTestService(t, RequestControlConfig{Enabled: true, AllGroups: true, AllUsers: true})
+	headers, body := capturedCodexRequestShape(t)
+	var payload map[string]any
+	require.NoError(t, json.Unmarshal(body, &payload))
+	clientMetadata, ok := payload["client_metadata"].(map[string]any)
+	require.True(t, ok)
+	clientMetadata["installation_id"] = clientMetadata["x-codex-installation-id"]
+	body, err := json.Marshal(payload)
+	require.NoError(t, err)
+	decision, err := svc.Check(context.Background(), RequestControlCheckInput{
+		Protocol:   RequestControlProtocolResponse,
+		Endpoint:   "/v1/responses",
+		Model:      "gpt-5.6-sol",
+		UserID:     1,
+		UserAgent:  headers.Get("User-Agent"),
+		Originator: headers.Get("originator"),
+		Headers:    headers,
+		Body:       body,
+	})
+	require.NoError(t, err)
+	require.True(t, decision.Blocked)
+	require.False(t, decision.BodyMatched)
+}
+
+func TestRequestControlTLSMismatchIsObservedWithoutBlockingValidCodexRequest(t *testing.T) {
+	svc := requestControlTestService(t, RequestControlConfig{Enabled: true, AllGroups: true, AllUsers: true})
+	headers, body := capturedCodexRequestShape(t)
+	decision, err := svc.Check(context.Background(), RequestControlCheckInput{
+		Protocol:       RequestControlProtocolResponse,
+		Endpoint:       "/v1/responses",
+		Model:          "gpt-5.6-sol",
+		UserID:         1,
+		UserAgent:      headers.Get("User-Agent"),
+		Originator:     headers.Get("originator"),
+		Headers:        headers,
+		Body:           body,
+		TLSFingerprint: "proxy:x-aether-tls-ja3-hash=not-the-codex-hash",
+	})
+	require.NoError(t, err)
+	require.True(t, decision.Allowed)
+	require.False(t, decision.Blocked)
+	require.True(t, decision.Observed)
+	require.NotNil(t, decision.TLSMatched)
+	require.False(t, *decision.TLSMatched)
+	require.Equal(t, "codex_tls_fingerprint_mismatch", decision.Reason)
+}
+
+func TestRequestControlTLSMatchAllowsAndDoesNotObserveOfficialCodexRequest(t *testing.T) {
+	svc := requestControlTestService(t, RequestControlConfig{Enabled: true, AllGroups: true, AllUsers: true})
+	headers, body := capturedCodexRequestShape(t)
+	decision, err := svc.Check(context.Background(), RequestControlCheckInput{
+		Protocol:       RequestControlProtocolResponse,
+		Endpoint:       "/v1/responses",
+		Model:          "gpt-5.6-sol",
+		UserID:         1,
+		UserAgent:      headers.Get("User-Agent"),
+		Originator:     headers.Get("originator"),
+		Headers:        headers,
+		Body:           body,
+		TLSFingerprint: "proxy:x-aether-tls-ja3-hash=23211f2b48104c7030b93680a2efcfd0",
+	})
+	require.NoError(t, err)
+	require.True(t, decision.Allowed)
+	require.False(t, decision.Blocked)
+	require.False(t, decision.Observed)
+	require.NotNil(t, decision.TLSMatched)
+	require.True(t, *decision.TLSMatched)
+}
+
 func TestRequestControlAllowsCodexBodyOnlyTurnMetadataExtensions(t *testing.T) {
 	svc := requestControlTestService(t, RequestControlConfig{Enabled: true, AllGroups: true, AllUsers: true})
 	headers, body := capturedCodexRequestShape(t)
@@ -569,6 +762,28 @@ func TestRequestControlAllowsCodexCompactOptionalFieldsToBeAbsent(t *testing.T) 
 	})
 	require.NoError(t, err)
 	require.True(t, decision.Allowed)
+}
+
+func TestRequestControlBlocksCodexCompactWithoutInstallationID(t *testing.T) {
+	svc := requestControlTestService(t, RequestControlConfig{Enabled: true, AllGroups: true, AllUsers: true})
+	headers, _ := capturedCodexRequestShape(t)
+	headers.Del("Accept")
+	headers.Del("x-client-request-id")
+	headers.Del("x-codex-installation-id")
+	body := []byte(`{"model":"gpt-5.6-sol","input":[],"parallel_tool_calls":false}`)
+	decision, err := svc.Check(context.Background(), RequestControlCheckInput{
+		Protocol:   RequestControlProtocolResponse,
+		Endpoint:   "/v1/responses/compact",
+		Model:      "gpt-5.6-sol",
+		UserID:     1,
+		UserAgent:  headers.Get("User-Agent"),
+		Originator: headers.Get("originator"),
+		Headers:    headers,
+		Body:       body,
+	})
+	require.NoError(t, err)
+	require.True(t, decision.Blocked)
+	require.False(t, decision.HeaderMatched)
 }
 
 func TestRequestControlAllowsCodexPrewarmWithoutTurnID(t *testing.T) {
@@ -676,6 +891,63 @@ func TestRequestControlAcceptsCapturedClaudeCodeShape(t *testing.T) {
 	require.True(t, decision.Allowed)
 }
 
+func TestRequestControlClaudeTLSMismatchIsObservedWithoutBlockingValidClaudeCode(t *testing.T) {
+	svc := requestControlTestService(t, RequestControlConfig{Enabled: true, AllGroups: true, AllUsers: true})
+	headers := http.Header{}
+	headers.Set("User-Agent", "claude-cli/2.1.234 (external, sdk-cli)")
+	headers.Set("X-App", "cli")
+	headers.Set("anthropic-beta", "claude-code-20250219,interleaved-thinking-2025-05-14")
+	headers.Set("anthropic-version", "2023-06-01")
+	body := []byte(`{"model":"claude-sonnet-4-6","metadata":{"user_id":"session-1"},"messages":[{"role":"user","content":"hello"}]}`)
+	knownValid := true
+	decision, err := svc.Check(context.Background(), RequestControlCheckInput{
+		Protocol:        RequestControlProtocolMessages,
+		Endpoint:        "/v1/messages",
+		Model:           "claude-sonnet-4-6",
+		UserID:          1,
+		UserAgent:       headers.Get("User-Agent"),
+		Headers:         headers,
+		Body:            body,
+		ClaudeCodeValid: &knownValid,
+		TLSFingerprint:  "proxy:x-aether-tls-ja3-hash=not-the-claude-hash",
+	})
+	require.NoError(t, err)
+	require.True(t, decision.Allowed)
+	require.False(t, decision.Blocked)
+	require.True(t, decision.Observed)
+	require.NotNil(t, decision.TLSMatched)
+	require.False(t, *decision.TLSMatched)
+	require.Equal(t, "claude_code_tls_fingerprint_mismatch", decision.Reason)
+}
+
+func TestRequestControlClaudeTLSMatchDoesNotObserveValidClaudeCode(t *testing.T) {
+	svc := requestControlTestService(t, RequestControlConfig{Enabled: true, AllGroups: true, AllUsers: true})
+	headers := http.Header{}
+	headers.Set("User-Agent", "claude-cli/2.1.234 (external, sdk-cli)")
+	headers.Set("X-App", "cli")
+	headers.Set("anthropic-beta", "claude-code-20250219,interleaved-thinking-2025-05-14")
+	headers.Set("anthropic-version", "2023-06-01")
+	body := []byte(`{"model":"claude-sonnet-4-6","metadata":{"user_id":"session-1"},"messages":[{"role":"user","content":"hello"}]}`)
+	knownValid := true
+	decision, err := svc.Check(context.Background(), RequestControlCheckInput{
+		Protocol:        RequestControlProtocolMessages,
+		Endpoint:        "/v1/messages",
+		Model:           "claude-sonnet-4-6",
+		UserID:          1,
+		UserAgent:       headers.Get("User-Agent"),
+		Headers:         headers,
+		Body:            body,
+		ClaudeCodeValid: &knownValid,
+		TLSFingerprint:  "proxy:x-aether-tls-ja4=t13d1714h1_5b57614c22b0_7baf387fc6ff",
+	})
+	require.NoError(t, err)
+	require.True(t, decision.Allowed)
+	require.False(t, decision.Blocked)
+	require.False(t, decision.Observed)
+	require.NotNil(t, decision.TLSMatched)
+	require.True(t, *decision.TLSMatched)
+}
+
 func TestRequestControlBlocksClaudeCodeWithoutClaudeBeta(t *testing.T) {
 	svc := requestControlTestService(t, RequestControlConfig{Enabled: true, AllGroups: true, AllUsers: true})
 	headers := http.Header{}
@@ -770,6 +1042,7 @@ func capturedCodexRequestShape(t *testing.T) (http.Header, []byte) {
 		sessionID      = "01a02a99-981a-7181-992f-267a960a36a1"
 		turnID         = "01a02a99-9887-73c0-af4a-af91958ec3ee"
 		installationID = "ed12c212-f894-4ba5-9f47-22a0999590bc"
+		windowID       = "01a02a99-981a-7181-992f-267a960a36a1:0"
 	)
 	turnMetadata, err := json.Marshal(map[string]any{
 		"installation_id": installationID,
@@ -787,7 +1060,9 @@ func capturedCodexRequestShape(t *testing.T) (http.Header, []byte) {
 	headers.Set("session-id", sessionID)
 	headers.Set("thread-id", sessionID)
 	headers.Set("x-client-request-id", sessionID)
+	headers.Set("x-codex-installation-id", installationID)
 	headers.Set("x-codex-turn-metadata", string(turnMetadata))
+	headers.Set("x-codex-window-id", windowID)
 	body, err := json.Marshal(map[string]any{
 		"model":               "gpt-5.6-sol",
 		"input":               []any{},
@@ -799,9 +1074,11 @@ func capturedCodexRequestShape(t *testing.T) (http.Header, []byte) {
 		"include":             []string{"reasoning.encrypted_content"},
 		"prompt_cache_key":    sessionID,
 		"client_metadata": map[string]string{
-			"session_id":            sessionID,
-			"thread_id":             sessionID,
-			"x-codex-turn-metadata": string(turnMetadata),
+			"x-codex-installation-id": installationID,
+			"x-codex-window-id":       windowID,
+			"session_id":              sessionID,
+			"thread_id":               sessionID,
+			"x-codex-turn-metadata":   string(turnMetadata),
 		},
 	})
 	require.NoError(t, err)
@@ -819,8 +1096,10 @@ func BenchmarkValidateCodexResponsesRequest1MB(b *testing.B) {
 	headers.Set("session-id", sessionID)
 	headers.Set("thread-id", sessionID)
 	headers.Set("x-client-request-id", sessionID)
+	headers.Set("x-codex-installation-id", "ed12c212-f894-4ba5-9f47-22a0999590bc")
 	headers.Set("x-codex-turn-metadata", turnMetadata)
 	body := []byte(`{"model":"gpt-5.6-sol","input":[{"type":"message","role":"user","content":[{"type":"input_text","text":"` + strings.Repeat("x", 1024*1024) + `"}]}],"tool_choice":"auto","parallel_tool_calls":false,"reasoning":{"effort":"max"},"store":false,"stream":true,"include":["reasoning.encrypted_content"],"prompt_cache_key":"` + sessionID + `","client_metadata":{"session_id":"` + sessionID + `","thread_id":"` + sessionID + `","x-codex-turn-metadata":` + strconv.Quote(turnMetadata) + `}}`)
+	body = bytes.Replace(body, []byte("\"client_metadata\":{\"session_id\""), []byte("\"client_metadata\":{\"x-codex-installation-id\":\"ed12c212-f894-4ba5-9f47-22a0999590bc\",\"session_id\""), 1)
 	input := RequestControlCheckInput{Endpoint: "/v1/responses", Headers: headers, Body: body}
 	b.ReportAllocs()
 	b.SetBytes(int64(len(body)))
