@@ -2414,6 +2414,9 @@ func openAIForwardErrorAlreadyCommunicated(c *gin.Context, writerSizeBeforeForwa
 	if c.Writer.Size() == writerSizeBeforeForward {
 		return false
 	}
+	if service.GetOpsCyberPolicy(c) != nil {
+		return true
+	}
 
 	msg := strings.TrimSpace(err.Error())
 	for _, prefix := range []string{

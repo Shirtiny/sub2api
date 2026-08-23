@@ -36,6 +36,11 @@ func isOpenAIAccount(account *Account) bool {
 }
 
 func (s *OpenAIGatewayService) handleOpenAIAccountUpstreamError(ctx context.Context, account *Account, statusCode int, headers http.Header, responseBody []byte, requestedModel ...string) bool {
+	// A cyber-policy rejection is caused by the user's request, not by account
+	// health. Never cool down or disable the upstream account for this response.
+	if isCyberPolicyResponse(statusCode, responseBody) {
+		return false
+	}
 	stateCtx, cancel := openAIAccountStateContext(ctx)
 	defer cancel()
 

@@ -1,6 +1,7 @@
 package service
 
 import (
+	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -19,6 +20,8 @@ type CyberPolicyMark struct {
 	Message        string
 	Body           string
 	UpstreamStatus int
+	UpstreamInTok  int
+	UpstreamOutTok int
 }
 
 func MarkOpsCyberPolicy(c *gin.Context, mark CyberPolicyMark) {
@@ -58,10 +61,16 @@ func DetectCyberPolicyResponse(status int, payload []byte) (bool, string, string
 	if code == "" {
 		code = strings.TrimSpace(gjson.GetBytes(payload, "response.error.code").String())
 	}
+	if code == "" {
+		code = strings.TrimSpace(gjson.GetBytes(payload, "code").String())
+	}
 	if strings.EqualFold(code, "cyber_policy") {
 		message := strings.TrimSpace(gjson.GetBytes(payload, "error.message").String())
 		if message == "" {
 			message = strings.TrimSpace(gjson.GetBytes(payload, "response.error.message").String())
+		}
+		if message == "" {
+			message = strings.TrimSpace(gjson.GetBytes(payload, "message").String())
 		}
 		return true, "cyber_policy", message
 	}
@@ -79,6 +88,9 @@ func DetectCyberPolicyResponse(status int, payload []byte) (bool, string, string
 			if message == "" {
 				message = strings.TrimSpace(gjson.GetBytes(payload, "response.error.message").String())
 			}
+			if message == "" {
+				message = strings.TrimSpace(gjson.GetBytes(payload, "message").String())
+			}
 			return true, "cyber_policy", message
 		}
 	}
@@ -88,4 +100,18 @@ func DetectCyberPolicyResponse(status int, payload []byte) (bool, string, string
 func isCyberPolicyResponse(status int, payload []byte) bool {
 	hit, _, _ := DetectCyberPolicyResponse(status, payload)
 	return hit
+}
+
+// detectOpenAICyberPolicy retains the compact internal helper shape used by
+// older gateway tests and call sites. Code-based hits are recognized at any
+// response status; message-only fallback remains restricted to HTTP 400.
+func detectOpenAICyberPolicy(payload []byte) (bool, string, string) {
+	return DetectCyberPolicyResponse(http.StatusBadRequest, payload)
+}
+
+func cyberPolicyClientMessage(message string) string {
+	if message = strings.TrimSpace(message); message != "" {
+		return message
+	}
+	return "Request blocked by upstream cyber-security policy"
 }

@@ -27,6 +27,8 @@ type CyberPolicyRecordInput struct {
 	UpstreamMessage string
 	UpstreamBody    string
 	UpstreamStatus  int
+	UpstreamInTok   int
+	UpstreamOutTok  int
 }
 
 // RecordCyberPolicyEvent records a cyber_policy hit independently of the
@@ -35,14 +37,16 @@ type CyberPolicyRecordInput struct {
 // settings are deliberately reused so administrators manage one policy in the
 // risk-control center.
 func (s *ContentModerationService) RecordCyberPolicyEvent(ctx context.Context, in CyberPolicyRecordInput) {
-	if s == nil || s.repo == nil || !s.isRiskControlEnabled(ctx) {
+	if s == nil || s.repo == nil || s.settingRepo == nil || !s.isRiskControlEnabled(ctx) {
 		return
 	}
 	cfg, err := s.loadConfig(ctx)
 	if err != nil {
 		slog.Warn("content_moderation.cyber_load_config_failed", "error", err)
-		cfg = defaultContentModerationConfig()
-		cfg.normalize()
+		// Keep the audit/notification path alive, but do not silently enforce
+		// automatic bans using guessed defaults when the administrator's JSON is
+		// invalid.
+		cfg = &ContentModerationConfig{}
 	}
 	userID := (*int64)(nil)
 	if in.UserID > 0 {
@@ -59,6 +63,9 @@ func (s *ContentModerationService) RecordCyberPolicyEvent(ctx context.Context, i
 	errorText := strings.TrimSpace(in.UpstreamMessage)
 	if body := strings.TrimSpace(in.UpstreamBody); body != "" {
 		errorText = strings.TrimSpace(errorText + "\n" + body)
+	}
+	if in.UpstreamInTok > 0 || in.UpstreamOutTok > 0 {
+		errorText = fmt.Sprintf("%s\nupstream_usage=in:%d,out:%d", errorText, in.UpstreamInTok, in.UpstreamOutTok)
 	}
 	log := &ContentModerationLog{
 		RequestID:       strings.TrimSpace(in.RequestID),

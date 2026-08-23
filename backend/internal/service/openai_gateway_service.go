@@ -3845,8 +3845,18 @@ func (s *OpenAIGatewayService) handleFailoverErrorResponsePassthrough(
 	requestBody []byte,
 ) error {
 	body := s.readUpstreamErrorBody(resp)
-	if hit, code, message := DetectCyberPolicyResponse(resp.StatusCode, body); hit {
-		MarkOpsCyberPolicy(c, CyberPolicyMark{Code: code, Message: message, Body: truncateString(string(body), 4096), UpstreamStatus: resp.StatusCode})
+	cyberHit, cyberCode, cyberMessage := DetectCyberPolicyResponse(resp.StatusCode, body)
+	if cyberHit {
+		MarkOpsCyberPolicy(c, CyberPolicyMark{Code: cyberCode, Message: cyberMessage, Body: truncateString(string(body), 4096), UpstreamStatus: resp.StatusCode})
+		setOpsUpstreamError(c, resp.StatusCode, cyberMessage, truncateString(string(body), 2048))
+		MarkResponseCommitted(c)
+		writeOpenAIPassthroughResponseHeaders(c.Writer.Header(), resp.Header, s.responseHeaderFilter)
+		contentType := resp.Header.Get("Content-Type")
+		if contentType == "" {
+			contentType = "application/json"
+		}
+		c.Data(resp.StatusCode, contentType, body)
+		return fmt.Errorf("openai cyber_policy: %s", cyberPolicyClientMessage(cyberMessage))
 	}
 
 	upstreamMsg := strings.TrimSpace(extractUpstreamErrorMessage(body))
@@ -3861,8 +3871,10 @@ func (s *OpenAIGatewayService) handleFailoverErrorResponsePassthrough(
 	}
 	setOpsUpstreamError(c, resp.StatusCode, upstreamMsg, upstreamDetail)
 	logOpenAIInstructionsRequiredDebug(ctx, c, account, resp.StatusCode, upstreamMsg, requestBody, body)
-	reqModel, _, _ := extractOpenAIRequestMetaFromBody(requestBody)
-	_ = s.handleOpenAIAccountUpstreamError(ctx, account, resp.StatusCode, resp.Header, body, reqModel)
+	if !cyberHit {
+		reqModel, _, _ := extractOpenAIRequestMetaFromBody(requestBody)
+		_ = s.handleOpenAIAccountUpstreamError(ctx, account, resp.StatusCode, resp.Header, body, reqModel)
+	}
 	appendOpsUpstreamError(c, OpsUpstreamErrorEvent{
 		Platform:             account.Platform,
 		AccountID:            account.ID,
@@ -3891,6 +3903,10 @@ func (s *OpenAIGatewayService) handleErrorResponsePassthrough(
 	requestBody []byte,
 ) error {
 	body := s.readUpstreamErrorBody(resp)
+	cyberHit, cyberCode, cyberMessage := DetectCyberPolicyResponse(resp.StatusCode, body)
+	if cyberHit {
+		MarkOpsCyberPolicy(c, CyberPolicyMark{Code: cyberCode, Message: cyberMessage, Body: truncateString(string(body), 4096), UpstreamStatus: resp.StatusCode})
+	}
 
 	upstreamMsg := strings.TrimSpace(extractUpstreamErrorMessage(body))
 	upstreamMsg = sanitizeUpstreamErrorMessage(upstreamMsg)
@@ -3904,10 +3920,12 @@ func (s *OpenAIGatewayService) handleErrorResponsePassthrough(
 	}
 	setOpsUpstreamError(c, resp.StatusCode, upstreamMsg, upstreamDetail)
 	logOpenAIInstructionsRequiredDebug(ctx, c, account, resp.StatusCode, upstreamMsg, requestBody, body)
-	// 透传模式保留原始上游错误响应，但运行态账号状态仍需更新，
-	// 避免粘性路由继续复用刚被限流的账号。
-	reqModel, _, _ := extractOpenAIRequestMetaFromBody(requestBody)
-	_ = s.handleOpenAIAccountUpstreamError(ctx, account, resp.StatusCode, resp.Header, body, reqModel)
+	// 透传模式保留原始上游错误响应；Cyber 命中不更新账号状态，因为它
+	// 反映的是用户请求风险而不是上游账号健康。
+	if !cyberHit {
+		reqModel, _, _ := extractOpenAIRequestMetaFromBody(requestBody)
+		_ = s.handleOpenAIAccountUpstreamError(ctx, account, resp.StatusCode, resp.Header, body, reqModel)
+	}
 	appendOpsUpstreamError(c, OpsUpstreamErrorEvent{
 		Platform:             account.Platform,
 		AccountID:            account.ID,
@@ -4722,8 +4740,18 @@ func (s *OpenAIGatewayService) handleErrorResponse(
 	requestedModel ...string,
 ) (*OpenAIForwardResult, error) {
 	body := s.readUpstreamErrorBody(resp)
-	if hit, code, message := DetectCyberPolicyResponse(resp.StatusCode, body); hit {
-		MarkOpsCyberPolicy(c, CyberPolicyMark{Code: code, Message: message, Body: truncateString(string(body), 4096), UpstreamStatus: resp.StatusCode})
+	cyberHit, cyberCode, cyberMessage := DetectCyberPolicyResponse(resp.StatusCode, body)
+	if cyberHit {
+		MarkOpsCyberPolicy(c, CyberPolicyMark{Code: cyberCode, Message: cyberMessage, Body: truncateString(string(body), 4096), UpstreamStatus: resp.StatusCode})
+		setOpsUpstreamError(c, resp.StatusCode, cyberMessage, truncateString(string(body), 2048))
+		MarkResponseCommitted(c)
+		writeOpenAIPassthroughResponseHeaders(c.Writer.Header(), resp.Header, s.responseHeaderFilter)
+		contentType := resp.Header.Get("Content-Type")
+		if contentType == "" {
+			contentType = "application/json"
+		}
+		c.Data(resp.StatusCode, contentType, body)
+		return nil, fmt.Errorf("openai cyber_policy: %s", cyberPolicyClientMessage(cyberMessage))
 	}
 
 	upstreamMsg := strings.TrimSpace(extractUpstreamErrorMessage(body))
@@ -4806,7 +4834,10 @@ func (s *OpenAIGatewayService) handleErrorResponse(
 	if reqModel == "" {
 		reqModel, _, _ = extractOpenAIRequestMetaFromBody(requestBody)
 	}
-	shouldDisable := s.handleOpenAIAccountUpstreamError(ctx, account, resp.StatusCode, resp.Header, body, reqModel)
+	shouldDisable := false
+	if !cyberHit {
+		shouldDisable = s.handleOpenAIAccountUpstreamError(ctx, account, resp.StatusCode, resp.Header, body, reqModel)
+	}
 	kind := "http_error"
 	if shouldDisable {
 		kind = "failover"
@@ -4886,8 +4917,13 @@ func (s *OpenAIGatewayService) handleCompatErrorResponse(
 	requestedModel ...string,
 ) (*OpenAIForwardResult, error) {
 	body := s.readUpstreamErrorBody(resp)
-	if hit, code, message := DetectCyberPolicyResponse(resp.StatusCode, body); hit {
-		MarkOpsCyberPolicy(c, CyberPolicyMark{Code: code, Message: message, Body: truncateString(string(body), 4096), UpstreamStatus: resp.StatusCode})
+	cyberHit, cyberCode, cyberMessage := DetectCyberPolicyResponse(resp.StatusCode, body)
+	if cyberHit {
+		MarkOpsCyberPolicy(c, CyberPolicyMark{Code: cyberCode, Message: cyberMessage, Body: truncateString(string(body), 4096), UpstreamStatus: resp.StatusCode})
+		setOpsUpstreamError(c, resp.StatusCode, cyberMessage, truncateString(string(body), 2048))
+		MarkResponseCommitted(c)
+		writeError(c, resp.StatusCode, "invalid_request_error", cyberPolicyClientMessage(cyberMessage))
+		return nil, fmt.Errorf("openai cyber_policy: %s", cyberPolicyClientMessage(cyberMessage))
 	}
 
 	upstreamMsg := strings.TrimSpace(extractUpstreamErrorMessage(body))
@@ -4946,9 +4982,12 @@ func (s *OpenAIGatewayService) handleCompatErrorResponse(
 	if len(requestedModel) > 0 {
 		modelForCooldown = requestedModel[0]
 	}
-	shouldDisable := s.handleOpenAIAccountUpstreamError(
-		c.Request.Context(), account, resp.StatusCode, resp.Header, body, modelForCooldown,
-	)
+	shouldDisable := false
+	if !cyberHit {
+		shouldDisable = s.handleOpenAIAccountUpstreamError(
+			c.Request.Context(), account, resp.StatusCode, resp.Header, body, modelForCooldown,
+		)
+	}
 	kind := "http_error"
 	if shouldDisable {
 		kind = "failover"
@@ -5865,6 +5904,18 @@ func extractOpenAISSEErrorMessage(payload []byte) string {
 }
 
 func (s *OpenAIGatewayService) writeOpenAINonStreamingProtocolError(resp *http.Response, c *gin.Context, message string) error {
+	if mark := GetOpsCyberPolicy(c); mark != nil {
+		message = cyberPolicyClientMessage(mark.Message)
+		setOpsUpstreamError(c, http.StatusBadRequest, message, mark.Body)
+		MarkResponseCommitted(c)
+		responseheaders.WriteFilteredHeaders(c.Writer.Header(), resp.Header, s.responseHeaderFilter)
+		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{
+			"type":    "invalid_request_error",
+			"code":    "cyber_policy",
+			"message": message,
+		}})
+		return fmt.Errorf("openai cyber_policy: %s", message)
+	}
 	message = sanitizeUpstreamErrorMessage(strings.TrimSpace(message))
 	if message == "" {
 		message = "Upstream returned an invalid non-streaming response"

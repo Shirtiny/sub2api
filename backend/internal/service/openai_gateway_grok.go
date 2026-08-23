@@ -660,6 +660,9 @@ func (s *OpenAIGatewayService) handleGrokAccountUpstreamError(ctx context.Contex
 	if s == nil || account == nil {
 		return
 	}
+	if isCyberPolicyResponse(statusCode, responseBody) {
+		return
+	}
 	switch statusCode {
 	case http.StatusUnauthorized:
 		s.tempUnscheduleGrok(ctx, account, 10*time.Minute, "grok oauth token unauthorized")

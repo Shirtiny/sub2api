@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -100,4 +101,25 @@ func TestCyberPolicyConfigRoundTrip(t *testing.T) {
 	var decoded ContentModerationConfig
 	require.NoError(t, json.Unmarshal(raw, &decoded))
 	require.True(t, decoded.CyberPolicyExcludeFromBanCount)
+}
+
+func TestCyberPolicyDoesNotCoolDownUpstreamAccount(t *testing.T) {
+	svc := &OpenAIGatewayService{rateLimitService: &RateLimitService{}}
+	account := &Account{ID: 99, Platform: PlatformOpenAI, Type: AccountTypeOAuth}
+	shouldDisable := svc.handleOpenAIAccountUpstreamError(
+		context.Background(), account, http.StatusBadRequest, http.Header{},
+		[]byte(`{"error":{"code":"cyber_policy","message":"blocked"}}`), "gpt-5",
+	)
+	require.False(t, shouldDisable)
+	require.False(t, svc.isOpenAIAccountRuntimeBlocked(account))
+}
+
+func TestCyberPolicyDoesNotCoolDownGrokAccount(t *testing.T) {
+	svc := &OpenAIGatewayService{}
+	account := &Account{ID: 100, Platform: PlatformGrok, Type: AccountTypeOAuth}
+	svc.handleGrokAccountUpstreamError(
+		context.Background(), account, http.StatusBadRequest, http.Header{},
+		[]byte(`{"error":{"code":"cyber_policy","message":"blocked"}}`),
+	)
+	require.False(t, svc.isOpenAIAccountRuntimeBlocked(account))
 }
