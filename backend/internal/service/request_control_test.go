@@ -76,13 +76,95 @@ func TestRequestControlCheckChatBlocks(t *testing.T) {
 	require.Equal(t, "openai_chat_completions_blocked", decision.Reason)
 }
 
-func TestRequestControlNonCodexResponsesObserved(t *testing.T) {
+func TestRequestControlBlocksAnonymousResponsesBeforeUAClassification(t *testing.T) {
 	svc := requestControlTestService(t, RequestControlConfig{Enabled: true, AllGroups: true, AllUsers: true})
 	decision, err := svc.Check(context.Background(), RequestControlCheckInput{Protocol: RequestControlProtocolResponse, Model: "gpt-5", UserID: 1, UserAgent: "curl/8", Headers: http.Header{}, Body: []byte(`{"model":"gpt-5"}`)})
+	require.NoError(t, err)
+	require.False(t, decision.Allowed)
+	require.True(t, decision.Observed)
+	require.True(t, decision.Blocked)
+	require.Equal(t, "anonymous_response_request", decision.Reason)
+	require.Equal(t, "missing", decision.Details["client_session"])
+}
+
+func TestRequestControlAllowsNonCodexResponsesWithClientSessionForObservation(t *testing.T) {
+	svc := requestControlTestService(t, RequestControlConfig{Enabled: true, AllGroups: true, AllUsers: true})
+	decision, err := svc.Check(context.Background(), RequestControlCheckInput{
+		Protocol:  RequestControlProtocolResponse,
+		Model:     "gpt-5",
+		UserID:    1,
+		UserAgent: "curl/8",
+		Headers:   http.Header{},
+		Body:      []byte(`{"model":"gpt-5","prompt_cache_key":"client-session-1"}`),
+	})
 	require.NoError(t, err)
 	require.True(t, decision.Allowed)
 	require.True(t, decision.Observed)
 	require.False(t, decision.Blocked)
+}
+
+func TestRequestControlAnonymousResponsesCannotUseUAWhitelist(t *testing.T) {
+	svc := requestControlTestService(t, RequestControlConfig{
+		Enabled:                  true,
+		AllGroups:                true,
+		AllUsers:                 true,
+		GlobalUserAgentWhitelist: []string{"curl/"},
+	})
+	decision, err := svc.Check(context.Background(), RequestControlCheckInput{
+		Protocol:  RequestControlProtocolResponse,
+		Model:     "gpt-5",
+		UserID:    1,
+		UserAgent: "curl/8",
+		Headers:   http.Header{},
+		Body:      []byte(`{"model":"gpt-5"}`),
+	})
+	require.NoError(t, err)
+	require.True(t, decision.Blocked)
+	require.Equal(t, "anonymous_response_request", decision.Reason)
+}
+
+func TestRequestControlRecognizesAetherStyleResponseSessionSignals(t *testing.T) {
+	svc := requestControlTestService(t, RequestControlConfig{Enabled: true, AllGroups: true, AllUsers: true})
+	cases := []struct {
+		name    string
+		headers http.Header
+		body    string
+	}{
+		{name: "aether header", headers: http.Header{"X-Aether-Session-Id": {"aether-session"}}, body: `{"model":"gpt-5"}`},
+		{name: "standard header", headers: http.Header{"Session_Id": {"standard-session"}}, body: `{"model":"gpt-5"}`},
+		{name: "nested metadata", headers: http.Header{}, body: `{"model":"gpt-5","metadata":{"conversation_id":"nested-session"}}`},
+		{name: "codex turn metadata header", headers: http.Header{"X-Codex-Turn-Metadata": {`{"session_id":"turn-session"}`}}, body: `{"model":"gpt-5"}`},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			decision, err := svc.Check(context.Background(), RequestControlCheckInput{
+				Protocol:  RequestControlProtocolResponse,
+				Model:     "gpt-5",
+				UserID:    1,
+				UserAgent: "curl/8",
+				Headers:   tc.headers,
+				Body:      []byte(tc.body),
+			})
+			require.NoError(t, err)
+			require.True(t, decision.Allowed)
+			require.True(t, decision.Observed)
+		})
+	}
+}
+
+func TestRequestControlDoesNotTreatClientRequestIDAsSession(t *testing.T) {
+	svc := requestControlTestService(t, RequestControlConfig{Enabled: true, AllGroups: true, AllUsers: true})
+	decision, err := svc.Check(context.Background(), RequestControlCheckInput{
+		Protocol:  RequestControlProtocolResponse,
+		Model:     "gpt-5",
+		UserID:    1,
+		UserAgent: "curl/8",
+		Headers:   http.Header{"X-Client-Request-Id": {"request-only-id"}},
+		Body:      []byte(`{"model":"gpt-5"}`),
+	})
+	require.NoError(t, err)
+	require.True(t, decision.Blocked)
+	require.Equal(t, "anonymous_response_request", decision.Reason)
 }
 
 func TestRequestControlHotPathUsesRuntimeSnapshot(t *testing.T) {

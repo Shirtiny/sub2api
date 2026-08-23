@@ -347,6 +347,30 @@ func (s *RequestControlService) Check(ctx context.Context, input RequestControlC
 	if rule, ok := runtime.userRules[input.UserID]; ok {
 		userMarkers = rule.UserAgentWhitelist
 	}
+	var responseBody *requestControlResponsesBody
+	if input.Protocol == RequestControlProtocolResponse {
+		parsedBody, bodyParsed, sessionPresent, bodyErr := inspectRequestControlResponseSession(input)
+		if !sessionPresent {
+			decision := &RequestControlDecision{
+				Blocked:    true,
+				Observed:   true,
+				Action:     RequestControlActionBlock,
+				Reason:     "anonymous_response_request",
+				Message:    cfg.BlockMessage,
+				StatusCode: cfg.BlockStatus,
+				ClientKind: "anonymous_response",
+				Details:    map[string]string{"client_session": "missing"},
+			}
+			if bodyErr != nil {
+				decision.Details["request_body"] = "invalid_or_unreadable"
+			}
+			s.enqueueLog(buildRequestControlLog(input, decision))
+			return decision, nil
+		}
+		if bodyParsed {
+			responseBody = &parsedBody
+		}
+	}
 	if matchesAnyUA(cfg.GlobalUserAgentWhitelist, input.UserAgent) || matchesAnyUA(userMarkers, input.UserAgent) {
 		decision := &RequestControlDecision{Allowed: true, Action: RequestControlActionUABypass, Reason: "user_agent_whitelist", ClientKind: "whitelisted"}
 		return decision, nil
@@ -378,7 +402,13 @@ func (s *RequestControlService) Check(ctx context.Context, input RequestControlC
 		if !openai.IsCodexOfficialClientRequest(input.UserAgent) {
 			decision = &RequestControlDecision{Allowed: true, Observed: true, Action: RequestControlActionObserve, Reason: "non_codex_user_agent", ClientKind: "non_codex"}
 		} else {
-			headerMatched, bodyMatched, details := validateCodexResponsesRequest(input)
+			var headerMatched, bodyMatched bool
+			var details map[string]string
+			if responseBody != nil {
+				headerMatched, bodyMatched, details = validateCodexResponsesRequestParsed(input, *responseBody, nil)
+			} else {
+				headerMatched, bodyMatched, details = validateCodexResponsesRequest(input)
+			}
 			valid := headerMatched && bodyMatched
 			decision = &RequestControlDecision{Allowed: valid, Blocked: !valid, Observed: !valid, Action: RequestControlActionAllow, Reason: "codex_request_valid", Message: cfg.BlockMessage, StatusCode: cfg.BlockStatus, ClientKind: "codex", BodyMatched: bodyMatched, HeaderMatched: headerMatched, Details: details}
 			if !valid {
@@ -846,6 +876,7 @@ func (value requestControlStringArray) Contains(expected string) bool {
 type requestControlClientMetadata struct {
 	Present      bool
 	Valid        bool
+	HasSession   bool
 	SessionID    requestControlJSONString
 	ThreadID     requestControlJSONString
 	TurnMetadata requestControlJSONString
@@ -860,8 +891,20 @@ func parseRequestControlClientMetadata(raw []byte) (requestControlClientMetadata
 			metadata.SessionID, err = parseRequestControlJSONString(rawValue, openaiwsv2.ClientEnvelopeMaxRouteIDBytes)
 		case "thread_id":
 			metadata.ThreadID, err = parseRequestControlJSONString(rawValue, openaiwsv2.ClientEnvelopeMaxRouteIDBytes)
+		case "sessionId", "conversation_id", "conversationId":
+			value, parseErr := parseRequestControlJSONString(rawValue, openaiwsv2.ClientEnvelopeMaxRouteIDBytes)
+			err = parseErr
+			if err == nil && value.Valid && strings.TrimSpace(value.Value) != "" {
+				metadata.HasSession = true
+			}
 		case "x-codex-turn-metadata":
 			metadata.TurnMetadata, err = parseRequestControlJSONString(rawValue, 0)
+			if err == nil && metadata.TurnMetadata.Valid {
+				metadata.HasSession, err = requestControlJSONObjectHasSession([]byte(metadata.TurnMetadata.Value))
+			}
+		}
+		if err == nil && (metadata.SessionID.Valid && strings.TrimSpace(metadata.SessionID.Value) != "" || metadata.ThreadID.Valid && strings.TrimSpace(metadata.ThreadID.Value) != "") {
+			metadata.HasSession = true
 		}
 		return err
 	})
@@ -884,6 +927,25 @@ type requestControlResponsesBody struct {
 	PromptCacheKey    requestControlJSONString
 	Type              requestControlJSONString
 	ClientMetadata    requestControlClientMetadata
+	SessionPresent    bool
+}
+
+func requestControlJSONObjectHasSession(raw []byte) (bool, error) {
+	found := false
+	err := openaiwsv2.VisitTopLevelObjectFields(raw, func(key, rawValue []byte) error {
+		switch string(key) {
+		case "session_id", "thread_id", "sessionId", "conversation_id", "conversationId":
+			value, err := parseRequestControlJSONString(rawValue, openaiwsv2.ClientEnvelopeMaxRouteIDBytes)
+			if err != nil {
+				return err
+			}
+			if value.Valid && strings.TrimSpace(value.Value) != "" {
+				found = true
+			}
+		}
+		return nil
+	})
+	return found, err
 }
 
 func parseRequestControlResponsesBody(raw []byte) (requestControlResponsesBody, error) {
@@ -909,20 +971,98 @@ func parseRequestControlResponsesBody(raw []byte) (requestControlResponsesBody, 
 			body.Include, err = parseRequestControlStringArray(rawValue)
 		case "prompt_cache_key":
 			body.PromptCacheKey, err = parseRequestControlJSONString(rawValue, openaiwsv2.ClientEnvelopeMaxCacheKeyBytes)
+			if err == nil && body.PromptCacheKey.Valid && strings.TrimSpace(body.PromptCacheKey.Value) != "" {
+				body.SessionPresent = true
+			}
+		case "session_id", "thread_id", "sessionId", "conversation_id", "conversationId":
+			value, parseErr := parseRequestControlJSONString(rawValue, openaiwsv2.ClientEnvelopeMaxRouteIDBytes)
+			err = parseErr
+			if err == nil && value.Valid && strings.TrimSpace(value.Value) != "" {
+				body.SessionPresent = true
+			}
+		case "metadata", "conversationState":
+			var nestedSession bool
+			nestedSession, err = requestControlJSONObjectHasSession(rawValue)
+			if err == nil && nestedSession {
+				body.SessionPresent = true
+			}
 		case "type":
 			body.Type, err = parseRequestControlJSONString(rawValue, openaiwsv2.ClientEnvelopeMaxEventTypeBytes)
 		case "client_metadata":
 			body.ClientMetadata, err = parseRequestControlClientMetadata(rawValue)
+			if err == nil && body.ClientMetadata.HasSession {
+				body.SessionPresent = true
+			}
 		}
 		return err
 	})
 	return body, err
 }
 
+var requestControlResponseSessionHeaders = []string{
+	"x-aether-session-id",
+	"session_id",
+	"conversation_id",
+	"session-id",
+	"thread-id",
+	"x-claude-code-session-id",
+	"x-opencode-session-id",
+}
+
+func requestControlHasResponseSessionHeader(headers http.Header) bool {
+	for _, name := range requestControlResponseSessionHeaders {
+		if requestControlHeaderHasValue(headers, name) {
+			return true
+		}
+	}
+	return false
+}
+
+func requestControlHeaderHasValue(headers http.Header, name string) bool {
+	for key, candidates := range headers {
+		if strings.EqualFold(key, name) {
+			for _, value := range candidates {
+				if strings.TrimSpace(value) != "" {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
+// inspectRequestControlResponseSession mirrors Aether's anonymous-avoidance
+// rule: a request is non-anonymous when it carries a non-empty client session
+// signal in supported headers or the request body. The parsed body is returned
+// when it had to be scanned so Codex validation can reuse the same pass.
+func inspectRequestControlResponseSession(input RequestControlCheckInput) (requestControlResponsesBody, bool, bool, error) {
+	if requestControlHasResponseSessionHeader(input.Headers) {
+		return requestControlResponsesBody{}, false, true, nil
+	}
+	for key, values := range input.Headers {
+		if !strings.EqualFold(key, "x-codex-turn-metadata") {
+			continue
+		}
+		for _, raw := range values {
+			found, err := requestControlJSONObjectHasSession([]byte(raw))
+			if err == nil && found {
+				return requestControlResponsesBody{}, false, true, nil
+			}
+		}
+	}
+	body, err := parseRequestControlResponsesBody(input.Body)
+	return body, true, err == nil && body.SessionPresent, err
+}
+
 // validateCodexResponsesRequest mirrors the stable request contract emitted by
 // Codex core/client.rs and login/auth/default_client.rs. Compact and WebSocket
 // requests intentionally have different transport fields.
 func validateCodexResponsesRequest(input RequestControlCheckInput) (bool, bool, map[string]string) {
+	body, err := parseRequestControlResponsesBody(input.Body)
+	return validateCodexResponsesRequestParsed(input, body, err)
+}
+
+func validateCodexResponsesRequestParsed(input RequestControlCheckInput, body requestControlResponsesBody, bodyErr error) (bool, bool, map[string]string) {
 	details := make(map[string]string)
 	userAgent, uaSingle := requestControlSingleHeader(input.Headers, "User-Agent")
 	originator, originatorSingle := requestControlSingleHeader(input.Headers, "originator")
@@ -983,9 +1123,8 @@ func validateCodexResponsesRequest(input RequestControlCheckInput) (bool, bool, 
 		details["turn_metadata"] = "missing_invalid_or_identity_mismatch"
 	}
 
-	body, err := parseRequestControlResponsesBody(input.Body)
-	bodyOK := err == nil
-	if err != nil {
+	bodyOK := bodyErr == nil
+	if bodyErr != nil {
 		details["body_json"] = "invalid"
 		return headerOK, false, details
 	}

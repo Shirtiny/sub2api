@@ -111,10 +111,15 @@ func projectRequestControlHeaders(source http.Header) http.Header {
 		"originator",
 		"Accept",
 		"Content-Type",
+		"x-aether-session-id",
+		"session_id",
+		"conversation_id",
 		"session-id",
 		"thread-id",
 		"x-client-request-id",
 		"x-codex-turn-metadata",
+		"x-opencode-session-id",
+		"x-opencode-agent-id",
 		"x-codex-beta-features",
 		"OpenAI-Beta",
 		"X-App",
@@ -122,8 +127,13 @@ func projectRequestControlHeaders(source http.Header) http.Header {
 		"anthropic-version",
 		"X-Claude-Code-Session-Id",
 	} {
-		for _, value := range source.Values(name) {
-			projected.Add(name, value)
+		for key, values := range source {
+			if !strings.EqualFold(key, name) {
+				continue
+			}
+			for _, value := range values {
+				projected.Add(name, value)
+			}
 		}
 	}
 	return projected
