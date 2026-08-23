@@ -40,19 +40,19 @@ const (
 	requestControlDefaultViolationWindowHours = 720
 	// Request-control logs are retained for 30 days, so the counting window
 	// cannot exceed the data available to the state query.
-	requestControlMaxViolationWindowHours     = 720
-	requestControlMaxBanThreshold             = 1000
-	requestControlHitSpacing                  = 5 * time.Minute
-	requestControlQueueSize                   = 8192
-	requestControlWorkerCount                 = 2
-	requestControlRefreshInterval             = 30 * time.Second
-	requestControlRefreshTimeout              = 5 * time.Second
-	requestControlWorkerTimeout               = 30 * time.Second
-	requestControlRetentionDays               = 30
-	requestControlMaxUserRules                = 2000
-	requestControlMaxUAMarkers                = 200
-	requestControlMaxUAMarkerRunes            = 200
-	requestControlMaxDetails                  = 32
+	requestControlMaxViolationWindowHours = 720
+	requestControlMaxBanThreshold         = 1000
+	requestControlHitSpacing              = 5 * time.Minute
+	requestControlQueueSize               = 8192
+	requestControlWorkerCount             = 2
+	requestControlRefreshInterval         = 30 * time.Second
+	requestControlRefreshTimeout          = 5 * time.Second
+	requestControlWorkerTimeout           = 30 * time.Second
+	requestControlRetentionDays           = 30
+	requestControlMaxUserRules            = 2000
+	requestControlMaxUAMarkers            = 200
+	requestControlMaxUAMarkerRunes        = 200
+	requestControlMaxDetails              = 32
 )
 
 var codexRequestUserAgentPattern = regexp.MustCompile(`(?i)^([a-z0-9][a-z0-9_. -]*)/(\d+\.\d+\.\d+)(?:[-+][0-9a-z.-]+)?(?:\s|$)`)
