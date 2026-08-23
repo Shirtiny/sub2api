@@ -82,7 +82,7 @@ func (h *OpenAIGatewayHandler) ChatCompletions(c *gin.Context) {
 
 	reqLog = reqLog.With(zap.String("model", reqModel), zap.Bool("stream", reqStream))
 	if decision := h.checkRequestControl(c, reqLog, apiKey, subject, service.RequestControlProtocolChat, reqModel, body); decision != nil && decision.Blocked {
-		h.errorResponse(c, requestControlStatus(decision), requestControlErrorCode(decision), decision.Message)
+		h.errorResponse(c, requestControlStatus(decision), requestControlErrorCode(decision), requestControlClientMessage(decision))
 		return
 	}
 

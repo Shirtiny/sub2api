@@ -11,6 +11,8 @@ import (
 	"go.uber.org/zap"
 )
 
+const requestControlClientBlockMessage = "该请求已被限制，请使用codex重新请求"
+
 func (h *GatewayHandler) checkRequestControl(c *gin.Context, reqLog *zap.Logger, apiKey *service.APIKey, subject middleware2.AuthSubject, protocol, model string, body []byte) *service.RequestControlDecision {
 	if h == nil || h.requestControlService == nil {
 		return nil
@@ -35,15 +37,16 @@ func (h *OpenAIGatewayHandler) checkRequestControl(c *gin.Context, reqLog *zap.L
 	return runRequestControl(c, reqLog, h.requestControlService, input)
 }
 
-func requestControlStatus(decision *service.RequestControlDecision) int {
-	if decision == nil || decision.StatusCode < 400 || decision.StatusCode > 599 {
-		return http.StatusForbidden
-	}
-	return decision.StatusCode
+func requestControlStatus(_ *service.RequestControlDecision) int {
+	return http.StatusForbidden
 }
 
 func requestControlErrorCode(_ *service.RequestControlDecision) string {
-	return "request_control_violation"
+	return "403"
+}
+
+func requestControlClientMessage(_ *service.RequestControlDecision) string {
+	return requestControlClientBlockMessage
 }
 
 func runRequestControl(c *gin.Context, reqLog *zap.Logger, svc *service.RequestControlService, input service.RequestControlCheckInput) *service.RequestControlDecision {

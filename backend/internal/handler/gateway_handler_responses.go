@@ -105,7 +105,7 @@ func (h *GatewayHandler) Responses(c *gin.Context) {
 	}
 
 	if decision := h.checkRequestControl(c, reqLog, apiKey, subject, service.RequestControlProtocolResponse, reqModel, body); decision != nil && decision.Blocked {
-		h.responsesErrorResponse(c, requestControlStatus(decision), requestControlErrorCode(decision), decision.Message)
+		h.responsesErrorResponse(c, requestControlStatus(decision), requestControlErrorCode(decision), requestControlClientMessage(decision))
 		return
 	}
 

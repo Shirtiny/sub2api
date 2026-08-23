@@ -96,7 +96,7 @@ func (h *GatewayHandler) ChatCompletions(c *gin.Context) {
 	}
 
 	if decision := h.checkRequestControl(c, reqLog, apiKey, subject, service.RequestControlProtocolChat, reqModel, body); decision != nil && decision.Blocked {
-		h.chatCompletionsErrorResponse(c, requestControlStatus(decision), requestControlErrorCode(decision), decision.Message)
+		h.chatCompletionsErrorResponse(c, requestControlStatus(decision), requestControlErrorCode(decision), requestControlClientMessage(decision))
 		return
 	}
 

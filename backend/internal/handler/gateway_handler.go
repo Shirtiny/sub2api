@@ -197,7 +197,7 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 	}
 
 	if decision := h.checkRequestControl(c, reqLog, apiKey, subject, service.RequestControlProtocolMessages, reqModel, body); decision != nil && decision.Blocked {
-		h.errorResponse(c, requestControlStatus(decision), requestControlErrorCode(decision), decision.Message)
+		h.errorResponse(c, requestControlStatus(decision), requestControlErrorCode(decision), requestControlClientMessage(decision))
 		return
 	}
 
@@ -1571,7 +1571,7 @@ func (h *GatewayHandler) CountTokens(c *gin.Context) {
 		return
 	}
 	if decision := h.checkRequestControl(c, reqLog, apiKey, subject, service.RequestControlProtocolMessages, parsedReq.Model, body); decision != nil && decision.Blocked {
-		h.errorResponse(c, requestControlStatus(decision), requestControlErrorCode(decision), decision.Message)
+		h.errorResponse(c, requestControlStatus(decision), requestControlErrorCode(decision), requestControlClientMessage(decision))
 		return
 	}
 
