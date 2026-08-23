@@ -200,7 +200,11 @@ func TestRequestControlDedupHashesBoundMetadata(t *testing.T) {
 	base := RequestControlCheckInput{
 		Protocol: RequestControlProtocolChat,
 		Headers: http.Header{
-			"Content-Type":      {"application/json"},
+			"Content-Type": {"application/json"},
+			"User-Agent":   {"stable-client/1.0.0"},
+			"originator":   {"stable-client"},
+		},
+		MetadataHeaders: http.Header{
 			"Authorization":     {"Bearer first"},
 			"X-Forwarded-For":   {"1.2.3.4"},
 			"Sec-WebSocket-Key": {"first-random-key"},
@@ -208,14 +212,20 @@ func TestRequestControlDedupHashesBoundMetadata(t *testing.T) {
 		Body: []byte(`{"model":"gpt-5","messages":[{"role":"user","content":"hidden"}]}`),
 	}
 	changedNoise := base
-	changedNoise.Headers = base.Headers.Clone()
-	changedNoise.Headers.Set("Authorization", "Bearer second")
-	changedNoise.Headers.Set("X-Forwarded-For", "9.9.9.9")
-	changedNoise.Headers.Set("Sec-WebSocket-Key", "second-random-key")
+	changedNoise.MetadataHeaders = base.MetadataHeaders.Clone()
+	changedNoise.MetadataHeaders.Set("Authorization", "Bearer second")
+	changedNoise.MetadataHeaders.Set("X-Forwarded-For", "9.9.9.9")
+	changedNoise.MetadataHeaders.Set("Sec-WebSocket-Key", "second-random-key")
 	firstHeader, firstBody := requestControlDedupHashes(base)
 	secondHeader, secondBody := requestControlDedupHashes(changedNoise)
 	require.Equal(t, firstHeader, secondHeader)
 	require.Equal(t, firstBody, secondBody)
+
+	changedClient := base
+	changedClient.Headers = base.Headers.Clone()
+	changedClient.Headers.Set("User-Agent", "other-client/2.0.0")
+	changedClientHash, _ := requestControlDedupHashes(changedClient)
+	require.NotEqual(t, firstHeader, changedClientHash)
 
 	changedSessionHeader := base
 	changedSessionHeader.Headers = base.Headers.Clone()
@@ -225,12 +235,12 @@ func TestRequestControlDedupHashesBoundMetadata(t *testing.T) {
 	firstSessionHeader.Headers.Set("session-id", "session-a")
 	firstSessionHash, _ := requestControlDedupHashes(firstSessionHeader)
 	secondSessionHash, _ := requestControlDedupHashes(changedSessionHeader)
-	require.NotEqual(t, firstSessionHash, secondSessionHash)
+	require.Equal(t, firstSessionHash, secondSessionHash)
 
 	changedBody := base
 	changedBody.Body = []byte(`{"model":"gpt-5","messages":[{"role":"assistant","content":"hidden"}]}`)
 	_, thirdBody := requestControlDedupHashes(changedBody)
-	require.NotEqual(t, firstBody, thirdBody)
+	require.Equal(t, firstBody, thirdBody)
 	changedContentSameLength := base
 	changedContentSameLength.Body = []byte(`{"model":"gpt-5","messages":[{"role":"user","content":"secret"}]}`)
 	_, sameShapeBody := requestControlDedupHashes(changedContentSameLength)
@@ -239,7 +249,12 @@ func TestRequestControlDedupHashesBoundMetadata(t *testing.T) {
 	changedPromptLength := base
 	changedPromptLength.Body = []byte(`{"model":"gpt-5","messages":[{"role":"user","content":"a much longer but still private prompt"}]}`)
 	_, promptLengthHash := requestControlDedupHashes(changedPromptLength)
-	require.NotEqual(t, firstBody, promptLengthHash)
+	require.Equal(t, firstBody, promptLengthHash)
+
+	changedModel := base
+	changedModel.Body = []byte(`{"model":"gpt-5.6-sol","messages":[{"role":"user","content":"hidden"}]}`)
+	_, modelHash := requestControlDedupHashes(changedModel)
+	require.Equal(t, firstBody, modelHash)
 
 	sessionA := base
 	sessionA.Body = []byte(`{"model":"gpt-5","messages":[{"role":"user","content":"hidden"}],"client_metadata":{"session_id":"session-a"}}`)
@@ -247,7 +262,17 @@ func TestRequestControlDedupHashesBoundMetadata(t *testing.T) {
 	sessionB.Body = []byte(`{"model":"gpt-5","messages":[{"role":"user","content":"hidden"}],"client_metadata":{"session_id":"session-b"}}`)
 	_, sessionHashA := requestControlDedupHashes(sessionA)
 	_, sessionHashB := requestControlDedupHashes(sessionB)
-	require.NotEqual(t, sessionHashA, sessionHashB)
+	require.Equal(t, sessionHashA, sessionHashB)
+
+	changedFormat := base
+	changedFormat.Body = []byte(`{"model":"gpt-5","messages":{"role":"user"}}`)
+	_, changedFormatHash := requestControlDedupHashes(changedFormat)
+	require.NotEqual(t, firstBody, changedFormatHash)
+
+	changedStaticControl := base
+	changedStaticControl.Body = []byte(`{"model":"gpt-5","messages":[{"role":"user","content":"hidden"}],"stream":false}`)
+	_, changedStaticControlHash := requestControlDedupHashes(changedStaticControl)
+	require.NotEqual(t, firstBody, changedStaticControlHash)
 
 	reorderedBody := base
 	reorderedBody.Body = []byte(`{"messages":[{"content":"hidden","role":"user"}],"model":"gpt-5"}`)
@@ -269,6 +294,66 @@ func TestRequestControlDedupHashesBoundMetadata(t *testing.T) {
 	_, largeHashA := requestControlDedupHashes(largeA)
 	_, largeHashB := requestControlDedupHashes(largeB)
 	require.Equal(t, largeHashA, largeHashB)
+}
+
+func TestRequestControlDedupClientProfileIgnoresVersionAndIdentityValues(t *testing.T) {
+	first := RequestControlCheckInput{
+		Protocol: RequestControlProtocolResponse,
+		Endpoint: "/v1/responses",
+		Headers: http.Header{
+			"User-Agent":              {"Codex Desktop/0.148.0-alpha.15 (Windows 10.0.26200; x86_64)"},
+			"Originator":              {"Codex Desktop"},
+			"Content-Type":            {"application/json"},
+			"Accept":                  {"text/event-stream"},
+			"Session-Id":              {"01a02a99-981a-992f-267a960a36a1"},
+			"Thread-Id":               {"01a02a99-981a-7181-992f-267a960a36a1"},
+			"X-Client-Request-Id":     {"01a02a99-981a-7181-992f-267a960a36a1"},
+			"X-Codex-Installation-Id": {"ed12c212-f894-4ba5-9f47-22a0999590bc"},
+			"X-Codex-Window-Id":       {"01a02a99-981a-7181-992f-267a960a36a1:0"},
+			"X-Codex-Turn-Metadata":   {`{"installation_id":"ed12c212-f894-4ba5-9f47-22a0999590bc","session_id":"01a02a99-981a-7181-992f-267a960a36a1","thread_id":"01a02a99-981a-7181-992f-267a960a36a1","request_kind":"turn"}`},
+		},
+	}
+	second := first
+	second.Headers = first.Headers.Clone()
+	second.Headers.Set("User-Agent", "Codex Desktop/0.149.0-alpha.4.1 (Windows 11.0.26100; x86_64)")
+	second.Headers.Set("originator", "codex_work_desktop")
+	second.Headers.Set("session-id", "01a02f27-90c8-7550-8a61-a3d3fcf9a8a1")
+	second.Headers.Set("thread-id", "01a02f27-90c8-7550-8a61-a3d3fcf9a8a1")
+	second.Headers.Set("x-client-request-id", "01a02f27-90c8-7550-8a61-a3d3fcf9a8a1")
+	second.Headers.Set("x-codex-installation-id", "fdbe860e-be97-4bb8-9e56-33a91c5e099e")
+	second.Headers.Set("x-codex-window-id", "01a02f27-90c8-7550-8a61-a3d3fcf9a8a1:3")
+	second.Headers.Set("x-codex-turn-metadata", `{"installation_id":"fdbe860e-be97-4bb8-9e56-33a91c5e099e","session_id":"01a02f27-90c8-7550-8a61-a3d3fcf9a8a1","thread_id":"01a02f27-90c8-7550-8a61-a3d3fcf9a8a1","request_kind":"turn"}`)
+	firstHeader, _ := requestControlDedupHashes(first)
+	secondHeader, _ := requestControlDedupHashes(second)
+	require.Equal(t, firstHeader, secondHeader)
+
+	cli := first
+	cli.Headers = first.Headers.Clone()
+	cli.Headers.Set("User-Agent", "codex-tui/0.146.0 (Mac OS 26.5.0; arm64)")
+	cli.Headers.Set("originator", "codex-tui")
+	cliHeader, _ := requestControlDedupHashes(cli)
+	require.NotEqual(t, firstHeader, cliHeader)
+}
+
+func TestRequestControlDedupBodyUsesFormatNotRequestContent(t *testing.T) {
+	base := RequestControlCheckInput{Protocol: RequestControlProtocolResponse, Endpoint: "/v1/responses"}
+	first := map[string]any{
+		"protocol": "openai_responses", "parse": "object",
+		"input": map[string]any{"kind": "array"}, "reasoning": map[string]any{"kind": "object"},
+		"stream": true, "store": false, "parallel_tool_calls": true,
+	}
+	second := map[string]any{
+		"protocol": "openai_responses", "parse": "object",
+		"input": map[string]any{"kind": "array"}, "reasoning": map[string]any{"kind": "object"},
+		"stream": false, "store": true, "parallel_tool_calls": false,
+	}
+	require.Equal(t, requestControlDedupBodyHash(base, first), requestControlDedupBodyHash(base, second))
+
+	differentShape := map[string]any{
+		"protocol": "openai_responses", "parse": "object",
+		"input": map[string]any{"kind": "string"}, "reasoning": map[string]any{"kind": "object"},
+	}
+	require.NotEqual(t, requestControlDedupBodyHash(base, first), requestControlDedupBodyHash(base, differentShape))
 }
 
 func TestRequestControlUsesConfiguredBlockStatusAndMessage(t *testing.T) {
@@ -454,7 +539,13 @@ func TestBuildRequestControlLogCarriesOnlyRequestMetadata(t *testing.T) {
 		MetadataHeaders: http.Header{"Content-Type": {"application/json"}},
 		Body:            []byte(`{"model":"gpt-5","messages":[{"role":"user","content":"a different length"}]}`),
 	}, &RequestControlDecision{Action: RequestControlActionBlock, Reason: "test"})
-	require.NotEqual(t, log.RequestBodyHash, other.RequestBodyHash)
+	require.Equal(t, log.RequestBodyHash, other.RequestBodyHash)
+
+	differentOutcome := buildRequestControlLog(RequestControlCheckInput{
+		Protocol: RequestControlProtocolChat,
+		Body:     []byte(`{"model":"gpt-5","messages":[{"role":"user","content":"hidden"}]}`),
+	}, &RequestControlDecision{Action: RequestControlActionBlock, Reason: "different_policy_result"})
+	require.Equal(t, log.RequestBodyHash, differentOutcome.RequestBodyHash)
 }
 
 func TestRequestControlLogDetailJSONIncludesMetadataWithoutTransientFields(t *testing.T) {

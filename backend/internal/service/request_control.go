@@ -1884,7 +1884,7 @@ func buildRequestControlLog(input RequestControlCheckInput, decision *RequestCon
 	log.TLSMatch = decision.TLSMatched
 	log.RequestHeaders, log.RequestBodyMetadata = buildRequestControlMetadata(input)
 	log.RequestHeadersHash = requestControlDedupHeaderHash(input)
-	log.RequestBodyHash = requestControlMetadataHash(log.RequestBodyMetadata)
+	log.RequestBodyHash = requestControlDedupBodyHash(input, log.RequestBodyMetadata)
 	return log
 }
 
