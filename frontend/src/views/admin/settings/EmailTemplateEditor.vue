@@ -269,12 +269,14 @@ const fallbackPlaceholders = [
   "{{quota_remaining}}",
   "{{quota_threshold}}",
   "{{triggered_at}}",
+  "{{model}}",
   "{{group_name}}",
   "{{moderation_category}}",
   "{{moderation_score}}",
   "{{violation_count}}",
   "{{ban_threshold}}",
   "{{block_message}}",
+  "{{upstream_message}}",
   "{{rule_name}}",
   "{{severity}}",
   "{{alert_status}}",
@@ -368,6 +370,11 @@ const eventDisplayMeta: Record<string, EventDisplayMeta> = {
     timing: "内容审计违规次数达到封禁阈值并自动禁用用户账号时发送。",
     categoryLabel: "风控",
   },
+  "content_moderation.cyber_policy_notice": {
+    label: "网络安全策略拦截提醒",
+    timing: "上游返回 cyber_policy 或 400 网络安全策略拦截时发送给用户。",
+    categoryLabel: "风控",
+  },
   "ops.alert": {
     label: "运维告警",
     timing: "运维监控规则触发告警并满足邮件通知配置时发送给运维收件人。",
@@ -429,6 +436,11 @@ const eventDisplayMetaEn: Record<string, EventDisplayMeta> = {
   "content_moderation.account_disabled": {
     label: "Risk Control Account Disabled",
     timing: "Sent when content moderation reaches the ban threshold and automatically disables the user account.",
+    categoryLabel: "Risk Control",
+  },
+  "content_moderation.cyber_policy_notice": {
+    label: "Cyber Policy Notice",
+    timing: "Sent when an upstream request is blocked by cyber_policy or a 400 cyber-security policy response.",
     categoryLabel: "Risk Control",
   },
   "ops.alert": {

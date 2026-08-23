@@ -159,6 +159,7 @@ func (h *OpenAIGatewayHandler) AlphaSearch(c *gin.Context) {
 			}
 			return h.gatewayService.ForwardAlphaSearch(c.Request.Context(), c, account, forwardBody)
 		}()
+		h.recordCyberPolicyIfMarked(c, apiKey, account, requestedModel)
 		finishOpenAIUsageResponseTiming(c, forwardStart, result)
 		service.SetOpsLatencyMs(c, service.OpsResponseLatencyMsKey, time.Since(forwardStart).Milliseconds())
 

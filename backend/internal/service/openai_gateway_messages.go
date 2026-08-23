@@ -340,8 +340,8 @@ func (s *OpenAIGatewayService) ForwardAsAnthropic(
 			)
 			return s.ForwardAsAnthropic(ctx, c, account, body, promptCacheKey, defaultMappedModel)
 		}
-		if s.shouldFailoverOpenAIUpstreamResponse(resp.StatusCode, upstreamMsg, respBody) ||
-			(account.IsPoolMode() && account.IsPoolModeRetryableStatus(resp.StatusCode)) {
+		if !isCyberPolicyResponse(resp.StatusCode, respBody) && (s.shouldFailoverOpenAIUpstreamResponse(resp.StatusCode, upstreamMsg, respBody) ||
+			(account.IsPoolMode() && account.IsPoolModeRetryableStatus(resp.StatusCode))) {
 			upstreamDetail := ""
 			if s.cfg != nil && s.cfg.Gateway.LogUpstreamErrorBody {
 				maxBytes := s.cfg.Gateway.LogUpstreamErrorBodyMaxBytes
@@ -505,8 +505,8 @@ func (s *OpenAIGatewayService) forwardOpenAIMessagesPassthrough(
 		resp.Body = io.NopCloser(bytes.NewReader(respBody))
 
 		upstreamMsg := sanitizeUpstreamErrorMessage(strings.TrimSpace(extractUpstreamErrorMessage(respBody)))
-		if s.shouldFailoverOpenAIUpstreamResponse(resp.StatusCode, upstreamMsg, respBody) ||
-			(account.IsPoolMode() && account.IsPoolModeRetryableStatus(resp.StatusCode)) {
+		if !isCyberPolicyResponse(resp.StatusCode, respBody) && (s.shouldFailoverOpenAIUpstreamResponse(resp.StatusCode, upstreamMsg, respBody) ||
+			(account.IsPoolMode() && account.IsPoolModeRetryableStatus(resp.StatusCode))) {
 			appendOpsUpstreamError(c, OpsUpstreamErrorEvent{
 				Platform:           account.Platform,
 				AccountID:          account.ID,
@@ -671,6 +671,9 @@ func (s *OpenAIGatewayService) handleOpenAIMessagesPassthroughStreamingResponse(
 	for scanner.Scan() {
 		line := scanner.Text()
 		if data, ok := extractAnthropicSSEDataLine(line); ok {
+			if hit, code, message := DetectCyberPolicyResponse(http.StatusOK, []byte(data)); hit {
+				MarkOpsCyberPolicy(c, CyberPolicyMark{Code: code, Message: message, Body: truncateString(data, 4096), UpstreamStatus: http.StatusOK})
+			}
 			if firstTokenMs == nil && strings.TrimSpace(data) != "" && strings.TrimSpace(data) != "[DONE]" {
 				ms := int(time.Since(startTime).Milliseconds())
 				firstTokenMs = &ms
@@ -710,6 +713,9 @@ func (s *OpenAIGatewayService) handleOpenAIMessagesPassthroughNonStreamingRespon
 	body, err := ReadUpstreamResponseBody(resp.Body, s.cfg, c, openAITooLargeError)
 	if err != nil {
 		return nil, err
+	}
+	if hit, code, message := DetectCyberPolicyResponse(resp.StatusCode, body); hit {
+		MarkOpsCyberPolicy(c, CyberPolicyMark{Code: code, Message: message, Body: truncateString(string(body), 4096), UpstreamStatus: resp.StatusCode})
 	}
 	usage := parseOpenAIUsageFromAnthropicMessagesBody(body)
 	responseheaders.WriteFilteredHeaders(c.Writer.Header(), resp.Header, s.responseHeaderFilter)
@@ -816,6 +822,16 @@ func (s *OpenAIGatewayService) handleAnthropicBufferedStreamingResponse(
 	if finalResponse == nil {
 		writeAnthropicError(c, http.StatusBadGateway, "api_error", "Upstream stream ended without a terminal response event")
 		return nil, fmt.Errorf("upstream stream ended without terminal event")
+	}
+	if payload, err := json.Marshal(finalResponse); err == nil {
+		if hit, code, message := DetectCyberPolicyResponse(http.StatusOK, payload); hit {
+			MarkOpsCyberPolicy(c, CyberPolicyMark{Code: code, Message: message, Body: truncateString(string(payload), 4096), UpstreamStatus: http.StatusOK})
+			if message == "" {
+				message = "Request blocked by upstream cyber-security policy"
+			}
+			writeAnthropicError(c, http.StatusBadRequest, "invalid_request_error", message)
+			return nil, fmt.Errorf("openai cyber_policy: %s", message)
+		}
 	}
 
 	// When the terminal event has an empty output array, reconstruct from
@@ -1147,6 +1163,23 @@ func (s *OpenAIGatewayService) handleAnthropicStreamingResponse(
 				usage = copyOpenAIUsageFromResponsesUsage(event.Usage)
 			}
 		}
+		if strings.TrimSpace(event.Type) == "response.failed" {
+			payloadBytes := []byte(payload)
+			if hit, code, message := DetectCyberPolicyResponse(http.StatusOK, payloadBytes); hit {
+				MarkOpsCyberPolicy(c, CyberPolicyMark{Code: code, Message: message, Body: truncateString(payload, 4096), UpstreamStatus: http.StatusOK})
+				if message == "" {
+					message = "Request blocked by upstream cyber-security policy"
+				}
+				if !clientDisconnected {
+					writeStreamHeaders()
+					if _, err := fmt.Fprint(c.Writer, buildAnthropicStreamErrorSSE("invalid_request_error", message)); err == nil {
+						c.Writer.Flush()
+					}
+				}
+				clientDisconnected = true
+				return true
+			}
+		}
 
 		// Convert to Anthropic events
 		events := apicompat.ResponsesEventToAnthropicEvents(&event, state)
@@ -1387,6 +1420,17 @@ func writeAnthropicError(c *gin.Context, statusCode int, errType, message string
 			"message": message,
 		},
 	})
+}
+
+func buildAnthropicStreamErrorSSE(errType, message string) string {
+	payload, err := json.Marshal(gin.H{"type": "error", "error": gin.H{
+		"type":    errType,
+		"message": message,
+	}})
+	if err != nil {
+		return "event: error\ndata: {\"type\":\"error\",\"error\":{\"type\":\"invalid_request_error\",\"message\":\"upstream policy blocked the request\"}}\n\n"
+	}
+	return "event: error\ndata: " + string(payload) + "\n\n"
 }
 
 func copyOpenAIUsageFromResponsesUsage(usage *apicompat.ResponsesUsage) OpenAIUsage {

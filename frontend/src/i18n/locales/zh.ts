@@ -2852,6 +2852,8 @@ export default {
       emailOnHitHint: '开启后每次达到阈值都会向用户发送风控提醒邮件；自动封禁通知始终发送。',
       autoBan: '自动封禁用户',
       autoBanHint: '命中次数达到阈值后将禁用用户账号、刷新认证缓存并发送封禁通知邮件。',
+      cyberPolicyExcludeBan: 'Cyber 命中不计入封禁次数',
+      cyberPolicyExcludeBanHint: '仍记录并发送 Cyber 提醒，但不参与自动封禁累计。',
       banThreshold: '封禁触发次数',
       violationWindowHours: '累计窗口（小时）',
       hitRetentionDays: '命中记录保留（天）',
@@ -3120,6 +3122,7 @@ export default {
       action: {
         block: '拦截',
         keywordBlock: '关键词拦截',
+        cyberPolicy: 'Cyber 策略拦截',
         error: '异常',
       },
     },

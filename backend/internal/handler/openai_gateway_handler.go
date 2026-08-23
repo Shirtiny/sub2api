@@ -411,6 +411,7 @@ func (h *OpenAIGatewayHandler) Responses(c *gin.Context) {
 			}()
 			return h.gatewayService.Forward(c.Request.Context(), c, account, forwardBody)
 		}()
+		h.recordCyberPolicyIfMarked(c, apiKey, account, reqModel)
 		finishOpenAIUsageResponseTiming(c, forwardStart, result)
 		forwardDurationMs := time.Since(forwardStart).Milliseconds()
 		upstreamLatencyMs, _ := getContextInt64(c, service.OpsUpstreamLatencyMsKey)
@@ -866,6 +867,7 @@ func (h *OpenAIGatewayHandler) Messages(c *gin.Context) {
 			}()
 			return h.gatewayService.ForwardAsAnthropic(c.Request.Context(), c, account, forwardBody, promptCacheKey, defaultMappedModel)
 		}()
+		h.recordCyberPolicyIfMarked(c, apiKey, account, reqModel)
 		finishOpenAIUsageResponseTiming(c, forwardStart, result)
 
 		forwardDurationMs := time.Since(forwardStart).Milliseconds()
@@ -1841,6 +1843,8 @@ func (h *OpenAIGatewayHandler) ResponsesWebSocket(c *gin.Context) {
 				return nil
 			},
 			AfterTurn: func(turn int, result *service.OpenAIForwardResult, turnErr error) {
+				h.recordCyberPolicyIfMarked(c, apiKey, account, reqModel)
+				clearCyberPolicyTurnState(c)
 				if turn == 1 && result == nil && getOpenAIWSInitialStepFailover(turnErr) != nil {
 					// A typed initial failover is proven safe for the outer account
 					// loop. Keep the user slot and pre-reserved finalizer capacity;

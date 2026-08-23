@@ -2346,6 +2346,11 @@ func (s *OpenAIGatewayService) forwardOpenAIWSV2(
 			parseOpenAIWSResponseUsageFromCompletedEvent(message, usage)
 		}
 		imageCounter.AddSSEData(message)
+		if eventType == "response.failed" {
+			if hit, code, cyberMessage := DetectCyberPolicyResponse(http.StatusOK, message); hit {
+				MarkOpsCyberPolicy(c, CyberPolicyMark{Code: code, Message: cyberMessage, Body: truncateString(string(message), 4096), UpstreamStatus: http.StatusOK})
+			}
+		}
 
 		if eventType == "error" {
 			errCodeRaw, errTypeRaw, errMsgRaw := parseOpenAIWSErrorEventFields(message)

@@ -199,6 +199,7 @@ func (h *OpenAIGatewayHandler) ChatCompletions(c *gin.Context) {
 			}()
 			return h.gatewayService.ForwardAsChatCompletions(c.Request.Context(), c, account, forwardBody, promptCacheKey, "")
 		}()
+		h.recordCyberPolicyIfMarked(c, apiKey, account, reqModel)
 		finishOpenAIUsageResponseTiming(c, forwardStart, result)
 
 		forwardDurationMs := time.Since(forwardStart).Milliseconds()

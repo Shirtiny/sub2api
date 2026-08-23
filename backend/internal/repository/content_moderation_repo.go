@@ -205,6 +205,46 @@ WHERE user_id = $1
 	return count, nil
 }
 
+func (r *contentModerationRepository) CountFlaggedByUserSinceWithOptions(ctx context.Context, userID int64, since time.Time, excludeCyberPolicy bool) (int, error) {
+	return r.countFlaggedByUserSince(ctx, userID, since, excludeCyberPolicy)
+}
+
+func (r *contentModerationRepository) UpdateLogEmailSent(ctx context.Context, id int64, sent bool) error {
+	if id <= 0 {
+		return nil
+	}
+	if _, err := r.db.ExecContext(ctx, `UPDATE content_moderation_logs SET email_sent = $1 WHERE id = $2`, sent, id); err != nil {
+		return fmt.Errorf("update content moderation log email_sent: %w", err)
+	}
+	return nil
+}
+
+func (r *contentModerationRepository) countFlaggedByUserSince(ctx context.Context, userID int64, since time.Time, excludeCyberPolicy bool) (int, error) {
+	if userID <= 0 {
+		return 0, nil
+	}
+	var count int
+	err := r.db.QueryRowContext(ctx, `
+WITH last_auto_ban AS (
+    SELECT MAX(created_at) AS at
+    FROM content_moderation_logs
+    WHERE user_id = $1 AND auto_banned = TRUE
+)
+SELECT COUNT(*)
+FROM content_moderation_logs
+WHERE user_id = $1
+  AND flagged = TRUE
+  AND side_effects_applied = TRUE
+  AND ($3::bool IS FALSE OR action <> 'cyber_policy')
+  AND created_at >= $2
+  AND created_at > COALESCE((SELECT at FROM last_auto_ban), '-infinity'::timestamptz)
+`, userID, since, excludeCyberPolicy).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("count user content moderation flagged logs: %w", err)
+	}
+	return count, nil
+}
+
 func (r *contentModerationRepository) CleanupExpiredLogs(ctx context.Context, hitBefore time.Time, nonHitBefore time.Time) (*service.ContentModerationCleanupResult, error) {
 	result := &service.ContentModerationCleanupResult{FinishedAt: time.Now()}
 	if r == nil || r.db == nil {
@@ -250,7 +290,7 @@ func buildContentModerationLogWhere(filter service.ContentModerationLogFilter) (
 	case "hit", "flagged":
 		where = append(where, "l.flagged = TRUE")
 	case "blocked", "block":
-		where = append(where, "l.action IN ('block', 'keyword_block', 'hash_block')")
+		where = append(where, "(l.action IN ('block', 'keyword_block', 'hash_block') OR l.action = 'cyber_policy')")
 	case "pass", "allow":
 		where = append(where, "l.flagged = FALSE AND l.error = ''")
 	case "error":

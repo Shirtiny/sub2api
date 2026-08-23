@@ -206,6 +206,9 @@ func (s *OpenAIGatewayService) forwardAsRawChatCompletions(
 	// 7. Handle error response with failover
 	if resp.StatusCode >= 400 {
 		respBody := s.readUpstreamErrorBody(resp)
+		if hit, code, message := DetectCyberPolicyResponse(resp.StatusCode, respBody); hit {
+			MarkOpsCyberPolicy(c, CyberPolicyMark{Code: code, Message: message, Body: truncateString(string(respBody), 4096), UpstreamStatus: resp.StatusCode})
+		}
 		_ = resp.Body.Close()
 		resp.Body = io.NopCloser(bytes.NewReader(respBody))
 		if account.Platform == PlatformGrok {
@@ -225,8 +228,8 @@ func (s *OpenAIGatewayService) forwardAsRawChatCompletions(
 				Message:            upstreamMsg,
 			})
 			s.handleGrokAccountUpstreamError(ctx, account, resp.StatusCode, resp.Header, respBody)
-			if s.shouldFailoverUpstreamError(resp.StatusCode) ||
-				(account.IsPoolMode() && account.IsPoolModeRetryableStatus(resp.StatusCode)) {
+			if !isCyberPolicyResponse(resp.StatusCode, respBody) && (s.shouldFailoverUpstreamError(resp.StatusCode) ||
+				(account.IsPoolMode() && account.IsPoolModeRetryableStatus(resp.StatusCode))) {
 				return nil, &UpstreamFailoverError{
 					StatusCode:             resp.StatusCode,
 					ResponseBody:           respBody,
@@ -235,8 +238,8 @@ func (s *OpenAIGatewayService) forwardAsRawChatCompletions(
 			}
 			return s.handleChatCompletionsErrorResponse(resp, c, account, billingModel)
 		}
-		if s.shouldFailoverOpenAIUpstreamResponse(resp.StatusCode, upstreamMsg, respBody) ||
-			(account.IsPoolMode() && account.IsPoolModeRetryableStatus(resp.StatusCode)) {
+		if !isCyberPolicyResponse(resp.StatusCode, respBody) && (s.shouldFailoverOpenAIUpstreamResponse(resp.StatusCode, upstreamMsg, respBody) ||
+			(account.IsPoolMode() && account.IsPoolModeRetryableStatus(resp.StatusCode))) {
 			upstreamDetail := ""
 			if s.cfg != nil && s.cfg.Gateway.LogUpstreamErrorBody {
 				maxBytes := s.cfg.Gateway.LogUpstreamErrorBodyMaxBytes

@@ -2862,6 +2862,8 @@ export default {
       emailOnHitHint: 'When enabled, send a risk-control email on every hit; auto-ban notices are always sent.',
       autoBan: 'Auto Ban User',
       autoBanHint: 'Disable the user, invalidate auth cache, and send a ban notice after the hit threshold is reached.',
+      cyberPolicyExcludeBan: 'Exclude Cyber hits from ban count',
+      cyberPolicyExcludeBanHint: 'Still record and email Cyber hits, but do not include them in automatic bans.',
       banThreshold: 'Ban Threshold',
       violationWindowHours: 'Count Window (hours)',
       hitRetentionDays: 'Hit Record Retention (days)',
@@ -3130,6 +3132,7 @@ export default {
       action: {
         block: 'Blocked',
         keywordBlock: 'Keyword Blocked',
+        cyberPolicy: 'Cyber Policy Blocked',
         error: 'Error',
       },
     },

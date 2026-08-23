@@ -268,7 +268,7 @@ func (s *OpenAIGatewayService) ForwardAsChatCompletions(
 			)
 			return s.forwardAsRawChatCompletions(ctx, c, account, body, defaultMappedModel)
 		}
-		if s.shouldFailoverOpenAIUpstreamResponse(resp.StatusCode, upstreamMsg, respBody) {
+		if !isCyberPolicyResponse(resp.StatusCode, respBody) && s.shouldFailoverOpenAIUpstreamResponse(resp.StatusCode, upstreamMsg, respBody) {
 			upstreamDetail := ""
 			if s.cfg != nil && s.cfg.Gateway.LogUpstreamErrorBody {
 				maxBytes := s.cfg.Gateway.LogUpstreamErrorBodyMaxBytes
@@ -406,6 +406,14 @@ func (s *OpenAIGatewayService) handleChatBufferedStreamingResponse(
 	}
 	if strings.TrimSpace(finalResponse.Status) == "failed" {
 		payload, _ := json.Marshal(gin.H{"type": "response.failed", "response": finalResponse})
+		if hit, code, message := DetectCyberPolicyResponse(http.StatusOK, payload); hit {
+			MarkOpsCyberPolicy(c, CyberPolicyMark{Code: code, Message: message, Body: truncateString(string(payload), 4096), UpstreamStatus: http.StatusOK})
+			if message == "" {
+				message = "Request blocked by upstream cyber-security policy"
+			}
+			writeChatCompletionsError(c, http.StatusBadRequest, "invalid_request_error", message)
+			return nil, fmt.Errorf("openai cyber_policy: %s", message)
+		}
 		return nil, s.newOpenAIStreamFailoverError(c, account, false, requestID, payload, openAICompatFailedResponseMessage(finalResponse))
 	}
 
@@ -539,6 +547,21 @@ func (s *OpenAIGatewayService) handleChatStreamingResponse(
 		if strings.TrimSpace(event.Type) == "response.failed" {
 			payloadBytes := []byte(payload)
 			message := extractOpenAISSEErrorMessage(payloadBytes)
+			if hit, code, cyberMessage := DetectCyberPolicyResponse(http.StatusOK, payloadBytes); hit {
+				MarkOpsCyberPolicy(c, CyberPolicyMark{Code: code, Message: cyberMessage, Body: truncateString(string(payloadBytes), 4096), UpstreamStatus: http.StatusOK})
+				if cyberMessage == "" {
+					cyberMessage = "Request blocked by upstream cyber-security policy"
+				}
+				if !clientDisconnected {
+					writeStreamHeaders()
+					if _, err := fmt.Fprint(c.Writer, buildChatStreamErrorSSE(code, cyberMessage)); err == nil {
+						_, _ = fmt.Fprint(c.Writer, "data: [DONE]\n\n")
+						c.Writer.Flush()
+					}
+				}
+				clientDisconnected = true
+				return true
+			}
 			streamFailoverErr = s.newOpenAIStreamFailoverError(c, account, false, requestID, payloadBytes, message)
 			return true
 		}
@@ -848,4 +871,16 @@ func writeChatCompletionsError(c *gin.Context, statusCode int, errType, message 
 			"message": message,
 		},
 	})
+}
+
+func buildChatStreamErrorSSE(code, message string) string {
+	payload, err := json.Marshal(gin.H{"error": gin.H{
+		"type":    "invalid_request_error",
+		"code":    code,
+		"message": message,
+	}})
+	if err != nil {
+		return "data: {\"error\":{\"type\":\"invalid_request_error\",\"code\":\"cyber_policy\",\"message\":\"upstream policy blocked the request\"}}\n\n"
+	}
+	return "data: " + string(payload) + "\n\n"
 }

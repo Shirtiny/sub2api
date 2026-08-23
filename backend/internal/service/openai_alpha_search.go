@@ -72,8 +72,8 @@ func (s *OpenAIGatewayService) ForwardAlphaSearch(ctx context.Context, c *gin.Co
 
 	if resp.StatusCode >= http.StatusBadRequest {
 		upstreamMessage := sanitizeUpstreamErrorMessage(strings.TrimSpace(extractUpstreamErrorMessage(respBody)))
-		if s.shouldFailoverOpenAIUpstreamResponse(resp.StatusCode, upstreamMessage, respBody) ||
-			isOpenAIAlphaSearchEndpointUnsupported(account, resp.StatusCode) {
+		if !isCyberPolicyResponse(resp.StatusCode, respBody) && (s.shouldFailoverOpenAIUpstreamResponse(resp.StatusCode, upstreamMessage, respBody) ||
+			isOpenAIAlphaSearchEndpointUnsupported(account, resp.StatusCode)) {
 			resp.Body = io.NopCloser(bytes.NewReader(respBody))
 			if shouldApplyOpenAIAlphaSearchAccountErrorSideEffects(resp.StatusCode) {
 				s.handleFailoverSideEffects(ctx, resp, account, upstreamModel)

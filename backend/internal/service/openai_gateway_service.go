@@ -2543,6 +2543,9 @@ func (s *OpenAIGatewayService) shouldFailoverUpstreamError(statusCode int) bool 
 }
 
 func (s *OpenAIGatewayService) shouldFailoverOpenAIUpstreamResponse(statusCode int, upstreamMsg string, upstreamBody []byte) bool {
+	if hit, _, _ := DetectCyberPolicyResponse(statusCode, upstreamBody); hit {
+		return false
+	}
 	if s.shouldFailoverUpstreamError(statusCode) {
 		return true
 	}
@@ -3604,8 +3607,8 @@ func (s *OpenAIGatewayService) forwardOpenAIPassthrough(
 	if resp.StatusCode >= 400 {
 		// 透传模式默认保持原样代理；但 429/529 属于网关必须兜底的
 		// 上游容量类错误，应先触发多账号 failover 以维持基础 SLA。
-		if shouldFailoverOpenAIPassthroughResponse(resp.StatusCode) ||
-			(account.IsPoolMode() && account.IsPoolModeRetryableStatus(resp.StatusCode)) {
+		if !isCyberPolicyResponse(resp.StatusCode, body) && (shouldFailoverOpenAIPassthroughResponse(resp.StatusCode) ||
+			(account.IsPoolMode() && account.IsPoolModeRetryableStatus(resp.StatusCode))) {
 			return nil, s.handleFailoverErrorResponsePassthrough(ctx, resp, c, account, body)
 		}
 		return nil, s.handleErrorResponsePassthrough(ctx, resp, c, account, body)
@@ -3842,6 +3845,9 @@ func (s *OpenAIGatewayService) handleFailoverErrorResponsePassthrough(
 	requestBody []byte,
 ) error {
 	body := s.readUpstreamErrorBody(resp)
+	if hit, code, message := DetectCyberPolicyResponse(resp.StatusCode, body); hit {
+		MarkOpsCyberPolicy(c, CyberPolicyMark{Code: code, Message: message, Body: truncateString(string(body), 4096), UpstreamStatus: resp.StatusCode})
+	}
 
 	upstreamMsg := strings.TrimSpace(extractUpstreamErrorMessage(body))
 	upstreamMsg = sanitizeUpstreamErrorMessage(upstreamMsg)
@@ -4014,6 +4020,9 @@ func openAIStreamDataStartsClientOutput(data, eventType string) bool {
 }
 
 func openAIStreamFailedEventShouldFailover(payload []byte, message string) bool {
+	if hit, _, _ := DetectCyberPolicyResponse(http.StatusBadRequest, payload); hit {
+		return false
+	}
 	if isOpenAITransientProcessingError(http.StatusBadRequest, message, payload) {
 		return true
 	}
@@ -4183,6 +4192,9 @@ func (s *OpenAIGatewayService) handleStreamingResponsePassthrough(
 			eventType := strings.TrimSpace(gjson.Get(trimmedData, "type").String())
 			if eventType == "response.failed" {
 				failedMessage = extractOpenAISSEErrorMessage(dataBytes)
+				if hit, code, message := DetectCyberPolicyResponse(http.StatusOK, dataBytes); hit {
+					MarkOpsCyberPolicy(c, CyberPolicyMark{Code: code, Message: message, Body: truncateString(string(dataBytes), 4096), UpstreamStatus: http.StatusOK})
+				}
 				if !openAIStreamClientOutputStarted(c, clientOutputStarted) && openAIStreamFailedEventShouldFailover(dataBytes, failedMessage) {
 					return resultWithUsage(),
 						s.newOpenAIStreamFailoverError(c, account, true, upstreamRequestID, dataBytes, failedMessage)
@@ -4375,6 +4387,9 @@ func (s *OpenAIGatewayService) handlePassthroughSSEToJSON(resp *http.Response, c
 		terminalType, terminalPayload, terminalOK := extractOpenAISSETerminalEvent(bodyText)
 		if terminalOK && terminalType == "response.failed" {
 			msg := extractOpenAISSEErrorMessage(terminalPayload)
+			if hit, code, cyberMessage := DetectCyberPolicyResponse(http.StatusOK, terminalPayload); hit {
+				MarkOpsCyberPolicy(c, CyberPolicyMark{Code: code, Message: cyberMessage, Body: truncateString(string(terminalPayload), 4096), UpstreamStatus: http.StatusOK})
+			}
 			if msg == "" {
 				msg = "Upstream compact response failed"
 			}
@@ -4707,6 +4722,9 @@ func (s *OpenAIGatewayService) handleErrorResponse(
 	requestedModel ...string,
 ) (*OpenAIForwardResult, error) {
 	body := s.readUpstreamErrorBody(resp)
+	if hit, code, message := DetectCyberPolicyResponse(resp.StatusCode, body); hit {
+		MarkOpsCyberPolicy(c, CyberPolicyMark{Code: code, Message: message, Body: truncateString(string(body), 4096), UpstreamStatus: resp.StatusCode})
+	}
 
 	upstreamMsg := strings.TrimSpace(extractUpstreamErrorMessage(body))
 	upstreamMsg = sanitizeUpstreamErrorMessage(upstreamMsg)
@@ -4868,6 +4886,9 @@ func (s *OpenAIGatewayService) handleCompatErrorResponse(
 	requestedModel ...string,
 ) (*OpenAIForwardResult, error) {
 	body := s.readUpstreamErrorBody(resp)
+	if hit, code, message := DetectCyberPolicyResponse(resp.StatusCode, body); hit {
+		MarkOpsCyberPolicy(c, CyberPolicyMark{Code: code, Message: message, Body: truncateString(string(body), 4096), UpstreamStatus: resp.StatusCode})
+	}
 
 	upstreamMsg := strings.TrimSpace(extractUpstreamErrorMessage(body))
 	if upstreamMsg == "" {
@@ -5187,6 +5208,9 @@ func (s *OpenAIGatewayService) handleStreamingResponse(ctx context.Context, resp
 			forceFlushFailedEvent := false
 			if eventType == "response.failed" {
 				failedMessage = extractOpenAISSEErrorMessage(dataBytes)
+				if hit, code, message := DetectCyberPolicyResponse(http.StatusOK, dataBytes); hit {
+					MarkOpsCyberPolicy(c, CyberPolicyMark{Code: code, Message: message, Body: truncateString(string(dataBytes), 4096), UpstreamStatus: http.StatusOK})
+				}
 				if !openAIStreamClientOutputStarted(c, clientOutputStarted) && openAIStreamFailedEventShouldFailover(dataBytes, failedMessage) {
 					sawFailedEvent = true
 					streamFailoverErr = s.newOpenAIStreamFailoverError(c, account, false, upstreamRequestID, dataBytes, failedMessage)
@@ -5769,6 +5793,9 @@ func (s *OpenAIGatewayService) handleSSEToJSON(resp *http.Response, c *gin.Conte
 		terminalType, terminalPayload, terminalOK := extractOpenAISSETerminalEvent(bodyText)
 		if terminalOK && terminalType == "response.failed" {
 			msg := extractOpenAISSEErrorMessage(terminalPayload)
+			if hit, code, cyberMessage := DetectCyberPolicyResponse(http.StatusOK, terminalPayload); hit {
+				MarkOpsCyberPolicy(c, CyberPolicyMark{Code: code, Message: cyberMessage, Body: truncateString(string(terminalPayload), 4096), UpstreamStatus: http.StatusOK})
+			}
 			if msg == "" {
 				msg = "Upstream compact response failed"
 			}

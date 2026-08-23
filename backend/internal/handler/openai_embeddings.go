@@ -165,6 +165,7 @@ func (h *OpenAIGatewayHandler) Embeddings(c *gin.Context) {
 			}()
 			return h.gatewayService.ForwardEmbeddings(c.Request.Context(), c, account, forwardBody, "")
 		}()
+		h.recordCyberPolicyIfMarked(c, apiKey, account, reqModel)
 		finishOpenAIUsageResponseTiming(c, forwardStart, result)
 
 		forwardDurationMs := time.Since(forwardStart).Milliseconds()

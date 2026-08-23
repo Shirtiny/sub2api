@@ -207,6 +207,7 @@ func (h *OpenAIGatewayHandler) Images(c *gin.Context) {
 			}()
 			return h.gatewayService.ForwardImages(requestCtx, c, account, body, parsed, channelMapping.MappedModel)
 		}()
+		h.recordCyberPolicyIfMarked(c, apiKey, account, requestModel)
 		finishOpenAIUsageResponseTiming(c, forwardStart, result)
 		forwardDurationMs := time.Since(forwardStart).Milliseconds()
 		upstreamLatencyMs, _ := getContextInt64(c, service.OpsUpstreamLatencyMsKey)
