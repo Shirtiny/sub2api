@@ -9,6 +9,7 @@ const {
   updateConfig,
   getStatus,
   listLogs,
+  getLog,
   getGroups,
   listUsers,
   getUser,
@@ -19,6 +20,7 @@ const {
   updateConfig: vi.fn(),
   getStatus: vi.fn(),
   listLogs: vi.fn(),
+  getLog: vi.fn(),
   getGroups: vi.fn(),
   listUsers: vi.fn(),
   getUser: vi.fn(),
@@ -33,6 +35,7 @@ vi.mock('@/api/admin', () => ({
       updateRequestControlConfig: updateConfig,
       getRequestControlStatus: getStatus,
       listRequestControlLogs: listLogs,
+      getRequestControlLog: getLog,
     },
     groups: { getAll: getGroups },
     users: { list: listUsers, getById: getUser },
@@ -81,6 +84,7 @@ describe('RequestControlPanel', () => {
     updateConfig.mockImplementation(async (payload: RequestControlConfig) => ({ ...baseConfig(), ...payload }))
     getStatus.mockResolvedValue({ enabled: true, risk_control_enabled: true, queue_size: 8192, queue_length: 0, enqueued: 0, processed: 0, dropped: 0, errors: 0 })
     listLogs.mockResolvedValue({ items: [], total: 0, page: 1, page_size: 20, pages: 1 })
+    getLog.mockResolvedValue(null)
     getGroups.mockResolvedValue([])
     listUsers.mockResolvedValue({
       items: [{ id: 42, username: 'tester', email: 'tester@example.com', role: 'user', balance: 0, concurrency: 1, status: 'active', allowed_groups: null, balance_notify_enabled: false, balance_notify_threshold: null, balance_notify_extra_emails: [], notes: '', created_at: '', updated_at: '' }],
@@ -148,5 +152,58 @@ describe('RequestControlPanel', () => {
     expect(userButton).toBeTruthy()
     await userButton!.trigger('click')
     expect((wrapper.get('[data-test="request-control-user-id"]').element as HTMLInputElement).value).toBe('42')
+  })
+
+  it('loads request metadata only when a record detail is opened', async () => {
+    const row = {
+      id: 7,
+      request_id: 'req-7',
+      user_id: 42,
+      user_email: 'tester@example.com',
+      api_key_id: null,
+      api_key_name: '',
+      group_id: null,
+      group_name: '',
+      endpoint: '/v1/responses',
+      provider: 'openai',
+      protocol: 'openai_responses',
+      model: 'gpt-5',
+      action: 'block',
+      reason: 'test',
+      allowed: false,
+      blocked: true,
+      observed: true,
+      client_kind: 'codex',
+      user_agent: 'codex_exec/1.0.0',
+      originator: 'codex_exec',
+      tls_fingerprint: '',
+      tls_match: null,
+      header_match: false,
+      body_match: false,
+      details: {},
+      violation_count: 1,
+      counted_violation: true,
+      email_sent: false,
+      hit_email_sent: false,
+      ban_email_sent: false,
+      auto_banned: false,
+      created_at: '2026-01-01T00:00:00Z',
+    }
+    listLogs.mockResolvedValue({ items: [row], total: 1, page: 1, page_size: 20, pages: 1 })
+    getLog.mockResolvedValue({
+      ...row,
+      request_headers: { 'content-type': 'application/json' },
+      request_body_metadata: { model: 'gpt-5', messages: { kind: 'array', count: 1 } },
+    })
+    const wrapper = mountPanel()
+    await flushPromises()
+
+    expect(getLog).not.toHaveBeenCalled()
+    await wrapper.get('[aria-label="admin.riskControl.requestControl.viewDetail"]').trigger('click')
+    await flushPromises()
+
+    expect(getLog).toHaveBeenCalledWith(7)
+    expect(document.body.textContent).toContain('admin.riskControl.requestControl.requestHeaders')
+    expect(document.body.textContent).toContain('content-type')
   })
 })

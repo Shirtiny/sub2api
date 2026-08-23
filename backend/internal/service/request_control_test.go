@@ -63,6 +63,9 @@ func (requestControlRepoStub) UpdateLogSideEffects(context.Context, *RequestCont
 func (requestControlRepoStub) ListLogs(context.Context, RequestControlLogFilter) ([]RequestControlLog, *pagination.PaginationResult, error) {
 	return nil, &pagination.PaginationResult{}, nil
 }
+func (requestControlRepoStub) GetLog(context.Context, int64) (*RequestControlLogDetail, error) {
+	return nil, ErrRequestControlLogNotFound
+}
 func (requestControlRepoStub) CleanupLogs(context.Context, time.Time) (int64, error) { return 0, nil }
 
 type requestControlViolationRepoStub struct {
@@ -221,6 +224,65 @@ func TestRequestControlBuiltInEmailIncludesConfiguredBlockMessage(t *testing.T) 
 	}, &ContentModerationConfig{BanThreshold: 4})
 	require.Contains(t, body, "&lt;custom request-control prompt&gt;")
 	require.NotContains(t, body, message)
+}
+
+func TestRequestControlMetadataRedactsHeadersAndSummarizesBody(t *testing.T) {
+	headers := http.Header{
+		"Authorization":           {"Bearer secret-token"},
+		"Content-Type":            {"application/json"},
+		"X-Codex-Installation-Id": {"ed12c212-f894-4ba5-9f47-22a0999590bc"},
+	}
+	body := []byte(`{"model":"gpt-5.6-sol","messages":[{"role":"user","content":"private prompt"}],"tools":[{"type":"function","function":{"name":"secret_tool","parameters":{"password":"do-not-store"}}}],"metadata":{"user_id":"session-1"}}`)
+	requestHeaders, requestBody := buildRequestControlMetadata(RequestControlCheckInput{
+		Protocol: RequestControlProtocolMessages,
+		Headers:  headers,
+		Body:     body,
+	})
+	require.Equal(t, "[redacted]", requestHeaders["authorization"])
+	require.Equal(t, "application/json", requestHeaders["content-type"])
+	bodyJSON := string(mustMarshalJSON(t, requestBody))
+	require.NotContains(t, bodyJSON, "private prompt")
+	require.NotContains(t, bodyJSON, "do-not-store")
+	require.Equal(t, "gpt-5.6-sol", requestBody["model"])
+	require.Equal(t, map[string]any{"kind": "object", "keys": []string{"user_id"}}, requestBody["metadata"])
+	messagesSummary, ok := requestBody["messages"].(map[string]any)
+	require.True(t, ok)
+	require.Equal(t, []string{"user"}, messagesSummary["roles"])
+	require.LessOrEqual(t, len(mustMarshalJSON(t, requestBody)), requestControlMetadataMaxJSONBytes)
+}
+
+func TestBuildRequestControlLogCarriesOnlyRequestMetadata(t *testing.T) {
+	log := buildRequestControlLog(RequestControlCheckInput{
+		Protocol: RequestControlProtocolChat,
+		Headers:  http.Header{"Content-Type": {"application/json"}},
+		MetadataHeaders: http.Header{
+			"Authorization":  {"Bearer secret"},
+			"X-Client-Trace": {"trace-1"},
+		},
+		Body: []byte(`{"model":"gpt-5","messages":[{"role":"user","content":"hidden"}]}`),
+	}, &RequestControlDecision{Action: RequestControlActionBlock, Reason: "test"})
+	require.Equal(t, "[redacted]", log.RequestHeaders["authorization"])
+	require.Equal(t, "trace-1", log.RequestHeaders["x-client-trace"])
+	require.NotContains(t, string(mustMarshalJSON(t, log.RequestBodyMetadata)), "hidden")
+}
+
+func TestRequestControlLogDetailJSONIncludesMetadataWithoutTransientFields(t *testing.T) {
+	detail := RequestControlLogDetail{
+		RequestControlLog:   RequestControlLog{ID: 7, RequestHeaders: map[string]string{"internal": "ignored"}, RequestBodyMetadata: map[string]any{"internal": "ignored"}},
+		RequestHeaders:      map[string]string{"content-type": "application/json"},
+		RequestBodyMetadata: map[string]any{"model": "gpt-5"},
+	}
+	raw := string(mustMarshalJSON(t, detail))
+	require.Contains(t, raw, "request_headers")
+	require.Contains(t, raw, "request_body_metadata")
+	require.NotContains(t, raw, "internal")
+}
+
+func mustMarshalJSON(t *testing.T, value any) []byte {
+	t.Helper()
+	raw, err := json.Marshal(value)
+	require.NoError(t, err)
+	return raw
 }
 
 func TestRequestControlQueuedLogPersistsCountedStateAfterHit(t *testing.T) {

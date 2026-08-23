@@ -351,6 +351,24 @@ func (h *ContentModerationHandler) ListRequestControlLogs(c *gin.Context) {
 	response.Paginated(c, items, pageResult.Total, pageResult.Page, pageResult.PageSize)
 }
 
+func (h *ContentModerationHandler) GetRequestControlLog(c *gin.Context) {
+	if h.requestControl == nil {
+		response.Error(c, 503, "Request control is unavailable")
+		return
+	}
+	id, err := strconv.ParseInt(strings.TrimSpace(c.Param("id")), 10, 64)
+	if err != nil || id <= 0 {
+		response.BadRequest(c, "Invalid request control log id")
+		return
+	}
+	item, err := h.requestControl.GetLog(c.Request.Context(), id)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, item)
+}
+
 func parseContentModerationDate(raw string) (time.Time, bool, error) {
 	raw = strings.TrimSpace(raw)
 	if raw == "" {

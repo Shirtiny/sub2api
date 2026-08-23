@@ -74,17 +74,18 @@ func runRequestControl(c *gin.Context, reqLog *zap.Logger, svc *service.RequestC
 
 func buildRequestControlInput(c *gin.Context, apiKey *service.APIKey, subject middleware2.AuthSubject, protocol, model string, body []byte) service.RequestControlCheckInput {
 	input := service.RequestControlCheckInput{
-		RequestID:      contentModerationRequestID(c.Request.Context()),
-		UserID:         subject.UserID,
-		Endpoint:       GetInboundEndpoint(c),
-		Model:          strings.TrimSpace(model),
-		Protocol:       protocol,
-		Body:           body,
-		Headers:        projectRequestControlHeaders(c.Request.Header),
-		UserAgent:      strings.TrimSpace(c.GetHeader("User-Agent")),
-		Originator:     strings.TrimSpace(c.GetHeader("originator")),
-		TLSFingerprint: inboundTLSFingerprint(c),
-		WebSocket:      isOpenAIWSUpgradeRequest(c.Request),
+		RequestID:       contentModerationRequestID(c.Request.Context()),
+		UserID:          subject.UserID,
+		Endpoint:        GetInboundEndpoint(c),
+		Model:           strings.TrimSpace(model),
+		Protocol:        protocol,
+		Body:            body,
+		Headers:         projectRequestControlHeaders(c.Request.Header),
+		MetadataHeaders: c.Request.Header,
+		UserAgent:       strings.TrimSpace(c.GetHeader("User-Agent")),
+		Originator:      strings.TrimSpace(c.GetHeader("originator")),
+		TLSFingerprint:  inboundTLSFingerprint(c),
+		WebSocket:       isOpenAIWSUpgradeRequest(c.Request),
 	}
 	if input.Endpoint == "" {
 		input.Endpoint = c.Request.URL.Path

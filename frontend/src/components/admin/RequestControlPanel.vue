@@ -202,8 +202,8 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100 dark:divide-dark-700">
-            <tr v-if="logsLoading"><td colspan="7" class="px-4 py-10 text-center text-sm text-gray-500">{{ t('common.loading') }}</td></tr>
-            <tr v-else-if="logs.length === 0"><td colspan="7" class="px-4 py-10 text-center text-sm text-gray-500">{{ t('admin.riskControl.requestControl.emptyLogs') }}</td></tr>
+            <tr v-if="logsLoading"><td colspan="8" class="px-4 py-10 text-center text-sm text-gray-500">{{ t('common.loading') }}</td></tr>
+            <tr v-else-if="logs.length === 0"><td colspan="8" class="px-4 py-10 text-center text-sm text-gray-500">{{ t('admin.riskControl.requestControl.emptyLogs') }}</td></tr>
             <template v-else>
               <tr v-for="row in logs" :key="row.id" class="hover:bg-gray-50 dark:hover:bg-dark-700/40">
               <td class="whitespace-nowrap px-4 py-3 text-sm text-content-secondary">{{ formatDate(row.created_at) }}</td>
@@ -215,6 +215,17 @@
               <td class="max-w-[220px] px-4 py-3 text-xs text-gray-500">
                 <span class="block truncate" :title="row.tls_fingerprint">{{ row.tls_fingerprint || t('admin.riskControl.requestControl.tlsUnavailable') }}</span>
               </td>
+              <td class="whitespace-nowrap px-4 py-3 text-right">
+                <button
+                  type="button"
+                  class="btn btn-ghost btn-sm"
+                  :title="t('admin.riskControl.requestControl.viewDetail')"
+                  :aria-label="t('admin.riskControl.requestControl.viewDetail')"
+                  @click="openLogDetail(row)"
+                >
+                  <Icon name="eye" size="sm" />
+                </button>
+              </td>
               </tr>
             </template>
           </tbody>
@@ -223,17 +234,51 @@
       <Pagination v-if="pagination.total > 0" :page="pagination.page" :total="pagination.total" :page-size="pagination.page_size" @update:page="onPageChange" @update:pageSize="onPageSizeChange" />
     </section>
   </div>
+
+  <BaseDialog
+    :show="detailOpen"
+    :title="t('admin.riskControl.requestControl.detailTitle')"
+    width="extra-wide"
+    @close="closeLogDetail"
+  >
+    <div v-if="detailLoading" class="py-12 text-center text-sm text-gray-500 dark:text-gray-400">
+      {{ t('common.loading') }}
+    </div>
+    <div v-else-if="detailError" class="py-12 text-center text-sm text-red-600 dark:text-red-300">
+      {{ t('admin.riskControl.requestControl.detailFailed') }}
+    </div>
+    <div v-else-if="detailLog" class="space-y-5">
+      <div class="grid grid-cols-1 gap-3 rounded-lg border border-gray-100 bg-gray-50 p-4 text-sm dark:border-dark-700 dark:bg-dark-900/30 sm:grid-cols-2 lg:grid-cols-4">
+        <div><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('admin.riskControl.requestControl.requestID') }}</p><p class="mt-1 break-all font-mono text-content-primary">{{ detailLog.request_id || '-' }}</p></div>
+        <div><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('admin.riskControl.requestControl.endpoint') }}</p><p class="mt-1 break-all text-content-primary">{{ detailLog.endpoint || '-' }}</p></div>
+        <div><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('admin.riskControl.requestControl.client') }}</p><p class="mt-1 break-all text-content-primary">{{ detailLog.client_kind || '-' }}</p></div>
+        <div><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('admin.riskControl.requestControl.result') }}</p><p class="mt-1 text-content-primary">{{ detailLog.action || '-' }} / {{ detailLog.reason || '-' }}</p></div>
+      </div>
+      <div class="grid grid-cols-1 gap-5 xl:grid-cols-2">
+        <section class="min-w-0">
+          <h4 class="mb-2 text-sm font-semibold text-content-primary">{{ t('admin.riskControl.requestControl.requestHeaders') }}</h4>
+          <pre class="max-h-[32rem] min-h-48 overflow-auto whitespace-pre-wrap break-all rounded-lg border border-gray-100 bg-gray-950 p-4 text-xs leading-5 text-gray-100 dark:border-dark-700">{{ formatMetadata(detailLog.request_headers) }}</pre>
+        </section>
+        <section class="min-w-0">
+          <h4 class="mb-2 text-sm font-semibold text-content-primary">{{ t('admin.riskControl.requestControl.requestBodyMetadata') }}</h4>
+          <p class="mb-2 text-xs text-gray-500 dark:text-gray-400">{{ t('admin.riskControl.requestControl.detailBodyHint') }}</p>
+          <pre class="max-h-[32rem] min-h-48 overflow-auto whitespace-pre-wrap break-all rounded-lg border border-gray-100 bg-gray-950 p-4 text-xs leading-5 text-gray-100 dark:border-dark-700">{{ formatMetadata(detailLog.request_body_metadata) }}</pre>
+        </section>
+      </div>
+    </div>
+  </BaseDialog>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Icon from '@/components/icons/Icon.vue'
+import BaseDialog from '@/components/common/BaseDialog.vue'
 import Pagination from '@/components/common/Pagination.vue'
 import Select from '@/components/common/Select.vue'
 import Toggle from '@/components/common/Toggle.vue'
 import { adminAPI } from '@/api/admin'
-import type { RequestControlConfig, RequestControlLog, RequestControlStatus, RequestControlUserRule } from '@/api/admin/riskControl'
+import type { RequestControlConfig, RequestControlLog, RequestControlLogDetail, RequestControlStatus, RequestControlUserRule } from '@/api/admin/riskControl'
 import type { AdminGroup, AdminUser } from '@/types'
 import { extractApiErrorMessage } from '@/utils/apiError'
 import { formatDateTime } from '@/utils/format'
@@ -245,6 +290,10 @@ const saving = ref(false)
 const logsLoading = ref(false)
 const groups = ref<AdminGroup[]>([])
 const logs = ref<RequestControlLog[]>([])
+const detailOpen = ref(false)
+const detailLoading = ref(false)
+const detailError = ref(false)
+const detailLog = ref<RequestControlLogDetail | null>(null)
 const status = ref<RequestControlStatus | null>(null)
 const ruleUserID = ref<number | null>(null)
 const ruleUAText = ref('')
@@ -295,7 +344,7 @@ const groupFilterOptions = computed(() => [
   ...groups.value.map((group) => ({ value: group.id, label: group.name })),
 ])
 const logHeadings = computed(() => [
-  t('admin.riskControl.requestControl.time'), t('admin.riskControl.requestControl.user'), t('admin.riskControl.requestControl.endpoint'), t('admin.riskControl.requestControl.result'), t('admin.riskControl.requestControl.client'), t('admin.riskControl.requestControl.observation'), t('admin.riskControl.requestControl.loggedAt'),
+  t('admin.riskControl.requestControl.time'), t('admin.riskControl.requestControl.user'), t('admin.riskControl.requestControl.endpoint'), t('admin.riskControl.requestControl.result'), t('admin.riskControl.requestControl.client'), t('admin.riskControl.requestControl.observation'), t('admin.riskControl.requestControl.loggedAt'), t('admin.riskControl.requestControl.detail'),
 ])
 const statusItems = computed(() => [
   { key: 'queue', label: t('admin.riskControl.requestControl.queue'), value: `${status.value?.queue_length ?? 0}/${status.value?.queue_size ?? 0}` },
@@ -390,6 +439,29 @@ function onPageSizeChange(pageSize: number) { pagination.page_size = pageSize; p
 function formatDate(value: string) { return formatDateTime(value) || '-' }
 function actionClass(row: RequestControlLog) { return row.blocked ? 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-300' : row.observed ? 'bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-300' : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300' }
 function detailText(row: RequestControlLog) { return Object.entries(row.details || {}).map(([key, value]) => `${key}: ${value}`).join(' · ') }
+function formatMetadata(value: unknown) {
+  try { return JSON.stringify(value ?? {}, null, 2) }
+  catch { return '{}' }
+}
+function closeLogDetail() {
+  detailOpen.value = false
+  detailLog.value = null
+  detailError.value = false
+}
+async function openLogDetail(row: RequestControlLog) {
+  detailOpen.value = true
+  detailLoading.value = true
+  detailError.value = false
+  detailLog.value = null
+  try {
+    detailLog.value = await adminAPI.riskControl.getRequestControlLog(row.id)
+  } catch (error) {
+    detailError.value = true
+    appStore.showError(extractApiErrorMessage(error, t('admin.riskControl.requestControl.detailFailed')))
+  } finally {
+    detailLoading.value = false
+  }
+}
 
 onMounted(() => { void load() })
 </script>

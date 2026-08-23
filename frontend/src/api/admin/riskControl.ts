@@ -90,6 +90,11 @@ export interface RequestControlLog {
   created_at: string
 }
 
+export interface RequestControlLogDetail extends RequestControlLog {
+  request_headers: Record<string, string>
+  request_body_metadata: Record<string, unknown>
+}
+
 export interface RequestControlLogsResponse {
   items: RequestControlLog[]
   total: number
@@ -409,6 +414,11 @@ export async function listRequestControlLogs(params: {
   return data
 }
 
+export async function getRequestControlLog(id: number): Promise<RequestControlLogDetail> {
+  const { data } = await apiClient.get<RequestControlLogDetail>(`/admin/risk-control/request-control/logs/${id}`)
+  return data
+}
+
 export const riskControlAPI = {
   getConfig,
   updateConfig,
@@ -422,6 +432,7 @@ export const riskControlAPI = {
   updateRequestControlConfig,
   getRequestControlStatus,
   listRequestControlLogs,
+  getRequestControlLog,
 }
 
 export default riskControlAPI

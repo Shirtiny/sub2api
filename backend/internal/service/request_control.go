@@ -134,6 +134,7 @@ type RequestControlCheckInput struct {
 	Protocol          string
 	Body              []byte
 	Headers           http.Header
+	MetadataHeaders   http.Header
 	UserAgent         string
 	Originator        string
 	TLSFingerprint    string
@@ -157,39 +158,49 @@ type RequestControlDecision struct {
 }
 
 type RequestControlLog struct {
-	ID             int64             `json:"id"`
-	RequestID      string            `json:"request_id"`
-	UserID         *int64            `json:"user_id"`
-	UserEmail      string            `json:"user_email"`
-	APIKeyID       *int64            `json:"api_key_id"`
-	APIKeyName     string            `json:"api_key_name"`
-	GroupID        *int64            `json:"group_id"`
-	GroupName      string            `json:"group_name"`
-	Endpoint       string            `json:"endpoint"`
-	Provider       string            `json:"provider"`
-	Protocol       string            `json:"protocol"`
-	Model          string            `json:"model"`
-	Action         string            `json:"action"`
-	Reason         string            `json:"reason"`
-	Allowed        bool              `json:"allowed"`
-	Blocked        bool              `json:"blocked"`
-	Observed       bool              `json:"observed"`
-	ClientKind     string            `json:"client_kind"`
-	UserAgent      string            `json:"user_agent"`
-	Originator     string            `json:"originator"`
-	TLSFingerprint string            `json:"tls_fingerprint"`
-	TLSMatch       *bool             `json:"tls_match"`
-	HeaderMatch    *bool             `json:"header_match"`
-	BodyMatch      *bool             `json:"body_match"`
-	Details        map[string]string `json:"details"`
-	ViolationCount int               `json:"violation_count"`
-	Counted        bool              `json:"counted_violation"`
-	EmailSent      bool              `json:"email_sent"`
-	HitEmailSent   bool              `json:"hit_email_sent"`
-	BanEmailSent   bool              `json:"ban_email_sent"`
-	AutoBanned     bool              `json:"auto_banned"`
-	CreatedAt      time.Time         `json:"created_at"`
+	ID                  int64             `json:"id"`
+	RequestID           string            `json:"request_id"`
+	UserID              *int64            `json:"user_id"`
+	UserEmail           string            `json:"user_email"`
+	APIKeyID            *int64            `json:"api_key_id"`
+	APIKeyName          string            `json:"api_key_name"`
+	GroupID             *int64            `json:"group_id"`
+	GroupName           string            `json:"group_name"`
+	Endpoint            string            `json:"endpoint"`
+	Provider            string            `json:"provider"`
+	Protocol            string            `json:"protocol"`
+	Model               string            `json:"model"`
+	Action              string            `json:"action"`
+	Reason              string            `json:"reason"`
+	Allowed             bool              `json:"allowed"`
+	Blocked             bool              `json:"blocked"`
+	Observed            bool              `json:"observed"`
+	ClientKind          string            `json:"client_kind"`
+	UserAgent           string            `json:"user_agent"`
+	Originator          string            `json:"originator"`
+	TLSFingerprint      string            `json:"tls_fingerprint"`
+	TLSMatch            *bool             `json:"tls_match"`
+	HeaderMatch         *bool             `json:"header_match"`
+	BodyMatch           *bool             `json:"body_match"`
+	Details             map[string]string `json:"details"`
+	ViolationCount      int               `json:"violation_count"`
+	Counted             bool              `json:"counted_violation"`
+	EmailSent           bool              `json:"email_sent"`
+	HitEmailSent        bool              `json:"hit_email_sent"`
+	BanEmailSent        bool              `json:"ban_email_sent"`
+	AutoBanned          bool              `json:"auto_banned"`
+	CreatedAt           time.Time         `json:"created_at"`
+	RequestHeaders      map[string]string `json:"-"`
+	RequestBodyMetadata map[string]any    `json:"-"`
 }
+
+type RequestControlLogDetail struct {
+	RequestControlLog
+	RequestHeaders      map[string]string `json:"request_headers"`
+	RequestBodyMetadata map[string]any    `json:"request_body_metadata"`
+}
+
+var ErrRequestControlLogNotFound = infraerrors.NotFound("REQUEST_CONTROL_LOG_NOT_FOUND", "request control log not found")
 
 type RequestControlLogFilter struct {
 	Pagination pagination.PaginationParams
@@ -218,6 +229,7 @@ type RequestControlRepository interface {
 	GetViolationState(context.Context, int64, time.Time) (int, *time.Time, error)
 	UpdateLogSideEffects(context.Context, *RequestControlLog) error
 	ListLogs(context.Context, RequestControlLogFilter) ([]RequestControlLog, *pagination.PaginationResult, error)
+	GetLog(context.Context, int64) (*RequestControlLogDetail, error)
 	CleanupLogs(context.Context, time.Time) (int64, error)
 }
 
@@ -542,6 +554,13 @@ func (s *RequestControlService) ListLogs(ctx context.Context, filter RequestCont
 		return []RequestControlLog{}, &pagination.PaginationResult{Total: 0, Page: params.Page, PageSize: params.PageSize, Pages: 0}, nil
 	}
 	return s.repo.ListLogs(ctx, filter)
+}
+
+func (s *RequestControlService) GetLog(ctx context.Context, id int64) (*RequestControlLogDetail, error) {
+	if s == nil || s.repo == nil || id <= 0 {
+		return nil, ErrRequestControlLogNotFound
+	}
+	return s.repo.GetLog(ctx, id)
 }
 
 func (s *RequestControlService) GetStatus() RequestControlRuntimeStatus {
@@ -1593,6 +1612,7 @@ func buildRequestControlLog(input RequestControlCheckInput, decision *RequestCon
 	log.HeaderMatch = requestControlBoolPtr(decision.HeaderMatched)
 	log.BodyMatch = requestControlBoolPtr(decision.BodyMatched)
 	log.TLSMatch = decision.TLSMatched
+	log.RequestHeaders, log.RequestBodyMetadata = buildRequestControlMetadata(input)
 	return log
 }
 
