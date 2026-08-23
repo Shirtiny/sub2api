@@ -146,6 +146,38 @@
     </div>
 
     <section class="card">
+      <div class="border-b border-gray-100 px-5 py-4 dark:border-dark-700">
+        <h3 class="text-base font-semibold text-content-primary">{{ t('admin.riskControl.requestControl.notificationsTitle') }}</h3>
+        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ t('admin.riskControl.requestControl.notificationsHint') }}</p>
+      </div>
+      <div class="grid grid-cols-1 gap-4 p-5 lg:grid-cols-2">
+        <div class="flex items-center justify-between rounded-lg border border-gray-100 p-4 dark:border-dark-700">
+          <div>
+            <p class="text-sm font-medium text-content-primary">{{ t('admin.riskControl.requestControl.emailOnHit') }}</p>
+            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ t('admin.riskControl.requestControl.emailOnHitHint') }}</p>
+          </div>
+          <Toggle v-model="form.email_on_hit" />
+        </div>
+        <div class="flex items-center justify-between rounded-lg border border-gray-100 p-4 dark:border-dark-700">
+          <div>
+            <p class="text-sm font-medium text-content-primary">{{ t('admin.riskControl.requestControl.autoBan') }}</p>
+            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ t('admin.riskControl.requestControl.autoBanHint') }}</p>
+          </div>
+          <Toggle v-model="form.auto_ban_enabled" />
+        </div>
+        <div>
+          <label class="input-label">{{ t('admin.riskControl.requestControl.banThreshold') }}</label>
+          <input v-model.number="form.ban_threshold" type="number" min="1" max="1000" class="input" />
+        </div>
+        <div>
+          <label class="input-label">{{ t('admin.riskControl.requestControl.violationWindowHours') }}</label>
+          <input v-model.number="form.violation_window_hours" type="number" min="1" max="720" class="input" />
+        </div>
+        <p class="text-xs text-gray-500 dark:text-gray-400 lg:col-span-2">{{ t('admin.riskControl.requestControl.violationWindowHint') }}</p>
+      </div>
+    </section>
+
+    <section class="card">
       <div class="flex flex-col gap-3 border-b border-gray-100 px-5 py-4 dark:border-dark-700 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h3 class="text-base font-semibold text-content-primary">{{ t('admin.riskControl.requestControl.logsTitle') }}</h3>
@@ -177,7 +209,7 @@
               <td class="px-4 py-3 text-sm text-content-secondary"><div>{{ row.endpoint || '-' }}</div><div class="text-xs text-gray-400">{{ row.model || '-' }}</div></td>
               <td class="px-4 py-3 text-sm"><span class="rounded-md px-2 py-1 text-xs font-medium" :class="actionClass(row)">{{ row.action }}</span><div class="mt-1 text-xs text-gray-400">{{ row.reason }}</div></td>
               <td class="px-4 py-3 text-sm text-content-secondary">{{ row.client_kind || '-' }}</td>
-              <td class="max-w-[300px] px-4 py-3 text-xs text-content-secondary"><div class="truncate" :title="row.user_agent">{{ row.user_agent || '-' }}</div><div v-if="Object.keys(row.details || {}).length" class="mt-1 truncate text-gray-400">{{ detailText(row) }}</div></td>
+              <td class="max-w-[300px] px-4 py-3 text-xs text-content-secondary"><div class="truncate" :title="row.user_agent">{{ row.user_agent || '-' }}</div><div v-if="row.violation_count > 0" class="mt-1 text-gray-400">{{ t('admin.riskControl.requestControl.violationCount', { count: row.violation_count }) }}<span v-if="row.email_sent"> / {{ t('admin.riskControl.requestControl.emailSent') }}</span><span v-if="row.auto_banned"> / {{ t('admin.riskControl.requestControl.autoBanned') }}</span></div><div v-if="Object.keys(row.details || {}).length" class="mt-1 truncate text-gray-400">{{ detailText(row) }}</div></td>
               <td class="max-w-[220px] px-4 py-3 text-xs text-gray-500">
                 <span class="block truncate" :title="row.tls_fingerprint">{{ row.tls_fingerprint || t('admin.riskControl.requestControl.tlsUnavailable') }}</span>
               </td>
@@ -231,7 +263,11 @@ const form = reactive<RequestControlConfig>({
   user_rules: [],
   global_user_agent_whitelist: [],
   block_status: 403,
-  block_message: '',
+  block_message: '内容违规，多次尝试将被封禁',
+  email_on_hit: true,
+  auto_ban_enabled: true,
+  ban_threshold: 4,
+  violation_window_hours: 720,
 })
 const filters = reactive({ action: '', protocol: '', group_id: 0, search: '' })
 const pagination = reactive({ page: 1, page_size: 20, total: 0, pages: 1 })

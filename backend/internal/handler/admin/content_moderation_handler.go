@@ -30,6 +30,10 @@ type requestControlConfigRequest struct {
 	GlobalUserAgentWhitelist *[]string                             `json:"global_user_agent_whitelist"`
 	BlockStatus              *int                                  `json:"block_status"`
 	BlockMessage             *string                               `json:"block_message"`
+	EmailOnHit               *bool                                 `json:"email_on_hit"`
+	AutoBanEnabled           *bool                                 `json:"auto_ban_enabled"`
+	BanThreshold             *int                                  `json:"ban_threshold"`
+	ViolationWindowHours     *int                                  `json:"violation_window_hours"`
 }
 
 type contentModerationConfigRequest struct {
@@ -276,7 +280,8 @@ func (h *ContentModerationHandler) UpdateRequestControlConfig(c *gin.Context) {
 	cfg, err := h.requestControl.UpdateConfig(c.Request.Context(), service.UpdateRequestControlConfigInput{
 		Enabled: req.Enabled, AllGroups: req.AllGroups, GroupIDs: req.GroupIDs, ModelFilter: req.ModelFilter,
 		AllUsers: req.AllUsers, UserRules: req.UserRules, GlobalUserAgentWhitelist: req.GlobalUserAgentWhitelist,
-		BlockStatus: req.BlockStatus, BlockMessage: req.BlockMessage,
+		BlockStatus: req.BlockStatus, BlockMessage: req.BlockMessage, EmailOnHit: req.EmailOnHit,
+		AutoBanEnabled: req.AutoBanEnabled, BanThreshold: req.BanThreshold, ViolationWindowHours: req.ViolationWindowHours,
 	})
 	if err != nil {
 		response.ErrorFrom(c, err)

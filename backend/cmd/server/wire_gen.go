@@ -244,7 +244,7 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	contentModerationHashCache := repository.NewContentModerationHashCache(redisClient)
 	contentModerationService := service.ProvideContentModerationService(settingRepository, contentModerationRepository, contentModerationHashCache, groupRepository, userRepository, apiKeyAuthCacheInvalidator, emailService, settingService)
 	requestControlRepository := repository.NewRequestControlRepository(db)
-	requestControlService := service.ProvideRequestControlService(settingRepository, requestControlRepository, groupRepository, settingService)
+	requestControlService := service.ProvideRequestControlService(settingRepository, requestControlRepository, groupRepository, settingService, userRepository, apiKeyAuthCacheInvalidator, emailService)
 	contentModerationHandler := admin.NewContentModerationHandler(contentModerationService, requestControlService)
 	paymentHandler := admin.NewPaymentHandler(paymentService, paymentConfigService)
 	affiliateHandler := admin.NewAffiliateHandler(affiliateService, adminService)

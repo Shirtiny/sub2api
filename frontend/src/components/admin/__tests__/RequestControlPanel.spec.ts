@@ -67,7 +67,11 @@ const baseConfig = (): RequestControlConfig => ({
   user_rules: [],
   global_user_agent_whitelist: [],
   block_status: 403,
-  block_message: 'request blocked',
+  block_message: '内容违规，多次尝试将被封禁',
+  email_on_hit: true,
+  auto_ban_enabled: true,
+  ban_threshold: 4,
+  violation_window_hours: 720,
 })
 
 describe('RequestControlPanel', () => {
@@ -110,6 +114,10 @@ describe('RequestControlPanel', () => {
 
     expect(updateConfig).toHaveBeenCalledWith(expect.objectContaining({
       global_user_agent_whitelist: ['codex_cli_rs/', 'trusted-client/'],
+      email_on_hit: true,
+      auto_ban_enabled: true,
+      ban_threshold: 4,
+      violation_window_hours: 720,
     }))
     expect(getStatus).toHaveBeenCalledTimes(2)
     expect(showSuccess).toHaveBeenCalled()

@@ -54,10 +54,39 @@ func (s *requestControlSettingStub) Delete(_ context.Context, key string) error 
 type requestControlRepoStub struct{}
 
 func (requestControlRepoStub) CreateLog(context.Context, *RequestControlLog) error { return nil }
+func (requestControlRepoStub) GetViolationState(context.Context, int64, time.Time) (int, *time.Time, error) {
+	return 0, nil, nil
+}
+func (requestControlRepoStub) UpdateLogSideEffects(context.Context, *RequestControlLog) error {
+	return nil
+}
 func (requestControlRepoStub) ListLogs(context.Context, RequestControlLogFilter) ([]RequestControlLog, *pagination.PaginationResult, error) {
 	return nil, &pagination.PaginationResult{}, nil
 }
 func (requestControlRepoStub) CleanupLogs(context.Context, time.Time) (int64, error) { return 0, nil }
+
+type requestControlViolationRepoStub struct {
+	requestControlRepoStub
+	count   int
+	last    *time.Time
+	created []*RequestControlLog
+	updated []*RequestControlLog
+}
+
+func (r *requestControlViolationRepoStub) CreateLog(_ context.Context, log *RequestControlLog) error {
+	log.ID = int64(len(r.created) + 1)
+	clone := *log
+	r.created = append(r.created, &clone)
+	return nil
+}
+func (r *requestControlViolationRepoStub) GetViolationState(context.Context, int64, time.Time) (int, *time.Time, error) {
+	return r.count, r.last, nil
+}
+func (r *requestControlViolationRepoStub) UpdateLogSideEffects(_ context.Context, log *RequestControlLog) error {
+	clone := *log
+	r.updated = append(r.updated, &clone)
+	return nil
+}
 
 func requestControlTestService(t *testing.T, cfg RequestControlConfig) *RequestControlService {
 	t.Helper()
@@ -74,6 +103,106 @@ func TestRequestControlCheckChatBlocks(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, decision.Blocked)
 	require.Equal(t, "openai_chat_completions_blocked", decision.Reason)
+}
+
+func TestRequestControlConfigDefaultsNotificationAndBanSettings(t *testing.T) {
+	cfg := defaultRequestControlConfig()
+	require.True(t, cfg.EmailOnHit)
+	require.True(t, cfg.AutoBanEnabled)
+	require.Equal(t, 4, cfg.BanThreshold)
+	require.Equal(t, 720, cfg.ViolationWindowHours)
+}
+
+func TestRequestControlUpdateConfigPersistsNotificationAndBanSettings(t *testing.T) {
+	cfg := RequestControlConfig{Enabled: true, AllGroups: true, AllUsers: true}
+	raw, err := json.Marshal(cfg)
+	require.NoError(t, err)
+	settings := &requestControlSettingStub{values: map[string]string{
+		SettingKeyRiskControlEnabled:   "true",
+		SettingKeyRequestControlConfig: string(raw),
+	}}
+	svc := NewRequestControlService(settings, requestControlRepoStub{}, nil)
+	emailOnHit := false
+	autoBan := true
+	threshold := 4
+	window := 48
+	view, err := svc.UpdateConfig(context.Background(), UpdateRequestControlConfigInput{
+		EmailOnHit:           &emailOnHit,
+		AutoBanEnabled:       &autoBan,
+		BanThreshold:         &threshold,
+		ViolationWindowHours: &window,
+	})
+	require.NoError(t, err)
+	require.False(t, view.EmailOnHit)
+	require.True(t, view.AutoBanEnabled)
+	require.Equal(t, threshold, view.BanThreshold)
+	require.Equal(t, window, view.ViolationWindowHours)
+}
+
+func TestRequestControlViolationCountUsesFiveMinuteGap(t *testing.T) {
+	userID := int64(7)
+	now := time.Now()
+	last := now
+	repo := &requestControlViolationRepoStub{count: 1, last: &last}
+	svc := &RequestControlService{repo: repo}
+	cfg := defaultRequestControlConfig()
+	log := &RequestControlLog{UserID: &userID, Blocked: true, CreatedAt: now.Add(4 * time.Minute)}
+
+	svc.prepareViolationCount(context.Background(), cfg, log)
+	require.False(t, log.Counted)
+	require.Equal(t, 1, log.ViolationCount)
+
+	// This uncounted request is still the previous hit for the next 5-minute
+	// gap decision.
+	lastRequest := log.CreatedAt
+	repo.last = &lastRequest
+	log.CreatedAt = now.Add(8 * time.Minute)
+	svc.prepareViolationCount(context.Background(), cfg, log)
+	require.False(t, log.Counted)
+	require.Equal(t, 1, log.ViolationCount)
+
+	lastRequest = log.CreatedAt
+	repo.last = &lastRequest
+	log.CreatedAt = now.Add(14*time.Minute + time.Second)
+	svc.prepareViolationCount(context.Background(), cfg, log)
+	require.True(t, log.Counted)
+	require.Equal(t, 2, log.ViolationCount)
+}
+
+func TestRequestControlAutoBanDisablesUserAndInvalidatesAuthCache(t *testing.T) {
+	userID := int64(42)
+	userRepo := &contentModerationTestUserRepo{user: &User{ID: userID, Email: "user@example.com", Status: StatusActive}}
+	cache := &contentModerationTestAuthCacheInvalidator{}
+	svc := &RequestControlService{userRepo: userRepo, authCacheInvalidator: cache}
+	cfg := &RequestControlConfig{AutoBanEnabled: true, BanThreshold: 4}
+	log := &RequestControlLog{UserID: &userID, ViolationCount: 4, Counted: true}
+
+	require.True(t, svc.applyRequestControlAutoBan(context.Background(), cfg, log))
+	require.True(t, log.AutoBanned)
+	require.Equal(t, StatusDisabled, userRepo.user.Status)
+	require.Equal(t, []int64{userID}, cache.userIDs)
+}
+
+func TestRequestControlQueuedLogPersistsCountedStateAfterHit(t *testing.T) {
+	userID := int64(7)
+	now := time.Now()
+	last := now.Add(-6 * time.Minute)
+	raw, err := json.Marshal(RequestControlConfig{Enabled: true, AllGroups: true, AllUsers: true})
+	require.NoError(t, err)
+	settings := &requestControlSettingStub{values: map[string]string{
+		SettingKeyRiskControlEnabled:   "true",
+		SettingKeyRequestControlConfig: string(raw),
+	}}
+	repo := &requestControlViolationRepoStub{count: 1, last: &last}
+	svc := NewRequestControlService(settings, repo, nil)
+	log := &RequestControlLog{UserID: &userID, Blocked: true, CreatedAt: now, RequestID: "req-1"}
+
+	require.NoError(t, svc.processQueuedLog(context.Background(), log))
+	require.Len(t, repo.created, 1)
+	require.True(t, repo.created[0].Counted)
+	require.Equal(t, 2, repo.created[0].ViolationCount)
+	require.Len(t, repo.updated, 1)
+	require.True(t, repo.updated[0].Counted)
 }
 
 func TestRequestControlBlocksAnonymousResponsesBeforeUAClassification(t *testing.T) {

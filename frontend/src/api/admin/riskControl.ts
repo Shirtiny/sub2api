@@ -22,6 +22,10 @@ export interface RequestControlConfig {
   global_user_agent_whitelist: string[]
   block_status: number
   block_message: string
+  email_on_hit: boolean
+  auto_ban_enabled: boolean
+  ban_threshold: number
+  violation_window_hours: number
 }
 
 export interface UpdateRequestControlConfig {
@@ -34,6 +38,10 @@ export interface UpdateRequestControlConfig {
   global_user_agent_whitelist?: string[]
   block_status?: number
   block_message?: string
+  email_on_hit?: boolean
+  auto_ban_enabled?: boolean
+  ban_threshold?: number
+  violation_window_hours?: number
 }
 
 export interface RequestControlStatus {
@@ -73,6 +81,10 @@ export interface RequestControlLog {
   header_match: boolean | null
   body_match: boolean | null
   details: Record<string, string>
+  violation_count: number
+  counted_violation: boolean
+  email_sent: boolean
+  auto_banned: boolean
   created_at: string
 }
 

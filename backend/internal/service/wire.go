@@ -653,8 +653,11 @@ func ProvideRequestControlService(
 	repo RequestControlRepository,
 	groupRepo GroupRepository,
 	settingService *SettingService,
+	userRepo UserRepository,
+	authCacheInvalidator APIKeyAuthCacheInvalidator,
+	emailService *EmailService,
 ) *RequestControlService {
-	svc := NewRequestControlService(settingRepo, repo, groupRepo)
+	svc := newRequestControlService(settingRepo, repo, groupRepo, userRepo, authCacheInvalidator, emailService)
 	if settingService != nil {
 		settingService.AddRiskControlUpdateCallback(svc.UpdateRiskControlEnabled)
 	}

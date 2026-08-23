@@ -34,17 +34,25 @@ const (
 	RequestControlProtocolChat     = ContentModerationProtocolOpenAIChat
 	RequestControlProtocolResponse = ContentModerationProtocolOpenAIResponses
 
-	requestControlDefaultBlockStatus  = http.StatusForbidden
-	requestControlDefaultBlockMessage = "请求管控未通过客户端校验，请使用受支持的官方客户端"
-	requestControlQueueSize           = 8192
-	requestControlWorkerCount         = 2
-	requestControlRefreshInterval     = 30 * time.Second
-	requestControlRefreshTimeout      = 5 * time.Second
-	requestControlRetentionDays       = 30
-	requestControlMaxUserRules        = 2000
-	requestControlMaxUAMarkers        = 200
-	requestControlMaxUAMarkerRunes    = 200
-	requestControlMaxDetails          = 32
+	requestControlDefaultBlockStatus          = http.StatusForbidden
+	requestControlDefaultBlockMessage         = "内容违规，多次尝试将被封禁"
+	requestControlDefaultBanThreshold         = 4
+	requestControlDefaultViolationWindowHours = 720
+	// Request-control logs are retained for 30 days, so the counting window
+	// cannot exceed the data available to the state query.
+	requestControlMaxViolationWindowHours     = 720
+	requestControlMaxBanThreshold             = 1000
+	requestControlHitSpacing                  = 5 * time.Minute
+	requestControlQueueSize                   = 8192
+	requestControlWorkerCount                 = 2
+	requestControlRefreshInterval             = 30 * time.Second
+	requestControlRefreshTimeout              = 5 * time.Second
+	requestControlWorkerTimeout               = 30 * time.Second
+	requestControlRetentionDays               = 30
+	requestControlMaxUserRules                = 2000
+	requestControlMaxUAMarkers                = 200
+	requestControlMaxUAMarkerRunes            = 200
+	requestControlMaxDetails                  = 32
 )
 
 var codexRequestUserAgentPattern = regexp.MustCompile(`(?i)^([a-z0-9][a-z0-9_. -]*)/(\d+\.\d+\.\d+)(?:[-+][0-9a-z.-]+)?(?:\s|$)`)
@@ -65,6 +73,10 @@ type RequestControlConfig struct {
 	GlobalUserAgentWhitelist []string                     `json:"global_user_agent_whitelist"`
 	BlockStatus              int                          `json:"block_status"`
 	BlockMessage             string                       `json:"block_message"`
+	EmailOnHit               bool                         `json:"email_on_hit"`
+	AutoBanEnabled           bool                         `json:"auto_ban_enabled"`
+	BanThreshold             int                          `json:"ban_threshold"`
+	ViolationWindowHours     int                          `json:"violation_window_hours"`
 }
 
 type RequestControlConfigView struct {
@@ -77,6 +89,10 @@ type RequestControlConfigView struct {
 	GlobalUserAgentWhitelist []string                     `json:"global_user_agent_whitelist"`
 	BlockStatus              int                          `json:"block_status"`
 	BlockMessage             string                       `json:"block_message"`
+	EmailOnHit               bool                         `json:"email_on_hit"`
+	AutoBanEnabled           bool                         `json:"auto_ban_enabled"`
+	BanThreshold             int                          `json:"ban_threshold"`
+	ViolationWindowHours     int                          `json:"violation_window_hours"`
 }
 
 type UpdateRequestControlConfigInput struct {
@@ -89,6 +105,10 @@ type UpdateRequestControlConfigInput struct {
 	GlobalUserAgentWhitelist *[]string                     `json:"global_user_agent_whitelist"`
 	BlockStatus              *int                          `json:"block_status"`
 	BlockMessage             *string                       `json:"block_message"`
+	EmailOnHit               *bool                         `json:"email_on_hit"`
+	AutoBanEnabled           *bool                         `json:"auto_ban_enabled"`
+	BanThreshold             *int                          `json:"ban_threshold"`
+	ViolationWindowHours     *int                          `json:"violation_window_hours"`
 }
 
 type RequestControlCheckInput struct {
@@ -154,6 +174,10 @@ type RequestControlLog struct {
 	HeaderMatch    *bool             `json:"header_match"`
 	BodyMatch      *bool             `json:"body_match"`
 	Details        map[string]string `json:"details"`
+	ViolationCount int               `json:"violation_count"`
+	Counted        bool              `json:"counted_violation"`
+	EmailSent      bool              `json:"email_sent"`
+	AutoBanned     bool              `json:"auto_banned"`
 	CreatedAt      time.Time         `json:"created_at"`
 }
 
@@ -181,6 +205,8 @@ type RequestControlRuntimeStatus struct {
 
 type RequestControlRepository interface {
 	CreateLog(context.Context, *RequestControlLog) error
+	GetViolationState(context.Context, int64, time.Time) (int, *time.Time, error)
+	UpdateLogSideEffects(context.Context, *RequestControlLog) error
 	ListLogs(context.Context, RequestControlLogFilter) ([]RequestControlLog, *pagination.PaginationResult, error)
 	CleanupLogs(context.Context, time.Time) (int64, error)
 }
@@ -198,26 +224,37 @@ type requestControlTask struct {
 }
 
 type RequestControlService struct {
-	settingRepo SettingRepository
-	repo        RequestControlRepository
-	groupRepo   GroupRepository
-	runtime     atomic.Pointer[requestControlRuntimeConfig]
-	refreshMu   sync.Mutex
-	queue       chan requestControlTask
-	validator   *ClaudeCodeValidator
-	enqueued    atomic.Int64
-	processed   atomic.Int64
-	dropped     atomic.Int64
-	errors      atomic.Int64
+	settingRepo          SettingRepository
+	repo                 RequestControlRepository
+	groupRepo            GroupRepository
+	userRepo             UserRepository
+	authCacheInvalidator APIKeyAuthCacheInvalidator
+	emailService         *EmailService
+	runtime              atomic.Pointer[requestControlRuntimeConfig]
+	refreshMu            sync.Mutex
+	queue                chan requestControlTask
+	validator            *ClaudeCodeValidator
+	violationMu          sync.Mutex
+	enqueued             atomic.Int64
+	processed            atomic.Int64
+	dropped              atomic.Int64
+	errors               atomic.Int64
 }
 
 func NewRequestControlService(settingRepo SettingRepository, repo RequestControlRepository, groupRepo GroupRepository) *RequestControlService {
+	return newRequestControlService(settingRepo, repo, groupRepo, nil, nil, nil)
+}
+
+func newRequestControlService(settingRepo SettingRepository, repo RequestControlRepository, groupRepo GroupRepository, userRepo UserRepository, authCacheInvalidator APIKeyAuthCacheInvalidator, emailService *EmailService) *RequestControlService {
 	svc := &RequestControlService{
-		settingRepo: settingRepo,
-		repo:        repo,
-		groupRepo:   groupRepo,
-		queue:       make(chan requestControlTask, requestControlQueueSize),
-		validator:   NewClaudeCodeValidator(),
+		settingRepo:          settingRepo,
+		repo:                 repo,
+		groupRepo:            groupRepo,
+		userRepo:             userRepo,
+		authCacheInvalidator: authCacheInvalidator,
+		emailService:         emailService,
+		queue:                make(chan requestControlTask, requestControlQueueSize),
+		validator:            NewClaudeCodeValidator(),
 	}
 	if settingRepo == nil {
 		return svc
@@ -292,6 +329,18 @@ func (s *RequestControlService) UpdateConfig(ctx context.Context, input UpdateRe
 	}
 	if input.BlockMessage != nil {
 		cfg.BlockMessage = *input.BlockMessage
+	}
+	if input.EmailOnHit != nil {
+		cfg.EmailOnHit = *input.EmailOnHit
+	}
+	if input.AutoBanEnabled != nil {
+		cfg.AutoBanEnabled = *input.AutoBanEnabled
+	}
+	if input.BanThreshold != nil {
+		cfg.BanThreshold = *input.BanThreshold
+	}
+	if input.ViolationWindowHours != nil {
+		cfg.ViolationWindowHours = *input.ViolationWindowHours
 	}
 	cfg.normalize()
 	if err := s.validateConfig(ctx, cfg); err != nil {
@@ -520,14 +569,71 @@ func (s *RequestControlService) worker() {
 		if task.log == nil {
 			continue
 		}
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		if err := s.repo.CreateLog(ctx, task.log); err != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), requestControlWorkerTimeout)
+		if err := s.processQueuedLog(ctx, task.log); err != nil {
 			s.errors.Add(1)
 			slog.Warn("request_control.log_persist_failed", "error", err)
 		} else {
 			s.processed.Add(1)
 		}
 		cancel()
+	}
+}
+
+func (s *RequestControlService) processQueuedLog(ctx context.Context, log *RequestControlLog) error {
+	if s == nil || s.repo == nil || log == nil {
+		return nil
+	}
+	if log.Blocked && log.UserID != nil && *log.UserID > 0 {
+		s.violationMu.Lock()
+		cfg := s.currentConfig()
+		s.prepareViolationCount(ctx, cfg, log)
+		err := s.repo.CreateLog(ctx, log)
+		s.violationMu.Unlock()
+		if err != nil {
+			return err
+		}
+		if log.Counted {
+			s.applyRequestControlSideEffects(ctx, cfg, log)
+			if err := s.repo.UpdateLogSideEffects(ctx, log); err != nil {
+				slog.Warn("request_control.update_side_effects_failed", "user_id", *log.UserID, "error", err)
+			}
+		}
+		return nil
+	}
+	return s.repo.CreateLog(ctx, log)
+}
+
+func (s *RequestControlService) currentConfig() *RequestControlConfig {
+	if s != nil {
+		if current := s.runtime.Load(); current != nil && current.config != nil {
+			return current.config
+		}
+	}
+	cfg := defaultRequestControlConfig()
+	cfg.normalize()
+	return cfg
+}
+
+func (s *RequestControlService) prepareViolationCount(ctx context.Context, cfg *RequestControlConfig, log *RequestControlLog) {
+	if s == nil || s.repo == nil || cfg == nil || log == nil || log.UserID == nil || *log.UserID <= 0 {
+		return
+	}
+	if log.CreatedAt.IsZero() {
+		log.CreatedAt = time.Now()
+	}
+	log.Counted = false
+	log.ViolationCount = 0
+	since := log.CreatedAt.Add(-time.Duration(cfg.ViolationWindowHours) * time.Hour)
+	count, last, err := s.repo.GetViolationState(ctx, *log.UserID, since)
+	if err != nil {
+		slog.Warn("request_control.violation_state_failed", "user_id", *log.UserID, "error", err)
+		return
+	}
+	log.ViolationCount = count
+	if last == nil || log.CreatedAt.Sub(*last) > requestControlHitSpacing {
+		log.Counted = true
+		log.ViolationCount = count + 1
 	}
 }
 
@@ -643,6 +749,12 @@ func (s *RequestControlService) validateConfig(ctx context.Context, cfg *Request
 	if cfg.ModelFilter.Type != ContentModerationModelFilterAll && len(cfg.ModelFilter.Models) == 0 {
 		return infraerrors.BadRequest("INVALID_REQUEST_CONTROL_MODEL_FILTER", "指定或排除模型时至少需要配置 1 个模型")
 	}
+	if cfg.BanThreshold < 1 || cfg.BanThreshold > requestControlMaxBanThreshold {
+		return infraerrors.BadRequest("INVALID_REQUEST_CONTROL_BAN_THRESHOLD", "封禁触发次数必须在 1-1000 之间")
+	}
+	if cfg.ViolationWindowHours < 1 || cfg.ViolationWindowHours > requestControlMaxViolationWindowHours {
+		return infraerrors.BadRequest("INVALID_REQUEST_CONTROL_VIOLATION_WINDOW", "累计窗口必须在 1-720 小时之间")
+	}
 	if !cfg.AllGroups && s.groupRepo != nil {
 		for _, id := range cfg.GroupIDs {
 			if _, err := s.groupRepo.GetByIDLite(ctx, id); err != nil {
@@ -654,7 +766,19 @@ func (s *RequestControlService) validateConfig(ctx context.Context, cfg *Request
 }
 
 func defaultRequestControlConfig() *RequestControlConfig {
-	return &RequestControlConfig{AllGroups: true, ModelFilter: ContentModerationModelFilter{Type: ContentModerationModelFilterAll}, AllUsers: true, UserRules: []RequestControlUserRule{}, GlobalUserAgentWhitelist: []string{}, BlockStatus: requestControlDefaultBlockStatus, BlockMessage: requestControlDefaultBlockMessage}
+	return &RequestControlConfig{
+		AllGroups:                true,
+		ModelFilter:              ContentModerationModelFilter{Type: ContentModerationModelFilterAll},
+		AllUsers:                 true,
+		UserRules:                []RequestControlUserRule{},
+		GlobalUserAgentWhitelist: []string{},
+		BlockStatus:              requestControlDefaultBlockStatus,
+		BlockMessage:             requestControlDefaultBlockMessage,
+		EmailOnHit:               true,
+		AutoBanEnabled:           true,
+		BanThreshold:             requestControlDefaultBanThreshold,
+		ViolationWindowHours:     requestControlDefaultViolationWindowHours,
+	}
 }
 
 func (cfg *RequestControlConfig) normalize() {
@@ -670,6 +794,18 @@ func (cfg *RequestControlConfig) normalize() {
 		cfg.BlockMessage = requestControlDefaultBlockMessage
 	}
 	cfg.BlockMessage = strings.TrimSpace(cfg.BlockMessage)
+	if cfg.BanThreshold <= 0 {
+		cfg.BanThreshold = requestControlDefaultBanThreshold
+	}
+	if cfg.BanThreshold > requestControlMaxBanThreshold {
+		cfg.BanThreshold = requestControlMaxBanThreshold
+	}
+	if cfg.ViolationWindowHours <= 0 {
+		cfg.ViolationWindowHours = requestControlDefaultViolationWindowHours
+	}
+	if cfg.ViolationWindowHours > requestControlMaxViolationWindowHours {
+		cfg.ViolationWindowHours = requestControlMaxViolationWindowHours
+	}
 	if len(cfg.UserRules) > requestControlMaxUserRules {
 		cfg.UserRules = cfg.UserRules[:requestControlMaxUserRules]
 	}
@@ -693,7 +829,7 @@ func requestControlConfigView(cfg *RequestControlConfig) *RequestControlConfigVi
 	if cfg == nil {
 		return nil
 	}
-	return &RequestControlConfigView{Enabled: cfg.Enabled, AllGroups: cfg.AllGroups, GroupIDs: append([]int64(nil), cfg.GroupIDs...), ModelFilter: cfg.ModelFilter, AllUsers: cfg.AllUsers, UserRules: append([]RequestControlUserRule(nil), cfg.UserRules...), GlobalUserAgentWhitelist: append([]string(nil), cfg.GlobalUserAgentWhitelist...), BlockStatus: cfg.BlockStatus, BlockMessage: cfg.BlockMessage}
+	return &RequestControlConfigView{Enabled: cfg.Enabled, AllGroups: cfg.AllGroups, GroupIDs: append([]int64(nil), cfg.GroupIDs...), ModelFilter: cfg.ModelFilter, AllUsers: cfg.AllUsers, UserRules: append([]RequestControlUserRule(nil), cfg.UserRules...), GlobalUserAgentWhitelist: append([]string(nil), cfg.GlobalUserAgentWhitelist...), BlockStatus: cfg.BlockStatus, BlockMessage: cfg.BlockMessage, EmailOnHit: cfg.EmailOnHit, AutoBanEnabled: cfg.AutoBanEnabled, BanThreshold: cfg.BanThreshold, ViolationWindowHours: cfg.ViolationWindowHours}
 }
 
 func (runtime *requestControlRuntimeConfig) includesGroup(groupID *int64, effective []int64) bool {
