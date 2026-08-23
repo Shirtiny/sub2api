@@ -4,8 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 
+	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
 )
 
@@ -95,12 +97,41 @@ func TestRecordCyberPolicyEventAutoBansAtThreshold(t *testing.T) {
 
 func TestCyberPolicyConfigRoundTrip(t *testing.T) {
 	cfg := defaultContentModerationConfig()
+	require.True(t, cfg.CyberPolicyEnabled)
+	require.True(t, cfg.CyberPolicyEmailEnabled)
 	cfg.CyberPolicyExcludeFromBanCount = true
 	raw, err := json.Marshal(cfg)
 	require.NoError(t, err)
 	var decoded ContentModerationConfig
 	require.NoError(t, json.Unmarshal(raw, &decoded))
 	require.True(t, decoded.CyberPolicyExcludeFromBanCount)
+}
+
+func TestCyberPolicyConfigDefaultsForExistingSettings(t *testing.T) {
+	svc := &ContentModerationService{settingRepo: &contentModerationTestSettingRepo{values: map[string]string{
+		SettingKeyContentModerationConfig: `{"mode":"pre_block"}`,
+	}}}
+
+	cfg, err := svc.loadConfig(context.Background())
+	require.NoError(t, err)
+	require.True(t, cfg.CyberPolicyEnabled)
+	require.True(t, cfg.CyberPolicyEmailEnabled)
+}
+
+func TestRecordCyberPolicyEventHonorsDisabledConfig(t *testing.T) {
+	cfg := defaultContentModerationConfig()
+	cfg.CyberPolicyEnabled = false
+	raw, err := json.Marshal(cfg)
+	require.NoError(t, err)
+	repo := &contentModerationTestRepo{}
+	svc := NewContentModerationService(&contentModerationTestSettingRepo{values: map[string]string{
+		SettingKeyRiskControlEnabled:      "true",
+		SettingKeyContentModerationConfig: string(raw),
+	}}, repo, nil, nil, nil, nil, nil)
+
+	svc.RecordCyberPolicyEvent(context.Background(), CyberPolicyRecordInput{UserID: 1, UpstreamMessage: "blocked"})
+
+	require.Empty(t, repo.snapshotLogs())
 }
 
 func TestCyberPolicyDoesNotCoolDownUpstreamAccount(t *testing.T) {
@@ -122,4 +153,15 @@ func TestCyberPolicyDoesNotCoolDownGrokAccount(t *testing.T) {
 		[]byte(`{"error":{"code":"cyber_policy","message":"blocked"}}`),
 	)
 	require.False(t, svc.isOpenAIAccountRuntimeBlocked(account))
+}
+
+func TestMarkOpenAIWSCyberPolicyCarriesUsage(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	payload := []byte(`{"type":"response.failed","response":{"error":{"code":"cyber_policy","message":"blocked"}}}`)
+	require.True(t, markOpenAIWSCyberPolicy(c, payload, OpenAIUsage{InputTokens: 12, OutputTokens: 3}))
+	mark := GetOpsCyberPolicy(c)
+	require.NotNil(t, mark)
+	require.Equal(t, 12, mark.UpstreamInTok)
+	require.Equal(t, 3, mark.UpstreamOutTok)
 }

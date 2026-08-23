@@ -46,7 +46,10 @@ func (s *ContentModerationService) RecordCyberPolicyEvent(ctx context.Context, i
 		// Keep the audit/notification path alive, but do not silently enforce
 		// automatic bans using guessed defaults when the administrator's JSON is
 		// invalid.
-		cfg = &ContentModerationConfig{}
+		cfg = &ContentModerationConfig{CyberPolicyEnabled: true, CyberPolicyEmailEnabled: true}
+	}
+	if !cfg.CyberPolicyEnabled {
+		return
 	}
 	userID := (*int64)(nil)
 	if in.UserID > 0 {
@@ -102,10 +105,12 @@ func (s *ContentModerationService) RecordCyberPolicyEvent(ctx context.Context, i
 	}
 	emailSent := false
 	if s.emailService != nil && strings.TrimSpace(log.UserEmail) != "" {
-		if err := s.sendCyberPolicyEmail(ctx, cfg, log); err != nil {
-			slog.Warn("content_moderation.cyber_email_failed", "user_id", in.UserID, "error", err)
-		} else {
-			emailSent = true
+		if cfg.CyberPolicyEmailEnabled {
+			if err := s.sendCyberPolicyEmail(ctx, cfg, log); err != nil {
+				slog.Warn("content_moderation.cyber_email_failed", "user_id", in.UserID, "error", err)
+			} else {
+				emailSent = true
+			}
 		}
 		if autoBanned {
 			if err := s.sendAccountDisabledEmail(ctx, cfg, log); err != nil {

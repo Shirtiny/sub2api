@@ -393,6 +393,8 @@ type ContentModerationConfig struct {
 	BuiltInFilterCategories        []string                     `json:"built_in_filter_categories"`
 	BuiltInFilterLevels            []string                     `json:"built_in_filter_levels"`
 	ModelFilter                    ContentModerationModelFilter `json:"model_filter"`
+	CyberPolicyEnabled             bool                         `json:"cyber_policy_enabled"`
+	CyberPolicyEmailEnabled        bool                         `json:"cyber_policy_email_enabled"`
 	CyberPolicyExcludeFromBanCount bool                         `json:"cyber_policy_exclude_from_ban_count"`
 }
 
@@ -431,6 +433,8 @@ type ContentModerationConfigView struct {
 	BuiltInFilterCategories        []string                        `json:"built_in_filter_categories"`
 	BuiltInFilterLevels            []string                        `json:"built_in_filter_levels"`
 	ModelFilter                    ContentModerationModelFilter    `json:"model_filter"`
+	CyberPolicyEnabled             bool                            `json:"cyber_policy_enabled"`
+	CyberPolicyEmailEnabled        bool                            `json:"cyber_policy_email_enabled"`
 	CyberPolicyExcludeFromBanCount bool                            `json:"cyber_policy_exclude_from_ban_count"`
 }
 
@@ -523,6 +527,8 @@ type UpdateContentModerationConfigInput struct {
 	BuiltInFilterCategories        *[]string                     `json:"built_in_filter_categories"`
 	BuiltInFilterLevels            *[]string                     `json:"built_in_filter_levels"`
 	ModelFilter                    *ContentModerationModelFilter `json:"model_filter"`
+	CyberPolicyEnabled             *bool                         `json:"cyber_policy_enabled"`
+	CyberPolicyEmailEnabled        *bool                         `json:"cyber_policy_email_enabled"`
 	CyberPolicyExcludeFromBanCount *bool                         `json:"cyber_policy_exclude_from_ban_count"`
 }
 
@@ -949,6 +955,12 @@ func (s *ContentModerationService) UpdateConfig(ctx context.Context, input Updat
 	}
 	if input.CyberPolicyExcludeFromBanCount != nil {
 		cfg.CyberPolicyExcludeFromBanCount = *input.CyberPolicyExcludeFromBanCount
+	}
+	if input.CyberPolicyEnabled != nil {
+		cfg.CyberPolicyEnabled = *input.CyberPolicyEnabled
+	}
+	if input.CyberPolicyEmailEnabled != nil {
+		cfg.CyberPolicyEmailEnabled = *input.CyberPolicyEmailEnabled
 	}
 	if input.AllGroups != nil {
 		cfg.AllGroups = *input.AllGroups
@@ -2606,6 +2618,8 @@ func defaultContentModerationConfig() *ContentModerationConfig {
 			Models: []string{},
 		},
 		CyberPolicyExcludeFromBanCount: false,
+		CyberPolicyEnabled:             true,
+		CyberPolicyEmailEnabled:        true,
 	}
 }
 
@@ -2626,6 +2640,8 @@ func cloneContentModerationConfig(cfg *ContentModerationConfig) *ContentModerati
 		Models: append([]string(nil), cfg.ModelFilter.Models...),
 	}
 	clone.CyberPolicyExcludeFromBanCount = cfg.CyberPolicyExcludeFromBanCount
+	clone.CyberPolicyEnabled = cfg.CyberPolicyEnabled
+	clone.CyberPolicyEmailEnabled = cfg.CyberPolicyEmailEnabled
 	return &clone
 }
 
@@ -2957,6 +2973,8 @@ func (s *ContentModerationService) configView(cfg *ContentModerationConfig) *Con
 		BuiltInFilterLevels:            append([]string(nil), cfg.BuiltInFilterLevels...),
 		ModelFilter:                    cloneContentModerationModelFilter(cfg.ModelFilter),
 		CyberPolicyExcludeFromBanCount: cfg.CyberPolicyExcludeFromBanCount,
+		CyberPolicyEnabled:             cfg.CyberPolicyEnabled,
+		CyberPolicyEmailEnabled:        cfg.CyberPolicyEmailEnabled,
 	}
 }
 

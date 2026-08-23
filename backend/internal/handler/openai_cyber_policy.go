@@ -59,6 +59,8 @@ func (h *OpenAIGatewayHandler) recordCyberPolicyIfMarked(c *gin.Context, apiKey 
 		UpstreamMessage: mark.Message,
 		UpstreamBody:    mark.Body,
 		UpstreamStatus:  mark.UpstreamStatus,
+		UpstreamInTok:   mark.UpstreamInTok,
+		UpstreamOutTok:  mark.UpstreamOutTok,
 	}
 	svc := h.contentModerationService
 	go func() {

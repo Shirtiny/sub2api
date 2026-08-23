@@ -89,6 +89,8 @@ const baseConfig = (): ContentModerationConfig => ({
   block_message: '内容审计命中风险规则，请调整输入后重试',
   email_on_hit: true,
   auto_ban_enabled: true,
+  cyber_policy_enabled: true,
+  cyber_policy_email_enabled: true,
   cyber_policy_exclude_from_ban_count: false,
   ban_threshold: 10,
   violation_window_hours: 720,

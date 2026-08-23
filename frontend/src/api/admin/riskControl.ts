@@ -154,6 +154,8 @@ export interface ContentModerationConfig {
   built_in_filter_levels: ContentModerationBuiltinLevel[]
   model_filter: ContentModerationModelFilter
   cyber_policy_exclude_from_ban_count: boolean
+  cyber_policy_enabled: boolean
+  cyber_policy_email_enabled: boolean
 }
 
 export type ContentModerationAPIKeyStatusValue = 'unknown' | 'ok' | 'error' | 'frozen'
@@ -234,6 +236,8 @@ export interface UpdateContentModerationConfig {
   built_in_filter_levels?: ContentModerationBuiltinLevel[]
   model_filter?: ContentModerationModelFilter
   cyber_policy_exclude_from_ban_count?: boolean
+  cyber_policy_enabled?: boolean
+  cyber_policy_email_enabled?: boolean
 }
 
 export interface ContentModerationRuntimeStatus {

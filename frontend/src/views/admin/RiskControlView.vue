@@ -899,10 +899,24 @@
               </div>
               <div class="flex items-center justify-between rounded-lg border border-gray-100 p-4 dark:border-dark-700 lg:col-span-2">
                 <div>
+                  <p class="text-sm font-medium text-content-primary">{{ t('admin.riskControl.cyberPolicyEnabled') }}</p>
+                  <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ t('admin.riskControl.cyberPolicyEnabledHint') }}</p>
+                </div>
+                <Toggle v-model="configForm.cyber_policy_enabled" />
+              </div>
+              <div class="flex items-center justify-between rounded-lg border border-gray-100 p-4 dark:border-dark-700">
+                <div>
+                  <p class="text-sm font-medium text-content-primary">{{ t('admin.riskControl.cyberPolicyEmail') }}</p>
+                  <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ t('admin.riskControl.cyberPolicyEmailHint') }}</p>
+                </div>
+                <Toggle v-model="configForm.cyber_policy_email_enabled" :disabled="!configForm.cyber_policy_enabled" />
+              </div>
+              <div class="flex items-center justify-between rounded-lg border border-gray-100 p-4 dark:border-dark-700">
+                <div>
                   <p class="text-sm font-medium text-content-primary">{{ t('admin.riskControl.cyberPolicyExcludeBan') }}</p>
                   <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ t('admin.riskControl.cyberPolicyExcludeBanHint') }}</p>
                 </div>
-                <Toggle v-model="configForm.cyber_policy_exclude_from_ban_count" />
+                <Toggle v-model="configForm.cyber_policy_exclude_from_ban_count" :disabled="!configForm.cyber_policy_enabled" />
               </div>
               <div>
                 <label class="input-label">{{ t('admin.riskControl.banThreshold') }}</label>
@@ -1353,6 +1367,8 @@ const configForm = reactive({
   block_message: '内容审计命中风险规则，请调整输入后重试',
   email_on_hit: true,
   auto_ban_enabled: true,
+  cyber_policy_enabled: true,
+  cyber_policy_email_enabled: true,
   cyber_policy_exclude_from_ban_count: false,
   ban_threshold: 10,
   violation_window_hours: 720,
@@ -1859,6 +1875,8 @@ function applyConfig(config: ContentModerationConfig) {
   configForm.block_message = config.block_message || '内容审计命中风险规则，请调整输入后重试'
   configForm.email_on_hit = config.email_on_hit ?? true
   configForm.auto_ban_enabled = config.auto_ban_enabled ?? true
+  configForm.cyber_policy_enabled = config.cyber_policy_enabled ?? true
+  configForm.cyber_policy_email_enabled = config.cyber_policy_email_enabled ?? true
   configForm.cyber_policy_exclude_from_ban_count = config.cyber_policy_exclude_from_ban_count ?? false
   configForm.ban_threshold = config.ban_threshold || 10
   configForm.violation_window_hours = config.violation_window_hours || 720
@@ -1948,6 +1966,8 @@ async function saveConfig() {
       block_message: configForm.block_message || '内容审计命中风险规则，请调整输入后重试',
       email_on_hit: configForm.email_on_hit,
       auto_ban_enabled: configForm.auto_ban_enabled,
+      cyber_policy_enabled: configForm.cyber_policy_enabled,
+      cyber_policy_email_enabled: configForm.cyber_policy_email_enabled,
       cyber_policy_exclude_from_ban_count: configForm.cyber_policy_exclude_from_ban_count,
       ban_threshold: Number(configForm.ban_threshold) || 10,
       violation_window_hours: Number(configForm.violation_window_hours) || 720,

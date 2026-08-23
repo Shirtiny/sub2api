@@ -73,6 +73,8 @@ type contentModerationConfigRequest struct {
 	BuiltInFilterEnabled           *bool                                 `json:"built_in_filter_enabled"`
 	ModelFilter                    *service.ContentModerationModelFilter `json:"model_filter"`
 	CyberPolicyExcludeFromBanCount *bool                                 `json:"cyber_policy_exclude_from_ban_count"`
+	CyberPolicyEnabled             *bool                                 `json:"cyber_policy_enabled"`
+	CyberPolicyEmailEnabled        *bool                                 `json:"cyber_policy_email_enabled"`
 }
 
 type contentModerationAPIKeyTestRequest struct {
@@ -137,6 +139,8 @@ func (h *ContentModerationHandler) UpdateConfig(c *gin.Context) {
 		BuiltInFilterEnabled:           req.BuiltInFilterEnabled,
 		ModelFilter:                    req.ModelFilter,
 		CyberPolicyExcludeFromBanCount: req.CyberPolicyExcludeFromBanCount,
+		CyberPolicyEnabled:             req.CyberPolicyEnabled,
+		CyberPolicyEmailEnabled:        req.CyberPolicyEmailEnabled,
 	})
 	if err != nil {
 		response.ErrorFrom(c, err)

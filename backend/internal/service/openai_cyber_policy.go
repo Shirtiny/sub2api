@@ -102,16 +102,25 @@ func isCyberPolicyResponse(status int, payload []byte) bool {
 	return hit
 }
 
-// detectOpenAICyberPolicy retains the compact internal helper shape used by
-// older gateway tests and call sites. Code-based hits are recognized at any
-// response status; message-only fallback remains restricted to HTTP 400.
-func detectOpenAICyberPolicy(payload []byte) (bool, string, string) {
-	return DetectCyberPolicyResponse(http.StatusBadRequest, payload)
-}
-
 func cyberPolicyClientMessage(message string) string {
 	if message = strings.TrimSpace(message); message != "" {
 		return message
 	}
 	return "Request blocked by upstream cyber-security policy"
+}
+
+func markOpenAIWSCyberPolicy(c *gin.Context, payload []byte, usage OpenAIUsage) bool {
+	hit, code, message := DetectCyberPolicyResponse(http.StatusOK, payload)
+	if !hit {
+		return false
+	}
+	MarkOpsCyberPolicy(c, CyberPolicyMark{
+		Code:           code,
+		Message:        message,
+		Body:           truncateString(string(payload), 4096),
+		UpstreamStatus: http.StatusOK,
+		UpstreamInTok:  usage.InputTokens,
+		UpstreamOutTok: usage.OutputTokens,
+	})
+	return true
 }
