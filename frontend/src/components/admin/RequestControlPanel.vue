@@ -62,6 +62,25 @@
             <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">{{ t('admin.riskControl.requestControl.uaHint') }}</p>
           </div>
 
+          <div>
+            <label class="input-label">{{ t('admin.riskControl.requestControl.protocolBlocking') }}</label>
+            <div class="space-y-2 rounded-lg border border-gray-100 p-3 dark:border-dark-700">
+              <label class="flex items-center justify-between gap-3 text-sm text-content-secondary">
+                <span>{{ t('admin.riskControl.requestControl.blockOpenAIChat') }}</span>
+                <Toggle v-model="form.block_openai_chat" />
+              </label>
+              <label class="flex items-center justify-between gap-3 text-sm text-content-secondary">
+                <span>{{ t('admin.riskControl.requestControl.blockClaudeMessages') }}</span>
+                <Toggle v-model="form.block_claude_messages" />
+              </label>
+              <label class="flex items-center justify-between gap-3 text-sm text-content-secondary">
+                <span>{{ t('admin.riskControl.requestControl.blockOpenAIResponses') }}</span>
+                <Toggle v-model="form.block_openai_responses" />
+              </label>
+            </div>
+            <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">{{ t('admin.riskControl.requestControl.protocolBlockingHint') }}</p>
+          </div>
+
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label class="input-label">{{ t('admin.riskControl.requestControl.blockStatus') }}</label>
@@ -109,12 +128,18 @@
             <p v-if="selectedUserLabel" class="mt-2 text-xs font-medium text-primary-700 dark:text-primary-300">{{ t('admin.riskControl.requestControl.selectedUser', { user: selectedUserLabel }) }}</p>
           </div>
           <div class="grid grid-cols-1 gap-3 sm:grid-cols-[120px_1fr_auto]">
-            <input v-model.number="ruleUserID" data-test="request-control-user-id" type="number" min="1" class="input" :placeholder="t('admin.riskControl.requestControl.userID')" />
-            <input v-model="ruleUAText" type="text" class="input font-mono text-sm" :placeholder="t('admin.riskControl.requestControl.userUAPlaceholder')" />
-            <button type="button" class="btn btn-secondary inline-flex items-center justify-center gap-2" @click="addRule">
-              <Icon name="plus" size="sm" />
-              {{ t('admin.riskControl.requestControl.addUser') }}
-            </button>
+            <input v-model.number="ruleUserID" data-test="request-control-user-id" type="number" min="1" class="input" :disabled="editingRuleUserID != null" :placeholder="t('admin.riskControl.requestControl.userID')" />
+            <textarea v-model="ruleUAText" rows="2" class="input resize-y font-mono text-sm" :placeholder="t('admin.riskControl.requestControl.userUAPlaceholder')" />
+            <div class="flex gap-2">
+              <button type="button" class="btn btn-secondary inline-flex flex-1 items-center justify-center gap-2" @click="addRule">
+                <Icon :name="editingRuleUserID != null ? 'check' : 'plus'" size="sm" />
+                {{ editingRuleUserID != null ? t('admin.riskControl.requestControl.updateUser') : t('admin.riskControl.requestControl.addUser') }}
+              </button>
+              <button v-if="editingRuleUserID != null" type="button" class="btn btn-ghost inline-flex items-center justify-center gap-2" @click="cancelEditRule">
+                <Icon name="x" size="sm" />
+                {{ t('common.cancel') }}
+              </button>
+            </div>
           </div>
           <div class="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-500 dark:bg-dark-700/50 dark:text-gray-400">
             <span>{{ form.all_users ? t('admin.riskControl.requestControl.allUsersOn') : t('admin.riskControl.requestControl.onlyConfiguredUsers') }}</span>
@@ -136,6 +161,7 @@
                   <td class="px-3 py-2"><Toggle v-model="rule.participate" /></td>
                   <td class="max-w-[260px] px-3 py-2 text-xs text-content-secondary">{{ rule.user_agent_whitelist.join(', ') || '-' }}</td>
                   <td class="px-3 py-2 text-right">
+                    <button type="button" class="btn btn-ghost btn-sm" :title="t('admin.riskControl.requestControl.editUserUA')" :aria-label="t('admin.riskControl.requestControl.editUserUA')" @click="editRule(rule)"><Icon name="edit" size="sm" /></button>
                     <button type="button" class="btn btn-ghost btn-sm" :title="t('admin.riskControl.requestControl.removeUser')" @click="removeRule(rule.user_id)"><Icon name="trash" size="sm" /></button>
                   </td>
                 </tr>
@@ -209,7 +235,7 @@
               <td class="whitespace-nowrap px-4 py-3 text-sm text-content-secondary">{{ formatDate(row.created_at) }}</td>
               <td class="px-4 py-3 text-sm text-content-secondary"><div>{{ row.group_name || '-' }}</div><div class="text-xs text-gray-400">{{ row.user_email || `UID ${row.user_id ?? '-'}` }}</div></td>
               <td class="px-4 py-3 text-sm text-content-secondary"><div>{{ row.endpoint || '-' }}</div><div class="text-xs text-gray-400">{{ row.model || '-' }}</div></td>
-              <td class="px-4 py-3 text-sm"><span class="rounded-md px-2 py-1 text-xs font-medium" :class="actionClass(row)">{{ row.action }}</span><div class="mt-1 text-xs text-gray-400">{{ row.reason }}</div></td>
+              <td class="px-4 py-3 text-sm"><div class="text-[11px] text-gray-400">{{ t('admin.riskControl.requestControl.actual') }}</div><span class="rounded-md px-2 py-1 text-xs font-medium" :class="actionClass(row)">{{ row.action }}</span><div class="mt-1 text-xs text-gray-400">{{ row.reason }}</div><div v-if="row.expected_action" class="mt-1 text-xs text-blue-600 dark:text-blue-300">{{ t('admin.riskControl.requestControl.expected') }}: {{ row.expected_action }} / {{ row.expected_reason }}<span v-if="row.expected_status_code"> ({{ row.expected_status_code }})</span></div></td>
               <td class="px-4 py-3 text-sm text-content-secondary">{{ row.client_kind || '-' }}</td>
               <td class="max-w-[300px] px-4 py-3 text-xs text-content-secondary"><div class="truncate" :title="row.user_agent">{{ row.user_agent || '-' }}</div><div v-if="row.violation_count > 0 || row.auto_banned" class="mt-1 text-gray-400"><span v-if="row.counted_violation">{{ t('admin.riskControl.requestControl.violationCount', { count: row.violation_count }) }}</span><span v-else>{{ t('admin.riskControl.requestControl.notCounted') }}</span><span v-if="row.hit_email_sent"> / {{ t('admin.riskControl.requestControl.hitEmailSent') }}</span><span v-if="row.ban_email_sent"> / {{ t('admin.riskControl.requestControl.banEmailSent') }}</span><span v-else-if="row.email_sent && !row.hit_email_sent"> / {{ t('admin.riskControl.requestControl.emailSent') }}</span><span v-if="row.auto_banned"> / {{ t('admin.riskControl.requestControl.autoBanned') }}</span></div><div v-if="Object.keys(row.details || {}).length" class="mt-1 truncate text-gray-400">{{ detailText(row) }}</div></td>
               <td class="max-w-[220px] px-4 py-3 text-xs text-gray-500">
@@ -252,7 +278,7 @@
         <div><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('admin.riskControl.requestControl.requestID') }}</p><p class="mt-1 break-all font-mono text-content-primary">{{ detailLog.request_id || '-' }}</p></div>
         <div><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('admin.riskControl.requestControl.endpoint') }}</p><p class="mt-1 break-all text-content-primary">{{ detailLog.endpoint || '-' }}</p></div>
         <div><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('admin.riskControl.requestControl.client') }}</p><p class="mt-1 break-all text-content-primary">{{ detailLog.client_kind || '-' }}</p></div>
-        <div><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('admin.riskControl.requestControl.result') }}</p><p class="mt-1 text-content-primary">{{ detailLog.action || '-' }} / {{ detailLog.reason || '-' }}</p></div>
+        <div><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('admin.riskControl.requestControl.result') }}</p><p class="mt-1 text-xs text-gray-400">{{ t('admin.riskControl.requestControl.actual') }}</p><p class="mt-1 text-content-primary">{{ detailLog.action || '-' }} / {{ detailLog.reason || '-' }}</p><p v-if="detailLog.expected_action" class="mt-1 text-xs text-blue-600 dark:text-blue-300">{{ t('admin.riskControl.requestControl.expected') }}: {{ detailLog.expected_action }} / {{ detailLog.expected_reason }}<span v-if="detailLog.expected_status_code"> ({{ detailLog.expected_status_code }})</span></p></div>
       </div>
       <div class="grid grid-cols-1 gap-5 xl:grid-cols-2">
         <section class="min-w-0">
@@ -297,6 +323,7 @@ const detailLog = ref<RequestControlLogDetail | null>(null)
 const status = ref<RequestControlStatus | null>(null)
 const ruleUserID = ref<number | null>(null)
 const ruleUAText = ref('')
+const editingRuleUserID = ref<number | null>(null)
 const userSearch = ref('')
 const userSearchLoading = ref(false)
 const userSearchDone = ref(false)
@@ -307,6 +334,9 @@ const globalUAText = ref('')
 
 const form = reactive<RequestControlConfig>({
   enabled: false,
+  block_openai_chat: true,
+  block_claude_messages: true,
+  block_openai_responses: true,
   all_groups: true,
   group_ids: [],
   model_filter: { type: 'all', models: [] },
@@ -356,6 +386,9 @@ const statusItems = computed(() => [
 function lines(value: string): string[] { return value.split(/[\n,]+/).map((item) => item.trim()).filter(Boolean) }
 function applyConfig(config: RequestControlConfig) {
   Object.assign(form, config)
+  form.block_openai_chat = config.block_openai_chat ?? true
+  form.block_claude_messages = config.block_claude_messages ?? true
+  form.block_openai_responses = config.block_openai_responses ?? true
   form.group_ids = [...(config.group_ids || [])]
   form.model_filter = { type: config.model_filter?.type || 'all', models: [...(config.model_filter?.models || [])] }
   form.user_rules = (config.user_rules || []).map((rule) => ({ ...rule, user_agent_whitelist: [...(rule.user_agent_whitelist || [])] }))
@@ -366,15 +399,31 @@ function applyConfig(config: RequestControlConfig) {
 function addRule() {
   const userID = Number(ruleUserID.value)
   if (!Number.isInteger(userID) || userID <= 0) { appStore.showError(t('admin.riskControl.requestControl.invalidUserID')); return }
-  const next: RequestControlUserRule = { user_id: userID, participate: true, user_agent_whitelist: lines(ruleUAText.value) }
   const index = form.user_rules.findIndex((rule) => rule.user_id === userID)
+  const next: RequestControlUserRule = { user_id: userID, participate: index >= 0 ? form.user_rules[index].participate : true, user_agent_whitelist: lines(ruleUAText.value) }
   if (index >= 0) form.user_rules[index] = next
   else form.user_rules.push(next)
   ruleUserID.value = null
   ruleUAText.value = ''
+  editingRuleUserID.value = null
   selectedUserLabel.value = ''
 }
-function removeRule(userID: number) { form.user_rules = form.user_rules.filter((rule) => rule.user_id !== userID) }
+function editRule(rule: RequestControlUserRule) {
+  editingRuleUserID.value = rule.user_id
+  ruleUserID.value = rule.user_id
+  ruleUAText.value = rule.user_agent_whitelist.join('\n')
+  selectedUserLabel.value = `UID ${rule.user_id}`
+}
+function cancelEditRule() {
+  editingRuleUserID.value = null
+  ruleUserID.value = null
+  ruleUAText.value = ''
+  selectedUserLabel.value = ''
+}
+function removeRule(userID: number) {
+  form.user_rules = form.user_rules.filter((rule) => rule.user_id !== userID)
+  if (editingRuleUserID.value === userID) cancelEditRule()
+}
 async function searchUsers() {
   const search = userSearch.value.trim()
   if (!search) return
@@ -396,6 +445,7 @@ async function searchUsers() {
   }
 }
 function selectUser(user: AdminUser) {
+  if (editingRuleUserID.value != null) cancelEditRule()
   ruleUserID.value = user.id
   selectedUserLabel.value = `${user.username || user.email} (UID ${user.id})`
   userSearch.value = ''

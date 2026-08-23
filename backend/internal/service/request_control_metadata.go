@@ -51,27 +51,34 @@ func requestControlHeaderMetadata(headers http.Header) map[string]string {
 		limit--
 	}
 	for _, key := range keys {
-		values := make([]string, 0, 1)
-		for original, candidates := range headers {
+		originalKeys := make([]string, 0, len(headers))
+		for original := range headers {
 			if strings.EqualFold(original, key) {
-				for _, candidate := range candidates {
-					if len(values) >= 8 {
-						break
-					}
-					values = append(values, truncateRequestControlValue(candidate, requestControlMetadataMaxHeaderRunes))
-				}
-			}
-			if len(values) >= 8 {
-				break
+				originalKeys = append(originalKeys, original)
 			}
 		}
+		sort.Strings(originalKeys)
+		values := make([]string, 0, 1)
+		for _, original := range originalKeys {
+			for _, candidate := range headers[original] {
+				values = append(values, truncateRequestControlValue(candidate, requestControlMetadataMaxHeaderRunes))
+			}
+		}
+		if len(values) > 8 {
+			values = values[:8]
+		}
+		sort.Strings(values)
 		value := "[redacted]"
 		if !requestControlSensitiveHeader(key) {
-			rawValue := strings.TrimSpace(strings.Join(values, ", "))
-			if strings.HasPrefix(strings.ToLower(rawValue), "bearer ") || strings.HasPrefix(strings.ToLower(rawValue), "basic ") {
-				value = "[redacted]"
+			if summary, ok := requestControlHeaderTurnMetadataSummary(key, headers); ok {
+				value = summary
 			} else {
-				value = requestControlMetadataString(logredact.RedactText(rawValue))
+				rawValue := strings.TrimSpace(strings.Join(values, ", "))
+				if strings.HasPrefix(strings.ToLower(rawValue), "bearer ") || strings.HasPrefix(strings.ToLower(rawValue), "basic ") {
+					value = "[redacted]"
+				} else {
+					value = requestControlMetadataString(logredact.RedactText(rawValue))
+				}
 			}
 		}
 		out[key] = truncateRequestControlValue(value, requestControlMetadataMaxHeaderRunes)
@@ -83,6 +90,36 @@ func requestControlHeaderMetadata(headers http.Header) map[string]string {
 		out["x-request-control-metadata-truncated"] = "true"
 	}
 	return out
+}
+
+// Summarize the potentially large Codex compatibility header before applying
+// the generic header-value bound. This keeps audit details useful and avoids
+// treating a valid JSON blob as malformed merely because its display value was
+// truncated.
+func requestControlHeaderTurnMetadataSummary(name string, headers http.Header) (string, bool) {
+	if !strings.EqualFold(strings.TrimSpace(name), "x-codex-turn-metadata") {
+		return "", false
+	}
+	values := requestControlHeaderValues(headers, name)
+	if len(values) != 1 {
+		return "", false
+	}
+	raw := strings.TrimSpace(values[0])
+	if strings.HasPrefix(raw, `"`) {
+		var decoded string
+		if err := json.Unmarshal([]byte(raw), &decoded); err != nil {
+			return "", false
+		}
+		raw = decoded
+	}
+	if _, ok := parseRequestControlTurnMetadata(raw); !ok {
+		return "", false
+	}
+	encoded, err := json.Marshal(requestControlTurnMetadataSummary(raw))
+	if err != nil {
+		return "", false
+	}
+	return string(encoded), true
 }
 
 func requestControlSensitiveHeader(name string) bool {
@@ -129,12 +166,16 @@ func requestControlBodyMetadata(protocol string, raw []byte) map[string]any {
 	fields := make([]string, 0, requestControlMetadataMaxFields)
 	err := openaiwsv2.VisitTopLevelObjectFields(raw, func(key, rawValue []byte) error {
 		name := string(key)
-		if len(fields) < requestControlMetadataMaxFields {
-			fields = append(fields, truncateRequestControlValue(name, requestControlMetadataMaxFieldRunes))
-		}
+		// Collect all bounded top-level keys before sorting/truncating so the
+		// metadata hash is independent of JSON field order.
+		fields = append(fields, truncateRequestControlValue(name, requestControlMetadataMaxFieldRunes))
 		requestControlAddBodyFieldMetadata(metadata, name, rawValue)
 		return nil
 	})
+	sort.Strings(fields)
+	if len(fields) > requestControlMetadataMaxFields {
+		fields = fields[:requestControlMetadataMaxFields]
+	}
 	metadata["top_level_fields"] = fields
 	if err != nil {
 		metadata["parse"] = "invalid_or_unreadable"
@@ -286,8 +327,15 @@ func requestControlClientMetadataSummary(raw []byte) map[string]any {
 		}
 	}
 	if rawValue, ok := value["x-codex-turn-metadata"]; ok {
-		if turnMetadata, ok := requestControlJSONScalarString(rawValue); ok {
+		trimmed := bytes.TrimSpace(rawValue)
+		var turnMetadata string
+		if err := json.Unmarshal(rawValue, &turnMetadata); err == nil {
+			// Parse before applying the display-length bound. The full metadata
+			// blob is needed to distinguish valid Desktop payloads from malformed
+			// ones; individual summary values are bounded below.
 			identity["x-codex-turn-metadata"] = requestControlTurnMetadataSummary(turnMetadata)
+		} else if len(trimmed) > 0 && trimmed[0] == '{' && openaiwsv2.ValidateTopLevelObject(trimmed) == nil {
+			identity["x-codex-turn-metadata"] = requestControlTurnMetadataSummaryJSON(trimmed)
 		}
 	}
 	if len(identity) > 0 {
@@ -297,8 +345,12 @@ func requestControlClientMetadataSummary(raw []byte) map[string]any {
 }
 
 func requestControlTurnMetadataSummary(raw string) map[string]any {
+	return requestControlTurnMetadataSummaryJSON([]byte(raw))
+}
+
+func requestControlTurnMetadataSummaryJSON(raw []byte) map[string]any {
 	var value map[string]json.RawMessage
-	if err := json.Unmarshal([]byte(raw), &value); err != nil {
+	if err := json.Unmarshal(raw, &value); err != nil {
 		return map[string]any{"kind": "invalid"}
 	}
 	result := make(map[string]any)

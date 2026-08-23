@@ -22,6 +22,9 @@ func NewContentModerationHandler(svc *service.ContentModerationService, requestC
 
 type requestControlConfigRequest struct {
 	Enabled                  *bool                                 `json:"enabled"`
+	BlockOpenAIChat          *bool                                 `json:"block_openai_chat"`
+	BlockClaudeMessages      *bool                                 `json:"block_claude_messages"`
+	BlockOpenAIResponses     *bool                                 `json:"block_openai_responses"`
 	AllGroups                *bool                                 `json:"all_groups"`
 	GroupIDs                 *[]int64                              `json:"group_ids"`
 	ModelFilter              *service.ContentModerationModelFilter `json:"model_filter"`
@@ -278,7 +281,8 @@ func (h *ContentModerationHandler) UpdateRequestControlConfig(c *gin.Context) {
 		return
 	}
 	cfg, err := h.requestControl.UpdateConfig(c.Request.Context(), service.UpdateRequestControlConfigInput{
-		Enabled: req.Enabled, AllGroups: req.AllGroups, GroupIDs: req.GroupIDs, ModelFilter: req.ModelFilter,
+		Enabled: req.Enabled, BlockOpenAIChat: req.BlockOpenAIChat, BlockClaudeMessages: req.BlockClaudeMessages, BlockOpenAIResponses: req.BlockOpenAIResponses,
+		AllGroups: req.AllGroups, GroupIDs: req.GroupIDs, ModelFilter: req.ModelFilter,
 		AllUsers: req.AllUsers, UserRules: req.UserRules, GlobalUserAgentWhitelist: req.GlobalUserAgentWhitelist,
 		BlockStatus: req.BlockStatus, BlockMessage: req.BlockMessage, EmailOnHit: req.EmailOnHit,
 		AutoBanEnabled: req.AutoBanEnabled, BanThreshold: req.BanThreshold, ViolationWindowHours: req.ViolationWindowHours,

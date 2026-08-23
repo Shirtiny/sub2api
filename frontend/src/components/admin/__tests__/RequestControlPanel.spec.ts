@@ -63,6 +63,9 @@ vi.mock('vue-i18n', async () => {
 
 const baseConfig = (): RequestControlConfig => ({
   enabled: true,
+  block_openai_chat: true,
+  block_claude_messages: true,
+  block_openai_responses: true,
   all_groups: true,
   group_ids: [],
   model_filter: { type: 'all', models: [] },
@@ -154,6 +157,27 @@ describe('RequestControlPanel', () => {
     expect((wrapper.get('[data-test="request-control-user-id"]').element as HTMLInputElement).value).toBe('42')
   })
 
+  it('edits an existing user UA whitelist instead of creating a duplicate rule', async () => {
+    getConfig.mockResolvedValue({ ...baseConfig(), user_rules: [{ user_id: 374, participate: false, user_agent_whitelist: ['old/'] }] })
+    const wrapper = mountPanel()
+    await flushPromises()
+
+    const edit = wrapper.find('button[title="admin.riskControl.requestControl.editUserUA"]')
+    expect(edit.exists()).toBe(true)
+    await edit.trigger('click')
+    await wrapper.get('[data-test="request-control-user-id"]').setValue('374')
+    await wrapper.find('textarea[placeholder="admin.riskControl.requestControl.userUAPlaceholder"]').setValue('new/\nsecond/')
+    const updateButton = wrapper.findAll('button').find((button) => button.text().includes('admin.riskControl.requestControl.updateUser'))
+    expect(updateButton).toBeTruthy()
+    await updateButton!.trigger('click')
+    await wrapper.get('[data-test="request-control-save"]').trigger('click')
+    await flushPromises()
+
+    expect(updateConfig).toHaveBeenCalledWith(expect.objectContaining({
+      user_rules: [{ user_id: 374, participate: false, user_agent_whitelist: ['new/', 'second/'] }],
+    }))
+  })
+
   it('loads request metadata only when a record detail is opened', async () => {
     const row = {
       id: 7,
@@ -180,6 +204,10 @@ describe('RequestControlPanel', () => {
       tls_match: null,
       header_match: false,
       body_match: false,
+      expected_action: 'block',
+      expected_reason: 'test',
+      expected_blocked: true,
+      expected_status_code: 403,
       details: {},
       violation_count: 1,
       counted_violation: true,

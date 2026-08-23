@@ -14,6 +14,9 @@ export interface RequestControlUserRule {
 
 export interface RequestControlConfig {
   enabled: boolean
+  block_openai_chat: boolean
+  block_claude_messages: boolean
+  block_openai_responses: boolean
   all_groups: boolean
   group_ids: number[]
   model_filter: ContentModerationModelFilter
@@ -30,6 +33,9 @@ export interface RequestControlConfig {
 
 export interface UpdateRequestControlConfig {
   enabled?: boolean
+  block_openai_chat?: boolean
+  block_claude_messages?: boolean
+  block_openai_responses?: boolean
   all_groups?: boolean
   group_ids?: number[]
   model_filter?: ContentModerationModelFilter
@@ -80,6 +86,10 @@ export interface RequestControlLog {
   tls_match: boolean | null
   header_match: boolean | null
   body_match: boolean | null
+  expected_action: string
+  expected_reason: string
+  expected_blocked: boolean
+  expected_status_code: number
   details: Record<string, string>
   violation_count: number
   counted_violation: boolean

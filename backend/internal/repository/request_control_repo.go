@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -20,9 +21,91 @@ func NewRequestControlRepository(db *sql.DB) service.RequestControlRepository {
 	return &requestControlRepository{db: db}
 }
 
+const requestControlMaxStoredHitTimestamps = 10000
+
+// RecordViolation updates the compact per-user rolling hit state. The
+// deduplicated request row must not be used as the source of truth for this
+// state because one fingerprint can be observed many times.
+func (r *requestControlRepository) RecordViolation(ctx context.Context, userID int64, at time.Time, window, spacing time.Duration) (int, bool, error) {
+	if r == nil || r.db == nil || userID <= 0 {
+		return 0, false, nil
+	}
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return 0, false, fmt.Errorf("begin request control violation state: %w", err)
+	}
+	defer func() { _ = tx.Rollback() }()
+	if _, err := tx.ExecContext(ctx, `
+INSERT INTO request_control_violation_states (user_id)
+VALUES ($1)
+ON CONFLICT (user_id) DO NOTHING`, userID); err != nil {
+		return 0, false, fmt.Errorf("initialize request control violation state: %w", err)
+	}
+	var raw []byte
+	var last sql.NullTime
+	if err := tx.QueryRowContext(ctx, `
+SELECT hit_times, last_hit_at
+FROM request_control_violation_states
+WHERE user_id = $1
+FOR UPDATE`, userID).Scan(&raw, &last); err != nil {
+		return 0, false, fmt.Errorf("load request control violation state: %w", err)
+	}
+	var hits []int64
+	if len(raw) > 0 {
+		if err := json.Unmarshal(raw, &hits); err != nil {
+			return 0, false, fmt.Errorf("decode request control violation state: %w", err)
+		}
+	}
+	effectiveAt := at
+	if last.Valid && last.Time.After(effectiveAt) {
+		effectiveAt = last.Time
+	}
+	cutoff := effectiveAt.Add(-window).UnixMilli()
+	filtered := hits[:0]
+	for _, timestamp := range hits {
+		if timestamp >= cutoff {
+			filtered = append(filtered, timestamp)
+		}
+	}
+	hits = filtered
+	counted := !last.Valid || (at.After(last.Time) && at.Sub(last.Time) > spacing)
+	if counted {
+		hits = append(hits, at.UnixMilli())
+	}
+	// Requests may finish out of order across workers. Keep timestamps ordered
+	// so the bounded tail retains the newest counted hits.
+	sort.Slice(hits, func(i, j int) bool { return hits[i] < hits[j] })
+	if len(hits) > requestControlMaxStoredHitTimestamps {
+		hits = hits[len(hits)-requestControlMaxStoredHitTimestamps:]
+	}
+	latest := effectiveAt
+	encoded, err := json.Marshal(hits)
+	if err != nil {
+		return 0, false, fmt.Errorf("encode request control violation state: %w", err)
+	}
+	if _, err := tx.ExecContext(ctx, `
+UPDATE request_control_violation_states
+SET hit_times = $2::jsonb, last_hit_at = $3, updated_at = NOW()
+WHERE user_id = $1`, userID, string(encoded), latest); err != nil {
+		return 0, false, fmt.Errorf("save request control violation state: %w", err)
+	}
+	if err := tx.Commit(); err != nil {
+		return 0, false, fmt.Errorf("commit request control violation state: %w", err)
+	}
+	return len(hits), counted, nil
+}
+
 func (r *requestControlRepository) CreateLog(ctx context.Context, log *service.RequestControlLog) error {
 	if r == nil || r.db == nil || log == nil {
 		return nil
+	}
+	eventAt := requestControlLogEventAt(log)
+	if eventAt.IsZero() {
+		eventAt = time.Now().UTC()
+		log.EventAt = eventAt
+	}
+	if log.CreatedAt.IsZero() {
+		log.CreatedAt = eventAt
 	}
 	details, err := json.Marshal(log.Details)
 	if err != nil {
@@ -47,25 +130,74 @@ func (r *requestControlRepository) CreateLog(ctx context.Context, log *service.R
 		groupID = *log.GroupID
 	}
 	err = r.db.QueryRowContext(ctx, `
-INSERT INTO request_control_logs (
+INSERT INTO request_control_logs AS existing (
     request_id, user_id, user_email, api_key_id, api_key_name, group_id, group_name,
     endpoint, provider, protocol, model, action, reason, allowed, blocked, observed,
 	client_kind, user_agent, originator, tls_fingerprint, tls_match, header_match,
-	body_match, details, request_headers, request_body_metadata, violation_count,
-	counted_violation, email_sent, hit_email_sent, ban_email_sent, auto_banned
+	body_match, details, request_headers, request_body_metadata,
+    expected_action, expected_reason, expected_blocked, expected_status_code,
+    request_headers_hash, request_body_hash, violation_count,
+    counted_violation, email_sent, hit_email_sent, ban_email_sent, auto_banned, created_at
 ) VALUES (
 	$1, $2, $3, $4, $5, $6, $7,
 	$8, $9, $10, $11, $12, $13, $14, $15, $16,
 	$17, $18, $19, $20, $21, $22, $23, $24::jsonb, $25::jsonb, $26::jsonb,
-	$27, $28, $29, $30, $31, $32
-) RETURNING id, created_at`,
+	$27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39
+	) ON CONFLICT (user_id, protocol, request_headers_hash, request_body_hash)
+	WHERE user_id IS NOT NULL AND request_headers_hash <> '' AND request_body_hash <> ''
+DO UPDATE SET
+    request_id = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.request_id ELSE existing.request_id END,
+    user_email = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.user_email ELSE existing.user_email END,
+    api_key_id = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.api_key_id ELSE existing.api_key_id END,
+    api_key_name = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.api_key_name ELSE existing.api_key_name END,
+    group_id = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.group_id ELSE existing.group_id END,
+    group_name = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.group_name ELSE existing.group_name END,
+    endpoint = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.endpoint ELSE existing.endpoint END,
+    provider = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.provider ELSE existing.provider END,
+    model = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.model ELSE existing.model END,
+    action = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.action ELSE existing.action END,
+    reason = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.reason ELSE existing.reason END,
+    allowed = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.allowed ELSE existing.allowed END,
+    blocked = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.blocked ELSE existing.blocked END,
+    observed = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.observed ELSE existing.observed END,
+    client_kind = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.client_kind ELSE existing.client_kind END,
+    user_agent = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.user_agent ELSE existing.user_agent END,
+    originator = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.originator ELSE existing.originator END,
+    tls_fingerprint = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.tls_fingerprint ELSE existing.tls_fingerprint END,
+    tls_match = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.tls_match ELSE existing.tls_match END,
+    header_match = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.header_match ELSE existing.header_match END,
+    body_match = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.body_match ELSE existing.body_match END,
+    details = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.details ELSE existing.details END,
+    request_headers = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.request_headers ELSE existing.request_headers END,
+    request_body_metadata = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.request_body_metadata ELSE existing.request_body_metadata END,
+    expected_action = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.expected_action ELSE existing.expected_action END,
+    expected_reason = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.expected_reason ELSE existing.expected_reason END,
+    expected_blocked = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.expected_blocked ELSE existing.expected_blocked END,
+    expected_status_code = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.expected_status_code ELSE existing.expected_status_code END,
+    violation_count = CASE WHEN EXCLUDED.created_at >= existing.created_at AND EXCLUDED.violation_count > 0 THEN EXCLUDED.violation_count ELSE existing.violation_count END,
+	-- The state/count side effect is calculated after this upsert. Preserve a
+	-- previous counted marker while the transient insert carries its default
+	-- false value; UpdateLogSideEffects records a new true marker afterward.
+	counted_violation = existing.counted_violation OR EXCLUDED.counted_violation,
+    email_sent = existing.email_sent OR EXCLUDED.email_sent,
+    hit_email_sent = existing.hit_email_sent OR EXCLUDED.hit_email_sent,
+    ban_email_sent = existing.ban_email_sent OR EXCLUDED.ban_email_sent,
+    auto_banned = existing.auto_banned OR EXCLUDED.auto_banned,
+	created_at = GREATEST(existing.created_at, EXCLUDED.created_at)
+RETURNING id, created_at`,
 		log.RequestID, userID, log.UserEmail, apiKeyID, log.APIKeyName, groupID, log.GroupName,
 		log.Endpoint, log.Provider, log.Protocol, log.Model, log.Action, log.Reason,
 		log.Allowed, log.Blocked, log.Observed, log.ClientKind, log.UserAgent, log.Originator,
 		log.TLSFingerprint, nullableBoolPtr(log.TLSMatch), nullableBoolPtr(log.HeaderMatch),
 		nullableBoolPtr(log.BodyMatch), string(details), string(requestHeaders), string(requestBody),
-		log.ViolationCount, log.Counted, log.EmailSent, log.HitEmailSent, log.BanEmailSent, log.AutoBanned,
+		log.ExpectedAction, log.ExpectedReason, log.ExpectedBlocked, log.ExpectedStatusCode,
+		log.RequestHeadersHash, log.RequestBodyHash, log.ViolationCount, log.Counted, log.EmailSent,
+		log.HitEmailSent, log.BanEmailSent, log.AutoBanned, eventAt,
 	).Scan(&log.ID, &log.CreatedAt)
+	if err == sql.ErrNoRows {
+		log.ID = 0
+		return nil
+	}
 	if err != nil {
 		return fmt.Errorf("insert request control log: %w", err)
 	}
@@ -101,10 +233,14 @@ func (r *requestControlRepository) UpdateLogSideEffects(ctx context.Context, log
 	}
 	_, err := r.db.ExecContext(ctx, `
 UPDATE request_control_logs
-	SET violation_count = $2, counted_violation = $3, email_sent = $4,
-	    hit_email_sent = $5, ban_email_sent = $6, auto_banned = $7
+	SET violation_count = CASE WHEN created_at <= $8::timestamptz + INTERVAL '1 microsecond' AND $2 > 0 THEN $2 ELSE violation_count END,
+	    counted_violation = counted_violation OR (created_at <= $8::timestamptz + INTERVAL '1 microsecond' AND $3),
+	    email_sent = email_sent OR $4,
+	    hit_email_sent = hit_email_sent OR $5,
+	    ban_email_sent = ban_email_sent OR $6,
+	    auto_banned = auto_banned OR $7
 	WHERE id = $1`, log.ID, log.ViolationCount, log.Counted, log.EmailSent,
-		log.HitEmailSent, log.BanEmailSent, log.AutoBanned)
+		log.HitEmailSent, log.BanEmailSent, log.AutoBanned, requestControlLogEventAt(log))
 	if err != nil {
 		return fmt.Errorf("update request control log side effects: %w", err)
 	}
@@ -136,7 +272,8 @@ SELECT
     l.group_id, l.group_name, l.endpoint, l.provider, l.protocol, l.model,
 	l.action, l.reason, l.allowed, l.blocked, l.observed, l.client_kind,
 	l.user_agent, l.originator, l.tls_fingerprint, l.tls_match, l.header_match,
-	 l.body_match, l.details, l.violation_count, l.counted_violation, l.email_sent,
+	 l.body_match, l.details, l.expected_action, l.expected_reason, l.expected_blocked, l.expected_status_code,
+	 l.violation_count, l.counted_violation, l.email_sent,
 	 l.hit_email_sent, l.ban_email_sent, l.auto_banned, l.created_at
 FROM request_control_logs l `+whereSQL+`
 ORDER BY l.created_at DESC, l.id DESC
@@ -152,13 +289,16 @@ LIMIT $`+fmt.Sprint(len(queryArgs)-1)+` OFFSET $`+fmt.Sprint(len(queryArgs)), qu
 		var tlsMatch, headerMatch, bodyMatch sql.NullBool
 		var violationCount int
 		var countedViolation, emailSent, hitEmailSent, banEmailSent, autoBanned bool
+		var expectedBlocked bool
+		var expectedStatusCode int
 		var details []byte
 		if err := rows.Scan(
 			&item.ID, &item.RequestID, &userID, &item.UserEmail, &apiKeyID, &item.APIKeyName,
 			&groupID, &item.GroupName, &item.Endpoint, &item.Provider, &item.Protocol, &item.Model,
 			&item.Action, &item.Reason, &item.Allowed, &item.Blocked, &item.Observed, &item.ClientKind,
 			&item.UserAgent, &item.Originator, &item.TLSFingerprint, &tlsMatch, &headerMatch,
-			&bodyMatch, &details, &violationCount, &countedViolation, &emailSent, &hitEmailSent, &banEmailSent, &autoBanned, &item.CreatedAt,
+			&bodyMatch, &details, &item.ExpectedAction, &item.ExpectedReason, &expectedBlocked, &expectedStatusCode,
+			&violationCount, &countedViolation, &emailSent, &hitEmailSent, &banEmailSent, &autoBanned, &item.CreatedAt,
 		); err != nil {
 			return nil, nil, fmt.Errorf("scan request control log: %w", err)
 		}
@@ -188,6 +328,8 @@ LIMIT $`+fmt.Sprint(len(queryArgs)-1)+` OFFSET $`+fmt.Sprint(len(queryArgs)), qu
 		}
 		item.Details = map[string]string{}
 		_ = json.Unmarshal(details, &item.Details)
+		item.ExpectedBlocked = expectedBlocked
+		item.ExpectedStatusCode = expectedStatusCode
 		item.ViolationCount = violationCount
 		item.Counted = countedViolation
 		item.EmailSent = emailSent
@@ -211,6 +353,8 @@ func (r *requestControlRepository) GetLog(ctx context.Context, id int64) (*servi
 	var tlsMatch, headerMatch, bodyMatch sql.NullBool
 	var violationCount int
 	var countedViolation, emailSent, hitEmailSent, banEmailSent, autoBanned bool
+	var expectedBlocked bool
+	var expectedStatusCode int
 	var details, requestHeaders, requestBody []byte
 	err := r.db.QueryRowContext(ctx, `
 SELECT
@@ -218,15 +362,17 @@ SELECT
     l.group_id, l.group_name, l.endpoint, l.provider, l.protocol, l.model,
     l.action, l.reason, l.allowed, l.blocked, l.observed, l.client_kind,
     l.user_agent, l.originator, l.tls_fingerprint, l.tls_match, l.header_match,
-    l.body_match, l.details, l.request_headers, l.request_body_metadata,
-    l.violation_count, l.counted_violation, l.email_sent, l.hit_email_sent,
+	 l.body_match, l.details, l.request_headers, l.request_body_metadata,
+	 l.expected_action, l.expected_reason, l.expected_blocked, l.expected_status_code,
+	 l.violation_count, l.counted_violation, l.email_sent, l.hit_email_sent,
     l.ban_email_sent, l.auto_banned, l.created_at
 FROM request_control_logs l WHERE l.id = $1`, id).Scan(
 		&item.ID, &item.RequestID, &userID, &item.UserEmail, &apiKeyID, &item.APIKeyName,
 		&groupID, &item.GroupName, &item.Endpoint, &item.Provider, &item.Protocol, &item.Model,
 		&item.Action, &item.Reason, &item.Allowed, &item.Blocked, &item.Observed, &item.ClientKind,
 		&item.UserAgent, &item.Originator, &item.TLSFingerprint, &tlsMatch, &headerMatch,
-		&bodyMatch, &details, &requestHeaders, &requestBody, &violationCount, &countedViolation,
+		&bodyMatch, &details, &requestHeaders, &requestBody, &item.ExpectedAction, &item.ExpectedReason, &expectedBlocked, &expectedStatusCode,
+		&violationCount, &countedViolation,
 		&emailSent, &hitEmailSent, &banEmailSent, &autoBanned, &item.CreatedAt,
 	)
 	if err != nil {
@@ -236,6 +382,8 @@ FROM request_control_logs l WHERE l.id = $1`, id).Scan(
 		return nil, fmt.Errorf("get request control log: %w", err)
 	}
 	applyRequestControlLogNullableFields(&item, userID, apiKeyID, groupID, tlsMatch, headerMatch, bodyMatch, details, violationCount, countedViolation, emailSent, hitEmailSent, banEmailSent, autoBanned)
+	item.ExpectedBlocked = expectedBlocked
+	item.ExpectedStatusCode = expectedStatusCode
 	var headers map[string]string
 	if len(requestHeaders) > 0 {
 		_ = json.Unmarshal(requestHeaders, &headers)
@@ -303,7 +451,12 @@ func (r *requestControlRepository) CleanupLogs(ctx context.Context, before time.
 		return 0, fmt.Errorf("cleanup request control logs: %w", err)
 	}
 	deleted, _ := result.RowsAffected()
-	return deleted, nil
+	stateResult, err := r.db.ExecContext(ctx, `DELETE FROM request_control_violation_states WHERE updated_at < $1`, before)
+	if err != nil {
+		return deleted, fmt.Errorf("cleanup request control violation states: %w", err)
+	}
+	stateDeleted, _ := stateResult.RowsAffected()
+	return deleted + stateDeleted, nil
 }
 
 func buildRequestControlLogWhere(filter service.RequestControlLogFilter) ([]string, []any) {
@@ -345,4 +498,14 @@ func nullableBoolPtr(value *bool) any {
 		return nil
 	}
 	return *value
+}
+
+func requestControlLogEventAt(log *service.RequestControlLog) time.Time {
+	if log == nil {
+		return time.Time{}
+	}
+	if !log.EventAt.IsZero() {
+		return log.EventAt
+	}
+	return log.CreatedAt
 }

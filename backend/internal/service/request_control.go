@@ -64,6 +64,7 @@ const (
 )
 
 var codexRequestUserAgentPattern = regexp.MustCompile(`(?i)^([a-z0-9][a-z0-9_. -]*)/(\d+\.\d+\.\d+)(?:[-+][0-9a-z.-]+)?(?:\s|$)`)
+var codexDesktopUserAgentPattern = regexp.MustCompile(`(?i)^codex desktop/\d+\.\d+\.\d+(?:[-+][0-9a-z.-]+)?(?:\s|$)`)
 
 type RequestControlUserRule struct {
 	UserID             int64    `json:"user_id"`
@@ -72,23 +73,58 @@ type RequestControlUserRule struct {
 }
 
 type RequestControlConfig struct {
-	Enabled                  bool                         `json:"enabled"`
-	AllGroups                bool                         `json:"all_groups"`
-	GroupIDs                 []int64                      `json:"group_ids"`
-	ModelFilter              ContentModerationModelFilter `json:"model_filter"`
-	AllUsers                 bool                         `json:"all_users"`
-	UserRules                []RequestControlUserRule     `json:"user_rules"`
-	GlobalUserAgentWhitelist []string                     `json:"global_user_agent_whitelist"`
-	BlockStatus              int                          `json:"block_status"`
-	BlockMessage             string                       `json:"block_message"`
-	EmailOnHit               bool                         `json:"email_on_hit"`
-	AutoBanEnabled           bool                         `json:"auto_ban_enabled"`
-	BanThreshold             int                          `json:"ban_threshold"`
-	ViolationWindowHours     int                          `json:"violation_window_hours"`
+	Enabled                    bool                         `json:"enabled"`
+	BlockOpenAIChat            bool                         `json:"block_openai_chat"`
+	BlockClaudeMessages        bool                         `json:"block_claude_messages"`
+	BlockOpenAIResponses       bool                         `json:"block_openai_responses"`
+	AllGroups                  bool                         `json:"all_groups"`
+	GroupIDs                   []int64                      `json:"group_ids"`
+	ModelFilter                ContentModerationModelFilter `json:"model_filter"`
+	AllUsers                   bool                         `json:"all_users"`
+	UserRules                  []RequestControlUserRule     `json:"user_rules"`
+	GlobalUserAgentWhitelist   []string                     `json:"global_user_agent_whitelist"`
+	BlockStatus                int                          `json:"block_status"`
+	BlockMessage               string                       `json:"block_message"`
+	EmailOnHit                 bool                         `json:"email_on_hit"`
+	AutoBanEnabled             bool                         `json:"auto_ban_enabled"`
+	BanThreshold               int                          `json:"ban_threshold"`
+	ViolationWindowHours       int                          `json:"violation_window_hours"`
+	protocolSwitchesConfigured bool
+}
+
+// UnmarshalJSON keeps existing settings fail-closed when the per-protocol
+// enforcement switches were introduced after the original config was saved.
+func (cfg *RequestControlConfig) UnmarshalJSON(data []byte) error {
+	type requestControlConfigAlias RequestControlConfig
+	// Decode into the existing value instead of replacing it with a zero value.
+	// loadConfig starts from defaults, so omitted fields in older persisted JSON
+	// must retain those defaults while the newly introduced switches are filled
+	// below.
+	if err := json.Unmarshal(data, (*requestControlConfigAlias)(cfg)); err != nil {
+		return err
+	}
+	cfg.protocolSwitchesConfigured = true
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(data, &fields); err != nil {
+		return err
+	}
+	if raw, ok := fields["block_openai_chat"]; !ok || bytes.Equal(bytes.TrimSpace(raw), []byte("null")) {
+		cfg.BlockOpenAIChat = true
+	}
+	if raw, ok := fields["block_claude_messages"]; !ok || bytes.Equal(bytes.TrimSpace(raw), []byte("null")) {
+		cfg.BlockClaudeMessages = true
+	}
+	if raw, ok := fields["block_openai_responses"]; !ok || bytes.Equal(bytes.TrimSpace(raw), []byte("null")) {
+		cfg.BlockOpenAIResponses = true
+	}
+	return nil
 }
 
 type RequestControlConfigView struct {
 	Enabled                  bool                         `json:"enabled"`
+	BlockOpenAIChat          bool                         `json:"block_openai_chat"`
+	BlockClaudeMessages      bool                         `json:"block_claude_messages"`
+	BlockOpenAIResponses     bool                         `json:"block_openai_responses"`
 	AllGroups                bool                         `json:"all_groups"`
 	GroupIDs                 []int64                      `json:"group_ids"`
 	ModelFilter              ContentModerationModelFilter `json:"model_filter"`
@@ -105,6 +141,9 @@ type RequestControlConfigView struct {
 
 type UpdateRequestControlConfigInput struct {
 	Enabled                  *bool                         `json:"enabled"`
+	BlockOpenAIChat          *bool                         `json:"block_openai_chat"`
+	BlockClaudeMessages      *bool                         `json:"block_claude_messages"`
+	BlockOpenAIResponses     *bool                         `json:"block_openai_responses"`
 	AllGroups                *bool                         `json:"all_groups"`
 	GroupIDs                 *[]int64                      `json:"group_ids"`
 	ModelFilter              *ContentModerationModelFilter `json:"model_filter"`
@@ -143,18 +182,22 @@ type RequestControlCheckInput struct {
 }
 
 type RequestControlDecision struct {
-	Allowed       bool              `json:"allowed"`
-	Blocked       bool              `json:"blocked"`
-	Observed      bool              `json:"observed"`
-	Action        string            `json:"action"`
-	Reason        string            `json:"reason"`
-	Message       string            `json:"message"`
-	StatusCode    int               `json:"status_code"`
-	ClientKind    string            `json:"client_kind"`
-	HeaderMatched bool              `json:"header_matched"`
-	BodyMatched   bool              `json:"body_matched"`
-	TLSMatched    *bool             `json:"tls_matched,omitempty"`
-	Details       map[string]string `json:"details,omitempty"`
+	Allowed            bool              `json:"allowed"`
+	Blocked            bool              `json:"blocked"`
+	Observed           bool              `json:"observed"`
+	Action             string            `json:"action"`
+	Reason             string            `json:"reason"`
+	Message            string            `json:"message"`
+	StatusCode         int               `json:"status_code"`
+	ClientKind         string            `json:"client_kind"`
+	HeaderMatched      bool              `json:"header_matched"`
+	BodyMatched        bool              `json:"body_matched"`
+	TLSMatched         *bool             `json:"tls_matched,omitempty"`
+	Details            map[string]string `json:"details,omitempty"`
+	ExpectedAction     string            `json:"expected_action,omitempty"`
+	ExpectedReason     string            `json:"expected_reason,omitempty"`
+	ExpectedBlocked    bool              `json:"expected_blocked,omitempty"`
+	ExpectedStatusCode int               `json:"expected_status_code,omitempty"`
 }
 
 type RequestControlLog struct {
@@ -183,6 +226,13 @@ type RequestControlLog struct {
 	HeaderMatch         *bool             `json:"header_match"`
 	BodyMatch           *bool             `json:"body_match"`
 	Details             map[string]string `json:"details"`
+	ExpectedAction      string            `json:"expected_action"`
+	ExpectedReason      string            `json:"expected_reason"`
+	ExpectedBlocked     bool              `json:"expected_blocked"`
+	ExpectedStatusCode  int               `json:"expected_status_code"`
+	RequestHeadersHash  string            `json:"-"`
+	RequestBodyHash     string            `json:"-"`
+	EventAt             time.Time         `json:"-"`
 	ViolationCount      int               `json:"violation_count"`
 	Counted             bool              `json:"counted_violation"`
 	EmailSent           bool              `json:"email_sent"`
@@ -231,6 +281,14 @@ type RequestControlRepository interface {
 	ListLogs(context.Context, RequestControlLogFilter) ([]RequestControlLog, *pagination.PaginationResult, error)
 	GetLog(context.Context, int64) (*RequestControlLogDetail, error)
 	CleanupLogs(context.Context, time.Time) (int64, error)
+}
+
+// RequestControlViolationStateRepository keeps the rolling hit timestamps
+// separate from the deduplicated observation row. Implementations may be
+// detected at runtime so lightweight test repositories and older adapters
+// retain the legacy fallback behavior.
+type RequestControlViolationStateRepository interface {
+	RecordViolation(context.Context, int64, time.Time, time.Duration, time.Duration) (int, bool, error)
 }
 
 type requestControlRuntimeConfig struct {
@@ -327,6 +385,15 @@ func (s *RequestControlService) UpdateConfig(ctx context.Context, input UpdateRe
 	}
 	if input.Enabled != nil {
 		cfg.Enabled = *input.Enabled
+	}
+	if input.BlockOpenAIChat != nil {
+		cfg.BlockOpenAIChat = *input.BlockOpenAIChat
+	}
+	if input.BlockClaudeMessages != nil {
+		cfg.BlockClaudeMessages = *input.BlockClaudeMessages
+	}
+	if input.BlockOpenAIResponses != nil {
+		cfg.BlockOpenAIResponses = *input.BlockOpenAIResponses
 	}
 	if input.AllGroups != nil {
 		cfg.AllGroups = *input.AllGroups
@@ -435,9 +502,7 @@ func (s *RequestControlService) Check(ctx context.Context, input RequestControlC
 			if bodyErr != nil {
 				decision.Details["request_body"] = "invalid_or_unreadable"
 			}
-			attachRequestControlTLSObservation(input, decision)
-			s.enqueueLog(buildRequestControlLog(input, decision))
-			return decision, nil
+			return s.finalizeDecision(input, cfg, decision), nil
 		}
 		if bodyParsed {
 			responseBody = &parsedBody
@@ -491,11 +556,35 @@ func (s *RequestControlService) Check(ctx context.Context, input RequestControlC
 	default:
 		return allow, nil
 	}
+	return s.finalizeDecision(input, cfg, decision), nil
+}
+
+const requestControlReasonObserveOnly = "blocking_disabled_observe_only"
+
+func (s *RequestControlService) finalizeDecision(input RequestControlCheckInput, cfg *RequestControlConfig, decision *RequestControlDecision) *RequestControlDecision {
+	if decision == nil {
+		return nil
+	}
+	if decision.ExpectedAction == "" {
+		decision.ExpectedAction = decision.Action
+		decision.ExpectedReason = decision.Reason
+		decision.ExpectedBlocked = decision.Blocked
+		if decision.Blocked {
+			decision.ExpectedStatusCode = decision.StatusCode
+		}
+	}
+	if decision.Blocked && decision.Reason != "anonymous_response_request" && !cfg.blocksProtocol(input.Protocol) {
+		decision.Allowed = true
+		decision.Blocked = false
+		decision.Observed = true
+		decision.Action = RequestControlActionObserve
+		decision.Reason = requestControlReasonObserveOnly
+	}
 	attachRequestControlTLSObservation(input, decision)
 	if decision.Blocked || decision.Observed {
 		s.enqueueLog(buildRequestControlLog(input, decision))
 	}
-	return decision, nil
+	return decision
 }
 
 func validateClaudeCodeRequestHeaders(headers http.Header, validator *ClaudeCodeValidator) bool {
@@ -616,19 +705,34 @@ func (s *RequestControlService) processQueuedLog(ctx context.Context, log *Reque
 		return nil
 	}
 	if log.Blocked && log.UserID != nil && *log.UserID > 0 {
-		s.violationMu.Lock()
 		cfg := s.currentConfig()
-		s.prepareViolationCount(ctx, cfg, log)
-		err := s.repo.CreateLog(ctx, log)
-		s.violationMu.Unlock()
+		_, hasStateRepo := s.repo.(RequestControlViolationStateRepository)
+		var err error
+		if hasStateRepo {
+			// The repository's state row lock serializes the rolling counter per
+			// user, so different users can persist concurrently. The legacy
+			// fallback still needs the process mutex around its read/insert pair.
+			err = s.repo.CreateLog(ctx, log)
+			if err == nil && log.ID > 0 {
+				s.prepareViolationCount(ctx, cfg, log)
+			}
+		} else {
+			s.violationMu.Lock()
+			s.prepareViolationCount(ctx, cfg, log)
+			err = s.repo.CreateLog(ctx, log)
+			s.violationMu.Unlock()
+		}
 		if err != nil {
 			return err
 		}
+		if log.ID <= 0 {
+			return nil
+		}
 		if log.Counted {
 			s.applyRequestControlSideEffects(ctx, cfg, log)
-			if err := s.repo.UpdateLogSideEffects(ctx, log); err != nil {
-				slog.Warn("request_control.update_side_effects_failed", "user_id", *log.UserID, "error", err)
-			}
+		}
+		if err := s.repo.UpdateLogSideEffects(ctx, log); err != nil {
+			slog.Warn("request_control.update_side_effects_failed", "user_id", *log.UserID, "error", err)
 		}
 		return nil
 	}
@@ -650,19 +754,36 @@ func (s *RequestControlService) prepareViolationCount(ctx context.Context, cfg *
 	if s == nil || s.repo == nil || cfg == nil || log == nil || log.UserID == nil || *log.UserID <= 0 {
 		return
 	}
+	eventAt := log.EventAt
+	if eventAt.IsZero() {
+		eventAt = log.CreatedAt
+	}
+	if eventAt.IsZero() {
+		eventAt = time.Now()
+	}
 	if log.CreatedAt.IsZero() {
-		log.CreatedAt = time.Now()
+		log.CreatedAt = eventAt
+	}
+	if stateRepo, ok := s.repo.(RequestControlViolationStateRepository); ok {
+		count, counted, err := stateRepo.RecordViolation(ctx, *log.UserID, eventAt, time.Duration(cfg.ViolationWindowHours)*time.Hour, requestControlHitSpacing)
+		if err == nil {
+			log.Counted = counted
+			log.ViolationCount = count
+			return
+		}
+		slog.Warn("request_control.violation_state_failed", "user_id", *log.UserID, "error", err)
+		return
 	}
 	log.Counted = false
 	log.ViolationCount = 0
-	since := log.CreatedAt.Add(-time.Duration(cfg.ViolationWindowHours) * time.Hour)
+	since := eventAt.Add(-time.Duration(cfg.ViolationWindowHours) * time.Hour)
 	count, last, err := s.repo.GetViolationState(ctx, *log.UserID, since)
 	if err != nil {
 		slog.Warn("request_control.violation_state_failed", "user_id", *log.UserID, "error", err)
 		return
 	}
 	log.ViolationCount = count
-	if last == nil || log.CreatedAt.Sub(*last) > requestControlHitSpacing {
+	if last == nil || eventAt.Sub(*last) > requestControlHitSpacing {
 		log.Counted = true
 		log.ViolationCount = count + 1
 	}
@@ -798,17 +919,21 @@ func (s *RequestControlService) validateConfig(ctx context.Context, cfg *Request
 
 func defaultRequestControlConfig() *RequestControlConfig {
 	return &RequestControlConfig{
-		AllGroups:                true,
-		ModelFilter:              ContentModerationModelFilter{Type: ContentModerationModelFilterAll},
-		AllUsers:                 true,
-		UserRules:                []RequestControlUserRule{},
-		GlobalUserAgentWhitelist: []string{},
-		BlockStatus:              requestControlDefaultBlockStatus,
-		BlockMessage:             requestControlDefaultBlockMessage,
-		EmailOnHit:               true,
-		AutoBanEnabled:           true,
-		BanThreshold:             requestControlDefaultBanThreshold,
-		ViolationWindowHours:     requestControlDefaultViolationWindowHours,
+		BlockOpenAIChat:            true,
+		BlockClaudeMessages:        true,
+		BlockOpenAIResponses:       true,
+		AllGroups:                  true,
+		ModelFilter:                ContentModerationModelFilter{Type: ContentModerationModelFilterAll},
+		AllUsers:                   true,
+		UserRules:                  []RequestControlUserRule{},
+		GlobalUserAgentWhitelist:   []string{},
+		BlockStatus:                requestControlDefaultBlockStatus,
+		BlockMessage:               requestControlDefaultBlockMessage,
+		EmailOnHit:                 true,
+		AutoBanEnabled:             true,
+		BanThreshold:               requestControlDefaultBanThreshold,
+		ViolationWindowHours:       requestControlDefaultViolationWindowHours,
+		protocolSwitchesConfigured: true,
 	}
 }
 
@@ -816,6 +941,12 @@ func (cfg *RequestControlConfig) normalize() {
 	if cfg == nil {
 		return
 	}
+	if !cfg.protocolSwitchesConfigured && !cfg.BlockOpenAIChat && !cfg.BlockClaudeMessages && !cfg.BlockOpenAIResponses {
+		cfg.BlockOpenAIChat = true
+		cfg.BlockClaudeMessages = true
+		cfg.BlockOpenAIResponses = true
+	}
+	cfg.protocolSwitchesConfigured = true
 	cfg.GroupIDs = normalizeInt64IDs(cfg.GroupIDs)
 	cfg.ModelFilter = normalizeContentModerationModelFilter(cfg.ModelFilter)
 	if cfg.BlockStatus <= 0 {
@@ -860,7 +991,7 @@ func requestControlConfigView(cfg *RequestControlConfig) *RequestControlConfigVi
 	if cfg == nil {
 		return nil
 	}
-	return &RequestControlConfigView{Enabled: cfg.Enabled, AllGroups: cfg.AllGroups, GroupIDs: append([]int64(nil), cfg.GroupIDs...), ModelFilter: cfg.ModelFilter, AllUsers: cfg.AllUsers, UserRules: append([]RequestControlUserRule(nil), cfg.UserRules...), GlobalUserAgentWhitelist: append([]string(nil), cfg.GlobalUserAgentWhitelist...), BlockStatus: cfg.BlockStatus, BlockMessage: cfg.BlockMessage, EmailOnHit: cfg.EmailOnHit, AutoBanEnabled: cfg.AutoBanEnabled, BanThreshold: cfg.BanThreshold, ViolationWindowHours: cfg.ViolationWindowHours}
+	return &RequestControlConfigView{Enabled: cfg.Enabled, BlockOpenAIChat: cfg.BlockOpenAIChat, BlockClaudeMessages: cfg.BlockClaudeMessages, BlockOpenAIResponses: cfg.BlockOpenAIResponses, AllGroups: cfg.AllGroups, GroupIDs: append([]int64(nil), cfg.GroupIDs...), ModelFilter: cfg.ModelFilter, AllUsers: cfg.AllUsers, UserRules: append([]RequestControlUserRule(nil), cfg.UserRules...), GlobalUserAgentWhitelist: append([]string(nil), cfg.GlobalUserAgentWhitelist...), BlockStatus: cfg.BlockStatus, BlockMessage: cfg.BlockMessage, EmailOnHit: cfg.EmailOnHit, AutoBanEnabled: cfg.AutoBanEnabled, BanThreshold: cfg.BanThreshold, ViolationWindowHours: cfg.ViolationWindowHours}
 }
 
 func (runtime *requestControlRuntimeConfig) includesGroup(groupID *int64, effective []int64) bool {
@@ -904,6 +1035,22 @@ func (cfg *RequestControlConfig) includesUser(userID int64, rules map[int64]Requ
 		return rule.Participate
 	}
 	return cfg.AllUsers
+}
+
+func (cfg *RequestControlConfig) blocksProtocol(protocol string) bool {
+	if cfg == nil {
+		return true
+	}
+	switch protocol {
+	case RequestControlProtocolChat:
+		return cfg.BlockOpenAIChat
+	case RequestControlProtocolMessages:
+		return cfg.BlockClaudeMessages
+	case RequestControlProtocolResponse:
+		return cfg.BlockOpenAIResponses
+	default:
+		return true
+	}
 }
 
 func normalizeUAMarkers(values []string) []string {
@@ -1051,6 +1198,26 @@ type requestControlClientMetadata struct {
 	TurnMetadata   requestControlJSONString
 }
 
+func parseRequestControlTurnMetadataValue(raw []byte) (requestControlJSONString, error) {
+	value := requestControlJSONString{Present: true}
+	trimmed := bytes.TrimSpace(raw)
+	if len(trimmed) == 0 {
+		return value, nil
+	}
+	if trimmed[0] == '"' {
+		parsed, err := parseRequestControlJSONString(trimmed, 0)
+		if err != nil {
+			return value, nil
+		}
+		parsed.Valid = false
+		if _, ok := parseRequestControlTurnMetadata(parsed.Value); ok {
+			parsed.Valid = true
+		}
+		return parsed, nil
+	}
+	return value, nil
+}
+
 func parseRequestControlClientMetadata(raw []byte) (requestControlClientMetadata, error) {
 	metadata := requestControlClientMetadata{Present: true}
 	err := openaiwsv2.VisitTopLevelObjectFields(raw, func(key, rawValue []byte) error {
@@ -1077,7 +1244,7 @@ func parseRequestControlClientMetadata(raw []byte) (requestControlClientMetadata
 				metadata.HasSession = true
 			}
 		case "x-codex-turn-metadata":
-			metadata.TurnMetadata, err = parseRequestControlJSONString(rawValue, 0)
+			metadata.TurnMetadata, err = parseRequestControlTurnMetadataValue(rawValue)
 			if err == nil && metadata.TurnMetadata.Valid {
 				metadata.HasSession, err = requestControlJSONObjectHasSession([]byte(metadata.TurnMetadata.Value))
 			}
@@ -1242,6 +1409,13 @@ func validateCodexResponsesRequest(input RequestControlCheckInput) (bool, bool, 
 }
 
 func validateCodexResponsesRequestParsed(input RequestControlCheckInput, body requestControlResponsesBody, bodyErr error) (bool, bool, map[string]string) {
+	if isCodexDesktopRequest(input) {
+		return validateCodexDesktopResponsesRequestParsed(input, body, bodyErr)
+	}
+	return validateCodexResponsesRequestParsedStrict(input, body, bodyErr)
+}
+
+func validateCodexResponsesRequestParsedStrict(input RequestControlCheckInput, body requestControlResponsesBody, bodyErr error) (bool, bool, map[string]string) {
 	details := make(map[string]string)
 	userAgent, uaSingle := requestControlSingleHeader(input.Headers, "User-Agent")
 	originator, originatorSingle := requestControlSingleHeader(input.Headers, "originator")
@@ -1292,7 +1466,6 @@ func validateCodexResponsesRequestParsed(input RequestControlCheckInput, body re
 		headerOK = false
 		details["client_request_id"] = "thread_mismatch"
 	}
-
 	turnMetadataRaw, turnMetadataSingle := requestControlSingleHeader(input.Headers, "x-codex-turn-metadata")
 	turnMetadata, turnMetadataOK := parseRequestControlTurnMetadata(turnMetadataRaw)
 	turnIdentityMatches := turnMetadata.RequestKind == "memory" ||
@@ -1405,6 +1578,97 @@ func validateCodexResponsesRequestParsed(input RequestControlCheckInput, body re
 		details["body_installation_id"] = "header_mismatch"
 	}
 	return headerOK, bodyOK, details
+}
+
+func isCodexDesktopRequest(input RequestControlCheckInput) bool {
+	userAgent, uaSingle := requestControlSingleHeader(input.Headers, "User-Agent")
+	originator, originatorSingle := requestControlSingleHeader(input.Headers, "originator")
+	return uaSingle && originatorSingle && codexDesktopUserAgentPattern.MatchString(userAgent) &&
+		(strings.EqualFold(originator, "codex desktop") || strings.EqualFold(originator, "codex_work_desktop"))
+}
+
+// validateCodexDesktopResponsesRequestParsed accepts the Desktop wire profile,
+// whose canonical identity is client_metadata rather than the CLI compatibility
+// headers. Body identity and the core Responses contract remain mandatory.
+func validateCodexDesktopResponsesRequestParsed(input RequestControlCheckInput, body requestControlResponsesBody, bodyErr error) (bool, bool, map[string]string) {
+	details := map[string]string{"codex_profile": "desktop_body_metadata"}
+	if bodyErr != nil {
+		details["body_json"] = "invalid"
+		return false, false, details
+	}
+	metadata := body.ClientMetadata
+	if !metadata.Present || !metadata.Valid {
+		details["client_metadata"] = "missing_or_invalid"
+		return false, false, details
+	}
+	if !metadata.InstallationID.Valid || !requestControlUUID(metadata.InstallationID.Value) {
+		details["body_installation_id"] = "missing_or_invalid"
+		return false, false, details
+	}
+	if !metadata.SessionID.Valid || !requestControlUUID(metadata.SessionID.Value) || !metadata.ThreadID.Valid || !requestControlUUID(metadata.ThreadID.Value) {
+		details["body_session_identity"] = "missing_or_mismatched"
+		return false, false, details
+	}
+	windowID, windowSingle := requestControlSingleHeader(input.Headers, "x-codex-window-id")
+	if !metadata.WindowID.Valid || !windowSingle || windowID != metadata.WindowID.Value {
+		details["window_identity"] = "missing_or_mismatched"
+		return false, false, details
+	}
+	if !metadata.TurnMetadata.Present {
+		details["body_turn_metadata"] = "missing"
+		return false, false, details
+	}
+
+	if !metadata.TurnMetadata.Valid || strings.TrimSpace(metadata.TurnMetadata.Value) == "" {
+		details["body_turn_metadata"] = "missing_or_invalid"
+		return false, false, details
+	}
+	// Derived compatibility headers are validation inputs only. Do not mutate
+	// the original request header map, which is also used for the redacted audit
+	// metadata and deduplication fingerprint.
+	if input.Headers == nil {
+		input.Headers = make(http.Header)
+	} else {
+		input.Headers = input.Headers.Clone()
+	}
+	canonicalTurnMetadata := metadata.TurnMetadata.Value
+	turnHeaderValues := requestControlHeaderValues(input.Headers, "x-codex-turn-metadata")
+	switch len(turnHeaderValues) {
+	case 0:
+		input.Headers.Set("x-codex-turn-metadata", canonicalTurnMetadata)
+	case 1:
+		current := strings.TrimSpace(turnHeaderValues[0])
+		if parsed, ok := parseRequestControlTurnMetadata(current); ok {
+			bodyMetadata, bodyOK := parseRequestControlTurnMetadata(canonicalTurnMetadata)
+			if !bodyOK || !requestControlTurnMetadataMatches(parsed, bodyMetadata) {
+				details["turn_metadata"] = "identity_mismatch"
+				return false, false, details
+			}
+		} else {
+			details["turn_metadata"] = "missing_or_invalid"
+			return false, false, details
+		}
+	default:
+		details["turn_metadata"] = "duplicate"
+		return false, false, details
+	}
+	requestControlSetHeaderIfMissing(input.Headers, "Accept", "text/event-stream")
+	requestControlSetHeaderIfMissing(input.Headers, "session-id", metadata.SessionID.Value)
+	requestControlSetHeaderIfMissing(input.Headers, "thread-id", metadata.ThreadID.Value)
+	requestControlSetHeaderIfMissing(input.Headers, "x-client-request-id", metadata.ThreadID.Value)
+	requestControlSetHeaderIfMissing(input.Headers, "x-codex-installation-id", metadata.InstallationID.Value)
+
+	headerOK, bodyOK, strictDetails := validateCodexResponsesRequestParsedStrict(input, body, nil)
+	for key, value := range details {
+		strictDetails[key] = value
+	}
+	return headerOK, bodyOK, strictDetails
+}
+
+func requestControlSetHeaderIfMissing(headers http.Header, name, value string) {
+	if len(requestControlHeaderValues(headers, name)) == 0 {
+		headers.Set(name, value)
+	}
 }
 
 func requestControlTurnMetadataMatches(header, body requestControlTurnMetadata) bool {
@@ -1581,26 +1845,32 @@ func requestControlTLSMatchExpected(raw, expectedJA3Hash, expectedJA3, expectedJ
 }
 
 func buildRequestControlLog(input RequestControlCheckInput, decision *RequestControlDecision) *RequestControlLog {
+	eventAt := time.Now()
 	log := &RequestControlLog{
-		RequestID:      truncateRequestControlValue(input.RequestID, 128),
-		UserEmail:      truncateRequestControlValue(input.UserEmail, 255),
-		APIKeyName:     truncateRequestControlValue(input.APIKeyName, 100),
-		GroupName:      truncateRequestControlValue(input.GroupName, 255),
-		Endpoint:       truncateRequestControlValue(input.Endpoint, 128),
-		Provider:       truncateRequestControlValue(input.Provider, 64),
-		Protocol:       truncateRequestControlValue(input.Protocol, 64),
-		Model:          truncateRequestControlValue(input.Model, 255),
-		Action:         truncateRequestControlValue(decision.Action, 32),
-		Reason:         truncateRequestControlValue(decision.Reason, 128),
-		Allowed:        decision.Allowed,
-		Blocked:        decision.Blocked,
-		Observed:       decision.Observed,
-		ClientKind:     truncateRequestControlValue(decision.ClientKind, 64),
-		UserAgent:      truncateRequestControlValue(input.UserAgent, 512),
-		Originator:     truncateRequestControlValue(input.Originator, 128),
-		TLSFingerprint: truncateRequestControlValue(input.TLSFingerprint, 128),
-		Details:        limitRequestControlDetails(decision.Details),
-		CreatedAt:      time.Now(),
+		RequestID:          truncateRequestControlValue(input.RequestID, 128),
+		UserEmail:          truncateRequestControlValue(input.UserEmail, 255),
+		APIKeyName:         truncateRequestControlValue(input.APIKeyName, 100),
+		GroupName:          truncateRequestControlValue(input.GroupName, 255),
+		Endpoint:           truncateRequestControlValue(input.Endpoint, 128),
+		Provider:           truncateRequestControlValue(input.Provider, 64),
+		Protocol:           truncateRequestControlValue(input.Protocol, 64),
+		Model:              truncateRequestControlValue(input.Model, 255),
+		Action:             truncateRequestControlValue(decision.Action, 32),
+		Reason:             truncateRequestControlValue(decision.Reason, 128),
+		Allowed:            decision.Allowed,
+		Blocked:            decision.Blocked,
+		Observed:           decision.Observed,
+		ClientKind:         truncateRequestControlValue(decision.ClientKind, 64),
+		UserAgent:          truncateRequestControlValue(input.UserAgent, 512),
+		Originator:         truncateRequestControlValue(input.Originator, 128),
+		TLSFingerprint:     truncateRequestControlValue(input.TLSFingerprint, 128),
+		Details:            limitRequestControlDetails(decision.Details),
+		ExpectedAction:     truncateRequestControlValue(decision.ExpectedAction, 32),
+		ExpectedReason:     truncateRequestControlValue(decision.ExpectedReason, 128),
+		ExpectedBlocked:    decision.ExpectedBlocked,
+		ExpectedStatusCode: decision.ExpectedStatusCode,
+		CreatedAt:          eventAt,
+		EventAt:            eventAt,
 	}
 	if input.UserID > 0 {
 		log.UserID = &input.UserID
@@ -1613,6 +1883,8 @@ func buildRequestControlLog(input RequestControlCheckInput, decision *RequestCon
 	log.BodyMatch = requestControlBoolPtr(decision.BodyMatched)
 	log.TLSMatch = decision.TLSMatched
 	log.RequestHeaders, log.RequestBodyMetadata = buildRequestControlMetadata(input)
+	log.RequestHeadersHash = requestControlDedupHeaderHash(input)
+	log.RequestBodyHash = requestControlMetadataHash(log.RequestBodyMetadata)
 	return log
 }
 
@@ -1633,13 +1905,17 @@ func truncateRequestControlValue(value string, limit int) string {
 }
 func limitRequestControlDetails(in map[string]string) map[string]string {
 	out := make(map[string]string)
-	count := 0
-	for key, value := range in {
-		if count >= requestControlMaxDetails {
+	keys := make([]string, 0, len(in))
+	for key := range in {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	for _, key := range keys {
+		if len(out) >= requestControlMaxDetails {
 			break
 		}
+		value := in[key]
 		out[key] = truncateRequestControlValue(value, 200)
-		count++
 	}
 	return out
 }
