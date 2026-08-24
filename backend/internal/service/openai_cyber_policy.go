@@ -54,8 +54,8 @@ func ClearOpsCyberPolicy(c *gin.Context) {
 
 // DetectCyberPolicyResponse recognizes the canonical error code and the
 // stable message markers emitted by the upstream Codex/Cyber policy path.
-// Message-only matching is restricted to HTTP 400 to avoid classifying normal
-// successful responses that happen to mention the word "cyber".
+// Message-only matching is restricted to HTTP 400 or a structured error
+// envelope so normal successful output that mentions "cyber" is never flagged.
 func DetectCyberPolicyResponse(status int, payload []byte) (bool, string, string) {
 	code := strings.TrimSpace(gjson.GetBytes(payload, "error.code").String())
 	if code == "" {
@@ -65,36 +65,55 @@ func DetectCyberPolicyResponse(status int, payload []byte) (bool, string, string
 		code = strings.TrimSpace(gjson.GetBytes(payload, "code").String())
 	}
 	if strings.EqualFold(code, "cyber_policy") {
-		message := strings.TrimSpace(gjson.GetBytes(payload, "error.message").String())
-		if message == "" {
-			message = strings.TrimSpace(gjson.GetBytes(payload, "response.error.message").String())
-		}
-		if message == "" {
-			message = strings.TrimSpace(gjson.GetBytes(payload, "message").String())
-		}
+		message := cyberPolicyErrorMessage(payload)
 		return true, "cyber_policy", message
 	}
-	if status != 400 {
+	message := cyberPolicyErrorMessage(payload)
+	markerText := string(payload)
+	if status != http.StatusBadRequest {
+		if !cyberPolicyStructuredErrorPayload(payload) {
+			return false, "", ""
+		}
+		markerText = message
+	}
+	if strings.TrimSpace(markerText) == "" {
 		return false, "", ""
 	}
-	normalized := strings.ToLower(string(payload))
+	normalized := strings.ToLower(markerText)
 	for _, marker := range []string{
 		"possible cybersecurity risk",
 		"trusted access for cyber",
 		"chatgpt.com/cyber",
 	} {
 		if strings.Contains(normalized, marker) {
-			message := strings.TrimSpace(gjson.GetBytes(payload, "error.message").String())
-			if message == "" {
-				message = strings.TrimSpace(gjson.GetBytes(payload, "response.error.message").String())
-			}
-			if message == "" {
-				message = strings.TrimSpace(gjson.GetBytes(payload, "message").String())
-			}
 			return true, "cyber_policy", message
 		}
 	}
 	return false, "", ""
+}
+
+func cyberPolicyErrorMessage(payload []byte) string {
+	for _, path := range []string{"error.message", "response.error.message", "message"} {
+		if message := strings.TrimSpace(gjson.GetBytes(payload, path).String()); message != "" {
+			return message
+		}
+	}
+	return ""
+}
+
+func cyberPolicyStructuredErrorPayload(payload []byte) bool {
+	if len(payload) == 0 || !gjson.ValidBytes(payload) {
+		return false
+	}
+	if gjson.GetBytes(payload, "error").Exists() || gjson.GetBytes(payload, "response.error").Exists() {
+		return true
+	}
+	switch strings.ToLower(strings.TrimSpace(gjson.GetBytes(payload, "type").String())) {
+	case "error", "response.failed":
+		return true
+	default:
+		return false
+	}
 }
 
 func isCyberPolicyResponse(status int, payload []byte) bool {
@@ -110,9 +129,17 @@ func cyberPolicyClientMessage(message string) string {
 }
 
 func markOpenAIWSCyberPolicy(c *gin.Context, payload []byte, usage OpenAIUsage) bool {
+	hit, _ := markOpenAIStreamingCyberPolicy(c, payload, usage)
+	return hit
+}
+
+func markOpenAIStreamingCyberPolicy(c *gin.Context, payload []byte, usage OpenAIUsage) (bool, string) {
 	hit, code, message := DetectCyberPolicyResponse(http.StatusOK, payload)
 	if !hit {
-		return false
+		return false, ""
+	}
+	if payloadUsage, ok := extractOpenAIUsageFromJSONBytes(payload); ok {
+		usage = payloadUsage
 	}
 	MarkOpsCyberPolicy(c, CyberPolicyMark{
 		Code:           code,
@@ -122,5 +149,5 @@ func markOpenAIWSCyberPolicy(c *gin.Context, payload []byte, usage OpenAIUsage) 
 		UpstreamInTok:  usage.InputTokens,
 		UpstreamOutTok: usage.OutputTokens,
 	})
-	return true
+	return true, cyberPolicyClientMessage(message)
 }

@@ -4208,17 +4208,21 @@ func (s *OpenAIGatewayService) handleStreamingResponsePassthrough(
 				}
 			}
 			eventType := strings.TrimSpace(gjson.Get(trimmedData, "type").String())
-			if eventType == "response.failed" {
+			cyberHit, cyberMessage := markOpenAIStreamingCyberPolicy(c, dataBytes, *usage)
+			if eventType == "response.failed" || cyberHit {
 				failedMessage = extractOpenAISSEErrorMessage(dataBytes)
-				if hit, code, message := DetectCyberPolicyResponse(http.StatusOK, dataBytes); hit {
-					MarkOpsCyberPolicy(c, CyberPolicyMark{Code: code, Message: message, Body: truncateString(string(dataBytes), 4096), UpstreamStatus: http.StatusOK})
+				if failedMessage == "" && cyberHit {
+					failedMessage = cyberMessage
 				}
-				if !openAIStreamClientOutputStarted(c, clientOutputStarted) && openAIStreamFailedEventShouldFailover(dataBytes, failedMessage) {
+				if !cyberHit && !openAIStreamClientOutputStarted(c, clientOutputStarted) && openAIStreamFailedEventShouldFailover(dataBytes, failedMessage) {
 					return resultWithUsage(),
 						s.newOpenAIStreamFailoverError(c, account, true, upstreamRequestID, dataBytes, failedMessage)
 				}
 				forceFlushFailedEvent = true
 				sawFailedEvent = true
+				if cyberHit {
+					sawTerminalEvent = true
+				}
 			}
 			if trimmedData == "[DONE]" {
 				sawDone = true
@@ -5245,18 +5249,22 @@ func (s *OpenAIGatewayService) handleStreamingResponse(ctx context.Context, resp
 				responseID = extractOpenAIResponseIDFromJSONBytes(dataBytes)
 			}
 			forceFlushFailedEvent := false
-			if eventType == "response.failed" {
+			cyberHit, cyberMessage := markOpenAIStreamingCyberPolicy(c, dataBytes, *usage)
+			if eventType == "response.failed" || cyberHit {
 				failedMessage = extractOpenAISSEErrorMessage(dataBytes)
-				if hit, code, message := DetectCyberPolicyResponse(http.StatusOK, dataBytes); hit {
-					MarkOpsCyberPolicy(c, CyberPolicyMark{Code: code, Message: message, Body: truncateString(string(dataBytes), 4096), UpstreamStatus: http.StatusOK})
+				if failedMessage == "" && cyberHit {
+					failedMessage = cyberMessage
 				}
-				if !openAIStreamClientOutputStarted(c, clientOutputStarted) && openAIStreamFailedEventShouldFailover(dataBytes, failedMessage) {
+				if !cyberHit && !openAIStreamClientOutputStarted(c, clientOutputStarted) && openAIStreamFailedEventShouldFailover(dataBytes, failedMessage) {
 					sawFailedEvent = true
 					streamFailoverErr = s.newOpenAIStreamFailoverError(c, account, false, upstreamRequestID, dataBytes, failedMessage)
 					return
 				}
 				forceFlushFailedEvent = true
 				sawFailedEvent = true
+				if cyberHit {
+					sawTerminalEvent = true
+				}
 			}
 			imageCounter.AddSSEData(dataBytes)
 

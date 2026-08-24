@@ -1435,6 +1435,37 @@ func TestOpenAIStreamingPolicyResponseFailedBeforeOutputPassesThrough(t *testing
 	require.Contains(t, rec.Body.String(), "high-risk cyber activity")
 }
 
+func TestOpenAIStreamingStructuredCyberErrorWithoutEventTypeIsMarked(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	cfg := &config.Config{Gateway: config.GatewayConfig{
+		StreamDataIntervalTimeout: 0,
+		StreamKeepaliveInterval:   0,
+		MaxLineSize:               defaultMaxLineSize,
+	}}
+	svc := &OpenAIGatewayService{cfg: cfg}
+
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request = httptest.NewRequest(http.MethodPost, "/", nil)
+	payload := `{"error":{"type":"invalid_request_error","code":"invalid_prompt","message":"This content was flagged for possible cybersecurity risk. Visit https://chatgpt.com/cyber"}}`
+	resp := &http.Response{
+		StatusCode: http.StatusOK,
+		Body:       io.NopCloser(strings.NewReader("data: " + payload + "\n\n")),
+		Header:     http.Header{"X-Request-Id": []string{"rid-cyber-envelope"}},
+	}
+
+	_, err := svc.handleStreamingResponse(c.Request.Context(), resp, c, &Account{ID: 1, Platform: PlatformOpenAI, Name: "acc"}, time.Now(), "model", "model")
+	require.Error(t, err)
+	var failoverErr *UpstreamFailoverError
+	require.False(t, errors.As(err, &failoverErr))
+	require.Contains(t, err.Error(), "possible cybersecurity risk")
+	require.Contains(t, rec.Body.String(), "possible cybersecurity risk")
+	mark := GetOpsCyberPolicy(c)
+	require.NotNil(t, mark)
+	require.Equal(t, ContentModerationActionCyberPolicy, mark.Code)
+	require.Contains(t, mark.Message, "possible cybersecurity risk")
+}
+
 func TestOpenAIStreamingClientDisconnectDrainsUpstreamUsage(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	cfg := &config.Config{
@@ -1580,6 +1611,32 @@ func TestOpenAIStreamingPassthroughResponseFailedBeforeOutputReturnsFailover(t *
 	require.Contains(t, string(failoverErr.ResponseBody), "upstream processing failed")
 	require.False(t, c.Writer.Written())
 	require.Empty(t, rec.Body.String())
+}
+
+func TestOpenAIStreamingPassthroughStructuredCyberErrorWithoutEventTypeIsMarked(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	svc := &OpenAIGatewayService{cfg: &config.Config{Gateway: config.GatewayConfig{MaxLineSize: defaultMaxLineSize}}}
+
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request = httptest.NewRequest(http.MethodPost, "/", nil)
+	payload := `{"error":{"type":"invalid_request_error","code":"invalid_prompt","message":"This content was flagged for possible cybersecurity risk. Visit https://chatgpt.com/cyber"}}`
+	resp := &http.Response{
+		StatusCode: http.StatusOK,
+		Body:       io.NopCloser(strings.NewReader("data: " + payload + "\n\n")),
+		Header:     http.Header{"X-Request-Id": []string{"rid-passthrough-cyber-envelope"}},
+	}
+
+	_, err := svc.handleStreamingResponsePassthrough(c.Request.Context(), resp, c, &Account{ID: 1, Platform: PlatformOpenAI, Name: "acc"}, time.Now(), "", "")
+	require.Error(t, err)
+	var failoverErr *UpstreamFailoverError
+	require.False(t, errors.As(err, &failoverErr))
+	require.Contains(t, err.Error(), "possible cybersecurity risk")
+	require.Contains(t, rec.Body.String(), "possible cybersecurity risk")
+	mark := GetOpsCyberPolicy(c)
+	require.NotNil(t, mark)
+	require.Equal(t, ContentModerationActionCyberPolicy, mark.Code)
+	require.Contains(t, mark.Message, "possible cybersecurity risk")
 }
 
 func TestOpenAIStreamingPassthroughResponseDoneWithoutDoneMarkerStillSucceeds(t *testing.T) {

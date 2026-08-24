@@ -22,8 +22,11 @@ func TestDetectCyberPolicyResponse(t *testing.T) {
 		{name: "canonical 400", status: 400, body: `{"error":{"code":"cyber_policy","message":"blocked"}}`, hit: true},
 		{name: "responses failed", status: 200, body: `{"response":{"error":{"code":"cyber_policy"}}}`, hit: true},
 		{name: "400 stable message", status: 400, body: `{"error":{"message":"This content was flagged for possible cybersecurity risk"}}`, hit: true},
+		{name: "200 structured error stable message", status: 200, body: `{"error":{"code":"invalid_prompt","message":"This content was flagged for possible cybersecurity risk"}}`, hit: true},
+		{name: "200 failed event stable message", status: 200, body: `{"type":"response.failed","response":{"error":{"code":"invalid_prompt","message":"Trusted Access for Cyber: https://chatgpt.com/cyber"}}}`, hit: true},
 		{name: "unrelated policy", status: 400, body: `{"error":{"code":"content_policy","message":"blocked"}}`, hit: false},
 		{name: "message on success", status: 200, body: `{"message":"possible cybersecurity risk"}`, hit: false},
+		{name: "marker in output delta", status: 200, body: `{"type":"response.output_text.delta","delta":"possible cybersecurity risk"}`, hit: false},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
