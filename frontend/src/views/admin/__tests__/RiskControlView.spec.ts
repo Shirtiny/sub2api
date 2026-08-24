@@ -91,7 +91,10 @@ const baseConfig = (): ContentModerationConfig => ({
   auto_ban_enabled: true,
   cyber_policy_enabled: true,
   cyber_policy_email_enabled: true,
-  cyber_policy_exclude_from_ban_count: false,
+  cyber_policy_email_message: '',
+  cyber_policy_auto_ban_enabled: true,
+  cyber_policy_ban_threshold: 3,
+  cyber_policy_violation_window_hours: 720,
   ban_threshold: 10,
   violation_window_hours: 720,
   retry_count: 2,
@@ -302,6 +305,42 @@ describe('admin RiskControlView', () => {
         sexual: 0.72,
         harassment: 0.99,
       }),
+    }))
+    expect(showError).not.toHaveBeenCalled()
+  })
+
+  it('saves an independent Cyber policy and custom email message', async () => {
+    const wrapper = mount(RiskControlView, {
+      global: {
+        stubs: {
+          AppLayout: AppLayoutStub,
+          BaseDialog: BaseDialogStub,
+          Icon: true,
+          Select: true,
+          Toggle: true,
+          Pagination: true,
+          ModelWhitelistSelector: ModelWhitelistSelectorStub,
+        },
+      },
+    })
+
+    await flushPromises()
+
+    await findButtonByText(wrapper, 'admin.riskControl.openSettings').trigger('click')
+    await findButtonByText(wrapper, 'admin.riskControl.tabs.cyberPolicy').trigger('click')
+    await wrapper.get('[data-test="cyber-policy-email-message"]').setValue('Please stop abusive Cyber requests.')
+    await wrapper.get('[data-test="cyber-policy-ban-threshold"]').setValue('5')
+    await wrapper.get('[data-test="cyber-policy-violation-window"]').setValue('24')
+    await findButtonByText(wrapper, 'admin.riskControl.saveConfig').trigger('click')
+    await flushPromises()
+
+    expect(updateConfig).toHaveBeenCalledWith(expect.objectContaining({
+      cyber_policy_email_message: 'Please stop abusive Cyber requests.',
+      cyber_policy_auto_ban_enabled: true,
+      cyber_policy_ban_threshold: 5,
+      cyber_policy_violation_window_hours: 24,
+      ban_threshold: 10,
+      violation_window_hours: 720,
     }))
     expect(showError).not.toHaveBeenCalled()
   })

@@ -276,6 +276,7 @@ const fallbackPlaceholders = [
   "{{violation_count}}",
   "{{ban_threshold}}",
   "{{block_message}}",
+  "{{cyber_message}}",
   "{{upstream_message}}",
   "{{rule_name}}",
   "{{severity}}",

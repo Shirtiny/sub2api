@@ -153,9 +153,12 @@ export interface ContentModerationConfig {
   built_in_filter_categories: ContentModerationBuiltinCategory[]
   built_in_filter_levels: ContentModerationBuiltinLevel[]
   model_filter: ContentModerationModelFilter
-  cyber_policy_exclude_from_ban_count: boolean
   cyber_policy_enabled: boolean
   cyber_policy_email_enabled: boolean
+  cyber_policy_email_message: string
+  cyber_policy_auto_ban_enabled: boolean
+  cyber_policy_ban_threshold: number
+  cyber_policy_violation_window_hours: number
 }
 
 export type ContentModerationAPIKeyStatusValue = 'unknown' | 'ok' | 'error' | 'frozen'
@@ -235,9 +238,12 @@ export interface UpdateContentModerationConfig {
   built_in_filter_categories?: ContentModerationBuiltinCategory[]
   built_in_filter_levels?: ContentModerationBuiltinLevel[]
   model_filter?: ContentModerationModelFilter
-  cyber_policy_exclude_from_ban_count?: boolean
   cyber_policy_enabled?: boolean
   cyber_policy_email_enabled?: boolean
+  cyber_policy_email_message?: string
+  cyber_policy_auto_ban_enabled?: boolean
+  cyber_policy_ban_threshold?: number
+  cyber_policy_violation_window_hours?: number
 }
 
 export interface ContentModerationRuntimeStatus {

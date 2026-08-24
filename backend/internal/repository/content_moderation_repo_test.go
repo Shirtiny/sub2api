@@ -38,7 +38,7 @@ func TestContentModerationRepositoryCountFlaggedByUserSince_CountsOnlyAppliedVio
 
 	repo := NewContentModerationRepository(db)
 	since := time.Now().Add(-time.Hour)
-	mock.ExpectQuery(regexp.QuoteMeta("AND side_effects_applied = TRUE")).
+	mock.ExpectQuery(regexp.QuoteMeta("AND action <> 'cyber_policy'")).
 		WithArgs(int64(1001), since).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(2))
 
@@ -46,6 +46,24 @@ func TestContentModerationRepositoryCountFlaggedByUserSince_CountsOnlyAppliedVio
 
 	require.NoError(t, err)
 	require.Equal(t, 2, count)
+	require.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestContentModerationRepositoryCountCyberPolicyByUserSinceCountsOnlyCyberHits(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	defer func() { _ = db.Close() }()
+
+	repo := NewContentModerationRepository(db)
+	since := time.Now().Add(-time.Hour)
+	mock.ExpectQuery(regexp.QuoteMeta("AND action = 'cyber_policy'")).
+		WithArgs(int64(1001), since).
+		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(3))
+
+	count, err := repo.CountCyberPolicyByUserSince(context.Background(), 1001, since)
+
+	require.NoError(t, err)
+	require.Equal(t, 3, count)
 	require.NoError(t, mock.ExpectationsWereMet())
 }
 

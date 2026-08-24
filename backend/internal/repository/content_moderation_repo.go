@@ -189,13 +189,14 @@ func (r *contentModerationRepository) CountFlaggedByUserSince(ctx context.Contex
 WITH last_auto_ban AS (
     SELECT MAX(created_at) AS at
     FROM content_moderation_logs
-    WHERE user_id = $1 AND auto_banned = TRUE
+    WHERE user_id = $1 AND auto_banned = TRUE AND action <> 'cyber_policy'
 )
 SELECT COUNT(*)
 FROM content_moderation_logs
 WHERE user_id = $1
   AND flagged = TRUE
   AND side_effects_applied = TRUE
+  AND action <> 'cyber_policy'
   AND created_at >= $2
   AND created_at > COALESCE((SELECT at FROM last_auto_ban), '-infinity'::timestamptz)
 `, userID, since).Scan(&count)
@@ -205,8 +206,30 @@ WHERE user_id = $1
 	return count, nil
 }
 
-func (r *contentModerationRepository) CountFlaggedByUserSinceWithOptions(ctx context.Context, userID int64, since time.Time, excludeCyberPolicy bool) (int, error) {
-	return r.countFlaggedByUserSince(ctx, userID, since, excludeCyberPolicy)
+func (r *contentModerationRepository) CountCyberPolicyByUserSince(ctx context.Context, userID int64, since time.Time) (int, error) {
+	if userID <= 0 {
+		return 0, nil
+	}
+	var count int
+	err := r.db.QueryRowContext(ctx, `
+WITH last_auto_ban AS (
+    SELECT MAX(created_at) AS at
+    FROM content_moderation_logs
+    WHERE user_id = $1 AND auto_banned = TRUE AND action = 'cyber_policy'
+)
+SELECT COUNT(*)
+FROM content_moderation_logs
+WHERE user_id = $1
+  AND flagged = TRUE
+  AND side_effects_applied = TRUE
+  AND action = 'cyber_policy'
+  AND created_at >= $2
+  AND created_at > COALESCE((SELECT at FROM last_auto_ban), '-infinity'::timestamptz)
+`, userID, since).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("count user cyber policy logs: %w", err)
+	}
+	return count, nil
 }
 
 func (r *contentModerationRepository) UpdateLogEmailSent(ctx context.Context, id int64, sent bool) error {
@@ -217,32 +240,6 @@ func (r *contentModerationRepository) UpdateLogEmailSent(ctx context.Context, id
 		return fmt.Errorf("update content moderation log email_sent: %w", err)
 	}
 	return nil
-}
-
-func (r *contentModerationRepository) countFlaggedByUserSince(ctx context.Context, userID int64, since time.Time, excludeCyberPolicy bool) (int, error) {
-	if userID <= 0 {
-		return 0, nil
-	}
-	var count int
-	err := r.db.QueryRowContext(ctx, `
-WITH last_auto_ban AS (
-    SELECT MAX(created_at) AS at
-    FROM content_moderation_logs
-    WHERE user_id = $1 AND auto_banned = TRUE
-)
-SELECT COUNT(*)
-FROM content_moderation_logs
-WHERE user_id = $1
-  AND flagged = TRUE
-  AND side_effects_applied = TRUE
-  AND ($3::bool IS FALSE OR action <> 'cyber_policy')
-  AND created_at >= $2
-  AND created_at > COALESCE((SELECT at FROM last_auto_ban), '-infinity'::timestamptz)
-`, userID, since, excludeCyberPolicy).Scan(&count)
-	if err != nil {
-		return 0, fmt.Errorf("count user content moderation flagged logs: %w", err)
-	}
-	return count, nil
 }
 
 func (r *contentModerationRepository) CleanupExpiredLogs(ctx context.Context, hitBefore time.Time, nonHitBefore time.Time) (*service.ContentModerationCleanupResult, error) {

@@ -883,6 +883,7 @@ func notificationEmailSampleVariables(locale string) map[string]string {
 			"violation_count":     "2",
 			"ban_threshold":       "3",
 			"block_message":       "内容违规，多次尝试将被封禁",
+			"cyber_message":       "您的请求被上游服务商的网络安全策略（cyber policy）拦截。",
 			"upstream_message":    "该请求已被上游网络安全策略拦截。",
 			"rule_name":           "错误率过高",
 			"severity":            "critical",
@@ -932,6 +933,7 @@ func notificationEmailSampleVariables(locale string) map[string]string {
 		"violation_count":     "2",
 		"ban_threshold":       "3",
 		"block_message":       "Repeated policy violations may result in account restrictions.",
+		"cyber_message":       "Your request was blocked by the upstream provider's cyber-security policy.",
 		"upstream_message":    "This request was blocked by the upstream cyber-security policy.",
 		"rule_name":           "High error rate",
 		"severity":            "critical",
@@ -1056,7 +1058,7 @@ var notificationEmailEventDefinitions = map[string]NotificationEmailEventInfo{
 		Category:    "risk_control",
 		Optional:    false,
 		Placeholders: append(append([]string{}, notificationEmailCommonPlaceholders...),
-			"triggered_at", "model", "group_name", "upstream_message", "violation_count", "ban_threshold"),
+			"triggered_at", "model", "group_name", "cyber_message", "upstream_message", "violation_count", "ban_threshold"),
 	},
 	NotificationEmailEventOpsAlert: {
 		Event:       NotificationEmailEventOpsAlert,
@@ -1309,7 +1311,7 @@ var notificationEmailOfficialTemplates = map[string]map[string]notificationEmail
 			Subject: "[{{site_name}}] Cyber-security policy notice",
 			HTML: notificationEmailCard("#ef4444", "Cyber-security policy notice", `
 <p>Hello {{recipient_name}},</p>
-<p>Your request was blocked by the upstream provider's cyber-security policy.</p>
+<p>{{cyber_message}}</p>
 <table style="width:100%;border-collapse:collapse;"><tr><td>Triggered at</td><td>{{triggered_at}}</td></tr><tr><td>Model</td><td>{{model}}</td></tr><tr><td>Group</td><td>{{group_name}}</td></tr><tr><td>Violation count</td><td>{{violation_count}} / {{ban_threshold}}</td></tr><tr><td>Upstream message</td><td>{{upstream_message}}</td></tr></table>
 <p>Please review the request and contact the administrator if you believe this was incorrect.</p>`),
 		},
@@ -1317,7 +1319,7 @@ var notificationEmailOfficialTemplates = map[string]map[string]notificationEmail
 			Subject: "[{{site_name}}] 网络安全策略拦截提醒",
 			HTML: notificationEmailCard("#ef4444", "网络安全策略拦截提醒", `
 <p>{{recipient_name}}，您好：</p>
-<p>您的请求被上游服务商的网络安全策略（cyber policy）拦截。</p>
+<p>{{cyber_message}}</p>
 <table style="width:100%;border-collapse:collapse;"><tr><td>触发时间</td><td>{{triggered_at}}</td></tr><tr><td>模型</td><td>{{model}}</td></tr><tr><td>所属分组</td><td>{{group_name}}</td></tr><tr><td>累计触发次数</td><td>{{violation_count}} / {{ban_threshold}}</td></tr><tr><td>上游说明</td><td>{{upstream_message}}</td></tr></table>
 <p>请调整请求内容后重试；如认为系误判，请联系管理员。</p>`),
 		},

@@ -20,6 +20,7 @@ import (
 	"sync/atomic"
 	"time"
 	"unicode"
+	"unicode/utf8"
 
 	gosensitive "github.com/Karrecy/sensitive-go"
 	"github.com/Karrecy/sensitive-go/builtin"
@@ -74,6 +75,11 @@ const (
 	maxContentModerationQueueSize                 = 100000
 	defaultContentModerationBanThreshold          = 10
 	defaultContentModerationViolationWindowHours  = 720
+	defaultCyberPolicyBanThreshold                = 3
+	defaultCyberPolicyViolationWindowHours        = 720
+	maxCyberPolicyBanThreshold                    = 1000
+	maxCyberPolicyViolationWindowHours            = 8760
+	maxCyberPolicyEmailMessageRunes               = 500
 	defaultContentModerationBlockHTTPStatus       = http.StatusForbidden
 	defaultContentModerationBlockMessage          = "内容审计命中风险规则，请调整输入后重试"
 	defaultContentModerationRetryCount            = 2
@@ -395,6 +401,10 @@ type ContentModerationConfig struct {
 	ModelFilter                    ContentModerationModelFilter `json:"model_filter"`
 	CyberPolicyEnabled             bool                         `json:"cyber_policy_enabled"`
 	CyberPolicyEmailEnabled        bool                         `json:"cyber_policy_email_enabled"`
+	CyberPolicyEmailMessage        string                       `json:"cyber_policy_email_message"`
+	CyberPolicyAutoBanEnabled      bool                         `json:"cyber_policy_auto_ban_enabled"`
+	CyberPolicyBanThreshold        int                          `json:"cyber_policy_ban_threshold"`
+	CyberPolicyWindowHours         int                          `json:"cyber_policy_violation_window_hours"`
 	CyberPolicyExcludeFromBanCount bool                         `json:"cyber_policy_exclude_from_ban_count"`
 }
 
@@ -435,6 +445,10 @@ type ContentModerationConfigView struct {
 	ModelFilter                    ContentModerationModelFilter    `json:"model_filter"`
 	CyberPolicyEnabled             bool                            `json:"cyber_policy_enabled"`
 	CyberPolicyEmailEnabled        bool                            `json:"cyber_policy_email_enabled"`
+	CyberPolicyEmailMessage        string                          `json:"cyber_policy_email_message"`
+	CyberPolicyAutoBanEnabled      bool                            `json:"cyber_policy_auto_ban_enabled"`
+	CyberPolicyBanThreshold        int                             `json:"cyber_policy_ban_threshold"`
+	CyberPolicyWindowHours         int                             `json:"cyber_policy_violation_window_hours"`
 	CyberPolicyExcludeFromBanCount bool                            `json:"cyber_policy_exclude_from_ban_count"`
 }
 
@@ -529,6 +543,10 @@ type UpdateContentModerationConfigInput struct {
 	ModelFilter                    *ContentModerationModelFilter `json:"model_filter"`
 	CyberPolicyEnabled             *bool                         `json:"cyber_policy_enabled"`
 	CyberPolicyEmailEnabled        *bool                         `json:"cyber_policy_email_enabled"`
+	CyberPolicyEmailMessage        *string                       `json:"cyber_policy_email_message"`
+	CyberPolicyAutoBanEnabled      *bool                         `json:"cyber_policy_auto_ban_enabled"`
+	CyberPolicyBanThreshold        *int                          `json:"cyber_policy_ban_threshold"`
+	CyberPolicyWindowHours         *int                          `json:"cyber_policy_violation_window_hours"`
 	CyberPolicyExcludeFromBanCount *bool                         `json:"cyber_policy_exclude_from_ban_count"`
 }
 
@@ -717,14 +735,8 @@ type ContentModerationRepository interface {
 	CreateLog(ctx context.Context, log *ContentModerationLog) error
 	ListLogs(ctx context.Context, filter ContentModerationLogFilter) ([]ContentModerationLog, *pagination.PaginationResult, error)
 	CountFlaggedByUserSince(ctx context.Context, userID int64, since time.Time) (int, error)
+	CountCyberPolicyByUserSince(ctx context.Context, userID int64, since time.Time) (int, error)
 	CleanupExpiredLogs(ctx context.Context, hitBefore time.Time, nonHitBefore time.Time) (*ContentModerationCleanupResult, error)
-}
-
-// ContentModerationViolationCounterWithOptions is an optional repository
-// extension. Keeping it separate preserves compatibility with lightweight
-// adapters and test repositories that implement the original counter method.
-type ContentModerationViolationCounterWithOptions interface {
-	CountFlaggedByUserSinceWithOptions(context.Context, int64, time.Time, bool) (int, error)
 }
 
 type ContentModerationEmailAuditRepository interface {
@@ -953,14 +965,26 @@ func (s *ContentModerationService) UpdateConfig(ctx context.Context, input Updat
 	if input.ModelFilter != nil {
 		cfg.ModelFilter = *input.ModelFilter
 	}
-	if input.CyberPolicyExcludeFromBanCount != nil {
-		cfg.CyberPolicyExcludeFromBanCount = *input.CyberPolicyExcludeFromBanCount
-	}
 	if input.CyberPolicyEnabled != nil {
 		cfg.CyberPolicyEnabled = *input.CyberPolicyEnabled
 	}
 	if input.CyberPolicyEmailEnabled != nil {
 		cfg.CyberPolicyEmailEnabled = *input.CyberPolicyEmailEnabled
+	}
+	if input.CyberPolicyEmailMessage != nil {
+		cfg.CyberPolicyEmailMessage = strings.TrimSpace(*input.CyberPolicyEmailMessage)
+	}
+	if input.CyberPolicyExcludeFromBanCount != nil && input.CyberPolicyAutoBanEnabled == nil {
+		cfg.CyberPolicyAutoBanEnabled = !*input.CyberPolicyExcludeFromBanCount
+	}
+	if input.CyberPolicyAutoBanEnabled != nil {
+		cfg.CyberPolicyAutoBanEnabled = *input.CyberPolicyAutoBanEnabled
+	}
+	if input.CyberPolicyBanThreshold != nil {
+		cfg.CyberPolicyBanThreshold = *input.CyberPolicyBanThreshold
+	}
+	if input.CyberPolicyWindowHours != nil {
+		cfg.CyberPolicyWindowHours = *input.CyberPolicyWindowHours
 	}
 	if input.AllGroups != nil {
 		cfg.AllGroups = *input.AllGroups
@@ -1954,8 +1978,32 @@ func (s *ContentModerationService) loadConfig(ctx context.Context) (*ContentMode
 	if err := json.Unmarshal([]byte(raw), cfg); err != nil {
 		return nil, infraerrors.BadRequest("INVALID_CONTENT_MODERATION_CONFIG", "内容审计配置不是有效 JSON")
 	}
+	applyLegacyCyberPolicyConfig(raw, cfg)
 	cfg.normalize()
 	return cfg, nil
+}
+
+func applyLegacyCyberPolicyConfig(raw string, cfg *ContentModerationConfig) {
+	if cfg == nil {
+		return
+	}
+	var fields map[string]json.RawMessage
+	if json.Unmarshal([]byte(raw), &fields) != nil {
+		return
+	}
+	if _, ok := fields["cyber_policy_auto_ban_enabled"]; !ok {
+		cfg.CyberPolicyAutoBanEnabled = cfg.AutoBanEnabled
+		var excluded bool
+		if legacy, exists := fields["cyber_policy_exclude_from_ban_count"]; exists && json.Unmarshal(legacy, &excluded) == nil && excluded {
+			cfg.CyberPolicyAutoBanEnabled = false
+		}
+	}
+	if _, ok := fields["cyber_policy_ban_threshold"]; !ok {
+		cfg.CyberPolicyBanThreshold = cfg.BanThreshold
+	}
+	if _, ok := fields["cyber_policy_violation_window_hours"]; !ok {
+		cfg.CyberPolicyWindowHours = cfg.ViolationWindowHours
+	}
 }
 
 func (s *ContentModerationService) isRiskControlEnabled(ctx context.Context) bool {
@@ -1989,6 +2037,15 @@ func (s *ContentModerationService) validateConfig(ctx context.Context, cfg *Cont
 	}
 	if cfg.BlockStatus < 400 || cfg.BlockStatus > 599 {
 		return infraerrors.BadRequest("INVALID_CONTENT_MODERATION_BLOCK_STATUS", "拦截 HTTP 状态码必须在 400-599 之间")
+	}
+	if cfg.CyberPolicyBanThreshold > maxCyberPolicyBanThreshold {
+		return infraerrors.BadRequest("INVALID_CYBER_POLICY_BAN_THRESHOLD", "Cyber 封禁触发次数不能超过 1000")
+	}
+	if cfg.CyberPolicyWindowHours > maxCyberPolicyViolationWindowHours {
+		return infraerrors.BadRequest("INVALID_CYBER_POLICY_WINDOW", "Cyber 累计窗口不能超过 8760 小时")
+	}
+	if utf8.RuneCountInString(cfg.CyberPolicyEmailMessage) > maxCyberPolicyEmailMessageRunes {
+		return infraerrors.BadRequest("INVALID_CYBER_POLICY_EMAIL_MESSAGE", "Cyber 邮件提示语不能超过 500 个字符")
 	}
 	if cfg.ModelFilter.Type != ContentModerationModelFilterAll && len(cfg.ModelFilter.Models) == 0 {
 		return infraerrors.BadRequest("INVALID_CONTENT_MODERATION_MODEL_FILTER", "指定或排除模型时至少需要配置 1 个模型")
@@ -2338,33 +2395,52 @@ func contentModerationLogAPIKeyID(log *ContentModerationLog) int64 {
 }
 
 func (s *ContentModerationService) applyFlaggedAccountSideEffects(ctx context.Context, cfg *ContentModerationConfig, log *ContentModerationLog) bool {
-	if s == nil || cfg == nil || log == nil || !log.Flagged || log.UserID == nil || *log.UserID <= 0 {
+	if cfg == nil {
+		return false
+	}
+	var countExisting func(context.Context, int64, time.Time) (int, error)
+	if s != nil && s.repo != nil {
+		countExisting = s.repo.CountFlaggedByUserSince
+	}
+	return s.applyFlaggedAccountSideEffectsWithPolicy(
+		ctx,
+		log,
+		cfg.AutoBanEnabled,
+		cfg.BanThreshold,
+		cfg.ViolationWindowHours,
+		countExisting,
+	)
+}
+
+func (s *ContentModerationService) applyFlaggedAccountSideEffectsWithPolicy(
+	ctx context.Context,
+	log *ContentModerationLog,
+	autoBanEnabled bool,
+	banThreshold int,
+	violationWindowHours int,
+	countExisting func(context.Context, int64, time.Time) (int, error),
+) bool {
+	if s == nil || log == nil || !log.Flagged || log.UserID == nil || *log.UserID <= 0 {
 		return false
 	}
 	count := 1
-	if s.repo != nil && cfg.ViolationWindowHours > 0 {
-		since := time.Now().Add(-time.Duration(cfg.ViolationWindowHours) * time.Hour)
-		var n int
-		var err error
-		if extended, ok := s.repo.(ContentModerationViolationCounterWithOptions); ok {
-			n, err = extended.CountFlaggedByUserSinceWithOptions(ctx, *log.UserID, since, cfg.CyberPolicyExcludeFromBanCount)
-		} else {
-			n, err = s.repo.CountFlaggedByUserSince(ctx, *log.UserID, since)
-		}
+	if countExisting != nil && violationWindowHours > 0 {
+		since := time.Now().Add(-time.Duration(violationWindowHours) * time.Hour)
+		n, err := countExisting(ctx, *log.UserID, since)
 		if err == nil {
 			count = n + 1
 		}
 	}
 	log.ViolationCount = count
 	autoBanJustApplied := false
-	if cfg.AutoBanEnabled && cfg.BanThreshold > 0 && count >= cfg.BanThreshold && s.userRepo != nil {
+	if autoBanEnabled && banThreshold > 0 && count >= banThreshold && s.userRepo != nil {
 		user, err := s.userRepo.GetByID(ctx, *log.UserID)
 		if err != nil {
 			slog.Warn("content_moderation.ban_get_user_failed", "user_id", *log.UserID, "error", err)
 			return false
 		}
 		if user.IsAdmin() {
-			slog.Warn("content_moderation.autoban_skipped_admin", "user_id", *log.UserID, "role", user.Role, "count", count, "threshold", cfg.BanThreshold)
+			slog.Warn("content_moderation.autoban_skipped_admin", "user_id", *log.UserID, "role", user.Role, "count", count, "threshold", banThreshold)
 			// TODO: Disable the triggering API key instead when API key mutation is available here.
 			return false
 		}
@@ -2617,9 +2693,13 @@ func defaultContentModerationConfig() *ContentModerationConfig {
 			Type:   ContentModerationModelFilterAll,
 			Models: []string{},
 		},
-		CyberPolicyExcludeFromBanCount: false,
 		CyberPolicyEnabled:             true,
 		CyberPolicyEmailEnabled:        true,
+		CyberPolicyEmailMessage:        "",
+		CyberPolicyAutoBanEnabled:      true,
+		CyberPolicyBanThreshold:        defaultCyberPolicyBanThreshold,
+		CyberPolicyWindowHours:         defaultCyberPolicyViolationWindowHours,
+		CyberPolicyExcludeFromBanCount: false,
 	}
 }
 
@@ -2639,9 +2719,13 @@ func cloneContentModerationConfig(cfg *ContentModerationConfig) *ContentModerati
 		Type:   cfg.ModelFilter.Type,
 		Models: append([]string(nil), cfg.ModelFilter.Models...),
 	}
-	clone.CyberPolicyExcludeFromBanCount = cfg.CyberPolicyExcludeFromBanCount
 	clone.CyberPolicyEnabled = cfg.CyberPolicyEnabled
 	clone.CyberPolicyEmailEnabled = cfg.CyberPolicyEmailEnabled
+	clone.CyberPolicyEmailMessage = cfg.CyberPolicyEmailMessage
+	clone.CyberPolicyAutoBanEnabled = cfg.CyberPolicyAutoBanEnabled
+	clone.CyberPolicyBanThreshold = cfg.CyberPolicyBanThreshold
+	clone.CyberPolicyWindowHours = cfg.CyberPolicyWindowHours
+	clone.CyberPolicyExcludeFromBanCount = cfg.CyberPolicyExcludeFromBanCount
 	return &clone
 }
 
@@ -2700,6 +2784,14 @@ func (cfg *ContentModerationConfig) normalize() {
 	if cfg.ViolationWindowHours <= 0 {
 		cfg.ViolationWindowHours = defaultContentModerationViolationWindowHours
 	}
+	if cfg.CyberPolicyBanThreshold <= 0 {
+		cfg.CyberPolicyBanThreshold = defaultCyberPolicyBanThreshold
+	}
+	if cfg.CyberPolicyWindowHours <= 0 {
+		cfg.CyberPolicyWindowHours = defaultCyberPolicyViolationWindowHours
+	}
+	cfg.CyberPolicyEmailMessage = strings.TrimSpace(cfg.CyberPolicyEmailMessage)
+	cfg.CyberPolicyExcludeFromBanCount = !cfg.CyberPolicyAutoBanEnabled
 	if cfg.RetryCount < 0 {
 		cfg.RetryCount = 0
 	}
@@ -2972,9 +3064,13 @@ func (s *ContentModerationService) configView(cfg *ContentModerationConfig) *Con
 		BuiltInFilterCategories:        append([]string(nil), cfg.BuiltInFilterCategories...),
 		BuiltInFilterLevels:            append([]string(nil), cfg.BuiltInFilterLevels...),
 		ModelFilter:                    cloneContentModerationModelFilter(cfg.ModelFilter),
-		CyberPolicyExcludeFromBanCount: cfg.CyberPolicyExcludeFromBanCount,
 		CyberPolicyEnabled:             cfg.CyberPolicyEnabled,
 		CyberPolicyEmailEnabled:        cfg.CyberPolicyEmailEnabled,
+		CyberPolicyEmailMessage:        cfg.CyberPolicyEmailMessage,
+		CyberPolicyAutoBanEnabled:      cfg.CyberPolicyAutoBanEnabled,
+		CyberPolicyBanThreshold:        cfg.CyberPolicyBanThreshold,
+		CyberPolicyWindowHours:         cfg.CyberPolicyWindowHours,
+		CyberPolicyExcludeFromBanCount: !cfg.CyberPolicyAutoBanEnabled,
 	}
 }
 

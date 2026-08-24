@@ -21,4 +21,11 @@ describe('risk control locale copy', () => {
     expect(zh.admin.riskControl.preBlockAPIKeyLoadHint).not.toContain('Worker 池')
     expect(en.admin.riskControl.preBlockAPIKeyLoadHint).not.toContain('worker pool')
   })
+
+  it('presents Cyber policy as an independent settings tab', () => {
+    expect(zh.admin.riskControl.tabs.cyberPolicy).toBe('Cyber 风控')
+    expect(zh.admin.riskControl.cyberPolicySectionHint).toContain('独立')
+    expect(en.admin.riskControl.tabs.cyberPolicy).toBe('Cyber Policy')
+    expect(en.admin.riskControl.cyberPolicySectionHint).toContain('independent')
+  })
 })

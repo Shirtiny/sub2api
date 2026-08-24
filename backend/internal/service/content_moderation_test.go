@@ -315,7 +315,23 @@ func (r *contentModerationTestRepo) CountFlaggedByUserSince(ctx context.Context,
 	defer r.mu.Unlock()
 	count := 0
 	for _, log := range r.logs {
-		if log.UserID == nil || *log.UserID != userID || !log.Flagged || !log.SideEffectsApplied {
+		if log.UserID == nil || *log.UserID != userID || !log.Flagged || !log.SideEffectsApplied || log.Action == ContentModerationActionCyberPolicy {
+			continue
+		}
+		if log.CreatedAt.IsZero() || log.CreatedAt.Before(since) {
+			continue
+		}
+		count++
+	}
+	return count, nil
+}
+
+func (r *contentModerationTestRepo) CountCyberPolicyByUserSince(ctx context.Context, userID int64, since time.Time) (int, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	count := 0
+	for _, log := range r.logs {
+		if log.UserID == nil || *log.UserID != userID || !log.Flagged || !log.SideEffectsApplied || log.Action != ContentModerationActionCyberPolicy {
 			continue
 		}
 		if log.CreatedAt.IsZero() || log.CreatedAt.Before(since) {

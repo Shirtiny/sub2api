@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
@@ -35,8 +36,16 @@ func TestDetectCyberPolicyResponse(t *testing.T) {
 	}
 }
 
-func TestRecordCyberPolicyEventUsesRiskControlBanCounter(t *testing.T) {
+func TestRecordCyberPolicyEventUsesIndependentCyberCounter(t *testing.T) {
 	repo := &contentModerationTestRepo{}
+	userID := int64(42)
+	require.NoError(t, repo.CreateLog(context.Background(), &ContentModerationLog{
+		UserID:             &userID,
+		Action:             ContentModerationActionBlock,
+		Flagged:            true,
+		SideEffectsApplied: true,
+		CreatedAt:          time.Now(),
+	}))
 	settings := &contentModerationTestSettingRepo{values: map[string]string{
 		SettingKeyRiskControlEnabled: "true",
 	}}
@@ -44,7 +53,7 @@ func TestRecordCyberPolicyEventUsesRiskControlBanCounter(t *testing.T) {
 
 	svc.RecordCyberPolicyEvent(context.Background(), CyberPolicyRecordInput{
 		RequestID:       "req-cyber-1",
-		UserID:          42,
+		UserID:          userID,
 		UserEmail:       "user@example.com",
 		Endpoint:        "/v1/responses",
 		Model:           "gpt-5",
@@ -53,24 +62,28 @@ func TestRecordCyberPolicyEventUsesRiskControlBanCounter(t *testing.T) {
 		UpstreamStatus:  400,
 	})
 	svc.RecordCyberPolicyEvent(context.Background(), CyberPolicyRecordInput{
-		RequestID: "req-cyber-2", UserID: 42, UserEmail: "user@example.com", Endpoint: "/v1/responses", Model: "gpt-5",
+		RequestID: "req-cyber-2", UserID: userID, UserEmail: "user@example.com", Endpoint: "/v1/responses", Model: "gpt-5",
 		UpstreamMessage: "blocked again", UpstreamStatus: 400,
 	})
 
 	logs := repo.snapshotLogs()
-	require.Len(t, logs, 2)
-	require.Equal(t, ContentModerationActionCyberPolicy, logs[0].Action)
-	require.Equal(t, ContentModerationActionCyberPolicy, logs[0].HighestCategory)
-	require.True(t, logs[0].Flagged)
-	require.Equal(t, 1.0, logs[0].HighestScore)
-	require.Equal(t, 1, logs[0].ViolationCount)
-	require.Equal(t, 2, logs[1].ViolationCount)
-	require.Contains(t, logs[0].Error, "cyber_policy")
+	require.Len(t, logs, 3)
+	require.Equal(t, ContentModerationActionCyberPolicy, logs[1].Action)
+	require.Equal(t, ContentModerationActionCyberPolicy, logs[1].HighestCategory)
+	require.True(t, logs[1].Flagged)
+	require.Equal(t, 1.0, logs[1].HighestScore)
+	require.Equal(t, 1, logs[1].ViolationCount)
+	require.Equal(t, 2, logs[2].ViolationCount)
+	require.Contains(t, logs[1].Error, "cyber_policy")
+	contentCount, err := repo.CountFlaggedByUserSince(context.Background(), userID, time.Now().Add(-time.Hour))
+	require.NoError(t, err)
+	require.Equal(t, 1, contentCount)
 }
 
 func TestRecordCyberPolicyEventAutoBansAtThreshold(t *testing.T) {
 	cfg := defaultContentModerationConfig()
-	cfg.BanThreshold = 1
+	cfg.BanThreshold = 100
+	cfg.CyberPolicyBanThreshold = 2
 	raw, err := json.Marshal(cfg)
 	require.NoError(t, err)
 	repo := &contentModerationTestRepo{}
@@ -87,10 +100,17 @@ func TestRecordCyberPolicyEventAutoBansAtThreshold(t *testing.T) {
 		UserID: userID, UserEmail: "user@example.com", Endpoint: "/v1/responses", Model: "gpt-5",
 		UpstreamMessage: "blocked", UpstreamStatus: 400,
 	})
+	require.Equal(t, StatusActive, userRepo.user.Status)
+	svc.RecordCyberPolicyEvent(context.Background(), CyberPolicyRecordInput{
+		UserID: userID, UserEmail: "user@example.com", Endpoint: "/v1/responses", Model: "gpt-5",
+		UpstreamMessage: "blocked again", UpstreamStatus: 400,
+	})
 
 	logs := repo.snapshotLogs()
-	require.Len(t, logs, 1)
-	require.True(t, logs[0].AutoBanned)
+	require.Len(t, logs, 2)
+	require.False(t, logs[0].AutoBanned)
+	require.True(t, logs[1].AutoBanned)
+	require.Equal(t, 2, logs[1].ViolationCount)
 	require.Equal(t, StatusDisabled, userRepo.user.Status)
 	require.Equal(t, []int64{userID}, invalidator.userIDs)
 }
@@ -99,23 +119,86 @@ func TestCyberPolicyConfigRoundTrip(t *testing.T) {
 	cfg := defaultContentModerationConfig()
 	require.True(t, cfg.CyberPolicyEnabled)
 	require.True(t, cfg.CyberPolicyEmailEnabled)
-	cfg.CyberPolicyExcludeFromBanCount = true
+	require.True(t, cfg.CyberPolicyAutoBanEnabled)
+	cfg.CyberPolicyEmailMessage = "Custom Cyber notice"
+	cfg.CyberPolicyBanThreshold = 6
+	cfg.CyberPolicyWindowHours = 12
 	raw, err := json.Marshal(cfg)
 	require.NoError(t, err)
 	var decoded ContentModerationConfig
 	require.NoError(t, json.Unmarshal(raw, &decoded))
-	require.True(t, decoded.CyberPolicyExcludeFromBanCount)
+	require.Equal(t, "Custom Cyber notice", decoded.CyberPolicyEmailMessage)
+	require.Equal(t, 6, decoded.CyberPolicyBanThreshold)
+	require.Equal(t, 12, decoded.CyberPolicyWindowHours)
 }
 
 func TestCyberPolicyConfigDefaultsForExistingSettings(t *testing.T) {
 	svc := &ContentModerationService{settingRepo: &contentModerationTestSettingRepo{values: map[string]string{
-		SettingKeyContentModerationConfig: `{"mode":"pre_block"}`,
+		SettingKeyContentModerationConfig: `{"mode":"pre_block","auto_ban_enabled":true,"ban_threshold":7,"violation_window_hours":48,"cyber_policy_exclude_from_ban_count":true}`,
 	}}}
 
 	cfg, err := svc.loadConfig(context.Background())
 	require.NoError(t, err)
 	require.True(t, cfg.CyberPolicyEnabled)
 	require.True(t, cfg.CyberPolicyEmailEnabled)
+	require.False(t, cfg.CyberPolicyAutoBanEnabled)
+	require.Equal(t, 7, cfg.CyberPolicyBanThreshold)
+	require.Equal(t, 48, cfg.CyberPolicyWindowHours)
+}
+
+func TestCyberPolicyConfigInheritsSharedValuesOnceForLegacySettings(t *testing.T) {
+	svc := &ContentModerationService{settingRepo: &contentModerationTestSettingRepo{values: map[string]string{
+		SettingKeyContentModerationConfig: `{"mode":"pre_block","auto_ban_enabled":true,"ban_threshold":5,"violation_window_hours":24}`,
+	}}}
+
+	cfg, err := svc.loadConfig(context.Background())
+	require.NoError(t, err)
+	require.True(t, cfg.CyberPolicyAutoBanEnabled)
+	require.Equal(t, 5, cfg.CyberPolicyBanThreshold)
+	require.Equal(t, 24, cfg.CyberPolicyWindowHours)
+}
+
+func TestUpdateConfigPersistsIndependentCyberPolicy(t *testing.T) {
+	settings := &contentModerationTestSettingRepo{values: map[string]string{}}
+	svc := NewContentModerationService(settings, nil, nil, nil, nil, nil, nil)
+	message := "Custom Cyber sentence."
+	cyberAutoBan := true
+	cyberThreshold := 5
+	cyberWindow := 24
+
+	view, err := svc.UpdateConfig(context.Background(), UpdateContentModerationConfigInput{
+		CyberPolicyEmailMessage:   &message,
+		CyberPolicyAutoBanEnabled: &cyberAutoBan,
+		CyberPolicyBanThreshold:   &cyberThreshold,
+		CyberPolicyWindowHours:    &cyberWindow,
+	})
+	require.NoError(t, err)
+	require.Equal(t, message, view.CyberPolicyEmailMessage)
+	require.Equal(t, 5, view.CyberPolicyBanThreshold)
+	require.Equal(t, 24, view.CyberPolicyWindowHours)
+
+	contentThreshold := 99
+	contentWindow := 12
+	view, err = svc.UpdateConfig(context.Background(), UpdateContentModerationConfigInput{
+		BanThreshold:         &contentThreshold,
+		ViolationWindowHours: &contentWindow,
+	})
+	require.NoError(t, err)
+	require.Equal(t, 99, view.BanThreshold)
+	require.Equal(t, 12, view.ViolationWindowHours)
+	require.Equal(t, 5, view.CyberPolicyBanThreshold)
+	require.Equal(t, 24, view.CyberPolicyWindowHours)
+}
+
+func TestBuildCyberPolicyNoticeEmailBodyUsesCustomMessage(t *testing.T) {
+	cfg := defaultContentModerationConfig()
+	cfg.CyberPolicyEmailMessage = `Custom <Cyber> notice`
+	body := buildCyberPolicyNoticeEmailBody("Cafe", cfg, &ContentModerationLog{
+		UserEmail: "user@example.com",
+		CreatedAt: time.Now(),
+	})
+	require.Contains(t, body, "Custom &lt;Cyber&gt; notice")
+	require.NotContains(t, body, defaultCyberPolicyEmailMessageZH)
 }
 
 func TestRecordCyberPolicyEventHonorsDisabledConfig(t *testing.T) {

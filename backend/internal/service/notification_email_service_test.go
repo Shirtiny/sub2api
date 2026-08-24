@@ -163,7 +163,19 @@ func TestNotificationEmailAdditionalEventsAreListedAndPreviewable(t *testing.T) 
 	})
 	require.NoError(t, err)
 	require.Contains(t, cyberPreview.HTML, "gpt-5")
-	require.Contains(t, cyberPreview.HTML, "上游网络安全策略拦截")
+	require.Contains(t, cyberPreview.HTML, "上游服务商的网络安全策略")
+	require.Contains(t, events[NotificationEmailEventCyberPolicyNotice].Placeholders, "cyber_message")
+
+	customCyberPreview, err := svc.PreviewTemplate(ctx, NotificationEmailPreviewInput{
+		Event:  NotificationEmailEventCyberPolicyNotice,
+		Locale: "zh",
+		Variables: map[string]string{
+			"cyber_message": "这是自定义 Cyber 提示语。",
+		},
+	})
+	require.NoError(t, err)
+	require.Contains(t, customCyberPreview.HTML, "这是自定义 Cyber 提示语。")
+	require.NotContains(t, customCyberPreview.HTML, "您的请求被上游服务商")
 }
 
 func TestNotificationEmailRawHTMLVariablesAreTrustedOnlyForHTMLPlaceholders(t *testing.T) {

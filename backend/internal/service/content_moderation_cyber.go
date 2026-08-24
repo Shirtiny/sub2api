@@ -9,7 +9,10 @@ import (
 	"time"
 )
 
-const ContentModerationActionCyberPolicy = "cyber_policy"
+const (
+	ContentModerationActionCyberPolicy = "cyber_policy"
+	defaultCyberPolicyEmailMessageZH   = "您的请求被上游服务商的网络安全策略（cyber policy）拦截。"
+)
 
 // CyberPolicyRecordInput is the bounded request context captured after an
 // upstream cyber-policy response has already been sent to the client.
@@ -33,9 +36,9 @@ type CyberPolicyRecordInput struct {
 
 // RecordCyberPolicyEvent records a cyber_policy hit independently of the
 // content-audit Enabled/Mode/scope switches. The global risk-control switch
-// remains authoritative. Existing email, rolling violation, and auto-ban
-// settings are deliberately reused so administrators manage one policy in the
-// risk-control center.
+// remains authoritative. Cyber hits use their own rolling counter, window,
+// threshold, and auto-ban switch so content-audit violations cannot affect the
+// Cyber policy state (or vice versa).
 func (s *ContentModerationService) RecordCyberPolicyEvent(ctx context.Context, in CyberPolicyRecordInput) {
 	if s == nil || s.repo == nil || s.settingRepo == nil || !s.isRiskControlEnabled(ctx) {
 		return
@@ -46,7 +49,12 @@ func (s *ContentModerationService) RecordCyberPolicyEvent(ctx context.Context, i
 		// Keep the audit/notification path alive, but do not silently enforce
 		// automatic bans using guessed defaults when the administrator's JSON is
 		// invalid.
-		cfg = &ContentModerationConfig{CyberPolicyEnabled: true, CyberPolicyEmailEnabled: true}
+		cfg = &ContentModerationConfig{
+			CyberPolicyEnabled:      true,
+			CyberPolicyEmailEnabled: true,
+			CyberPolicyBanThreshold: defaultCyberPolicyBanThreshold,
+			CyberPolicyWindowHours:  defaultCyberPolicyViolationWindowHours,
+		}
 	}
 	if !cfg.CyberPolicyEnabled {
 		return
@@ -92,11 +100,8 @@ func (s *ContentModerationService) RecordCyberPolicyEvent(ctx context.Context, i
 	}
 	// Persist the audit row before attempting SMTP. A slow or unavailable mail
 	// server must never hide the security event from the risk-control center.
-	autoBanned := false
-	if !cfg.CyberPolicyExcludeFromBanCount {
-		autoBanned = s.applyFlaggedAccountSideEffects(ctx, cfg, log)
-		log.SideEffectsApplied = log.ViolationCount > 0
-	}
+	autoBanned := s.applyCyberPolicyAccountSideEffects(ctx, cfg, log)
+	log.SideEffectsApplied = log.ViolationCount > 0
 	log.EmailSent = false
 	persisted := s.repo.CreateLog(ctx, log) == nil
 	if !persisted {
@@ -113,7 +118,7 @@ func (s *ContentModerationService) RecordCyberPolicyEvent(ctx context.Context, i
 			}
 		}
 		if autoBanned {
-			if err := s.sendAccountDisabledEmail(ctx, cfg, log); err != nil {
+			if err := s.sendAccountDisabledEmail(ctx, cyberPolicyDisabledEmailConfig(cfg), log); err != nil {
 				slog.Warn("content_moderation.cyber_ban_email_failed", "user_id", in.UserID, "error", err)
 			} else {
 				emailSent = true
@@ -129,16 +134,45 @@ func (s *ContentModerationService) RecordCyberPolicyEvent(ctx context.Context, i
 	}
 }
 
+func (s *ContentModerationService) applyCyberPolicyAccountSideEffects(ctx context.Context, cfg *ContentModerationConfig, log *ContentModerationLog) bool {
+	if cfg == nil {
+		return false
+	}
+	var countExisting func(context.Context, int64, time.Time) (int, error)
+	if s != nil && s.repo != nil {
+		countExisting = s.repo.CountCyberPolicyByUserSince
+	}
+	return s.applyFlaggedAccountSideEffectsWithPolicy(
+		ctx,
+		log,
+		cfg.CyberPolicyAutoBanEnabled,
+		cfg.CyberPolicyBanThreshold,
+		cfg.CyberPolicyWindowHours,
+		countExisting,
+	)
+}
+
 func (s *ContentModerationService) sendCyberPolicyEmail(ctx context.Context, cfg *ContentModerationConfig, log *ContentModerationLog) error {
 	if s == nil || s.emailService == nil || log == nil {
 		return nil
 	}
 	siteName := s.siteName(ctx)
-	banThreshold := defaultContentModerationBanThreshold
-	if cfg != nil && cfg.BanThreshold > 0 {
-		banThreshold = cfg.BanThreshold
+	banThreshold := defaultCyberPolicyBanThreshold
+	if cfg != nil && cfg.CyberPolicyBanThreshold > 0 {
+		banThreshold = cfg.CyberPolicyBanThreshold
 	}
 	if s.emailService.notificationEmailService != nil {
+		variables := map[string]string{
+			"triggered_at":     log.CreatedAt.UTC().Format(time.RFC3339),
+			"model":            defaultContentModerationString(log.Model, "-"),
+			"group_name":       defaultContentModerationString(log.GroupName, "-"),
+			"upstream_message": defaultContentModerationString(log.Error, "-"),
+			"violation_count":  fmt.Sprintf("%d", log.ViolationCount),
+			"ban_threshold":    fmt.Sprintf("%d", banThreshold),
+		}
+		if message := cyberPolicyEmailMessage(cfg, ""); message != "" {
+			variables["cyber_message"] = message
+		}
 		err := s.emailService.notificationEmailService.Send(ctx, NotificationEmailSendInput{
 			Event:          NotificationEmailEventCyberPolicyNotice,
 			RecipientEmail: log.UserEmail,
@@ -146,14 +180,7 @@ func (s *ContentModerationService) sendCyberPolicyEmail(ctx context.Context, cfg
 			UserID:         contentModerationEmailUserID(log),
 			SourceType:     "content_moderation",
 			SourceID:       contentModerationEmailSourceID(log),
-			Variables: map[string]string{
-				"triggered_at":     log.CreatedAt.UTC().Format(time.RFC3339),
-				"model":            defaultContentModerationString(log.Model, "-"),
-				"group_name":       defaultContentModerationString(log.GroupName, "-"),
-				"upstream_message": defaultContentModerationString(log.Error, "-"),
-				"violation_count":  fmt.Sprintf("%d", log.ViolationCount),
-				"ban_threshold":    fmt.Sprintf("%d", banThreshold),
-			},
+			Variables:      variables,
 		})
 		if err == nil {
 			return nil
@@ -164,10 +191,29 @@ func (s *ContentModerationService) sendCyberPolicyEmail(ctx context.Context, cfg
 		slog.Warn("template cyber policy email failed; using built-in body", "error", err)
 	}
 	subject := fmt.Sprintf("[%s] 网络安全策略拦截提醒 / Cyber Policy Notice", sanitizeEmailHeader(siteName))
-	return s.emailService.SendEmail(ctx, log.UserEmail, subject, buildCyberPolicyNoticeEmailBody(siteName, log))
+	return s.emailService.SendEmail(ctx, log.UserEmail, subject, buildCyberPolicyNoticeEmailBody(siteName, cfg, log))
 }
 
-func buildCyberPolicyNoticeEmailBody(siteName string, log *ContentModerationLog) string {
+func cyberPolicyDisabledEmailConfig(cfg *ContentModerationConfig) *ContentModerationConfig {
+	clone := cloneContentModerationConfig(cfg)
+	if clone == nil {
+		clone = defaultContentModerationConfig()
+	}
+	clone.BanThreshold = clone.CyberPolicyBanThreshold
+	clone.BlockMessage = cyberPolicyEmailMessage(clone, defaultCyberPolicyEmailMessageZH)
+	return clone
+}
+
+func cyberPolicyEmailMessage(cfg *ContentModerationConfig, fallback string) string {
+	if cfg != nil {
+		if message := strings.TrimSpace(cfg.CyberPolicyEmailMessage); message != "" {
+			return message
+		}
+	}
+	return fallback
+}
+
+func buildCyberPolicyNoticeEmailBody(siteName string, cfg *ContentModerationConfig, log *ContentModerationLog) string {
 	if log == nil {
 		return ""
 	}
@@ -175,8 +221,9 @@ func buildCyberPolicyNoticeEmailBody(siteName string, log *ContentModerationLog)
 	if name == "" && log.UserID != nil {
 		name = fmt.Sprintf("UID %d", *log.UserID)
 	}
-	return fmt.Sprintf(`<!doctype html><html><body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:#f5f6fb;color:#222;padding:32px"><div style="max-width:680px;margin:auto;background:#fff;padding:36px;border-top:8px solid #ef4444"><p style="color:#888;letter-spacing:2px">RISK CONTROL / 网络安全策略</p><h1>请求被网络安全策略拦截</h1><p>尊敬的用户 <strong>%s</strong>，您的请求被上游网络安全策略（cyber policy）拦截。</p><table style="width:100%%"><tr><td>触发时间</td><td>%s</td></tr><tr><td>模型</td><td>%s</td></tr><tr><td>上游说明</td><td>%s</td></tr></table><p>请调整请求内容后重试；如认为系误判，请联系管理员。</p><p style="color:#777">此邮件由 %s 自动发送，请勿回复。</p></div></body></html>`,
+	return fmt.Sprintf(`<!doctype html><html><body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:#f5f6fb;color:#222;padding:32px"><div style="max-width:680px;margin:auto;background:#fff;padding:36px;border-top:8px solid #ef4444"><p style="color:#888;letter-spacing:2px">RISK CONTROL / 网络安全策略</p><h1>请求被网络安全策略拦截</h1><p>尊敬的用户 <strong>%s</strong>，%s</p><table style="width:100%%"><tr><td>触发时间</td><td>%s</td></tr><tr><td>模型</td><td>%s</td></tr><tr><td>上游说明</td><td>%s</td></tr></table><p>请调整请求内容后重试；如认为系误判，请联系管理员。</p><p style="color:#777">此邮件由 %s 自动发送，请勿回复。</p></div></body></html>`,
 		html.EscapeString(name),
+		html.EscapeString(cyberPolicyEmailMessage(cfg, defaultCyberPolicyEmailMessageZH)),
 		html.EscapeString(log.CreatedAt.Format("2006-01-02 15:04:05")),
 		html.EscapeString(defaultContentModerationString(log.Model, "-")),
 		html.EscapeString(defaultContentModerationString(log.Error, "-")),

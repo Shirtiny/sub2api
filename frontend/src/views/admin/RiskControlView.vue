@@ -875,6 +875,10 @@
 
           <div v-else-if="activeSettingsTab === 'response'" class="space-y-5">
             <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+              <div class="lg:col-span-2">
+                <h3 class="text-base font-semibold text-content-primary">{{ t('admin.riskControl.contentHitPolicy') }}</h3>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ t('admin.riskControl.contentHitPolicyHint') }}</p>
+              </div>
               <div>
                 <label class="input-label">{{ t('admin.riskControl.blockStatus') }}</label>
                 <input v-model.number="configForm.block_status" type="number" min="400" max="599" class="input" />
@@ -897,6 +901,24 @@
                 </div>
                 <Toggle v-model="configForm.auto_ban_enabled" />
               </div>
+              <div>
+                <label class="input-label">{{ t('admin.riskControl.banThreshold') }}</label>
+                <input v-model.number="configForm.ban_threshold" type="number" min="1" max="1000" class="input" />
+              </div>
+              <div>
+                <label class="input-label">{{ t('admin.riskControl.violationWindowHours') }}</label>
+                <input v-model.number="configForm.violation_window_hours" type="number" min="1" max="8760" class="input" />
+              </div>
+
+            </div>
+          </div>
+
+          <div v-else-if="activeSettingsTab === 'cyberPolicy'" class="space-y-5">
+            <div>
+              <h3 class="text-base font-semibold text-content-primary">{{ t('admin.riskControl.cyberPolicySection') }}</h3>
+              <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ t('admin.riskControl.cyberPolicySectionHint') }}</p>
+            </div>
+            <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
               <div class="flex items-center justify-between rounded-lg border border-gray-100 p-4 dark:border-dark-700 lg:col-span-2">
                 <div>
                   <p class="text-sm font-medium text-content-primary">{{ t('admin.riskControl.cyberPolicyEnabled') }}</p>
@@ -913,18 +935,47 @@
               </div>
               <div class="flex items-center justify-between rounded-lg border border-gray-100 p-4 dark:border-dark-700">
                 <div>
-                  <p class="text-sm font-medium text-content-primary">{{ t('admin.riskControl.cyberPolicyExcludeBan') }}</p>
-                  <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ t('admin.riskControl.cyberPolicyExcludeBanHint') }}</p>
+                  <p class="text-sm font-medium text-content-primary">{{ t('admin.riskControl.cyberPolicyAutoBan') }}</p>
+                  <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ t('admin.riskControl.cyberPolicyAutoBanHint') }}</p>
                 </div>
-                <Toggle v-model="configForm.cyber_policy_exclude_from_ban_count" :disabled="!configForm.cyber_policy_enabled" />
+                <Toggle v-model="configForm.cyber_policy_auto_ban_enabled" :disabled="!configForm.cyber_policy_enabled" />
+              </div>
+              <div class="lg:col-span-2">
+                <label class="input-label">{{ t('admin.riskControl.cyberPolicyEmailMessage') }}</label>
+                <textarea
+                  v-model.trim="configForm.cyber_policy_email_message"
+                  data-test="cyber-policy-email-message"
+                  rows="3"
+                  maxlength="500"
+                  class="input min-h-24 resize-y"
+                  :disabled="!configForm.cyber_policy_enabled || !configForm.cyber_policy_email_enabled"
+                  :placeholder="t('admin.riskControl.cyberPolicyEmailMessagePlaceholder')"
+                ></textarea>
+                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ t('admin.riskControl.cyberPolicyEmailMessageHint') }}</p>
               </div>
               <div>
-                <label class="input-label">{{ t('admin.riskControl.banThreshold') }}</label>
-                <input v-model.number="configForm.ban_threshold" type="number" min="1" max="1000" class="input" />
+                <label class="input-label">{{ t('admin.riskControl.cyberPolicyBanThreshold') }}</label>
+                <input
+                  v-model.number="configForm.cyber_policy_ban_threshold"
+                  data-test="cyber-policy-ban-threshold"
+                  type="number"
+                  min="1"
+                  max="1000"
+                  class="input"
+                  :disabled="!configForm.cyber_policy_enabled || !configForm.cyber_policy_auto_ban_enabled"
+                />
               </div>
               <div>
-                <label class="input-label">{{ t('admin.riskControl.violationWindowHours') }}</label>
-                <input v-model.number="configForm.violation_window_hours" type="number" min="1" max="8760" class="input" />
+                <label class="input-label">{{ t('admin.riskControl.cyberPolicyViolationWindowHours') }}</label>
+                <input
+                  v-model.number="configForm.cyber_policy_violation_window_hours"
+                  data-test="cyber-policy-violation-window"
+                  type="number"
+                  min="1"
+                  max="8760"
+                  class="input"
+                  :disabled="!configForm.cyber_policy_enabled || !configForm.cyber_policy_auto_ban_enabled"
+                />
               </div>
             </div>
           </div>
@@ -1256,7 +1307,7 @@ import { useAppStore } from '@/stores/app'
 import { extractApiErrorMessage } from '@/utils/apiError'
 import { formatDateTime as formatDateTimeValue } from '@/utils/format'
 
-type SettingsTab = 'basic' | 'scope' | 'runtime' | 'response' | 'riskThresholds' | 'retention' | 'keywords'
+type SettingsTab = 'basic' | 'scope' | 'runtime' | 'response' | 'cyberPolicy' | 'riskThresholds' | 'retention' | 'keywords'
 type RiskTab = 'content' | 'request'
 type WorkerSlotState = 'active' | 'idle' | 'disabled'
 type APIKeysWriteMode = 'append' | 'replace'
@@ -1369,7 +1420,10 @@ const configForm = reactive({
   auto_ban_enabled: true,
   cyber_policy_enabled: true,
   cyber_policy_email_enabled: true,
-  cyber_policy_exclude_from_ban_count: false,
+  cyber_policy_email_message: '',
+  cyber_policy_auto_ban_enabled: true,
+  cyber_policy_ban_threshold: 3,
+  cyber_policy_violation_window_hours: 720,
   ban_threshold: 10,
   violation_window_hours: 720,
   hit_retention_days: 180,
@@ -1407,6 +1461,7 @@ const settingsTabs = computed<Array<{ id: SettingsTab; label: string }>>(() => [
   { id: 'scope', label: t('admin.riskControl.tabs.scope') },
   { id: 'runtime', label: t('admin.riskControl.tabs.runtime') },
   { id: 'response', label: t('admin.riskControl.tabs.response') },
+  { id: 'cyberPolicy', label: t('admin.riskControl.tabs.cyberPolicy') },
   { id: 'riskThresholds', label: t('admin.riskControl.tabs.riskThresholds') },
   { id: 'keywords', label: t('admin.riskControl.tabs.keywords') },
   { id: 'retention', label: t('admin.riskControl.tabs.retention') },
@@ -1877,7 +1932,10 @@ function applyConfig(config: ContentModerationConfig) {
   configForm.auto_ban_enabled = config.auto_ban_enabled ?? true
   configForm.cyber_policy_enabled = config.cyber_policy_enabled ?? true
   configForm.cyber_policy_email_enabled = config.cyber_policy_email_enabled ?? true
-  configForm.cyber_policy_exclude_from_ban_count = config.cyber_policy_exclude_from_ban_count ?? false
+  configForm.cyber_policy_email_message = config.cyber_policy_email_message || ''
+  configForm.cyber_policy_auto_ban_enabled = config.cyber_policy_auto_ban_enabled ?? true
+  configForm.cyber_policy_ban_threshold = config.cyber_policy_ban_threshold || 3
+  configForm.cyber_policy_violation_window_hours = config.cyber_policy_violation_window_hours || 720
   configForm.ban_threshold = config.ban_threshold || 10
   configForm.violation_window_hours = config.violation_window_hours || 720
   configForm.hit_retention_days = config.hit_retention_days || 180
@@ -1968,7 +2026,10 @@ async function saveConfig() {
       auto_ban_enabled: configForm.auto_ban_enabled,
       cyber_policy_enabled: configForm.cyber_policy_enabled,
       cyber_policy_email_enabled: configForm.cyber_policy_email_enabled,
-      cyber_policy_exclude_from_ban_count: configForm.cyber_policy_exclude_from_ban_count,
+      cyber_policy_email_message: configForm.cyber_policy_email_message.trim(),
+      cyber_policy_auto_ban_enabled: configForm.cyber_policy_auto_ban_enabled,
+      cyber_policy_ban_threshold: Number(configForm.cyber_policy_ban_threshold) || 3,
+      cyber_policy_violation_window_hours: Number(configForm.cyber_policy_violation_window_hours) || 720,
       ban_threshold: Number(configForm.ban_threshold) || 10,
       violation_window_hours: Number(configForm.violation_window_hours) || 720,
       hit_retention_days: Number(configForm.hit_retention_days) || 180,

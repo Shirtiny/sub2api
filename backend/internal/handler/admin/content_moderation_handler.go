@@ -72,9 +72,13 @@ type contentModerationConfigRequest struct {
 	KeywordBlockingMode            *string                               `json:"keyword_blocking_mode"`
 	BuiltInFilterEnabled           *bool                                 `json:"built_in_filter_enabled"`
 	ModelFilter                    *service.ContentModerationModelFilter `json:"model_filter"`
-	CyberPolicyExcludeFromBanCount *bool                                 `json:"cyber_policy_exclude_from_ban_count"`
 	CyberPolicyEnabled             *bool                                 `json:"cyber_policy_enabled"`
 	CyberPolicyEmailEnabled        *bool                                 `json:"cyber_policy_email_enabled"`
+	CyberPolicyEmailMessage        *string                               `json:"cyber_policy_email_message"`
+	CyberPolicyAutoBanEnabled      *bool                                 `json:"cyber_policy_auto_ban_enabled"`
+	CyberPolicyBanThreshold        *int                                  `json:"cyber_policy_ban_threshold"`
+	CyberPolicyWindowHours         *int                                  `json:"cyber_policy_violation_window_hours"`
+	CyberPolicyExcludeFromBanCount *bool                                 `json:"cyber_policy_exclude_from_ban_count"`
 }
 
 type contentModerationAPIKeyTestRequest struct {
@@ -138,9 +142,13 @@ func (h *ContentModerationHandler) UpdateConfig(c *gin.Context) {
 		KeywordBlockingMode:            req.KeywordBlockingMode,
 		BuiltInFilterEnabled:           req.BuiltInFilterEnabled,
 		ModelFilter:                    req.ModelFilter,
-		CyberPolicyExcludeFromBanCount: req.CyberPolicyExcludeFromBanCount,
 		CyberPolicyEnabled:             req.CyberPolicyEnabled,
 		CyberPolicyEmailEnabled:        req.CyberPolicyEmailEnabled,
+		CyberPolicyEmailMessage:        req.CyberPolicyEmailMessage,
+		CyberPolicyAutoBanEnabled:      req.CyberPolicyAutoBanEnabled,
+		CyberPolicyBanThreshold:        req.CyberPolicyBanThreshold,
+		CyberPolicyWindowHours:         req.CyberPolicyWindowHours,
+		CyberPolicyExcludeFromBanCount: req.CyberPolicyExcludeFromBanCount,
 	})
 	if err != nil {
 		response.ErrorFrom(c, err)
