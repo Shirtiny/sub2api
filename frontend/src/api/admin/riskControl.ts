@@ -55,6 +55,8 @@ export interface RequestControlStatus {
   risk_control_enabled: boolean
   queue_size: number
   queue_length: number
+  queue_bytes: number
+  queue_max_bytes: number
   enqueued: number
   processed: number
   dropped: number
@@ -122,6 +124,7 @@ export interface RequestControlLogDetail extends RequestControlLog {
     body_truncated: boolean
     body_sha256: string
     body_capture_mode: 'full' | 'head_tail' | ''
+    captured_at: string
   }
 }
 

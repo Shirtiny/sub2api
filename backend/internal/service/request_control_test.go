@@ -225,7 +225,13 @@ func TestRequestControlDedupHashesBoundMetadata(t *testing.T) {
 	changedClient.Headers = base.Headers.Clone()
 	changedClient.Headers.Set("User-Agent", "other-client/2.0.0")
 	changedClientHash, _ := requestControlDedupHashes(changedClient)
-	require.NotEqual(t, firstHeader, changedClientHash)
+	require.Equal(t, firstHeader, changedClientHash)
+
+	knownClient := base
+	knownClient.Headers = base.Headers.Clone()
+	knownClient.Headers.Set("User-Agent", "curl/8.0.0")
+	knownClientHash, _ := requestControlDedupHashes(knownClient)
+	require.NotEqual(t, firstHeader, knownClientHash)
 
 	changedSessionHeader := base
 	changedSessionHeader.Headers = base.Headers.Clone()
@@ -333,6 +339,32 @@ func TestRequestControlDedupClientProfileIgnoresVersionAndIdentityValues(t *test
 	cli.Headers.Set("originator", "codex-tui")
 	cliHeader, _ := requestControlDedupHashes(cli)
 	require.NotEqual(t, firstHeader, cliHeader)
+}
+
+func TestRequestControlDedupBucketsUnknownClientHeaderValues(t *testing.T) {
+	first := RequestControlCheckInput{
+		Protocol: RequestControlProtocolResponse,
+		Endpoint: "/v1/responses",
+		Headers: http.Header{
+			"User-Agent":        {"random-family-a/1"},
+			"Originator":        {"random-origin-a"},
+			"Content-Type":      {"application/random-a"},
+			"X-App":             {"random-app-a"},
+			"anthropic-version": {"random-version-a"},
+		},
+		Body: []byte(`{"model":"gpt-5","input":[]}`),
+	}
+	second := first
+	second.Headers = http.Header{
+		"User-Agent":        {"random-family-b/2"},
+		"Originator":        {"random-origin-b"},
+		"Content-Type":      {"application/random-b"},
+		"X-App":             {"random-app-b"},
+		"anthropic-version": {"random-version-b"},
+	}
+	firstHeader, _ := requestControlDedupHashes(first)
+	secondHeader, _ := requestControlDedupHashes(second)
+	require.Equal(t, firstHeader, secondHeader)
 }
 
 func TestRequestControlDedupBodyUsesFormatNotRequestContent(t *testing.T) {
@@ -641,6 +673,28 @@ func TestRequestControlQueuedLogPersistsCountedStateAfterHit(t *testing.T) {
 	require.True(t, repo.updated[0].Counted)
 }
 
+func TestRequestControlQueueEnforcesByteBudget(t *testing.T) {
+	svc := &RequestControlService{repo: requestControlRepoStub{}, queue: make(chan requestControlTask, 2)}
+	log := &RequestControlLog{Protocol: RequestControlProtocolResponse, RequestSnapshot: RequestControlRequestSnapshot{Body: strings.Repeat("x", 1024)}}
+	logBytes := requestControlLogApproxBytes(log)
+	svc.queueBytes.Store(requestControlQueueBytes - logBytes + 1)
+
+	svc.enqueueLog(log)
+	require.Equal(t, int64(1), svc.dropped.Load())
+	require.Empty(t, svc.queue)
+	require.Equal(t, requestControlQueueBytes-logBytes+1, svc.queueBytes.Load())
+
+	svc.queueBytes.Store(0)
+	svc.enqueueLog(log)
+	require.Equal(t, 1, len(svc.queue))
+	task := <-svc.queue
+	require.Equal(t, logBytes, task.bytes)
+	require.Equal(t, logBytes, svc.queueBytes.Load())
+	status := svc.GetStatus()
+	require.Equal(t, logBytes, status.QueueBytes)
+	require.Equal(t, int64(requestControlQueueBytes), status.QueueMaxBytes)
+}
+
 func TestRequestControlBlocksAnonymousResponsesBeforeUAClassification(t *testing.T) {
 	svc := requestControlTestService(t, RequestControlConfig{Enabled: true, AllGroups: true, AllUsers: true})
 	decision, err := svc.Check(context.Background(), RequestControlCheckInput{Protocol: RequestControlProtocolResponse, Model: "gpt-5", UserID: 1, UserAgent: "curl/8", Headers: http.Header{}, Body: []byte(`{"model":"gpt-5"}`)})
@@ -669,11 +723,12 @@ func TestRequestControlAllowsPiLocalCompactionWithoutClientSession(t *testing.T)
 	require.True(t, decision.Allowed)
 	require.True(t, decision.Observed)
 	require.False(t, decision.Blocked)
-	require.Equal(t, requestControlReasonCompactionAllowed, decision.Reason)
+	require.Equal(t, "non_codex_user_agent", decision.Reason)
 	require.Equal(t, "local_compaction_candidate", decision.Details["request_kind"])
 	require.Equal(t, "strong_heuristic", decision.Details["request_kind_confidence"])
 	require.Contains(t, decision.Details["request_kind_evidence"], "tool_choice:none")
-	require.Equal(t, "none", decision.Details["session_source"])
+	require.Equal(t, "synthetic", decision.Details["client_session"])
+	require.Equal(t, "gateway:compaction_derived", decision.Details["session_source"])
 }
 
 func TestRequestControlAllowsExplicitCompactEndpoint(t *testing.T) {
@@ -713,9 +768,25 @@ func TestRequestControlAllowsLargeOpenAIJSCompactionShapeWithoutToolChoice(t *te
 	require.True(t, decision.Allowed)
 	require.True(t, decision.Observed)
 	require.False(t, decision.Blocked)
-	require.Equal(t, requestControlReasonCompactionAllowed, decision.Reason)
+	require.Equal(t, "non_codex_user_agent", decision.Reason)
 	require.Equal(t, "local_compaction_candidate", decision.Details["request_kind"])
 	require.Contains(t, decision.Details["request_kind_evidence"], "body_bytes:large")
+	require.Equal(t, "gateway:compaction_derived", decision.Details["session_source"])
+}
+
+func TestRequestControlHeuristicCompactionDoesNotBypassCodexSignaturePolicy(t *testing.T) {
+	svc := requestControlTestService(t, RequestControlConfig{Enabled: true, AllGroups: true, AllUsers: true, BlockOpenAIResponses: true})
+	decision, err := svc.Check(context.Background(), RequestControlCheckInput{
+		Protocol: RequestControlProtocolResponse, Endpoint: "/v1/responses", Model: "gpt-5.6-sol", UserID: 1,
+		UserAgent: "codex-tui/0.146.0", Headers: http.Header{},
+		Body: []byte(`{"model":"gpt-5.6-sol","input":[],"stream":true,"store":false,"tool_choice":"none","max_output_tokens":1024}`),
+	})
+	require.NoError(t, err)
+	require.True(t, decision.Blocked)
+	require.False(t, decision.Allowed)
+	require.Equal(t, "codex_request_signature_mismatch", decision.Reason)
+	require.Equal(t, "local_compaction_candidate", decision.Details["request_kind"])
+	require.Equal(t, "gateway:compaction_derived", decision.Details["session_source"])
 }
 
 func TestRequestControlStillBlocksSmallAnonymousResponsesWithoutCompactionSignal(t *testing.T) {

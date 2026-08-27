@@ -293,6 +293,7 @@
           <div><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('admin.riskControl.requestControl.clientAddress') }}</p><p class="mt-1 break-all font-mono text-content-primary">{{ detailLog.request_snapshot.client_ip || detailLog.request_snapshot.remote_addr || '-' }}</p></div>
           <div><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('admin.riskControl.requestControl.bodySize') }}</p><p class="mt-1 text-content-primary">{{ formatSnapshotBytes(detailLog.request_snapshot.body_bytes) }}</p></div>
           <div><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('admin.riskControl.requestControl.capturedSize') }}</p><p class="mt-1 text-content-primary">{{ formatSnapshotBytes(detailLog.request_snapshot.body_captured_bytes) }}</p></div>
+          <div><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('admin.riskControl.requestControl.snapshotCapturedAt') }}</p><p class="mt-1 text-content-primary">{{ formatDate(detailLog.request_snapshot.captured_at) }}</p></div>
           <div class="sm:col-span-2"><p class="text-xs text-gray-500 dark:text-gray-400">SHA-256</p><p class="mt-1 break-all font-mono text-xs text-content-primary">{{ detailLog.request_snapshot.body_sha256 || '-' }}</p></div>
         </div>
         <div v-if="detailLog.request_snapshot.body_truncated" class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-200">
@@ -414,7 +415,7 @@ const logHeadings = computed(() => [
   t('admin.riskControl.requestControl.time'), t('admin.riskControl.requestControl.user'), t('admin.riskControl.requestControl.endpoint'), t('admin.riskControl.requestControl.result'), t('admin.riskControl.requestControl.client'), t('admin.riskControl.requestControl.observation'), t('admin.riskControl.requestControl.loggedAt'), t('admin.riskControl.requestControl.detail'),
 ])
 const statusItems = computed(() => [
-  { key: 'queue', label: t('admin.riskControl.requestControl.queue'), value: `${status.value?.queue_length ?? 0}/${status.value?.queue_size ?? 0}` },
+  { key: 'queue', label: t('admin.riskControl.requestControl.queue'), value: `${status.value?.queue_length ?? 0}/${status.value?.queue_size ?? 0} · ${formatSnapshotBytes(status.value?.queue_bytes ?? 0)}/${formatSnapshotBytes(status.value?.queue_max_bytes ?? 0)}` },
   { key: 'processed', label: t('admin.riskControl.requestControl.processed'), value: String(status.value?.processed ?? 0) },
   { key: 'dropped', label: t('admin.riskControl.requestControl.dropped'), value: String(status.value?.dropped ?? 0) },
   { key: 'errors', label: t('admin.riskControl.requestControl.errors'), value: String(status.value?.errors ?? 0) },

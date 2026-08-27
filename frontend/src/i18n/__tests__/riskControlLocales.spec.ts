@@ -31,8 +31,10 @@ describe('risk control locale copy', () => {
 
   it('documents fingerprint aggregation and bounded snapshot retention', () => {
     expect(zh.admin.riskControl.requestControl.logsHint).toContain('请求格式指纹聚合')
+    expect(zh.admin.riskControl.requestControl.logsHint).toContain('每 15 分钟刷新一次')
     expect(zh.admin.riskControl.requestControl.logsHint).toContain('最多 256KB、保留 3 天')
     expect(en.admin.riskControl.requestControl.logsHint).toContain('aggregated by user and request-format fingerprint')
+    expect(en.admin.riskControl.requestControl.logsHint).toContain('at most once per 15 minutes')
     expect(en.admin.riskControl.requestControl.logsHint).toContain('capped at 256KB and kept for 3 days')
   })
 })

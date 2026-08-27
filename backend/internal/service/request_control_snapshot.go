@@ -9,15 +9,16 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"github.com/Wei-Shaw/sub2api/internal/util/logredact"
 )
 
 const (
-	requestControlSnapshotMaxHeaders      = 128
-	requestControlSnapshotMaxHeaderValues = 32
-	requestControlSnapshotMaxHeaderRunes  = 4096
+	requestControlSnapshotMaxHeaders      = 64
+	requestControlSnapshotMaxHeaderValues = 8
+	requestControlSnapshotMaxHeaderRunes  = 1024
 	requestControlSnapshotMaxBodyBytes    = 256 * 1024
 )
 
@@ -37,6 +38,7 @@ type RequestControlRequestSnapshot struct {
 	BodyTruncated     bool                `json:"body_truncated"`
 	BodySHA256        string              `json:"body_sha256"`
 	BodyCaptureMode   string              `json:"body_capture_mode"`
+	CapturedAt        time.Time           `json:"captured_at"`
 }
 
 func buildRequestControlRequestSnapshot(input RequestControlCheckInput) RequestControlRequestSnapshot {
@@ -44,8 +46,10 @@ func buildRequestControlRequestSnapshot(input RequestControlCheckInput) RequestC
 	if headers == nil {
 		headers = input.Headers
 	}
-	capturedBody, truncated, capturedBytes := captureRequestControlBody(input.Body)
-	body := string(redactRequestControlBody([]byte(capturedBody)))
+	capturedBody, truncated, _ := captureRequestControlBody(input.Body)
+	redactedBody := redactRequestControlBody([]byte(capturedBody))
+	body, redactionTruncated, _ := captureRequestControlBody(redactedBody)
+	truncated = truncated || redactionTruncated
 	digest := sha256.Sum256(input.Body)
 	return RequestControlRequestSnapshot{
 		Available:         true,
@@ -59,7 +63,7 @@ func buildRequestControlRequestSnapshot(input RequestControlCheckInput) RequestC
 		Headers:           requestControlSnapshotHeaders(headers),
 		Body:              body,
 		BodyBytes:         len(input.Body),
-		BodyCapturedBytes: capturedBytes,
+		BodyCapturedBytes: len(body),
 		BodyTruncated:     truncated,
 		BodySHA256:        hex.EncodeToString(digest[:]),
 		BodyCaptureMode:   requestControlBodyCaptureMode(truncated),
@@ -192,12 +196,28 @@ func captureRequestControlBody(raw []byte) (string, bool, int) {
 	if len(raw) <= requestControlSnapshotMaxBodyBytes {
 		return strings.ToValidUTF8(string(raw), "�"), false, len(raw)
 	}
-	half := requestControlSnapshotMaxBodyBytes / 2
-	head := requestControlValidUTF8Prefix(raw[:half])
-	tail := requestControlValidUTF8Suffix(raw[len(raw)-half:])
-	omitted := len(raw) - half*2
-	marker := "\n\n...[request-control omitted " + strconv.Itoa(omitted) + " bytes]...\n\n"
-	return head + marker + tail, true, half * 2
+	omitted := len(raw) - requestControlSnapshotMaxBodyBytes
+	var marker string
+	var headBytes, tailBytes int
+	for range 3 {
+		marker = requestControlBodyOmittedMarker(omitted)
+		payloadBytes := requestControlSnapshotMaxBodyBytes - len(marker)
+		headBytes = payloadBytes / 2
+		tailBytes = payloadBytes - headBytes
+		nextOmitted := len(raw) - headBytes - tailBytes
+		if nextOmitted == omitted {
+			break
+		}
+		omitted = nextOmitted
+	}
+	head := requestControlValidUTF8Prefix(raw[:headBytes])
+	tail := requestControlValidUTF8Suffix(raw[len(raw)-tailBytes:])
+	body := head + marker + tail
+	return body, true, len(body)
+}
+
+func requestControlBodyOmittedMarker(bytes int) string {
+	return "\n\n...[request-control omitted " + strconv.Itoa(bytes) + " bytes]...\n\n"
 }
 
 func requestControlValidUTF8Prefix(raw []byte) string {

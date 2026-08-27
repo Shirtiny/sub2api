@@ -12,7 +12,7 @@ import (
 
 // Increment when the canonical profile below changes. Existing rows remain
 // readable; new rows simply use a new unique fingerprint.
-const requestControlDedupFingerprintVersion = 4
+const requestControlDedupFingerprintVersion = 5
 
 var requestControlDedupSessionHeaders = []string{
 	"x-aether-session-id",
@@ -65,8 +65,8 @@ func requestControlDedupHeaderHash(input RequestControlCheckInput) string {
 		"codex_window":        requestControlDedupHeaderValueShape(headers, "x-codex-window-id"),
 		"client_request_id":   requestControlDedupHeaderValueShape(headers, "x-client-request-id"),
 		"session_signal":      requestControlDedupSessionSignal(headers),
-		"claude_app":          strings.ToLower(firstRequestControlHeader(headers, "X-App")),
-		"anthropic_version":   strings.ToLower(firstRequestControlHeader(headers, "anthropic-version")),
+		"claude_app":          requestControlDedupKnownValue(firstRequestControlHeader(headers, "X-App"), "cli", "claude-code"),
+		"anthropic_version":   requestControlDedupKnownValue(firstRequestControlHeader(headers, "anthropic-version"), "2023-06-01"),
 		"claude_code_beta":    requestControlHeaderTokenContains(firstRequestControlHeader(headers, "anthropic-beta"), "claude-code-20250219"),
 	}
 	return requestControlMetadataHash(profile)
@@ -108,14 +108,20 @@ func requestControlDedupClientFamily(value string) string {
 		return "codex_sdk"
 	case strings.HasPrefix(value, "claude-code/"), strings.HasPrefix(value, "claude-cli/"), strings.HasPrefix(value, "claude code"):
 		return "claude_code"
+	case strings.HasPrefix(value, "pi ("):
+		return "pi"
+	case strings.HasPrefix(value, "openai/js"):
+		return "openai_js"
+	case strings.HasPrefix(value, "openai/python"):
+		return "openai_python"
+	case strings.HasPrefix(value, "opencode/"):
+		return "opencode"
+	case strings.HasPrefix(value, "curl/"):
+		return "curl"
+	case value == "ruby" || strings.HasPrefix(value, "ruby/"):
+		return "ruby"
 	}
-	family := strings.FieldsFunc(value, func(r rune) bool {
-		return r == '/' || r == ' ' || r == '('
-	})
-	if len(family) == 0 {
-		return "unknown"
-	}
-	return truncateRequestControlValue(family[0], 64)
+	return "other"
 }
 
 func requestControlDedupTransport(websocket bool) string {
@@ -133,7 +139,25 @@ func requestControlDedupMediaType(value string) string {
 		}
 		return "invalid"
 	}
-	return strings.ToLower(mediaType)
+	switch normalized := strings.ToLower(mediaType); normalized {
+	case "application/json", "text/event-stream", "application/x-ndjson":
+		return normalized
+	default:
+		return "other"
+	}
+}
+
+func requestControlDedupKnownValue(value string, known ...string) string {
+	normalized := strings.ToLower(strings.TrimSpace(value))
+	if normalized == "" {
+		return "missing"
+	}
+	for _, candidate := range known {
+		if normalized == candidate {
+			return normalized
+		}
+	}
+	return "other"
 }
 
 func requestControlDedupSessionSignal(headers http.Header) string {

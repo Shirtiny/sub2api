@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"net/http"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -62,7 +63,7 @@ func TestBuildRequestControlRequestSnapshotKeepsHeadTailAndFullHashWhenLarge(t *
 	require.Equal(t, requestControlSnapshotMaxBodyBytes, snapshot.BodyCapturedBytes)
 	require.True(t, strings.HasPrefix(snapshot.Body, strings.Repeat("H", 128)))
 	require.True(t, strings.HasSuffix(snapshot.Body, strings.Repeat("T", 128)))
-	require.Contains(t, snapshot.Body, "omitted 1024 bytes")
+	require.Contains(t, snapshot.Body, "request-control omitted")
 	require.NotContains(t, snapshot.Body, strings.Repeat("M", 128))
 	digest := sha256.Sum256(body)
 	require.Equal(t, hex.EncodeToString(digest[:]), snapshot.BodySHA256)
@@ -76,6 +77,7 @@ func TestBuildRequestControlRequestSnapshotRedactsCredentialsButKeepsPrompt(t *t
 	require.NotContains(t, snapshot.Body, "secret-token")
 	require.NotContains(t, snapshot.Body, "secret-password")
 	require.Contains(t, snapshot.Body, "\"***\"")
+	require.Equal(t, len(snapshot.Body), snapshot.BodyCapturedBytes)
 }
 
 func TestBuildRequestControlRequestSnapshotLargeCredentialOutsideCaptureDoesNotTriggerFullScan(t *testing.T) {
@@ -86,4 +88,35 @@ func TestBuildRequestControlRequestSnapshotLargeCredentialOutsideCaptureDoesNotT
 	require.True(t, snapshot.BodyTruncated)
 	require.Equal(t, requestControlSnapshotMaxBodyBytes, snapshot.BodyCapturedBytes)
 	require.NotContains(t, snapshot.Body, "secret-middle-token")
+}
+
+func TestBuildRequestControlRequestSnapshotReappliesLimitAfterRedaction(t *testing.T) {
+	body := []byte(`{"input":"` + strings.Repeat("<", 100*1024) + `","password":"secret-password"}`)
+	require.Less(t, len(body), requestControlSnapshotMaxBodyBytes)
+	snapshot := buildRequestControlRequestSnapshot(RequestControlCheckInput{Body: body})
+	require.True(t, snapshot.BodyTruncated)
+	require.LessOrEqual(t, len(snapshot.Body), requestControlSnapshotMaxBodyBytes)
+	require.Equal(t, len(snapshot.Body), snapshot.BodyCapturedBytes)
+	require.NotContains(t, snapshot.Body, "secret-password")
+}
+
+func TestBuildRequestControlRequestSnapshotBoundsHeaders(t *testing.T) {
+	headers := make(http.Header)
+	for i := range requestControlSnapshotMaxHeaders + 10 {
+		for range requestControlSnapshotMaxHeaderValues + 2 {
+			headers.Add("X-Test-"+strconv.Itoa(i), strings.Repeat("v", requestControlSnapshotMaxHeaderRunes+10))
+		}
+	}
+	snapshot := buildRequestControlRequestSnapshot(RequestControlCheckInput{MetadataHeaders: headers})
+	require.LessOrEqual(t, len(snapshot.Headers), requestControlSnapshotMaxHeaders+1)
+	require.Equal(t, []string{"true"}, snapshot.Headers["x-request-control-headers-truncated"])
+	for key, values := range snapshot.Headers {
+		if key == "x-request-control-headers-truncated" {
+			continue
+		}
+		require.LessOrEqual(t, len(values), requestControlSnapshotMaxHeaderValues)
+		for _, value := range values {
+			require.LessOrEqual(t, len(value), requestControlSnapshotMaxHeaderRunes)
+		}
+	}
 }

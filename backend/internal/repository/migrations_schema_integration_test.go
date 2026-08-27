@@ -130,6 +130,7 @@ func TestMigrationsRunner_IsIdempotent_AndSchemaIsUpToDate(t *testing.T) {
 
 	// request_control_logs: per-event diagnostic snapshot and historical timing
 	requireColumn(t, tx, "request_control_logs", "request_snapshot", "jsonb", 0, false)
+	requireColumn(t, tx, "request_control_logs", "request_snapshot_at", "timestamp with time zone", 0, true)
 	requireColumn(t, tx, "request_control_logs", "event_count", "bigint", 0, false)
 	requireColumn(t, tx, "request_control_logs", "first_seen_at", "timestamp with time zone", 0, false)
 	requireColumn(t, tx, "request_control_logs", "last_seen_at", "timestamp with time zone", 0, false)

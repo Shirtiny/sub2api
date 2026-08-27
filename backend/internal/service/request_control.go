@@ -44,6 +44,7 @@ const (
 	requestControlMaxBanThreshold         = 1000
 	requestControlHitSpacing              = 5 * time.Minute
 	requestControlQueueSize               = 8192
+	requestControlQueueBytes              = 64 * 1024 * 1024
 	requestControlWorkerCount             = 2
 	requestControlRefreshInterval         = 30 * time.Second
 	requestControlRefreshTimeout          = 5 * time.Second
@@ -281,6 +282,8 @@ type RequestControlRuntimeStatus struct {
 	RiskControlEnabled bool  `json:"risk_control_enabled"`
 	QueueSize          int   `json:"queue_size"`
 	QueueLength        int   `json:"queue_length"`
+	QueueBytes         int64 `json:"queue_bytes"`
+	QueueMaxBytes      int64 `json:"queue_max_bytes"`
 	Enqueued           int64 `json:"enqueued"`
 	Processed          int64 `json:"processed"`
 	Dropped            int64 `json:"dropped"`
@@ -317,7 +320,8 @@ type requestControlRuntimeConfig struct {
 }
 
 type requestControlTask struct {
-	log *RequestControlLog
+	log   *RequestControlLog
+	bytes int64
 }
 
 type RequestControlService struct {
@@ -330,6 +334,7 @@ type RequestControlService struct {
 	runtime              atomic.Pointer[requestControlRuntimeConfig]
 	refreshMu            sync.Mutex
 	queue                chan requestControlTask
+	queueBytes           atomic.Int64
 	validator            *ClaudeCodeValidator
 	violationMu          sync.Mutex
 	enqueued             atomic.Int64
@@ -507,7 +512,8 @@ func (s *RequestControlService) Check(ctx context.Context, input RequestControlC
 	if input.Protocol == RequestControlProtocolResponse {
 		inspection := inspectRequestControlResponseSessionDetails(input)
 		responseDiagnostics = requestControlResponseDiagnosticDetails(input, inspection.SessionPresent, inspection.SessionSource, inspection.Body, inspection.BodyParsed, inspection.BodyErr)
-		if requestControlResponseRequestKindIsCompaction(responseDiagnostics["request_kind"]) {
+		requestKind := responseDiagnostics["request_kind"]
+		if requestControlResponseRequestKindIsExplicitCompaction(requestKind) {
 			decision := &RequestControlDecision{
 				Allowed:    true,
 				Observed:   true,
@@ -517,6 +523,14 @@ func (s *RequestControlService) Check(ctx context.Context, input RequestControlC
 				Details:    responseDiagnostics,
 			}
 			return s.finalizeDecision(input, cfg, decision), nil
+		}
+		// A local-summary wire shape is not proof of compaction. Treat it as a
+		// synthetic session signal (the gateway injects the same routing session
+		// downstream), then continue through the normal UA/signature policy.
+		if !inspection.SessionPresent && requestControlResponseRequestKindIsHeuristicCompaction(requestKind) {
+			inspection.SessionPresent = true
+			responseDiagnostics["client_session"] = "synthetic"
+			responseDiagnostics["session_source"] = "gateway:compaction_derived"
 		}
 		if !inspection.SessionPresent {
 			decision := &RequestControlDecision{
@@ -690,12 +704,14 @@ func (s *RequestControlService) GetStatus() RequestControlRuntimeStatus {
 		return RequestControlRuntimeStatus{}
 	}
 	status := RequestControlRuntimeStatus{
-		QueueSize:   cap(s.queue),
-		QueueLength: len(s.queue),
-		Enqueued:    s.enqueued.Load(),
-		Processed:   s.processed.Load(),
-		Dropped:     s.dropped.Load(),
-		Errors:      s.errors.Load(),
+		QueueSize:     cap(s.queue),
+		QueueLength:   len(s.queue),
+		QueueBytes:    s.queueBytes.Load(),
+		QueueMaxBytes: requestControlQueueBytes,
+		Enqueued:      s.enqueued.Load(),
+		Processed:     s.processed.Load(),
+		Dropped:       s.dropped.Load(),
+		Errors:        s.errors.Load(),
 	}
 	if current := s.runtime.Load(); current != nil && current.config != nil {
 		status.Enabled = current.config.Enabled
@@ -708,10 +724,28 @@ func (s *RequestControlService) enqueueLog(log *RequestControlLog) {
 	if s == nil || log == nil || s.repo == nil {
 		return
 	}
+	queuedBytes := requestControlLogApproxBytes(log)
+	if queuedBytes > requestControlQueueBytes {
+		s.dropped.Add(1)
+		slog.Warn("request_control.log_too_large", "user_id", log.UserID, "protocol", log.Protocol, "bytes", queuedBytes)
+		return
+	}
+	for {
+		current := s.queueBytes.Load()
+		if current > requestControlQueueBytes-queuedBytes {
+			s.dropped.Add(1)
+			slog.Warn("request_control.log_queue_bytes_full", "user_id", log.UserID, "protocol", log.Protocol, "bytes", queuedBytes, "queue_bytes", current)
+			return
+		}
+		if s.queueBytes.CompareAndSwap(current, current+queuedBytes) {
+			break
+		}
+	}
 	select {
-	case s.queue <- requestControlTask{log: log}:
+	case s.queue <- requestControlTask{log: log, bytes: queuedBytes}:
 		s.enqueued.Add(1)
 	default:
+		s.queueBytes.Add(-queuedBytes)
 		s.dropped.Add(1)
 		slog.Warn("request_control.log_queue_full", "user_id", log.UserID, "protocol", log.Protocol, "reason", log.Reason)
 	}
@@ -720,6 +754,7 @@ func (s *RequestControlService) enqueueLog(log *RequestControlLog) {
 func (s *RequestControlService) worker() {
 	for task := range s.queue {
 		if task.log == nil {
+			s.queueBytes.Add(-task.bytes)
 			continue
 		}
 		ctx, cancel := context.WithTimeout(context.Background(), requestControlWorkerTimeout)
@@ -730,7 +765,25 @@ func (s *RequestControlService) worker() {
 			s.processed.Add(1)
 		}
 		cancel()
+		s.queueBytes.Add(-task.bytes)
 	}
+}
+
+func requestControlLogApproxBytes(log *RequestControlLog) int64 {
+	if log == nil {
+		return 0
+	}
+	// The fixed allowance covers bounded metadata/maps; the two potentially
+	// large values (body and multi-value headers) are counted explicitly.
+	size := int64(64 * 1024)
+	size += int64(len(log.RequestSnapshot.Body) + len(log.UserAgent) + len(log.RequestID))
+	for key, values := range log.RequestSnapshot.Headers {
+		size += int64(len(key))
+		for _, value := range values {
+			size += int64(len(value))
+		}
+	}
+	return size
 }
 
 func (s *RequestControlService) processQueuedLog(ctx context.Context, log *RequestControlLog) error {
@@ -1558,12 +1611,20 @@ func requestControlResponseRequestKind(input RequestControlCheckInput, parsed re
 }
 
 func requestControlResponseRequestKindIsCompaction(kind string) bool {
+	return requestControlResponseRequestKindIsExplicitCompaction(kind) || requestControlResponseRequestKindIsHeuristicCompaction(kind)
+}
+
+func requestControlResponseRequestKindIsExplicitCompaction(kind string) bool {
 	switch strings.TrimSpace(kind) {
-	case "openai_responses_compact_endpoint", "openai_responses_compaction_trigger", "codex_compaction_request", "local_compaction_candidate":
+	case "openai_responses_compact_endpoint", "openai_responses_compaction_trigger", "codex_compaction_request":
 		return true
 	default:
 		return false
 	}
+}
+
+func requestControlResponseRequestKindIsHeuristicCompaction(kind string) bool {
+	return strings.TrimSpace(kind) == "local_compaction_candidate"
 }
 
 // IsOpenAIResponsesCompactionRequest is shared by request control and the
@@ -2099,6 +2160,7 @@ func buildRequestControlLog(input RequestControlCheckInput, decision *RequestCon
 	log.TLSMatch = decision.TLSMatched
 	log.RequestHeaders, log.RequestBodyMetadata = buildRequestControlMetadata(input)
 	log.RequestSnapshot = buildRequestControlRequestSnapshot(input)
+	log.RequestSnapshot.CapturedAt = eventAt
 	log.RequestHeadersHash = requestControlDedupHeaderHash(input)
 	log.RequestBodyHash = requestControlDedupBodyHash(input, log.RequestBodyMetadata)
 	return log

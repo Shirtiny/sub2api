@@ -141,13 +141,13 @@ INSERT INTO request_control_logs AS existing (
     expected_action, expected_reason, expected_blocked, expected_status_code,
 	request_headers_hash, request_body_hash, violation_count,
 	counted_violation, email_sent, hit_email_sent, ban_email_sent, auto_banned,
-	event_count, first_seen_at, last_seen_at, created_at, request_snapshot
+	event_count, first_seen_at, last_seen_at, created_at, request_snapshot, request_snapshot_at
 ) VALUES (
 	$1, $2, $3, $4, $5, $6, $7,
 	$8, $9, $10, $11, $12, $13, $14, $15, $16,
 	$17, $18, $19, $20, $21, $22, $23, $24::jsonb, $25::jsonb, $26::jsonb,
 	$27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38,
-	1, $39, $39, $39, $40::jsonb
+	1, $39, $39, $39, $40::jsonb, $39
 	) ON CONFLICT (user_id, protocol, request_headers_hash, request_body_hash)
 	WHERE user_id IS NOT NULL AND request_headers_hash <> '' AND request_body_hash <> ''
 DO UPDATE SET
@@ -175,7 +175,16 @@ DO UPDATE SET
     details = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.details ELSE existing.details END,
     request_headers = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.request_headers ELSE existing.request_headers END,
     request_body_metadata = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.request_body_metadata ELSE existing.request_body_metadata END,
-    request_snapshot = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.request_snapshot ELSE existing.request_snapshot END,
+	request_snapshot = CASE
+		WHEN existing.request_snapshot = '{}'::jsonb
+		  OR existing.request_snapshot_at IS NULL
+		  OR EXCLUDED.created_at >= existing.request_snapshot_at + INTERVAL '15 minutes'
+		THEN EXCLUDED.request_snapshot ELSE existing.request_snapshot END,
+	request_snapshot_at = CASE
+		WHEN existing.request_snapshot = '{}'::jsonb
+		  OR existing.request_snapshot_at IS NULL
+		  OR EXCLUDED.created_at >= existing.request_snapshot_at + INTERVAL '15 minutes'
+		THEN EXCLUDED.request_snapshot_at ELSE existing.request_snapshot_at END,
     expected_action = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.expected_action ELSE existing.expected_action END,
     expected_reason = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.expected_reason ELSE existing.expected_reason END,
     expected_blocked = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.expected_blocked ELSE existing.expected_blocked END,
@@ -485,7 +494,8 @@ func (r *requestControlRepository) CleanupSnapshots(ctx context.Context, before 
 	}
 	result, err := r.db.ExecContext(ctx, `
 UPDATE request_control_logs
-SET request_snapshot = '{}'::jsonb
+SET request_snapshot = '{}'::jsonb,
+	request_snapshot_at = NULL
 WHERE created_at < $1 AND request_snapshot <> '{}'::jsonb`, before)
 	if err != nil {
 		return 0, fmt.Errorf("cleanup request control snapshots: %w", err)

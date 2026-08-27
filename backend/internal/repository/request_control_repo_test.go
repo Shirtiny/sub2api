@@ -125,7 +125,7 @@ func TestRequestControlRepositoryCreateLogPersistsExpectedOutcomeAndFingerprints
 		Details: map[string]string{"x": "y"}, RequestHeaders: map[string]string{"content-type": "application/json"},
 		RequestBodyMetadata: map[string]any{"protocol": service.RequestControlProtocolChat}, RequestHeadersHash: strings.Repeat("a", 64), RequestBodyHash: strings.Repeat("b", 64),
 	}
-	mock.ExpectQuery(regexp.QuoteMeta("INSERT INTO request_control_logs")).WithArgs(
+	mock.ExpectQuery("(?s)INSERT INTO request_control_logs.*request_snapshot_at \\+ INTERVAL '15 minutes'").WithArgs(
 		"req-1", userID, "user@example.com", nil, "", nil, "",
 		"", "", service.RequestControlProtocolChat, "", "observe", "blocking_disabled_observe_only", true, false, true,
 		"", "", "", "", nil, nil, nil, `{"x":"y"}`, `{"content-type":"application/json"}`, `{"protocol":"openai_chat_completions"}`,
@@ -176,7 +176,7 @@ func TestRequestControlRepositoryCleanupSnapshotsKeepsBaseRows(t *testing.T) {
 
 	repo := &requestControlRepository{db: db}
 	before := time.Date(2026, 8, 20, 0, 0, 0, 0, time.UTC)
-	mock.ExpectExec(regexp.QuoteMeta("SET request_snapshot = '{}'::jsonb")).
+	mock.ExpectExec("(?s)SET request_snapshot = '\\{\\}'::jsonb.*request_snapshot_at = NULL").
 		WithArgs(before).
 		WillReturnResult(sqlmock.NewResult(0, 12))
 

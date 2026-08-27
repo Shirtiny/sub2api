@@ -241,6 +241,7 @@ describe('RequestControlPanel', () => {
         body_truncated: false,
         body_sha256: 'abc123',
         body_capture_mode: 'full',
+        captured_at: '2026-01-01T00:10:00Z',
       },
     })
     const wrapper = mountPanel()
