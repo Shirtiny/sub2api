@@ -14,7 +14,9 @@ WHERE first_seen_at IS NULL OR last_seen_at IS NULL;
 
 ALTER TABLE request_control_logs
     ALTER COLUMN first_seen_at SET DEFAULT NOW(),
-    ALTER COLUMN last_seen_at SET DEFAULT NOW();
+    ALTER COLUMN first_seen_at SET NOT NULL,
+    ALTER COLUMN last_seen_at SET DEFAULT NOW(),
+    ALTER COLUMN last_seen_at SET NOT NULL;
 
 COMMENT ON COLUMN request_control_logs.event_count IS
     'Number of request events aggregated into this deduplicated row';
