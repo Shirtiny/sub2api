@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -125,12 +126,12 @@ func TestRequestControlRepositoryCreateLogPersistsExpectedOutcomeAndFingerprints
 		Details: map[string]string{"x": "y"}, RequestHeaders: map[string]string{"content-type": "application/json"},
 		RequestBodyMetadata: map[string]any{"protocol": service.RequestControlProtocolChat}, RequestHeadersHash: strings.Repeat("a", 64), RequestBodyHash: strings.Repeat("b", 64),
 	}
-	mock.ExpectQuery("(?s)INSERT INTO request_control_logs.*request_snapshot_at \\+ INTERVAL '15 minutes'").WithArgs(
+	mock.ExpectQuery("(?s)INSERT INTO request_control_logs.*AS snapshot_due").WithArgs(
 		"req-1", userID, "user@example.com", nil, "", nil, "",
 		"", "", service.RequestControlProtocolChat, "", "observe", "blocking_disabled_observe_only", true, false, true,
 		"", "", "", "", nil, nil, nil, `{"x":"y"}`, `{"content-type":"application/json"}`, `{"protocol":"openai_chat_completions"}`,
-		"block", "openai_chat_completions_blocked", true, 403, strings.Repeat("a", 64), strings.Repeat("b", 64), 0, false, false, false, false, false, sqlmock.AnyArg(), sqlmock.AnyArg(),
-	).WillReturnRows(sqlmock.NewRows([]string{"id", "event_count", "first_seen_at", "last_seen_at", "created_at"}).AddRow(int64(9), int64(1), createdAt, createdAt, createdAt))
+		"block", "openai_chat_completions_blocked", true, 403, strings.Repeat("a", 64), strings.Repeat("b", 64), 0, false, false, false, false, false, sqlmock.AnyArg(),
+	).WillReturnRows(sqlmock.NewRows([]string{"id", "event_count", "first_seen_at", "last_seen_at", "created_at", "snapshot_due"}).AddRow(int64(9), int64(1), createdAt, createdAt, createdAt, false))
 
 	require.NoError(t, repo.CreateLog(context.Background(), log))
 	require.Equal(t, int64(9), log.ID)
@@ -157,10 +158,10 @@ func TestRequestControlRepositoryCreateLogReturnsAggregatedOccurrenceSummary(t *
 		WithArgs(
 			"", userID, "", nil, "", nil, "", "", "", service.RequestControlProtocolResponse, "", "", "", false, false, false,
 			"", "", "", "", nil, nil, nil, `{}`, `{}`, `{}`, "", "", false, 0,
-			strings.Repeat("a", 64), strings.Repeat("b", 64), 0, false, false, false, false, false, lastSeen, sqlmock.AnyArg(),
+			strings.Repeat("a", 64), strings.Repeat("b", 64), 0, false, false, false, false, false, lastSeen,
 		).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "event_count", "first_seen_at", "last_seen_at", "created_at"}).
-			AddRow(int64(9), int64(4), firstSeen, lastSeen, lastSeen))
+		WillReturnRows(sqlmock.NewRows([]string{"id", "event_count", "first_seen_at", "last_seen_at", "created_at", "snapshot_due"}).
+			AddRow(int64(9), int64(4), firstSeen, lastSeen, lastSeen, false))
 
 	require.NoError(t, repo.CreateLog(context.Background(), log))
 	require.Equal(t, int64(4), log.EventCount)
@@ -206,12 +207,42 @@ func TestRequestControlRepositoryCreateLogCarriesLatestSnapshotForAggregateRow(t
 		WithArgs(
 			"req-latest", userID, "", nil, "", nil, "", "", "", service.RequestControlProtocolResponse, "", "", "", false, false, false,
 			"", "", "", "", nil, nil, nil, `{}`, `{}`, `{}`, "", "", false, 0,
-			strings.Repeat("a", 64), strings.Repeat("b", 64), 0, false, false, false, false, false, at, sqlmock.AnyArg(),
+			strings.Repeat("a", 64), strings.Repeat("b", 64), 0, false, false, false, false, false, at,
 		).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "event_count", "first_seen_at", "last_seen_at", "created_at"}).
-			AddRow(int64(20), int64(5), at.Add(-time.Hour), at, at))
+		WillReturnRows(sqlmock.NewRows([]string{"id", "event_count", "first_seen_at", "last_seen_at", "created_at", "snapshot_due"}).
+			AddRow(int64(20), int64(5), at.Add(-time.Hour), at, at, false))
 	require.NoError(t, repo.CreateLog(context.Background(), log))
 	require.Equal(t, int64(20), log.ID)
 	require.Equal(t, int64(5), log.EventCount)
+	require.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestRequestControlRepositorySnapshotFailureDoesNotFailBaseLog(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	defer func() { _ = db.Close() }()
+
+	repo := &requestControlRepository{db: db}
+	userID := int64(7)
+	at := time.Date(2026, 8, 27, 12, 0, 0, 0, time.UTC)
+	log := &service.RequestControlLog{
+		RequestID: "req-snapshot", UserID: &userID, Protocol: service.RequestControlProtocolResponse,
+		Details: map[string]string{}, RequestHeaders: map[string]string{}, RequestBodyMetadata: map[string]any{},
+		RequestHeadersHash: strings.Repeat("a", 64), RequestBodyHash: strings.Repeat("b", 64), EventAt: at,
+		RequestSnapshot: service.RequestControlRequestSnapshot{Available: true, Body: `{"model":"gpt-5"}`, CapturedAt: at},
+	}
+	mock.ExpectQuery(regexp.QuoteMeta("INSERT INTO request_control_logs")).
+		WithArgs(
+			"req-snapshot", userID, "", nil, "", nil, "", "", "", service.RequestControlProtocolResponse, "", "", "", false, false, false,
+			"", "", "", "", nil, nil, nil, `{}`, `{}`, `{}`, "", "", false, 0,
+			strings.Repeat("a", 64), strings.Repeat("b", 64), 0, false, false, false, false, false, at,
+		).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "event_count", "first_seen_at", "last_seen_at", "created_at", "snapshot_due"}).
+			AddRow(int64(21), int64(1), at, at, at, true))
+	mock.ExpectExec(regexp.QuoteMeta("SET request_snapshot = $1::jsonb")).
+		WithArgs(sqlmock.AnyArg(), at, int64(21)).
+		WillReturnError(errors.New("snapshot storage unavailable"))
+
+	require.NoError(t, repo.CreateLog(context.Background(), log))
 	require.NoError(t, mock.ExpectationsWereMet())
 }

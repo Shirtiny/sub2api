@@ -3082,7 +3082,7 @@ export default {
         detailBodyHint: 'Structured metadata supports quick inspection; use the request body snapshot above to verify the actual content. Explicit compaction signals are observed and allowed; a strong wire shape only supplies a session before normal request control continues.',
         emptyLogs: 'No request control records',
         invalidUserID: 'Enter a valid user ID',
-        queue: 'Log queue',
+        queue: 'Log queue / snapshot memory',
         processed: 'Persisted',
         dropped: 'Dropped',
         errors: 'Write errors',

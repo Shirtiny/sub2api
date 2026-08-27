@@ -44,7 +44,7 @@ const (
 	requestControlMaxBanThreshold         = 1000
 	requestControlHitSpacing              = 5 * time.Minute
 	requestControlQueueSize               = 8192
-	requestControlQueueBytes              = 64 * 1024 * 1024
+	requestControlSnapshotQueueBytes      = 64 * 1024 * 1024
 	requestControlWorkerCount             = 2
 	requestControlRefreshInterval         = 30 * time.Second
 	requestControlRefreshTimeout          = 5 * time.Second
@@ -707,7 +707,7 @@ func (s *RequestControlService) GetStatus() RequestControlRuntimeStatus {
 		QueueSize:     cap(s.queue),
 		QueueLength:   len(s.queue),
 		QueueBytes:    s.queueBytes.Load(),
-		QueueMaxBytes: requestControlQueueBytes,
+		QueueMaxBytes: requestControlSnapshotQueueBytes,
 		Enqueued:      s.enqueued.Load(),
 		Processed:     s.processed.Load(),
 		Dropped:       s.dropped.Load(),
@@ -724,28 +724,17 @@ func (s *RequestControlService) enqueueLog(log *RequestControlLog) {
 	if s == nil || log == nil || s.repo == nil {
 		return
 	}
-	queuedBytes := requestControlLogApproxBytes(log)
-	if queuedBytes > requestControlQueueBytes {
-		s.dropped.Add(1)
-		slog.Warn("request_control.log_too_large", "user_id", log.UserID, "protocol", log.Protocol, "bytes", queuedBytes)
-		return
-	}
-	for {
-		current := s.queueBytes.Load()
-		if current > requestControlQueueBytes-queuedBytes {
-			s.dropped.Add(1)
-			slog.Warn("request_control.log_queue_bytes_full", "user_id", log.UserID, "protocol", log.Protocol, "bytes", queuedBytes, "queue_bytes", current)
-			return
-		}
-		if s.queueBytes.CompareAndSwap(current, current+queuedBytes) {
-			break
-		}
+	snapshotBytes := requestControlSnapshotApproxBytes(log)
+	if snapshotBytes > 0 && !s.reserveRequestControlSnapshotBytes(snapshotBytes) {
+		omitRequestControlSnapshot(log, "omitted_queue_memory_budget")
+		slog.Warn("request_control.snapshot_omitted_queue_bytes", "user_id", log.UserID, "protocol", log.Protocol, "bytes", snapshotBytes, "queue_bytes", s.queueBytes.Load())
+		snapshotBytes = 0
 	}
 	select {
-	case s.queue <- requestControlTask{log: log, bytes: queuedBytes}:
+	case s.queue <- requestControlTask{log: log, bytes: snapshotBytes}:
 		s.enqueued.Add(1)
 	default:
-		s.queueBytes.Add(-queuedBytes)
+		s.queueBytes.Add(-snapshotBytes)
 		s.dropped.Add(1)
 		slog.Warn("request_control.log_queue_full", "user_id", log.UserID, "protocol", log.Protocol, "reason", log.Reason)
 	}
@@ -769,8 +758,23 @@ func (s *RequestControlService) worker() {
 	}
 }
 
-func requestControlLogApproxBytes(log *RequestControlLog) int64 {
-	if log == nil {
+func (s *RequestControlService) reserveRequestControlSnapshotBytes(bytes int64) bool {
+	if s == nil || bytes <= 0 || bytes > requestControlSnapshotQueueBytes {
+		return false
+	}
+	for {
+		current := s.queueBytes.Load()
+		if current > requestControlSnapshotQueueBytes-bytes {
+			return false
+		}
+		if s.queueBytes.CompareAndSwap(current, current+bytes) {
+			return true
+		}
+	}
+}
+
+func requestControlSnapshotApproxBytes(log *RequestControlLog) int64 {
+	if log == nil || !log.RequestSnapshot.Available {
 		return 0
 	}
 	// The fixed allowance covers bounded metadata/maps; the two potentially
@@ -784,6 +788,17 @@ func requestControlLogApproxBytes(log *RequestControlLog) int64 {
 		}
 	}
 	return size
+}
+
+func omitRequestControlSnapshot(log *RequestControlLog, reason string) {
+	if log == nil {
+		return
+	}
+	log.RequestSnapshot = RequestControlRequestSnapshot{}
+	if log.Details == nil {
+		log.Details = make(map[string]string)
+	}
+	log.Details["request_snapshot"] = truncateRequestControlValue(reason, 128)
 }
 
 func (s *RequestControlService) processQueuedLog(ctx context.Context, log *RequestControlLog) error {

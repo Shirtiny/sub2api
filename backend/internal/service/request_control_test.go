@@ -673,26 +673,50 @@ func TestRequestControlQueuedLogPersistsCountedStateAfterHit(t *testing.T) {
 	require.True(t, repo.updated[0].Counted)
 }
 
-func TestRequestControlQueueEnforcesByteBudget(t *testing.T) {
+func TestRequestControlQueueOmitsSnapshotAtByteBudgetButKeepsTask(t *testing.T) {
 	svc := &RequestControlService{repo: requestControlRepoStub{}, queue: make(chan requestControlTask, 2)}
-	log := &RequestControlLog{Protocol: RequestControlProtocolResponse, RequestSnapshot: RequestControlRequestSnapshot{Body: strings.Repeat("x", 1024)}}
-	logBytes := requestControlLogApproxBytes(log)
-	svc.queueBytes.Store(requestControlQueueBytes - logBytes + 1)
+	log := &RequestControlLog{Protocol: RequestControlProtocolResponse, RequestSnapshot: RequestControlRequestSnapshot{Available: true, Body: strings.Repeat("x", 1024)}}
+	snapshotBytes := requestControlSnapshotApproxBytes(log)
+	svc.queueBytes.Store(requestControlSnapshotQueueBytes - snapshotBytes + 1)
 
 	svc.enqueueLog(log)
-	require.Equal(t, int64(1), svc.dropped.Load())
-	require.Empty(t, svc.queue)
-	require.Equal(t, requestControlQueueBytes-logBytes+1, svc.queueBytes.Load())
+	require.Equal(t, int64(0), svc.dropped.Load())
+	require.Len(t, svc.queue, 1)
+	require.False(t, log.RequestSnapshot.Available)
+	require.Equal(t, "omitted_queue_memory_budget", log.Details["request_snapshot"])
+	require.Equal(t, requestControlSnapshotQueueBytes-snapshotBytes+1, svc.queueBytes.Load())
+	task := <-svc.queue
+	require.Zero(t, task.bytes)
 
 	svc.queueBytes.Store(0)
+	log.RequestSnapshot = RequestControlRequestSnapshot{Available: true, Body: strings.Repeat("x", 1024)}
 	svc.enqueueLog(log)
 	require.Equal(t, 1, len(svc.queue))
-	task := <-svc.queue
-	require.Equal(t, logBytes, task.bytes)
-	require.Equal(t, logBytes, svc.queueBytes.Load())
+	task = <-svc.queue
+	require.Equal(t, snapshotBytes, task.bytes)
+	require.Equal(t, snapshotBytes, svc.queueBytes.Load())
 	status := svc.GetStatus()
-	require.Equal(t, logBytes, status.QueueBytes)
-	require.Equal(t, int64(requestControlQueueBytes), status.QueueMaxBytes)
+	require.Equal(t, snapshotBytes, status.QueueBytes)
+	require.Equal(t, int64(requestControlSnapshotQueueBytes), status.QueueMaxBytes)
+}
+
+func TestRequestControlSnapshotOmissionStillProcessesBlockedViolation(t *testing.T) {
+	userID := int64(7)
+	repo := &requestControlViolationRepoStub{}
+	svc := &RequestControlService{repo: repo, queue: make(chan requestControlTask, 1)}
+	log := &RequestControlLog{
+		UserID: &userID, Blocked: true, Protocol: RequestControlProtocolResponse, EventAt: time.Now(),
+		RequestSnapshot: RequestControlRequestSnapshot{Available: true, Body: strings.Repeat("x", 1024)},
+	}
+	snapshotBytes := requestControlSnapshotApproxBytes(log)
+	svc.queueBytes.Store(requestControlSnapshotQueueBytes - snapshotBytes + 1)
+	svc.enqueueLog(log)
+	task := <-svc.queue
+	require.Zero(t, task.bytes)
+	require.NoError(t, svc.processQueuedLog(context.Background(), task.log))
+	require.Len(t, repo.created, 1)
+	require.True(t, repo.created[0].Counted)
+	require.Equal(t, 1, repo.created[0].ViolationCount)
 }
 
 func TestRequestControlBlocksAnonymousResponsesBeforeUAClassification(t *testing.T) {

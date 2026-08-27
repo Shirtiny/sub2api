@@ -3072,7 +3072,7 @@ export default {
         detailBodyHint: '结构化元数据用于快速筛选；上方请求正文快照用于复核实际内容。明确压缩信号只观察放行，结构强特征仅用于补充会话并继续正常管控。',
         emptyLogs: '暂无请求管控记录',
         invalidUserID: '请输入有效的用户 ID',
-        queue: '记录队列',
+        queue: '记录队列 / 快照内存',
         processed: '已写入',
         dropped: '队列丢弃',
         errors: '写入错误',

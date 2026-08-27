@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"sort"
 	"strings"
 	"time"
@@ -118,10 +119,6 @@ func (r *requestControlRepository) CreateLog(ctx context.Context, log *service.R
 	if err != nil {
 		return fmt.Errorf("marshal request control request body metadata: %w", err)
 	}
-	requestSnapshot, err := json.Marshal(log.RequestSnapshot)
-	if err != nil {
-		return fmt.Errorf("marshal request control request snapshot: %w", err)
-	}
 	var userID, apiKeyID, groupID any
 	if log.UserID != nil {
 		userID = *log.UserID
@@ -132,6 +129,7 @@ func (r *requestControlRepository) CreateLog(ctx context.Context, log *service.R
 	if log.GroupID != nil {
 		groupID = *log.GroupID
 	}
+	var snapshotDue bool
 	err = r.db.QueryRowContext(ctx, `
 INSERT INTO request_control_logs AS existing (
     request_id, user_id, user_email, api_key_id, api_key_name, group_id, group_name,
@@ -141,13 +139,13 @@ INSERT INTO request_control_logs AS existing (
     expected_action, expected_reason, expected_blocked, expected_status_code,
 	request_headers_hash, request_body_hash, violation_count,
 	counted_violation, email_sent, hit_email_sent, ban_email_sent, auto_banned,
-	event_count, first_seen_at, last_seen_at, created_at, request_snapshot, request_snapshot_at
+		event_count, first_seen_at, last_seen_at, created_at
 ) VALUES (
 	$1, $2, $3, $4, $5, $6, $7,
 	$8, $9, $10, $11, $12, $13, $14, $15, $16,
 	$17, $18, $19, $20, $21, $22, $23, $24::jsonb, $25::jsonb, $26::jsonb,
 	$27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38,
-	1, $39, $39, $39, $40::jsonb, $39
+		1, $39, $39, $39
 	) ON CONFLICT (user_id, protocol, request_headers_hash, request_body_hash)
 	WHERE user_id IS NOT NULL AND request_headers_hash <> '' AND request_body_hash <> ''
 DO UPDATE SET
@@ -175,16 +173,6 @@ DO UPDATE SET
     details = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.details ELSE existing.details END,
     request_headers = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.request_headers ELSE existing.request_headers END,
     request_body_metadata = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.request_body_metadata ELSE existing.request_body_metadata END,
-	request_snapshot = CASE
-		WHEN existing.request_snapshot = '{}'::jsonb
-		  OR existing.request_snapshot_at IS NULL
-		  OR EXCLUDED.created_at >= existing.request_snapshot_at + INTERVAL '15 minutes'
-		THEN EXCLUDED.request_snapshot ELSE existing.request_snapshot END,
-	request_snapshot_at = CASE
-		WHEN existing.request_snapshot = '{}'::jsonb
-		  OR existing.request_snapshot_at IS NULL
-		  OR EXCLUDED.created_at >= existing.request_snapshot_at + INTERVAL '15 minutes'
-		THEN EXCLUDED.request_snapshot_at ELSE existing.request_snapshot_at END,
     expected_action = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.expected_action ELSE existing.expected_action END,
     expected_reason = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.expected_reason ELSE existing.expected_reason END,
     expected_blocked = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.expected_blocked ELSE existing.expected_blocked END,
@@ -199,7 +187,8 @@ DO UPDATE SET
 	first_seen_at = LEAST(existing.first_seen_at, EXCLUDED.first_seen_at),
 	last_seen_at = GREATEST(existing.last_seen_at, EXCLUDED.last_seen_at),
 	created_at = GREATEST(existing.created_at, EXCLUDED.created_at)
-RETURNING id, event_count, first_seen_at, last_seen_at, created_at`,
+	RETURNING id, event_count, first_seen_at, last_seen_at, created_at,
+		(request_snapshot = '{}'::jsonb OR request_snapshot_at IS NULL OR request_snapshot_at <= $39 - INTERVAL '15 minutes') AS snapshot_due`,
 		log.RequestID, userID, log.UserEmail, apiKeyID, log.APIKeyName, groupID, log.GroupName,
 		log.Endpoint, log.Provider, log.Protocol, log.Model, log.Action, log.Reason,
 		log.Allowed, log.Blocked, log.Observed, log.ClientKind, log.UserAgent, log.Originator,
@@ -207,14 +196,29 @@ RETURNING id, event_count, first_seen_at, last_seen_at, created_at`,
 		nullableBoolPtr(log.BodyMatch), string(details), string(requestHeaders), string(requestBody),
 		log.ExpectedAction, log.ExpectedReason, log.ExpectedBlocked, log.ExpectedStatusCode,
 		log.RequestHeadersHash, log.RequestBodyHash, log.ViolationCount, log.Counted, log.EmailSent,
-		log.HitEmailSent, log.BanEmailSent, log.AutoBanned, eventAt, string(requestSnapshot),
-	).Scan(&log.ID, &log.EventCount, &log.FirstSeenAt, &log.LastSeenAt, &log.CreatedAt)
+		log.HitEmailSent, log.BanEmailSent, log.AutoBanned, eventAt,
+	).Scan(&log.ID, &log.EventCount, &log.FirstSeenAt, &log.LastSeenAt, &log.CreatedAt, &snapshotDue)
 	if err == sql.ErrNoRows {
 		log.ID = 0
 		return nil
 	}
 	if err != nil {
 		return fmt.Errorf("insert request control log: %w", err)
+	}
+	if snapshotDue && log.RequestSnapshot.Available {
+		requestSnapshot, marshalErr := json.Marshal(log.RequestSnapshot)
+		if marshalErr != nil {
+			slog.Warn("request_control.snapshot_marshal_failed", "log_id", log.ID, "error", marshalErr)
+			return nil
+		}
+		if _, updateErr := r.db.ExecContext(ctx, `
+UPDATE request_control_logs
+SET request_snapshot = $1::jsonb, request_snapshot_at = $2
+WHERE id = $3
+  AND (request_snapshot = '{}'::jsonb OR request_snapshot_at IS NULL OR request_snapshot_at <= $2 - INTERVAL '15 minutes')`,
+			string(requestSnapshot), eventAt, log.ID); updateErr != nil {
+			slog.Warn("request_control.snapshot_update_failed", "log_id", log.ID, "error", updateErr)
+		}
 	}
 	return nil
 }
