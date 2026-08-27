@@ -28,4 +28,11 @@ describe('risk control locale copy', () => {
     expect(en.admin.riskControl.tabs.cyberPolicy).toBe('Cyber Policy')
     expect(en.admin.riskControl.cyberPolicySectionHint).toContain('independent')
   })
+
+  it('documents per-request snapshots and their retention', () => {
+    expect(zh.admin.riskControl.requestControl.logsHint).toContain('每次请求独立保存')
+    expect(zh.admin.riskControl.requestControl.logsHint).toContain('正文快照保留 7 天')
+    expect(en.admin.riskControl.requestControl.logsHint).toContain('stored per request')
+    expect(en.admin.riskControl.requestControl.logsHint).toContain('kept for 7 days')
+  })
 })

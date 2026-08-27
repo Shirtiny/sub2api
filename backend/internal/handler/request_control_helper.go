@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/Wei-Shaw/sub2api/internal/pkg/ip"
 	middleware2 "github.com/Wei-Shaw/sub2api/internal/server/middleware"
 	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/gin-gonic/gin"
@@ -73,8 +74,24 @@ func runRequestControl(c *gin.Context, reqLog *zap.Logger, svc *service.RequestC
 }
 
 func buildRequestControlInput(c *gin.Context, apiKey *service.APIKey, subject middleware2.AuthSubject, protocol, model string, body []byte) service.RequestControlCheckInput {
+	if c == nil || c.Request == nil {
+		return service.RequestControlCheckInput{UserID: subject.UserID, Protocol: protocol, Model: strings.TrimSpace(model), Body: body}
+	}
+	requestPath := ""
+	requestQuery := ""
+	if c.Request.URL != nil {
+		requestPath = c.Request.URL.Path
+		requestQuery = c.Request.URL.RawQuery
+	}
 	input := service.RequestControlCheckInput{
 		RequestID:       contentModerationRequestID(c.Request.Context()),
+		RequestMethod:   c.Request.Method,
+		RequestHost:     c.Request.Host,
+		RequestPath:     requestPath,
+		RequestQuery:    requestQuery,
+		ClientIP:        ip.GetClientIP(c),
+		RemoteAddr:      c.Request.RemoteAddr,
+		ContentLength:   c.Request.ContentLength,
 		UserID:          subject.UserID,
 		Endpoint:        GetInboundEndpoint(c),
 		Model:           strings.TrimSpace(model),
@@ -88,7 +105,7 @@ func buildRequestControlInput(c *gin.Context, apiKey *service.APIKey, subject mi
 		WebSocket:       isOpenAIWSUpgradeRequest(c.Request),
 	}
 	if input.Endpoint == "" {
-		input.Endpoint = c.Request.URL.Path
+		input.Endpoint = requestPath
 	}
 	if apiKey != nil {
 		input.APIKeyID = apiKey.ID

@@ -225,6 +225,23 @@ describe('RequestControlPanel', () => {
       ...row,
       request_headers: { 'content-type': 'application/json' },
       request_body_metadata: { model: 'gpt-5', messages: { kind: 'array', count: 1 } },
+      request_snapshot: {
+        available: true,
+        method: 'POST',
+        host: 'www.cafecode.work',
+        path: '/v1/responses',
+        raw_query: '',
+        client_ip: '127.0.0.1',
+        remote_addr: '127.0.0.1:1234',
+        content_length: 31,
+        headers: { 'content-type': ['application/json'], authorization: ['[redacted]'] },
+        body: '{"model":"gpt-5","input":[]}',
+        body_bytes: 31,
+        body_captured_bytes: 31,
+        body_truncated: false,
+        body_sha256: 'abc123',
+        body_capture_mode: 'full',
+      },
     })
     const wrapper = mountPanel()
     await flushPromises()
@@ -234,8 +251,9 @@ describe('RequestControlPanel', () => {
     await flushPromises()
 
     expect(getLog).toHaveBeenCalledWith(7)
-    expect(document.body.textContent).toContain('admin.riskControl.requestControl.requestHeaders')
+    expect(document.body.textContent).toContain('admin.riskControl.requestControl.fullRequestHeaders')
     expect(document.body.textContent).toContain('content-type')
+    expect(document.body.textContent).toContain('{"model":"gpt-5","input":[]}')
     expect(document.body.textContent).toContain('admin.riskControl.requestControl.eventCountLabel')
     expect(document.body.textContent).toContain('4')
   })

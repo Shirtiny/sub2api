@@ -23,9 +23,8 @@ func NewRequestControlRepository(db *sql.DB) service.RequestControlRepository {
 
 const requestControlMaxStoredHitTimestamps = 10000
 
-// RecordViolation updates the compact per-user rolling hit state. The
-// deduplicated request row must not be used as the source of truth for this
-// state because one fingerprint can be observed many times.
+// RecordViolation updates the compact per-user rolling hit state independently
+// of audit-row retention and historical aggregate rows.
 func (r *requestControlRepository) RecordViolation(ctx context.Context, userID int64, at time.Time, window, spacing time.Duration) (int, bool, error) {
 	if r == nil || r.db == nil || userID <= 0 {
 		return 0, false, nil
@@ -119,6 +118,10 @@ func (r *requestControlRepository) CreateLog(ctx context.Context, log *service.R
 	if err != nil {
 		return fmt.Errorf("marshal request control request body metadata: %w", err)
 	}
+	requestSnapshot, err := json.Marshal(log.RequestSnapshot)
+	if err != nil {
+		return fmt.Errorf("marshal request control request snapshot: %w", err)
+	}
 	var userID, apiKeyID, groupID any
 	if log.UserID != nil {
 		userID = *log.UserID
@@ -130,7 +133,7 @@ func (r *requestControlRepository) CreateLog(ctx context.Context, log *service.R
 		groupID = *log.GroupID
 	}
 	err = r.db.QueryRowContext(ctx, `
-INSERT INTO request_control_logs AS existing (
+INSERT INTO request_control_logs (
     request_id, user_id, user_email, api_key_id, api_key_name, group_id, group_name,
     endpoint, provider, protocol, model, action, reason, allowed, blocked, observed,
 	client_kind, user_agent, originator, tls_fingerprint, tls_match, header_match,
@@ -138,57 +141,14 @@ INSERT INTO request_control_logs AS existing (
     expected_action, expected_reason, expected_blocked, expected_status_code,
 	request_headers_hash, request_body_hash, violation_count,
 	counted_violation, email_sent, hit_email_sent, ban_email_sent, auto_banned,
-	event_count, first_seen_at, last_seen_at, created_at
+	event_count, first_seen_at, last_seen_at, created_at, request_snapshot
 ) VALUES (
 	$1, $2, $3, $4, $5, $6, $7,
 	$8, $9, $10, $11, $12, $13, $14, $15, $16,
 	$17, $18, $19, $20, $21, $22, $23, $24::jsonb, $25::jsonb, $26::jsonb,
 	$27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38,
-	1, $39, $39, $39
-	) ON CONFLICT (user_id, protocol, request_headers_hash, request_body_hash)
-	WHERE user_id IS NOT NULL AND request_headers_hash <> '' AND request_body_hash <> ''
-DO UPDATE SET
-    request_id = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.request_id ELSE existing.request_id END,
-    user_email = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.user_email ELSE existing.user_email END,
-    api_key_id = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.api_key_id ELSE existing.api_key_id END,
-    api_key_name = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.api_key_name ELSE existing.api_key_name END,
-    group_id = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.group_id ELSE existing.group_id END,
-    group_name = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.group_name ELSE existing.group_name END,
-    endpoint = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.endpoint ELSE existing.endpoint END,
-    provider = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.provider ELSE existing.provider END,
-    model = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.model ELSE existing.model END,
-    action = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.action ELSE existing.action END,
-    reason = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.reason ELSE existing.reason END,
-    allowed = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.allowed ELSE existing.allowed END,
-    blocked = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.blocked ELSE existing.blocked END,
-    observed = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.observed ELSE existing.observed END,
-    client_kind = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.client_kind ELSE existing.client_kind END,
-    user_agent = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.user_agent ELSE existing.user_agent END,
-    originator = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.originator ELSE existing.originator END,
-    tls_fingerprint = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.tls_fingerprint ELSE existing.tls_fingerprint END,
-    tls_match = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.tls_match ELSE existing.tls_match END,
-    header_match = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.header_match ELSE existing.header_match END,
-    body_match = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.body_match ELSE existing.body_match END,
-    details = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.details ELSE existing.details END,
-    request_headers = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.request_headers ELSE existing.request_headers END,
-    request_body_metadata = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.request_body_metadata ELSE existing.request_body_metadata END,
-    expected_action = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.expected_action ELSE existing.expected_action END,
-    expected_reason = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.expected_reason ELSE existing.expected_reason END,
-    expected_blocked = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.expected_blocked ELSE existing.expected_blocked END,
-    expected_status_code = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.expected_status_code ELSE existing.expected_status_code END,
-    violation_count = CASE WHEN EXCLUDED.created_at >= existing.created_at AND EXCLUDED.violation_count > 0 THEN EXCLUDED.violation_count ELSE existing.violation_count END,
-	-- The state/count side effect is calculated after this upsert. Preserve a
-	-- previous counted marker while the transient insert carries its default
-	-- false value; UpdateLogSideEffects records a new true marker afterward.
-	counted_violation = existing.counted_violation OR EXCLUDED.counted_violation,
-    email_sent = existing.email_sent OR EXCLUDED.email_sent,
-    hit_email_sent = existing.hit_email_sent OR EXCLUDED.hit_email_sent,
-    ban_email_sent = existing.ban_email_sent OR EXCLUDED.ban_email_sent,
-    auto_banned = existing.auto_banned OR EXCLUDED.auto_banned,
-	event_count = existing.event_count + 1,
-	first_seen_at = LEAST(existing.first_seen_at, EXCLUDED.first_seen_at),
-	last_seen_at = GREATEST(existing.last_seen_at, EXCLUDED.last_seen_at),
-	created_at = GREATEST(existing.created_at, EXCLUDED.created_at)
+	1, $39, $39, $39, $40::jsonb
+	)
 RETURNING id, event_count, first_seen_at, last_seen_at, created_at`,
 		log.RequestID, userID, log.UserEmail, apiKeyID, log.APIKeyName, groupID, log.GroupName,
 		log.Endpoint, log.Provider, log.Protocol, log.Model, log.Action, log.Reason,
@@ -197,7 +157,7 @@ RETURNING id, event_count, first_seen_at, last_seen_at, created_at`,
 		nullableBoolPtr(log.BodyMatch), string(details), string(requestHeaders), string(requestBody),
 		log.ExpectedAction, log.ExpectedReason, log.ExpectedBlocked, log.ExpectedStatusCode,
 		log.RequestHeadersHash, log.RequestBodyHash, log.ViolationCount, log.Counted, log.EmailSent,
-		log.HitEmailSent, log.BanEmailSent, log.AutoBanned, eventAt,
+		log.HitEmailSent, log.BanEmailSent, log.AutoBanned, eventAt, string(requestSnapshot),
 	).Scan(&log.ID, &log.EventCount, &log.FirstSeenAt, &log.LastSeenAt, &log.CreatedAt)
 	if err == sql.ErrNoRows {
 		log.ID = 0
@@ -362,7 +322,7 @@ func (r *requestControlRepository) GetLog(ctx context.Context, id int64) (*servi
 	var countedViolation, emailSent, hitEmailSent, banEmailSent, autoBanned bool
 	var expectedBlocked bool
 	var expectedStatusCode int
-	var details, requestHeaders, requestBody []byte
+	var details, requestHeaders, requestBody, requestSnapshot []byte
 	err := r.db.QueryRowContext(ctx, `
 SELECT
     l.id, l.request_id, l.user_id, l.user_email, l.api_key_id, l.api_key_name,
@@ -372,7 +332,8 @@ SELECT
 	 l.body_match, l.details, l.request_headers, l.request_body_metadata,
 	 l.expected_action, l.expected_reason, l.expected_blocked, l.expected_status_code,
 	 l.violation_count, l.counted_violation, l.email_sent, l.hit_email_sent,
-	 l.ban_email_sent, l.auto_banned, l.event_count, l.first_seen_at, l.last_seen_at, l.created_at
+	 l.ban_email_sent, l.auto_banned, l.event_count, l.first_seen_at, l.last_seen_at, l.created_at,
+	 l.request_snapshot
 FROM request_control_logs l WHERE l.id = $1`, id).Scan(
 		&item.ID, &item.RequestID, &userID, &item.UserEmail, &apiKeyID, &item.APIKeyName,
 		&groupID, &item.GroupName, &item.Endpoint, &item.Provider, &item.Protocol, &item.Model,
@@ -382,6 +343,7 @@ FROM request_control_logs l WHERE l.id = $1`, id).Scan(
 		&violationCount, &countedViolation,
 		&emailSent, &hitEmailSent, &banEmailSent, &autoBanned,
 		&item.EventCount, &item.FirstSeenAt, &item.LastSeenAt, &item.CreatedAt,
+		&requestSnapshot,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -409,7 +371,16 @@ FROM request_control_logs l WHERE l.id = $1`, id).Scan(
 			"reason":             "recorded_before_metadata_capture",
 		}
 	}
-	return &service.RequestControlLogDetail{RequestControlLog: item, RequestHeaders: headers, RequestBodyMetadata: bodyMetadata}, nil
+	snapshot := service.RequestControlRequestSnapshot{}
+	if len(requestSnapshot) > 0 {
+		_ = json.Unmarshal(requestSnapshot, &snapshot)
+	}
+	return &service.RequestControlLogDetail{
+		RequestControlLog:   item,
+		RequestHeaders:      headers,
+		RequestBodyMetadata: bodyMetadata,
+		RequestSnapshot:     snapshot,
+	}, nil
 }
 
 func applyRequestControlLogNullableFields(item *service.RequestControlLog, userID, apiKeyID, groupID sql.NullInt64, tlsMatch, headerMatch, bodyMatch sql.NullBool, details []byte, violationCount int, countedViolation, emailSent, hitEmailSent, banEmailSent, autoBanned bool) {
@@ -465,6 +436,21 @@ func (r *requestControlRepository) CleanupLogs(ctx context.Context, before time.
 	}
 	stateDeleted, _ := stateResult.RowsAffected()
 	return deleted + stateDeleted, nil
+}
+
+func (r *requestControlRepository) CleanupSnapshots(ctx context.Context, before time.Time) (int64, error) {
+	if r == nil || r.db == nil {
+		return 0, nil
+	}
+	result, err := r.db.ExecContext(ctx, `
+UPDATE request_control_logs
+SET request_snapshot = '{}'::jsonb
+WHERE created_at < $1 AND request_snapshot <> '{}'::jsonb`, before)
+	if err != nil {
+		return 0, fmt.Errorf("cleanup request control snapshots: %w", err)
+	}
+	cleared, _ := result.RowsAffected()
+	return cleared, nil
 }
 
 func buildRequestControlLogWhere(filter service.RequestControlLogFilter) ([]string, []any) {

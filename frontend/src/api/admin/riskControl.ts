@@ -106,6 +106,23 @@ export interface RequestControlLog {
 export interface RequestControlLogDetail extends RequestControlLog {
   request_headers: Record<string, string>
   request_body_metadata: Record<string, unknown>
+  request_snapshot: {
+    available: boolean
+    method: string
+    host: string
+    path: string
+    raw_query: string
+    client_ip: string
+    remote_addr: string
+    content_length: number
+    headers: Record<string, string[]>
+    body: string
+    body_bytes: number
+    body_captured_bytes: number
+    body_truncated: boolean
+    body_sha256: string
+    body_capture_mode: 'full' | 'head_tail' | ''
+  }
 }
 
 export interface RequestControlLogsResponse {

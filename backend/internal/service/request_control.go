@@ -49,6 +49,7 @@ const (
 	requestControlRefreshTimeout          = 5 * time.Second
 	requestControlWorkerTimeout           = 30 * time.Second
 	requestControlRetentionDays           = 30
+	requestControlSnapshotRetentionDays   = 7
 	requestControlMaxUserRules            = 2000
 	requestControlMaxUAMarkers            = 200
 	requestControlMaxUAMarkerRunes        = 200
@@ -160,6 +161,13 @@ type UpdateRequestControlConfigInput struct {
 
 type RequestControlCheckInput struct {
 	RequestID         string
+	RequestMethod     string
+	RequestHost       string
+	RequestPath       string
+	RequestQuery      string
+	ClientIP          string
+	RemoteAddr        string
+	ContentLength     int64
 	UserID            int64
 	UserEmail         string
 	APIKeyID          int64
@@ -201,56 +209,58 @@ type RequestControlDecision struct {
 }
 
 type RequestControlLog struct {
-	ID                  int64             `json:"id"`
-	RequestID           string            `json:"request_id"`
-	UserID              *int64            `json:"user_id"`
-	UserEmail           string            `json:"user_email"`
-	APIKeyID            *int64            `json:"api_key_id"`
-	APIKeyName          string            `json:"api_key_name"`
-	GroupID             *int64            `json:"group_id"`
-	GroupName           string            `json:"group_name"`
-	Endpoint            string            `json:"endpoint"`
-	Provider            string            `json:"provider"`
-	Protocol            string            `json:"protocol"`
-	Model               string            `json:"model"`
-	Action              string            `json:"action"`
-	Reason              string            `json:"reason"`
-	Allowed             bool              `json:"allowed"`
-	Blocked             bool              `json:"blocked"`
-	Observed            bool              `json:"observed"`
-	ClientKind          string            `json:"client_kind"`
-	UserAgent           string            `json:"user_agent"`
-	Originator          string            `json:"originator"`
-	TLSFingerprint      string            `json:"tls_fingerprint"`
-	TLSMatch            *bool             `json:"tls_match"`
-	HeaderMatch         *bool             `json:"header_match"`
-	BodyMatch           *bool             `json:"body_match"`
-	Details             map[string]string `json:"details"`
-	ExpectedAction      string            `json:"expected_action"`
-	ExpectedReason      string            `json:"expected_reason"`
-	ExpectedBlocked     bool              `json:"expected_blocked"`
-	ExpectedStatusCode  int               `json:"expected_status_code"`
-	RequestHeadersHash  string            `json:"-"`
-	RequestBodyHash     string            `json:"-"`
-	EventAt             time.Time         `json:"-"`
-	ViolationCount      int               `json:"violation_count"`
-	Counted             bool              `json:"counted_violation"`
-	EmailSent           bool              `json:"email_sent"`
-	HitEmailSent        bool              `json:"hit_email_sent"`
-	BanEmailSent        bool              `json:"ban_email_sent"`
-	AutoBanned          bool              `json:"auto_banned"`
-	CreatedAt           time.Time         `json:"created_at"`
-	EventCount          int64             `json:"event_count"`
-	FirstSeenAt         time.Time         `json:"first_seen_at"`
-	LastSeenAt          time.Time         `json:"last_seen_at"`
-	RequestHeaders      map[string]string `json:"-"`
-	RequestBodyMetadata map[string]any    `json:"-"`
+	ID                  int64                         `json:"id"`
+	RequestID           string                        `json:"request_id"`
+	UserID              *int64                        `json:"user_id"`
+	UserEmail           string                        `json:"user_email"`
+	APIKeyID            *int64                        `json:"api_key_id"`
+	APIKeyName          string                        `json:"api_key_name"`
+	GroupID             *int64                        `json:"group_id"`
+	GroupName           string                        `json:"group_name"`
+	Endpoint            string                        `json:"endpoint"`
+	Provider            string                        `json:"provider"`
+	Protocol            string                        `json:"protocol"`
+	Model               string                        `json:"model"`
+	Action              string                        `json:"action"`
+	Reason              string                        `json:"reason"`
+	Allowed             bool                          `json:"allowed"`
+	Blocked             bool                          `json:"blocked"`
+	Observed            bool                          `json:"observed"`
+	ClientKind          string                        `json:"client_kind"`
+	UserAgent           string                        `json:"user_agent"`
+	Originator          string                        `json:"originator"`
+	TLSFingerprint      string                        `json:"tls_fingerprint"`
+	TLSMatch            *bool                         `json:"tls_match"`
+	HeaderMatch         *bool                         `json:"header_match"`
+	BodyMatch           *bool                         `json:"body_match"`
+	Details             map[string]string             `json:"details"`
+	ExpectedAction      string                        `json:"expected_action"`
+	ExpectedReason      string                        `json:"expected_reason"`
+	ExpectedBlocked     bool                          `json:"expected_blocked"`
+	ExpectedStatusCode  int                           `json:"expected_status_code"`
+	RequestHeadersHash  string                        `json:"-"`
+	RequestBodyHash     string                        `json:"-"`
+	EventAt             time.Time                     `json:"-"`
+	ViolationCount      int                           `json:"violation_count"`
+	Counted             bool                          `json:"counted_violation"`
+	EmailSent           bool                          `json:"email_sent"`
+	HitEmailSent        bool                          `json:"hit_email_sent"`
+	BanEmailSent        bool                          `json:"ban_email_sent"`
+	AutoBanned          bool                          `json:"auto_banned"`
+	CreatedAt           time.Time                     `json:"created_at"`
+	EventCount          int64                         `json:"event_count"`
+	FirstSeenAt         time.Time                     `json:"first_seen_at"`
+	LastSeenAt          time.Time                     `json:"last_seen_at"`
+	RequestHeaders      map[string]string             `json:"-"`
+	RequestBodyMetadata map[string]any                `json:"-"`
+	RequestSnapshot     RequestControlRequestSnapshot `json:"-"`
 }
 
 type RequestControlLogDetail struct {
 	RequestControlLog
-	RequestHeaders      map[string]string `json:"request_headers"`
-	RequestBodyMetadata map[string]any    `json:"request_body_metadata"`
+	RequestHeaders      map[string]string             `json:"request_headers"`
+	RequestBodyMetadata map[string]any                `json:"request_body_metadata"`
+	RequestSnapshot     RequestControlRequestSnapshot `json:"request_snapshot"`
 }
 
 var ErrRequestControlLogNotFound = infraerrors.NotFound("REQUEST_CONTROL_LOG_NOT_FOUND", "request control log not found")
@@ -286,12 +296,16 @@ type RequestControlRepository interface {
 	CleanupLogs(context.Context, time.Time) (int64, error)
 }
 
-// RequestControlViolationStateRepository keeps the rolling hit timestamps
-// separate from the deduplicated observation row. Implementations may be
+// RequestControlViolationStateRepository keeps rolling hit timestamps
+// independent of audit-row cardinality. Implementations may be
 // detected at runtime so lightweight test repositories and older adapters
 // retain the legacy fallback behavior.
 type RequestControlViolationStateRepository interface {
 	RecordViolation(context.Context, int64, time.Time, time.Duration, time.Duration) (int, bool, error)
+}
+
+type RequestControlSnapshotRepository interface {
+	CleanupSnapshots(context.Context, time.Time) (int64, error)
 }
 
 type requestControlRuntimeConfig struct {
@@ -828,6 +842,13 @@ func (s *RequestControlService) cleanupWorker() {
 	defer ticker.Stop()
 	for range ticker.C {
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		if snapshotRepo, ok := s.repo.(RequestControlSnapshotRepository); ok {
+			if cleared, err := snapshotRepo.CleanupSnapshots(ctx, time.Now().Add(-requestControlSnapshotRetentionDays*24*time.Hour)); err != nil {
+				slog.Warn("request_control.snapshot_cleanup_failed", "error", err)
+			} else if cleared > 0 {
+				slog.Info("request_control.snapshot_cleanup_completed", "cleared", cleared)
+			}
+		}
 		if deleted, err := s.repo.CleanupLogs(ctx, time.Now().Add(-requestControlRetentionDays*24*time.Hour)); err != nil {
 			slog.Warn("request_control.cleanup_failed", "error", err)
 		} else if deleted > 0 {
@@ -1486,7 +1507,7 @@ const requestControlLocalCompactionMinBodyBytes = 32 * 1024
 // requestControlResponseRequestKind records explicit compact signals and a
 // bounded, client-agnostic heuristic for local agent summarization. Explicit
 // compact signals and strong local-summary shapes are exempt from request
-// control blocking; the original body remains unavailable to audit logs.
+// control blocking; the bounded request snapshot is persisted separately.
 func requestControlResponseRequestKind(input RequestControlCheckInput, parsed requestControlResponsesBody, bodyParsed bool, bodyErr error) (string, string, []string) {
 	endpoint := strings.ToLower(strings.TrimRight(strings.TrimSpace(input.Endpoint), "/"))
 	if strings.HasSuffix(endpoint, "/responses/compact") {
@@ -2077,6 +2098,7 @@ func buildRequestControlLog(input RequestControlCheckInput, decision *RequestCon
 	log.BodyMatch = requestControlBoolPtr(decision.BodyMatched)
 	log.TLSMatch = decision.TLSMatched
 	log.RequestHeaders, log.RequestBodyMetadata = buildRequestControlMetadata(input)
+	log.RequestSnapshot = buildRequestControlRequestSnapshot(input)
 	log.RequestHeadersHash = requestControlDedupHeaderHash(input)
 	log.RequestBodyHash = requestControlDedupBodyHash(input, log.RequestBodyMetadata)
 	return log

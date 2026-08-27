@@ -539,7 +539,7 @@ func TestRequestControlMetadataCarriesResponseSessionAndCompactionEvidence(t *te
 	require.Contains(t, evidence, "tool_choice:none")
 }
 
-func TestBuildRequestControlLogCarriesOnlyRequestMetadata(t *testing.T) {
+func TestBuildRequestControlLogCarriesMetadataAndDiagnosticSnapshot(t *testing.T) {
 	log := buildRequestControlLog(RequestControlCheckInput{
 		Protocol: RequestControlProtocolChat,
 		Headers:  http.Header{"Content-Type": {"application/json"}},
@@ -552,6 +552,8 @@ func TestBuildRequestControlLogCarriesOnlyRequestMetadata(t *testing.T) {
 	require.Equal(t, "[redacted]", log.RequestHeaders["authorization"])
 	require.Equal(t, "trace-1", log.RequestHeaders["x-client-trace"])
 	require.NotContains(t, string(mustMarshalJSON(t, log.RequestBodyMetadata)), "hidden")
+	require.Contains(t, log.RequestSnapshot.Body, "hidden")
+	require.Equal(t, []string{"[redacted]"}, log.RequestSnapshot.Headers["authorization"])
 	other := buildRequestControlLog(RequestControlCheckInput{
 		Protocol:        RequestControlProtocolChat,
 		MetadataHeaders: http.Header{"Content-Type": {"application/json"}},
@@ -597,13 +599,16 @@ func TestRequestControlSessionSourceIsStableAcrossJSONFieldOrder(t *testing.T) {
 
 func TestRequestControlLogDetailJSONIncludesMetadataWithoutTransientFields(t *testing.T) {
 	detail := RequestControlLogDetail{
-		RequestControlLog:   RequestControlLog{ID: 7, RequestHeaders: map[string]string{"internal": "ignored"}, RequestBodyMetadata: map[string]any{"internal": "ignored"}},
+		RequestControlLog:   RequestControlLog{ID: 7, RequestHeaders: map[string]string{"internal": "ignored"}, RequestBodyMetadata: map[string]any{"internal": "ignored"}, RequestSnapshot: RequestControlRequestSnapshot{Body: "internal ignored"}},
 		RequestHeaders:      map[string]string{"content-type": "application/json"},
 		RequestBodyMetadata: map[string]any{"model": "gpt-5"},
+		RequestSnapshot:     RequestControlRequestSnapshot{Available: true, Body: `{"model":"gpt-5"}`},
 	}
 	raw := string(mustMarshalJSON(t, detail))
 	require.Contains(t, raw, "request_headers")
 	require.Contains(t, raw, "request_body_metadata")
+	require.Contains(t, raw, "request_snapshot")
+	require.Contains(t, raw, `\"model\":\"gpt-5\"`)
 	require.NotContains(t, raw, "internal")
 }
 

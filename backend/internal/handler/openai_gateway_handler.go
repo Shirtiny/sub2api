@@ -203,6 +203,10 @@ func (h *OpenAIGatewayHandler) Responses(c *gin.Context) {
 	}
 
 	setOpsRequestContext(c, "", false)
+	// Preserve the exact inbound payload for request-control diagnostics. The
+	// compact endpoint may normalize the body before forwarding, but admins need
+	// to see what the client actually sent.
+	requestControlBody := body
 	sessionHashBody := body
 	body, ok = h.normalizeOpenAIResponsesCompactRequest(c, reqLog, body)
 	if !ok {
@@ -254,9 +258,9 @@ func (h *OpenAIGatewayHandler) Responses(c *gin.Context) {
 	setOpsRequestContext(c, reqModel, reqStream)
 	setOpsEndpointContext(c, "", int16(service.RequestTypeFromLegacy(reqStream, false)))
 	compactionRequest := service.IsOpenAIResponsesCompactionRequest(buildRequestControlInput(
-		c, apiKey, subject, service.RequestControlProtocolResponse, reqModel, body,
+		c, apiKey, subject, service.RequestControlProtocolResponse, reqModel, requestControlBody,
 	))
-	if decision := h.checkRequestControl(c, reqLog, apiKey, subject, service.RequestControlProtocolResponse, reqModel, body); decision != nil && decision.Blocked {
+	if decision := h.checkRequestControl(c, reqLog, apiKey, subject, service.RequestControlProtocolResponse, reqModel, requestControlBody); decision != nil && decision.Blocked {
 		h.errorResponse(c, requestControlStatus(decision), requestControlErrorCode(decision), requestControlClientMessage(decision))
 		return
 	}

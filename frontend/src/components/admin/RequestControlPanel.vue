@@ -232,7 +232,7 @@
             <tr v-else-if="logs.length === 0"><td colspan="8" class="px-4 py-10 text-center text-sm text-gray-500">{{ t('admin.riskControl.requestControl.emptyLogs') }}</td></tr>
             <template v-else>
               <tr v-for="row in logs" :key="row.id" class="hover:bg-gray-50 dark:hover:bg-dark-700/40">
-              <td class="whitespace-nowrap px-4 py-3 text-sm text-content-secondary"><div>{{ formatDate(row.last_seen_at || row.created_at) }}</div><div v-if="row.event_count > 1" class="mt-1 text-xs text-gray-400">{{ t('admin.riskControl.requestControl.eventCount', { count: row.event_count }) }}</div></td>
+              <td class="whitespace-nowrap px-4 py-3 text-sm text-content-secondary"><div>{{ formatDate(row.last_seen_at || row.created_at) }}</div><div v-if="row.event_count > 1" class="mt-1 text-xs text-gray-400">{{ t('admin.riskControl.requestControl.eventCount', { count: row.event_count }) }}</div><div v-else class="mt-1 text-xs text-gray-400">{{ t('admin.riskControl.requestControl.singleEvent') }}</div></td>
               <td class="px-4 py-3 text-sm text-content-secondary"><div>{{ row.group_name || '-' }}</div><div class="text-xs text-gray-400">{{ row.user_email || `UID ${row.user_id ?? '-'}` }}</div></td>
               <td class="px-4 py-3 text-sm text-content-secondary"><div>{{ row.endpoint || '-' }}</div><div class="text-xs text-gray-400">{{ row.model || '-' }}</div></td>
               <td class="px-4 py-3 text-sm"><div class="text-[11px] text-gray-400">{{ t('admin.riskControl.requestControl.actual') }}</div><span class="rounded-md px-2 py-1 text-xs font-medium" :class="actionClass(row)">{{ row.action }}</span><div class="mt-1 text-xs text-gray-400">{{ row.reason }}</div><div v-if="row.expected_action" class="mt-1 text-xs text-blue-600 dark:text-blue-300">{{ t('admin.riskControl.requestControl.expected') }}: {{ row.expected_action }} / {{ row.expected_reason }}<span v-if="row.expected_status_code"> ({{ row.expected_status_code }})</span></div></td>
@@ -285,9 +285,36 @@
         <div><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('admin.riskControl.requestControl.firstSeen') }}</p><p class="mt-1 text-content-primary">{{ formatDate(detailLog.first_seen_at || detailLog.created_at) }}</p></div>
         <div><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('admin.riskControl.requestControl.lastSeen') }}</p><p class="mt-1 text-content-primary">{{ formatDate(detailLog.last_seen_at || detailLog.created_at) }}</p></div>
       </div>
+      <template v-if="detailLog.request_snapshot?.available">
+        <div class="grid grid-cols-1 gap-3 rounded-lg border border-gray-100 bg-gray-50 p-4 text-sm dark:border-dark-700 dark:bg-dark-900/30 sm:grid-cols-2 lg:grid-cols-4">
+          <div><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('admin.riskControl.requestControl.requestMethod') }}</p><p class="mt-1 break-all font-mono text-content-primary">{{ detailLog.request_snapshot.method || '-' }}</p></div>
+          <div><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('admin.riskControl.requestControl.requestHost') }}</p><p class="mt-1 break-all font-mono text-content-primary">{{ detailLog.request_snapshot.host || '-' }}</p></div>
+          <div><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('admin.riskControl.requestControl.requestPath') }}</p><p class="mt-1 break-all font-mono text-content-primary">{{ requestSnapshotPath }}</p></div>
+          <div><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('admin.riskControl.requestControl.clientAddress') }}</p><p class="mt-1 break-all font-mono text-content-primary">{{ detailLog.request_snapshot.client_ip || detailLog.request_snapshot.remote_addr || '-' }}</p></div>
+          <div><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('admin.riskControl.requestControl.bodySize') }}</p><p class="mt-1 text-content-primary">{{ formatSnapshotBytes(detailLog.request_snapshot.body_bytes) }}</p></div>
+          <div><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('admin.riskControl.requestControl.capturedSize') }}</p><p class="mt-1 text-content-primary">{{ formatSnapshotBytes(detailLog.request_snapshot.body_captured_bytes) }}</p></div>
+          <div class="sm:col-span-2"><p class="text-xs text-gray-500 dark:text-gray-400">SHA-256</p><p class="mt-1 break-all font-mono text-xs text-content-primary">{{ detailLog.request_snapshot.body_sha256 || '-' }}</p></div>
+        </div>
+        <div v-if="detailLog.request_snapshot.body_truncated" class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-200">
+          {{ t('admin.riskControl.requestControl.bodyTruncatedHint', { captured: formatSnapshotBytes(detailLog.request_snapshot.body_captured_bytes), total: formatSnapshotBytes(detailLog.request_snapshot.body_bytes) }) }}
+        </div>
+        <div class="grid grid-cols-1 gap-5 xl:grid-cols-2">
+          <section class="min-w-0">
+            <h4 class="mb-2 text-sm font-semibold text-content-primary">{{ t('admin.riskControl.requestControl.fullRequestHeaders') }}</h4>
+            <pre class="max-h-[40rem] min-h-48 overflow-auto whitespace-pre-wrap break-all rounded-lg border border-gray-100 bg-gray-950 p-4 text-xs leading-5 text-gray-100 dark:border-dark-700">{{ formatMetadata(detailLog.request_snapshot.headers) }}</pre>
+          </section>
+          <section class="min-w-0">
+            <h4 class="mb-2 text-sm font-semibold text-content-primary">{{ t('admin.riskControl.requestControl.requestBodySnapshot') }}</h4>
+            <pre class="max-h-[40rem] min-h-48 overflow-auto whitespace-pre-wrap break-all rounded-lg border border-gray-100 bg-gray-950 p-4 text-xs leading-5 text-gray-100 dark:border-dark-700">{{ detailLog.request_snapshot.body || '-' }}</pre>
+          </section>
+        </div>
+      </template>
+      <div v-else class="rounded-lg border border-gray-100 bg-gray-50 px-4 py-3 text-sm text-gray-500 dark:border-dark-700 dark:bg-dark-900/30 dark:text-gray-400">
+        {{ t('admin.riskControl.requestControl.snapshotUnavailable') }}
+      </div>
       <div class="grid grid-cols-1 gap-5 xl:grid-cols-2">
         <section class="min-w-0">
-          <h4 class="mb-2 text-sm font-semibold text-content-primary">{{ t('admin.riskControl.requestControl.requestHeaders') }}</h4>
+          <h4 class="mb-2 text-sm font-semibold text-content-primary">{{ t('admin.riskControl.requestControl.requestHeadersSummary') }}</h4>
           <pre class="max-h-[32rem] min-h-48 overflow-auto whitespace-pre-wrap break-all rounded-lg border border-gray-100 bg-gray-950 p-4 text-xs leading-5 text-gray-100 dark:border-dark-700">{{ formatMetadata(detailLog.request_headers) }}</pre>
         </section>
         <section class="min-w-0">
@@ -312,7 +339,7 @@ import { adminAPI } from '@/api/admin'
 import type { RequestControlConfig, RequestControlLog, RequestControlLogDetail, RequestControlStatus, RequestControlUserRule } from '@/api/admin/riskControl'
 import type { AdminGroup, AdminUser } from '@/types'
 import { extractApiErrorMessage } from '@/utils/apiError'
-import { formatDateTime } from '@/utils/format'
+import { formatBytes, formatDateTime } from '@/utils/format'
 import { useAppStore } from '@/stores/app'
 
 const { t } = useI18n()
@@ -333,6 +360,11 @@ const userSearch = ref('')
 const userSearchLoading = ref(false)
 const userSearchDone = ref(false)
 const userSearchResults = ref<AdminUser[]>([])
+const requestSnapshotPath = computed(() => {
+  const snapshot = detailLog.value?.request_snapshot
+  if (!snapshot) return '-'
+  return `${snapshot.path || ''}${snapshot.raw_query ? `?${snapshot.raw_query}` : ''}` || '-'
+})
 const selectedUserLabel = ref('')
 const modelText = ref('')
 const globalUAText = ref('')
@@ -492,6 +524,7 @@ function reloadLogs() { pagination.page = 1; void loadLogs() }
 function onPageChange(page: number) { pagination.page = page; void loadLogs() }
 function onPageSizeChange(pageSize: number) { pagination.page_size = pageSize; pagination.page = 1; void loadLogs() }
 function formatDate(value: string) { return formatDateTime(value) || '-' }
+function formatSnapshotBytes(value: number) { return formatBytes(Math.max(0, Number(value) || 0)) }
 function actionClass(row: RequestControlLog) { return row.blocked ? 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-300' : row.observed ? 'bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-300' : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300' }
 function detailText(row: RequestControlLog) { return Object.entries(row.details || {}).map(([key, value]) => `${key}: ${value}`).join(' · ') }
 function formatMetadata(value: unknown) {

@@ -25,7 +25,7 @@ func TestRequestControlRepositoryGetLogIncludesRedactedMetadata(t *testing.T) {
 		"endpoint", "provider", "protocol", "model", "action", "reason", "allowed", "blocked", "observed",
 		"client_kind", "user_agent", "originator", "tls_fingerprint", "tls_match", "header_match", "body_match",
 		"details", "request_headers", "request_body_metadata", "expected_action", "expected_reason", "expected_blocked", "expected_status_code", "violation_count", "counted_violation", "email_sent",
-		"hit_email_sent", "ban_email_sent", "auto_banned", "event_count", "first_seen_at", "last_seen_at", "created_at",
+		"hit_email_sent", "ban_email_sent", "auto_banned", "event_count", "first_seen_at", "last_seen_at", "created_at", "request_snapshot",
 	}
 	mock.ExpectQuery(regexp.QuoteMeta("l.request_headers, l.request_body_metadata")).
 		WithArgs(int64(7)).
@@ -35,6 +35,7 @@ func TestRequestControlRepositoryGetLogIncludesRedactedMetadata(t *testing.T) {
 			"codex", "codex_exec/1.0.0", "codex_exec", "", nil, false, false,
 			`{"reason":"test"}`, `{"authorization":"[redacted]"}`, `{"model":"gpt-5","messages":{"kind":"array","count":1}}`,
 			"block", "test", true, 403, 1, true, false, false, false, false, int64(3), createdAt.Add(-time.Hour), createdAt, createdAt,
+			`{"available":true,"method":"POST","headers":{"authorization":["[redacted]"]},"body":"{\"model\":\"gpt-5\"}","body_bytes":17}`,
 		))
 
 	detail, err := repo.GetLog(context.Background(), 7)
@@ -43,6 +44,9 @@ func TestRequestControlRepositoryGetLogIncludesRedactedMetadata(t *testing.T) {
 	require.Equal(t, "[redacted]", detail.RequestHeaders["authorization"])
 	require.Equal(t, "gpt-5", detail.RequestBodyMetadata["model"])
 	require.Equal(t, int64(3), detail.EventCount)
+	require.True(t, detail.RequestSnapshot.Available)
+	require.Equal(t, "POST", detail.RequestSnapshot.Method)
+	require.Equal(t, `{"model":"gpt-5"}`, detail.RequestSnapshot.Body)
 	require.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -125,7 +129,7 @@ func TestRequestControlRepositoryCreateLogPersistsExpectedOutcomeAndFingerprints
 		"req-1", userID, "user@example.com", nil, "", nil, "",
 		"", "", service.RequestControlProtocolChat, "", "observe", "blocking_disabled_observe_only", true, false, true,
 		"", "", "", "", nil, nil, nil, `{"x":"y"}`, `{"content-type":"application/json"}`, `{"protocol":"openai_chat_completions"}`,
-		"block", "openai_chat_completions_blocked", true, 403, strings.Repeat("a", 64), strings.Repeat("b", 64), 0, false, false, false, false, false, sqlmock.AnyArg(),
+		"block", "openai_chat_completions_blocked", true, 403, strings.Repeat("a", 64), strings.Repeat("b", 64), 0, false, false, false, false, false, sqlmock.AnyArg(), sqlmock.AnyArg(),
 	).WillReturnRows(sqlmock.NewRows([]string{"id", "event_count", "first_seen_at", "last_seen_at", "created_at"}).AddRow(int64(9), int64(1), createdAt, createdAt, createdAt))
 
 	require.NoError(t, repo.CreateLog(context.Background(), log))
@@ -135,32 +139,80 @@ func TestRequestControlRepositoryCreateLogPersistsExpectedOutcomeAndFingerprints
 	require.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestRequestControlRepositoryCreateLogReturnsAggregatedOccurrenceSummary(t *testing.T) {
+func TestRequestControlRepositoryCreateLogPersistsOneRowPerOccurrence(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	require.NoError(t, err)
 	defer func() { _ = db.Close() }()
 
 	repo := &requestControlRepository{db: db}
 	userID := int64(7)
-	firstSeen := time.Date(2026, 8, 27, 10, 0, 0, 0, time.UTC)
-	lastSeen := firstSeen.Add(10 * time.Minute)
+	eventAt := time.Date(2026, 8, 27, 10, 10, 0, 0, time.UTC)
 	log := &service.RequestControlLog{
 		UserID: &userID, Protocol: service.RequestControlProtocolResponse,
 		Details: map[string]string{}, RequestHeaders: map[string]string{}, RequestBodyMetadata: map[string]any{},
-		RequestHeadersHash: strings.Repeat("a", 64), RequestBodyHash: strings.Repeat("b", 64), EventAt: lastSeen,
+		RequestHeadersHash: strings.Repeat("a", 64), RequestBodyHash: strings.Repeat("b", 64), EventAt: eventAt,
 	}
 	mock.ExpectQuery(regexp.QuoteMeta("INSERT INTO request_control_logs")).
 		WithArgs(
 			"", userID, "", nil, "", nil, "", "", "", service.RequestControlProtocolResponse, "", "", "", false, false, false,
 			"", "", "", "", nil, nil, nil, `{}`, `{}`, `{}`, "", "", false, 0,
-			strings.Repeat("a", 64), strings.Repeat("b", 64), 0, false, false, false, false, false, lastSeen,
+			strings.Repeat("a", 64), strings.Repeat("b", 64), 0, false, false, false, false, false, eventAt, sqlmock.AnyArg(),
 		).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "event_count", "first_seen_at", "last_seen_at", "created_at"}).
-			AddRow(int64(9), int64(4), firstSeen, lastSeen, lastSeen))
+			AddRow(int64(9), int64(1), eventAt, eventAt, eventAt))
 
 	require.NoError(t, repo.CreateLog(context.Background(), log))
-	require.Equal(t, int64(4), log.EventCount)
-	require.Equal(t, firstSeen, log.FirstSeenAt)
-	require.Equal(t, lastSeen, log.LastSeenAt)
+	require.Equal(t, int64(1), log.EventCount)
+	require.Equal(t, eventAt, log.FirstSeenAt)
+	require.Equal(t, eventAt, log.LastSeenAt)
+	require.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestRequestControlRepositoryCleanupSnapshotsKeepsBaseRows(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	defer func() { _ = db.Close() }()
+
+	repo := &requestControlRepository{db: db}
+	before := time.Date(2026, 8, 20, 0, 0, 0, 0, time.UTC)
+	mock.ExpectExec(regexp.QuoteMeta("SET request_snapshot = '{}'::jsonb")).
+		WithArgs(before).
+		WillReturnResult(sqlmock.NewResult(0, 12))
+
+	cleared, err := repo.CleanupSnapshots(context.Background(), before)
+	require.NoError(t, err)
+	require.Equal(t, int64(12), cleared)
+	require.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestRequestControlRepositoryCreateLogDoesNotAggregateMatchingFingerprints(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	defer func() { _ = db.Close() }()
+
+	repo := &requestControlRepository{db: db}
+	userID := int64(7)
+	at := time.Date(2026, 8, 27, 12, 0, 0, 0, time.UTC)
+	newLog := func(requestID string, eventAt time.Time) *service.RequestControlLog {
+		return &service.RequestControlLog{
+			RequestID: requestID, UserID: &userID, Protocol: service.RequestControlProtocolResponse,
+			Details: map[string]string{}, RequestHeaders: map[string]string{}, RequestBodyMetadata: map[string]any{},
+			RequestHeadersHash: strings.Repeat("a", 64), RequestBodyHash: strings.Repeat("b", 64), EventAt: eventAt,
+		}
+	}
+	for i, requestID := range []string{"req-1", "req-2"} {
+		eventAt := at.Add(time.Duration(i) * time.Second)
+		mock.ExpectQuery(regexp.QuoteMeta("INSERT INTO request_control_logs")).
+			WithArgs(
+				requestID, userID, "", nil, "", nil, "", "", "", service.RequestControlProtocolResponse, "", "", "", false, false, false,
+				"", "", "", "", nil, nil, nil, `{}`, `{}`, `{}`, "", "", false, 0,
+				strings.Repeat("a", 64), strings.Repeat("b", 64), 0, false, false, false, false, false, eventAt, sqlmock.AnyArg(),
+			).
+			WillReturnRows(sqlmock.NewRows([]string{"id", "event_count", "first_seen_at", "last_seen_at", "created_at"}).
+				AddRow(int64(20+i), int64(1), eventAt, eventAt, eventAt))
+		log := newLog(requestID, eventAt)
+		require.NoError(t, repo.CreateLog(context.Background(), log))
+		require.Equal(t, int64(20+i), log.ID)
+	}
 	require.NoError(t, mock.ExpectationsWereMet())
 }
