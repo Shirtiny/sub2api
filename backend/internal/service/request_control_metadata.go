@@ -26,7 +26,23 @@ func buildRequestControlMetadata(input RequestControlCheckInput) (map[string]str
 	if headers == nil {
 		headers = input.Headers
 	}
-	return requestControlHeaderMetadata(headers), requestControlBodyMetadata(input.Protocol, input.Body)
+	metadata := requestControlBodyMetadata(input.Protocol, input.Body)
+	if input.Protocol == RequestControlProtocolResponse {
+		inspection := inspectRequestControlResponseSession(input)
+		metadata["client_session_present"] = inspection.SessionPresent
+		sessionSource := inspection.SessionSource
+		if sessionSource == "" {
+			sessionSource = "none"
+		}
+		metadata["client_session_source"] = sessionSource
+		kind, confidence, evidence := requestControlResponseRequestKind(input, inspection.Body, inspection.BodyParsed, inspection.BodyErr)
+		metadata["response_request_kind"] = kind
+		metadata["response_request_kind_confidence"] = confidence
+		if len(evidence) > 0 {
+			metadata["response_request_kind_evidence"] = evidence
+		}
+	}
+	return requestControlHeaderMetadata(headers), boundRequestControlBodyMetadata(metadata)
 }
 
 func requestControlHeaderMetadata(headers http.Header) map[string]string {
@@ -444,9 +460,14 @@ func boundRequestControlBodyMetadata(metadata map[string]any) map[string]any {
 		return metadata
 	}
 	return map[string]any{
-		"body_bytes":         metadata["body_bytes"],
-		"protocol":           metadata["protocol"],
-		"top_level_fields":   metadata["top_level_fields"],
-		"metadata_truncated": true,
+		"body_bytes":                       metadata["body_bytes"],
+		"protocol":                         metadata["protocol"],
+		"top_level_fields":                 metadata["top_level_fields"],
+		"client_session_present":           metadata["client_session_present"],
+		"client_session_source":            metadata["client_session_source"],
+		"response_request_kind":            metadata["response_request_kind"],
+		"response_request_kind_confidence": metadata["response_request_kind_confidence"],
+		"response_request_kind_evidence":   metadata["response_request_kind_evidence"],
+		"metadata_truncated":               true,
 	}
 }

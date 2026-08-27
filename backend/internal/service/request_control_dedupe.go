@@ -12,7 +12,7 @@ import (
 
 // Increment when the canonical profile below changes. Existing rows remain
 // readable; new rows simply use a new unique fingerprint.
-const requestControlDedupFingerprintVersion = 3
+const requestControlDedupFingerprintVersion = 4
 
 var requestControlDedupSessionHeaders = []string{
 	"x-aether-session-id",
@@ -195,6 +195,13 @@ func requestControlDedupBodyMetadata(input RequestControlCheckInput, metadata ma
 		"endpoint":  requestControlDedupEndpoint(input.Endpoint),
 		"transport": requestControlDedupTransport(input.WebSocket),
 		"parse":     requestControlDedupParseShape(metadata),
+	}
+	if requestKind, ok := metadata["response_request_kind"].(string); ok &&
+		requestKind != "" && requestKind != "openai_responses_standard_or_unknown" {
+		profile["response_request_kind"] = requestKind
+	}
+	if sessionPresent, ok := metadata["client_session_present"].(bool); ok && sessionPresent {
+		profile["client_session_present"] = sessionPresent
 	}
 	for _, key := range []string{
 		"input", "messages", "system", "reasoning", "thinking",

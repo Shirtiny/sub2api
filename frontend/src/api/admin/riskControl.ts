@@ -97,6 +97,9 @@ export interface RequestControlLog {
   hit_email_sent: boolean
   ban_email_sent: boolean
   auto_banned: boolean
+  event_count: number
+  first_seen_at: string
+  last_seen_at: string
   created_at: string
 }
 

@@ -240,6 +240,9 @@ type RequestControlLog struct {
 	BanEmailSent        bool              `json:"ban_email_sent"`
 	AutoBanned          bool              `json:"auto_banned"`
 	CreatedAt           time.Time         `json:"created_at"`
+	EventCount          int64             `json:"event_count"`
+	FirstSeenAt         time.Time         `json:"first_seen_at"`
+	LastSeenAt          time.Time         `json:"last_seen_at"`
 	RequestHeaders      map[string]string `json:"-"`
 	RequestBodyMetadata map[string]any    `json:"-"`
 }
@@ -486,9 +489,11 @@ func (s *RequestControlService) Check(ctx context.Context, input RequestControlC
 		userMarkers = rule.UserAgentWhitelist
 	}
 	var responseBody *requestControlResponsesBody
+	var responseDiagnostics map[string]string
 	if input.Protocol == RequestControlProtocolResponse {
-		parsedBody, bodyParsed, sessionPresent, bodyErr := inspectRequestControlResponseSession(input)
-		if !sessionPresent {
+		inspection := inspectRequestControlResponseSession(input)
+		responseDiagnostics = requestControlResponseDiagnosticDetails(input, inspection.SessionPresent, inspection.SessionSource, inspection.Body, inspection.BodyParsed, inspection.BodyErr)
+		if !inspection.SessionPresent {
 			decision := &RequestControlDecision{
 				Blocked:    true,
 				Observed:   true,
@@ -497,15 +502,15 @@ func (s *RequestControlService) Check(ctx context.Context, input RequestControlC
 				Message:    cfg.BlockMessage,
 				StatusCode: cfg.BlockStatus,
 				ClientKind: "anonymous_response",
-				Details:    map[string]string{"client_session": "missing"},
+				Details:    responseDiagnostics,
 			}
-			if bodyErr != nil {
+			if inspection.BodyErr != nil {
 				decision.Details["request_body"] = "invalid_or_unreadable"
 			}
 			return s.finalizeDecision(input, cfg, decision), nil
 		}
-		if bodyParsed {
-			responseBody = &parsedBody
+		if inspection.BodyParsed {
+			responseBody = &inspection.Body
 		}
 	}
 	if matchesAnyUA(cfg.GlobalUserAgentWhitelist, input.UserAgent) || matchesAnyUA(userMarkers, input.UserAgent) {
@@ -556,6 +561,7 @@ func (s *RequestControlService) Check(ctx context.Context, input RequestControlC
 	default:
 		return allow, nil
 	}
+	mergeRequestControlDetails(decision, responseDiagnostics)
 	return s.finalizeDecision(input, cfg, decision), nil
 }
 
@@ -1274,6 +1280,41 @@ type requestControlResponsesBody struct {
 	Type              requestControlJSONString
 	ClientMetadata    requestControlClientMetadata
 	SessionPresent    bool
+	SessionSource     string
+	MaxOutputTokens   bool
+	ToolsPresent      bool
+}
+
+type requestControlResponseSessionInspection struct {
+	Body           requestControlResponsesBody
+	BodyParsed     bool
+	SessionPresent bool
+	SessionSource  string
+	BodyErr        error
+}
+
+var requestControlBodySessionSourcePriority = map[string]int{
+	"body:prompt_cache_key":  1,
+	"body:session_id":        2,
+	"body:thread_id":         3,
+	"body:sessionId":         4,
+	"body:conversation_id":   5,
+	"body:conversationId":    6,
+	"body:metadata":          7,
+	"body:conversationState": 8,
+	"body:client_metadata":   9,
+}
+
+func requestControlPreferBodySessionSource(current, candidate string) string {
+	if current == "" {
+		return candidate
+	}
+	currentPriority, currentOK := requestControlBodySessionSourcePriority[current]
+	candidatePriority, candidateOK := requestControlBodySessionSourcePriority[candidate]
+	if candidateOK && (!currentOK || candidatePriority < currentPriority) {
+		return candidate
+	}
+	return current
 }
 
 func requestControlJSONObjectHasSession(raw []byte) (bool, error) {
@@ -1303,6 +1344,10 @@ func parseRequestControlResponsesBody(raw []byte) (requestControlResponsesBody, 
 			body.Model, err = parseRequestControlJSONString(rawValue, openaiwsv2.ClientEnvelopeMaxIdentifierBytes)
 		case "input":
 			body.Input, err = parseRequestControlJSONKind(rawValue)
+		case "max_output_tokens":
+			body.MaxOutputTokens = true
+		case "tools":
+			body.ToolsPresent = true
 		case "tool_choice":
 			body.ToolChoice, err = parseRequestControlJSONString(rawValue, openaiwsv2.ClientEnvelopeMaxOptionBytes)
 		case "parallel_tool_calls":
@@ -1319,18 +1364,21 @@ func parseRequestControlResponsesBody(raw []byte) (requestControlResponsesBody, 
 			body.PromptCacheKey, err = parseRequestControlJSONString(rawValue, openaiwsv2.ClientEnvelopeMaxCacheKeyBytes)
 			if err == nil && body.PromptCacheKey.Valid && strings.TrimSpace(body.PromptCacheKey.Value) != "" {
 				body.SessionPresent = true
+				body.SessionSource = requestControlPreferBodySessionSource(body.SessionSource, "body:prompt_cache_key")
 			}
 		case "session_id", "thread_id", "sessionId", "conversation_id", "conversationId":
 			value, parseErr := parseRequestControlJSONString(rawValue, openaiwsv2.ClientEnvelopeMaxRouteIDBytes)
 			err = parseErr
 			if err == nil && value.Valid && strings.TrimSpace(value.Value) != "" {
 				body.SessionPresent = true
+				body.SessionSource = requestControlPreferBodySessionSource(body.SessionSource, "body:"+string(key))
 			}
 		case "metadata", "conversationState":
 			var nestedSession bool
 			nestedSession, err = requestControlJSONObjectHasSession(rawValue)
 			if err == nil && nestedSession {
 				body.SessionPresent = true
+				body.SessionSource = requestControlPreferBodySessionSource(body.SessionSource, "body:"+string(key))
 			}
 		case "type":
 			body.Type, err = parseRequestControlJSONString(rawValue, openaiwsv2.ClientEnvelopeMaxEventTypeBytes)
@@ -1338,6 +1386,7 @@ func parseRequestControlResponsesBody(raw []byte) (requestControlResponsesBody, 
 			body.ClientMetadata, err = parseRequestControlClientMetadata(rawValue)
 			if err == nil && body.ClientMetadata.HasSession {
 				body.SessionPresent = true
+				body.SessionSource = requestControlPreferBodySessionSource(body.SessionSource, "body:client_metadata")
 			}
 		}
 		return err
@@ -1355,13 +1404,13 @@ var requestControlResponseSessionHeaders = []string{
 	"x-opencode-session-id",
 }
 
-func requestControlHasResponseSessionHeader(headers http.Header) bool {
+func requestControlResponseSessionHeaderSource(headers http.Header) string {
 	for _, name := range requestControlResponseSessionHeaders {
 		if requestControlHeaderHasValue(headers, name) {
-			return true
+			return "header:" + strings.ToLower(name)
 		}
 	}
-	return false
+	return ""
 }
 
 func requestControlHeaderHasValue(headers http.Header, name string) bool {
@@ -1381,9 +1430,9 @@ func requestControlHeaderHasValue(headers http.Header, name string) bool {
 // rule: a request is non-anonymous when it carries a non-empty client session
 // signal in supported headers or the request body. The parsed body is returned
 // when it had to be scanned so Codex validation can reuse the same pass.
-func inspectRequestControlResponseSession(input RequestControlCheckInput) (requestControlResponsesBody, bool, bool, error) {
-	if requestControlHasResponseSessionHeader(input.Headers) {
-		return requestControlResponsesBody{}, false, true, nil
+func inspectRequestControlResponseSession(input RequestControlCheckInput) requestControlResponseSessionInspection {
+	if source := requestControlResponseSessionHeaderSource(input.Headers); source != "" {
+		return requestControlResponseSessionInspection{SessionPresent: true, SessionSource: source}
 	}
 	for key, values := range input.Headers {
 		if !strings.EqualFold(key, "x-codex-turn-metadata") {
@@ -1392,12 +1441,96 @@ func inspectRequestControlResponseSession(input RequestControlCheckInput) (reque
 		for _, raw := range values {
 			found, err := requestControlJSONObjectHasSession([]byte(raw))
 			if err == nil && found {
-				return requestControlResponsesBody{}, false, true, nil
+				return requestControlResponseSessionInspection{SessionPresent: true, SessionSource: "header:x-codex-turn-metadata"}
 			}
 		}
 	}
 	body, err := parseRequestControlResponsesBody(input.Body)
-	return body, true, err == nil && body.SessionPresent, err
+	return requestControlResponseSessionInspection{
+		Body:           body,
+		BodyParsed:     true,
+		SessionPresent: err == nil && body.SessionPresent,
+		SessionSource:  body.SessionSource,
+		BodyErr:        err,
+	}
+}
+
+// requestControlResponseRequestKind records explicit compact signals and a
+// conservative heuristic for Pi-style local summarization. The heuristic is
+// deliberately labelled as a candidate: a generic SDK caller can emit the
+// same wire shape, so it must not be treated as proof or an allow-list signal.
+func requestControlResponseRequestKind(input RequestControlCheckInput, parsed requestControlResponsesBody, bodyParsed bool, bodyErr error) (string, string, []string) {
+	endpoint := strings.ToLower(strings.TrimRight(strings.TrimSpace(input.Endpoint), "/"))
+	if strings.HasSuffix(endpoint, "/responses/compact") {
+		return "openai_responses_compact_endpoint", "explicit", []string{"endpoint:/responses/compact"}
+	}
+	if HasCompactionTriggerInInput(input.Body) {
+		return "openai_responses_compaction_trigger", "explicit", []string{"input.type:compaction_trigger"}
+	}
+	if !bodyParsed {
+		parsed, bodyErr = parseRequestControlResponsesBody(input.Body)
+	}
+	if bodyErr != nil {
+		return "openai_responses_standard_or_unknown", "unknown", []string{"body:invalid_or_unreadable"}
+	}
+	localSummaryShape := parsed.Input.Present && parsed.Input.Kind == '[' &&
+		parsed.ToolChoice.Valid && strings.EqualFold(strings.TrimSpace(parsed.ToolChoice.Value), "none") &&
+		parsed.Store.Present && parsed.Store.Valid && !parsed.Store.Value &&
+		parsed.Stream.Present && parsed.Stream.Valid && parsed.Stream.Value &&
+		parsed.MaxOutputTokens && !parsed.ToolsPresent && !parsed.PromptCacheKey.Present
+	if localSummaryShape {
+		evidence := []string{
+			"input:array",
+			"tool_choice:none",
+			"store:false",
+			"stream:true",
+			"max_output_tokens:present",
+			"tools:missing",
+			"prompt_cache_key:missing",
+		}
+		userAgent := strings.ToLower(strings.TrimSpace(input.UserAgent))
+		switch {
+		case strings.HasPrefix(userAgent, "pi ("):
+			return "pi_local_compaction_candidate", "strong_heuristic", append([]string{"user_agent:pi"}, evidence...)
+		case strings.HasPrefix(userAgent, "openai/js"):
+			return "local_compaction_candidate", "heuristic", append([]string{"user_agent:openai_js"}, evidence...)
+		}
+	}
+	return "openai_responses_standard_or_unknown", "default", nil
+}
+
+func requestControlResponseDiagnosticDetails(input RequestControlCheckInput, sessionPresent bool, sessionSource string, parsed requestControlResponsesBody, bodyParsed bool, bodyErr error) map[string]string {
+	details := map[string]string{
+		// Keep client_session for API/UI compatibility. session_source is the
+		// actionable diagnostic that was previously absent from anonymous logs.
+		"client_session": "missing",
+		"session_source": "none",
+	}
+	if sessionPresent {
+		details["client_session"] = "present"
+		if strings.TrimSpace(sessionSource) != "" {
+			details["session_source"] = sessionSource
+		}
+	}
+	kind, confidence, evidence := requestControlResponseRequestKind(input, parsed, bodyParsed, bodyErr)
+	details["request_kind"] = kind
+	details["request_kind_confidence"] = confidence
+	if len(evidence) > 0 {
+		details["request_kind_evidence"] = strings.Join(evidence, ",")
+	}
+	return details
+}
+
+func mergeRequestControlDetails(target *RequestControlDecision, extra map[string]string) {
+	if target == nil {
+		return
+	}
+	if target.Details == nil {
+		target.Details = make(map[string]string)
+	}
+	for key, value := range extra {
+		target.Details[key] = value
+	}
 }
 
 // validateCodexResponsesRequest mirrors the stable request contract emitted by
@@ -1871,6 +2004,9 @@ func buildRequestControlLog(input RequestControlCheckInput, decision *RequestCon
 		ExpectedStatusCode: decision.ExpectedStatusCode,
 		CreatedAt:          eventAt,
 		EventAt:            eventAt,
+		EventCount:         1,
+		FirstSeenAt:        eventAt,
+		LastSeenAt:         eventAt,
 	}
 	if input.UserID > 0 {
 		log.UserID = &input.UserID

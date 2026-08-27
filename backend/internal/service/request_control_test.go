@@ -521,6 +521,24 @@ func TestRequestControlMetadataParsesLongTurnMetadataBeforeDisplayTruncation(t *
 	require.Equal(t, "turn", turnSummary["request_kind"])
 }
 
+func TestRequestControlMetadataCarriesResponseSessionAndCompactionEvidence(t *testing.T) {
+	body := []byte(`{"model":"gpt-5.6-sol","input":[{"role":"user","content":[{"type":"input_text","text":"hidden"}]}],"stream":true,"store":false,"tool_choice":"none","max_output_tokens":819,"reasoning":{"effort":"low"}}`)
+	_, metadata := buildRequestControlMetadata(RequestControlCheckInput{
+		Protocol:  RequestControlProtocolResponse,
+		Endpoint:  "/v1/responses",
+		UserAgent: "pi (linux x64)",
+		Headers:   http.Header{},
+		Body:      body,
+	})
+	require.Equal(t, false, metadata["client_session_present"])
+	require.Equal(t, "none", metadata["client_session_source"])
+	require.Equal(t, "pi_local_compaction_candidate", metadata["response_request_kind"])
+	require.Equal(t, "strong_heuristic", metadata["response_request_kind_confidence"])
+	evidence, ok := metadata["response_request_kind_evidence"].([]string)
+	require.True(t, ok)
+	require.Contains(t, evidence, "user_agent:pi")
+}
+
 func TestBuildRequestControlLogCarriesOnlyRequestMetadata(t *testing.T) {
 	log := buildRequestControlLog(RequestControlCheckInput{
 		Protocol: RequestControlProtocolChat,
@@ -546,6 +564,35 @@ func TestBuildRequestControlLogCarriesOnlyRequestMetadata(t *testing.T) {
 		Body:     []byte(`{"model":"gpt-5","messages":[{"role":"user","content":"hidden"}]}`),
 	}, &RequestControlDecision{Action: RequestControlActionBlock, Reason: "different_policy_result"})
 	require.Equal(t, log.RequestBodyHash, differentOutcome.RequestBodyHash)
+}
+
+func TestRequestControlDedupSeparatesLocalCompactionCandidateFromStandardResponses(t *testing.T) {
+	base := RequestControlCheckInput{
+		Protocol:  RequestControlProtocolResponse,
+		Endpoint:  "/v1/responses",
+		UserAgent: "pi (linux x64)",
+		Headers:   http.Header{},
+	}
+	standard := base
+	standard.Body = []byte(`{"model":"gpt-5.6-sol","input":[{"role":"user"}],"stream":true,"store":false,"tool_choice":"auto","max_output_tokens":819,"tools":[]}`)
+	compaction := base
+	compaction.Body = []byte(`{"model":"gpt-5.6-sol","input":[{"role":"user"}],"stream":true,"store":false,"tool_choice":"none","max_output_tokens":819}`)
+	_, standardHash := requestControlDedupHashes(standard)
+	_, compactionHash := requestControlDedupHashes(compaction)
+	require.NotEqual(t, standardHash, compactionHash)
+}
+
+func TestRequestControlSessionSourceIsStableAcrossJSONFieldOrder(t *testing.T) {
+	first := RequestControlCheckInput{
+		Protocol: RequestControlProtocolResponse,
+		Body:     []byte(`{"model":"gpt-5","session_id":"session-1","prompt_cache_key":"cache-1"}`),
+	}
+	second := first
+	second.Body = []byte(`{"prompt_cache_key":"cache-1","session_id":"session-1","model":"gpt-5"}`)
+	firstInspection := inspectRequestControlResponseSession(first)
+	secondInspection := inspectRequestControlResponseSession(second)
+	require.Equal(t, "body:prompt_cache_key", firstInspection.SessionSource)
+	require.Equal(t, firstInspection.SessionSource, secondInspection.SessionSource)
 }
 
 func TestRequestControlLogDetailJSONIncludesMetadataWithoutTransientFields(t *testing.T) {
@@ -598,6 +645,52 @@ func TestRequestControlBlocksAnonymousResponsesBeforeUAClassification(t *testing
 	require.True(t, decision.Blocked)
 	require.Equal(t, "anonymous_response_request", decision.Reason)
 	require.Equal(t, "missing", decision.Details["client_session"])
+	require.Equal(t, "none", decision.Details["session_source"])
+	require.Equal(t, "openai_responses_standard_or_unknown", decision.Details["request_kind"])
+}
+
+func TestRequestControlDiagnosesPiLocalCompactionAsSessionlessCandidate(t *testing.T) {
+	svc := requestControlTestService(t, RequestControlConfig{Enabled: true, AllGroups: true, AllUsers: true})
+	decision, err := svc.Check(context.Background(), RequestControlCheckInput{
+		Protocol:  RequestControlProtocolResponse,
+		Endpoint:  "/v1/responses",
+		Model:     "gpt-5.6-sol",
+		UserID:    1,
+		UserAgent: "pi (linux x64)",
+		Headers:   http.Header{},
+		Body:      []byte(`{"model":"gpt-5.6-sol","input":[{"role":"user","content":[{"type":"input_text","text":"summarize"}]}],"stream":true,"store":false,"tool_choice":"none","max_output_tokens":819,"reasoning":{"effort":"low"}}`),
+	})
+	require.NoError(t, err)
+	require.True(t, decision.Blocked)
+	require.Equal(t, "anonymous_response_request", decision.Reason)
+	require.Equal(t, "pi_local_compaction_candidate", decision.Details["request_kind"])
+	require.Equal(t, "strong_heuristic", decision.Details["request_kind_confidence"])
+	require.Contains(t, decision.Details["request_kind_evidence"], "user_agent:pi")
+	require.Equal(t, "none", decision.Details["session_source"])
+}
+
+func TestRequestControlDiagnosesExplicitCompactEndpoint(t *testing.T) {
+	svc := requestControlTestService(t, RequestControlConfig{Enabled: true, AllGroups: true, AllUsers: true})
+	decision, err := svc.Check(context.Background(), RequestControlCheckInput{
+		Protocol: RequestControlProtocolResponse, Endpoint: "/v1/responses/compact", Model: "gpt-5.6-sol", UserID: 1,
+		UserAgent: "codex-tui/0.1.0", Headers: http.Header{}, Body: []byte(`{"model":"gpt-5.6-sol","input":[],"parallel_tool_calls":false}`),
+	})
+	require.NoError(t, err)
+	require.True(t, decision.Blocked)
+	require.Equal(t, "openai_responses_compact_endpoint", decision.Details["request_kind"])
+	require.Equal(t, "explicit", decision.Details["request_kind_confidence"])
+}
+
+func TestRequestControlSessionDiagnosticIncludesSource(t *testing.T) {
+	svc := requestControlTestService(t, RequestControlConfig{Enabled: true, AllGroups: true, AllUsers: true})
+	decision, err := svc.Check(context.Background(), RequestControlCheckInput{
+		Protocol: RequestControlProtocolResponse, Endpoint: "/v1/responses", Model: "gpt-5", UserID: 1,
+		UserAgent: "curl/8", Headers: http.Header{"Session_Id": {"session-1"}}, Body: []byte(`{"model":"gpt-5"}`),
+	})
+	require.NoError(t, err)
+	require.True(t, decision.Allowed)
+	require.Equal(t, "present", decision.Details["client_session"])
+	require.Equal(t, "header:session_id", decision.Details["session_source"])
 }
 
 func TestRequestControlAllowsNonCodexResponsesWithClientSessionForObservation(t *testing.T) {

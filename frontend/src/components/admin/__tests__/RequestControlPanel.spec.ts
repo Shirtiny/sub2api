@@ -215,6 +215,9 @@ describe('RequestControlPanel', () => {
       hit_email_sent: false,
       ban_email_sent: false,
       auto_banned: false,
+      event_count: 4,
+      first_seen_at: '2026-01-01T00:00:00Z',
+      last_seen_at: '2026-01-01T00:10:00Z',
       created_at: '2026-01-01T00:00:00Z',
     }
     listLogs.mockResolvedValue({ items: [row], total: 1, page: 1, page_size: 20, pages: 1 })
@@ -233,5 +236,7 @@ describe('RequestControlPanel', () => {
     expect(getLog).toHaveBeenCalledWith(7)
     expect(document.body.textContent).toContain('admin.riskControl.requestControl.requestHeaders')
     expect(document.body.textContent).toContain('content-type')
+    expect(document.body.textContent).toContain('admin.riskControl.requestControl.eventCountLabel')
+    expect(document.body.textContent).toContain('4')
   })
 })

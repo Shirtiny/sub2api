@@ -232,7 +232,7 @@
             <tr v-else-if="logs.length === 0"><td colspan="8" class="px-4 py-10 text-center text-sm text-gray-500">{{ t('admin.riskControl.requestControl.emptyLogs') }}</td></tr>
             <template v-else>
               <tr v-for="row in logs" :key="row.id" class="hover:bg-gray-50 dark:hover:bg-dark-700/40">
-              <td class="whitespace-nowrap px-4 py-3 text-sm text-content-secondary">{{ formatDate(row.created_at) }}</td>
+              <td class="whitespace-nowrap px-4 py-3 text-sm text-content-secondary"><div>{{ formatDate(row.last_seen_at || row.created_at) }}</div><div v-if="row.event_count > 1" class="mt-1 text-xs text-gray-400">{{ t('admin.riskControl.requestControl.eventCount', { count: row.event_count }) }}</div></td>
               <td class="px-4 py-3 text-sm text-content-secondary"><div>{{ row.group_name || '-' }}</div><div class="text-xs text-gray-400">{{ row.user_email || `UID ${row.user_id ?? '-'}` }}</div></td>
               <td class="px-4 py-3 text-sm text-content-secondary"><div>{{ row.endpoint || '-' }}</div><div class="text-xs text-gray-400">{{ row.model || '-' }}</div></td>
               <td class="px-4 py-3 text-sm"><div class="text-[11px] text-gray-400">{{ t('admin.riskControl.requestControl.actual') }}</div><span class="rounded-md px-2 py-1 text-xs font-medium" :class="actionClass(row)">{{ row.action }}</span><div class="mt-1 text-xs text-gray-400">{{ row.reason }}</div><div v-if="row.expected_action" class="mt-1 text-xs text-blue-600 dark:text-blue-300">{{ t('admin.riskControl.requestControl.expected') }}: {{ row.expected_action }} / {{ row.expected_reason }}<span v-if="row.expected_status_code"> ({{ row.expected_status_code }})</span></div></td>
@@ -279,6 +279,11 @@
         <div><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('admin.riskControl.requestControl.endpoint') }}</p><p class="mt-1 break-all text-content-primary">{{ detailLog.endpoint || '-' }}</p></div>
         <div><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('admin.riskControl.requestControl.client') }}</p><p class="mt-1 break-all text-content-primary">{{ detailLog.client_kind || '-' }}</p></div>
         <div><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('admin.riskControl.requestControl.result') }}</p><p class="mt-1 text-xs text-gray-400">{{ t('admin.riskControl.requestControl.actual') }}</p><p class="mt-1 text-content-primary">{{ detailLog.action || '-' }} / {{ detailLog.reason || '-' }}</p><p v-if="detailLog.expected_action" class="mt-1 text-xs text-blue-600 dark:text-blue-300">{{ t('admin.riskControl.requestControl.expected') }}: {{ detailLog.expected_action }} / {{ detailLog.expected_reason }}<span v-if="detailLog.expected_status_code"> ({{ detailLog.expected_status_code }})</span></p></div>
+      </div>
+      <div class="grid grid-cols-1 gap-3 rounded-lg border border-gray-100 bg-gray-50 p-4 text-sm dark:border-dark-700 dark:bg-dark-900/30 sm:grid-cols-3">
+        <div><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('admin.riskControl.requestControl.eventCountLabel') }}</p><p class="mt-1 text-content-primary">{{ detailLog.event_count || 1 }}</p></div>
+        <div><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('admin.riskControl.requestControl.firstSeen') }}</p><p class="mt-1 text-content-primary">{{ formatDate(detailLog.first_seen_at || detailLog.created_at) }}</p></div>
+        <div><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('admin.riskControl.requestControl.lastSeen') }}</p><p class="mt-1 text-content-primary">{{ formatDate(detailLog.last_seen_at || detailLog.created_at) }}</p></div>
       </div>
       <div class="grid grid-cols-1 gap-5 xl:grid-cols-2">
         <section class="min-w-0">

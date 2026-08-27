@@ -136,13 +136,15 @@ INSERT INTO request_control_logs AS existing (
 	client_kind, user_agent, originator, tls_fingerprint, tls_match, header_match,
 	body_match, details, request_headers, request_body_metadata,
     expected_action, expected_reason, expected_blocked, expected_status_code,
-    request_headers_hash, request_body_hash, violation_count,
-    counted_violation, email_sent, hit_email_sent, ban_email_sent, auto_banned, created_at
+	request_headers_hash, request_body_hash, violation_count,
+	counted_violation, email_sent, hit_email_sent, ban_email_sent, auto_banned,
+	event_count, first_seen_at, last_seen_at, created_at
 ) VALUES (
 	$1, $2, $3, $4, $5, $6, $7,
 	$8, $9, $10, $11, $12, $13, $14, $15, $16,
 	$17, $18, $19, $20, $21, $22, $23, $24::jsonb, $25::jsonb, $26::jsonb,
-	$27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39
+	$27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38,
+	1, $39, $39, $39
 	) ON CONFLICT (user_id, protocol, request_headers_hash, request_body_hash)
 	WHERE user_id IS NOT NULL AND request_headers_hash <> '' AND request_body_hash <> ''
 DO UPDATE SET
@@ -183,8 +185,11 @@ DO UPDATE SET
     hit_email_sent = existing.hit_email_sent OR EXCLUDED.hit_email_sent,
     ban_email_sent = existing.ban_email_sent OR EXCLUDED.ban_email_sent,
     auto_banned = existing.auto_banned OR EXCLUDED.auto_banned,
+	event_count = existing.event_count + 1,
+	first_seen_at = LEAST(existing.first_seen_at, EXCLUDED.first_seen_at),
+	last_seen_at = GREATEST(existing.last_seen_at, EXCLUDED.last_seen_at),
 	created_at = GREATEST(existing.created_at, EXCLUDED.created_at)
-RETURNING id, created_at`,
+RETURNING id, event_count, first_seen_at, last_seen_at, created_at`,
 		log.RequestID, userID, log.UserEmail, apiKeyID, log.APIKeyName, groupID, log.GroupName,
 		log.Endpoint, log.Provider, log.Protocol, log.Model, log.Action, log.Reason,
 		log.Allowed, log.Blocked, log.Observed, log.ClientKind, log.UserAgent, log.Originator,
@@ -193,7 +198,7 @@ RETURNING id, created_at`,
 		log.ExpectedAction, log.ExpectedReason, log.ExpectedBlocked, log.ExpectedStatusCode,
 		log.RequestHeadersHash, log.RequestBodyHash, log.ViolationCount, log.Counted, log.EmailSent,
 		log.HitEmailSent, log.BanEmailSent, log.AutoBanned, eventAt,
-	).Scan(&log.ID, &log.CreatedAt)
+	).Scan(&log.ID, &log.EventCount, &log.FirstSeenAt, &log.LastSeenAt, &log.CreatedAt)
 	if err == sql.ErrNoRows {
 		log.ID = 0
 		return nil
@@ -274,7 +279,8 @@ SELECT
 	l.user_agent, l.originator, l.tls_fingerprint, l.tls_match, l.header_match,
 	 l.body_match, l.details, l.expected_action, l.expected_reason, l.expected_blocked, l.expected_status_code,
 	 l.violation_count, l.counted_violation, l.email_sent,
-	 l.hit_email_sent, l.ban_email_sent, l.auto_banned, l.created_at
+	 l.hit_email_sent, l.ban_email_sent, l.auto_banned,
+	 l.event_count, l.first_seen_at, l.last_seen_at, l.created_at
 FROM request_control_logs l `+whereSQL+`
 ORDER BY l.created_at DESC, l.id DESC
 LIMIT $`+fmt.Sprint(len(queryArgs)-1)+` OFFSET $`+fmt.Sprint(len(queryArgs)), queryArgs...)
@@ -298,7 +304,8 @@ LIMIT $`+fmt.Sprint(len(queryArgs)-1)+` OFFSET $`+fmt.Sprint(len(queryArgs)), qu
 			&item.Action, &item.Reason, &item.Allowed, &item.Blocked, &item.Observed, &item.ClientKind,
 			&item.UserAgent, &item.Originator, &item.TLSFingerprint, &tlsMatch, &headerMatch,
 			&bodyMatch, &details, &item.ExpectedAction, &item.ExpectedReason, &expectedBlocked, &expectedStatusCode,
-			&violationCount, &countedViolation, &emailSent, &hitEmailSent, &banEmailSent, &autoBanned, &item.CreatedAt,
+			&violationCount, &countedViolation, &emailSent, &hitEmailSent, &banEmailSent, &autoBanned,
+			&item.EventCount, &item.FirstSeenAt, &item.LastSeenAt, &item.CreatedAt,
 		); err != nil {
 			return nil, nil, fmt.Errorf("scan request control log: %w", err)
 		}
@@ -365,7 +372,7 @@ SELECT
 	 l.body_match, l.details, l.request_headers, l.request_body_metadata,
 	 l.expected_action, l.expected_reason, l.expected_blocked, l.expected_status_code,
 	 l.violation_count, l.counted_violation, l.email_sent, l.hit_email_sent,
-    l.ban_email_sent, l.auto_banned, l.created_at
+	 l.ban_email_sent, l.auto_banned, l.event_count, l.first_seen_at, l.last_seen_at, l.created_at
 FROM request_control_logs l WHERE l.id = $1`, id).Scan(
 		&item.ID, &item.RequestID, &userID, &item.UserEmail, &apiKeyID, &item.APIKeyName,
 		&groupID, &item.GroupName, &item.Endpoint, &item.Provider, &item.Protocol, &item.Model,
@@ -373,7 +380,8 @@ FROM request_control_logs l WHERE l.id = $1`, id).Scan(
 		&item.UserAgent, &item.Originator, &item.TLSFingerprint, &tlsMatch, &headerMatch,
 		&bodyMatch, &details, &requestHeaders, &requestBody, &item.ExpectedAction, &item.ExpectedReason, &expectedBlocked, &expectedStatusCode,
 		&violationCount, &countedViolation,
-		&emailSent, &hitEmailSent, &banEmailSent, &autoBanned, &item.CreatedAt,
+		&emailSent, &hitEmailSent, &banEmailSent, &autoBanned,
+		&item.EventCount, &item.FirstSeenAt, &item.LastSeenAt, &item.CreatedAt,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
