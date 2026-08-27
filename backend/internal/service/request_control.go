@@ -49,7 +49,7 @@ const (
 	requestControlRefreshTimeout          = 5 * time.Second
 	requestControlWorkerTimeout           = 30 * time.Second
 	requestControlRetentionDays           = 30
-	requestControlSnapshotRetentionDays   = 7
+	requestControlSnapshotRetentionDays   = 3
 	requestControlMaxUserRules            = 2000
 	requestControlMaxUAMarkers            = 200
 	requestControlMaxUAMarkerRunes        = 200

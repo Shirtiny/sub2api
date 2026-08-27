@@ -18,7 +18,7 @@ const (
 	requestControlSnapshotMaxHeaders      = 128
 	requestControlSnapshotMaxHeaderValues = 32
 	requestControlSnapshotMaxHeaderRunes  = 4096
-	requestControlSnapshotMaxBodyBytes    = 8 * 1024 * 1024
+	requestControlSnapshotMaxBodyBytes    = 256 * 1024
 )
 
 type RequestControlRequestSnapshot struct {
@@ -44,7 +44,8 @@ func buildRequestControlRequestSnapshot(input RequestControlCheckInput) RequestC
 	if headers == nil {
 		headers = input.Headers
 	}
-	body, truncated, capturedBytes := captureRequestControlBody(redactRequestControlBody(input.Body))
+	capturedBody, truncated, capturedBytes := captureRequestControlBody(input.Body)
+	body := string(redactRequestControlBody([]byte(capturedBody)))
 	digest := sha256.Sum256(input.Body)
 	return RequestControlRequestSnapshot{
 		Available:         true,
@@ -104,14 +105,7 @@ func requestControlSnapshotBodyMayContainCredential(raw []byte) bool {
 	// Avoid a second full JSON decode on the request-control hot path. A false
 	// positive merely canonicalizes/redacts the snapshot; a false negative is
 	// avoided by covering both snake_case and camelCase spellings.
-	scan := raw
-	if len(scan) > requestControlSnapshotMaxBodyBytes*2 {
-		half := requestControlSnapshotMaxBodyBytes / 2
-		scan = make([]byte, 0, half*2)
-		scan = append(scan, raw[:half]...)
-		scan = append(scan, raw[len(raw)-half:]...)
-	}
-	lower := bytes.ToLower(scan)
+	lower := bytes.ToLower(raw)
 	for _, marker := range []string{
 		`"authorization"`, `"api_key"`, `"apikey"`, `"x-api-key"`, `"access_token"`, `"accesstoken"`,
 		`"refresh_token"`, `"refreshtoken"`, `"id_token"`, `"idtoken"`, `"client_secret"`, `"clientsecret"`,

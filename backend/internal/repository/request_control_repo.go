@@ -133,7 +133,7 @@ func (r *requestControlRepository) CreateLog(ctx context.Context, log *service.R
 		groupID = *log.GroupID
 	}
 	err = r.db.QueryRowContext(ctx, `
-INSERT INTO request_control_logs (
+INSERT INTO request_control_logs AS existing (
     request_id, user_id, user_email, api_key_id, api_key_name, group_id, group_name,
     endpoint, provider, protocol, model, action, reason, allowed, blocked, observed,
 	client_kind, user_agent, originator, tls_fingerprint, tls_match, header_match,
@@ -148,7 +148,48 @@ INSERT INTO request_control_logs (
 	$17, $18, $19, $20, $21, $22, $23, $24::jsonb, $25::jsonb, $26::jsonb,
 	$27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38,
 	1, $39, $39, $39, $40::jsonb
-	)
+	) ON CONFLICT (user_id, protocol, request_headers_hash, request_body_hash)
+	WHERE user_id IS NOT NULL AND request_headers_hash <> '' AND request_body_hash <> ''
+DO UPDATE SET
+    request_id = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.request_id ELSE existing.request_id END,
+    user_email = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.user_email ELSE existing.user_email END,
+    api_key_id = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.api_key_id ELSE existing.api_key_id END,
+    api_key_name = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.api_key_name ELSE existing.api_key_name END,
+    group_id = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.group_id ELSE existing.group_id END,
+    group_name = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.group_name ELSE existing.group_name END,
+    endpoint = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.endpoint ELSE existing.endpoint END,
+    provider = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.provider ELSE existing.provider END,
+    model = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.model ELSE existing.model END,
+    action = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.action ELSE existing.action END,
+    reason = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.reason ELSE existing.reason END,
+    allowed = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.allowed ELSE existing.allowed END,
+    blocked = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.blocked ELSE existing.blocked END,
+    observed = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.observed ELSE existing.observed END,
+    client_kind = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.client_kind ELSE existing.client_kind END,
+    user_agent = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.user_agent ELSE existing.user_agent END,
+    originator = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.originator ELSE existing.originator END,
+    tls_fingerprint = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.tls_fingerprint ELSE existing.tls_fingerprint END,
+    tls_match = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.tls_match ELSE existing.tls_match END,
+    header_match = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.header_match ELSE existing.header_match END,
+    body_match = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.body_match ELSE existing.body_match END,
+    details = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.details ELSE existing.details END,
+    request_headers = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.request_headers ELSE existing.request_headers END,
+    request_body_metadata = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.request_body_metadata ELSE existing.request_body_metadata END,
+    request_snapshot = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.request_snapshot ELSE existing.request_snapshot END,
+    expected_action = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.expected_action ELSE existing.expected_action END,
+    expected_reason = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.expected_reason ELSE existing.expected_reason END,
+    expected_blocked = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.expected_blocked ELSE existing.expected_blocked END,
+    expected_status_code = CASE WHEN EXCLUDED.created_at >= existing.created_at THEN EXCLUDED.expected_status_code ELSE existing.expected_status_code END,
+    violation_count = CASE WHEN EXCLUDED.created_at >= existing.created_at AND EXCLUDED.violation_count > 0 THEN EXCLUDED.violation_count ELSE existing.violation_count END,
+	counted_violation = existing.counted_violation OR EXCLUDED.counted_violation,
+    email_sent = existing.email_sent OR EXCLUDED.email_sent,
+    hit_email_sent = existing.hit_email_sent OR EXCLUDED.hit_email_sent,
+    ban_email_sent = existing.ban_email_sent OR EXCLUDED.ban_email_sent,
+    auto_banned = existing.auto_banned OR EXCLUDED.auto_banned,
+	event_count = existing.event_count + 1,
+	first_seen_at = LEAST(existing.first_seen_at, EXCLUDED.first_seen_at),
+	last_seen_at = GREATEST(existing.last_seen_at, EXCLUDED.last_seen_at),
+	created_at = GREATEST(existing.created_at, EXCLUDED.created_at)
 RETURNING id, event_count, first_seen_at, last_seen_at, created_at`,
 		log.RequestID, userID, log.UserEmail, apiKeyID, log.APIKeyName, groupID, log.GroupName,
 		log.Endpoint, log.Provider, log.Protocol, log.Model, log.Action, log.Reason,

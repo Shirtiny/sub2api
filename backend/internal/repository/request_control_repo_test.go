@@ -139,32 +139,33 @@ func TestRequestControlRepositoryCreateLogPersistsExpectedOutcomeAndFingerprints
 	require.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestRequestControlRepositoryCreateLogPersistsOneRowPerOccurrence(t *testing.T) {
+func TestRequestControlRepositoryCreateLogReturnsAggregatedOccurrenceSummary(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	require.NoError(t, err)
 	defer func() { _ = db.Close() }()
 
 	repo := &requestControlRepository{db: db}
 	userID := int64(7)
-	eventAt := time.Date(2026, 8, 27, 10, 10, 0, 0, time.UTC)
+	firstSeen := time.Date(2026, 8, 27, 10, 0, 0, 0, time.UTC)
+	lastSeen := firstSeen.Add(10 * time.Minute)
 	log := &service.RequestControlLog{
 		UserID: &userID, Protocol: service.RequestControlProtocolResponse,
 		Details: map[string]string{}, RequestHeaders: map[string]string{}, RequestBodyMetadata: map[string]any{},
-		RequestHeadersHash: strings.Repeat("a", 64), RequestBodyHash: strings.Repeat("b", 64), EventAt: eventAt,
+		RequestHeadersHash: strings.Repeat("a", 64), RequestBodyHash: strings.Repeat("b", 64), EventAt: lastSeen,
 	}
 	mock.ExpectQuery(regexp.QuoteMeta("INSERT INTO request_control_logs")).
 		WithArgs(
 			"", userID, "", nil, "", nil, "", "", "", service.RequestControlProtocolResponse, "", "", "", false, false, false,
 			"", "", "", "", nil, nil, nil, `{}`, `{}`, `{}`, "", "", false, 0,
-			strings.Repeat("a", 64), strings.Repeat("b", 64), 0, false, false, false, false, false, eventAt, sqlmock.AnyArg(),
+			strings.Repeat("a", 64), strings.Repeat("b", 64), 0, false, false, false, false, false, lastSeen, sqlmock.AnyArg(),
 		).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "event_count", "first_seen_at", "last_seen_at", "created_at"}).
-			AddRow(int64(9), int64(1), eventAt, eventAt, eventAt))
+			AddRow(int64(9), int64(4), firstSeen, lastSeen, lastSeen))
 
 	require.NoError(t, repo.CreateLog(context.Background(), log))
-	require.Equal(t, int64(1), log.EventCount)
-	require.Equal(t, eventAt, log.FirstSeenAt)
-	require.Equal(t, eventAt, log.LastSeenAt)
+	require.Equal(t, int64(4), log.EventCount)
+	require.Equal(t, firstSeen, log.FirstSeenAt)
+	require.Equal(t, lastSeen, log.LastSeenAt)
 	require.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -185,7 +186,7 @@ func TestRequestControlRepositoryCleanupSnapshotsKeepsBaseRows(t *testing.T) {
 	require.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestRequestControlRepositoryCreateLogDoesNotAggregateMatchingFingerprints(t *testing.T) {
+func TestRequestControlRepositoryCreateLogCarriesLatestSnapshotForAggregateRow(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	require.NoError(t, err)
 	defer func() { _ = db.Close() }()
@@ -200,19 +201,17 @@ func TestRequestControlRepositoryCreateLogDoesNotAggregateMatchingFingerprints(t
 			RequestHeadersHash: strings.Repeat("a", 64), RequestBodyHash: strings.Repeat("b", 64), EventAt: eventAt,
 		}
 	}
-	for i, requestID := range []string{"req-1", "req-2"} {
-		eventAt := at.Add(time.Duration(i) * time.Second)
-		mock.ExpectQuery(regexp.QuoteMeta("INSERT INTO request_control_logs")).
-			WithArgs(
-				requestID, userID, "", nil, "", nil, "", "", "", service.RequestControlProtocolResponse, "", "", "", false, false, false,
-				"", "", "", "", nil, nil, nil, `{}`, `{}`, `{}`, "", "", false, 0,
-				strings.Repeat("a", 64), strings.Repeat("b", 64), 0, false, false, false, false, false, eventAt, sqlmock.AnyArg(),
-			).
-			WillReturnRows(sqlmock.NewRows([]string{"id", "event_count", "first_seen_at", "last_seen_at", "created_at"}).
-				AddRow(int64(20+i), int64(1), eventAt, eventAt, eventAt))
-		log := newLog(requestID, eventAt)
-		require.NoError(t, repo.CreateLog(context.Background(), log))
-		require.Equal(t, int64(20+i), log.ID)
-	}
+	log := newLog("req-latest", at)
+	mock.ExpectQuery(regexp.QuoteMeta("INSERT INTO request_control_logs")).
+		WithArgs(
+			"req-latest", userID, "", nil, "", nil, "", "", "", service.RequestControlProtocolResponse, "", "", "", false, false, false,
+			"", "", "", "", nil, nil, nil, `{}`, `{}`, `{}`, "", "", false, 0,
+			strings.Repeat("a", 64), strings.Repeat("b", 64), 0, false, false, false, false, false, at, sqlmock.AnyArg(),
+		).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "event_count", "first_seen_at", "last_seen_at", "created_at"}).
+			AddRow(int64(20), int64(5), at.Add(-time.Hour), at, at))
+	require.NoError(t, repo.CreateLog(context.Background(), log))
+	require.Equal(t, int64(20), log.ID)
+	require.Equal(t, int64(5), log.EventCount)
 	require.NoError(t, mock.ExpectationsWereMet())
 }

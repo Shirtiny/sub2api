@@ -29,10 +29,10 @@ describe('risk control locale copy', () => {
     expect(en.admin.riskControl.cyberPolicySectionHint).toContain('independent')
   })
 
-  it('documents per-request snapshots and their retention', () => {
-    expect(zh.admin.riskControl.requestControl.logsHint).toContain('每次请求独立保存')
-    expect(zh.admin.riskControl.requestControl.logsHint).toContain('正文快照保留 7 天')
-    expect(en.admin.riskControl.requestControl.logsHint).toContain('stored per request')
-    expect(en.admin.riskControl.requestControl.logsHint).toContain('kept for 7 days')
+  it('documents fingerprint aggregation and bounded snapshot retention', () => {
+    expect(zh.admin.riskControl.requestControl.logsHint).toContain('请求格式指纹聚合')
+    expect(zh.admin.riskControl.requestControl.logsHint).toContain('最多 256KB、保留 3 天')
+    expect(en.admin.riskControl.requestControl.logsHint).toContain('aggregated by user and request-format fingerprint')
+    expect(en.admin.riskControl.requestControl.logsHint).toContain('capped at 256KB and kept for 3 days')
   })
 })

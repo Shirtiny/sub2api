@@ -77,3 +77,13 @@ func TestBuildRequestControlRequestSnapshotRedactsCredentialsButKeepsPrompt(t *t
 	require.NotContains(t, snapshot.Body, "secret-password")
 	require.Contains(t, snapshot.Body, "\"***\"")
 }
+
+func TestBuildRequestControlRequestSnapshotLargeCredentialOutsideCaptureDoesNotTriggerFullScan(t *testing.T) {
+	body := []byte(strings.Repeat("A", requestControlSnapshotMaxBodyBytes/2) +
+		`{"access_token":"secret-middle-token"}` + strings.Repeat("B", requestControlSnapshotMaxBodyBytes) +
+		strings.Repeat("C", requestControlSnapshotMaxBodyBytes/2))
+	snapshot := buildRequestControlRequestSnapshot(RequestControlCheckInput{Body: body})
+	require.True(t, snapshot.BodyTruncated)
+	require.Equal(t, requestControlSnapshotMaxBodyBytes, snapshot.BodyCapturedBytes)
+	require.NotContains(t, snapshot.Body, "secret-middle-token")
+}
