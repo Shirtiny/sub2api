@@ -28,7 +28,7 @@ func buildRequestControlMetadata(input RequestControlCheckInput) (map[string]str
 	}
 	metadata := requestControlBodyMetadata(input.Protocol, input.Body)
 	if input.Protocol == RequestControlProtocolResponse {
-		inspection := inspectRequestControlResponseSession(input)
+		inspection := inspectRequestControlResponseSessionDetails(input)
 		metadata["client_session_present"] = inspection.SessionPresent
 		sessionSource := inspection.SessionSource
 		if sessionSource == "" {

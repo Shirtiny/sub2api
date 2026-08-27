@@ -4,8 +4,8 @@
 -- appeared.
 ALTER TABLE request_control_logs
     ADD COLUMN IF NOT EXISTS event_count BIGINT NOT NULL DEFAULT 1,
-    ADD COLUMN IF NOT EXISTS first_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    ADD COLUMN IF NOT EXISTS last_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+    ADD COLUMN IF NOT EXISTS first_seen_at TIMESTAMPTZ,
+    ADD COLUMN IF NOT EXISTS last_seen_at TIMESTAMPTZ;
 
 UPDATE request_control_logs
 SET first_seen_at = COALESCE(first_seen_at, created_at),

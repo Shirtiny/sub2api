@@ -491,7 +491,7 @@ func (s *RequestControlService) Check(ctx context.Context, input RequestControlC
 	var responseBody *requestControlResponsesBody
 	var responseDiagnostics map[string]string
 	if input.Protocol == RequestControlProtocolResponse {
-		inspection := inspectRequestControlResponseSession(input)
+		inspection := inspectRequestControlResponseSessionDetails(input)
 		responseDiagnostics = requestControlResponseDiagnosticDetails(input, inspection.SessionPresent, inspection.SessionSource, inspection.Body, inspection.BodyParsed, inspection.BodyErr)
 		if !inspection.SessionPresent {
 			decision := &RequestControlDecision{
@@ -1413,6 +1413,12 @@ func requestControlResponseSessionHeaderSource(headers http.Header) string {
 	return ""
 }
 
+// requestControlHasResponseSessionHeader is retained as a small compatibility
+// helper for callers/tests that only need the boolean session check.
+func requestControlHasResponseSessionHeader(headers http.Header) bool {
+	return requestControlResponseSessionHeaderSource(headers) != ""
+}
+
 func requestControlHeaderHasValue(headers http.Header, name string) bool {
 	for key, candidates := range headers {
 		if strings.EqualFold(key, name) {
@@ -1430,7 +1436,7 @@ func requestControlHeaderHasValue(headers http.Header, name string) bool {
 // rule: a request is non-anonymous when it carries a non-empty client session
 // signal in supported headers or the request body. The parsed body is returned
 // when it had to be scanned so Codex validation can reuse the same pass.
-func inspectRequestControlResponseSession(input RequestControlCheckInput) requestControlResponseSessionInspection {
+func inspectRequestControlResponseSessionDetails(input RequestControlCheckInput) requestControlResponseSessionInspection {
 	if source := requestControlResponseSessionHeaderSource(input.Headers); source != "" {
 		return requestControlResponseSessionInspection{SessionPresent: true, SessionSource: source}
 	}
@@ -1453,6 +1459,13 @@ func inspectRequestControlResponseSession(input RequestControlCheckInput) reques
 		SessionSource:  body.SessionSource,
 		BodyErr:        err,
 	}
+}
+
+// inspectRequestControlResponseSession preserves the original helper contract;
+// new diagnostics use inspectRequestControlResponseSessionDetails.
+func inspectRequestControlResponseSession(input RequestControlCheckInput) (requestControlResponsesBody, bool, bool, error) {
+	inspection := inspectRequestControlResponseSessionDetails(input)
+	return inspection.Body, inspection.BodyParsed, inspection.SessionPresent, inspection.BodyErr
 }
 
 // requestControlResponseRequestKind records explicit compact signals and a

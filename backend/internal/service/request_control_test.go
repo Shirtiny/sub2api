@@ -589,8 +589,8 @@ func TestRequestControlSessionSourceIsStableAcrossJSONFieldOrder(t *testing.T) {
 	}
 	second := first
 	second.Body = []byte(`{"prompt_cache_key":"cache-1","session_id":"session-1","model":"gpt-5"}`)
-	firstInspection := inspectRequestControlResponseSession(first)
-	secondInspection := inspectRequestControlResponseSession(second)
+	firstInspection := inspectRequestControlResponseSessionDetails(first)
+	secondInspection := inspectRequestControlResponseSessionDetails(second)
 	require.Equal(t, "body:prompt_cache_key", firstInspection.SessionSource)
 	require.Equal(t, firstInspection.SessionSource, secondInspection.SessionSource)
 }
