@@ -1515,12 +1515,6 @@ func requestControlResponseSessionHeaderSource(headers http.Header) string {
 	return ""
 }
 
-// requestControlHasResponseSessionHeader is retained as a small compatibility
-// helper for callers/tests that only need the boolean session check.
-func requestControlHasResponseSessionHeader(headers http.Header) bool {
-	return requestControlResponseSessionHeaderSource(headers) != ""
-}
-
 func requestControlHeaderHasValue(headers http.Header, name string) bool {
 	for key, candidates := range headers {
 		if strings.EqualFold(key, name) {
@@ -1561,13 +1555,6 @@ func inspectRequestControlResponseSessionDetails(input RequestControlCheckInput)
 		SessionSource:  body.SessionSource,
 		BodyErr:        err,
 	}
-}
-
-// inspectRequestControlResponseSession preserves the original helper contract;
-// new diagnostics use inspectRequestControlResponseSessionDetails.
-func inspectRequestControlResponseSession(input RequestControlCheckInput) (requestControlResponsesBody, bool, bool, error) {
-	inspection := inspectRequestControlResponseSessionDetails(input)
-	return inspection.Body, inspection.BodyParsed, inspection.SessionPresent, inspection.BodyErr
 }
 
 const requestControlLocalCompactionMinBodyBytes = 32 * 1024

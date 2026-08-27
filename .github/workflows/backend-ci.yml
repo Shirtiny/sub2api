@@ -69,5 +69,8 @@ jobs:
         uses: golangci/golangci-lint-action@v9
         with:
           version: v2.9
+          # Avoid making lint availability depend on the remote JSON Schema host.
+          # golangci-lint still parses the config and runs the configured linters.
+          verify: false
           args: --timeout=30m
           working-directory: backend
