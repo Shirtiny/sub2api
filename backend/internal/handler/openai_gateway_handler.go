@@ -253,6 +253,9 @@ func (h *OpenAIGatewayHandler) Responses(c *gin.Context) {
 
 	setOpsRequestContext(c, reqModel, reqStream)
 	setOpsEndpointContext(c, "", int16(service.RequestTypeFromLegacy(reqStream, false)))
+	compactionRequest := service.IsOpenAIResponsesCompactionRequest(buildRequestControlInput(
+		c, apiKey, subject, service.RequestControlProtocolResponse, reqModel, body,
+	))
 	if decision := h.checkRequestControl(c, reqLog, apiKey, subject, service.RequestControlProtocolResponse, reqModel, body); decision != nil && decision.Blocked {
 		h.errorResponse(c, requestControlStatus(decision), requestControlErrorCode(decision), requestControlClientMessage(decision))
 		return
@@ -322,6 +325,9 @@ func (h *OpenAIGatewayHandler) Responses(c *gin.Context) {
 
 	// Generate session hash (header first; fallback to prompt_cache_key)
 	sessionHash := h.gatewayService.GenerateSessionHash(c, sessionHashBody)
+	if compactionRequest && ensureOpenAICompactionRoutingSession(c, apiKey.ID, sessionHash) {
+		reqLog.Info("openai.compaction_routing_session_injected")
+	}
 	requireCompact := isOpenAIRemoteCompactPath(c)
 
 	maxAccountSwitches := h.maxAccountSwitches
@@ -553,6 +559,27 @@ func isOpenAIRemoteCompactPath(c *gin.Context) bool {
 	}
 	normalizedPath := strings.TrimRight(strings.TrimSpace(c.Request.URL.Path), "/")
 	return strings.HasSuffix(normalizedPath, "/responses/compact")
+}
+
+// ensureOpenAICompactionRoutingSession supplies a non-secret, API-key-isolated
+// session identifier for local agent compaction requests that intentionally
+// disable prompt caching. This keeps downstream anonymous-avoidance from
+// rejecting a request that request control has already classified as compact.
+func ensureOpenAICompactionRoutingSession(c *gin.Context, apiKeyID int64, sessionHash string) bool {
+	if c == nil || c.Request == nil {
+		return false
+	}
+	if strings.TrimSpace(c.GetHeader("session_id")) != "" || strings.TrimSpace(c.GetHeader("conversation_id")) != "" {
+		return false
+	}
+	seed := strings.TrimSpace(sessionHash)
+	if seed == "" {
+		seed = uuid.NewString()
+	}
+	isolatedSeed := strconv.FormatInt(apiKeyID, 10) + ":" + seed
+	sessionID := uuid.NewSHA1(uuid.NameSpaceOID, []byte("sub2api:responses-compaction:"+isolatedSeed)).String()
+	c.Request.Header.Set("session_id", sessionID)
+	return true
 }
 
 // isBareOpenAIResponsesPath only matches the bare /responses endpoint, without

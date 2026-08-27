@@ -532,11 +532,11 @@ func TestRequestControlMetadataCarriesResponseSessionAndCompactionEvidence(t *te
 	})
 	require.Equal(t, false, metadata["client_session_present"])
 	require.Equal(t, "none", metadata["client_session_source"])
-	require.Equal(t, "pi_local_compaction_candidate", metadata["response_request_kind"])
+	require.Equal(t, "local_compaction_candidate", metadata["response_request_kind"])
 	require.Equal(t, "strong_heuristic", metadata["response_request_kind_confidence"])
 	evidence, ok := metadata["response_request_kind_evidence"].([]string)
 	require.True(t, ok)
-	require.Contains(t, evidence, "user_agent:pi")
+	require.Contains(t, evidence, "tool_choice:none")
 }
 
 func TestBuildRequestControlLogCarriesOnlyRequestMetadata(t *testing.T) {
@@ -649,7 +649,7 @@ func TestRequestControlBlocksAnonymousResponsesBeforeUAClassification(t *testing
 	require.Equal(t, "openai_responses_standard_or_unknown", decision.Details["request_kind"])
 }
 
-func TestRequestControlDiagnosesPiLocalCompactionAsSessionlessCandidate(t *testing.T) {
+func TestRequestControlAllowsPiLocalCompactionWithoutClientSession(t *testing.T) {
 	svc := requestControlTestService(t, RequestControlConfig{Enabled: true, AllGroups: true, AllUsers: true})
 	decision, err := svc.Check(context.Background(), RequestControlCheckInput{
 		Protocol:  RequestControlProtocolResponse,
@@ -661,24 +661,101 @@ func TestRequestControlDiagnosesPiLocalCompactionAsSessionlessCandidate(t *testi
 		Body:      []byte(`{"model":"gpt-5.6-sol","input":[{"role":"user","content":[{"type":"input_text","text":"summarize"}]}],"stream":true,"store":false,"tool_choice":"none","max_output_tokens":819,"reasoning":{"effort":"low"}}`),
 	})
 	require.NoError(t, err)
-	require.True(t, decision.Blocked)
-	require.Equal(t, "anonymous_response_request", decision.Reason)
-	require.Equal(t, "pi_local_compaction_candidate", decision.Details["request_kind"])
+	require.True(t, decision.Allowed)
+	require.True(t, decision.Observed)
+	require.False(t, decision.Blocked)
+	require.Equal(t, requestControlReasonCompactionAllowed, decision.Reason)
+	require.Equal(t, "local_compaction_candidate", decision.Details["request_kind"])
 	require.Equal(t, "strong_heuristic", decision.Details["request_kind_confidence"])
-	require.Contains(t, decision.Details["request_kind_evidence"], "user_agent:pi")
+	require.Contains(t, decision.Details["request_kind_evidence"], "tool_choice:none")
 	require.Equal(t, "none", decision.Details["session_source"])
 }
 
-func TestRequestControlDiagnosesExplicitCompactEndpoint(t *testing.T) {
+func TestRequestControlAllowsExplicitCompactEndpoint(t *testing.T) {
 	svc := requestControlTestService(t, RequestControlConfig{Enabled: true, AllGroups: true, AllUsers: true})
 	decision, err := svc.Check(context.Background(), RequestControlCheckInput{
 		Protocol: RequestControlProtocolResponse, Endpoint: "/v1/responses/compact", Model: "gpt-5.6-sol", UserID: 1,
 		UserAgent: "codex-tui/0.1.0", Headers: http.Header{}, Body: []byte(`{"model":"gpt-5.6-sol","input":[],"parallel_tool_calls":false}`),
 	})
 	require.NoError(t, err)
-	require.True(t, decision.Blocked)
+	require.True(t, decision.Allowed)
+	require.True(t, decision.Observed)
+	require.False(t, decision.Blocked)
+	require.Equal(t, requestControlReasonCompactionAllowed, decision.Reason)
 	require.Equal(t, "openai_responses_compact_endpoint", decision.Details["request_kind"])
 	require.Equal(t, "explicit", decision.Details["request_kind_confidence"])
+}
+
+func TestRequestControlAllowsLargeOpenAIJSCompactionShapeWithoutToolChoice(t *testing.T) {
+	svc := requestControlTestService(t, RequestControlConfig{Enabled: true, AllGroups: true, AllUsers: true, BlockOpenAIResponses: true})
+	history := strings.Repeat("conversation history ", 2200)
+	body, err := json.Marshal(map[string]any{
+		"model":             "gpt-5.6-sol",
+		"input":             []any{map[string]any{"role": "developer", "content": "summarize"}, map[string]any{"role": "user", "content": history}},
+		"stream":            true,
+		"store":             false,
+		"max_output_tokens": 13107,
+		"reasoning":         map[string]any{"effort": "medium", "summary": "auto"},
+	})
+	require.NoError(t, err)
+	require.GreaterOrEqual(t, len(body), requestControlLocalCompactionMinBodyBytes)
+
+	decision, err := svc.Check(context.Background(), RequestControlCheckInput{
+		Protocol: RequestControlProtocolResponse, Endpoint: "/v1/responses", Model: "gpt-5.6-sol", UserID: 1,
+		UserAgent: "OpenAI/JS 6.40.0", Headers: http.Header{}, Body: body,
+	})
+	require.NoError(t, err)
+	require.True(t, decision.Allowed)
+	require.True(t, decision.Observed)
+	require.False(t, decision.Blocked)
+	require.Equal(t, requestControlReasonCompactionAllowed, decision.Reason)
+	require.Equal(t, "local_compaction_candidate", decision.Details["request_kind"])
+	require.Contains(t, decision.Details["request_kind_evidence"], "body_bytes:large")
+}
+
+func TestRequestControlStillBlocksSmallAnonymousResponsesWithoutCompactionSignal(t *testing.T) {
+	svc := requestControlTestService(t, RequestControlConfig{Enabled: true, AllGroups: true, AllUsers: true})
+	decision, err := svc.Check(context.Background(), RequestControlCheckInput{
+		Protocol: RequestControlProtocolResponse, Endpoint: "/v1/responses", Model: "gpt-5.6-sol", UserID: 1,
+		UserAgent: "OpenAI/JS 6.40.0", Headers: http.Header{},
+		Body: []byte(`{"model":"gpt-5.6-sol","input":[{"role":"user","content":"hello"}],"stream":true,"store":false,"max_output_tokens":1024}`),
+	})
+	require.NoError(t, err)
+	require.True(t, decision.Blocked)
+	require.Equal(t, "anonymous_response_request", decision.Reason)
+}
+
+func TestRequestControlAllowsCompactionTriggerWithoutClientSession(t *testing.T) {
+	svc := requestControlTestService(t, RequestControlConfig{Enabled: true, AllGroups: true, AllUsers: true, BlockOpenAIResponses: true})
+	decision, err := svc.Check(context.Background(), RequestControlCheckInput{
+		Protocol: RequestControlProtocolResponse, Endpoint: "/v1/responses", Model: "gpt-5.6-sol", UserID: 1,
+		UserAgent: "any-agent/1.0", Headers: http.Header{},
+		Body: []byte(`{"model":"gpt-5.6-sol","input":[{"type":"compaction_trigger"}]}`),
+	})
+	require.NoError(t, err)
+	require.True(t, decision.Allowed)
+	require.True(t, decision.Observed)
+	require.False(t, decision.Blocked)
+	require.Equal(t, requestControlReasonCompactionAllowed, decision.Reason)
+	require.Equal(t, "openai_responses_compaction_trigger", decision.Details["request_kind"])
+}
+
+func TestRequestControlAllowsExplicitCompactionDespiteUAMismatchAndProtocolBlock(t *testing.T) {
+	svc := requestControlTestService(t, RequestControlConfig{
+		Enabled: true, AllGroups: true, AllUsers: true, BlockOpenAIResponses: true,
+	})
+	decision, err := svc.Check(context.Background(), RequestControlCheckInput{
+		Protocol: RequestControlProtocolResponse, Endpoint: "/v1/responses/compact", Model: "gpt-5.6-sol", UserID: 1,
+		UserAgent: "unknown-agent/1.0", Headers: http.Header{"Session_Id": {"session-1"}},
+		Body: []byte(`{"model":"gpt-5.6-sol","input":[]}`),
+	})
+	require.NoError(t, err)
+	require.True(t, decision.Allowed)
+	require.True(t, decision.Observed)
+	require.False(t, decision.Blocked)
+	require.Equal(t, requestControlReasonCompactionAllowed, decision.Reason)
+	require.Equal(t, RequestControlActionObserve, decision.ExpectedAction)
+	require.False(t, decision.ExpectedBlocked)
 }
 
 func TestRequestControlSessionDiagnosticIncludesSource(t *testing.T) {
@@ -1368,7 +1445,7 @@ func TestRequestControlAllowsCodexCompactOptionalFieldsToBeAbsent(t *testing.T) 
 	require.True(t, decision.Allowed)
 }
 
-func TestRequestControlBlocksCodexCompactWithoutInstallationID(t *testing.T) {
+func TestRequestControlAllowsCodexCompactWithoutInstallationID(t *testing.T) {
 	svc := requestControlTestService(t, RequestControlConfig{Enabled: true, AllGroups: true, AllUsers: true})
 	headers, _ := capturedCodexRequestShape(t)
 	headers.Del("Accept")
@@ -1386,8 +1463,10 @@ func TestRequestControlBlocksCodexCompactWithoutInstallationID(t *testing.T) {
 		Body:       body,
 	})
 	require.NoError(t, err)
-	require.True(t, decision.Blocked)
-	require.False(t, decision.HeaderMatched)
+	require.True(t, decision.Allowed)
+	require.True(t, decision.Observed)
+	require.False(t, decision.Blocked)
+	require.Equal(t, requestControlReasonCompactionAllowed, decision.Reason)
 }
 
 func TestRequestControlAllowsCodexPrewarmWithoutTurnID(t *testing.T) {

@@ -8,6 +8,7 @@ import (
 
 	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
 	"go.uber.org/zap"
@@ -122,4 +123,35 @@ func TestNormalizeOpenAIResponsesCompactRequest_SubpathNotPromoted(t *testing.T)
 	require.True(t, ok)
 	require.Equal(t, "/v1/responses/resp_123/cancel", c.Request.URL.Path)
 	require.Equal(t, body, normalized)
+}
+
+func TestEnsureOpenAICompactionRoutingSessionInjectsStableIsolatedUUID(t *testing.T) {
+	first := newCompactBodySignalTestContext(t, "/v1/responses", []byte(`{}`))
+	require.True(t, ensureOpenAICompactionRoutingSession(first, 17, "session-hash"))
+	firstSession := first.GetHeader("session_id")
+	require.NotEmpty(t, firstSession)
+	_, err := uuid.Parse(firstSession)
+	require.NoError(t, err)
+	require.False(t, ensureOpenAICompactionRoutingSession(first, 17, "session-hash"))
+	require.Equal(t, firstSession, first.GetHeader("session_id"))
+
+	sameKey := newCompactBodySignalTestContext(t, "/v1/responses", []byte(`{}`))
+	require.True(t, ensureOpenAICompactionRoutingSession(sameKey, 17, "session-hash"))
+	require.Equal(t, firstSession, sameKey.GetHeader("session_id"))
+
+	differentKey := newCompactBodySignalTestContext(t, "/v1/responses", []byte(`{}`))
+	require.True(t, ensureOpenAICompactionRoutingSession(differentKey, 18, "session-hash"))
+	require.NotEqual(t, firstSession, differentKey.GetHeader("session_id"))
+}
+
+func TestEnsureOpenAICompactionRoutingSessionPreservesClientIdentity(t *testing.T) {
+	withSession := newCompactBodySignalTestContext(t, "/v1/responses", []byte(`{}`))
+	withSession.Request.Header.Set("session_id", "client-session")
+	require.False(t, ensureOpenAICompactionRoutingSession(withSession, 17, "session-hash"))
+	require.Equal(t, "client-session", withSession.GetHeader("session_id"))
+
+	withConversation := newCompactBodySignalTestContext(t, "/v1/responses", []byte(`{}`))
+	withConversation.Request.Header.Set("conversation_id", "client-conversation")
+	require.False(t, ensureOpenAICompactionRoutingSession(withConversation, 17, "session-hash"))
+	require.Empty(t, withConversation.GetHeader("session_id"))
 }

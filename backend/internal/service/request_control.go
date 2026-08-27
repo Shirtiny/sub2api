@@ -493,6 +493,17 @@ func (s *RequestControlService) Check(ctx context.Context, input RequestControlC
 	if input.Protocol == RequestControlProtocolResponse {
 		inspection := inspectRequestControlResponseSessionDetails(input)
 		responseDiagnostics = requestControlResponseDiagnosticDetails(input, inspection.SessionPresent, inspection.SessionSource, inspection.Body, inspection.BodyParsed, inspection.BodyErr)
+		if requestControlResponseRequestKindIsCompaction(responseDiagnostics["request_kind"]) {
+			decision := &RequestControlDecision{
+				Allowed:    true,
+				Observed:   true,
+				Action:     RequestControlActionObserve,
+				Reason:     requestControlReasonCompactionAllowed,
+				ClientKind: "compaction",
+				Details:    responseDiagnostics,
+			}
+			return s.finalizeDecision(input, cfg, decision), nil
+		}
 		if !inspection.SessionPresent {
 			decision := &RequestControlDecision{
 				Blocked:    true,
@@ -566,6 +577,8 @@ func (s *RequestControlService) Check(ctx context.Context, input RequestControlC
 }
 
 const requestControlReasonObserveOnly = "blocking_disabled_observe_only"
+
+const requestControlReasonCompactionAllowed = "compaction_request_allowed"
 
 func (s *RequestControlService) finalizeDecision(input RequestControlCheckInput, cfg *RequestControlConfig, decision *RequestControlDecision) *RequestControlDecision {
 	if decision == nil {
@@ -1468,10 +1481,12 @@ func inspectRequestControlResponseSession(input RequestControlCheckInput) (reque
 	return inspection.Body, inspection.BodyParsed, inspection.SessionPresent, inspection.BodyErr
 }
 
+const requestControlLocalCompactionMinBodyBytes = 32 * 1024
+
 // requestControlResponseRequestKind records explicit compact signals and a
-// conservative heuristic for Pi-style local summarization. The heuristic is
-// deliberately labelled as a candidate: a generic SDK caller can emit the
-// same wire shape, so it must not be treated as proof or an allow-list signal.
+// bounded, client-agnostic heuristic for local agent summarization. Explicit
+// compact signals and strong local-summary shapes are exempt from request
+// control blocking; the original body remains unavailable to audit logs.
 func requestControlResponseRequestKind(input RequestControlCheckInput, parsed requestControlResponsesBody, bodyParsed bool, bodyErr error) (string, string, []string) {
 	endpoint := strings.ToLower(strings.TrimRight(strings.TrimSpace(input.Endpoint), "/"))
 	if strings.HasSuffix(endpoint, "/responses/compact") {
@@ -1480,36 +1495,66 @@ func requestControlResponseRequestKind(input RequestControlCheckInput, parsed re
 	if HasCompactionTriggerInInput(input.Body) {
 		return "openai_responses_compaction_trigger", "explicit", []string{"input.type:compaction_trigger"}
 	}
+	for _, raw := range requestControlHeaderValues(input.Headers, "x-codex-turn-metadata") {
+		if metadata, ok := parseRequestControlTurnMetadata(strings.TrimSpace(raw)); ok && metadata.RequestKind == "compaction" {
+			return "codex_compaction_request", "explicit", []string{"x-codex-turn-metadata.request_kind:compaction"}
+		}
+	}
 	if !bodyParsed {
 		parsed, bodyErr = parseRequestControlResponsesBody(input.Body)
 	}
 	if bodyErr != nil {
 		return "openai_responses_standard_or_unknown", "unknown", []string{"body:invalid_or_unreadable"}
 	}
-	localSummaryShape := parsed.Input.Present && parsed.Input.Kind == '[' &&
-		parsed.ToolChoice.Valid && strings.EqualFold(strings.TrimSpace(parsed.ToolChoice.Value), "none") &&
+	if parsed.ClientMetadata.TurnMetadata.Valid {
+		if metadata, ok := parseRequestControlTurnMetadata(parsed.ClientMetadata.TurnMetadata.Value); ok && metadata.RequestKind == "compaction" {
+			return "codex_compaction_request", "explicit", []string{"client_metadata.request_kind:compaction"}
+		}
+	}
+	localSummaryBase := parsed.Input.Present && parsed.Input.Kind == '[' &&
 		parsed.Store.Present && parsed.Store.Valid && !parsed.Store.Value &&
 		parsed.Stream.Present && parsed.Stream.Valid && parsed.Stream.Value &&
 		parsed.MaxOutputTokens && !parsed.ToolsPresent && !parsed.PromptCacheKey.Present
-	if localSummaryShape {
+	toolChoiceNone := parsed.ToolChoice.Present && parsed.ToolChoice.Valid && strings.EqualFold(strings.TrimSpace(parsed.ToolChoice.Value), "none")
+	largeRequestWithoutToolChoice := !parsed.ToolChoice.Present && len(input.Body) >= requestControlLocalCompactionMinBodyBytes
+	if localSummaryBase && (toolChoiceNone || largeRequestWithoutToolChoice) {
 		evidence := []string{
 			"input:array",
-			"tool_choice:none",
 			"store:false",
 			"stream:true",
 			"max_output_tokens:present",
 			"tools:missing",
 			"prompt_cache_key:missing",
 		}
-		userAgent := strings.ToLower(strings.TrimSpace(input.UserAgent))
-		switch {
-		case strings.HasPrefix(userAgent, "pi ("):
-			return "pi_local_compaction_candidate", "strong_heuristic", append([]string{"user_agent:pi"}, evidence...)
-		case strings.HasPrefix(userAgent, "openai/js"):
-			return "local_compaction_candidate", "heuristic", append([]string{"user_agent:openai_js"}, evidence...)
+		if toolChoiceNone {
+			evidence = append(evidence, "tool_choice:none")
+		} else {
+			evidence = append(evidence, "tool_choice:missing", "body_bytes:large")
 		}
+		return "local_compaction_candidate", "strong_heuristic", evidence
 	}
 	return "openai_responses_standard_or_unknown", "default", nil
+}
+
+func requestControlResponseRequestKindIsCompaction(kind string) bool {
+	switch strings.TrimSpace(kind) {
+	case "openai_responses_compact_endpoint", "openai_responses_compaction_trigger", "codex_compaction_request", "local_compaction_candidate":
+		return true
+	default:
+		return false
+	}
+}
+
+// IsOpenAIResponsesCompactionRequest is shared by request control and the
+// gateway's downstream session propagation. It intentionally does not depend
+// on User-Agent: OpenAI/JS is an SDK identifier used by multiple agents.
+func IsOpenAIResponsesCompactionRequest(input RequestControlCheckInput) bool {
+	if input.Protocol != "" && input.Protocol != RequestControlProtocolResponse {
+		return false
+	}
+	inspection := inspectRequestControlResponseSessionDetails(input)
+	kind, _, _ := requestControlResponseRequestKind(input, inspection.Body, inspection.BodyParsed, inspection.BodyErr)
+	return requestControlResponseRequestKindIsCompaction(kind)
 }
 
 func requestControlResponseDiagnosticDetails(input RequestControlCheckInput, sessionPresent bool, sessionSource string, parsed requestControlResponsesBody, bodyParsed bool, bodyErr error) map[string]string {
