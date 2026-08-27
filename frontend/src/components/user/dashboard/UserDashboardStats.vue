@@ -261,9 +261,8 @@ const sortedPlatforms = computed(() => {
   return [...list].sort((a, b) => b.total_actual_cost - a.total_actual_cost)
 })
 
-// 处理"各平台之和 < 总值"的差值：后端按平台聚合时过滤了无法归属平台的行
-// （group 与 account 都缺 platform）。这里把差值作为"其他"卡片显式展示，
-// 避免 Row 1 总值与 Row 3 平台拆分加总对不上、用户困惑。
+// Durable totals outlive raw per-platform dimensions. Keep the difference explicit
+// as historical/unclassified usage instead of attributing it to a live platform.
 const OTHER_THRESHOLD = 0.0001
 const platformCards = computed<FusedPlatformCard[]>(() => {
   // 建立 by_platform Map
@@ -308,16 +307,25 @@ const platformCards = computed<FusedPlatformCard[]>(() => {
   const today = props.stats?.today_actual_cost ?? 0
   const sumTotal = cards.reduce((s, c) => s + c.total_actual_cost, 0)
   const sumToday = cards.reduce((s, c) => s + c.today_actual_cost, 0)
+  const sumRequests = cards.reduce((s, c) => s + c.total_requests, 0)
+  const sumTokens = cards.reduce((s, c) => s + c.total_tokens, 0)
   const diffTotal = Math.max(0, total - sumTotal)
   const diffToday = Math.max(0, today - sumToday)
+  const diffRequests = Math.max(0, (props.stats?.total_requests ?? 0) - sumRequests)
+  const diffTokens = Math.max(0, (props.stats?.total_tokens ?? 0) - sumTokens)
 
-  if (diffTotal > OTHER_THRESHOLD || diffToday > OTHER_THRESHOLD) {
+  if (
+    diffTotal > OTHER_THRESHOLD ||
+    diffToday > OTHER_THRESHOLD ||
+    diffRequests > 0 ||
+    diffTokens > 0
+  ) {
     cards.push({
       platform: '__other__',
       total_actual_cost: diffTotal,
       today_actual_cost: diffToday,
-      total_requests: 0,
-      total_tokens: 0,
+      total_requests: diffRequests,
+      total_tokens: diffTokens,
       isOther: true,
     })
   }

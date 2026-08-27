@@ -1851,92 +1851,12 @@ func (r *usageLogRepository) ListByUserAndTimeRange(ctx context.Context, userID 
 
 // GetUserStatsAggregated returns aggregated usage statistics for a user using database-level aggregation
 func (r *usageLogRepository) GetUserStatsAggregated(ctx context.Context, userID int64, startTime, endTime time.Time) (*usagestats.UsageStats, error) {
-	query := `
-		SELECT
-			COUNT(*) as total_requests,
-			COALESCE(SUM(input_tokens), 0) as total_input_tokens,
-			COALESCE(SUM(output_tokens), 0) as total_output_tokens,
-			COALESCE(SUM(cache_creation_tokens + cache_read_tokens), 0) as total_cache_tokens,
-			COALESCE(SUM(cache_creation_tokens), 0) as total_cache_creation_tokens,
-			COALESCE(SUM(cache_read_tokens), 0) as total_cache_read_tokens,
-			COALESCE(SUM(total_cost), 0) as total_cost,
-			COALESCE(SUM(actual_cost), 0) as total_actual_cost,
-			COALESCE(AVG(COALESCE(duration_ms, 0)), 0) as avg_duration_ms
-		FROM usage_logs
-		WHERE user_id = $1 AND created_at >= $2 AND created_at < $3
-	`
-
-	var stats usagestats.UsageStats
-	if err := scanSingleRow(
-		ctx,
-		r.sql,
-		query,
-		[]any{userID, startTime, endTime},
-		&stats.TotalRequests,
-		&stats.TotalInputTokens,
-		&stats.TotalOutputTokens,
-		&stats.TotalCacheTokens,
-		&stats.TotalCacheCreationTokens,
-		&stats.TotalCacheReadTokens,
-		&stats.TotalCost,
-		&stats.TotalActualCost,
-		&stats.AverageDurationMs,
-	); err != nil {
-		return nil, err
-	}
-	stats.TotalCacheTokens = stats.TotalCacheCreationTokens + stats.TotalCacheReadTokens
-	stats.TotalTokens = stats.TotalInputTokens + stats.TotalOutputTokens + stats.TotalCacheTokens
-	cacheByGroupType, err := r.getCacheGroupTypeStats(ctx, []string{"ul.user_id = $1", "ul.created_at >= $2", "ul.created_at < $3"}, []any{userID, startTime, endTime})
-	if err != nil {
-		return nil, err
-	}
-	stats.CacheByGroupType = cacheByGroupType
-	return &stats, nil
+	return r.getDurableUsageStats(ctx, "user_id", userID, startTime, endTime)
 }
 
 // GetAPIKeyStatsAggregated returns aggregated usage statistics for an API key using database-level aggregation
 func (r *usageLogRepository) GetAPIKeyStatsAggregated(ctx context.Context, apiKeyID int64, startTime, endTime time.Time) (*usagestats.UsageStats, error) {
-	query := `
-		SELECT
-			COUNT(*) as total_requests,
-			COALESCE(SUM(input_tokens), 0) as total_input_tokens,
-			COALESCE(SUM(output_tokens), 0) as total_output_tokens,
-			COALESCE(SUM(cache_creation_tokens + cache_read_tokens), 0) as total_cache_tokens,
-			COALESCE(SUM(cache_creation_tokens), 0) as total_cache_creation_tokens,
-			COALESCE(SUM(cache_read_tokens), 0) as total_cache_read_tokens,
-			COALESCE(SUM(total_cost), 0) as total_cost,
-			COALESCE(SUM(actual_cost), 0) as total_actual_cost,
-			COALESCE(AVG(COALESCE(duration_ms, 0)), 0) as avg_duration_ms
-		FROM usage_logs
-		WHERE api_key_id = $1 AND created_at >= $2 AND created_at < $3
-	`
-
-	var stats usagestats.UsageStats
-	if err := scanSingleRow(
-		ctx,
-		r.sql,
-		query,
-		[]any{apiKeyID, startTime, endTime},
-		&stats.TotalRequests,
-		&stats.TotalInputTokens,
-		&stats.TotalOutputTokens,
-		&stats.TotalCacheTokens,
-		&stats.TotalCacheCreationTokens,
-		&stats.TotalCacheReadTokens,
-		&stats.TotalCost,
-		&stats.TotalActualCost,
-		&stats.AverageDurationMs,
-	); err != nil {
-		return nil, err
-	}
-	stats.TotalCacheTokens = stats.TotalCacheCreationTokens + stats.TotalCacheReadTokens
-	stats.TotalTokens = stats.TotalInputTokens + stats.TotalOutputTokens + stats.TotalCacheTokens
-	cacheByGroupType, err := r.getCacheGroupTypeStats(ctx, []string{"ul.api_key_id = $1", "ul.created_at >= $2", "ul.created_at < $3"}, []any{apiKeyID, startTime, endTime})
-	if err != nil {
-		return nil, err
-	}
-	stats.CacheByGroupType = cacheByGroupType
-	return &stats, nil
+	return r.getDurableUsageStats(ctx, "api_key_id", apiKeyID, startTime, endTime)
 }
 
 func (r *usageLogRepository) getCacheGroupTypeStats(ctx context.Context, conditions []string, args []any) (results []usagestats.CacheGroupTypeStat, err error) {
@@ -2626,36 +2546,19 @@ func (r *usageLogRepository) GetUserDashboardStats(ctx context.Context, userID i
 		return nil, err
 	}
 
-	// 累计 Token 统计
-	totalStatsQuery := `
-		SELECT
-			COUNT(*) as total_requests,
-			COALESCE(SUM(input_tokens), 0) as total_input_tokens,
-			COALESCE(SUM(output_tokens), 0) as total_output_tokens,
-			COALESCE(SUM(cache_creation_tokens), 0) as total_cache_creation_tokens,
-			COALESCE(SUM(cache_read_tokens), 0) as total_cache_read_tokens,
-			COALESCE(SUM(total_cost), 0) as total_cost,
-			COALESCE(SUM(actual_cost), 0) as total_actual_cost,
-			COALESCE(AVG(duration_ms), 0) as avg_duration_ms
-		FROM usage_logs
-		WHERE user_id = $1
-	`
-	if err := scanSingleRow(
-		ctx,
-		r.sql,
-		totalStatsQuery,
-		[]any{userID},
-		&stats.TotalRequests,
-		&stats.TotalInputTokens,
-		&stats.TotalOutputTokens,
-		&stats.TotalCacheCreationTokens,
-		&stats.TotalCacheReadTokens,
-		&stats.TotalCost,
-		&stats.TotalActualCost,
-		&stats.AverageDurationMs,
-	); err != nil {
+	retentionStart, retentionEnd := durableUsageRetentionRange()
+	totals, err := r.getDurableUsageStats(ctx, "user_id", userID, retentionStart, retentionEnd)
+	if err != nil {
 		return nil, err
 	}
+	stats.TotalRequests = totals.TotalRequests
+	stats.TotalInputTokens = totals.TotalInputTokens
+	stats.TotalOutputTokens = totals.TotalOutputTokens
+	stats.TotalCacheCreationTokens = totals.TotalCacheCreationTokens
+	stats.TotalCacheReadTokens = totals.TotalCacheReadTokens
+	stats.TotalCost = totals.TotalCost
+	stats.TotalActualCost = totals.TotalActualCost
+	stats.AverageDurationMs = totals.AverageDurationMs
 	stats.TotalTokens = stats.TotalInputTokens + stats.TotalOutputTokens + stats.TotalCacheCreationTokens + stats.TotalCacheReadTokens
 
 	// 今日 Token 统计
@@ -2778,36 +2681,19 @@ func (r *usageLogRepository) GetAPIKeyDashboardStats(ctx context.Context, apiKey
 	stats.TotalAPIKeys = 1
 	stats.ActiveAPIKeys = 1
 
-	// 累计 Token 统计
-	totalStatsQuery := `
-		SELECT
-			COUNT(*) as total_requests,
-			COALESCE(SUM(input_tokens), 0) as total_input_tokens,
-			COALESCE(SUM(output_tokens), 0) as total_output_tokens,
-			COALESCE(SUM(cache_creation_tokens), 0) as total_cache_creation_tokens,
-			COALESCE(SUM(cache_read_tokens), 0) as total_cache_read_tokens,
-			COALESCE(SUM(total_cost), 0) as total_cost,
-			COALESCE(SUM(actual_cost), 0) as total_actual_cost,
-			COALESCE(AVG(duration_ms), 0) as avg_duration_ms
-		FROM usage_logs
-		WHERE api_key_id = $1
-	`
-	if err := scanSingleRow(
-		ctx,
-		r.sql,
-		totalStatsQuery,
-		[]any{apiKeyID},
-		&stats.TotalRequests,
-		&stats.TotalInputTokens,
-		&stats.TotalOutputTokens,
-		&stats.TotalCacheCreationTokens,
-		&stats.TotalCacheReadTokens,
-		&stats.TotalCost,
-		&stats.TotalActualCost,
-		&stats.AverageDurationMs,
-	); err != nil {
+	retentionStart, retentionEnd := durableUsageRetentionRange()
+	totals, err := r.getDurableUsageStats(ctx, "api_key_id", apiKeyID, retentionStart, retentionEnd)
+	if err != nil {
 		return nil, err
 	}
+	stats.TotalRequests = totals.TotalRequests
+	stats.TotalInputTokens = totals.TotalInputTokens
+	stats.TotalOutputTokens = totals.TotalOutputTokens
+	stats.TotalCacheCreationTokens = totals.TotalCacheCreationTokens
+	stats.TotalCacheReadTokens = totals.TotalCacheReadTokens
+	stats.TotalCost = totals.TotalCost
+	stats.TotalActualCost = totals.TotalActualCost
+	stats.AverageDurationMs = totals.AverageDurationMs
 	stats.TotalTokens = stats.TotalInputTokens + stats.TotalOutputTokens + stats.TotalCacheCreationTokens + stats.TotalCacheReadTokens
 
 	// 今日 Token 统计
@@ -2853,6 +2739,9 @@ func (r *usageLogRepository) GetAPIKeyDashboardStats(ctx context.Context, apiKey
 
 // GetUserUsageTrendByUserID 获取指定用户的使用趋势
 func (r *usageLogRepository) GetUserUsageTrendByUserID(ctx context.Context, userID int64, startTime, endTime time.Time, granularity string) (results []TrendDataPoint, err error) {
+	if granularity == "day" {
+		return r.getDurableDailyUsageTrend(ctx, userID, 0, startTime, endTime)
+	}
 	dateFormat := safeDateFormat(granularity)
 
 	query := fmt.Sprintf(`
@@ -3038,16 +2927,26 @@ func (r *usageLogRepository) GetBatchUserUsageStats(ctx context.Context, userIDs
 		return result, nil
 	}
 
-	// 默认最近 30 天
+	// 默认最近 30 个自然日（含今天）。
 	if startTime.IsZero() {
-		startTime = time.Now().AddDate(0, 0, -30)
+		startTime, _ = durableUsageDefaultRange()
 	}
 	if endTime.IsZero() {
-		endTime = time.Now()
+		_, endTime = durableUsageDefaultRange()
 	}
 
 	for _, id := range normalizedUserIDs {
 		result[id] = &BatchUserUsageStats{UserID: id}
+	}
+	durableCosts, err := r.getDurableBatchUserCosts(ctx, normalizedUserIDs, startTime, endTime)
+	if err != nil {
+		return nil, err
+	}
+	for id, costs := range durableCosts {
+		if stats := result[id]; stats != nil {
+			stats.TotalActualCost = costs[0]
+			stats.TodayActualCost = costs[1]
+		}
 	}
 
 	// GROUP BY (user_id, effective_platform) 一次查询同时得到总值与按平台拆分。
@@ -3084,8 +2983,6 @@ func (r *usageLogRepository) GetBatchUserUsageStats(ctx context.Context, userIDs
 		if !ok {
 			continue
 		}
-		stats.TotalActualCost += total
-		stats.TodayActualCost += todayTotal
 		if platform.Valid && platform.String != "" {
 			stats.ByPlatform = append(stats.ByPlatform, PlatformUsage{
 				Platform:        platform.String,
@@ -3116,54 +3013,14 @@ func (r *usageLogRepository) GetBatchAPIKeyUsageStats(ctx context.Context, apiKe
 		return result, nil
 	}
 
-	// 默认最近 30 天
+	// 默认最近 30 个自然日（含今天）。
 	if startTime.IsZero() {
-		startTime = time.Now().AddDate(0, 0, -30)
+		startTime, _ = durableUsageDefaultRange()
 	}
 	if endTime.IsZero() {
-		endTime = time.Now()
+		_, endTime = durableUsageDefaultRange()
 	}
-
-	for _, id := range normalizedAPIKeyIDs {
-		result[id] = &BatchAPIKeyUsageStats{APIKeyID: id}
-	}
-
-	query := `
-		SELECT
-			api_key_id,
-			COALESCE(SUM(actual_cost) FILTER (WHERE created_at >= $2 AND created_at < $3), 0) as total_cost,
-			COALESCE(SUM(actual_cost) FILTER (WHERE created_at >= $4), 0) as today_cost
-		FROM usage_logs
-		WHERE api_key_id = ANY($1)
-		  AND created_at >= LEAST($2, $4)
-		GROUP BY api_key_id
-	`
-	today := timezone.Today()
-	rows, err := r.sql.QueryContext(ctx, query, pq.Array(normalizedAPIKeyIDs), startTime, endTime, today)
-	if err != nil {
-		return nil, err
-	}
-	for rows.Next() {
-		var apiKeyID int64
-		var total float64
-		var todayTotal float64
-		if err := rows.Scan(&apiKeyID, &total, &todayTotal); err != nil {
-			_ = rows.Close()
-			return nil, err
-		}
-		if stats, ok := result[apiKeyID]; ok {
-			stats.TotalActualCost = total
-			stats.TodayActualCost = todayTotal
-		}
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return result, nil
+	return r.getDurableBatchAPIKeyUsageStats(ctx, normalizedAPIKeyIDs, startTime, endTime)
 }
 
 // GetUsageTrendWithFilters returns usage trend data with optional filters

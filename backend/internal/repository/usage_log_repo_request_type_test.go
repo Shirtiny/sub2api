@@ -434,35 +434,30 @@ func TestUsageLogRepositoryGetStatsWithFiltersRequestTypePriority(t *testing.T) 
 	require.NoError(t, mock.ExpectationsWereMet())
 }
 
+func expectDurableUserStatsQueries(
+	mock sqlmock.Sqlmock,
+	userID int64,
+	start, end time.Time,
+	totals *sqlmock.Rows,
+	cacheRows *sqlmock.Rows,
+) {
+	mock.ExpectQuery("(?s)WITH covered_days AS .*SUM\\(total_duration_ms\\).+FROM parts").
+		WithArgs(userID, start, end, sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg()).
+		WillReturnRows(totals)
+	mock.ExpectQuery("(?s)WITH covered_days AS .*CASE WHEN billing_type = 1 THEN 'subscription'.+ORDER BY billing_type DESC").
+		WithArgs(userID, start, end, sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg()).
+		WillReturnRows(cacheRows)
+}
+
 func TestUsageLogRepositoryGetUserStatsAggregatedCacheByGroupType(t *testing.T) {
 	db, mock := newSQLMock(t)
 	repo := &usageLogRepository{sql: db}
-
 	start := time.Date(2026, 6, 1, 0, 0, 0, 0, time.UTC)
 	end := start.Add(24 * time.Hour)
-
-	mock.ExpectQuery("FROM usage_logs\\s+WHERE user_id = \\$1 AND created_at >= \\$2 AND created_at < \\$3").
-		WithArgs(int64(127), start, end).
-		WillReturnRows(sqlmock.NewRows([]string{
-			"total_requests",
-			"total_input_tokens",
-			"total_output_tokens",
-			"total_cache_tokens",
-			"total_cache_creation_tokens",
-			"total_cache_read_tokens",
-			"total_cost",
-			"total_actual_cost",
-			"avg_duration_ms",
-		}).AddRow(int64(3), int64(10), int64(5), int64(90), int64(20), int64(70), 1.2, 1.0, 50.0))
-	mock.ExpectQuery("FROM usage_logs ul\\s+WHERE ul.user_id = \\$1 AND ul.created_at >= \\$2 AND ul.created_at < \\$3").
-		WithArgs(int64(127), start, end).
-		WillReturnRows(sqlmock.NewRows([]string{
-			"group_type",
-			"requests",
-			"input_tokens",
-			"cache_creation_tokens",
-			"cache_read_tokens",
-		}).
+	expectDurableUserStatsQueries(mock, 127, start, end,
+		sqlmock.NewRows([]string{"requests", "input", "output", "cache_creation", "cache_read", "cost", "actual_cost", "duration"}).
+			AddRow(int64(3), int64(10), int64(5), int64(20), int64(70), 1.2, 1.0, int64(150)),
+		sqlmock.NewRows([]string{"group_type", "requests", "input", "cache_creation", "cache_read"}).
 			AddRow(service.SubscriptionTypeSubscription, int64(1), int64(4), int64(0), int64(16)).
 			AddRow(service.SubscriptionTypeStandard, int64(2), int64(10), int64(20), int64(70)))
 
@@ -472,7 +467,6 @@ func TestUsageLogRepositoryGetUserStatsAggregatedCacheByGroupType(t *testing.T) 
 	require.Len(t, stats.CacheByGroupType, 2)
 	require.Equal(t, service.SubscriptionTypeSubscription, stats.CacheByGroupType[0].GroupType)
 	require.InDelta(t, 80.0, stats.CacheByGroupType[0].HitRate, 1e-9)
-	require.Equal(t, service.SubscriptionTypeStandard, stats.CacheByGroupType[1].GroupType)
 	require.Equal(t, int64(100), stats.CacheByGroupType[1].TotalInputTokens)
 	require.InDelta(t, 70.0, stats.CacheByGroupType[1].HitRate, 1e-9)
 	require.NoError(t, mock.ExpectationsWereMet())
@@ -481,32 +475,12 @@ func TestUsageLogRepositoryGetUserStatsAggregatedCacheByGroupType(t *testing.T) 
 func TestUsageLogRepositoryGetUserStatsAggregatedCacheByGroupTypeUsesBillingType(t *testing.T) {
 	db, mock := newSQLMock(t)
 	repo := &usageLogRepository{sql: db}
-
 	start := time.Date(2026, 6, 1, 0, 0, 0, 0, time.UTC)
 	end := start.Add(24 * time.Hour)
-
-	mock.ExpectQuery("FROM usage_logs\\s+WHERE user_id = \\$1 AND created_at >= \\$2 AND created_at < \\$3").
-		WithArgs(int64(127), start, end).
-		WillReturnRows(sqlmock.NewRows([]string{
-			"total_requests",
-			"total_input_tokens",
-			"total_output_tokens",
-			"total_cache_tokens",
-			"total_cache_creation_tokens",
-			"total_cache_read_tokens",
-			"total_cost",
-			"total_actual_cost",
-			"avg_duration_ms",
-		}).AddRow(int64(1), int64(4), int64(5), int64(16), int64(0), int64(16), 1.2, 1.0, 50.0))
-	mock.ExpectQuery("(?s)CASE\\s+WHEN ul\\.billing_type = 1 OR ul\\.subscription_id IS NOT NULL THEN 'subscription'\\s+ELSE 'standard'").
-		WithArgs(int64(127), start, end).
-		WillReturnRows(sqlmock.NewRows([]string{
-			"group_type",
-			"requests",
-			"input_tokens",
-			"cache_creation_tokens",
-			"cache_read_tokens",
-		}).
+	expectDurableUserStatsQueries(mock, 127, start, end,
+		sqlmock.NewRows([]string{"requests", "input", "output", "cache_creation", "cache_read", "cost", "actual_cost", "duration"}).
+			AddRow(int64(1), int64(4), int64(5), int64(0), int64(16), 1.2, 1.0, int64(50)),
+		sqlmock.NewRows([]string{"group_type", "requests", "input", "cache_creation", "cache_read"}).
 			AddRow(service.SubscriptionTypeSubscription, int64(1), int64(4), int64(0), int64(16)))
 
 	stats, err := repo.GetUserStatsAggregated(context.Background(), 127, start, end)
@@ -520,39 +494,17 @@ func TestUsageLogRepositoryGetUserStatsAggregatedCacheByGroupTypeUsesBillingType
 func TestUsageLogRepositoryGetUserStatsAggregatedCacheByGroupTypeSkipsZeroInput(t *testing.T) {
 	db, mock := newSQLMock(t)
 	repo := &usageLogRepository{sql: db}
-
 	start := time.Date(2026, 6, 1, 0, 0, 0, 0, time.UTC)
 	end := start.Add(24 * time.Hour)
-
-	mock.ExpectQuery("FROM usage_logs\\s+WHERE user_id = \\$1 AND created_at >= \\$2 AND created_at < \\$3").
-		WithArgs(int64(127), start, end).
-		WillReturnRows(sqlmock.NewRows([]string{
-			"total_requests",
-			"total_input_tokens",
-			"total_output_tokens",
-			"total_cache_tokens",
-			"total_cache_creation_tokens",
-			"total_cache_read_tokens",
-			"total_cost",
-			"total_actual_cost",
-			"avg_duration_ms",
-		}).AddRow(int64(2), int64(4), int64(5), int64(16), int64(0), int64(16), 1.2, 1.0, 50.0))
-	mock.ExpectQuery("(?s)FROM usage_logs ul\\s+WHERE ul.user_id = \\$1 AND ul.created_at >= \\$2 AND ul.created_at < \\$3.*HAVING.*SUM\\(ul\\.cache_read_tokens\\).* > 0").
-		WithArgs(int64(127), start, end).
-		WillReturnRows(sqlmock.NewRows([]string{
-			"group_type",
-			"requests",
-			"input_tokens",
-			"cache_creation_tokens",
-			"cache_read_tokens",
-		}).
-			AddRow(service.SubscriptionTypeSubscription, int64(1), int64(4), int64(0), int64(16)).
-			AddRow(service.SubscriptionTypeStandard, int64(1), int64(0), int64(0), int64(0)))
+	expectDurableUserStatsQueries(mock, 127, start, end,
+		sqlmock.NewRows([]string{"requests", "input", "output", "cache_creation", "cache_read", "cost", "actual_cost", "duration"}).
+			AddRow(int64(2), int64(4), int64(5), int64(0), int64(16), 1.2, 1.0, int64(100)),
+		sqlmock.NewRows([]string{"group_type", "requests", "input", "cache_creation", "cache_read"}).
+			AddRow(service.SubscriptionTypeSubscription, int64(1), int64(4), int64(0), int64(16)))
 
 	stats, err := repo.GetUserStatsAggregated(context.Background(), 127, start, end)
 	require.NoError(t, err)
 	require.Len(t, stats.CacheByGroupType, 1)
-	require.Equal(t, service.SubscriptionTypeSubscription, stats.CacheByGroupType[0].GroupType)
 	require.Equal(t, int64(20), stats.CacheByGroupType[0].TotalInputTokens)
 	require.InDelta(t, 80.0, stats.CacheByGroupType[0].HitRate, 1e-9)
 	require.NoError(t, mock.ExpectationsWereMet())

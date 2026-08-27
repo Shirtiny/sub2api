@@ -686,7 +686,7 @@ export default {
     platformBreakdown: 'Per-platform Breakdown',
     platformBreakdownEmpty: 'No platform usage yet',
     platformCount: '{count} platforms',
-    platformOther: 'Other',
+    platformOther: 'Historical / unclassified',
     platformQuota: {
       title: 'Quota Usage',
       daily: 'Daily',
@@ -2147,7 +2147,7 @@ export default {
       platformBreakdown: 'Per-platform breakdown',
       platformBreakdownEmpty: 'No platform usage yet',
       platformBreakdownHint: 'Hover for per-platform usage',
-      platformOther: 'Other',
+      platformOther: 'Historical / unclassified',
       membershipOperation: 'Adjustment Type',
       editMembershipPoints: 'Edit Membership Points',
       currentMembershipPoints: 'Current Membership Points',

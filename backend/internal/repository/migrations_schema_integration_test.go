@@ -89,6 +89,16 @@ func TestMigrationsRunner_IsIdempotent_AndSchemaIsUpToDate(t *testing.T) {
 	requireColumn(t, tx, "usage_billing_dedup_archive", "request_fingerprint", "character varying", 64, false)
 	requireIndex(t, tx, "usage_billing_dedup_archive", "usage_billing_dedup_archive_pkey")
 
+	// durable user/API-key calendar-day usage facts (migration 195)
+	var userAPIKeyUsageDailyRegclass sql.NullString
+	require.NoError(t, tx.QueryRowContext(context.Background(), "SELECT to_regclass('public.user_api_key_usage_daily')").Scan(&userAPIKeyUsageDailyRegclass))
+	require.True(t, userAPIKeyUsageDailyRegclass.Valid, "expected user_api_key_usage_daily table to exist")
+	requireColumn(t, tx, "user_api_key_usage_daily", "bucket_date", "date", 0, false)
+	requireColumn(t, tx, "user_api_key_usage_daily", "input_tokens", "bigint", 0, false)
+	requireColumn(t, tx, "user_api_key_usage_daily", "actual_cost", "numeric", 0, false)
+	requireIndex(t, tx, "user_api_key_usage_daily", "idx_user_api_key_usage_daily_user_date")
+	requireIndex(t, tx, "user_api_key_usage_daily", "idx_user_api_key_usage_daily_key_date")
+
 	// settings table should exist
 	var settingsRegclass sql.NullString
 	require.NoError(t, tx.QueryRowContext(context.Background(), "SELECT to_regclass('public.settings')").Scan(&settingsRegclass))

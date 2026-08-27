@@ -85,6 +85,14 @@ func (s *dashboardRepoStub) CleanupSubscriptionUsageDaily(ctx context.Context, c
 	return nil
 }
 
+func (s *dashboardRepoStub) AggregateUserAPIKeyUsageDaily(ctx context.Context, start, end time.Time) error {
+	return nil
+}
+
+func (s *dashboardRepoStub) CleanupUserAPIKeyUsageDaily(ctx context.Context, cutoff time.Time) error {
+	return nil
+}
+
 func (s *dashboardRepoStub) CleanupUsageLogs(ctx context.Context, cutoff time.Time) error {
 	return nil
 }

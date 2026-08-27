@@ -1346,6 +1346,8 @@ type DashboardAggregationRetentionConfig struct {
 	UsageBillingDedupDays int `mapstructure:"usage_billing_dedup_days"`
 	HourlyDays            int `mapstructure:"hourly_days"`
 	DailyDays             int `mapstructure:"daily_days"`
+	// UserAPIKeyDailyDays: user_api_key_usage_daily 的保留天数（含当天）。
+	UserAPIKeyDailyDays int `mapstructure:"user_api_key_daily_days"`
 	// SubscriptionDailyDays: subscription_usage_daily 的保留天数。
 	// 刻意远大于 usage_logs_days —— 这张表存在的意义就是在 usage_logs 被裁剪后
 	// 仍能回溯订阅周期（通常一个月）内的每日用量。
@@ -1829,6 +1831,7 @@ func setDefaults() {
 	viper.SetDefault("dashboard_aggregation.retention.usage_billing_dedup_days", 365)
 	viper.SetDefault("dashboard_aggregation.retention.hourly_days", 180)
 	viper.SetDefault("dashboard_aggregation.retention.daily_days", 730)
+	viper.SetDefault("dashboard_aggregation.retention.user_api_key_daily_days", 61)
 	viper.SetDefault("dashboard_aggregation.retention.subscription_daily_days", 400)
 	viper.SetDefault("dashboard_aggregation.recompute_days", 2)
 
@@ -2412,6 +2415,9 @@ func (c *Config) Validate() error {
 		if c.DashboardAgg.Retention.DailyDays <= 0 {
 			return fmt.Errorf("dashboard_aggregation.retention.daily_days must be positive")
 		}
+		if c.DashboardAgg.Retention.UserAPIKeyDailyDays <= 0 {
+			return fmt.Errorf("dashboard_aggregation.retention.user_api_key_daily_days must be positive")
+		}
 		if c.DashboardAgg.Retention.SubscriptionDailyDays <= 0 {
 			return fmt.Errorf("dashboard_aggregation.retention.subscription_daily_days must be positive")
 		}
@@ -2444,6 +2450,9 @@ func (c *Config) Validate() error {
 		}
 		if c.DashboardAgg.Retention.DailyDays < 0 {
 			return fmt.Errorf("dashboard_aggregation.retention.daily_days must be non-negative")
+		}
+		if c.DashboardAgg.Retention.UserAPIKeyDailyDays < 0 {
+			return fmt.Errorf("dashboard_aggregation.retention.user_api_key_daily_days must be non-negative")
 		}
 		if c.DashboardAgg.Retention.SubscriptionDailyDays < 0 {
 			return fmt.Errorf("dashboard_aggregation.retention.subscription_daily_days must be non-negative")

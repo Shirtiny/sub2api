@@ -96,6 +96,9 @@ func (r *dashboardAggregationRepository) aggregateRangeInTx(ctx context.Context,
 	if err := r.upsertDailyAggregates(ctx, dayStart, dayEnd); err != nil {
 		return err
 	}
+	if err := r.upsertCompletedUserAPIKeyUsageDaily(ctx, dayStart, dayEnd); err != nil {
+		return err
+	}
 	// 纯 upsert，不先删范围：增量路径只覆盖水位线附近的窗口，若 usage_logs 已被
 	// 保留期裁剪，删除会连带毁掉本表要长期保存的历史。清理陈旧行交给 RecomputeRange。
 	if err := r.upsertSubscriptionUsageDaily(ctx, dayStart, dayEnd); err != nil {
@@ -157,12 +160,13 @@ func (r *dashboardAggregationRepository) recomputeRangeInTx(ctx context.Context,
 	if _, err := r.sql.ExecContext(ctx, "DELETE FROM usage_dashboard_daily_users WHERE bucket_date >= $1::date AND bucket_date < $2::date", dayStart, dayEnd); err != nil {
 		return err
 	}
-	// 刻意不删 subscription_usage_daily。usage_dashboard_* 是 usage_logs 的派生视图，
+	// 刻意不删 user_api_key_usage_daily 和 subscription_usage_daily。usage_dashboard_* 是 usage_logs 的派生视图，
 	// 源行被删就该跟着回退；这张表相反，它的全部价值就在于 usage_logs 被保留期或
 	// 运维清理脚本裁掉之后历史仍在。RecomputeRange 的调用方之一正是
 	// UsageCleanupService（见 usage_cleanup_service.go），它在删完某区间的 usage_logs
 	// 后立刻对同一区间触发重算 —— 若这里删了，那段订阅用量历史将永久且无法重建地消失。
-	// 下面的 upsert 仍会刷新还有源行的键，所以重算只会让数据更准，不会抹掉历史。
+	// user_api_key_usage_daily 在删除后的重算路径中完全不写；正常增量路径负责刷新完整日。
+	// subscription_usage_daily 的纯 upsert 仍会刷新还有源行的键。
 
 	if err := r.insertHourlyActiveUsers(ctx, hourStart, hourEnd); err != nil {
 		return err
@@ -226,6 +230,77 @@ func (r *dashboardAggregationRepository) CleanupAggregates(ctx context.Context, 
 func (r *dashboardAggregationRepository) CleanupSubscriptionUsageDaily(ctx context.Context, cutoff time.Time) error {
 	_, err := r.sql.ExecContext(ctx, "DELETE FROM subscription_usage_daily WHERE bucket_date < $1::date", cutoff.UTC())
 	return err
+}
+
+func (r *dashboardAggregationRepository) CleanupUserAPIKeyUsageDaily(ctx context.Context, cutoff time.Time) error {
+	_, err := r.sql.ExecContext(ctx, "DELETE FROM user_api_key_usage_daily WHERE bucket_date < $1::date", cutoff.In(timezone.Location()))
+	return err
+}
+
+// upsertUserAPIKeyUsageDaily stores durable calendar-day facts during normal
+// aggregation and explicit backfill. Deletion-triggered recomputation never calls it.
+func (r *dashboardAggregationRepository) upsertUserAPIKeyUsageDaily(ctx context.Context, start, end time.Time) error {
+	tzName := timezone.Name()
+	query := `
+		INSERT INTO user_api_key_usage_daily (
+			bucket_date, user_id, api_key_id, billing_type, request_count,
+			input_tokens, output_tokens, cache_creation_tokens, cache_read_tokens,
+			total_cost, actual_cost, total_duration_ms, computed_at
+		)
+		SELECT
+			(ul.created_at AT TIME ZONE $3)::date,
+			ul.user_id,
+			ul.api_key_id,
+			CASE WHEN ul.billing_type = 1 OR ul.subscription_id IS NOT NULL THEN 1 ELSE 0 END,
+			COUNT(*),
+			COALESCE(SUM(ul.input_tokens), 0),
+			COALESCE(SUM(ul.output_tokens), 0),
+			COALESCE(SUM(ul.cache_creation_tokens), 0),
+			COALESCE(SUM(ul.cache_read_tokens), 0),
+			COALESCE(SUM(ul.total_cost), 0),
+			COALESCE(SUM(ul.actual_cost), 0),
+			COALESCE(SUM(COALESCE(ul.duration_ms, 0)), 0),
+			NOW()
+		FROM usage_logs ul
+		WHERE ul.created_at >= $1 AND ul.created_at < $2
+		GROUP BY
+			(ul.created_at AT TIME ZONE $3)::date,
+			ul.user_id,
+			ul.api_key_id,
+			CASE WHEN ul.billing_type = 1 OR ul.subscription_id IS NOT NULL THEN 1 ELSE 0 END
+		ON CONFLICT (bucket_date, user_id, api_key_id, billing_type)
+		DO UPDATE SET
+			request_count = EXCLUDED.request_count,
+			input_tokens = EXCLUDED.input_tokens,
+			output_tokens = EXCLUDED.output_tokens,
+			cache_creation_tokens = EXCLUDED.cache_creation_tokens,
+			cache_read_tokens = EXCLUDED.cache_read_tokens,
+			total_cost = EXCLUDED.total_cost,
+			actual_cost = EXCLUDED.actual_cost,
+			total_duration_ms = EXCLUDED.total_duration_ms,
+			computed_at = NOW()
+		WHERE EXCLUDED.request_count > user_api_key_usage_daily.request_count
+	`
+	_, err := r.sql.ExecContext(ctx, query, start, end, tzName)
+	return err
+}
+
+func (r *dashboardAggregationRepository) AggregateUserAPIKeyUsageDaily(ctx context.Context, start, end time.Time) error {
+	if r == nil || r.sql == nil || !end.After(start) {
+		return nil
+	}
+	return r.upsertUserAPIKeyUsageDaily(ctx, start, end)
+}
+
+func (r *dashboardAggregationRepository) upsertCompletedUserAPIKeyUsageDaily(ctx context.Context, start, end time.Time) error {
+	today := truncateToDay(time.Now().In(timezone.Location()))
+	if end.After(today) {
+		end = today
+	}
+	if !end.After(start) {
+		return nil
+	}
+	return r.upsertUserAPIKeyUsageDaily(ctx, start, end)
 }
 
 // upsertSubscriptionUsageDaily 把 [start, end) 覆盖到的完整自然日重新聚合进

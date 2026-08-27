@@ -7,25 +7,31 @@ import (
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/timezone"
 	"github.com/stretchr/testify/require"
 )
 
 type dashboardAggregationRepoTestStub struct {
-	aggregateCalls       int
-	recomputeCalls       int
-	cleanupUsageCalls    int
-	cleanupSubDailyCalls int
-	cleanupDedupCalls    int
-	ensurePartitionCalls int
-	lastStart            time.Time
-	lastEnd              time.Time
-	watermark            time.Time
-	aggregateErr         error
-	cleanupAggregatesErr error
-	cleanupSubDailyErr   error
-	cleanupUsageErr      error
-	cleanupDedupErr      error
-	ensurePartitionErr   error
+	aggregateCalls        int
+	userDailyCalls        int
+	recomputeCalls        int
+	cleanupUsageCalls     int
+	cleanupUserDailyCalls int
+	cleanupSubDailyCalls  int
+	cleanupDedupCalls     int
+	ensurePartitionCalls  int
+	lastStart             time.Time
+	lastEnd               time.Time
+	userDailyStart        time.Time
+	userDailyEnd          time.Time
+	watermark             time.Time
+	aggregateErr          error
+	cleanupAggregatesErr  error
+	cleanupUserDailyErr   error
+	cleanupSubDailyErr    error
+	cleanupUsageErr       error
+	cleanupDedupErr       error
+	ensurePartitionErr    error
 }
 
 func (s *dashboardAggregationRepoTestStub) AggregateRange(ctx context.Context, start, end time.Time) error {
@@ -33,6 +39,13 @@ func (s *dashboardAggregationRepoTestStub) AggregateRange(ctx context.Context, s
 	s.lastStart = start
 	s.lastEnd = end
 	return s.aggregateErr
+}
+
+func (s *dashboardAggregationRepoTestStub) AggregateUserAPIKeyUsageDaily(ctx context.Context, start, end time.Time) error {
+	s.userDailyCalls++
+	s.userDailyStart = start
+	s.userDailyEnd = end
+	return nil
 }
 
 func (s *dashboardAggregationRepoTestStub) RecomputeRange(ctx context.Context, start, end time.Time) error {
@@ -55,6 +68,11 @@ func (s *dashboardAggregationRepoTestStub) CleanupAggregates(ctx context.Context
 func (s *dashboardAggregationRepoTestStub) CleanupSubscriptionUsageDaily(ctx context.Context, cutoff time.Time) error {
 	s.cleanupSubDailyCalls++
 	return s.cleanupSubDailyErr
+}
+
+func (s *dashboardAggregationRepoTestStub) CleanupUserAPIKeyUsageDaily(ctx context.Context, cutoff time.Time) error {
+	s.cleanupUserDailyCalls++
+	return s.cleanupUserDailyErr
 }
 
 func (s *dashboardAggregationRepoTestStub) CleanupUsageLogs(ctx context.Context, cutoff time.Time) error {
@@ -91,8 +109,33 @@ func TestDashboardAggregationService_RunScheduledAggregation_EpochUsesRetentionS
 	svc.runScheduledAggregation()
 
 	require.Equal(t, 1, repo.aggregateCalls)
+	require.Equal(t, 1, repo.userDailyCalls)
 	require.False(t, repo.lastEnd.IsZero())
 	require.Equal(t, truncateToDayUTC(repo.lastEnd.AddDate(0, 0, -1)), repo.lastStart)
+}
+
+func TestDashboardAggregationService_ReconcilesRecentUserDaysOnceAfterSettlementDelay(t *testing.T) {
+	repo := &dashboardAggregationRepoTestStub{}
+	svc := &DashboardAggregationService{repo: repo}
+	now := time.Date(2026, 8, 27, 12, 0, 0, 0, timezone.Location())
+
+	require.NoError(t, svc.maybeReconcileUserAPIKeyUsageDaily(context.Background(), now))
+	require.NoError(t, svc.maybeReconcileUserAPIKeyUsageDaily(context.Background(), now.Add(time.Hour)))
+	require.Equal(t, 1, repo.userDailyCalls)
+	require.Equal(t, timezone.StartOfDay(now).AddDate(0, 0, -userAPIKeyUsageDailyReconcileDays), repo.userDailyStart)
+	require.Equal(t, timezone.StartOfDay(now), repo.userDailyEnd)
+
+	require.NoError(t, svc.maybeReconcileUserAPIKeyUsageDaily(context.Background(), now.AddDate(0, 0, 1)))
+	require.Equal(t, 2, repo.userDailyCalls)
+}
+
+func TestDashboardAggregationService_DoesNotFinalizeUserDayBeforeDelay(t *testing.T) {
+	repo := &dashboardAggregationRepoTestStub{}
+	svc := &DashboardAggregationService{repo: repo}
+	now := time.Date(2026, 8, 27, 2, 59, 0, 0, timezone.Location())
+
+	require.NoError(t, svc.maybeReconcileUserAPIKeyUsageDaily(context.Background(), now))
+	require.Zero(t, repo.userDailyCalls)
 }
 
 func TestDashboardAggregationService_CleanupRetentionFailure_DoesNotRecord(t *testing.T) {
@@ -132,6 +175,13 @@ func TestDashboardAggregationService_CleanupDedupFailure_DoesNotRecord(t *testin
 
 	require.Nil(t, svc.lastRetentionCleanup.Load())
 	require.Equal(t, 1, repo.cleanupDedupCalls)
+}
+
+func TestRetainedCalendarDayCutoffKeepsSixtyOneDaysIncludingToday(t *testing.T) {
+	loc := timezone.Location()
+	now := time.Date(2026, 8, 27, 23, 59, 0, 0, loc)
+	want := timezone.StartOfDay(now).AddDate(0, 0, -60)
+	require.Equal(t, want, retainedCalendarDayCutoff(now, 61))
 }
 
 func TestDashboardAggregationService_PartitionFailure_DoesNotAggregate(t *testing.T) {

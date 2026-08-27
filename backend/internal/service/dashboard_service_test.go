@@ -124,6 +124,14 @@ func (s *dashboardAggregationRepoStub) CleanupSubscriptionUsageDaily(ctx context
 	return nil
 }
 
+func (s *dashboardAggregationRepoStub) AggregateUserAPIKeyUsageDaily(ctx context.Context, start, end time.Time) error {
+	return nil
+}
+
+func (s *dashboardAggregationRepoStub) CleanupUserAPIKeyUsageDaily(ctx context.Context, cutoff time.Time) error {
+	return nil
+}
+
 func (s *dashboardAggregationRepoStub) CleanupUsageLogs(ctx context.Context, cutoff time.Time) error {
 	return nil
 }

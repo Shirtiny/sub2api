@@ -716,6 +716,9 @@ func TestLoadDefaultDashboardAggregationConfig(t *testing.T) {
 	if cfg.DashboardAgg.Retention.DailyDays != 730 {
 		t.Fatalf("DashboardAgg.Retention.DailyDays = %d, want 730", cfg.DashboardAgg.Retention.DailyDays)
 	}
+	if cfg.DashboardAgg.Retention.UserAPIKeyDailyDays != 61 {
+		t.Fatalf("DashboardAgg.Retention.UserAPIKeyDailyDays = %d, want 61", cfg.DashboardAgg.Retention.UserAPIKeyDailyDays)
+	}
 	if cfg.DashboardAgg.RecomputeDays != 2 {
 		t.Fatalf("DashboardAgg.RecomputeDays = %d, want 2", cfg.DashboardAgg.RecomputeDays)
 	}
@@ -1302,6 +1305,11 @@ func TestValidateConfigErrors(t *testing.T) {
 			name:    "dashboard aggregation retention",
 			mutate:  func(c *Config) { c.DashboardAgg.Enabled = true; c.DashboardAgg.Retention.UsageLogsDays = 0 },
 			wantErr: "dashboard_aggregation.retention.usage_logs_days",
+		},
+		{
+			name:    "dashboard aggregation user api key daily retention",
+			mutate:  func(c *Config) { c.DashboardAgg.Enabled = true; c.DashboardAgg.Retention.UserAPIKeyDailyDays = 0 },
+			wantErr: "dashboard_aggregation.retention.user_api_key_daily_days",
 		},
 		{
 			name: "dashboard aggregation dedup retention",

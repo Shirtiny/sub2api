@@ -10,6 +10,7 @@ import (
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/timezone"
 	"github.com/google/uuid"
 )
 
@@ -17,6 +18,10 @@ const (
 	defaultDashboardAggregationTimeout         = 2 * time.Minute
 	defaultDashboardAggregationBackfillTimeout = 30 * time.Minute
 	dashboardAggregationRetentionInterval      = 6 * time.Hour
+	// Delay finalizing yesterday so async usage writes that cross midnight are included.
+	UserAPIKeyUsageDailySettlementDelay = 3 * time.Hour
+	// Reconcile the raw-log retention window once a day before the host cleanup runs.
+	userAPIKeyUsageDailyReconcileDays = 7
 
 	// dashboardAggregationLeaderLockKey gates the periodic scheduled aggregation so
 	// that only one instance runs it per cycle in a multi-replica deployment.
@@ -43,6 +48,8 @@ type DashboardAggregationRepository interface {
 	GetAggregationWatermark(ctx context.Context) (time.Time, error)
 	UpdateAggregationWatermark(ctx context.Context, aggregatedAt time.Time) error
 	CleanupAggregates(ctx context.Context, hourlyCutoff, dailyCutoff time.Time) error
+	AggregateUserAPIKeyUsageDaily(ctx context.Context, start, end time.Time) error
+	CleanupUserAPIKeyUsageDaily(ctx context.Context, cutoff time.Time) error
 	CleanupSubscriptionUsageDaily(ctx context.Context, cutoff time.Time) error
 	CleanupUsageLogs(ctx context.Context, cutoff time.Time) error
 	CleanupUsageBillingDedup(ctx context.Context, cutoff time.Time) error
@@ -56,6 +63,7 @@ type DashboardAggregationService struct {
 	cfg                  config.DashboardAggregationConfig
 	running              int32
 	lastRetentionCleanup atomic.Value // time.Time
+	lastUserDailyRollup  atomic.Value // time.Time (oldest retained day boundary)
 
 	lockCache  LeaderLockCache
 	db         *sql.DB
@@ -251,6 +259,9 @@ func (s *DashboardAggregationService) runScheduledAggregation() {
 		start = now.Add(-lookback)
 	}
 
+	if err := s.maybeReconcileUserAPIKeyUsageDaily(ctx, now); err != nil {
+		logger.LegacyPrintf("service.dashboard_aggregation", "[DashboardAggregation] user_api_key_usage_daily 昨日汇总失败: %v", err)
+	}
 	if err := s.aggregateRange(ctx, start, now); err != nil {
 		logger.LegacyPrintf("service.dashboard_aggregation", "[DashboardAggregation] 聚合失败: %v", err)
 		return
@@ -268,6 +279,25 @@ func (s *DashboardAggregationService) runScheduledAggregation() {
 	)
 
 	s.maybeCleanupRetention(ctx, now)
+}
+
+func (s *DashboardAggregationService) maybeReconcileUserAPIKeyUsageDaily(ctx context.Context, now time.Time) error {
+	localToday := timezone.StartOfDay(now)
+	if now.In(timezone.Location()).Before(localToday.Add(UserAPIKeyUsageDailySettlementDelay)) {
+		return nil
+	}
+	targetDay := localToday.AddDate(0, 0, -1)
+	if lastAny := s.lastUserDailyRollup.Load(); lastAny != nil {
+		if last, ok := lastAny.(time.Time); ok && last.Equal(targetDay) {
+			return nil
+		}
+	}
+	start := localToday.AddDate(0, 0, -userAPIKeyUsageDailyReconcileDays)
+	if err := s.repo.AggregateUserAPIKeyUsageDaily(ctx, start, localToday); err != nil {
+		return err
+	}
+	s.lastUserDailyRollup.Store(targetDay)
+	return nil
 }
 
 func (s *DashboardAggregationService) backfillRange(ctx context.Context, start, end time.Time) error {
@@ -330,6 +360,7 @@ func (s *DashboardAggregationService) maybeCleanupRetention(ctx context.Context,
 
 	hourlyCutoff := now.AddDate(0, 0, -s.cfg.Retention.HourlyDays)
 	dailyCutoff := now.AddDate(0, 0, -s.cfg.Retention.DailyDays)
+	userAPIKeyDailyCutoff := retainedCalendarDayCutoff(now, s.cfg.Retention.UserAPIKeyDailyDays)
 	subDailyCutoff := now.AddDate(0, 0, -s.cfg.Retention.SubscriptionDailyDays)
 	usageCutoff := now.AddDate(0, 0, -s.cfg.Retention.UsageLogsDays)
 	dedupCutoff := now.AddDate(0, 0, -s.cfg.Retention.UsageBillingDedupDays)
@@ -337,6 +368,10 @@ func (s *DashboardAggregationService) maybeCleanupRetention(ctx context.Context,
 	aggErr := s.repo.CleanupAggregates(ctx, hourlyCutoff, dailyCutoff)
 	if aggErr != nil {
 		logger.LegacyPrintf("service.dashboard_aggregation", "[DashboardAggregation] 聚合保留清理失败: %v", aggErr)
+	}
+	userAPIKeyDailyErr := s.repo.CleanupUserAPIKeyUsageDaily(ctx, userAPIKeyDailyCutoff)
+	if userAPIKeyDailyErr != nil {
+		logger.LegacyPrintf("service.dashboard_aggregation", "[DashboardAggregation] user_api_key_usage_daily 保留清理失败: %v", userAPIKeyDailyErr)
 	}
 	subDailyErr := s.repo.CleanupSubscriptionUsageDaily(ctx, subDailyCutoff)
 	if subDailyErr != nil {
@@ -350,9 +385,18 @@ func (s *DashboardAggregationService) maybeCleanupRetention(ctx context.Context,
 	if dedupErr != nil {
 		logger.LegacyPrintf("service.dashboard_aggregation", "[DashboardAggregation] usage_billing_dedup 保留清理失败: %v", dedupErr)
 	}
-	if aggErr == nil && subDailyErr == nil && usageErr == nil && dedupErr == nil {
+	if aggErr == nil && userAPIKeyDailyErr == nil && subDailyErr == nil && usageErr == nil && dedupErr == nil {
 		s.lastRetentionCleanup.Store(now)
 	}
+}
+
+func retainedCalendarDayCutoff(now time.Time, days int) time.Time {
+	if days <= 0 {
+		return now
+	}
+	local := now.In(timezone.Location())
+	today := time.Date(local.Year(), local.Month(), local.Day(), 0, 0, 0, 0, local.Location())
+	return today.AddDate(0, 0, -(days - 1))
 }
 
 func truncateToDayUTC(t time.Time) time.Time {

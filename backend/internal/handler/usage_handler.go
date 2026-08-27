@@ -108,7 +108,7 @@ func (h *UsageHandler) List(c *gin.Context) {
 
 	// Parse date range
 	var startTime, endTime *time.Time
-	userTZ := c.Query("timezone") // Get user's timezone from request
+	userTZ := c.Query("timezone")
 	if startDateStr := c.Query("start_date"); startDateStr != "" {
 		t, err := timezone.ParseInUserLocation("2006-01-02", startDateStr, userTZ)
 		if err != nil {
@@ -332,8 +332,8 @@ func (h *UsageHandler) Stats(c *gin.Context) {
 	}
 
 	// 获取时间范围参数
-	userTZ := c.Query("timezone") // Get user's timezone from request
-	now := timezone.NowInUserLocation(userTZ)
+	// Durable daily usage is bucketed in the configured system timezone.
+	now := timezone.Now()
 	var startTime, endTime time.Time
 
 	// 优先使用 start_date 和 end_date 参数
@@ -343,12 +343,12 @@ func (h *UsageHandler) Stats(c *gin.Context) {
 	if startDateStr != "" && endDateStr != "" {
 		// 使用自定义日期范围
 		var err error
-		startTime, err = timezone.ParseInUserLocation("2006-01-02", startDateStr, userTZ)
+		startTime, err = timezone.ParseInLocation("2006-01-02", startDateStr)
 		if err != nil {
 			response.BadRequest(c, "Invalid start_date format, use YYYY-MM-DD")
 			return
 		}
-		endTime, err = timezone.ParseInUserLocation("2006-01-02", endDateStr, userTZ)
+		endTime, err = timezone.ParseInLocation("2006-01-02", endDateStr)
 		if err != nil {
 			response.BadRequest(c, "Invalid end_date format, use YYYY-MM-DD")
 			return
@@ -360,13 +360,13 @@ func (h *UsageHandler) Stats(c *gin.Context) {
 		period := c.DefaultQuery("period", "today")
 		switch period {
 		case "today":
-			startTime = timezone.StartOfDayInUserLocation(now, userTZ)
+			startTime = timezone.StartOfDay(now)
 		case "week":
 			startTime = now.AddDate(0, 0, -7)
 		case "month":
 			startTime = now.AddDate(0, -1, 0)
 		default:
-			startTime = timezone.StartOfDayInUserLocation(now, userTZ)
+			startTime = timezone.StartOfDay(now)
 		}
 		endTime = now
 	}
@@ -387,33 +387,32 @@ func (h *UsageHandler) Stats(c *gin.Context) {
 }
 
 // parseUserTimeRange parses start_date, end_date query parameters for user dashboard
-// Uses user's timezone if provided, otherwise falls back to server timezone
+// Durable daily usage is bucketed in the configured system timezone.
 func parseUserTimeRange(c *gin.Context) (time.Time, time.Time) {
-	userTZ := c.Query("timezone") // Get user's timezone from request
-	now := timezone.NowInUserLocation(userTZ)
+	now := timezone.Now()
 	startDate := c.Query("start_date")
 	endDate := c.Query("end_date")
 
 	var startTime, endTime time.Time
 
 	if startDate != "" {
-		if t, err := timezone.ParseInUserLocation("2006-01-02", startDate, userTZ); err == nil {
+		if t, err := timezone.ParseInLocation("2006-01-02", startDate); err == nil {
 			startTime = t
 		} else {
-			startTime = timezone.StartOfDayInUserLocation(now.AddDate(0, 0, -7), userTZ)
+			startTime = timezone.StartOfDay(now.AddDate(0, 0, -7))
 		}
 	} else {
-		startTime = timezone.StartOfDayInUserLocation(now.AddDate(0, 0, -7), userTZ)
+		startTime = timezone.StartOfDay(now.AddDate(0, 0, -7))
 	}
 
 	if endDate != "" {
-		if t, err := timezone.ParseInUserLocation("2006-01-02", endDate, userTZ); err == nil {
-			endTime = t.Add(24 * time.Hour) // Include the end date
+		if t, err := timezone.ParseInLocation("2006-01-02", endDate); err == nil {
+			endTime = t.AddDate(0, 0, 1) // Include the end date
 		} else {
-			endTime = timezone.StartOfDayInUserLocation(now.AddDate(0, 0, 1), userTZ)
+			endTime = timezone.StartOfDay(now.AddDate(0, 0, 1))
 		}
 	} else {
-		endTime = timezone.StartOfDayInUserLocation(now.AddDate(0, 0, 1), userTZ)
+		endTime = timezone.StartOfDay(now.AddDate(0, 0, 1))
 	}
 
 	return startTime, endTime
@@ -435,10 +434,10 @@ func parseAPIKeyDailyUsageDays(raw string) (int, bool) {
 	return days, true
 }
 
-func apiKeyDailyUsageRange(days int, userTZ string) (time.Time, time.Time) {
-	now := timezone.NowInUserLocation(userTZ)
-	startTime := timezone.StartOfDayInUserLocation(now.AddDate(0, 0, -(days-1)), userTZ)
-	endTime := timezone.StartOfDayInUserLocation(now.AddDate(0, 0, 1), userTZ)
+func apiKeyDailyUsageRange(days int) (time.Time, time.Time) {
+	now := timezone.Now()
+	startTime := timezone.StartOfDay(now.AddDate(0, 0, -(days - 1)))
+	endTime := timezone.StartOfDay(now.AddDate(0, 0, 1))
 	return startTime, endTime
 }
 
@@ -597,8 +596,7 @@ func (h *UsageHandler) GetMyAPIKeyDailyUsage(c *gin.Context) {
 		return
 	}
 
-	userTZ := c.Query("timezone")
-	startTime, endTime := apiKeyDailyUsageRange(days, userTZ)
+	startTime, endTime := apiKeyDailyUsageRange(days)
 	items, err := h.usageService.GetAPIKeyDailyUsage(c.Request.Context(), subject.UserID, apiKeyID, startTime, endTime)
 	if err != nil {
 		response.ErrorFrom(c, err)

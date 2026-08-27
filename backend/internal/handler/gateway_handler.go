@@ -1124,7 +1124,7 @@ func (h *GatewayHandler) buildAPIKeyDailyUsage(c *gin.Context, userID, apiKeyID 
 	if h.usageService == nil {
 		return nil
 	}
-	startTime, endTime := apiKeyDailyUsageRange(days, c.Query("timezone"))
+	startTime, endTime := apiKeyDailyUsageRange(days)
 	stats, err := h.usageService.GetAPIKeyDailyUsage(c.Request.Context(), userID, apiKeyID, startTime, endTime)
 	if err != nil {
 		return nil

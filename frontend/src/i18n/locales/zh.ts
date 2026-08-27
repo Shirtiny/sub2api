@@ -685,7 +685,7 @@ export default {
     platformBreakdown: '按平台拆分',
     platformBreakdownEmpty: '暂无平台用量',
     platformCount: '{count} 个平台',
-    platformOther: '其他',
+    platformOther: '历史/未分类',
     platformQuota: {
       title: '配额用量',
       daily: '日',
@@ -2146,7 +2146,7 @@ export default {
       platformBreakdown: '按平台拆分',
       platformBreakdownEmpty: '暂无平台明细',
       platformBreakdownHint: '悬浮查看各平台用量',
-      platformOther: '其他',
+      platformOther: '历史/未分类',
       membershipOperation: '调整方式',
       editMembershipPoints: '修改会员点数',
       currentMembershipPoints: '当前会员点数',
