@@ -92,7 +92,22 @@ jobs:
             sha256sum "$file"
           done < release-record/migrations.files > release-record/migrations.sha256
 
-          grep -E '/[^/]*backfill[^/]*\.sql$' release-record/migrations.files > release-record/backfill-migrations.files || true
+          # Most data backfills are identified by filename. Keep an explicit
+          # list for published migrations that perform a backfill but cannot be
+          # renamed without breaking schema_migrations checksum history.
+          EXPLICIT_BACKFILL_MIGRATIONS=(
+            backend/migrations/195_user_api_key_usage_daily.sql
+          )
+          {
+            grep -E '/[^/]*backfill[^/]*\.sql$' release-record/migrations.files || true
+            for file in "${EXPLICIT_BACKFILL_MIGRATIONS[@]}"; do
+              if grep -Fqx "$file" release-record/migrations.files; then
+                printf '%s\n' "$file"
+              else
+                echo "Skipping explicit backfill migration not present in this tag: $file" >&2
+              fi
+            done
+          } | LC_ALL=C sort -u > release-record/backfill-migrations.files
           while IFS= read -r file; do
             sha256sum "$file"
           done < release-record/backfill-migrations.files > release-record/backfill-migrations.sha256
