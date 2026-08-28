@@ -3299,6 +3299,7 @@ export default {
       description: 'Manage user subscriptions and quota limits',
       assignSubscription: 'Assign Subscription',
       adjustSubscription: 'Adjust Subscription',
+      editMultiplier: 'Edit Subscription Multiplier',
       revokeSubscription: 'Revoke Subscription',
       allStatus: 'All Status',
       allGroups: 'All Groups',
@@ -3335,12 +3336,17 @@ export default {
       form: {
         user: 'User',
         group: 'Subscription Group',
+        plan: 'Subscription Plan',
+        multiplier: 'Plan Multiplier',
         validityDays: 'Validity (Days)',
         adjustDays: 'Adjust by (Days)'
       },
       selectUser: 'Select a user',
       selectGroup: 'Select a subscription group',
+      selectPlan: 'Select a subscription plan',
+      selectMultiplier: 'Select a plan multiplier',
       groupHint: 'Only groups with subscription billing type are shown',
+      planOptionSummary: '{group} · {days} days · concurrency {concurrency}',
       validityHint: 'Number of days the subscription will be valid',
       adjustingFor: 'Adjusting subscription for',
       currentExpiration: 'Current expiration',
@@ -3349,6 +3355,7 @@ export default {
       assign: 'Assign',
       assigning: 'Assigning...',
       adjust: 'Adjust',
+      multiplier: 'Multiplier',
       adjusting: 'Adjusting...',
       revoke: 'Revoke',
       resetQuota: 'Reset Quota',
@@ -3442,15 +3449,19 @@ export default {
       assignFirstSubscription: 'Assign a subscription to get started.',
       subscriptionAssigned: 'Subscription assigned successfully',
       subscriptionAdjusted: 'Subscription adjusted successfully',
+      multiplierUpdated: 'Subscription multiplier updated',
       subscriptionRevoked: 'Subscription revoked successfully',
       failedToLoad: 'Failed to load subscriptions',
       failedToAssign: 'Failed to assign subscription',
       failedToAdjust: 'Failed to adjust subscription',
+      failedToUpdateMultiplier: 'Failed to update subscription multiplier',
       failedToRevoke: 'Failed to revoke subscription',
       adjustWouldExpire: 'Remaining days after adjustment must be greater than 0',
       adjustOutOfRange: 'Adjustment days must be between -36500 and 36500',
       pleaseSelectUser: 'Please select a user',
       pleaseSelectGroup: 'Please select a group',
+      pleaseSelectPlan: 'Please select a subscription plan',
+      pleaseSelectMultiplier: 'Please select a plan multiplier',
       validityDaysRequired: 'Please enter a valid number of days (at least 1)',
       revokeConfirm:
         "Are you sure you want to revoke the subscription for '{user}'? This action cannot be undone.",
@@ -3469,7 +3480,7 @@ export default {
           title: 'Assign Subscription to User',
           line1: 'Click the "Assign Subscription" button in the top right',
           line2: 'Search for a user by email and select them',
-          line3: 'Choose a subscription group, set validity days, then click "Assign"'
+          line3: 'Choose a subscription plan and multiplier, set validity days, then click "Assign"'
         },
         step3: {
           title: 'Manage Existing Subscriptions'
@@ -3477,12 +3488,13 @@ export default {
         actions: {
           adjust: 'Adjust',
           adjustDesc: 'Extend or shorten the subscription validity period',
+          multiplierDesc: 'Change the plan multiplier and restore its concurrency and reset entitlements',
           resetQuota: 'Reset Quota',
           resetQuotaDesc: 'Reset daily/weekly/monthly usage to zero',
           revoke: 'Revoke',
           revokeDesc: 'Immediately terminate the subscription (irreversible)'
         },
-        tip: 'Tip: Only groups with billing type "Subscription" and status "Active" appear in the group dropdown. If no options are available, create one in Group Management first.'
+        tip: 'Tip: Only plans linked to active subscription groups are listed. Create a subscription plan in payment settings if no option is available.'
       }
     },
 

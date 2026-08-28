@@ -12,6 +12,7 @@ import type {
   BulkShiftWindowRequest,
   BulkShiftWindowResult,
   ExtendSubscriptionRequest,
+  UpdateSubscriptionMultiplierRequest,
   PaginatedResponse,
   SubscriptionStats,
   SubscriptionUsageSeries
@@ -112,6 +113,19 @@ export async function extend(
   const { data } = await apiClient.post<UserSubscription>(
     `/admin/subscriptions/${id}/extend`,
     request
+  )
+  return data
+}
+
+/** Update the plan-backed multiplier without changing validity or usage. */
+export async function updateMultiplier(
+  id: number,
+  request: UpdateSubscriptionMultiplierRequest
+): Promise<UserSubscription> {
+  const { data } = await apiClient.put<UserSubscription>(
+    `/admin/subscriptions/${id}/multiplier`,
+    request,
+    { headers: { 'Idempotency-Key': createIdempotencyKey('subscription-multiplier') } }
   )
   return data
 }
@@ -258,6 +272,7 @@ export const subscriptionsAPI = {
   assign,
   bulkAssign,
   extend,
+  updateMultiplier,
   revoke,
   resetQuota,
   bulkResetQuota,

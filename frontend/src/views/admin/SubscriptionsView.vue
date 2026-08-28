@@ -223,14 +223,21 @@
           </template>
 
           <template #cell-group="{ row }">
-            <GroupBadge
-              v-if="row.group"
-              :name="row.group.name"
-              :platform="row.group.platform"
-              :subscription-type="row.group.subscription_type"
-              :rate-multiplier="row.group.rate_multiplier"
-              :show-rate="false"
-            />
+            <div v-if="row.group" class="flex flex-wrap items-center gap-1.5">
+              <GroupBadge
+                :name="row.group.name"
+                :platform="row.group.platform"
+                :subscription-type="row.group.subscription_type"
+                :rate-multiplier="row.group.rate_multiplier"
+                :show-rate="false"
+              />
+              <span
+                v-if="row.custom_multiplier != null"
+                class="rounded bg-gray-100 px-1.5 py-0.5 text-xs font-semibold text-gray-700 dark:bg-dark-600 dark:text-gray-200"
+              >
+                {{ row.custom_multiplier }}x
+              </span>
+            </div>
             <span v-else class="text-sm text-content-tertiary">-</span>
           </template>
 
@@ -411,6 +418,14 @@
                 <span class="text-xs">{{ t('admin.subscriptions.adjust') }}</span>
               </button>
               <button
+                v-if="row.status === 'active' && canEditSubscriptionMultiplier(row)"
+                @click="handleEditMultiplier(row)"
+                class="flex flex-col items-center gap-0.5 rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-emerald-900/20 dark:hover:text-emerald-400"
+              >
+                <Icon name="edit" size="sm" />
+                <span class="text-xs">{{ t('admin.subscriptions.multiplier') }}</span>
+              </button>
+              <button
                 v-if="row.status === 'active'"
                 @click="handleResetQuota(row)"
                 :disabled="resettingQuota && resettingSubscription?.id === row.id"
@@ -516,34 +531,38 @@
           </div>
         </div>
         <div>
-          <label class="input-label">{{ t('admin.subscriptions.form.group') }}</label>
+          <label class="input-label">{{ t('admin.subscriptions.form.plan') }}</label>
           <Select
-            v-model="assignForm.group_id"
-            :options="subscriptionGroupOptions"
-            :placeholder="t('admin.subscriptions.selectGroup')"
+            v-model="assignForm.plan_id"
+            :options="assignPlanOptions"
+            :placeholder="t('admin.subscriptions.selectPlan')"
+            @change="handleAssignPlanChange"
           >
             <template #selected="{ option }">
-              <GroupBadge
-                v-if="option"
-                :name="(option as unknown as GroupOption).label"
-                :platform="(option as unknown as GroupOption).platform"
-                :subscription-type="(option as unknown as GroupOption).subscriptionType"
-                :rate-multiplier="(option as unknown as GroupOption).rate"
-              />
-              <span v-else class="text-gray-400">{{ t('admin.subscriptions.selectGroup') }}</span>
+              <span v-if="option" class="text-content-primary">
+                {{ (option as unknown as PlanOption).label }}
+              </span>
+              <span v-else class="text-gray-400">{{ t('admin.subscriptions.selectPlan') }}</span>
             </template>
-            <template #option="{ option, selected }">
-              <GroupOptionItem
-                :name="(option as unknown as GroupOption).label"
-                :platform="(option as unknown as GroupOption).platform"
-                :subscription-type="(option as unknown as GroupOption).subscriptionType"
-                :rate-multiplier="(option as unknown as GroupOption).rate"
-                :description="(option as unknown as GroupOption).description"
-                :selected="selected"
-              />
+            <template #option="{ option }">
+              <div class="min-w-0 py-0.5">
+                <div class="truncate text-sm font-medium text-content-primary">
+                  {{ (option as unknown as PlanOption).label }}
+                </div>
+                <div class="mt-0.5 truncate text-xs text-content-tertiary">
+                  {{ (option as unknown as PlanOption).description }}
+                </div>
+              </div>
             </template>
           </Select>
-          <p class="input-hint">{{ t('admin.subscriptions.groupHint') }}</p>
+        </div>
+        <div v-if="selectedAssignPlan?.custom_multiplier_enabled">
+          <label class="input-label">{{ t('admin.subscriptions.form.multiplier') }}</label>
+          <Select
+            v-model="assignForm.multiplier"
+            :options="assignMultiplierOptions"
+            :placeholder="t('admin.subscriptions.selectMultiplier')"
+          />
         </div>
         <div>
           <label class="input-label">{{ t('admin.subscriptions.form.validityDays') }}</label>
@@ -651,6 +670,63 @@
             class="btn btn-primary"
           >
             {{ submitting ? t('admin.subscriptions.adjusting') : t('admin.subscriptions.adjust') }}
+          </button>
+        </div>
+      </template>
+    </BaseDialog>
+
+    <!-- Edit Subscription Multiplier Modal -->
+    <BaseDialog
+      :show="showMultiplierModal"
+      :title="t('admin.subscriptions.editMultiplier')"
+      width="narrow"
+      @close="closeMultiplierModal"
+    >
+      <form
+        v-if="multiplierSubscription"
+        id="subscription-multiplier-form"
+        @submit.prevent="handleUpdateMultiplier"
+        class="space-y-5"
+      >
+        <div class="rounded-lg bg-gray-50 p-4 dark:bg-dark-700">
+          <p class="text-sm font-medium text-content-primary">
+            {{ multiplierSubscription.user?.email }}
+          </p>
+          <p class="mt-1 text-sm text-content-secondary">
+            {{ multiplierSubscription.group?.name }}
+          </p>
+        </div>
+        <div>
+          <label class="input-label">{{ t('admin.subscriptions.form.plan') }}</label>
+          <Select
+            v-model="multiplierForm.plan_id"
+            :options="editMultiplierPlanOptions"
+            :placeholder="t('admin.subscriptions.selectPlan')"
+            :disabled="multiplierSubscription.custom_source_plan_id != null"
+            @change="handleMultiplierPlanChange"
+          />
+        </div>
+        <div>
+          <label class="input-label">{{ t('admin.subscriptions.form.multiplier') }}</label>
+          <Select
+            v-model="multiplierForm.multiplier"
+            :options="editMultiplierOptions"
+            :placeholder="t('admin.subscriptions.selectMultiplier')"
+          />
+        </div>
+      </form>
+      <template #footer>
+        <div v-if="multiplierSubscription" class="flex justify-end gap-3">
+          <button @click="closeMultiplierModal" type="button" class="btn btn-secondary">
+            {{ t('common.cancel') }}
+          </button>
+          <button
+            type="submit"
+            form="subscription-multiplier-form"
+            :disabled="submitting"
+            class="btn btn-primary"
+          >
+            {{ submitting ? t('common.saving') : t('common.save') }}
           </button>
         </div>
       </template>
@@ -912,8 +988,7 @@ import { adminAPI } from '@/api/admin'
 import type {
   UserSubscription,
   Group,
-  GroupPlatform,
-  SubscriptionType,
+  SubscriptionPlan,
   BulkShiftWindowResult,
   SubscriptionFilterScope
 } from '@/types'
@@ -930,7 +1005,6 @@ import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import Select from '@/components/common/Select.vue'
 import GroupBadge from '@/components/common/GroupBadge.vue'
-import GroupOptionItem from '@/components/common/GroupOptionItem.vue'
 import SubscriptionStatsDialog from '@/components/admin/SubscriptionStatsDialog.vue'
 import Icon from '@/components/icons/Icon.vue'
 import {
@@ -944,13 +1018,11 @@ import { subscriptionEffectiveExpiresAt } from '@/utils/subscriptionCustom'
 const { t } = useI18n()
 const appStore = useAppStore()
 
-interface GroupOption {
+interface PlanOption {
   value: number
   label: string
-  description: string | null
-  platform: GroupPlatform
-  subscriptionType: SubscriptionType
-  rate: number
+  description: string
+  [key: string]: unknown
 }
 
 // Guide modal state
@@ -958,6 +1030,7 @@ const showGuideModal = ref(false)
 
 const guideActionRows = computed(() => [
   { action: t('admin.subscriptions.guide.actions.adjust'), desc: t('admin.subscriptions.guide.actions.adjustDesc') },
+  { action: t('admin.subscriptions.multiplier'), desc: t('admin.subscriptions.guide.actions.multiplierDesc') },
   { action: t('admin.subscriptions.guide.actions.resetQuota'), desc: t('admin.subscriptions.guide.actions.resetQuotaDesc') },
   { action: t('admin.subscriptions.guide.actions.revoke'), desc: t('admin.subscriptions.guide.actions.revokeDesc') }
 ])
@@ -1079,6 +1152,7 @@ const statusOptions = computed(() => [
 
 const subscriptions = ref<UserSubscription[]>([])
 const groups = ref<Group[]>([])
+const plans = ref<SubscriptionPlan[]>([])
 const loading = ref(false)
 let abortController: AbortController | null = null
 
@@ -1120,6 +1194,7 @@ const pagination = reactive({
 
 const showAssignModal = ref(false)
 const showExtendModal = ref(false)
+const showMultiplierModal = ref(false)
 const showRevokeDialog = ref(false)
 const showResetQuotaConfirm = ref(false)
 const showBulkResetQuotaConfirm = ref(false)
@@ -1303,11 +1378,19 @@ const confirmShiftWindow = async () => {
 }
 const extendingSubscription = ref<UserSubscription | null>(null)
 const revokingSubscription = ref<UserSubscription | null>(null)
+const multiplierSubscription = ref<UserSubscription | null>(null)
 
 const assignForm = reactive({
   user_id: null as number | null,
   group_id: null as number | null,
+  plan_id: null as number | null,
+  multiplier: null as number | null,
   validity_days: 30
+})
+
+const multiplierForm = reactive({
+  plan_id: null as number | null,
+  multiplier: null as number | null
 })
 
 const extendForm = reactive({
@@ -1328,19 +1411,70 @@ const platformFilterOptions = computed(() => [
   { value: 'antigravity', label: 'Antigravity' }
 ])
 
-// Group options for assign (only subscription type groups)
-const subscriptionGroupOptions = computed(() =>
-  groups.value
-    .filter((g) => g.subscription_type === 'subscription' && g.status === 'active')
-    .map((g) => ({
-      value: g.id,
-      label: g.name,
-      description: g.description,
-      platform: g.platform,
-      subscriptionType: g.subscription_type,
-      rate: g.rate_multiplier
-    }))
+const groupByID = (groupID: number) => groups.value.find((group) => group.id === groupID)
+
+const planValidityDays = (plan: SubscriptionPlan) => {
+  const unit = plan.validity_unit?.toLowerCase()
+  if (unit === 'week' || unit === 'weeks') return plan.validity_days * 7
+  if (unit === 'month' || unit === 'months') return plan.validity_days * 30
+  return plan.validity_days
+}
+
+const selectablePlans = computed(() =>
+  plans.value.filter((plan) => {
+    const group = groupByID(plan.group_id)
+    return group?.subscription_type === 'subscription' && group.status === 'active'
+  })
 )
+
+const planOption = (plan: SubscriptionPlan): PlanOption => ({
+  value: plan.id,
+  label: plan.name,
+  description: t('admin.subscriptions.planOptionSummary', {
+    group: groupByID(plan.group_id)?.name || `#${plan.group_id}`,
+    days: planValidityDays(plan),
+    concurrency: plan.concurrency
+  })
+})
+
+const assignPlanOptions = computed(() => selectablePlans.value.map(planOption))
+const selectedAssignPlan = computed(() =>
+  selectablePlans.value.find((plan) => plan.id === assignForm.plan_id) || null
+)
+
+const multiplierOptionsForPlan = (plan: SubscriptionPlan | null) => {
+  if (!plan?.custom_multiplier_enabled) return []
+  const min = Math.max(1, plan.custom_multiplier_min ?? 1)
+  const max = Math.max(min, plan.custom_multiplier_max ?? min)
+  return Array.from({ length: max - min + 1 }, (_, index) => {
+    const multiplier = min + index
+    return { value: multiplier, label: `${multiplier}x` }
+  })
+}
+
+const assignMultiplierOptions = computed(() => multiplierOptionsForPlan(selectedAssignPlan.value))
+
+const multiplierPlansForSubscription = (subscription: UserSubscription | null) => {
+  if (!subscription || subscription.group?.is_custom_subscription_group) return []
+  const sourceGroupID = subscription.custom_source_group_id ?? subscription.group_id
+  const candidates = selectablePlans.value.filter(
+    (plan) => plan.group_id === sourceGroupID && plan.custom_multiplier_enabled
+  )
+  if (subscription.custom_source_plan_id == null) return candidates
+  return candidates.filter((plan) => plan.id === subscription.custom_source_plan_id)
+}
+
+const canEditSubscriptionMultiplier = (subscription: UserSubscription) =>
+  multiplierPlansForSubscription(subscription).length > 0
+
+const editMultiplierPlans = computed(() =>
+  multiplierPlansForSubscription(multiplierSubscription.value)
+)
+const editMultiplierPlanOptions = computed(() => editMultiplierPlans.value.map(planOption))
+const selectedEditMultiplierPlan = computed(() =>
+  editMultiplierPlans.value.find((plan) => plan.id === multiplierForm.plan_id) || null
+)
+const editMultiplierOptions = computed(() => multiplierOptionsForPlan(selectedEditMultiplierPlan.value))
 
 const applyFilters = () => {
   pagination.page = 1
@@ -1395,6 +1529,15 @@ const loadGroups = async () => {
     groups.value = await adminAPI.groups.getAll()
   } catch (error) {
     console.error('Error loading groups:', error)
+  }
+}
+
+const loadPlans = async () => {
+  try {
+    const response = await adminAPI.payment.getPlans()
+    plans.value = response.data || []
+  } catch (error) {
+    console.error('Error loading subscription plans:', error)
   }
 }
 
@@ -1518,6 +1661,8 @@ const closeAssignModal = () => {
   showAssignModal.value = false
   assignForm.user_id = null
   assignForm.group_id = null
+  assignForm.plan_id = null
+  assignForm.multiplier = null
   assignForm.validity_days = 30
   // Clear user search state
   selectedUser.value = null
@@ -1526,13 +1671,31 @@ const closeAssignModal = () => {
   showUserDropdown.value = false
 }
 
+const handleAssignPlanChange = (value: string | number | boolean | null) => {
+  const plan = selectablePlans.value.find((candidate) => candidate.id === Number(value))
+  if (!plan) {
+    assignForm.group_id = null
+    assignForm.multiplier = null
+    return
+  }
+  assignForm.group_id = plan.group_id
+  assignForm.validity_days = planValidityDays(plan)
+  assignForm.multiplier = plan.custom_multiplier_enabled
+    ? Math.max(1, plan.custom_multiplier_min ?? 1)
+    : null
+}
+
 const handleAssignSubscription = async () => {
   if (!assignForm.user_id) {
     appStore.showError(t('admin.subscriptions.pleaseSelectUser'))
     return
   }
-  if (!assignForm.group_id) {
-    appStore.showError(t('admin.subscriptions.pleaseSelectGroup'))
+  if (!assignForm.plan_id || !assignForm.group_id) {
+    appStore.showError(t('admin.subscriptions.pleaseSelectPlan'))
+    return
+  }
+  if (selectedAssignPlan.value?.custom_multiplier_enabled && !assignForm.multiplier) {
+    appStore.showError(t('admin.subscriptions.pleaseSelectMultiplier'))
     return
   }
   if (!assignForm.validity_days || assignForm.validity_days < 1) {
@@ -1545,6 +1708,8 @@ const handleAssignSubscription = async () => {
     await adminAPI.subscriptions.assign({
       user_id: assignForm.user_id,
       group_id: assignForm.group_id,
+      plan_id: assignForm.plan_id,
+      multiplier: assignForm.multiplier ?? undefined,
       validity_days: assignForm.validity_days
     })
     appStore.showSuccess(t('admin.subscriptions.subscriptionAssigned'))
@@ -1553,6 +1718,58 @@ const handleAssignSubscription = async () => {
   } catch (error: any) {
     appStore.showError(error.response?.data?.detail || t('admin.subscriptions.failedToAssign'))
     console.error('Error assigning subscription:', error)
+  } finally {
+    submitting.value = false
+  }
+}
+
+const handleEditMultiplier = (subscription: UserSubscription) => {
+  const availablePlans = multiplierPlansForSubscription(subscription)
+  if (availablePlans.length === 0) return
+  const selectedPlan = availablePlans.find(
+    (plan) => plan.id === subscription.custom_source_plan_id
+  ) || availablePlans[0]
+  multiplierSubscription.value = subscription
+  multiplierForm.plan_id = selectedPlan.id
+  const options = multiplierOptionsForPlan(selectedPlan)
+  const currentMultiplier = subscription.custom_multiplier
+  multiplierForm.multiplier = options.some((option) => option.value === currentMultiplier)
+    ? currentMultiplier ?? options[0]?.value ?? null
+    : options[0]?.value ?? null
+  showMultiplierModal.value = true
+}
+
+const handleMultiplierPlanChange = (value: string | number | boolean | null) => {
+  const plan = editMultiplierPlans.value.find((candidate) => candidate.id === Number(value))
+  multiplierForm.multiplier = multiplierOptionsForPlan(plan || null)[0]?.value ?? null
+}
+
+const closeMultiplierModal = () => {
+  showMultiplierModal.value = false
+  multiplierSubscription.value = null
+  multiplierForm.plan_id = null
+  multiplierForm.multiplier = null
+}
+
+const handleUpdateMultiplier = async () => {
+  if (!multiplierSubscription.value || !multiplierForm.plan_id || !multiplierForm.multiplier) {
+    appStore.showError(t('admin.subscriptions.pleaseSelectMultiplier'))
+    return
+  }
+  submitting.value = true
+  try {
+    await adminAPI.subscriptions.updateMultiplier(multiplierSubscription.value.id, {
+      plan_id: multiplierForm.plan_id,
+      multiplier: multiplierForm.multiplier
+    })
+    appStore.showSuccess(t('admin.subscriptions.multiplierUpdated'))
+    closeMultiplierModal()
+    await loadSubscriptions()
+  } catch (error: any) {
+    appStore.showError(
+      error.response?.data?.detail || error?.message || t('admin.subscriptions.failedToUpdateMultiplier')
+    )
+    console.error('Error updating subscription multiplier:', error)
   } finally {
     submitting.value = false
   }
@@ -1777,6 +1994,7 @@ onMounted(() => {
   loadSavedColumns()
   loadSubscriptions()
   loadGroups()
+  loadPlans()
   document.addEventListener('click', handleClickOutside)
 })
 

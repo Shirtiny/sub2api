@@ -1716,7 +1716,9 @@ export interface SubscriptionProgress {
 
 export interface AssignSubscriptionRequest {
   user_id: number
-  group_id: number
+  group_id?: number
+  plan_id?: number
+  multiplier?: number
   validity_days?: number
 }
 
@@ -1728,6 +1730,11 @@ export interface BulkAssignSubscriptionRequest {
 
 export interface ExtendSubscriptionRequest {
   days: number
+}
+
+export interface UpdateSubscriptionMultiplierRequest {
+  plan_id: number
+  multiplier: number
 }
 
 // ==================== Subscription Window Shift ====================

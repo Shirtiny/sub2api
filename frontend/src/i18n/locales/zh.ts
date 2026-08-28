@@ -3289,6 +3289,7 @@ export default {
       description: '管理用户订阅和配额限制',
       assignSubscription: '分配订阅',
       adjustSubscription: '调整订阅',
+      editMultiplier: '修改订阅倍率',
       revokeSubscription: '撤销订阅',
       allStatus: '全部状态',
       allGroups: '全部分组',
@@ -3325,12 +3326,17 @@ export default {
       form: {
         user: '用户',
         group: '订阅分组',
+        plan: '订阅套餐',
+        multiplier: '套餐倍率',
         validityDays: '有效期（天）',
         adjustDays: '调整天数'
       },
       selectUser: '选择用户',
       selectGroup: '选择订阅分组',
+      selectPlan: '选择订阅套餐',
+      selectMultiplier: '选择套餐倍率',
       groupHint: '仅显示订阅计费类型的分组',
+      planOptionSummary: '{group} · {days} 天 · 并发 {concurrency}',
       validityHint: '订阅的有效天数',
       adjustingFor: '为以下用户调整订阅',
       currentExpiration: '当前到期时间',
@@ -3339,6 +3345,7 @@ export default {
       assign: '分配',
       assigning: '分配中...',
       adjust: '调整',
+      multiplier: '倍率',
       adjusting: '调整中...',
       revoke: '撤销',
       resetQuota: '重置配额',
@@ -3432,15 +3439,19 @@ export default {
       assignFirstSubscription: '分配一个订阅以开始使用。',
       subscriptionAssigned: '订阅分配成功',
       subscriptionAdjusted: '订阅调整成功',
+      multiplierUpdated: '订阅倍率已更新',
       subscriptionRevoked: '订阅撤销成功',
       failedToLoad: '加载订阅列表失败',
       failedToAssign: '分配订阅失败',
       failedToAdjust: '调整订阅失败',
+      failedToUpdateMultiplier: '修改订阅倍率失败',
       failedToRevoke: '撤销订阅失败',
       adjustWouldExpire: '调整后剩余天数必须大于0',
       adjustOutOfRange: '调整天数必须在 -36500 到 36500 之间',
       pleaseSelectUser: '请选择用户',
       pleaseSelectGroup: '请选择分组',
+      pleaseSelectPlan: '请选择订阅套餐',
+      pleaseSelectMultiplier: '请选择套餐倍率',
       validityDaysRequired: '请输入有效的天数（至少1天）',
       revokeConfirm: "确定要撤销 '{user}' 的订阅吗？此操作无法撤销。",
       guide: {
@@ -3458,7 +3469,7 @@ export default {
           title: '分配订阅给用户',
           line1: '点击本页右上角「分配订阅」按钮',
           line2: '在弹窗中搜索用户邮箱并选择目标用户',
-          line3: '选择订阅分组、设置有效期天数，点击「分配」'
+          line3: '选择订阅套餐和倍率、设置有效期天数，点击「分配」'
         },
         step3: {
           title: '管理已有订阅'
@@ -3466,12 +3477,13 @@ export default {
         actions: {
           adjust: '调整',
           adjustDesc: '延长或缩短订阅有效期',
+          multiplierDesc: '修改套餐倍率，并补齐套餐对应的并发和重置权益',
           resetQuota: '重置配额',
           resetQuotaDesc: '将日/周/月用量归零，重新开始计算',
           revoke: '撤销',
           revokeDesc: '立即终止该用户的订阅，不可恢复'
         },
-        tip: '提示：订阅分组下拉列表中只会显示计费类型为「订阅」且状态为「正常」的分组。如果没有可选项，请先到分组管理中创建。'
+        tip: '提示：套餐列表只显示绑定到有效订阅分组的套餐。如果没有可选项，请先在支付配置中创建订阅套餐。'
       }
     },
 

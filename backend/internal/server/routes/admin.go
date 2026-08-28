@@ -554,6 +554,7 @@ func registerSubscriptionRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
 		subscriptions.POST("/bulk-reset-quota", h.Admin.Subscription.BulkResetQuota)
 		subscriptions.POST("/bulk-shift-window", h.Admin.Subscription.BulkShiftWindow)
 		subscriptions.POST("/:id/extend", h.Admin.Subscription.Extend)
+		subscriptions.PUT("/:id/multiplier", h.Admin.Subscription.UpdateMultiplier)
 		subscriptions.POST("/:id/reset-quota", h.Admin.Subscription.ResetQuota)
 		subscriptions.DELETE("/:id", h.Admin.Subscription.Revoke)
 	}

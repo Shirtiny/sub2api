@@ -41,7 +41,9 @@ func NewSubscriptionHandler(subscriptionService *service.SubscriptionService) *S
 // AssignSubscriptionRequest represents assign subscription request
 type AssignSubscriptionRequest struct {
 	UserID       int64  `json:"user_id" binding:"required"`
-	GroupID      int64  `json:"group_id" binding:"required"`
+	GroupID      int64  `json:"group_id" binding:"omitempty"`
+	PlanID       *int64 `json:"plan_id" binding:"omitempty"`
+	Multiplier   *int   `json:"multiplier" binding:"omitempty,min=1,max=100"`
 	ValidityDays int    `json:"validity_days" binding:"omitempty,max=36500"` // max 100 years
 	Notes        string `json:"notes"`
 }
@@ -52,6 +54,13 @@ type BulkAssignSubscriptionRequest struct {
 	GroupID      int64   `json:"group_id" binding:"required"`
 	ValidityDays int     `json:"validity_days" binding:"omitempty,max=36500"` // max 100 years
 	Notes        string  `json:"notes"`
+}
+
+// UpdateSubscriptionMultiplierRequest updates the multiplier of a plan-backed
+// subscription without changing its validity period or usage.
+type UpdateSubscriptionMultiplierRequest struct {
+	PlanID     int64 `json:"plan_id" binding:"required"`
+	Multiplier int   `json:"multiplier" binding:"required,min=1,max=100"`
 }
 
 // AdjustSubscriptionRequest represents adjust subscription request (extend or shorten)
@@ -144,13 +153,35 @@ func (h *SubscriptionHandler) Assign(c *gin.Context) {
 	// Get admin user ID from context
 	adminID := getAdminIDFromContext(c)
 
-	subscription, err := h.subscriptionService.AssignSubscription(c.Request.Context(), &service.AssignSubscriptionInput{
-		UserID:       req.UserID,
-		GroupID:      req.GroupID,
-		ValidityDays: req.ValidityDays,
-		AssignedBy:   adminID,
-		Notes:        req.Notes,
-	})
+	var subscription *service.UserSubscription
+	var err error
+	if req.PlanID != nil {
+		subscription, err = h.subscriptionService.AssignPlanSubscription(c.Request.Context(), &service.AssignPlanSubscriptionInput{
+			UserID:       req.UserID,
+			GroupID:      req.GroupID,
+			PlanID:       *req.PlanID,
+			Multiplier:   req.Multiplier,
+			ValidityDays: req.ValidityDays,
+			AssignedBy:   adminID,
+			Notes:        req.Notes,
+		})
+	} else {
+		if req.GroupID <= 0 {
+			response.BadRequest(c, "group_id is required")
+			return
+		}
+		if req.Multiplier != nil {
+			response.BadRequest(c, "plan_id is required when multiplier is provided")
+			return
+		}
+		subscription, err = h.subscriptionService.AssignSubscription(c.Request.Context(), &service.AssignSubscriptionInput{
+			UserID:       req.UserID,
+			GroupID:      req.GroupID,
+			ValidityDays: req.ValidityDays,
+			AssignedBy:   adminID,
+			Notes:        req.Notes,
+		})
+	}
 	if err != nil {
 		response.ErrorFrom(c, err)
 		return
@@ -184,6 +215,36 @@ func (h *SubscriptionHandler) BulkAssign(c *gin.Context) {
 	}
 
 	response.Success(c, dto.BulkAssignResultFromService(result))
+}
+
+// UpdateMultiplier changes a subscription's selected plan multiplier.
+// PUT /api/v1/admin/subscriptions/:id/multiplier
+func (h *SubscriptionHandler) UpdateMultiplier(c *gin.Context) {
+	subscriptionID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		response.BadRequest(c, "Invalid subscription ID")
+		return
+	}
+	var req UpdateSubscriptionMultiplierRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+	payload := struct {
+		SubscriptionID int64                               `json:"subscription_id"`
+		Body           UpdateSubscriptionMultiplierRequest `json:"body"`
+	}{SubscriptionID: subscriptionID, Body: req}
+	executeAdminIdempotentJSON(c, "admin.subscriptions.update_multiplier", payload, service.DefaultWriteIdempotencyTTL(), func(ctx context.Context) (any, error) {
+		subscription, execErr := h.subscriptionService.UpdateSubscriptionMultiplier(ctx, &service.UpdateSubscriptionMultiplierInput{
+			SubscriptionID: subscriptionID,
+			PlanID:         req.PlanID,
+			Multiplier:     req.Multiplier,
+		})
+		if execErr != nil {
+			return nil, execErr
+		}
+		return dto.UserSubscriptionFromServiceAdmin(subscription), nil
+	})
 }
 
 // Extend handles adjusting a subscription (extend or shorten)
