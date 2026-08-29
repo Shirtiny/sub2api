@@ -88,7 +88,7 @@ describe('RequestControlPanel', () => {
     vi.clearAllMocks()
     getConfig.mockResolvedValue(baseConfig())
     updateConfig.mockImplementation(async (payload: RequestControlConfig) => ({ ...baseConfig(), ...payload }))
-    getStatus.mockResolvedValue({ enabled: true, risk_control_enabled: true, queue_size: 8192, queue_length: 0, enqueued: 0, processed: 0, dropped: 0, errors: 0 })
+    getStatus.mockResolvedValue({ enabled: true, risk_control_enabled: true, request_snapshot_enabled: false, queue_size: 8192, queue_length: 0, enqueued: 0, processed: 0, dropped: 0, errors: 0 })
     listLogs.mockResolvedValue({ items: [], total: 0, page: 1, page_size: 20, pages: 1 })
     getLog.mockResolvedValue(null)
     getGroups.mockResolvedValue([])
@@ -137,10 +137,13 @@ describe('RequestControlPanel', () => {
 
   it('saves the request snapshot switch', async () => {
     getConfig.mockResolvedValue({ ...baseConfig(), request_snapshot_enabled: true })
+    getStatus.mockResolvedValue({ enabled: true, risk_control_enabled: true, request_snapshot_enabled: true, queue_size: 8192, queue_length: 0, enqueued: 0, processed: 0, dropped: 0, errors: 0 })
     const wrapper = mountPanel()
     await flushPromises()
 
     expect(wrapper.get('[data-test="request-control-snapshot-toggle"]').attributes('modelvalue')).toBe('true')
+    expect(wrapper.text()).toContain('admin.riskControl.requestControl.requestSnapshotRuntime')
+    expect(wrapper.text()).toContain('common.enabled')
     await wrapper.get('[data-test="request-control-save"]').trigger('click')
     await flushPromises()
 
@@ -148,7 +151,7 @@ describe('RequestControlPanel', () => {
   })
 
   it('warns when the module is enabled but the global risk-control switch is off', async () => {
-    getStatus.mockResolvedValue({ enabled: true, risk_control_enabled: false, queue_size: 8192, queue_length: 0, enqueued: 0, processed: 0, dropped: 0, errors: 0 })
+    getStatus.mockResolvedValue({ enabled: true, risk_control_enabled: false, request_snapshot_enabled: false, queue_size: 8192, queue_length: 0, enqueued: 0, processed: 0, dropped: 0, errors: 0 })
     const wrapper = mountPanel()
     await flushPromises()
 

@@ -281,16 +281,17 @@ type RequestControlLogFilter struct {
 }
 
 type RequestControlRuntimeStatus struct {
-	Enabled            bool  `json:"enabled"`
-	RiskControlEnabled bool  `json:"risk_control_enabled"`
-	QueueSize          int   `json:"queue_size"`
-	QueueLength        int   `json:"queue_length"`
-	QueueBytes         int64 `json:"queue_bytes"`
-	QueueMaxBytes      int64 `json:"queue_max_bytes"`
-	Enqueued           int64 `json:"enqueued"`
-	Processed          int64 `json:"processed"`
-	Dropped            int64 `json:"dropped"`
-	Errors             int64 `json:"errors"`
+	Enabled                bool  `json:"enabled"`
+	RiskControlEnabled     bool  `json:"risk_control_enabled"`
+	RequestSnapshotEnabled bool  `json:"request_snapshot_enabled"`
+	QueueSize              int   `json:"queue_size"`
+	QueueLength            int   `json:"queue_length"`
+	QueueBytes             int64 `json:"queue_bytes"`
+	QueueMaxBytes          int64 `json:"queue_max_bytes"`
+	Enqueued               int64 `json:"enqueued"`
+	Processed              int64 `json:"processed"`
+	Dropped                int64 `json:"dropped"`
+	Errors                 int64 `json:"errors"`
 }
 
 type RequestControlRepository interface {
@@ -722,6 +723,7 @@ func (s *RequestControlService) GetStatus() RequestControlRuntimeStatus {
 	if current := s.runtime.Load(); current != nil && current.config != nil {
 		status.Enabled = current.config.Enabled
 		status.RiskControlEnabled = current.globalEnabled
+		status.RequestSnapshotEnabled = current.config.RequestSnapshotEnabled
 	}
 	return status
 }
@@ -2167,14 +2169,11 @@ func buildRequestControlLog(input RequestControlCheckInput, decision *RequestCon
 	log.BodyMatch = requestControlBoolPtr(decision.BodyMatched)
 	log.TLSMatch = decision.TLSMatched
 	log.RequestHeaders, log.RequestBodyMetadata = buildRequestControlMetadata(input)
-	// An actual block must always retain enough evidence for an administrator
-	// to diagnose a false positive. The opt-in switch only expands capture to
-	// observed requests, which can be much higher volume.
-	if decision.Blocked || requestSnapshotEnabled {
+	if requestSnapshotEnabled {
 		log.RequestSnapshot = buildRequestControlRequestSnapshot(input)
 		log.RequestSnapshot.CapturedAt = eventAt
 	} else {
-		log.Details["request_snapshot"] = "disabled_for_observed_request"
+		log.Details["request_snapshot"] = "disabled_by_config"
 	}
 	log.RequestHeadersHash = requestControlDedupHeaderHash(input)
 	log.RequestBodyHash = requestControlDedupBodyHash(input, log.RequestBodyMetadata)

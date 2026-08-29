@@ -55,6 +55,7 @@ export interface UpdateRequestControlConfig {
 export interface RequestControlStatus {
   enabled: boolean
   risk_control_enabled: boolean
+  request_snapshot_enabled: boolean
   queue_size: number
   queue_length: number
   queue_bytes: number

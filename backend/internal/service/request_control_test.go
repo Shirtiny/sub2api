@@ -441,6 +441,7 @@ func TestRequestControlUpdateConfigPersistsNotificationAndBanSettings(t *testing
 	})
 	require.NoError(t, err)
 	require.True(t, view.RequestSnapshotEnabled)
+	require.True(t, svc.GetStatus().RequestSnapshotEnabled)
 	require.False(t, view.EmailOnHit)
 	require.True(t, view.AutoBanEnabled)
 	require.Equal(t, threshold, view.BanThreshold)
@@ -605,14 +606,14 @@ func TestBuildRequestControlLogCarriesMetadataAndDiagnosticSnapshot(t *testing.T
 	require.Equal(t, log.RequestBodyHash, differentOutcome.RequestBodyHash)
 }
 
-func TestBuildRequestControlLogForcesDiagnosticSnapshotForBlockedRequest(t *testing.T) {
+func TestBuildRequestControlLogSkipsBlockedSnapshotWhenDisabled(t *testing.T) {
 	log := buildRequestControlLog(RequestControlCheckInput{
 		Protocol: RequestControlProtocolChat,
 		Body:     []byte(`{"model":"gpt-5","messages":[{"role":"user","content":"private prompt"}]}`),
 	}, &RequestControlDecision{Action: RequestControlActionBlock, Reason: "test", Blocked: true}, false)
-	require.True(t, log.RequestSnapshot.Available)
-	require.Contains(t, log.RequestSnapshot.Body, "private prompt")
-	require.NotContains(t, log.Details, "request_snapshot")
+	require.False(t, log.RequestSnapshot.Available)
+	require.Empty(t, log.RequestSnapshot.Body)
+	require.Equal(t, "disabled_by_config", log.Details["request_snapshot"])
 }
 
 func TestBuildRequestControlLogSkipsObservedSnapshotWhenDisabled(t *testing.T) {
@@ -622,7 +623,7 @@ func TestBuildRequestControlLogSkipsObservedSnapshotWhenDisabled(t *testing.T) {
 	}, &RequestControlDecision{Action: RequestControlActionObserve, Reason: "test", Observed: true}, false)
 	require.False(t, log.RequestSnapshot.Available)
 	require.Empty(t, log.RequestSnapshot.Body)
-	require.Equal(t, "disabled_for_observed_request", log.Details["request_snapshot"])
+	require.Equal(t, "disabled_by_config", log.Details["request_snapshot"])
 }
 
 func TestRequestControlDedupSeparatesLocalCompactionCandidateFromStandardResponses(t *testing.T) {
@@ -850,38 +851,54 @@ func TestRequestControlStillBlocksSmallAnonymousResponsesWithoutCompactionSignal
 	require.Equal(t, "anonymous_response_request", decision.Reason)
 }
 
-func TestRequestControlAnonymousBlockForcesSnapshotWhenCaptureSwitchIsOff(t *testing.T) {
-	cfg := RequestControlConfig{
-		Enabled:                true,
-		RequestSnapshotEnabled: false,
-		AllGroups:              true,
-		AllUsers:               true,
-	}
-	cfg.normalize()
-	svc := &RequestControlService{
-		settingRepo: &requestControlSettingStub{},
-		repo:        requestControlRepoStub{},
-		queue:       make(chan requestControlTask, 1),
-	}
-	svc.runtime.Store(newRequestControlRuntimeConfig(true, &cfg))
-	body := []byte(`{"model":"gpt-5.6-terra","input":[{"role":"user","content":"diagnose me"}],"stream":true}`)
+func TestRequestControlSnapshotCaptureFollowsPersistedConfigSwitch(t *testing.T) {
+	for _, snapshotEnabled := range []bool{false, true} {
+		t.Run(strconv.FormatBool(snapshotEnabled), func(t *testing.T) {
+			cfg := RequestControlConfig{
+				Enabled:                true,
+				RequestSnapshotEnabled: snapshotEnabled,
+				AllGroups:              true,
+				AllUsers:               true,
+			}
+			raw, err := json.Marshal(cfg)
+			require.NoError(t, err)
+			settings := &requestControlSettingStub{values: map[string]string{
+				SettingKeyRiskControlEnabled:   "true",
+				SettingKeyRequestControlConfig: string(raw),
+			}}
+			svc := &RequestControlService{
+				settingRepo: settings,
+				repo:        requestControlRepoStub{},
+				queue:       make(chan requestControlTask, 1),
+			}
+			runtime, err := svc.refresh(context.Background())
+			require.NoError(t, err)
+			require.Equal(t, snapshotEnabled, runtime.config.RequestSnapshotEnabled)
+			body := []byte(`{"model":"gpt-5.6-terra","input":[{"role":"user","content":"diagnose me"}],"stream":true}`)
 
-	decision, err := svc.Check(context.Background(), RequestControlCheckInput{
-		Protocol: RequestControlProtocolResponse,
-		Endpoint: "/v1/responses",
-		Model:    "gpt-5.6-terra",
-		UserID:   1,
-		Headers:  http.Header{},
-		Body:     body,
-	})
-	require.NoError(t, err)
-	require.True(t, decision.Blocked)
+			decision, err := svc.Check(context.Background(), RequestControlCheckInput{
+				Protocol: RequestControlProtocolResponse,
+				Endpoint: "/v1/responses",
+				Model:    "gpt-5.6-terra",
+				UserID:   1,
+				Headers:  http.Header{},
+				Body:     body,
+			})
+			require.NoError(t, err)
+			require.True(t, decision.Blocked)
 
-	task := <-svc.queue
-	require.NotNil(t, task.log)
-	require.True(t, task.log.RequestSnapshot.Available)
-	require.Equal(t, string(body), task.log.RequestSnapshot.Body)
-	require.NotContains(t, task.log.Details, "request_snapshot")
+			task := <-svc.queue
+			require.NotNil(t, task.log)
+			require.Equal(t, snapshotEnabled, task.log.RequestSnapshot.Available)
+			if snapshotEnabled {
+				require.Equal(t, string(body), task.log.RequestSnapshot.Body)
+				require.NotContains(t, task.log.Details, "request_snapshot")
+			} else {
+				require.Empty(t, task.log.RequestSnapshot.Body)
+				require.Equal(t, "disabled_by_config", task.log.Details["request_snapshot"])
+			}
+		})
+	}
 }
 
 func TestRequestControlAllowsCompactionTriggerWithoutClientSession(t *testing.T) {

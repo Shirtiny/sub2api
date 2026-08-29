@@ -87,6 +87,10 @@
               <Toggle v-model="form.request_snapshot_enabled" data-test="request-control-snapshot-toggle" />
             </label>
             <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">{{ t('admin.riskControl.requestControl.requestSnapshotHint') }}</p>
+            <p v-if="status" class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              {{ t('admin.riskControl.requestControl.requestSnapshotRuntime') }}:
+              {{ status.request_snapshot_enabled ? t('common.enabled') : t('common.disabled') }}
+            </p>
           </div>
 
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
