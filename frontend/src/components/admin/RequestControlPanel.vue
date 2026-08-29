@@ -81,6 +81,14 @@
             <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">{{ t('admin.riskControl.requestControl.protocolBlockingHint') }}</p>
           </div>
 
+          <div class="rounded-lg border border-gray-100 p-3 dark:border-dark-700">
+            <label class="flex items-center justify-between gap-3 text-sm text-content-secondary">
+              <span>{{ t('admin.riskControl.requestControl.requestSnapshot') }}</span>
+              <Toggle v-model="form.request_snapshot_enabled" data-test="request-control-snapshot-toggle" />
+            </label>
+            <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">{{ t('admin.riskControl.requestControl.requestSnapshotHint') }}</p>
+          </div>
+
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label class="input-label">{{ t('admin.riskControl.requestControl.blockStatus') }}</label>
@@ -372,6 +380,7 @@ const globalUAText = ref('')
 
 const form = reactive<RequestControlConfig>({
   enabled: false,
+  request_snapshot_enabled: false,
   block_openai_chat: true,
   block_claude_messages: true,
   block_openai_responses: true,
@@ -424,6 +433,7 @@ const statusItems = computed(() => [
 function lines(value: string): string[] { return value.split(/[\n,]+/).map((item) => item.trim()).filter(Boolean) }
 function applyConfig(config: RequestControlConfig) {
   Object.assign(form, config)
+  form.request_snapshot_enabled = config.request_snapshot_enabled ?? false
   form.block_openai_chat = config.block_openai_chat ?? true
   form.block_claude_messages = config.block_claude_messages ?? true
   form.block_openai_responses = config.block_openai_responses ?? true

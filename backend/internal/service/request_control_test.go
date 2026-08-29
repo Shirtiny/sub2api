@@ -171,6 +171,7 @@ func TestRequestControlLegacyConfigDefaultsProtocolSwitchesToBlock(t *testing.T)
 	require.True(t, cfg.BlockOpenAIChat)
 	require.True(t, cfg.BlockClaudeMessages)
 	require.True(t, cfg.BlockOpenAIResponses)
+	require.False(t, cfg.RequestSnapshotEnabled)
 }
 
 func TestRequestControlLegacyConfigPreservesExistingDefaults(t *testing.T) {
@@ -410,6 +411,7 @@ func TestRequestControlUsesConfiguredBlockStatusAndMessage(t *testing.T) {
 
 func TestRequestControlConfigDefaultsNotificationAndBanSettings(t *testing.T) {
 	cfg := defaultRequestControlConfig()
+	require.False(t, cfg.RequestSnapshotEnabled)
 	require.True(t, cfg.EmailOnHit)
 	require.True(t, cfg.AutoBanEnabled)
 	require.Equal(t, 4, cfg.BanThreshold)
@@ -429,13 +431,16 @@ func TestRequestControlUpdateConfigPersistsNotificationAndBanSettings(t *testing
 	autoBan := true
 	threshold := 4
 	window := 48
+	snapshotEnabled := true
 	view, err := svc.UpdateConfig(context.Background(), UpdateRequestControlConfigInput{
-		EmailOnHit:           &emailOnHit,
-		AutoBanEnabled:       &autoBan,
-		BanThreshold:         &threshold,
-		ViolationWindowHours: &window,
+		RequestSnapshotEnabled: &snapshotEnabled,
+		EmailOnHit:             &emailOnHit,
+		AutoBanEnabled:         &autoBan,
+		BanThreshold:           &threshold,
+		ViolationWindowHours:   &window,
 	})
 	require.NoError(t, err)
+	require.True(t, view.RequestSnapshotEnabled)
 	require.False(t, view.EmailOnHit)
 	require.True(t, view.AutoBanEnabled)
 	require.Equal(t, threshold, view.BanThreshold)
@@ -580,7 +585,7 @@ func TestBuildRequestControlLogCarriesMetadataAndDiagnosticSnapshot(t *testing.T
 			"X-Client-Trace": {"trace-1"},
 		},
 		Body: []byte(`{"model":"gpt-5","messages":[{"role":"user","content":"hidden"}]}`),
-	}, &RequestControlDecision{Action: RequestControlActionBlock, Reason: "test"})
+	}, &RequestControlDecision{Action: RequestControlActionBlock, Reason: "test"}, true)
 	require.Equal(t, "[redacted]", log.RequestHeaders["authorization"])
 	require.Equal(t, "trace-1", log.RequestHeaders["x-client-trace"])
 	require.NotContains(t, string(mustMarshalJSON(t, log.RequestBodyMetadata)), "hidden")
@@ -590,14 +595,23 @@ func TestBuildRequestControlLogCarriesMetadataAndDiagnosticSnapshot(t *testing.T
 		Protocol:        RequestControlProtocolChat,
 		MetadataHeaders: http.Header{"Content-Type": {"application/json"}},
 		Body:            []byte(`{"model":"gpt-5","messages":[{"role":"user","content":"a different length"}]}`),
-	}, &RequestControlDecision{Action: RequestControlActionBlock, Reason: "test"})
+	}, &RequestControlDecision{Action: RequestControlActionBlock, Reason: "test"}, true)
 	require.Equal(t, log.RequestBodyHash, other.RequestBodyHash)
 
 	differentOutcome := buildRequestControlLog(RequestControlCheckInput{
 		Protocol: RequestControlProtocolChat,
 		Body:     []byte(`{"model":"gpt-5","messages":[{"role":"user","content":"hidden"}]}`),
-	}, &RequestControlDecision{Action: RequestControlActionBlock, Reason: "different_policy_result"})
+	}, &RequestControlDecision{Action: RequestControlActionBlock, Reason: "different_policy_result"}, true)
 	require.Equal(t, log.RequestBodyHash, differentOutcome.RequestBodyHash)
+}
+
+func TestBuildRequestControlLogSkipsDiagnosticSnapshotWhenDisabled(t *testing.T) {
+	log := buildRequestControlLog(RequestControlCheckInput{
+		Protocol: RequestControlProtocolChat,
+		Body:     []byte(`{"model":"gpt-5","messages":[{"role":"user","content":"private prompt"}]}`),
+	}, &RequestControlDecision{Action: RequestControlActionBlock, Reason: "test"}, false)
+	require.False(t, log.RequestSnapshot.Available)
+	require.Empty(t, log.RequestSnapshot.Body)
 }
 
 func TestRequestControlDedupSeparatesLocalCompactionCandidateFromStandardResponses(t *testing.T) {
@@ -1812,7 +1826,7 @@ func TestBuildRequestControlLogBoundsClientControlledFields(t *testing.T) {
 		Action:     RequestControlActionBlock,
 		Reason:     "test",
 		ClientKind: "test",
-	})
+	}, false)
 	require.Len(t, log.RequestID, 128)
 	require.LessOrEqual(t, len(log.Model), 255)
 	require.True(t, json.Valid([]byte(strconv.Quote(log.Model))))

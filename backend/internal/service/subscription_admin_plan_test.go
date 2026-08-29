@@ -99,6 +99,103 @@ func TestAssignPlanSubscriptionPersistsOneXPlanEntitlements(t *testing.T) {
 	require.True(t, resetGrant.CustomTerm)
 }
 
+func TestAssignPlanSubscriptionReusesOnlyMatchingPlanConcurrency(t *testing.T) {
+	ctx := context.Background()
+	client := newPaymentOrderLifecycleTestClient(t)
+	user, err := client.User.Create().
+		SetEmail("admin-plan-reuse@example.com").
+		SetPasswordHash("hash").
+		SetUsername("admin-plan-reuse").
+		Save(ctx)
+	require.NoError(t, err)
+	group, err := client.Group.Create().
+		SetName("Reuse Plan Group").
+		SetStatus(StatusActive).
+		SetPlatform(PlatformOpenAI).
+		SetSubscriptionType(SubscriptionTypeSubscription).
+		Save(ctx)
+	require.NoError(t, err)
+	plan, err := client.SubscriptionPlan.Create().
+		SetName("Reuse Plan").
+		SetGroupID(group.ID).
+		SetPrice(100).
+		SetValidityDays(30).
+		SetValidityUnit("days").
+		SetConcurrency(12).
+		Save(ctx)
+	require.NoError(t, err)
+
+	repo := &adminPlanSubscriptionRepo{paymentFulfillmentSubscriptionRepo: &paymentFulfillmentSubscriptionRepo{client: client}}
+	groupRepo := &subscriptionGroupRepoStub{group: &Group{
+		ID:               group.ID,
+		Name:             group.Name,
+		Status:           StatusActive,
+		SubscriptionType: SubscriptionTypeSubscription,
+	}}
+	svc := NewSubscriptionService(groupRepo, repo, nil, client, nil)
+	input := &AssignPlanSubscriptionInput{UserID: user.ID, GroupID: group.ID, PlanID: plan.ID, ValidityDays: 30}
+	first, err := svc.AssignPlanSubscription(ctx, input)
+	require.NoError(t, err)
+	second, err := svc.AssignPlanSubscription(ctx, input)
+	require.NoError(t, err)
+	require.Equal(t, first.ID, second.ID)
+
+	count, err := client.SubscriptionConcurrencyEntitlement.Query().
+		Where(subscriptionconcurrencyentitlement.SubscriptionIDEQ(first.ID)).
+		Count(ctx)
+	require.NoError(t, err)
+	require.Equal(t, 1, count)
+}
+
+func TestAssignPlanSubscriptionRejectsExistingSubscriptionWithoutPlanConcurrency(t *testing.T) {
+	ctx := context.Background()
+	client := newPaymentOrderLifecycleTestClient(t)
+	user, err := client.User.Create().
+		SetEmail("admin-plan-mismatch@example.com").
+		SetPasswordHash("hash").
+		SetUsername("admin-plan-mismatch").
+		Save(ctx)
+	require.NoError(t, err)
+	group, err := client.Group.Create().
+		SetName("Mismatch Plan Group").
+		SetStatus(StatusActive).
+		SetPlatform(PlatformOpenAI).
+		SetSubscriptionType(SubscriptionTypeSubscription).
+		Save(ctx)
+	require.NoError(t, err)
+	plan, err := client.SubscriptionPlan.Create().
+		SetName("Mismatch Plan").
+		SetGroupID(group.ID).
+		SetPrice(100).
+		SetValidityDays(30).
+		SetValidityUnit("days").
+		SetConcurrency(16).
+		Save(ctx)
+	require.NoError(t, err)
+	startsAt := time.Now().Add(-time.Minute)
+	_, err = client.UserSubscription.Create().
+		SetUserID(user.ID).
+		SetGroupID(group.ID).
+		SetStartsAt(startsAt).
+		SetExpiresAt(startsAt.AddDate(0, 0, 30)).
+		SetStatus(SubscriptionStatusActive).
+		Save(ctx)
+	require.NoError(t, err)
+
+	repo := &adminPlanSubscriptionRepo{paymentFulfillmentSubscriptionRepo: &paymentFulfillmentSubscriptionRepo{client: client}}
+	groupRepo := &subscriptionGroupRepoStub{group: &Group{
+		ID:               group.ID,
+		Name:             group.Name,
+		Status:           StatusActive,
+		SubscriptionType: SubscriptionTypeSubscription,
+	}}
+	svc := NewSubscriptionService(groupRepo, repo, nil, client, nil)
+	_, err = svc.AssignPlanSubscription(ctx, &AssignPlanSubscriptionInput{
+		UserID: user.ID, GroupID: group.ID, PlanID: plan.ID, ValidityDays: 30,
+	})
+	require.ErrorIs(t, err, ErrSubscriptionAssignConflict)
+}
+
 func TestUpdateSubscriptionMultiplierPreservesTermAndUsage(t *testing.T) {
 	ctx := context.Background()
 	client := newPaymentOrderLifecycleTestClient(t)

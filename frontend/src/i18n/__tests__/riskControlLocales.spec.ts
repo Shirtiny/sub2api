@@ -37,4 +37,11 @@ describe('risk control locale copy', () => {
     expect(en.admin.riskControl.requestControl.logsHint).toContain('at most once per 15 minutes')
     expect(en.admin.riskControl.requestControl.logsHint).toContain('capped at 256KB and kept for 3 days')
   })
+
+  it('documents that request snapshots are opt-in', () => {
+    expect(zh.admin.riskControl.requestControl.requestSnapshotHint).toContain('默认关闭')
+    expect(zh.admin.riskControl.requestControl.requestSnapshotHint).toContain('关闭后不采集新快照')
+    expect(en.admin.riskControl.requestControl.requestSnapshotHint).toContain('Off by default')
+    expect(en.admin.riskControl.requestControl.requestSnapshotHint).toContain('stops new snapshot capture')
+  })
 })

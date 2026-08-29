@@ -14,6 +14,7 @@ export interface RequestControlUserRule {
 
 export interface RequestControlConfig {
   enabled: boolean
+  request_snapshot_enabled: boolean
   block_openai_chat: boolean
   block_claude_messages: boolean
   block_openai_responses: boolean
@@ -33,6 +34,7 @@ export interface RequestControlConfig {
 
 export interface UpdateRequestControlConfig {
   enabled?: boolean
+  request_snapshot_enabled?: boolean
   block_openai_chat?: boolean
   block_claude_messages?: boolean
   block_openai_responses?: boolean

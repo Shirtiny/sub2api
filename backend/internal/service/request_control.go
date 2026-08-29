@@ -76,6 +76,7 @@ type RequestControlUserRule struct {
 
 type RequestControlConfig struct {
 	Enabled                    bool                         `json:"enabled"`
+	RequestSnapshotEnabled     bool                         `json:"request_snapshot_enabled"`
 	BlockOpenAIChat            bool                         `json:"block_openai_chat"`
 	BlockClaudeMessages        bool                         `json:"block_claude_messages"`
 	BlockOpenAIResponses       bool                         `json:"block_openai_responses"`
@@ -124,6 +125,7 @@ func (cfg *RequestControlConfig) UnmarshalJSON(data []byte) error {
 
 type RequestControlConfigView struct {
 	Enabled                  bool                         `json:"enabled"`
+	RequestSnapshotEnabled   bool                         `json:"request_snapshot_enabled"`
 	BlockOpenAIChat          bool                         `json:"block_openai_chat"`
 	BlockClaudeMessages      bool                         `json:"block_claude_messages"`
 	BlockOpenAIResponses     bool                         `json:"block_openai_responses"`
@@ -143,6 +145,7 @@ type RequestControlConfigView struct {
 
 type UpdateRequestControlConfigInput struct {
 	Enabled                  *bool                         `json:"enabled"`
+	RequestSnapshotEnabled   *bool                         `json:"request_snapshot_enabled"`
 	BlockOpenAIChat          *bool                         `json:"block_openai_chat"`
 	BlockClaudeMessages      *bool                         `json:"block_claude_messages"`
 	BlockOpenAIResponses     *bool                         `json:"block_openai_responses"`
@@ -408,6 +411,9 @@ func (s *RequestControlService) UpdateConfig(ctx context.Context, input UpdateRe
 	if input.Enabled != nil {
 		cfg.Enabled = *input.Enabled
 	}
+	if input.RequestSnapshotEnabled != nil {
+		cfg.RequestSnapshotEnabled = *input.RequestSnapshotEnabled
+	}
 	if input.BlockOpenAIChat != nil {
 		cfg.BlockOpenAIChat = *input.BlockOpenAIChat
 	}
@@ -629,7 +635,7 @@ func (s *RequestControlService) finalizeDecision(input RequestControlCheckInput,
 	}
 	attachRequestControlTLSObservation(input, decision)
 	if decision.Blocked || decision.Observed {
-		s.enqueueLog(buildRequestControlLog(input, decision))
+		s.enqueueLog(buildRequestControlLog(input, decision, cfg.RequestSnapshotEnabled))
 	}
 	return decision
 }
@@ -1099,7 +1105,7 @@ func requestControlConfigView(cfg *RequestControlConfig) *RequestControlConfigVi
 	if cfg == nil {
 		return nil
 	}
-	return &RequestControlConfigView{Enabled: cfg.Enabled, BlockOpenAIChat: cfg.BlockOpenAIChat, BlockClaudeMessages: cfg.BlockClaudeMessages, BlockOpenAIResponses: cfg.BlockOpenAIResponses, AllGroups: cfg.AllGroups, GroupIDs: append([]int64(nil), cfg.GroupIDs...), ModelFilter: cfg.ModelFilter, AllUsers: cfg.AllUsers, UserRules: append([]RequestControlUserRule(nil), cfg.UserRules...), GlobalUserAgentWhitelist: append([]string(nil), cfg.GlobalUserAgentWhitelist...), BlockStatus: cfg.BlockStatus, BlockMessage: cfg.BlockMessage, EmailOnHit: cfg.EmailOnHit, AutoBanEnabled: cfg.AutoBanEnabled, BanThreshold: cfg.BanThreshold, ViolationWindowHours: cfg.ViolationWindowHours}
+	return &RequestControlConfigView{Enabled: cfg.Enabled, RequestSnapshotEnabled: cfg.RequestSnapshotEnabled, BlockOpenAIChat: cfg.BlockOpenAIChat, BlockClaudeMessages: cfg.BlockClaudeMessages, BlockOpenAIResponses: cfg.BlockOpenAIResponses, AllGroups: cfg.AllGroups, GroupIDs: append([]int64(nil), cfg.GroupIDs...), ModelFilter: cfg.ModelFilter, AllUsers: cfg.AllUsers, UserRules: append([]RequestControlUserRule(nil), cfg.UserRules...), GlobalUserAgentWhitelist: append([]string(nil), cfg.GlobalUserAgentWhitelist...), BlockStatus: cfg.BlockStatus, BlockMessage: cfg.BlockMessage, EmailOnHit: cfg.EmailOnHit, AutoBanEnabled: cfg.AutoBanEnabled, BanThreshold: cfg.BanThreshold, ViolationWindowHours: cfg.ViolationWindowHours}
 }
 
 func (runtime *requestControlRuntimeConfig) includesGroup(groupID *int64, effective []int64) bool {
@@ -2119,7 +2125,7 @@ func requestControlTLSMatchExpected(raw, expectedJA3Hash, expectedJA3, expectedJ
 	return nil
 }
 
-func buildRequestControlLog(input RequestControlCheckInput, decision *RequestControlDecision) *RequestControlLog {
+func buildRequestControlLog(input RequestControlCheckInput, decision *RequestControlDecision, requestSnapshotEnabled bool) *RequestControlLog {
 	eventAt := time.Now()
 	log := &RequestControlLog{
 		RequestID:          truncateRequestControlValue(input.RequestID, 128),
@@ -2161,8 +2167,10 @@ func buildRequestControlLog(input RequestControlCheckInput, decision *RequestCon
 	log.BodyMatch = requestControlBoolPtr(decision.BodyMatched)
 	log.TLSMatch = decision.TLSMatched
 	log.RequestHeaders, log.RequestBodyMetadata = buildRequestControlMetadata(input)
-	log.RequestSnapshot = buildRequestControlRequestSnapshot(input)
-	log.RequestSnapshot.CapturedAt = eventAt
+	if requestSnapshotEnabled {
+		log.RequestSnapshot = buildRequestControlRequestSnapshot(input)
+		log.RequestSnapshot.CapturedAt = eventAt
+	}
 	log.RequestHeadersHash = requestControlDedupHeaderHash(input)
 	log.RequestBodyHash = requestControlDedupBodyHash(input, log.RequestBodyMetadata)
 	return log

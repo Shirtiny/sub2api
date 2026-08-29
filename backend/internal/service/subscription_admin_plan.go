@@ -9,6 +9,7 @@ import (
 	dbent "github.com/Wei-Shaw/sub2api/ent"
 	"github.com/Wei-Shaw/sub2api/ent/subscriptionconcurrencyentitlement"
 	"github.com/Wei-Shaw/sub2api/ent/subscriptionearlyresetentitlement"
+	"github.com/Wei-Shaw/sub2api/ent/usersubscription"
 	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 )
 
@@ -83,7 +84,10 @@ func (s *SubscriptionService) AssignPlanSubscription(ctx context.Context, input 
 	err = s.withSubscriptionUpdateTx(ctx, func(txCtx context.Context) error {
 		var assignErr error
 		subscription, reused, assignErr = s.assignSubscriptionWithReuseMode(txCtx, assignment, true)
-		return assignErr
+		if assignErr != nil || !reused {
+			return assignErr
+		}
+		return s.validateReusedPlanConcurrency(txCtx, subscription, assignment)
 	})
 	if err != nil {
 		return nil, err
@@ -152,7 +156,11 @@ func (s *SubscriptionService) resolveAdminPlanSelection(
 	if planID <= 0 {
 		return nil, nil, 0, false, ErrSubscriptionPlanNotFound
 	}
-	plan, err := s.entClient.SubscriptionPlan.Get(ctx, planID)
+	client := s.entClient
+	if tx := dbent.TxFromContext(ctx); tx != nil {
+		client = tx.Client()
+	}
+	plan, err := client.SubscriptionPlan.Get(ctx, planID)
 	if err != nil {
 		if dbent.IsNotFound(err) {
 			return nil, nil, 0, false, ErrSubscriptionPlanNotFound
@@ -177,6 +185,37 @@ func (s *SubscriptionService) resolveAdminPlanSelection(
 		return nil, nil, 0, false, err
 	}
 	return plan, group, resolvedMultiplier, custom, nil
+}
+
+func (s *SubscriptionService) validateReusedPlanConcurrency(ctx context.Context, sub *UserSubscription, input *AssignSubscriptionInput) error {
+	if sub == nil || input == nil || input.PlanConcurrency == nil {
+		return nil
+	}
+	now := time.Now()
+	if legacy, ok := sub.ActivePlanConcurrencyEntitlementAt(now); ok && legacy.Concurrency == *input.PlanConcurrency {
+		return nil
+	}
+	client := s.entClient
+	if tx := dbent.TxFromContext(ctx); tx != nil {
+		client = tx.Client()
+	}
+	matched, err := client.SubscriptionConcurrencyEntitlement.Query().
+		Where(
+			subscriptionconcurrencyentitlement.SubscriptionIDEQ(sub.ID),
+			subscriptionconcurrencyentitlement.ConcurrencyEQ(*input.PlanConcurrency),
+			subscriptionconcurrencyentitlement.StartsAtLTE(now),
+			subscriptionconcurrencyentitlement.ExpiresAtGT(now),
+		).
+		Exist(ctx)
+	if err != nil {
+		return fmt.Errorf("check existing subscription plan concurrency: %w", err)
+	}
+	if matched {
+		return nil
+	}
+	return ErrSubscriptionAssignConflict.WithMetadata(map[string]string{
+		"conflict_reason": "plan_concurrency_mismatch",
+	})
 }
 
 func resolveAdminPlanMultiplier(plan *dbent.SubscriptionPlan, requested *int) (int, bool, error) {
@@ -219,70 +258,94 @@ func (s *SubscriptionService) UpdateSubscriptionMultiplier(ctx context.Context, 
 	if input == nil || input.SubscriptionID <= 0 {
 		return nil, ErrSubscriptionNilInput
 	}
-	sub, err := s.userSubRepo.GetByID(ctx, input.SubscriptionID)
-	if err != nil {
-		return nil, ErrSubscriptionNotFound
+	if s == nil || s.entClient == nil {
+		return nil, infraerrors.ServiceUnavailable("SERVICE_UNAVAILABLE", "subscription service unavailable")
 	}
-	now := time.Now()
-	if sub.Status != SubscriptionStatusActive || !sub.ExpiresAt.After(now) {
-		return nil, ErrSubscriptionExpired
-	}
-	if sub.Group != nil && sub.Group.IsCustomSubscriptionGroup {
-		return nil, ErrSubscriptionPlanUnavailable
-	}
-	sourceGroupID := sub.GroupID
-	if sub.CustomSourceGroupID != nil {
-		sourceGroupID = *sub.CustomSourceGroupID
-	}
-	plan, group, multiplier, custom, err := s.resolveAdminPlanSelection(
-		ctx,
-		sourceGroupID,
-		input.PlanID,
-		&input.Multiplier,
-	)
-	if err != nil {
-		return nil, err
-	}
-	if !custom {
-		return nil, ErrSubscriptionMultiplierDisabled
-	}
-	if sub.HasActiveVirtualCustomEntitlementAt(now) && sub.CustomSourcePlanID != nil && *sub.CustomSourcePlanID != plan.ID {
-		return nil, ErrSubscriptionPlanSourceMismatch
-	}
-
-	customExpiresAt := sub.ExpiresAt
-	if sub.CustomExpiresAt != nil && sub.CustomExpiresAt.After(now) && sub.CustomExpiresAt.Before(customExpiresAt) {
-		customExpiresAt = *sub.CustomExpiresAt
-	}
-	updated := *sub
-	updated.CustomMultiplier = &multiplier
-	updated.CustomSourcePlanID = &plan.ID
-	updated.CustomSourceGroupID = &plan.GroupID
-	updated.CustomExpiresAt = &customExpiresAt
-	updated.CustomDisplayName = customSubscriptionGroupName(group.Name, multiplier)
-	updated.EarlyResetEnabled = plan.EarlyResetEnabled
-	updated.EarlyResetDurationDays = 0
-	if plan.EarlyResetEnabled {
-		updated.EarlyResetDurationDays = plan.EarlyResetDurationDays
-	}
-
-	err = s.withSubscriptionUpdateTx(ctx, func(txCtx context.Context) error {
-		if err := s.userSubRepo.Update(txCtx, &updated); err != nil {
-			return fmt.Errorf("update subscription multiplier: %w", err)
+	var subscriptionID, userID, groupID int64
+	err := s.withSubscriptionUpdateTx(ctx, func(txCtx context.Context) error {
+		client := s.entClient
+		if tx := dbent.TxFromContext(txCtx); tx != nil {
+			client = tx.Client()
 		}
-		if err := s.upsertAdminPlanConcurrencyEntitlement(txCtx, &updated, plan.Concurrency, now, customExpiresAt); err != nil {
+		query := client.UserSubscription.Query().
+			Where(usersubscription.IDEQ(input.SubscriptionID)).
+			WithGroup()
+		if supportsForUpdate(client) {
+			query = query.ForUpdate()
+		}
+		current, lockErr := query.Only(txCtx)
+		if lockErr != nil {
+			if dbent.IsNotFound(lockErr) {
+				return ErrSubscriptionNotFound
+			}
+			return fmt.Errorf("lock subscription for multiplier update: %w", lockErr)
+		}
+
+		now := time.Now()
+		if current.Status != SubscriptionStatusActive || !current.ExpiresAt.After(now) {
+			return ErrSubscriptionExpired
+		}
+		if current.Edges.Group != nil && current.Edges.Group.IsCustomSubscriptionGroup {
+			return ErrSubscriptionPlanUnavailable
+		}
+		sourceGroupID := current.GroupID
+		if current.CustomSourceGroupID != nil {
+			sourceGroupID = *current.CustomSourceGroupID
+		}
+		plan, group, multiplier, custom, resolveErr := s.resolveAdminPlanSelection(
+			txCtx,
+			sourceGroupID,
+			input.PlanID,
+			&input.Multiplier,
+		)
+		if resolveErr != nil {
+			return resolveErr
+		}
+		if !custom {
+			return ErrSubscriptionMultiplierDisabled
+		}
+		if current.CustomExpiresAt != nil && current.CustomExpiresAt.After(now) && current.CustomSourcePlanID != nil && *current.CustomSourcePlanID != plan.ID {
+			return ErrSubscriptionPlanSourceMismatch
+		}
+
+		customExpiresAt := current.ExpiresAt
+		if current.CustomExpiresAt != nil && current.CustomExpiresAt.After(now) && current.CustomExpiresAt.Before(customExpiresAt) {
+			customExpiresAt = *current.CustomExpiresAt
+		}
+		earlyResetDurationDays := 0
+		if plan.EarlyResetEnabled {
+			earlyResetDurationDays = plan.EarlyResetDurationDays
+		}
+		// Only update fields owned by the selected plan. Usage counters, status,
+		// validity, and reset windows may be changing concurrently on hot paths.
+		if _, updateErr := client.UserSubscription.UpdateOneID(current.ID).
+			SetCustomMultiplier(multiplier).
+			SetCustomSourcePlanID(plan.ID).
+			SetCustomSourceGroupID(plan.GroupID).
+			SetCustomExpiresAt(customExpiresAt).
+			SetCustomDisplayName(customSubscriptionGroupName(group.Name, multiplier)).
+			SetEarlyResetEnabled(plan.EarlyResetEnabled).
+			SetEarlyResetDurationDays(earlyResetDurationDays).
+			Save(txCtx); updateErr != nil {
+			return fmt.Errorf("update subscription multiplier: %w", updateErr)
+		}
+		updated := &UserSubscription{ID: current.ID, UserID: current.UserID}
+		if err := s.upsertAdminPlanConcurrencyEntitlement(txCtx, updated, plan.Concurrency, now, customExpiresAt); err != nil {
 			return fmt.Errorf("update subscription concurrency entitlement: %w", err)
 		}
-		if err := s.upsertAdminEarlyResetEntitlement(txCtx, &updated, plan, now, customExpiresAt); err != nil {
+		if err := s.upsertAdminEarlyResetEntitlement(txCtx, updated, plan, now, customExpiresAt); err != nil {
 			return fmt.Errorf("update subscription early reset entitlement: %w", err)
 		}
+		subscriptionID = current.ID
+		userID = current.UserID
+		groupID = current.GroupID
 		return nil
 	})
 	if err != nil {
 		return nil, err
 	}
-	s.invalidateSubscriptionCaches(ctx, updated.UserID, updated.GroupID)
-	return s.GetByID(ctx, updated.ID)
+	s.invalidateSubscriptionCaches(ctx, userID, groupID)
+	return s.GetByID(ctx, subscriptionID)
 }
 
 func (s *SubscriptionService) upsertAdminPlanConcurrencyEntitlement(

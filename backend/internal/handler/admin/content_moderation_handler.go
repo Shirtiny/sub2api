@@ -22,6 +22,7 @@ func NewContentModerationHandler(svc *service.ContentModerationService, requestC
 
 type requestControlConfigRequest struct {
 	Enabled                  *bool                                 `json:"enabled"`
+	RequestSnapshotEnabled   *bool                                 `json:"request_snapshot_enabled"`
 	BlockOpenAIChat          *bool                                 `json:"block_openai_chat"`
 	BlockClaudeMessages      *bool                                 `json:"block_claude_messages"`
 	BlockOpenAIResponses     *bool                                 `json:"block_openai_responses"`
@@ -295,7 +296,8 @@ func (h *ContentModerationHandler) UpdateRequestControlConfig(c *gin.Context) {
 		return
 	}
 	cfg, err := h.requestControl.UpdateConfig(c.Request.Context(), service.UpdateRequestControlConfigInput{
-		Enabled: req.Enabled, BlockOpenAIChat: req.BlockOpenAIChat, BlockClaudeMessages: req.BlockClaudeMessages, BlockOpenAIResponses: req.BlockOpenAIResponses,
+		Enabled: req.Enabled, RequestSnapshotEnabled: req.RequestSnapshotEnabled,
+		BlockOpenAIChat: req.BlockOpenAIChat, BlockClaudeMessages: req.BlockClaudeMessages, BlockOpenAIResponses: req.BlockOpenAIResponses,
 		AllGroups: req.AllGroups, GroupIDs: req.GroupIDs, ModelFilter: req.ModelFilter,
 		AllUsers: req.AllUsers, UserRules: req.UserRules, GlobalUserAgentWhitelist: req.GlobalUserAgentWhitelist,
 		BlockStatus: req.BlockStatus, BlockMessage: req.BlockMessage, EmailOnHit: req.EmailOnHit,

@@ -63,6 +63,7 @@ vi.mock('vue-i18n', async () => {
 
 const baseConfig = (): RequestControlConfig => ({
   enabled: true,
+  request_snapshot_enabled: false,
   block_openai_chat: true,
   block_claude_messages: true,
   block_openai_responses: true,
@@ -121,6 +122,7 @@ describe('RequestControlPanel', () => {
 
     expect(updateConfig).toHaveBeenCalledWith(expect.objectContaining({
       global_user_agent_whitelist: ['codex_cli_rs/', 'trusted-client/'],
+      request_snapshot_enabled: false,
       email_on_hit: true,
       auto_ban_enabled: true,
       ban_threshold: 4,
@@ -129,6 +131,18 @@ describe('RequestControlPanel', () => {
     expect(getStatus).toHaveBeenCalledTimes(2)
     expect(showSuccess).toHaveBeenCalled()
     expect(showError).not.toHaveBeenCalled()
+  })
+
+  it('saves the request snapshot switch', async () => {
+    getConfig.mockResolvedValue({ ...baseConfig(), request_snapshot_enabled: true })
+    const wrapper = mountPanel()
+    await flushPromises()
+
+    expect(wrapper.get('[data-test="request-control-snapshot-toggle"]').attributes('modelvalue')).toBe('true')
+    await wrapper.get('[data-test="request-control-save"]').trigger('click')
+    await flushPromises()
+
+    expect(updateConfig).toHaveBeenCalledWith(expect.objectContaining({ request_snapshot_enabled: true }))
   })
 
   it('warns when the module is enabled but the global risk-control switch is off', async () => {
