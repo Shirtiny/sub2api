@@ -553,7 +553,8 @@ func (r *requestControlRepository) CleanupSnapshots(ctx context.Context, before 
 UPDATE request_control_logs
 SET request_snapshot = '{}'::jsonb,
 	request_snapshot_at = NULL
-WHERE created_at < $1 AND request_snapshot <> '{}'::jsonb`, before)
+WHERE COALESCE(request_snapshot_at, created_at) < $1
+  AND request_snapshot <> '{}'::jsonb`, before)
 	if err != nil {
 		return 0, fmt.Errorf("cleanup request control snapshots: %w", err)
 	}

@@ -170,14 +170,14 @@ func TestRequestControlRepositoryCreateLogReturnsAggregatedOccurrenceSummary(t *
 	require.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestRequestControlRepositoryCleanupSnapshotsKeepsBaseRows(t *testing.T) {
+func TestRequestControlRepositoryCleanupSnapshotsUsesSnapshotTimestampAndKeepsBaseRows(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	require.NoError(t, err)
 	defer func() { _ = db.Close() }()
 
 	repo := &requestControlRepository{db: db}
 	before := time.Date(2026, 8, 20, 0, 0, 0, 0, time.UTC)
-	mock.ExpectExec("(?s)SET request_snapshot = '\\{\\}'::jsonb.*request_snapshot_at = NULL").
+	mock.ExpectExec("(?s)SET request_snapshot = '\\{\\}'::jsonb.*request_snapshot_at = NULL.*COALESCE\\(request_snapshot_at, created_at\\) < \\$1").
 		WithArgs(before).
 		WillReturnResult(sqlmock.NewResult(0, 12))
 
