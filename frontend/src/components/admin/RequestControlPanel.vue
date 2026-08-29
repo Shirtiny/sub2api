@@ -319,7 +319,10 @@
         </div>
       </template>
       <div v-else class="rounded-lg border border-gray-100 bg-gray-50 px-4 py-3 text-sm text-gray-500 dark:border-dark-700 dark:bg-dark-900/30 dark:text-gray-400">
-        {{ t('admin.riskControl.requestControl.snapshotUnavailable') }}
+        <p>{{ t('admin.riskControl.requestControl.snapshotUnavailable') }}</p>
+        <p v-if="snapshotUnavailableReason" class="mt-1 font-mono text-xs">
+          {{ t('admin.riskControl.requestControl.snapshotUnavailableReason', { reason: snapshotUnavailableReason }) }}
+        </p>
       </div>
       <div class="grid grid-cols-1 gap-5 xl:grid-cols-2">
         <section class="min-w-0">
@@ -374,6 +377,7 @@ const requestSnapshotPath = computed(() => {
   if (!snapshot) return '-'
   return `${snapshot.path || ''}${snapshot.raw_query ? `?${snapshot.raw_query}` : ''}` || '-'
 })
+const snapshotUnavailableReason = computed(() => detailLog.value?.details?.request_snapshot || '')
 const selectedUserLabel = ref('')
 const modelText = ref('')
 const globalUAText = ref('')

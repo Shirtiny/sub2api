@@ -38,10 +38,10 @@ describe('risk control locale copy', () => {
     expect(en.admin.riskControl.requestControl.logsHint).toContain('capped at 256KB and kept for 3 days')
   })
 
-  it('documents that request snapshots are opt-in', () => {
-    expect(zh.admin.riskControl.requestControl.requestSnapshotHint).toContain('默认关闭')
-    expect(zh.admin.riskControl.requestControl.requestSnapshotHint).toContain('关闭后不采集新快照')
-    expect(en.admin.riskControl.requestControl.requestSnapshotHint).toContain('Off by default')
-    expect(en.admin.riskControl.requestControl.requestSnapshotHint).toContain('stops new snapshot capture')
+  it('documents forced blocked snapshots and opt-in observed snapshots', () => {
+    expect(zh.admin.riskControl.requestControl.requestSnapshotHint).toContain('实际拦截请求始终强制保存')
+    expect(zh.admin.riskControl.requestControl.requestSnapshotHint).toContain('关闭仅停止观察请求')
+    expect(en.admin.riskControl.requestControl.requestSnapshotHint).toContain('Actually blocked requests always retain')
+    expect(en.admin.riskControl.requestControl.requestSnapshotHint).toContain('only stops new observed-request snapshots')
   })
 })

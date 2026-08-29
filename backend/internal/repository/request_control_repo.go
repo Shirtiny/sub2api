@@ -209,18 +209,50 @@ DO UPDATE SET
 		requestSnapshot, marshalErr := json.Marshal(log.RequestSnapshot)
 		if marshalErr != nil {
 			slog.Warn("request_control.snapshot_marshal_failed", "log_id", log.ID, "error", marshalErr)
+			r.markRequestControlSnapshotUnavailable(ctx, log, "marshal_failed")
 			return nil
 		}
-		if _, updateErr := r.db.ExecContext(ctx, `
+		result, updateErr := r.db.ExecContext(ctx, `
 UPDATE request_control_logs
 SET request_snapshot = $1::jsonb, request_snapshot_at = $2
 WHERE id = $3
   AND (request_snapshot = '{}'::jsonb OR request_snapshot_at IS NULL OR request_snapshot_at <= $2 - INTERVAL '15 minutes')`,
-			string(requestSnapshot), eventAt, log.ID); updateErr != nil {
+			string(requestSnapshot), eventAt, log.ID)
+		if updateErr != nil {
 			slog.Warn("request_control.snapshot_update_failed", "log_id", log.ID, "error", updateErr)
+			r.markRequestControlSnapshotUnavailable(ctx, log, "persist_failed")
+			return nil
+		}
+		rows, rowsErr := result.RowsAffected()
+		if rowsErr != nil {
+			slog.Warn("request_control.snapshot_rows_affected_failed", "log_id", log.ID, "error", rowsErr)
+			r.markRequestControlSnapshotUnavailable(ctx, log, "persist_state_unknown")
+		} else if rows == 0 {
+			slog.Warn("request_control.snapshot_not_written", "log_id", log.ID)
+			r.markRequestControlSnapshotUnavailable(ctx, log, "persist_not_written")
 		}
 	}
 	return nil
+}
+
+// markRequestControlSnapshotUnavailable preserves the base audit row while
+// making a degraded snapshot path explicit. The empty-snapshot predicate
+// avoids overwriting diagnostics when a concurrent occurrence already stored
+// a valid snapshot for the aggregate row.
+func (r *requestControlRepository) markRequestControlSnapshotUnavailable(ctx context.Context, log *service.RequestControlLog, reason string) {
+	if r == nil || r.db == nil || log == nil || log.ID <= 0 {
+		return
+	}
+	if log.Details == nil {
+		log.Details = make(map[string]string)
+	}
+	log.Details["request_snapshot"] = reason
+	if _, err := r.db.ExecContext(ctx, `
+UPDATE request_control_logs
+SET details = jsonb_set(details, '{request_snapshot}', to_jsonb($1::text), true)
+WHERE id = $2 AND request_snapshot = '{}'::jsonb`, reason, log.ID); err != nil {
+		slog.Warn("request_control.snapshot_failure_marker_update_failed", "log_id", log.ID, "reason", reason, "error", err)
+	}
 }
 
 // GetViolationState returns counted hits and the latest blocked hit in the

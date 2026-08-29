@@ -2167,9 +2167,14 @@ func buildRequestControlLog(input RequestControlCheckInput, decision *RequestCon
 	log.BodyMatch = requestControlBoolPtr(decision.BodyMatched)
 	log.TLSMatch = decision.TLSMatched
 	log.RequestHeaders, log.RequestBodyMetadata = buildRequestControlMetadata(input)
-	if requestSnapshotEnabled {
+	// An actual block must always retain enough evidence for an administrator
+	// to diagnose a false positive. The opt-in switch only expands capture to
+	// observed requests, which can be much higher volume.
+	if decision.Blocked || requestSnapshotEnabled {
 		log.RequestSnapshot = buildRequestControlRequestSnapshot(input)
 		log.RequestSnapshot.CapturedAt = eventAt
+	} else {
+		log.Details["request_snapshot"] = "disabled_for_observed_request"
 	}
 	log.RequestHeadersHash = requestControlDedupHeaderHash(input)
 	log.RequestBodyHash = requestControlDedupBodyHash(input, log.RequestBodyMetadata)

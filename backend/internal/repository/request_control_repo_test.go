@@ -200,6 +200,7 @@ func TestRequestControlRepositoryCreateLogCarriesLatestSnapshotForAggregateRow(t
 			RequestID: requestID, UserID: &userID, Protocol: service.RequestControlProtocolResponse,
 			Details: map[string]string{}, RequestHeaders: map[string]string{}, RequestBodyMetadata: map[string]any{},
 			RequestHeadersHash: strings.Repeat("a", 64), RequestBodyHash: strings.Repeat("b", 64), EventAt: eventAt,
+			RequestSnapshot: service.RequestControlRequestSnapshot{Available: true, Body: `{"model":"gpt-5"}`, CapturedAt: eventAt},
 		}
 	}
 	log := newLog("req-latest", at)
@@ -210,7 +211,10 @@ func TestRequestControlRepositoryCreateLogCarriesLatestSnapshotForAggregateRow(t
 			strings.Repeat("a", 64), strings.Repeat("b", 64), 0, false, false, false, false, false, at,
 		).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "event_count", "first_seen_at", "last_seen_at", "created_at", "snapshot_due"}).
-			AddRow(int64(20), int64(5), at.Add(-time.Hour), at, at, false))
+			AddRow(int64(20), int64(5), at.Add(-time.Hour), at, at, true))
+	mock.ExpectExec(regexp.QuoteMeta("SET request_snapshot = $1::jsonb")).
+		WithArgs(sqlmock.AnyArg(), at, int64(20)).
+		WillReturnResult(sqlmock.NewResult(0, 1))
 	require.NoError(t, repo.CreateLog(context.Background(), log))
 	require.Equal(t, int64(20), log.ID)
 	require.Equal(t, int64(5), log.EventCount)
@@ -242,7 +246,11 @@ func TestRequestControlRepositorySnapshotFailureDoesNotFailBaseLog(t *testing.T)
 	mock.ExpectExec(regexp.QuoteMeta("SET request_snapshot = $1::jsonb")).
 		WithArgs(sqlmock.AnyArg(), at, int64(21)).
 		WillReturnError(errors.New("snapshot storage unavailable"))
+	mock.ExpectExec(regexp.QuoteMeta("SET details = jsonb_set(details, '{request_snapshot}', to_jsonb($1::text), true)")).
+		WithArgs("persist_failed", int64(21)).
+		WillReturnResult(sqlmock.NewResult(0, 1))
 
 	require.NoError(t, repo.CreateLog(context.Background(), log))
+	require.Equal(t, "persist_failed", log.Details["request_snapshot"])
 	require.NoError(t, mock.ExpectationsWereMet())
 }

@@ -55,8 +55,10 @@ vi.mock('vue-i18n', async () => {
   return {
     ...actual,
     useI18n: () => ({
-      t: (key: string, params?: Record<string, string | number>) =>
-        key.replace(/\{(\w+)\}/g, (_, token) => String(params?.[token] ?? `{${token}}`)),
+      t: (key: string, params?: Record<string, string | number>) => {
+        const rendered = key.replace(/\{(\w+)\}/g, (_, token) => String(params?.[token] ?? `{${token}}`))
+        return params?.reason ? `${rendered}: ${params.reason}` : rendered
+      },
     }),
   }
 })
@@ -271,5 +273,39 @@ describe('RequestControlPanel', () => {
     expect(document.body.textContent).toContain('{"model":"gpt-5","input":[]}')
     expect(document.body.textContent).toContain('admin.riskControl.requestControl.eventCountLabel')
     expect(document.body.textContent).toContain('4')
+  })
+
+  it('shows the persisted reason when a request snapshot is unavailable', async () => {
+    const row = {
+      id: 8,
+      request_id: 'req-8',
+      user_id: 42,
+      user_email: 'tester@example.com',
+      endpoint: '/v1/responses',
+      protocol: 'openai_responses',
+      model: 'gpt-5.6-terra',
+      action: 'block',
+      reason: 'anonymous_response_request',
+      blocked: true,
+      observed: true,
+      details: { request_snapshot: 'persist_failed' },
+      event_count: 1,
+      created_at: '2026-01-01T00:00:00Z',
+    }
+    listLogs.mockResolvedValue({ items: [row], total: 1, page: 1, page_size: 20, pages: 1 })
+    getLog.mockResolvedValue({
+      ...row,
+      request_headers: {},
+      request_body_metadata: {},
+      request_snapshot: { available: false },
+    })
+    const wrapper = mountPanel()
+    await flushPromises()
+
+    await wrapper.get('[aria-label="admin.riskControl.requestControl.viewDetail"]').trigger('click')
+    await flushPromises()
+
+    expect(document.body.textContent).toContain('admin.riskControl.requestControl.snapshotUnavailableReason')
+    expect(document.body.textContent).toContain('persist_failed')
   })
 })
