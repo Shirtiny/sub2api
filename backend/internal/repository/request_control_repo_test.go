@@ -246,11 +246,45 @@ func TestRequestControlRepositorySnapshotFailureDoesNotFailBaseLog(t *testing.T)
 	mock.ExpectExec(regexp.QuoteMeta("SET request_snapshot = $1::jsonb")).
 		WithArgs(sqlmock.AnyArg(), at, int64(21)).
 		WillReturnError(errors.New("snapshot storage unavailable"))
-	mock.ExpectExec(regexp.QuoteMeta("SET details = jsonb_set(details, '{request_snapshot}', to_jsonb($1::text), true)")).
-		WithArgs("persist_failed", int64(21)).
+	mock.ExpectExec("(?s)"+regexp.QuoteMeta("SET details = jsonb_set(details, '{request_snapshot}', to_jsonb($1::text), true)")+".*"+regexp.QuoteMeta("created_at <= $3::timestamptz + INTERVAL '1 microsecond'")).
+		WithArgs("persist_failed", int64(21), at).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
 	require.NoError(t, repo.CreateLog(context.Background(), log))
 	require.Equal(t, "persist_failed", log.Details["request_snapshot"])
+	require.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestRequestControlRepositoryConcurrentSnapshotIsNotMarkedAsFailure(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	defer func() { _ = db.Close() }()
+
+	repo := &requestControlRepository{db: db}
+	userID := int64(7)
+	at := time.Date(2026, 8, 27, 12, 0, 0, 0, time.UTC)
+	log := &service.RequestControlLog{
+		RequestID: "req-concurrent", UserID: &userID, Protocol: service.RequestControlProtocolResponse,
+		Details: map[string]string{}, RequestHeaders: map[string]string{}, RequestBodyMetadata: map[string]any{},
+		RequestHeadersHash: strings.Repeat("a", 64), RequestBodyHash: strings.Repeat("b", 64), EventAt: at,
+		RequestSnapshot: service.RequestControlRequestSnapshot{Available: true, Body: `{"model":"gpt-5"}`, CapturedAt: at},
+	}
+	mock.ExpectQuery(regexp.QuoteMeta("INSERT INTO request_control_logs")).
+		WithArgs(
+			"req-concurrent", userID, "", nil, "", nil, "", "", "", service.RequestControlProtocolResponse, "", "", "", false, false, false,
+			"", "", "", "", nil, nil, nil, `{}`, `{}`, `{}`, "", "", false, 0,
+			strings.Repeat("a", 64), strings.Repeat("b", 64), 0, false, false, false, false, false, at,
+		).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "event_count", "first_seen_at", "last_seen_at", "created_at", "snapshot_due"}).
+			AddRow(int64(22), int64(2), at.Add(-time.Minute), at, at, true))
+	mock.ExpectExec(regexp.QuoteMeta("SET request_snapshot = $1::jsonb")).
+		WithArgs(sqlmock.AnyArg(), at, int64(22)).
+		WillReturnResult(sqlmock.NewResult(0, 0))
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT request_snapshot <> '{}'::jsonb")).
+		WithArgs(int64(22)).
+		WillReturnRows(sqlmock.NewRows([]string{"persisted"}).AddRow(true))
+
+	require.NoError(t, repo.CreateLog(context.Background(), log))
+	require.NotContains(t, log.Details, "request_snapshot")
 	require.NoError(t, mock.ExpectationsWereMet())
 }

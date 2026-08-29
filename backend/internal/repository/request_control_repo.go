@@ -209,37 +209,56 @@ DO UPDATE SET
 		requestSnapshot, marshalErr := json.Marshal(log.RequestSnapshot)
 		if marshalErr != nil {
 			slog.Warn("request_control.snapshot_marshal_failed", "log_id", log.ID, "error", marshalErr)
-			r.markRequestControlSnapshotUnavailable(ctx, log, "marshal_failed")
+			r.markRequestControlSnapshotUnavailable(ctx, log, "marshal_failed", eventAt)
 			return nil
 		}
 		result, updateErr := r.db.ExecContext(ctx, `
 UPDATE request_control_logs
 SET request_snapshot = $1::jsonb, request_snapshot_at = $2
 WHERE id = $3
-  AND (request_snapshot = '{}'::jsonb OR request_snapshot_at IS NULL OR request_snapshot_at <= $2 - INTERVAL '15 minutes')`,
+  AND (request_snapshot = '{}'::jsonb OR request_snapshot_at IS NULL OR request_snapshot_at <= $2::timestamptz - INTERVAL '15 minutes')`,
 			string(requestSnapshot), eventAt, log.ID)
 		if updateErr != nil {
 			slog.Warn("request_control.snapshot_update_failed", "log_id", log.ID, "error", updateErr)
-			r.markRequestControlSnapshotUnavailable(ctx, log, "persist_failed")
+			r.markRequestControlSnapshotUnavailable(ctx, log, "persist_failed", eventAt)
 			return nil
 		}
 		rows, rowsErr := result.RowsAffected()
-		if rowsErr != nil {
-			slog.Warn("request_control.snapshot_rows_affected_failed", "log_id", log.ID, "error", rowsErr)
-			r.markRequestControlSnapshotUnavailable(ctx, log, "persist_state_unknown")
-		} else if rows == 0 {
-			slog.Warn("request_control.snapshot_not_written", "log_id", log.ID)
-			r.markRequestControlSnapshotUnavailable(ctx, log, "persist_not_written")
+		if rowsErr == nil && rows > 0 {
+			return nil
+		}
+		// A zero-row conditional update is normal when a concurrent occurrence
+		// already stored a fresh snapshot. Verify the row before treating it as
+		// a degraded write so expected races do not emit false warnings.
+		persisted, verifyErr := r.requestControlSnapshotPersisted(ctx, log.ID)
+		if verifyErr != nil {
+			slog.Warn("request_control.snapshot_state_verify_failed", "log_id", log.ID, "rows_error", rowsErr, "error", verifyErr)
+			r.markRequestControlSnapshotUnavailable(ctx, log, "persist_state_unknown", eventAt)
+		} else if !persisted {
+			slog.Warn("request_control.snapshot_not_written", "log_id", log.ID, "rows_error", rowsErr)
+			r.markRequestControlSnapshotUnavailable(ctx, log, "persist_not_written", eventAt)
 		}
 	}
 	return nil
+}
+
+func (r *requestControlRepository) requestControlSnapshotPersisted(ctx context.Context, logID int64) (bool, error) {
+	var persisted bool
+	err := r.db.QueryRowContext(ctx, `
+SELECT request_snapshot <> '{}'::jsonb
+FROM request_control_logs
+WHERE id = $1`, logID).Scan(&persisted)
+	if err != nil {
+		return false, fmt.Errorf("verify request control snapshot: %w", err)
+	}
+	return persisted, nil
 }
 
 // markRequestControlSnapshotUnavailable preserves the base audit row while
 // making a degraded snapshot path explicit. The empty-snapshot predicate
 // avoids overwriting diagnostics when a concurrent occurrence already stored
 // a valid snapshot for the aggregate row.
-func (r *requestControlRepository) markRequestControlSnapshotUnavailable(ctx context.Context, log *service.RequestControlLog, reason string) {
+func (r *requestControlRepository) markRequestControlSnapshotUnavailable(ctx context.Context, log *service.RequestControlLog, reason string, eventAt time.Time) {
 	if r == nil || r.db == nil || log == nil || log.ID <= 0 {
 		return
 	}
@@ -250,7 +269,9 @@ func (r *requestControlRepository) markRequestControlSnapshotUnavailable(ctx con
 	if _, err := r.db.ExecContext(ctx, `
 UPDATE request_control_logs
 SET details = jsonb_set(details, '{request_snapshot}', to_jsonb($1::text), true)
-WHERE id = $2 AND request_snapshot = '{}'::jsonb`, reason, log.ID); err != nil {
+WHERE id = $2
+  AND request_snapshot = '{}'::jsonb
+  AND created_at <= $3::timestamptz + INTERVAL '1 microsecond'`, reason, log.ID, eventAt); err != nil {
 		slog.Warn("request_control.snapshot_failure_marker_update_failed", "log_id", log.ID, "reason", reason, "error", err)
 	}
 }
