@@ -1601,7 +1601,10 @@ func requestControlResponseRequestKind(input RequestControlCheckInput, parsed re
 		parsed.MaxOutputTokens && !parsed.ToolsPresent && !parsed.PromptCacheKey.Present
 	toolChoiceNone := parsed.ToolChoice.Present && parsed.ToolChoice.Valid && strings.EqualFold(strings.TrimSpace(parsed.ToolChoice.Value), "none")
 	largeRequestWithoutToolChoice := !parsed.ToolChoice.Present && len(input.Body) >= requestControlLocalCompactionMinBodyBytes
-	if localSummaryBase && (toolChoiceNone || largeRequestWithoutToolChoice) {
+	// Inspect Pi's fixed prompt only when the cheap structural checks matched
+	// and body size alone would not already classify the request.
+	piSummarizationPrompt := localSummaryBase && !parsed.ToolChoice.Present && !largeRequestWithoutToolChoice && hasPiContextSummarizationPromptInInput(input.Body)
+	if localSummaryBase && (toolChoiceNone || piSummarizationPrompt || largeRequestWithoutToolChoice) {
 		evidence := []string{
 			"input:array",
 			"store:false",
@@ -1610,9 +1613,12 @@ func requestControlResponseRequestKind(input RequestControlCheckInput, parsed re
 			"tools:missing",
 			"prompt_cache_key:missing",
 		}
-		if toolChoiceNone {
+		switch {
+		case toolChoiceNone:
 			evidence = append(evidence, "tool_choice:none")
-		} else {
+		case piSummarizationPrompt:
+			evidence = append(evidence, "tool_choice:missing", "input.0:pi_summarization_prompt")
+		default:
 			evidence = append(evidence, "tool_choice:missing", "body_bytes:large")
 		}
 		return "local_compaction_candidate", "strong_heuristic", evidence

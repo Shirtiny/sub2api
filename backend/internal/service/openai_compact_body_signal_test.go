@@ -3,6 +3,8 @@
 package service
 
 import (
+	"encoding/json"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -53,4 +55,25 @@ func TestHasCompactionTriggerInInput_StringInput(t *testing.T) {
 func TestHasCompactionTriggerInInput_CompactTriggerOnly(t *testing.T) {
 	body := []byte(`{"model":"gpt-5.5","input":[{"type":"compaction_trigger"}]}`)
 	require.True(t, HasCompactionTriggerInInput(body))
+}
+
+func TestHasPiContextSummarizationPromptInInput_StringContent(t *testing.T) {
+	body := []byte(`{"input":[{"role":"system","content":"` + strings.ReplaceAll(piContextSummarizationSystemPrompt, "\n", `\n`) + `"},{"role":"user","content":[{"type":"input_text","text":"short history"}]}]}`)
+	require.True(t, hasPiContextSummarizationPromptInInput(body))
+}
+
+func TestHasPiContextSummarizationPromptInInput_DeveloperTextBlock(t *testing.T) {
+	body, err := json.Marshal(map[string]any{
+		"input": []any{
+			map[string]any{"role": "developer", "content": []any{map[string]any{"type": "input_text", "text": piContextSummarizationSystemPrompt}}},
+			map[string]any{"role": "user", "content": "short history"},
+		},
+	})
+	require.NoError(t, err)
+	require.True(t, hasPiContextSummarizationPromptInInput(body))
+}
+
+func TestHasPiContextSummarizationPromptInInput_RejectsOrdinarySummaryPrompt(t *testing.T) {
+	body := []byte(`{"input":[{"role":"system","content":"Summarize this conversation."},{"role":"user","content":"short history"}]}`)
+	require.False(t, hasPiContextSummarizationPromptInInput(body))
 }

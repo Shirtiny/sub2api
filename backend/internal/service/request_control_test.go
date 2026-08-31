@@ -781,6 +781,62 @@ func TestRequestControlAllowsPiLocalCompactionWithoutClientSession(t *testing.T)
 	require.Equal(t, "gateway:compaction_derived", decision.Details["session_source"])
 }
 
+func TestRequestControlAllowsShortPiCompactionPromptWithoutClientSession(t *testing.T) {
+	svc := requestControlTestService(t, RequestControlConfig{Enabled: true, AllGroups: true, AllUsers: true})
+	body, err := json.Marshal(map[string]any{
+		"model": "gpt-5.6-sol",
+		"input": []any{
+			map[string]any{"role": "system", "content": piContextSummarizationSystemPrompt},
+			map[string]any{"role": "user", "content": []any{map[string]any{"type": "input_text", "text": "short conversation history"}}},
+		},
+		"stream":            true,
+		"store":             false,
+		"max_output_tokens": 13107,
+	})
+	require.NoError(t, err)
+	require.Less(t, len(body), requestControlLocalCompactionMinBodyBytes)
+
+	decision, err := svc.Check(context.Background(), RequestControlCheckInput{
+		Protocol: RequestControlProtocolResponse, Endpoint: "/v1/responses", Model: "gpt-5.6-sol", UserID: 1,
+		UserAgent: "pi (win32 10.0.26200; x64)", Headers: http.Header{}, Body: body,
+	})
+	require.NoError(t, err)
+	require.True(t, decision.Allowed)
+	require.True(t, decision.Observed)
+	require.False(t, decision.Blocked)
+	require.Equal(t, "non_codex_user_agent", decision.Reason)
+	require.Equal(t, "local_compaction_candidate", decision.Details["request_kind"])
+	require.Equal(t, "strong_heuristic", decision.Details["request_kind_confidence"])
+	require.Contains(t, decision.Details["request_kind_evidence"], "input.0:pi_summarization_prompt")
+	require.Equal(t, "synthetic", decision.Details["client_session"])
+	require.Equal(t, "gateway:compaction_derived", decision.Details["session_source"])
+}
+
+func TestRequestControlPiCompactionPromptAloneDoesNotBypassRequestShape(t *testing.T) {
+	svc := requestControlTestService(t, RequestControlConfig{Enabled: true, AllGroups: true, AllUsers: true})
+	body, err := json.Marshal(map[string]any{
+		"model": "gpt-5.6-sol",
+		"input": []any{
+			map[string]any{"role": "system", "content": piContextSummarizationSystemPrompt},
+			map[string]any{"role": "user", "content": "short conversation history"},
+		},
+		"stream":            true,
+		"store":             false,
+		"max_output_tokens": 13107,
+		"tools":             []any{},
+	})
+	require.NoError(t, err)
+
+	decision, err := svc.Check(context.Background(), RequestControlCheckInput{
+		Protocol: RequestControlProtocolResponse, Endpoint: "/v1/responses", Model: "gpt-5.6-sol", UserID: 1,
+		UserAgent: "pi (win32 10.0.26200; x64)", Headers: http.Header{}, Body: body,
+	})
+	require.NoError(t, err)
+	require.True(t, decision.Blocked)
+	require.Equal(t, "anonymous_response_request", decision.Reason)
+	require.Equal(t, "openai_responses_standard_or_unknown", decision.Details["request_kind"])
+}
+
 func TestRequestControlAllowsExplicitCompactEndpoint(t *testing.T) {
 	svc := requestControlTestService(t, RequestControlConfig{Enabled: true, AllGroups: true, AllUsers: true})
 	decision, err := svc.Check(context.Background(), RequestControlCheckInput{
