@@ -865,16 +865,16 @@ func TestShouldParseUsageTerminalEvents(t *testing.T) {
 		"response.completed",
 		"response.failed",
 		"response.incomplete",
+		"response.cancelled",
+		"response.canceled",
 	} {
 		require.True(t, shouldParseUsage(eventType), eventType)
 	}
 	require.True(t, isTerminalEvent("error"))
 	require.True(t, isFailureTerminalEvent("error"))
 	require.False(t, shouldParseUsage("error"))
-	for _, eventType := range []string{"response.done", "response.cancelled", "response.canceled"} {
-		require.False(t, shouldParseUsage(eventType), eventType)
-		require.True(t, isTerminalEvent(eventType), eventType)
-	}
+	require.False(t, shouldParseUsage("response.done"))
+	require.True(t, isTerminalEvent("response.done"))
 	require.False(t, shouldParseUsage("response.output_text.delta"))
 	require.False(t, shouldParseUsage(""))
 }

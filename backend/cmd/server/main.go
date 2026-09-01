@@ -170,12 +170,26 @@ func runMainServer() {
 
 	log.Println("Shutting down server...")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	if err := app.Server.Shutdown(ctx); err != nil {
-		log.Fatalf("Server forced to shutdown: %v", err)
+	if err := shutdownHTTPServer(app.Server, 30*time.Second); err != nil {
+		// Do not call log.Fatal here: it invokes os.Exit and skips the deferred
+		// cleanup that drains required usage/billing finalizers.
+		log.Printf("Server graceful shutdown timed out; active connections were closed: %v", err)
 	}
 
 	log.Println("Server exited")
+}
+
+func shutdownHTTPServer(server *http.Server, timeout time.Duration) error {
+	if server == nil {
+		return nil
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	if err := server.Shutdown(ctx); err != nil {
+		if closeErr := server.Close(); closeErr != nil {
+			return errors.Join(err, closeErr)
+		}
+		return err
+	}
+	return nil
 }

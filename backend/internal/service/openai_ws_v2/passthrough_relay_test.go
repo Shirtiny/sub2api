@@ -1052,6 +1052,72 @@ func TestRelay_IDLessFailureTerminalForwardsCallbacksAndCloses(t *testing.T) {
 	}
 }
 
+func TestRelay_CancelledTerminalForwardsUsageToBillingCallback(t *testing.T) {
+	t.Parallel()
+
+	for _, eventType := range []string{"response.cancelled", "response.canceled"} {
+		eventType := eventType
+		t.Run(eventType, func(t *testing.T) {
+			t.Parallel()
+
+			payload := []byte(`{"type":"` + eventType + `","response":{"id":"resp-cancelled","usage":{"input_tokens":119404,"input_tokens_details":{"cached_tokens":119040},"output_tokens":301,"total_tokens":119705}}}`)
+			clientConn := newPassthroughTestFrameConn(nil, false)
+			upstreamConn := newPassthroughTestFrameConn([]passthroughTestFrame{
+				{msgType: coderws.MessageText, payload: payload},
+			}, true)
+			turns := make([]RelayTurnResult, 0, 1)
+
+			result, relayExit := Relay(
+				context.Background(),
+				clientConn,
+				upstreamConn,
+				[]byte(`{"type":"response.create","model":"gpt-5.6-sol"}`),
+				RelayOptions{OnTurnComplete: func(turn RelayTurnResult) {
+					turns = append(turns, turn)
+				}},
+			)
+
+			require.Nil(t, relayExit)
+			require.Len(t, turns, 1)
+			require.Equal(t, eventType, turns[0].TerminalEventType)
+			require.Equal(t, "resp-cancelled", turns[0].RequestID)
+			require.Equal(t, 119404, turns[0].Usage.InputTokens)
+			require.Equal(t, 119040, turns[0].Usage.CacheReadInputTokens)
+			require.Equal(t, 301, turns[0].Usage.OutputTokens)
+			require.Equal(t, turns[0].Usage, result.Usage)
+		})
+	}
+}
+
+func TestRelay_IDLessCancelledTerminalStillForwardsUsageToBillingCallback(t *testing.T) {
+	t.Parallel()
+
+	payload := []byte(`{"type":"response.cancelled","response":{"usage":{"input_tokens":8,"output_tokens":1}}}`)
+	clientConn := newPassthroughTestFrameConn(nil, false)
+	upstreamConn := newPassthroughTestFrameConn([]passthroughTestFrame{
+		{msgType: coderws.MessageText, payload: payload},
+	}, true)
+	turns := make([]RelayTurnResult, 0, 1)
+
+	result, relayExit := Relay(
+		context.Background(),
+		clientConn,
+		upstreamConn,
+		[]byte(`{"type":"response.create","model":"gpt-5.6-sol"}`),
+		RelayOptions{OnTurnComplete: func(turn RelayTurnResult) {
+			turns = append(turns, turn)
+		}},
+	)
+
+	require.Nil(t, relayExit)
+	require.Len(t, turns, 1)
+	require.Empty(t, turns[0].RequestID)
+	require.Equal(t, "response.cancelled", turns[0].TerminalEventType)
+	require.Equal(t, 8, turns[0].Usage.InputTokens)
+	require.Equal(t, 1, turns[0].Usage.OutputTokens)
+	require.Equal(t, turns[0].Usage, result.Usage)
+}
+
 func TestRelay_TopLevelErrorTerminalState(t *testing.T) {
 	t.Parallel()
 

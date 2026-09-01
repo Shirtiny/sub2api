@@ -1536,7 +1536,7 @@ func emitTurnComplete(
 		return
 	}
 	responseID := strings.TrimSpace(observed.responseID)
-	if responseID == "" && !isFailureTerminalEvent(observed.eventType) {
+	if responseID == "" && !terminalCanCompleteWithoutResponseID(observed.eventType) {
 		return
 	}
 	requestModel := strings.TrimSpace(observed.requestModel)
@@ -1767,6 +1767,10 @@ func isFailureTerminalEvent(eventType string) bool {
 	return eventType == "response.failed" || eventType == "response.incomplete" || eventType == "error"
 }
 
+func terminalCanCompleteWithoutResponseID(eventType string) bool {
+	return isFailureTerminalEvent(eventType) || eventType == "response.cancelled" || eventType == "response.canceled"
+}
+
 func isResponseStepBoundaryEvent(eventType string) bool {
 	switch eventType {
 	case "response.in_progress", "response.output_item.added", "response.output_item.done":
@@ -1778,7 +1782,9 @@ func isResponseStepBoundaryEvent(eventType string) bool {
 
 func shouldParseUsage(eventType string) bool {
 	switch eventType {
-	case "response.completed", "response.failed", "response.incomplete":
+	// Aether may attach authoritative or billing-floor usage to a cancelled
+	// terminal so the middle hop can settle the same request exactly once.
+	case "response.completed", "response.failed", "response.incomplete", "response.cancelled", "response.canceled":
 		return true
 	default:
 		return false
