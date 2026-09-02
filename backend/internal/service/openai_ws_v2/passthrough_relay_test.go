@@ -779,6 +779,7 @@ func TestRelay_FirstMessageAlreadySentStillObservesClientDisconnectBeforeTTFT(t 
 func TestRelay_ClientDisconnectAfterTerminalWriteCompletes(t *testing.T) {
 	t.Parallel()
 
+	cancelPayload := []byte(`{"type":"aether.turn.cancel"}`)
 	terminalPayload := []byte(`{"type":"response.completed","response":{"id":"resp_done","usage":{"input_tokens":2,"output_tokens":1}}}`)
 	clientConn := &closeAfterWriteFrameConn{
 		passthroughTestFrameConn: newPassthroughTestFrameConn(nil, false),
@@ -796,13 +797,17 @@ func TestRelay_ClientDisconnectAfterTerminalWriteCompletes(t *testing.T) {
 		clientConn,
 		upstreamConn,
 		[]byte(`{"type":"response.create","model":"gpt-4o","input":[]}`),
-		RelayOptions{UpstreamDrainTimeout: 100 * time.Millisecond},
+		RelayOptions{
+			UpstreamDrainTimeout:            100 * time.Millisecond,
+			ClientDisconnectUpstreamPayload: cancelPayload,
+		},
 	)
 
 	require.Nil(t, relayExit)
 	require.Equal(t, "response.completed", result.TerminalEventType)
 	require.Equal(t, int64(2), result.UpstreamToClientFrames)
 	require.Zero(t, result.DroppedDownstreamFrames)
+	require.Len(t, upstreamConn.Writes(), 1, "a settled turn must not receive a cancel signal")
 }
 
 func TestRelay_ClientDisconnect_DrainCapturesLateUsage(t *testing.T) {
@@ -841,6 +846,62 @@ func TestRelay_ClientDisconnect_DrainCapturesLateUsage(t *testing.T) {
 	require.Equal(t, int64(1), result.ClientToUpstreamFrames)
 	require.Equal(t, int64(0), result.UpstreamToClientFrames)
 	require.Equal(t, int64(2), result.DroppedDownstreamFrames)
+}
+
+func TestRelay_ClientDisconnectSignalsInFlightUpstreamAndCapturesCancelledUsage(t *testing.T) {
+	t.Parallel()
+
+	cancelPayload := []byte(`{"type":"aether.turn.cancel"}`)
+	terminalPayload := []byte(`{"type":"response.cancelled","response":{"usage":{"input_tokens":8,"output_tokens":1,"input_tokens_details":{"cached_tokens":7}}}}`)
+	clientConn := newPassthroughTestFrameConn(nil, true)
+	upstreamBase := newPassthroughTestFrameConn(nil, false)
+	var terminalOnce sync.Once
+	upstreamConn := &scriptedUpstreamFrameConn{
+		base: upstreamBase,
+		onWrite: func(payload []byte) {
+			if string(payload) != string(cancelPayload) {
+				return
+			}
+			terminalOnce.Do(func() {
+				upstreamBase.readCh <- passthroughTestFrame{
+					msgType: coderws.MessageText,
+					payload: terminalPayload,
+				}
+			})
+		},
+	}
+	turns := make([]RelayTurnResult, 0, 1)
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	result, relayExit := Relay(
+		ctx,
+		clientConn,
+		upstreamConn,
+		[]byte(`{"type":"response.create","model":"gpt-5.6-sol"}`),
+		RelayOptions{
+			ClientDisconnectUpstreamPayload: cancelPayload,
+			UpstreamDrainTimeout:            400 * time.Millisecond,
+			OnTurnComplete: func(turn RelayTurnResult) {
+				turns = append(turns, turn)
+			},
+		},
+	)
+
+	require.NotNil(t, relayExit)
+	require.Equal(t, "client_disconnected", relayExit.Stage)
+	require.Equal(t, "response.cancelled", result.TerminalEventType)
+	require.Equal(t, 8, result.Usage.InputTokens)
+	require.Equal(t, 7, result.Usage.CacheReadInputTokens)
+	require.Equal(t, 1, result.Usage.OutputTokens)
+	require.Len(t, turns, 1)
+	require.Equal(t, result.Usage, turns[0].Usage)
+	require.Equal(t, int64(1), result.ClientToUpstreamFrames)
+	require.Equal(t, int64(1), result.DroppedDownstreamFrames)
+
+	upstreamWrites := upstreamBase.Writes()
+	require.Len(t, upstreamWrites, 2)
+	require.JSONEq(t, string(cancelPayload), string(upstreamWrites[1].payload))
 }
 
 func TestRelay_IdleTimeout(t *testing.T) {

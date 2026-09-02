@@ -101,17 +101,28 @@ func TestAetherWSHandshakeNegotiationIsExact(t *testing.T) {
 
 	valid := make(http.Header)
 	valid.Set(AetherWSControlSelectedHeader, AetherWSControlProtocolRouteV1)
-	valid.Set(AetherWSCapabilitiesHeader, "close-after-terminal,client-reconnect")
+	valid.Set(AetherWSCapabilitiesHeader, aetherWSTurnCancelCapabilities)
 	negotiated, err := validateAetherWSHandshakeResponse(valid, capability)
 	require.NoError(t, err)
 	require.Equal(t, AetherWSControlProtocolRouteV1, negotiated.ControlProtocol)
 	require.True(t, negotiated.CloseAfterTerminal)
 	require.True(t, negotiated.ClientReconnect)
+	require.True(t, negotiated.TurnCancel)
+
+	legacy := valid.Clone()
+	legacy.Set(AetherWSCapabilitiesHeader, aetherWSLegacyCapabilities)
+	negotiated, err = validateAetherWSHandshakeResponse(legacy, capability)
+	require.NoError(t, err)
+	require.True(t, negotiated.CloseAfterTerminal)
+	require.True(t, negotiated.ClientReconnect)
+	require.False(t, negotiated.TurnCancel)
 
 	for _, invalid := range []string{
 		"client-reconnect,close-after-terminal",
 		"close-after-terminal",
 		"close-after-terminal,client-reconnect,provider-fallback",
+		"close-after-terminal,client-reconnect,turn-cancel,provider-fallback",
+		"close-after-terminal,turn-cancel,client-reconnect",
 	} {
 		headers := valid.Clone()
 		headers.Set(AetherWSCapabilitiesHeader, invalid)

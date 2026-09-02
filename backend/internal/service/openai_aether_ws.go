@@ -22,6 +22,9 @@ const (
 	AetherWSControlAcceptHeader    = "X-Aether-WS-Control-Accept"
 	AetherWSControlSelectedHeader  = "X-Aether-WS-Control"
 	AetherWSCapabilitiesHeader     = "X-Aether-WS-Capabilities"
+	aetherWSLegacyCapabilities     = "close-after-terminal,client-reconnect"
+	aetherWSTurnCancelCapabilities = aetherWSLegacyCapabilities + ",turn-cancel"
+	aetherWSTurnCancelPayload      = `{"type":"aether.turn.cancel"}`
 )
 
 func validateAetherWSClientPayload(payload []byte) error {
@@ -130,6 +133,7 @@ type AetherWSNegotiatedCapabilities struct {
 	ControlProtocol    string
 	CloseAfterTerminal bool
 	ClientReconnect    bool
+	TurnCancel         bool
 }
 
 // ResolveAetherWSAccountCapability is the single effective resolver for the
@@ -273,13 +277,19 @@ func validateAetherWSHandshakeResponse(
 		return negotiated, fmt.Errorf("aether websocket capabilities negotiation failed")
 	}
 	capabilityList := strings.TrimSpace(capabilityValues[0])
-	if capabilityList != "close-after-terminal,client-reconnect" {
+	turnCancel := false
+	switch capabilityList {
+	case aetherWSLegacyCapabilities:
+	case aetherWSTurnCancelCapabilities:
+		turnCancel = true
+	default:
 		return negotiated, fmt.Errorf("aether websocket capabilities are unsupported")
 	}
 	negotiated = AetherWSNegotiatedCapabilities{
 		ControlProtocol:    AetherWSControlProtocolRouteV1,
 		CloseAfterTerminal: true,
 		ClientReconnect:    true,
+		TurnCancel:         turnCancel,
 	}
 	return negotiated, nil
 }

@@ -704,21 +704,26 @@ func (s *OpenAIGatewayService) proxyResponsesWebSocketV2Passthrough(
 	}
 	upstreamFirstMessageSent = true
 
+	var clientDisconnectUpstreamPayload []byte
+	if negotiatedAether.TurnCancel {
+		clientDisconnectUpstreamPayload = []byte(aetherWSTurnCancelPayload)
+	}
 	relayResult, relayExit := openaiwsv2.RunEntry(openaiwsv2.EntryInput{
 		Ctx:                ctx,
 		ClientConn:         clientFrameConn,
 		UpstreamConn:       upstreamFrameConn,
 		FirstClientMessage: firstClientMessage,
 		Options: openaiwsv2.RelayOptions{
-			WriteTimeout:            s.openAIWSWriteTimeout(),
-			IdleTimeout:             s.openAIWSPassthroughIdleTimeout(),
-			FirstMessageType:        coderws.MessageText,
-			FirstMessageSent:        upstreamFirstMessageSent,
-			FirstMessageStartedAt:   firstMessageStartedAt,
-			InitialRequestModel:     initialRequestModel,
-			ValidatedFirstEnvelope:  &firstEnvelope,
-			ReadClientFrame:         readClientFrame,
-			RequireClientTextFrames: true,
+			WriteTimeout:                    s.openAIWSWriteTimeout(),
+			IdleTimeout:                     s.openAIWSPassthroughIdleTimeout(),
+			ClientDisconnectUpstreamPayload: clientDisconnectUpstreamPayload,
+			FirstMessageType:                coderws.MessageText,
+			FirstMessageSent:                upstreamFirstMessageSent,
+			FirstMessageStartedAt:           firstMessageStartedAt,
+			InitialRequestModel:             initialRequestModel,
+			ValidatedFirstEnvelope:          &firstEnvelope,
+			ReadClientFrame:                 readClientFrame,
+			RequireClientTextFrames:         true,
 			BeforeInspectUpstreamFrame: func(msgType coderws.MessageType, payload []byte) error {
 				if msgType != coderws.MessageText {
 					return NewOpenAIWSClientCloseError(

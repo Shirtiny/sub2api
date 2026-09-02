@@ -59,13 +59,16 @@ type RelayExit struct {
 }
 
 type RelayOptions struct {
-	WriteTimeout          time.Duration
-	IdleTimeout           time.Duration
-	UpstreamDrainTimeout  time.Duration
-	FirstMessageType      coderws.MessageType
-	FirstMessageSent      bool
-	FirstMessageStartedAt time.Time
-	InitialRequestModel   string
+	WriteTimeout         time.Duration
+	IdleTimeout          time.Duration
+	UpstreamDrainTimeout time.Duration
+	// ClientDisconnectUpstreamPayload is a negotiated control frame sent only
+	// when the downstream disconnects while a response is still in flight.
+	ClientDisconnectUpstreamPayload []byte
+	FirstMessageType                coderws.MessageType
+	FirstMessageSent                bool
+	FirstMessageStartedAt           time.Time
+	InitialRequestModel             string
 	// ValidatedFirstEnvelope avoids rescanning a manually dispatched first
 	// frame. The caller must obtain it from ParseClientEnvelope before write.
 	ValidatedFirstEnvelope          *ClientEnvelope
@@ -177,6 +180,10 @@ func newResponseStepGateWithModel(model string) *responseStepGate {
 	}
 	gate.phaseSnapshot.Store(uint32(responseStepInFlight))
 	return gate
+}
+
+func (g *responseStepGate) hasInFlightStep() bool {
+	return g != nil && responseStepPhase(g.phaseSnapshot.Load()) == responseStepInFlight
 }
 
 func (g *responseStepGate) begin(msgType coderws.MessageType, payload []byte) (bool, error) {
@@ -797,6 +804,28 @@ func Relay(
 	// 客户端断开后尽力继续读取上游短窗口，捕获延迟 usage/terminal 事件用于计费。
 	if firstExit.stage == "read_client" && firstExit.graceful {
 		dropDownstreamWrites.Store(true)
+		if len(options.ClientDisconnectUpstreamPayload) > 0 && stepGate.hasInFlightStep() {
+			cancelWriteTimeout := writeTimeout
+			if cancelWriteTimeout > drainTimeout {
+				cancelWriteTimeout = drainTimeout
+			}
+			cancelCtx, cancelWrite := context.WithTimeout(relayCtx, cancelWriteTimeout)
+			err := upstreamConn.WriteFrame(cancelCtx, coderws.MessageText, options.ClientDisconnectUpstreamPayload)
+			cancelWrite()
+			trace := RelayTraceEvent{
+				Stage:        "write_disconnect_signal_ok",
+				Direction:    "client_to_upstream",
+				MessageType:  relayMessageTypeString(coderws.MessageText),
+				PayloadBytes: len(options.ClientDisconnectUpstreamPayload),
+			}
+			if err != nil {
+				trace.Stage = "write_disconnect_signal_failed"
+				trace.Error = err.Error()
+			} else {
+				markActivity()
+			}
+			emitRelayTrace(onTrace, trace)
+		}
 		secondExit, hasSecondExit = waitRelayExit(exitCh, drainTimeout)
 	} else {
 		relayCancel()
