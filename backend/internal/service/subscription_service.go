@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"math/rand/v2"
@@ -31,6 +32,7 @@ var (
 	ErrSubscriptionNotFound       = infraerrors.NotFound("SUBSCRIPTION_NOT_FOUND", "subscription not found")
 	ErrSubscriptionExpired        = infraerrors.Forbidden("SUBSCRIPTION_EXPIRED", "subscription has expired")
 	ErrSubscriptionSuspended      = infraerrors.Forbidden("SUBSCRIPTION_SUSPENDED", "subscription is suspended")
+	ErrSubscriptionNotStarted     = infraerrors.Forbidden("SUBSCRIPTION_NOT_STARTED", "subscription has not started")
 	ErrSubscriptionAlreadyExists  = infraerrors.Conflict("SUBSCRIPTION_ALREADY_EXISTS", "subscription already exists for this user and group")
 	ErrSubscriptionAssignConflict = infraerrors.Conflict("SUBSCRIPTION_ASSIGN_CONFLICT", "subscription exists but request conflicts with existing assignment semantics")
 	ErrGroupNotSubscriptionType   = infraerrors.BadRequest("GROUP_NOT_SUBSCRIPTION_TYPE", "group is not a subscription type")
@@ -46,10 +48,59 @@ var (
 	ErrEarlyResetDisabled         = infraerrors.Forbidden("EARLY_RESET_DISABLED", "early reset is not enabled for this subscription")
 	ErrEarlyResetWouldExpire      = infraerrors.BadRequest("EARLY_RESET_WOULD_EXPIRE", "early reset would expire the subscription")
 	ErrEarlyResetConflict         = infraerrors.Conflict("EARLY_RESET_CONFLICT", "subscription changed while early reset was being applied")
+	// User-initiated quota reset errors.  A reset allowance is a remaining
+	// count, not a boolean; all validation is repeated in the repository's
+	// conditional UPDATE so concurrent requests cannot spend it twice.
+	ErrInvalidQuotaResetCount = infraerrors.BadRequest("INVALID_QUOTA_RESET_COUNT", "reset count must be between 0 and 1000")
+	ErrQuotaResetDisabled     = infraerrors.Forbidden("QUOTA_RESET_DISABLED", "user quota reset is not available for this subscription")
+	ErrQuotaResetExhausted    = infraerrors.TooManyRequests("QUOTA_RESET_EXHAUSTED", "no quota resets remain for this subscription")
+	ErrQuotaResetConflict     = infraerrors.Conflict("QUOTA_RESET_CONFLICT", "subscription changed while quota reset was being applied")
+	ErrQuotaResetUnavailable  = infraerrors.ServiceUnavailable("QUOTA_RESET_UNAVAILABLE", "user quota reset is unavailable")
 )
 
 type earlyResetSubscriptionRepository interface {
 	EarlyReset(ctx context.Context, input EarlyResetSubscriptionParams) error
+}
+
+// userQuotaResetRepository is deliberately narrower than
+// UserSubscriptionRepository.  This keeps existing integrations and test
+// doubles source-compatible while allowing the real Ent repository to provide
+// an atomic, conditional UPDATE ... SET usage=0, reset_count=reset_count-1.
+type userQuotaResetRepository interface {
+	ResetUserQuota(ctx context.Context, params UserQuotaResetParams) (*UserSubscription, error)
+}
+
+type userQuotaResetPolicyRepository interface {
+	ResetUserQuotaWithPolicy(ctx context.Context, params UserQuotaResetParams, skipPersistedEarlyResetPolicy bool) (*UserSubscription, error)
+}
+
+type subscriptionResetCountRepository interface {
+	SetResetCount(ctx context.Context, subscriptionID int64, count int) error
+}
+
+type subscriptionResetCountPolicyRepository interface {
+	SetResetCountWithPolicy(ctx context.Context, subscriptionID int64, count int, skipPersistedEarlyResetPolicy bool) error
+}
+
+type bulkSubscriptionResetCountRepository interface {
+	BulkSetResetCount(ctx context.Context, subscriptionIDs []int64, count int) (int64, error)
+}
+
+type bulkSubscriptionResetCountPolicyRepository interface {
+	BulkSetResetCountWithPolicy(ctx context.Context, subscriptionIDs []int64, count int, skipPersistedEarlyResetPolicy bool) (int64, error)
+}
+
+const MaxUserQuotaResetCount = 1000
+
+// Keep each SQL IN/update statement bounded. Explicit admin selections are
+// capped at this value by the handler, while the "all active" form may span
+// more rows and is split into the same-sized batches below.
+const maxSubscriptionResetCountBatchSize = 1000
+
+func (s *SubscriptionService) hasSubscriptionEntitlements() bool {
+	return s != nil && s.entClient != nil &&
+		s.entClient.UserSubscription != nil &&
+		s.entClient.SubscriptionEarlyResetEntitlement != nil
 }
 
 // SubscriptionService 订阅服务
@@ -67,6 +118,7 @@ type SubscriptionService struct {
 	subCacheJitter int // 抖动百分比
 
 	maintenanceQueue *SubscriptionMaintenanceQueue
+	now              func() time.Time
 }
 
 // NewSubscriptionService 创建订阅服务
@@ -76,10 +128,83 @@ func NewSubscriptionService(groupRepo GroupRepository, userSubRepo UserSubscript
 		userSubRepo:         userSubRepo,
 		billingCacheService: billingCacheService,
 		entClient:           entClient,
+		now:                 time.Now,
 	}
 	svc.initSubCache(cfg)
 	svc.initMaintenanceQueue(cfg)
 	return svc
+}
+
+func (s *SubscriptionService) currentTime() time.Time {
+	if s != nil && s.now != nil {
+		return s.now()
+	}
+	return time.Now()
+}
+
+// entClientForContext keeps entitlement reads on the same transaction as the
+// subscription mutation.  Using the service's base client here would make a
+// policy snapshot race with a concurrent plan/entitlement update.
+func (s *SubscriptionService) entClientForContext(ctx context.Context) *dbent.Client {
+	if s == nil || s.entClient == nil {
+		return nil
+	}
+	if tx := dbent.TxFromContext(ctx); tx != nil {
+		return tx.Client()
+	}
+	return s.entClient
+}
+
+// lockSubscriptionForQuotaReset serializes a quota-reset decision with other
+// subscription updates on PostgreSQL. SQLite does not support row-level
+// FOR UPDATE; its write transaction still provides the required serialization
+// for the actual conditional UPDATE.
+func (s *SubscriptionService) lockSubscriptionForQuotaReset(ctx context.Context, subscriptionID, userID int64) error {
+	client := s.entClientForContext(ctx)
+	if client == nil || dbent.TxFromContext(ctx) == nil || !supportsForUpdate(client) {
+		return nil
+	}
+	_, err := client.UserSubscription.Query().
+		Where(
+			usersubscription.IDEQ(subscriptionID),
+			usersubscription.UserIDEQ(userID),
+			usersubscription.DeletedAtIsNil(),
+		).
+		ForUpdate().
+		Only(ctx)
+	if err != nil {
+		if dbent.IsNotFound(err) {
+			return ErrSubscriptionNotFound
+		}
+		return fmt.Errorf("lock subscription for quota reset: %w", err)
+	}
+	return nil
+}
+
+// lockSubscriptionRowsForQuotaReset locks a bounded batch before a bulk
+// allowance update. The caller still relies on the repository predicates for
+// rows that disappear or change between batches.
+func (s *SubscriptionService) lockSubscriptionRowsForQuotaReset(ctx context.Context, subscriptionIDs []int64) error {
+	client := s.entClientForContext(ctx)
+	if client == nil || dbent.TxFromContext(ctx) == nil || !supportsForUpdate(client) {
+		return nil
+	}
+	for start := 0; start < len(subscriptionIDs); start += maxSubscriptionResetCountBatchSize {
+		end := start + maxSubscriptionResetCountBatchSize
+		if end > len(subscriptionIDs) {
+			end = len(subscriptionIDs)
+		}
+		if _, err := client.UserSubscription.Query().
+			Where(
+				usersubscription.IDIn(subscriptionIDs[start:end]...),
+				usersubscription.DeletedAtIsNil(),
+			).
+			ForUpdate().
+			All(ctx); err != nil {
+			return fmt.Errorf("lock subscriptions for reset-count update: %w", err)
+		}
+	}
+	return nil
 }
 
 func (s *SubscriptionService) SetAuthCacheInvalidator(invalidator APIKeyAuthCacheInvalidator) {
@@ -1165,14 +1290,15 @@ type earlyResetTerm struct {
 }
 
 func (s *SubscriptionService) applyCurrentEarlyResetPolicies(ctx context.Context, subs []UserSubscription, now time.Time) error {
-	if s == nil || s.entClient == nil || len(subs) == 0 {
+	client := s.entClientForContext(ctx)
+	if client == nil || len(subs) == 0 {
 		return nil
 	}
 	ids := make([]int64, 0, len(subs))
 	for i := range subs {
 		ids = append(ids, subs[i].ID)
 	}
-	entitlements, err := s.entClient.SubscriptionEarlyResetEntitlement.Query().
+	entitlements, err := client.SubscriptionEarlyResetEntitlement.Query().
 		Where(subscriptionearlyresetentitlement.SubscriptionIDIn(ids...)).
 		Order(dbent.Asc(subscriptionearlyresetentitlement.FieldStartsAt), dbent.Asc(subscriptionearlyresetentitlement.FieldID)).
 		All(ctx)
@@ -1228,7 +1354,8 @@ func (s *SubscriptionService) applyCurrentEarlyResetPolicy(ctx context.Context, 
 
 func (s *SubscriptionService) currentEarlyResetTerm(ctx context.Context, sub *UserSubscription, now time.Time) (earlyResetTerm, bool, error) {
 	customTerm := sub.HasActiveVirtualCustomEntitlementAt(now)
-	if s == nil || s.entClient == nil {
+	client := s.entClientForContext(ctx)
+	if client == nil {
 		expiresAt := sub.ExpiresAt
 		if customTerm && sub.CustomExpiresAt != nil {
 			expiresAt = *sub.CustomExpiresAt
@@ -1238,7 +1365,7 @@ func (s *SubscriptionService) currentEarlyResetTerm(ctx context.Context, sub *Us
 			CustomTerm: customTerm, StartsAt: sub.StartsAt, ExpiresAt: expiresAt,
 		}, true, nil
 	}
-	entitlement, err := s.entClient.SubscriptionEarlyResetEntitlement.Query().
+	entitlement, err := client.SubscriptionEarlyResetEntitlement.Query().
 		Where(
 			subscriptionearlyresetentitlement.SubscriptionIDEQ(sub.ID),
 			subscriptionearlyresetentitlement.CustomTermEQ(customTerm),
@@ -1257,7 +1384,7 @@ func (s *SubscriptionService) currentEarlyResetTerm(ctx context.Context, sub *Us
 	if !dbent.IsNotFound(err) {
 		return earlyResetTerm{}, false, fmt.Errorf("load current early reset entitlement: %w", err)
 	}
-	hasRows, err := s.entClient.SubscriptionEarlyResetEntitlement.Query().
+	hasRows, err := client.SubscriptionEarlyResetEntitlement.Query().
 		Where(subscriptionearlyresetentitlement.SubscriptionIDEQ(sub.ID)).
 		Exist(ctx)
 	if err != nil {
@@ -1374,6 +1501,542 @@ func (s *SubscriptionService) AdminResetQuota(ctx context.Context, subscriptionI
 	s.invalidateSubscriptionCaches(ctx, sub.UserID, sub.GroupID)
 	// Return the refreshed subscription from DB
 	return s.userSubRepo.GetByID(ctx, subscriptionID)
+}
+
+// ResetUserQuota consumes one administrator-granted reset allowance and
+// starts fresh daily and weekly windows for the caller's own subscription.
+// The repository performs the final ownership/count/status check in one
+// conditional UPDATE, so a forged subscription ID or concurrent double-click
+// cannot grant an extra reset.
+func (s *SubscriptionService) ResetUserQuota(ctx context.Context, userID, subscriptionID int64) (*UserSubscription, error) {
+	if userID <= 0 || subscriptionID <= 0 {
+		return nil, ErrSubscriptionNotFound
+	}
+	if s == nil || s.userSubRepo == nil {
+		return nil, ErrQuotaResetUnavailable
+	}
+	sub, err := s.userSubRepo.GetByID(ctx, subscriptionID)
+	if err != nil {
+		if errors.Is(err, ErrSubscriptionNotFound) {
+			return nil, ErrSubscriptionNotFound
+		}
+		return nil, err
+	}
+	if sub == nil || sub.UserID != userID {
+		// Do not reveal whether an arbitrary ID belongs to another user.
+		return nil, ErrSubscriptionNotFound
+	}
+
+	now := s.currentTime()
+	if sub.Status == SubscriptionStatusSuspended {
+		return nil, ErrSubscriptionSuspended
+	}
+	if sub.Status == "revoked" {
+		return nil, ErrSubscriptionNotFound
+	}
+	if sub.StartsAt.After(now) {
+		return nil, ErrSubscriptionNotStarted
+	}
+	if sub.Status != SubscriptionStatusActive || !sub.ExpiresAt.After(now) {
+		return nil, ErrSubscriptionExpired
+	}
+	// Keep exhausted requests cheap and bounded: resolve purchased entitlement
+	// history only when a reset allowance actually remains. Plan-policy checks
+	// are repeated after the current entitlement snapshot is applied below.
+	if sub.ResetCount <= 0 {
+		if sub.EarlyResetEnabled || sub.EarlyResetDurationDays != 0 {
+			return nil, ErrQuotaResetDisabled
+		}
+		return nil, ErrQuotaResetExhausted
+	}
+	policyResolved := s.hasSubscriptionEntitlements()
+	if !policyResolved {
+		if err := s.validateUserQuotaResetEligibility(ctx, sub, now, false); err != nil {
+			return nil, err
+		}
+	}
+
+	repo, hasRepo := s.userSubRepo.(userQuotaResetRepository)
+	policyRepo, hasPolicyRepo := s.userSubRepo.(userQuotaResetPolicyRepository)
+	if !hasRepo && !hasPolicyRepo {
+		return nil, ErrQuotaResetUnavailable
+	}
+	// A partially initialized Ent client is not usable for the transaction
+	// path. Treat it as an unavailable feature instead of panicking while
+	// handling a user request (normal wiring always initializes this client).
+	if s.entClient != nil && s.entClient.UserSubscription == nil {
+		return nil, ErrQuotaResetUnavailable
+	}
+	windowStart := startOfDay(now)
+	var updated *UserSubscription
+	err = s.withSubscriptionUpdateTx(ctx, func(txCtx context.Context) error {
+		if policyResolved {
+			// Re-read the row and resolve the purchased entitlement while the
+			// update transaction is open.  The initial request snapshot is only
+			// a fast rejection check and must not authorize the write.
+			if err := s.lockSubscriptionForQuotaReset(txCtx, subscriptionID, userID); err != nil {
+				return err
+			}
+			fresh, refreshErr := s.userSubRepo.GetByID(txCtx, subscriptionID)
+			if refreshErr != nil {
+				if errors.Is(refreshErr, ErrSubscriptionNotFound) {
+					return ErrSubscriptionNotFound
+				}
+				return refreshErr
+			}
+			if fresh == nil || fresh.UserID != userID {
+				return ErrSubscriptionNotFound
+			}
+			sub = fresh
+			if _, policyErr := s.applyCurrentEarlyResetPolicy(txCtx, sub, now); policyErr != nil {
+				return policyErr
+			}
+		}
+		if err := s.validateUserQuotaResetEligibility(txCtx, sub, now, policyResolved); err != nil {
+			return err
+		}
+		params := UserQuotaResetParams{
+			SubscriptionID: subscriptionID,
+			UserID:         userID,
+			Now:            now,
+			WindowStart:    windowStart,
+		}
+		var resetErr error
+		if hasPolicyRepo {
+			updated, resetErr = policyRepo.ResetUserQuotaWithPolicy(txCtx, params, policyResolved)
+		} else {
+			updated, resetErr = repo.ResetUserQuota(txCtx, params)
+		}
+		return resetErr
+	})
+	if err != nil {
+		return nil, err
+	}
+	if updated == nil {
+		// A repository implementation may only report success. Keep the
+		// response useful without issuing a second, race-prone read.
+		copy := *sub
+		copy.ResetCount--
+		copy.DailyUsageUSD = 0
+		copy.WeeklyUsageUSD = 0
+		copy.UpdatedAt = now
+		copy.DailyWindowStart = cloneTimePtr(&windowStart)
+		copy.WeeklyWindowStart = cloneTimePtr(&windowStart)
+		updated = &copy
+	}
+	if updated.Group == nil {
+		updated.Group = sub.Group
+	}
+	if updated.User == nil {
+		updated.User = sub.User
+	}
+	if s.hasSubscriptionEntitlements() {
+		if _, policyErr := s.applyCurrentEarlyResetPolicy(ctx, updated, now); policyErr != nil {
+			log.Printf("Failed to refresh early reset policy after user quota reset: %v", policyErr)
+		}
+	}
+	s.invalidateSubscriptionCaches(ctx, userID, sub.GroupID)
+	return updated, nil
+}
+
+// ResetSubscriptionQuota is a descriptive alias retained for callers that
+// use the domain-oriented method name.
+func (s *SubscriptionService) ResetSubscriptionQuota(ctx context.Context, userID, subscriptionID int64) (*UserSubscription, error) {
+	return s.ResetUserQuota(ctx, userID, subscriptionID)
+}
+
+func (s *SubscriptionService) validateUserQuotaResetEligibility(ctx context.Context, sub *UserSubscription, now time.Time, policyResolved bool) error {
+	if sub == nil {
+		return ErrSubscriptionNotFound
+	}
+	if !quotaResetPlanSupportsDailyWeekly(sub) {
+		return ErrQuotaResetDisabled
+	}
+	// Check the cheap persisted allowance before querying entitlement history;
+	// exhausted callers should not be able to turn this endpoint into an
+	// entitlement-table read loop.
+	if sub.ResetCount <= 0 {
+		return ErrQuotaResetExhausted
+	}
+	// Entitlement snapshots are authoritative for purchased plan terms. This
+	// catches a stale user_subscriptions flag when an early-reset term is
+	// active, while retaining compatibility with deployments without the
+	// entitlement table/client.
+	if !policyResolved && s.hasSubscriptionEntitlements() {
+		term, found, err := s.currentEarlyResetTerm(ctx, sub, now)
+		if err != nil {
+			return err
+		}
+		if found && (term.Enabled || term.DurationDays != 0) {
+			return ErrQuotaResetDisabled
+		}
+	}
+	return nil
+}
+
+// quotaResetPlanSupportsDailyWeekly is the shared plan check used by both the
+// user operation and administrator allowance assignment. A nil or partially
+// hydrated group is treated as unknown for backwards compatibility; a fully
+// populated group with no daily/weekly limit is explicitly ineligible.
+func quotaResetPlanSupportsDailyWeekly(sub *UserSubscription) bool {
+	if sub == nil || sub.EarlyResetEnabled || sub.EarlyResetDurationDays != 0 || sub.HasOneTimeDailyQuota() {
+		return false
+	}
+	if sub.Group == nil {
+		return true
+	}
+	group := EffectiveSubscriptionGroup(sub, sub.Group)
+	if group == nil {
+		return true
+	}
+	if group.SubscriptionType != "" && group.SubscriptionType != SubscriptionTypeSubscription {
+		return false
+	}
+	// A nil Group in a lightweight repository response means that quota
+	// metadata is unknown, not necessarily unlimited. Only reject when the
+	// response explicitly carries the subscription's limit metadata.
+	metadataKnown := group.SubscriptionType != "" || group.DailyLimitUSD != nil || group.WeeklyLimitUSD != nil || group.MonthlyLimitUSD != nil
+	return !metadataKnown || group.HasDailyLimit() || group.HasWeeklyLimit()
+}
+
+// SetSubscriptionResetCount sets the remaining user reset allowance for one
+// subscription. A zero value is also allowed on early-reset plans so an
+// administrator can explicitly clear stale allowances.
+func (s *SubscriptionService) SetSubscriptionResetCount(ctx context.Context, subscriptionID int64, count int) (*UserSubscription, error) {
+	if subscriptionID <= 0 {
+		return nil, ErrSubscriptionNotFound
+	}
+	if s == nil || s.userSubRepo == nil {
+		return nil, ErrQuotaResetUnavailable
+	}
+	if s.entClient != nil && s.entClient.UserSubscription == nil {
+		return nil, ErrQuotaResetUnavailable
+	}
+	if count < 0 || count > MaxUserQuotaResetCount {
+		return nil, ErrInvalidQuotaResetCount
+	}
+	sub, err := s.userSubRepo.GetByID(ctx, subscriptionID)
+	if err != nil {
+		if errors.Is(err, ErrSubscriptionNotFound) {
+			return nil, ErrSubscriptionNotFound
+		}
+		return nil, err
+	}
+	if sub == nil {
+		return nil, ErrSubscriptionNotFound
+	}
+	if sub.Status == "revoked" {
+		return nil, ErrSubscriptionNotFound
+	}
+	policyResolved := count > 0 && s.hasSubscriptionEntitlements()
+	repo, hasRepo := s.userSubRepo.(subscriptionResetCountRepository)
+	policyRepo, hasPolicyRepo := s.userSubRepo.(subscriptionResetCountPolicyRepository)
+	if !hasRepo && !hasPolicyRepo {
+		return nil, ErrQuotaResetUnavailable
+	}
+	now := s.currentTime()
+	err = s.withSubscriptionUpdateTx(ctx, func(txCtx context.Context) error {
+		if policyResolved {
+			if lockErr := s.lockSubscriptionForQuotaReset(txCtx, subscriptionID, sub.UserID); lockErr != nil {
+				return lockErr
+			}
+			fresh, refreshErr := s.userSubRepo.GetByID(txCtx, subscriptionID)
+			if refreshErr != nil {
+				if errors.Is(refreshErr, ErrSubscriptionNotFound) {
+					return ErrSubscriptionNotFound
+				}
+				return refreshErr
+			}
+			if fresh == nil {
+				return ErrSubscriptionNotFound
+			}
+			sub = fresh
+			if sub.Status == "revoked" {
+				return ErrSubscriptionNotFound
+			}
+			if _, policyErr := s.applyCurrentEarlyResetPolicy(txCtx, sub, now); policyErr != nil {
+				return policyErr
+			}
+		}
+		if count > 0 {
+			if eligibilityErr := s.validateResetCountAssignmentEligibility(txCtx, sub, policyResolved); eligibilityErr != nil {
+				return eligibilityErr
+			}
+		}
+		if hasPolicyRepo {
+			return policyRepo.SetResetCountWithPolicy(txCtx, subscriptionID, count, policyResolved)
+		}
+		return repo.SetResetCount(txCtx, subscriptionID, count)
+	})
+	if err != nil {
+		return nil, err
+	}
+	s.invalidateSubscriptionCaches(ctx, sub.UserID, sub.GroupID)
+	updated, err := s.userSubRepo.GetByID(ctx, subscriptionID)
+	if err != nil {
+		return nil, err
+	}
+	if updated == nil {
+		return nil, ErrSubscriptionNotFound
+	}
+	if s.hasSubscriptionEntitlements() {
+		if _, policyErr := s.applyCurrentEarlyResetPolicy(ctx, updated, s.currentTime()); policyErr != nil {
+			log.Printf("Failed to refresh early reset policy after reset-count update: %v", policyErr)
+		}
+	}
+	return updated, nil
+}
+
+func (s *SubscriptionService) validateResetCountAssignmentEligibility(ctx context.Context, sub *UserSubscription, policyResolved bool) error {
+	if sub == nil {
+		return ErrSubscriptionNotFound
+	}
+	if !quotaResetPlanSupportsDailyWeekly(sub) {
+		return ErrQuotaResetDisabled
+	}
+	if !policyResolved && s.hasSubscriptionEntitlements() {
+		term, found, err := s.currentEarlyResetTerm(ctx, sub, s.currentTime())
+		if err != nil {
+			return err
+		}
+		if found && (term.Enabled || term.DurationDays != 0) {
+			return ErrQuotaResetDisabled
+		}
+	}
+	return nil
+}
+
+type BulkSubscriptionResetCountResult struct {
+	Updated int64 `json:"updated"`
+	Skipped int64 `json:"skipped"`
+}
+
+// BulkSetSubscriptionResetCount sets one allowance value for a bounded list
+// of subscriptions. If subscriptionIDs is empty, all currently active
+// subscriptions are considered. Plans without a daily/weekly window (including
+// early-reset and one-day plans) are skipped for a positive count; count=0 is
+// allowed on non-revoked rows to clear an old allowance.
+func (s *SubscriptionService) BulkSetSubscriptionResetCount(ctx context.Context, subscriptionIDs []int64, count int) (BulkSubscriptionResetCountResult, error) {
+	if count < 0 || count > MaxUserQuotaResetCount {
+		return BulkSubscriptionResetCountResult{}, ErrInvalidQuotaResetCount
+	}
+	if s == nil || s.userSubRepo == nil {
+		return BulkSubscriptionResetCountResult{}, ErrQuotaResetUnavailable
+	}
+	if s.entClient != nil && s.entClient.UserSubscription == nil {
+		return BulkSubscriptionResetCountResult{}, ErrQuotaResetUnavailable
+	}
+	if len(subscriptionIDs) > maxSubscriptionResetCountBatchSize {
+		return BulkSubscriptionResetCountResult{}, infraerrors.BadRequest("TOO_MANY_SUBSCRIPTIONS", "at most 1000 subscriptions may be updated at once")
+	}
+	setRepo, hasSet := s.userSubRepo.(subscriptionResetCountRepository)
+	policySetRepo, hasPolicySet := s.userSubRepo.(subscriptionResetCountPolicyRepository)
+	bulkRepo, hasBulk := s.userSubRepo.(bulkSubscriptionResetCountRepository)
+	policyBulkRepo, hasPolicyBulk := s.userSubRepo.(bulkSubscriptionResetCountPolicyRepository)
+	if !hasSet && !hasPolicySet && !hasBulk && !hasPolicyBulk {
+		return BulkSubscriptionResetCountResult{}, ErrQuotaResetUnavailable
+	}
+
+	// A zero assignment only clears stale allowances; it does not need an
+	// entitlement-table lookup and should remain available even if that
+	// optional history store is temporarily unavailable.
+	subs, err := s.listSubscriptionsForResetCount(ctx, subscriptionIDs, count > 0)
+	if err != nil {
+		return BulkSubscriptionResetCountResult{}, err
+	}
+	ids := make([]int64, 0, len(subs))
+	seen := make(map[int64]struct{}, len(subs))
+	for i := range subs {
+		sub := &subs[i]
+		if sub.ID <= 0 {
+			continue
+		}
+		if sub.Status == "revoked" {
+			continue
+		}
+		if _, exists := seen[sub.ID]; exists {
+			continue
+		}
+		seen[sub.ID] = struct{}{}
+		if count > 0 {
+			// listSubscriptionsForResetCount applies the current entitlement
+			// policy to every row, so this flag is authoritative here and avoids
+			// one extra entitlement query per subscription.
+			if !quotaResetPlanSupportsDailyWeekly(sub) {
+				continue
+			}
+		}
+		ids = append(ids, sub.ID)
+	}
+
+	requested := len(subs)
+	if len(subscriptionIDs) > 0 {
+		// Report missing/invalid IDs as skipped too, while treating duplicate
+		// IDs as one request. The handler rejects invalid IDs, but keeping this
+		// accounting here protects direct service callers as well.
+		requestedSet := make(map[int64]struct{}, len(subscriptionIDs))
+		for _, id := range subscriptionIDs {
+			if _, exists := requestedSet[id]; !exists {
+				requestedSet[id] = struct{}{}
+			}
+		}
+		requested = len(requestedSet)
+	}
+	if requested < len(ids) {
+		requested = len(ids)
+	}
+	result := BulkSubscriptionResetCountResult{Skipped: int64(requested - len(ids))}
+	if len(ids) > 0 {
+		policyResolved := count > 0 && s.hasSubscriptionEntitlements()
+		var updated int64
+		writeErr := s.withSubscriptionUpdateTx(ctx, func(txCtx context.Context) error {
+			if policyResolved {
+				// Lock and re-read the entitlement policy in the same transaction
+				// as the writes.  The first list is only a candidate snapshot.
+				if err := s.lockSubscriptionRowsForQuotaReset(txCtx, ids); err != nil {
+					return err
+				}
+				if err := s.applyCurrentEarlyResetPoliciesBatched(txCtx, subs, s.currentTime()); err != nil {
+					return err
+				}
+				byID := make(map[int64]*UserSubscription, len(subs))
+				for i := range subs {
+					byID[subs[i].ID] = &subs[i]
+				}
+				eligibleIDs := ids[:0]
+				for _, id := range ids {
+					if sub := byID[id]; sub != nil && quotaResetPlanSupportsDailyWeekly(sub) {
+						eligibleIDs = append(eligibleIDs, id)
+					}
+				}
+				result.Skipped += int64(len(ids) - len(eligibleIDs))
+				ids = eligibleIDs
+			}
+
+			for start := 0; start < len(ids); start += maxSubscriptionResetCountBatchSize {
+				end := start + maxSubscriptionResetCountBatchSize
+				if end > len(ids) {
+					end = len(ids)
+				}
+				batch := ids[start:end]
+				if hasBulk || hasPolicyBulk {
+					var batchUpdated int64
+					var batchErr error
+					if hasPolicyBulk {
+						batchUpdated, batchErr = policyBulkRepo.BulkSetResetCountWithPolicy(txCtx, batch, count, policyResolved)
+					} else {
+						batchUpdated, batchErr = bulkRepo.BulkSetResetCount(txCtx, batch, count)
+					}
+					if batchErr != nil {
+						return batchErr
+					}
+					updated += batchUpdated
+					continue
+				}
+				for _, id := range batch {
+					var setErr error
+					if hasPolicySet {
+						setErr = policySetRepo.SetResetCountWithPolicy(txCtx, id, count, policyResolved)
+					} else {
+						setErr = setRepo.SetResetCount(txCtx, id, count)
+					}
+					if setErr != nil {
+						if errors.Is(setErr, ErrQuotaResetDisabled) || errors.Is(setErr, ErrSubscriptionNotFound) {
+							continue
+						}
+						return setErr
+					}
+					updated++
+				}
+			}
+			return nil
+		})
+		if writeErr != nil {
+			return BulkSubscriptionResetCountResult{}, writeErr
+		}
+		result.Updated = updated
+		if updated < int64(len(ids)) {
+			result.Skipped += int64(len(ids)) - updated
+		}
+		for i := range subs {
+			if _, selected := seen[subs[i].ID]; selected {
+				s.invalidateSubscriptionCaches(ctx, subs[i].UserID, subs[i].GroupID)
+			}
+		}
+	}
+	return result, nil
+}
+
+func (s *SubscriptionService) listSubscriptionsForResetCount(ctx context.Context, ids []int64, resolvePolicy bool) ([]UserSubscription, error) {
+	if len(ids) > 0 {
+		out := make([]UserSubscription, 0, len(ids))
+		seen := make(map[int64]struct{}, len(ids))
+		for _, id := range ids {
+			if id <= 0 {
+				continue
+			}
+			if _, exists := seen[id]; exists {
+				continue
+			}
+			seen[id] = struct{}{}
+			sub, err := s.userSubRepo.GetByID(ctx, id)
+			if err != nil {
+				if errors.Is(err, ErrSubscriptionNotFound) {
+					continue
+				}
+				return nil, fmt.Errorf("load subscription %d for reset count: %w", id, err)
+			}
+			if sub == nil {
+				continue
+			}
+			out = append(out, *sub)
+		}
+		// Resolve entitlement policy in one query for an explicit selection.  A
+		// bulk request is admin-only but can still contain hundreds of IDs; doing
+		// two entitlement queries per row would turn a bounded write into an easy
+		// database load amplifier.
+		if resolvePolicy && s.hasSubscriptionEntitlements() && len(out) > 0 {
+			if err := s.applyCurrentEarlyResetPoliciesBatched(ctx, out, s.currentTime()); err != nil {
+				return nil, err
+			}
+		}
+		return out, nil
+	}
+
+	params := pagination.PaginationParams{Page: 1, PageSize: 1000}
+	subs, pag, err := s.userSubRepo.List(ctx, params, nil, nil, SubscriptionStatusActive, "", "created_at", "asc")
+	if err != nil {
+		return nil, fmt.Errorf("list subscriptions for reset count: %w", err)
+	}
+	if pag != nil {
+		for page := 2; page <= pag.Pages; page++ {
+			params.Page = page
+			pageSubs, _, pageErr := s.userSubRepo.List(ctx, params, nil, nil, SubscriptionStatusActive, "", "created_at", "asc")
+			if pageErr != nil {
+				return nil, fmt.Errorf("list subscriptions for reset count page %d: %w", page, pageErr)
+			}
+			subs = append(subs, pageSubs...)
+		}
+	}
+	if resolvePolicy && s.hasSubscriptionEntitlements() && len(subs) > 0 {
+		if err := s.applyCurrentEarlyResetPoliciesBatched(ctx, subs, s.currentTime()); err != nil {
+			return nil, err
+		}
+	}
+	return subs, nil
+}
+
+func (s *SubscriptionService) applyCurrentEarlyResetPoliciesBatched(ctx context.Context, subs []UserSubscription, now time.Time) error {
+	for start := 0; start < len(subs); start += maxSubscriptionResetCountBatchSize {
+		end := start + maxSubscriptionResetCountBatchSize
+		if end > len(subs) {
+			end = len(subs)
+		}
+		if err := s.applyCurrentEarlyResetPolicies(ctx, subs[start:end], now); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (s *SubscriptionService) EarlyResetSubscription(ctx context.Context, userID, subscriptionID int64) (*UserSubscription, error) {
@@ -1785,6 +2448,7 @@ type SubscriptionProgress struct {
 	GroupName     string               `json:"group_name"`
 	ExpiresAt     time.Time            `json:"expires_at"`
 	ExpiresInDays int                  `json:"expires_in_days"`
+	ResetCount    int                  `json:"reset_count,omitempty"`
 	Daily         *UsageWindowProgress `json:"daily,omitempty"`
 	Weekly        *UsageWindowProgress `json:"weekly,omitempty"`
 	Monthly       *UsageWindowProgress `json:"monthly,omitempty"`
@@ -1830,6 +2494,7 @@ func (s *SubscriptionService) calculateProgress(sub *UserSubscription, group *Gr
 		GroupName:     sub.DisplayName(group),
 		ExpiresAt:     sub.ExpiresAt,
 		ExpiresInDays: sub.DaysRemaining(),
+		ResetCount:    sub.ResetCount,
 	}
 
 	// 日进度

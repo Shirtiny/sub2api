@@ -1673,6 +1673,8 @@ export interface UserSubscription {
   daily_usage_usd: number
   weekly_usage_usd: number
   monthly_usage_usd: number
+  /** Remaining administrator-granted daily/weekly quota resets. */
+  reset_count?: number
   early_reset_enabled?: boolean
   early_reset_duration_days?: number
   custom_multiplier?: number | null
@@ -1692,6 +1694,7 @@ export interface UserSubscription {
 
 export interface SubscriptionProgress {
   subscription_id: number
+  reset_count?: number
   daily: {
     used: number
     limit: number | null

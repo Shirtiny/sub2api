@@ -285,6 +285,92 @@ type ResetSubscriptionQuotaRequest struct {
 	Monthly bool `json:"monthly"`
 }
 
+// SetSubscriptionResetCountRequest sets the number of remaining user-facing
+// daily/weekly quota resets. A pointer allows an explicit zero while still
+// rejecting an omitted count.
+type SetSubscriptionResetCountRequest struct {
+	Count *int `json:"count"`
+	// ResetCount is accepted as an explicit alias for API clients that mirror
+	// the persisted field name.
+	ResetCount      *int    `json:"reset_count,omitempty"`
+	SubscriptionIDs []int64 `json:"subscription_ids,omitempty"`
+}
+
+func (r SetSubscriptionResetCountRequest) value() (*int, bool) {
+	if r.Count != nil {
+		return r.Count, true
+	}
+	if r.ResetCount != nil {
+		return r.ResetCount, true
+	}
+	return nil, false
+}
+
+// SetResetCount sets one subscription's remaining user reset allowance.
+// PUT|POST /api/v1/admin/subscriptions/:id/reset-count
+func (h *SubscriptionHandler) SetResetCount(c *gin.Context) {
+	subscriptionID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil || subscriptionID <= 0 {
+		response.BadRequest(c, "Invalid subscription ID")
+		return
+	}
+	var req SetSubscriptionResetCountRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "count is required")
+		return
+	}
+	count, ok := req.value()
+	if !ok {
+		response.BadRequest(c, "count is required")
+		return
+	}
+	payload := struct {
+		SubscriptionID int64 `json:"subscription_id"`
+		Count          int   `json:"count"`
+	}{SubscriptionID: subscriptionID, Count: *count}
+	executeAdminIdempotentJSON(c, "admin.subscriptions.set_reset_count", payload, service.DefaultWriteIdempotencyTTL(), func(ctx context.Context) (any, error) {
+		sub, setErr := h.subscriptionService.SetSubscriptionResetCount(ctx, subscriptionID, *count)
+		if setErr != nil {
+			return nil, setErr
+		}
+		return dto.UserSubscriptionFromServiceAdmin(sub), nil
+	})
+}
+
+// BulkSetResetCount sets one allowance value for a bounded set of
+// subscriptions. When subscription_ids is omitted, all active subscriptions
+// are considered.
+// POST /api/v1/admin/subscriptions/bulk-reset-count
+func (h *SubscriptionHandler) BulkSetResetCount(c *gin.Context) {
+	var req SetSubscriptionResetCountRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "count is required")
+		return
+	}
+	count, ok := req.value()
+	if !ok {
+		response.BadRequest(c, "count is required")
+		return
+	}
+	if len(req.SubscriptionIDs) > 1000 {
+		response.BadRequest(c, "subscription_ids cannot contain more than 1000 items")
+		return
+	}
+	for _, id := range req.SubscriptionIDs {
+		if id <= 0 {
+			response.BadRequest(c, "subscription_ids contains an invalid ID")
+			return
+		}
+	}
+	payload := struct {
+		Count           int     `json:"count"`
+		SubscriptionIDs []int64 `json:"subscription_ids,omitempty"`
+	}{Count: *count, SubscriptionIDs: req.SubscriptionIDs}
+	executeAdminIdempotentJSON(c, "admin.subscriptions.bulk_set_reset_count", payload, service.DefaultWriteIdempotencyTTL(), func(ctx context.Context) (any, error) {
+		return h.subscriptionService.BulkSetSubscriptionResetCount(ctx, req.SubscriptionIDs, *count)
+	})
+}
+
 // ResetQuota resets daily, weekly, and/or monthly usage for a subscription.
 // POST /api/v1/admin/subscriptions/:id/reset-quota
 func (h *SubscriptionHandler) ResetQuota(c *gin.Context) {

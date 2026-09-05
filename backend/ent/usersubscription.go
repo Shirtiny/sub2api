@@ -47,7 +47,9 @@ type UserSubscription struct {
 	WeeklyUsageUsd float64 `json:"weekly_usage_usd,omitempty"`
 	// MonthlyUsageUsd holds the value of the "monthly_usage_usd" field.
 	MonthlyUsageUsd float64 `json:"monthly_usage_usd,omitempty"`
-	// whether the subscriber may reset quota before the normal window
+	// remaining user-initiated daily/weekly quota resets
+	ResetCount int `json:"reset_count,omitempty"`
+	// whether quota is one-time and may only be refreshed through an explicit early reset
 	EarlyResetEnabled bool `json:"early_reset_enabled,omitempty"`
 	// days deducted from the subscription period on early reset
 	EarlyResetDurationDays int `json:"early_reset_duration_days,omitempty"`
@@ -154,7 +156,7 @@ func (*UserSubscription) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case usersubscription.FieldDailyUsageUsd, usersubscription.FieldWeeklyUsageUsd, usersubscription.FieldMonthlyUsageUsd:
 			values[i] = new(sql.NullFloat64)
-		case usersubscription.FieldID, usersubscription.FieldUserID, usersubscription.FieldGroupID, usersubscription.FieldEarlyResetDurationDays, usersubscription.FieldAssignedBy, usersubscription.FieldPlanConcurrency, usersubscription.FieldCustomMultiplier, usersubscription.FieldCustomSourcePlanID, usersubscription.FieldCustomSourceGroupID:
+		case usersubscription.FieldID, usersubscription.FieldUserID, usersubscription.FieldGroupID, usersubscription.FieldResetCount, usersubscription.FieldEarlyResetDurationDays, usersubscription.FieldAssignedBy, usersubscription.FieldPlanConcurrency, usersubscription.FieldCustomMultiplier, usersubscription.FieldCustomSourcePlanID, usersubscription.FieldCustomSourceGroupID:
 			values[i] = new(sql.NullInt64)
 		case usersubscription.FieldStatus, usersubscription.FieldNotes, usersubscription.FieldCustomDisplayName:
 			values[i] = new(sql.NullString)
@@ -268,6 +270,12 @@ func (_m *UserSubscription) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field monthly_usage_usd", values[i])
 			} else if value.Valid {
 				_m.MonthlyUsageUsd = value.Float64
+			}
+		case usersubscription.FieldResetCount:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field reset_count", values[i])
+			} else if value.Valid {
+				_m.ResetCount = int(value.Int64)
 			}
 		case usersubscription.FieldEarlyResetEnabled:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -460,6 +468,9 @@ func (_m *UserSubscription) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("monthly_usage_usd=")
 	builder.WriteString(fmt.Sprintf("%v", _m.MonthlyUsageUsd))
+	builder.WriteString(", ")
+	builder.WriteString("reset_count=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ResetCount))
 	builder.WriteString(", ")
 	builder.WriteString("early_reset_enabled=")
 	builder.WriteString(fmt.Sprintf("%v", _m.EarlyResetEnabled))

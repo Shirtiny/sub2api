@@ -15,9 +15,12 @@ type UserSubscription struct {
 	WeeklyWindowStart  *time.Time
 	MonthlyWindowStart *time.Time
 
-	DailyUsageUSD          float64
-	WeeklyUsageUSD         float64
-	MonthlyUsageUSD        float64
+	DailyUsageUSD   float64
+	WeeklyUsageUSD  float64
+	MonthlyUsageUSD float64
+	// ResetCount is the number of user-initiated daily/weekly quota resets
+	// remaining for this subscription.
+	ResetCount             int
 	EarlyResetEnabled      bool
 	EarlyResetDurationDays int
 

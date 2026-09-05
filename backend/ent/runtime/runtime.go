@@ -2549,12 +2549,32 @@ func init() {
 	usersubscriptionDescMonthlyUsageUsd := usersubscriptionFields[10].Descriptor()
 	// usersubscription.DefaultMonthlyUsageUsd holds the default value on creation for the monthly_usage_usd field.
 	usersubscription.DefaultMonthlyUsageUsd = usersubscriptionDescMonthlyUsageUsd.Default.(float64)
+	// usersubscriptionDescResetCount is the schema descriptor for reset_count field.
+	usersubscriptionDescResetCount := usersubscriptionFields[11].Descriptor()
+	// usersubscription.DefaultResetCount holds the default value on creation for the reset_count field.
+	usersubscription.DefaultResetCount = usersubscriptionDescResetCount.Default.(int)
+	// usersubscription.ResetCountValidator is a validator for the "reset_count" field. It is called by the builders before save.
+	usersubscription.ResetCountValidator = func() func(int) error {
+		validators := usersubscriptionDescResetCount.Validators
+		fns := [...]func(int) error{
+			validators[0].(func(int) error),
+			validators[1].(func(int) error),
+		}
+		return func(reset_count int) error {
+			for _, fn := range fns {
+				if err := fn(reset_count); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
 	// usersubscriptionDescEarlyResetEnabled is the schema descriptor for early_reset_enabled field.
-	usersubscriptionDescEarlyResetEnabled := usersubscriptionFields[11].Descriptor()
+	usersubscriptionDescEarlyResetEnabled := usersubscriptionFields[12].Descriptor()
 	// usersubscription.DefaultEarlyResetEnabled holds the default value on creation for the early_reset_enabled field.
 	usersubscription.DefaultEarlyResetEnabled = usersubscriptionDescEarlyResetEnabled.Default.(bool)
 	// usersubscriptionDescEarlyResetDurationDays is the schema descriptor for early_reset_duration_days field.
-	usersubscriptionDescEarlyResetDurationDays := usersubscriptionFields[12].Descriptor()
+	usersubscriptionDescEarlyResetDurationDays := usersubscriptionFields[13].Descriptor()
 	// usersubscription.DefaultEarlyResetDurationDays holds the default value on creation for the early_reset_duration_days field.
 	usersubscription.DefaultEarlyResetDurationDays = usersubscriptionDescEarlyResetDurationDays.Default.(int)
 	// usersubscription.EarlyResetDurationDaysValidator is a validator for the "early_reset_duration_days" field. It is called by the builders before save.
@@ -2574,11 +2594,11 @@ func init() {
 		}
 	}()
 	// usersubscriptionDescAssignedAt is the schema descriptor for assigned_at field.
-	usersubscriptionDescAssignedAt := usersubscriptionFields[14].Descriptor()
+	usersubscriptionDescAssignedAt := usersubscriptionFields[15].Descriptor()
 	// usersubscription.DefaultAssignedAt holds the default value on creation for the assigned_at field.
 	usersubscription.DefaultAssignedAt = usersubscriptionDescAssignedAt.Default.(func() time.Time)
 	// usersubscriptionDescPlanConcurrency is the schema descriptor for plan_concurrency field.
-	usersubscriptionDescPlanConcurrency := usersubscriptionFields[16].Descriptor()
+	usersubscriptionDescPlanConcurrency := usersubscriptionFields[17].Descriptor()
 	// usersubscription.PlanConcurrencyValidator is a validator for the "plan_concurrency" field. It is called by the builders before save.
 	usersubscription.PlanConcurrencyValidator = func() func(int) error {
 		validators := usersubscriptionDescPlanConcurrency.Validators
@@ -2596,7 +2616,7 @@ func init() {
 		}
 	}()
 	// usersubscriptionDescCustomDisplayName is the schema descriptor for custom_display_name field.
-	usersubscriptionDescCustomDisplayName := usersubscriptionFields[22].Descriptor()
+	usersubscriptionDescCustomDisplayName := usersubscriptionFields[23].Descriptor()
 	// usersubscription.CustomDisplayNameValidator is a validator for the "custom_display_name" field. It is called by the builders before save.
 	usersubscription.CustomDisplayNameValidator = usersubscriptionDescCustomDisplayName.Validators[0].(func(string) error)
 }

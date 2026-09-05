@@ -251,6 +251,27 @@ func (_u *UserSubscriptionUpdate) AddMonthlyUsageUsd(v float64) *UserSubscriptio
 	return _u
 }
 
+// SetResetCount sets the "reset_count" field.
+func (_u *UserSubscriptionUpdate) SetResetCount(v int) *UserSubscriptionUpdate {
+	_u.mutation.ResetResetCount()
+	_u.mutation.SetResetCount(v)
+	return _u
+}
+
+// SetNillableResetCount sets the "reset_count" field if the given value is not nil.
+func (_u *UserSubscriptionUpdate) SetNillableResetCount(v *int) *UserSubscriptionUpdate {
+	if v != nil {
+		_u.SetResetCount(*v)
+	}
+	return _u
+}
+
+// AddResetCount adds value to the "reset_count" field.
+func (_u *UserSubscriptionUpdate) AddResetCount(v int) *UserSubscriptionUpdate {
+	_u.mutation.AddResetCount(v)
+	return _u
+}
+
 // SetEarlyResetEnabled sets the "early_reset_enabled" field.
 func (_u *UserSubscriptionUpdate) SetEarlyResetEnabled(v bool) *UserSubscriptionUpdate {
 	_u.mutation.SetEarlyResetEnabled(v)
@@ -681,6 +702,11 @@ func (_u *UserSubscriptionUpdate) check() error {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "UserSubscription.status": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.ResetCount(); ok {
+		if err := usersubscription.ResetCountValidator(v); err != nil {
+			return &ValidationError{Name: "reset_count", err: fmt.Errorf(`ent: validator failed for field "UserSubscription.reset_count": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.EarlyResetDurationDays(); ok {
 		if err := usersubscription.EarlyResetDurationDaysValidator(v); err != nil {
 			return &ValidationError{Name: "early_reset_duration_days", err: fmt.Errorf(`ent: validator failed for field "UserSubscription.early_reset_duration_days": %w`, err)}
@@ -770,6 +796,12 @@ func (_u *UserSubscriptionUpdate) sqlSave(ctx context.Context) (_node int, err e
 	}
 	if value, ok := _u.mutation.AddedMonthlyUsageUsd(); ok {
 		_spec.AddField(usersubscription.FieldMonthlyUsageUsd, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.ResetCount(); ok {
+		_spec.SetField(usersubscription.FieldResetCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedResetCount(); ok {
+		_spec.AddField(usersubscription.FieldResetCount, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.EarlyResetEnabled(); ok {
 		_spec.SetField(usersubscription.FieldEarlyResetEnabled, field.TypeBool, value)
@@ -1259,6 +1291,27 @@ func (_u *UserSubscriptionUpdateOne) AddMonthlyUsageUsd(v float64) *UserSubscrip
 	return _u
 }
 
+// SetResetCount sets the "reset_count" field.
+func (_u *UserSubscriptionUpdateOne) SetResetCount(v int) *UserSubscriptionUpdateOne {
+	_u.mutation.ResetResetCount()
+	_u.mutation.SetResetCount(v)
+	return _u
+}
+
+// SetNillableResetCount sets the "reset_count" field if the given value is not nil.
+func (_u *UserSubscriptionUpdateOne) SetNillableResetCount(v *int) *UserSubscriptionUpdateOne {
+	if v != nil {
+		_u.SetResetCount(*v)
+	}
+	return _u
+}
+
+// AddResetCount adds value to the "reset_count" field.
+func (_u *UserSubscriptionUpdateOne) AddResetCount(v int) *UserSubscriptionUpdateOne {
+	_u.mutation.AddResetCount(v)
+	return _u
+}
+
 // SetEarlyResetEnabled sets the "early_reset_enabled" field.
 func (_u *UserSubscriptionUpdateOne) SetEarlyResetEnabled(v bool) *UserSubscriptionUpdateOne {
 	_u.mutation.SetEarlyResetEnabled(v)
@@ -1702,6 +1755,11 @@ func (_u *UserSubscriptionUpdateOne) check() error {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "UserSubscription.status": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.ResetCount(); ok {
+		if err := usersubscription.ResetCountValidator(v); err != nil {
+			return &ValidationError{Name: "reset_count", err: fmt.Errorf(`ent: validator failed for field "UserSubscription.reset_count": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.EarlyResetDurationDays(); ok {
 		if err := usersubscription.EarlyResetDurationDaysValidator(v); err != nil {
 			return &ValidationError{Name: "early_reset_duration_days", err: fmt.Errorf(`ent: validator failed for field "UserSubscription.early_reset_duration_days": %w`, err)}
@@ -1808,6 +1866,12 @@ func (_u *UserSubscriptionUpdateOne) sqlSave(ctx context.Context) (_node *UserSu
 	}
 	if value, ok := _u.mutation.AddedMonthlyUsageUsd(); ok {
 		_spec.AddField(usersubscription.FieldMonthlyUsageUsd, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.ResetCount(); ok {
+		_spec.SetField(usersubscription.FieldResetCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedResetCount(); ok {
+		_spec.AddField(usersubscription.FieldResetCount, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.EarlyResetEnabled(); ok {
 		_spec.SetField(usersubscription.FieldEarlyResetEnabled, field.TypeBool, value)

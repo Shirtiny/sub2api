@@ -43,6 +43,8 @@ const (
 	FieldWeeklyUsageUsd = "weekly_usage_usd"
 	// FieldMonthlyUsageUsd holds the string denoting the monthly_usage_usd field in the database.
 	FieldMonthlyUsageUsd = "monthly_usage_usd"
+	// FieldResetCount holds the string denoting the reset_count field in the database.
+	FieldResetCount = "reset_count"
 	// FieldEarlyResetEnabled holds the string denoting the early_reset_enabled field in the database.
 	FieldEarlyResetEnabled = "early_reset_enabled"
 	// FieldEarlyResetDurationDays holds the string denoting the early_reset_duration_days field in the database.
@@ -133,6 +135,7 @@ var Columns = []string{
 	FieldDailyUsageUsd,
 	FieldWeeklyUsageUsd,
 	FieldMonthlyUsageUsd,
+	FieldResetCount,
 	FieldEarlyResetEnabled,
 	FieldEarlyResetDurationDays,
 	FieldAssignedBy,
@@ -181,6 +184,10 @@ var (
 	DefaultWeeklyUsageUsd float64
 	// DefaultMonthlyUsageUsd holds the default value on creation for the "monthly_usage_usd" field.
 	DefaultMonthlyUsageUsd float64
+	// DefaultResetCount holds the default value on creation for the "reset_count" field.
+	DefaultResetCount int
+	// ResetCountValidator is a validator for the "reset_count" field. It is called by the builders before save.
+	ResetCountValidator func(int) error
 	// DefaultEarlyResetEnabled holds the default value on creation for the "early_reset_enabled" field.
 	DefaultEarlyResetEnabled bool
 	// DefaultEarlyResetDurationDays holds the default value on creation for the "early_reset_duration_days" field.
@@ -271,6 +278,11 @@ func ByWeeklyUsageUsd(opts ...sql.OrderTermOption) OrderOption {
 // ByMonthlyUsageUsd orders the results by the monthly_usage_usd field.
 func ByMonthlyUsageUsd(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldMonthlyUsageUsd, opts...).ToFunc()
+}
+
+// ByResetCount orders the results by the reset_count field.
+func ByResetCount(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldResetCount, opts...).ToFunc()
 }
 
 // ByEarlyResetEnabled orders the results by the early_reset_enabled field.

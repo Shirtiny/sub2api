@@ -8,6 +8,7 @@ const showError = vi.hoisted(() => vi.fn())
 const showSuccess = vi.hoisted(() => vi.fn())
 const getMySubscriptions = vi.hoisted(() => vi.fn())
 const earlyResetSubscription = vi.hoisted(() => vi.fn())
+const resetSubscriptionQuota = vi.hoisted(() => vi.fn())
 const invalidateCache = vi.hoisted(() => vi.fn())
 const syncActiveSubscription = vi.hoisted(() => vi.fn())
 
@@ -42,6 +43,8 @@ vi.mock('@/api/subscriptions', () => ({
   default: {
     getMySubscriptions,
     earlyResetSubscription,
+    resetSubscriptionQuota,
+    resetQuota: resetSubscriptionQuota,
   },
 }))
 
@@ -52,6 +55,7 @@ describe('SubscriptionsView renewal routing', () => {
     showSuccess.mockReset()
     getMySubscriptions.mockReset()
     earlyResetSubscription.mockReset()
+    resetSubscriptionQuota.mockReset()
     invalidateCache.mockReset()
     syncActiveSubscription.mockReset()
   })
@@ -362,5 +366,90 @@ describe('SubscriptionsView renewal routing', () => {
     await flushPromises()
 
     expect(showError).toHaveBeenCalledWith('本次提前重置会使订阅立即过期，如需放弃套餐请联系客服')
+  })
+
+  it('shows and consumes a user quota reset allowance', async () => {
+    const now = new Date()
+    const startsAt = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString()
+    const expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString()
+    getMySubscriptions.mockResolvedValue([
+      {
+        id: 17,
+        user_id: 7,
+        group_id: 3,
+        status: 'active',
+        starts_at: startsAt,
+        expires_at: expiresAt,
+        reset_count: 2,
+        daily_usage_usd: 10,
+        weekly_usage_usd: 20,
+        monthly_usage_usd: 30,
+        group: { id: 3, name: 'Weekly', platform: 'openai', weekly_limit_usd: 80 }
+      }
+    ])
+    resetSubscriptionQuota.mockResolvedValue({
+      id: 17,
+      user_id: 7,
+      group_id: 3,
+      status: 'active',
+      starts_at: startsAt,
+      expires_at: expiresAt,
+      reset_count: 1,
+      daily_usage_usd: 0,
+      weekly_usage_usd: 0,
+      monthly_usage_usd: 30,
+      group: { id: 3, name: 'Weekly', platform: 'openai', weekly_limit_usd: 80 }
+    })
+
+    const wrapper = shallowMount(SubscriptionsView, {
+      global: {
+        stubs: { AppLayout: { template: '<div><slot /></div>' }, Icon: true }
+      }
+    })
+    await flushPromises()
+
+    await wrapper.find('[data-testid="subscription-quota-reset"]').trigger('click')
+    const dialogs = wrapper.findAllComponents(ConfirmDialog)
+    const dialog = dialogs.find(item => item.props('show'))
+    expect(dialog).toBeDefined()
+    dialog?.vm.$emit('confirm')
+    await flushPromises()
+
+    expect(resetSubscriptionQuota).toHaveBeenCalledWith(17, expect.any(String))
+    expect(syncActiveSubscription).toHaveBeenCalledWith(expect.objectContaining({ id: 17, reset_count: 1 }))
+    expect(showSuccess).toHaveBeenCalled()
+  })
+
+  it('does not expose user reset for early-reset, one-day, or future subscriptions', async () => {
+    const now = new Date()
+    const starts = new Date(now.getTime() - 12 * 60 * 60 * 1000).toISOString()
+    const expires = new Date(now.getTime() + 12 * 60 * 60 * 1000).toISOString()
+    const futureStarts = new Date(now.getTime() + 12 * 60 * 60 * 1000).toISOString()
+    const futureExpires = new Date(now.getTime() + 48 * 60 * 60 * 1000).toISOString()
+    getMySubscriptions.mockResolvedValue([
+      {
+        id: 18, group_id: 3, status: 'active', starts_at: starts, expires_at: '2099-01-20T00:00:00Z',
+        reset_count: 2, early_reset_enabled: true, daily_usage_usd: 0, weekly_usage_usd: 0, monthly_usage_usd: 0,
+        group: { id: 3, name: 'Early', platform: 'openai', weekly_limit_usd: 80 }
+      },
+      {
+        id: 19, group_id: 3, status: 'active', starts_at: starts, expires_at: expires,
+        reset_count: 2, daily_usage_usd: 0, weekly_usage_usd: 0, monthly_usage_usd: 0,
+        group: { id: 3, name: 'Day', platform: 'openai', daily_limit_usd: 80 }
+      },
+      {
+        id: 20, group_id: 3, status: 'active', starts_at: futureStarts, expires_at: futureExpires,
+        reset_count: 2, daily_usage_usd: 0, weekly_usage_usd: 0, monthly_usage_usd: 0,
+        group: { id: 3, name: 'Future', platform: 'openai', weekly_limit_usd: 80 }
+      }
+    ])
+
+    const wrapper = shallowMount(SubscriptionsView, {
+      global: {
+        stubs: { AppLayout: { template: '<div><slot /></div>' }, Icon: true }
+      }
+    })
+    await flushPromises()
+    expect(wrapper.findAll('[data-testid="subscription-quota-reset"]')).toHaveLength(0)
   })
 })

@@ -125,6 +125,11 @@ func MonthlyUsageUsd(v float64) predicate.UserSubscription {
 	return predicate.UserSubscription(sql.FieldEQ(FieldMonthlyUsageUsd, v))
 }
 
+// ResetCount applies equality check predicate on the "reset_count" field. It's identical to ResetCountEQ.
+func ResetCount(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldEQ(FieldResetCount, v))
+}
+
 // EarlyResetEnabled applies equality check predicate on the "early_reset_enabled" field. It's identical to EarlyResetEnabledEQ.
 func EarlyResetEnabled(v bool) predicate.UserSubscription {
 	return predicate.UserSubscription(sql.FieldEQ(FieldEarlyResetEnabled, v))
@@ -768,6 +773,46 @@ func MonthlyUsageUsdLT(v float64) predicate.UserSubscription {
 // MonthlyUsageUsdLTE applies the LTE predicate on the "monthly_usage_usd" field.
 func MonthlyUsageUsdLTE(v float64) predicate.UserSubscription {
 	return predicate.UserSubscription(sql.FieldLTE(FieldMonthlyUsageUsd, v))
+}
+
+// ResetCountEQ applies the EQ predicate on the "reset_count" field.
+func ResetCountEQ(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldEQ(FieldResetCount, v))
+}
+
+// ResetCountNEQ applies the NEQ predicate on the "reset_count" field.
+func ResetCountNEQ(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldNEQ(FieldResetCount, v))
+}
+
+// ResetCountIn applies the In predicate on the "reset_count" field.
+func ResetCountIn(vs ...int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldIn(FieldResetCount, vs...))
+}
+
+// ResetCountNotIn applies the NotIn predicate on the "reset_count" field.
+func ResetCountNotIn(vs ...int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldNotIn(FieldResetCount, vs...))
+}
+
+// ResetCountGT applies the GT predicate on the "reset_count" field.
+func ResetCountGT(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldGT(FieldResetCount, v))
+}
+
+// ResetCountGTE applies the GTE predicate on the "reset_count" field.
+func ResetCountGTE(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldGTE(FieldResetCount, v))
+}
+
+// ResetCountLT applies the LT predicate on the "reset_count" field.
+func ResetCountLT(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldLT(FieldResetCount, v))
+}
+
+// ResetCountLTE applies the LTE predicate on the "reset_count" field.
+func ResetCountLTE(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldLTE(FieldResetCount, v))
 }
 
 // EarlyResetEnabledEQ applies the EQ predicate on the "early_reset_enabled" field.

@@ -590,6 +590,7 @@ type UserSubscription struct {
 	DailyUsageUSD          float64 `json:"daily_usage_usd"`
 	WeeklyUsageUSD         float64 `json:"weekly_usage_usd"`
 	MonthlyUsageUSD        float64 `json:"monthly_usage_usd"`
+	ResetCount             int     `json:"reset_count,omitempty"`
 	EarlyResetEnabled      bool    `json:"early_reset_enabled"`
 	EarlyResetDurationDays int     `json:"early_reset_duration_days"`
 

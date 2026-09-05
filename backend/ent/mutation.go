@@ -53824,6 +53824,8 @@ type UserSubscriptionMutation struct {
 	addweekly_usage_usd             *float64
 	monthly_usage_usd               *float64
 	addmonthly_usage_usd            *float64
+	reset_count                     *int
+	addreset_count                  *int
 	early_reset_enabled             *bool
 	early_reset_duration_days       *int
 	addearly_reset_duration_days    *int
@@ -54570,6 +54572,62 @@ func (m *UserSubscriptionMutation) AddedMonthlyUsageUsd() (r float64, exists boo
 func (m *UserSubscriptionMutation) ResetMonthlyUsageUsd() {
 	m.monthly_usage_usd = nil
 	m.addmonthly_usage_usd = nil
+}
+
+// SetResetCount sets the "reset_count" field.
+func (m *UserSubscriptionMutation) SetResetCount(i int) {
+	m.reset_count = &i
+	m.addreset_count = nil
+}
+
+// ResetCount returns the value of the "reset_count" field in the mutation.
+func (m *UserSubscriptionMutation) ResetCount() (r int, exists bool) {
+	v := m.reset_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldResetCount returns the old "reset_count" field's value of the UserSubscription entity.
+// If the UserSubscription object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserSubscriptionMutation) OldResetCount(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldResetCount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldResetCount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldResetCount: %w", err)
+	}
+	return oldValue.ResetCount, nil
+}
+
+// AddResetCount adds i to the "reset_count" field.
+func (m *UserSubscriptionMutation) AddResetCount(i int) {
+	if m.addreset_count != nil {
+		*m.addreset_count += i
+	} else {
+		m.addreset_count = &i
+	}
+}
+
+// AddedResetCount returns the value that was added to the "reset_count" field in this mutation.
+func (m *UserSubscriptionMutation) AddedResetCount() (r int, exists bool) {
+	v := m.addreset_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetResetCount resets all changes to the "reset_count" field.
+func (m *UserSubscriptionMutation) ResetResetCount() {
+	m.reset_count = nil
+	m.addreset_count = nil
 }
 
 // SetEarlyResetEnabled sets the "early_reset_enabled" field.
@@ -55461,7 +55519,7 @@ func (m *UserSubscriptionMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UserSubscriptionMutation) Fields() []string {
-	fields := make([]string, 0, 26)
+	fields := make([]string, 0, 27)
 	if m.created_at != nil {
 		fields = append(fields, usersubscription.FieldCreatedAt)
 	}
@@ -55503,6 +55561,9 @@ func (m *UserSubscriptionMutation) Fields() []string {
 	}
 	if m.monthly_usage_usd != nil {
 		fields = append(fields, usersubscription.FieldMonthlyUsageUsd)
+	}
+	if m.reset_count != nil {
+		fields = append(fields, usersubscription.FieldResetCount)
 	}
 	if m.early_reset_enabled != nil {
 		fields = append(fields, usersubscription.FieldEarlyResetEnabled)
@@ -55576,6 +55637,8 @@ func (m *UserSubscriptionMutation) Field(name string) (ent.Value, bool) {
 		return m.WeeklyUsageUsd()
 	case usersubscription.FieldMonthlyUsageUsd:
 		return m.MonthlyUsageUsd()
+	case usersubscription.FieldResetCount:
+		return m.ResetCount()
 	case usersubscription.FieldEarlyResetEnabled:
 		return m.EarlyResetEnabled()
 	case usersubscription.FieldEarlyResetDurationDays:
@@ -55637,6 +55700,8 @@ func (m *UserSubscriptionMutation) OldField(ctx context.Context, name string) (e
 		return m.OldWeeklyUsageUsd(ctx)
 	case usersubscription.FieldMonthlyUsageUsd:
 		return m.OldMonthlyUsageUsd(ctx)
+	case usersubscription.FieldResetCount:
+		return m.OldResetCount(ctx)
 	case usersubscription.FieldEarlyResetEnabled:
 		return m.OldEarlyResetEnabled(ctx)
 	case usersubscription.FieldEarlyResetDurationDays:
@@ -55768,6 +55833,13 @@ func (m *UserSubscriptionMutation) SetField(name string, value ent.Value) error 
 		}
 		m.SetMonthlyUsageUsd(v)
 		return nil
+	case usersubscription.FieldResetCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetResetCount(v)
+		return nil
 	case usersubscription.FieldEarlyResetEnabled:
 		v, ok := value.(bool)
 		if !ok {
@@ -55869,6 +55941,9 @@ func (m *UserSubscriptionMutation) AddedFields() []string {
 	if m.addmonthly_usage_usd != nil {
 		fields = append(fields, usersubscription.FieldMonthlyUsageUsd)
 	}
+	if m.addreset_count != nil {
+		fields = append(fields, usersubscription.FieldResetCount)
+	}
 	if m.addearly_reset_duration_days != nil {
 		fields = append(fields, usersubscription.FieldEarlyResetDurationDays)
 	}
@@ -55898,6 +55973,8 @@ func (m *UserSubscriptionMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedWeeklyUsageUsd()
 	case usersubscription.FieldMonthlyUsageUsd:
 		return m.AddedMonthlyUsageUsd()
+	case usersubscription.FieldResetCount:
+		return m.AddedResetCount()
 	case usersubscription.FieldEarlyResetDurationDays:
 		return m.AddedEarlyResetDurationDays()
 	case usersubscription.FieldPlanConcurrency:
@@ -55937,6 +56014,13 @@ func (m *UserSubscriptionMutation) AddField(name string, value ent.Value) error 
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddMonthlyUsageUsd(v)
+		return nil
+	case usersubscription.FieldResetCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddResetCount(v)
 		return nil
 	case usersubscription.FieldEarlyResetDurationDays:
 		v, ok := value.(int)
@@ -56122,6 +56206,9 @@ func (m *UserSubscriptionMutation) ResetField(name string) error {
 		return nil
 	case usersubscription.FieldMonthlyUsageUsd:
 		m.ResetMonthlyUsageUsd()
+		return nil
+	case usersubscription.FieldResetCount:
+		m.ResetResetCount()
 		return nil
 	case usersubscription.FieldEarlyResetEnabled:
 		m.ResetEarlyResetEnabled()

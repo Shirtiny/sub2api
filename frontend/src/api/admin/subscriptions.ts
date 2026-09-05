@@ -167,6 +167,50 @@ export async function bulkResetQuota(
   return data
 }
 
+export interface SetSubscriptionResetCountRequest {
+  count?: number
+  reset_count?: number
+  subscription_ids?: number[]
+}
+
+export interface BulkSubscriptionResetCountResult {
+  updated: number
+  skipped: number
+}
+
+/** Set the remaining user-initiated reset count for one subscription. */
+export async function setResetCount(
+  id: number,
+  request: SetSubscriptionResetCountRequest
+): Promise<UserSubscription> {
+  const count = request.count ?? request.reset_count
+  if (count == null || !Number.isInteger(count) || count < 0 || count > 1000) {
+    throw new Error('reset count must be a non-negative integer')
+  }
+  const { data } = await apiClient.put<UserSubscription>(
+    `/admin/subscriptions/${id}/reset-count`,
+    { ...request, count },
+    { headers: { 'Idempotency-Key': createIdempotencyKey('subscription-reset-count') } }
+  )
+  return data
+}
+
+/** Set a reset count for many subscriptions (or all when ids are omitted). */
+export async function bulkSetResetCount(
+  request: SetSubscriptionResetCountRequest
+): Promise<BulkSubscriptionResetCountResult> {
+  const count = request.count ?? request.reset_count
+  if (count == null || !Number.isInteger(count) || count < 0 || count > 1000) {
+    throw new Error('reset count must be a non-negative integer')
+  }
+  const { data } = await apiClient.post<BulkSubscriptionResetCountResult>(
+    '/admin/subscriptions/bulk-reset-count',
+    { ...request, count },
+    { headers: { 'Idempotency-Key': createIdempotencyKey('subscriptions-bulk-reset-count') } }
+  )
+  return data
+}
+
 /**
  * Shift the reset window start of many subscriptions at once
  * @param request - Which windows to move, the hour offset, and the filter scope.
@@ -276,6 +320,8 @@ export const subscriptionsAPI = {
   revoke,
   resetQuota,
   bulkResetQuota,
+  setResetCount,
+  bulkSetResetCount,
   bulkShiftWindow,
   getStats,
   getUsageSeries,

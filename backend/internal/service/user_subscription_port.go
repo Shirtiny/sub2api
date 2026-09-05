@@ -39,6 +39,17 @@ type UserSubscriptionRepository interface {
 	BatchUpdateExpiredStatus(ctx context.Context) (int64, error)
 }
 
+// UserQuotaResetParams contains the immutable identity and time values used by
+// the atomic user-initiated quota reset operation.  The concrete repository
+// keeps this operation optional so older repository test doubles remain
+// source-compatible with UserSubscriptionRepository.
+type UserQuotaResetParams struct {
+	SubscriptionID int64
+	UserID         int64
+	Now            time.Time
+	WindowStart    time.Time
+}
+
 type EarlyResetSubscriptionParams struct {
 	ID                      int64
 	UserID                  int64

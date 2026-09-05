@@ -822,6 +822,7 @@ func userSubscriptionFromServiceBase(sub *service.UserSubscription) UserSubscrip
 		DailyUsageUSD:          sub.DailyUsageUSD,
 		WeeklyUsageUSD:         sub.WeeklyUsageUSD,
 		MonthlyUsageUSD:        sub.MonthlyUsageUSD,
+		ResetCount:             sub.ResetCount,
 		EarlyResetEnabled:      sub.EarlyResetEnabled,
 		EarlyResetDurationDays: sub.EarlyResetDurationDays,
 		CustomMultiplier:       customMultiplier,

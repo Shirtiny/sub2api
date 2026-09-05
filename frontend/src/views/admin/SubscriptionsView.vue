@@ -110,6 +110,16 @@
               {{ t('admin.subscriptions.bulkResetQuota') }}
             </button>
             <button
+              @click="openBulkResetCountDialog"
+              :disabled="bulkSettingResetCount"
+              class="btn btn-secondary"
+            >
+              <Icon name="refresh" size="md" class="mr-2" :class="bulkSettingResetCount ? 'animate-spin' : ''" />
+              {{ selectedResetCountCount > 0
+                ? t('admin.subscriptions.bulkSetResetCountSelected', { count: selectedResetCountCount })
+                : t('admin.subscriptions.bulkSetResetCount') }}
+            </button>
+            <button
               @click="openShiftWindowDialog"
               :disabled="shiftingWindow"
               class="btn btn-secondary"
@@ -201,6 +211,30 @@
           default-sort-order="desc"
           @sort="handleSort"
         >
+          <template #header-select>
+            <input
+              data-testid="subscription-reset-count-select-all"
+              :aria-label="t('admin.subscriptions.selectAllForResetCount')"
+              type="checkbox"
+              class="h-4 w-4 cursor-pointer rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+              :checked="allResetCountRowsSelected"
+              @click.stop
+              @change="toggleResetCountRows($event)"
+            />
+          </template>
+
+          <template #cell-select="{ row }">
+            <input
+              data-testid="subscription-reset-count-select"
+              :aria-label="t('admin.subscriptions.selectForResetCount')"
+              type="checkbox"
+              class="h-4 w-4 cursor-pointer rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+              :checked="isResetCountRowSelected(row.id)"
+              @click.stop
+              @change="toggleResetCountRow(row.id, $event)"
+            />
+          </template>
+
           <template #cell-user="{ row }">
             <div class="flex items-center gap-2">
               <div
@@ -371,6 +405,12 @@
             </div>
           </template>
 
+          <template #cell-reset_count="{ row }">
+            <span class="text-sm tabular-nums text-content-secondary">
+              {{ row.reset_count ?? 0 }}
+            </span>
+          </template>
+
           <template #cell-expires_at="{ value }">
             <div v-if="value">
               <span
@@ -433,6 +473,15 @@
               >
                 <Icon name="refresh" size="sm" />
                 <span class="text-xs">{{ t('admin.subscriptions.resetQuota') }}</span>
+              </button>
+              <button
+                v-if="canSetResetCount(row)"
+                @click="openResetCountDialog(row)"
+                :disabled="settingResetCount && resetCountSubscription?.id === row.id"
+                class="flex flex-col items-center gap-0.5 rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-purple-50 hover:text-purple-600 dark:hover:bg-purple-900/20 dark:hover:text-purple-400 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Icon name="edit" size="sm" />
+                <span class="text-xs">{{ t('admin.subscriptions.setResetCount') }}</span>
               </button>
               <button
                 v-if="row.status === 'active'"
@@ -784,6 +833,79 @@
         </p>
       </div>
     </ConfirmDialog>
+
+    <!-- Set per-subscription user reset allowance -->
+    <BaseDialog
+      data-testid="subscription-reset-count-dialog"
+      :show="showResetCountDialog"
+      :title="t('admin.subscriptions.setResetCountTitle')"
+      width="narrow"
+      @close="closeResetCountDialog"
+    >
+      <form id="subscription-reset-count-form" class="space-y-4" @submit.prevent="confirmSetResetCount">
+        <div v-if="resetCountSubscription" class="rounded-lg bg-gray-50 p-3 text-sm dark:bg-dark-700">
+          <div class="font-medium text-content-primary">{{ resetCountSubscription.user?.email || `#${resetCountSubscription.user_id}` }}</div>
+          <div class="mt-1 text-content-secondary">{{ resetCountSubscription.group?.name || `Group #${resetCountSubscription.group_id}` }}</div>
+        </div>
+        <div>
+          <label class="input-label" for="subscription-reset-count">{{ t('admin.subscriptions.resetCountLabel') }}</label>
+          <input
+            id="subscription-reset-count"
+            v-model.number="resetCountForm.count"
+            type="number"
+            min="0"
+            :max="MAX_RESET_COUNT"
+            step="1"
+            required
+            class="input"
+          />
+          <p class="input-hint">{{ t('admin.subscriptions.resetCountHint', { max: MAX_RESET_COUNT }) }}</p>
+        </div>
+      </form>
+      <template #footer>
+        <div class="flex justify-end gap-3">
+          <button type="button" class="btn btn-secondary" @click="closeResetCountDialog">{{ t('common.cancel') }}</button>
+          <button type="submit" form="subscription-reset-count-form" class="btn btn-primary" :disabled="settingResetCount || !isResetCountValid">
+            {{ settingResetCount ? t('admin.subscriptions.settingResetCount') : t('common.save') }}
+          </button>
+        </div>
+      </template>
+    </BaseDialog>
+
+    <!-- Set one allowance value for all subscriptions (or the supplied IDs). -->
+    <BaseDialog
+      data-testid="subscription-bulk-reset-count-dialog"
+      :show="showBulkResetCountDialog"
+      :title="t('admin.subscriptions.bulkSetResetCountTitle')"
+      width="narrow"
+      @close="closeBulkResetCountDialog"
+    >
+      <form id="bulk-subscription-reset-count-form" class="space-y-4" @submit.prevent="confirmBulkSetResetCount">
+        <p class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">{{ bulkResetCountMessage }}</p>
+        <div>
+          <label class="input-label" for="bulk-subscription-reset-count">{{ t('admin.subscriptions.resetCountLabel') }}</label>
+          <input
+            id="bulk-subscription-reset-count"
+            v-model.number="bulkResetCountForm.count"
+            type="number"
+            min="0"
+            :max="MAX_RESET_COUNT"
+            step="1"
+            required
+            class="input"
+          />
+          <p class="input-hint">{{ t('admin.subscriptions.resetCountHint', { max: MAX_RESET_COUNT }) }}</p>
+        </div>
+      </form>
+      <template #footer>
+        <div class="flex justify-end gap-3">
+          <button type="button" class="btn btn-secondary" @click="closeBulkResetCountDialog">{{ t('common.cancel') }}</button>
+          <button type="submit" form="bulk-subscription-reset-count-form" class="btn btn-primary" :disabled="bulkSettingResetCount || !isBulkResetCountValid">
+            {{ bulkSettingResetCount ? t('admin.subscriptions.settingResetCount') : t('common.save') }}
+          </button>
+        </div>
+      </template>
+    </BaseDialog>
     <!-- Bulk Shift Reset Window Dialog -->
     <BaseDialog
       :show="showShiftWindowDialog"
@@ -995,7 +1117,9 @@ import type {
 import type { SimpleUser } from '@/api/admin/usage'
 import type { Column } from '@/components/common/types'
 import { formatDateOnly } from '@/utils/format'
+import { extractI18nErrorMessage } from '@/utils/apiError'
 import { getPersistedPageSize } from '@/composables/usePersistedPageSize'
+import { useTableSelection } from '@/composables/useTableSelection'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import TablePageLayout from '@/components/layout/TablePageLayout.vue'
 import DataTable from '@/components/common/DataTable.vue'
@@ -1031,6 +1155,7 @@ const showGuideModal = ref(false)
 const guideActionRows = computed(() => [
   { action: t('admin.subscriptions.guide.actions.adjust'), desc: t('admin.subscriptions.guide.actions.adjustDesc') },
   { action: t('admin.subscriptions.multiplier'), desc: t('admin.subscriptions.guide.actions.multiplierDesc') },
+  { action: t('admin.subscriptions.setResetCount'), desc: t('admin.subscriptions.guide.actions.resetCountDesc') },
   { action: t('admin.subscriptions.guide.actions.resetQuota'), desc: t('admin.subscriptions.guide.actions.resetQuotaDesc') },
   { action: t('admin.subscriptions.guide.actions.revoke'), desc: t('admin.subscriptions.guide.actions.revokeDesc') }
 ])
@@ -1065,6 +1190,7 @@ const setUserColumnMode = (mode: 'email' | 'username') => {
 
 // All available columns
 const allColumns = computed<Column[]>(() => [
+  { key: 'select', label: '', sortable: false },
   {
     key: 'user',
     label: userColumnMode.value === 'email'
@@ -1074,6 +1200,7 @@ const allColumns = computed<Column[]>(() => [
   },
   { key: 'group', label: t('admin.subscriptions.columns.group'), sortable: false },
   { key: 'usage', label: t('admin.subscriptions.columns.usage'), sortable: false },
+  { key: 'reset_count', label: t('admin.subscriptions.columns.resetCount'), sortable: false },
   { key: 'expires_at', label: t('admin.subscriptions.columns.expires'), sortable: true },
   { key: 'status', label: t('admin.subscriptions.columns.status'), sortable: true },
   { key: 'actions', label: t('admin.subscriptions.columns.actions'), sortable: false }
@@ -1081,7 +1208,7 @@ const allColumns = computed<Column[]>(() => [
 
 // Columns that can be toggled (exclude user and actions which are always visible)
 const toggleableColumns = computed(() =>
-  allColumns.value.filter(col => col.key !== 'user' && col.key !== 'actions')
+  allColumns.value.filter(col => col.key !== 'select' && col.key !== 'user' && col.key !== 'actions')
 )
 
 // Hidden columns set
@@ -1134,7 +1261,7 @@ const isColumnVisible = (key: string) => !hiddenColumns.has(key)
 // Filtered columns for display
 const columns = computed<Column[]>(() =>
   allColumns.value.filter(col =>
-    col.key === 'user' || col.key === 'actions' || !hiddenColumns.has(col.key)
+    col.key === 'select' || col.key === 'user' || col.key === 'actions' || !hiddenColumns.has(col.key)
   )
 )
 
@@ -1155,6 +1282,30 @@ const groups = ref<Group[]>([])
 const plans = ref<SubscriptionPlan[]>([])
 const loading = ref(false)
 let abortController: AbortController | null = null
+
+const {
+  selectedSet: selectedResetCountRows,
+  selectedCount: selectedResetCountCount,
+  allVisibleSelected: allResetCountRowsSelected,
+  isSelected: isResetCountRowSelected,
+  select: selectResetCountRow,
+  deselect: deselectResetCountRow,
+  toggleVisible: toggleResetCountRowsVisible,
+  clear: clearResetCountRows
+} = useTableSelection<UserSubscription>({
+  rows: subscriptions,
+  getId: (subscription) => subscription.id
+})
+
+const toggleResetCountRow = (id: number, event: Event) => {
+  const checked = (event.target as HTMLInputElement).checked
+  if (checked) selectResetCountRow(id)
+  else deselectResetCountRow(id)
+}
+
+const toggleResetCountRows = (event: Event) => {
+  toggleResetCountRowsVisible((event.target as HTMLInputElement).checked)
+}
 
 // Toolbar user filter (fuzzy search -> select user_id)
 const filterUserKeyword = ref('')
@@ -1198,10 +1349,52 @@ const showMultiplierModal = ref(false)
 const showRevokeDialog = ref(false)
 const showResetQuotaConfirm = ref(false)
 const showBulkResetQuotaConfirm = ref(false)
+const showResetCountDialog = ref(false)
+const showBulkResetCountDialog = ref(false)
 const submitting = ref(false)
 const resettingSubscription = ref<UserSubscription | null>(null)
 const resettingQuota = ref(false)
 const bulkResettingQuota = ref(false)
+const resetCountSubscription = ref<UserSubscription | null>(null)
+const settingResetCount = ref(false)
+const bulkSettingResetCount = ref(false)
+const MAX_RESET_COUNT = 1000
+const resetCountForm = reactive({ count: 0 })
+const bulkResetCountForm = reactive({ count: 0 })
+const isResetCountValid = computed(() =>
+  Number.isInteger(resetCountForm.count) && resetCountForm.count >= 0 && resetCountForm.count <= MAX_RESET_COUNT
+)
+const isBulkResetCountValid = computed(() =>
+  Number.isInteger(bulkResetCountForm.count) && bulkResetCountForm.count >= 0 && bulkResetCountForm.count <= MAX_RESET_COUNT
+)
+const bulkResetCountMessage = computed(() =>
+  selectedResetCountCount.value > 0
+    ? t('admin.subscriptions.bulkSetResetCountSelectedMessage', { count: selectedResetCountCount.value })
+    : t('admin.subscriptions.bulkSetResetCountMessage')
+)
+
+const canSetResetCount = (subscription: UserSubscription): boolean => {
+  if (
+    subscription.status === 'revoked' ||
+    subscription.early_reset_enabled ||
+    (subscription.early_reset_duration_days || 0) !== 0 ||
+    isOneTimeDailyQuota(subscription)
+  ) {
+    return false
+  }
+  const group = subscription.group
+  if (!group) return true
+  if (group.subscription_type && group.subscription_type !== 'subscription') return false
+  const metadataKnown =
+    Object.prototype.hasOwnProperty.call(group, 'subscription_type') ||
+    Object.prototype.hasOwnProperty.call(group, 'daily_limit_usd') ||
+    Object.prototype.hasOwnProperty.call(group, 'weekly_limit_usd') ||
+    Object.prototype.hasOwnProperty.call(group, 'monthly_limit_usd')
+  return !metadataKnown || Boolean(
+    (group.daily_limit_usd && group.daily_limit_usd > 0) ||
+    (group.weekly_limit_usd && group.weekly_limit_usd > 0)
+  )
+}
 // 月度窗口默认不勾选：月额度分组（如冰摇茶）的周期远长于日/周分组，
 // 跟随批量重置会提前作废用户当期额度。
 const bulkResetSelection = reactive({ daily: true, weekly: true, monthly: false })
@@ -1875,6 +2068,87 @@ const confirmBulkResetQuota = async () => {
     console.error('Error resetting all subscription quotas:', error)
   } finally {
     bulkResettingQuota.value = false
+  }
+}
+
+const openResetCountDialog = (subscription: UserSubscription) => {
+  if (subscription.status === 'revoked') return
+  resetCountSubscription.value = subscription
+  resetCountForm.count = subscription.reset_count ?? 0
+  showResetCountDialog.value = true
+}
+
+const closeResetCountDialog = () => {
+  if (settingResetCount.value) return
+  showResetCountDialog.value = false
+  resetCountSubscription.value = null
+}
+
+const confirmSetResetCount = async () => {
+  const target = resetCountSubscription.value
+  if (!target || !isResetCountValid.value || settingResetCount.value) return
+  settingResetCount.value = true
+  try {
+    await adminAPI.subscriptions.setResetCount(target.id, { count: resetCountForm.count })
+    appStore.showSuccess(t('admin.subscriptions.resetCountUpdated'))
+    showResetCountDialog.value = false
+    resetCountSubscription.value = null
+    await loadSubscriptions()
+  } catch (error: any) {
+    appStore.showError(
+      extractI18nErrorMessage(
+        error,
+        t,
+        'admin.subscriptions.resetCountErrors',
+        t('admin.subscriptions.failedToSetResetCount')
+      )
+    )
+    console.error('Error setting subscription reset count:', error)
+  } finally {
+    settingResetCount.value = false
+  }
+}
+
+const openBulkResetCountDialog = () => {
+  bulkResetCountForm.count = 0
+  showBulkResetCountDialog.value = true
+}
+
+const closeBulkResetCountDialog = () => {
+  if (bulkSettingResetCount.value) return
+  showBulkResetCountDialog.value = false
+}
+
+const confirmBulkSetResetCount = async () => {
+  if (!isBulkResetCountValid.value || bulkSettingResetCount.value) return
+  bulkSettingResetCount.value = true
+  try {
+    const selectedIDs = Array.from(selectedResetCountRows.value)
+    const result = await adminAPI.subscriptions.bulkSetResetCount({
+      count: bulkResetCountForm.count,
+      ...(selectedIDs.length > 0 ? { subscription_ids: selectedIDs } : {})
+    })
+    appStore.showSuccess(
+      t('admin.subscriptions.bulkResetCountSuccess', {
+        updated: result.updated,
+        skipped: result.skipped
+      })
+    )
+    showBulkResetCountDialog.value = false
+    clearResetCountRows()
+    await loadSubscriptions()
+  } catch (error: any) {
+    appStore.showError(
+      extractI18nErrorMessage(
+        error,
+        t,
+        'admin.subscriptions.resetCountErrors',
+        t('admin.subscriptions.failedToSetResetCount')
+      )
+    )
+    console.error('Error setting subscription reset counts:', error)
+  } finally {
+    bulkSettingResetCount.value = false
   }
 }
 

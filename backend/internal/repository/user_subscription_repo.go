@@ -11,6 +11,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/group"
 	"github.com/Wei-Shaw/sub2api/ent/predicate"
 	"github.com/Wei-Shaw/sub2api/ent/usersubscription"
+	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
 	"github.com/Wei-Shaw/sub2api/internal/service"
 )
@@ -59,6 +60,7 @@ func (r *userSubscriptionRepository) Create(ctx context.Context, sub *service.Us
 		SetDailyUsageUsd(sub.DailyUsageUSD).
 		SetWeeklyUsageUsd(sub.WeeklyUsageUSD).
 		SetMonthlyUsageUsd(sub.MonthlyUsageUSD).
+		SetResetCount(sub.ResetCount).
 		SetEarlyResetEnabled(sub.EarlyResetEnabled).
 		SetEarlyResetDurationDays(sub.EarlyResetDurationDays).
 		SetNillableAssignedBy(sub.AssignedBy).
@@ -152,6 +154,7 @@ func (r *userSubscriptionRepository) Update(ctx context.Context, sub *service.Us
 		SetDailyUsageUsd(sub.DailyUsageUSD).
 		SetWeeklyUsageUsd(sub.WeeklyUsageUSD).
 		SetMonthlyUsageUsd(sub.MonthlyUsageUSD).
+		SetResetCount(sub.ResetCount).
 		SetEarlyResetEnabled(sub.EarlyResetEnabled).
 		SetEarlyResetDurationDays(sub.EarlyResetDurationDays).
 		SetNillableAssignedBy(sub.AssignedBy).
@@ -395,6 +398,195 @@ func (r *userSubscriptionRepository) ResetUsageWindows(ctx context.Context, id i
 	}
 	_, err := update.Save(ctx)
 	return translatePersistenceError(err, service.ErrSubscriptionNotFound, nil)
+}
+
+// ResetUserQuota atomically consumes one user reset allowance and resets the
+// daily and weekly windows. Ownership, active status, expiry, the
+// early-reset exclusion (for the default/direct path) and the remaining-count
+// check all live in the conditional UPDATE; the service-authoritative variant
+// can replace only the stale policy snapshot after resolving entitlements.
+func (r *userSubscriptionRepository) ResetUserQuota(ctx context.Context, params service.UserQuotaResetParams) (*service.UserSubscription, error) {
+	return r.ResetUserQuotaWithPolicy(ctx, params, false)
+}
+
+// ResetUserQuotaWithPolicy is used by the service after it has resolved the
+// current entitlement term. The ordinary method above retains a persisted
+// early-reset guard for direct callers.
+func (r *userSubscriptionRepository) ResetUserQuotaWithPolicy(ctx context.Context, params service.UserQuotaResetParams, skipPersistedEarlyResetPolicy bool) (*service.UserSubscription, error) {
+	if params.SubscriptionID <= 0 || params.UserID <= 0 {
+		return nil, service.ErrSubscriptionNotFound
+	}
+	now := params.Now
+	if now.IsZero() {
+		now = time.Now()
+	}
+	windowStart := params.WindowStart
+	if windowStart.IsZero() {
+		windowStart = time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+	}
+
+	client := clientFromContext(ctx, r.client)
+	update := client.UserSubscription.Update().Where(
+		usersubscription.IDEQ(params.SubscriptionID),
+		usersubscription.UserIDEQ(params.UserID),
+		usersubscription.DeletedAtIsNil(),
+		usersubscription.StatusEQ(service.SubscriptionStatusActive),
+		usersubscription.StartsAtLTE(now),
+		activeSubscriptionExpiresAt(now),
+		usersubscription.ResetCountGT(0),
+	)
+	if !skipPersistedEarlyResetPolicy {
+		update = update.Where(
+			usersubscription.EarlyResetEnabledEQ(false),
+			usersubscription.EarlyResetDurationDaysEQ(0),
+		)
+	}
+	updated, err := update.
+		AddResetCount(-1).
+		SetDailyUsageUsd(0).
+		SetWeeklyUsageUsd(0).
+		SetDailyWindowStart(windowStart).
+		SetWeeklyWindowStart(windowStart).
+		Save(ctx)
+	if err != nil {
+		return nil, translatePersistenceError(err, service.ErrSubscriptionNotFound, nil)
+	}
+	if updated == 0 {
+		return nil, r.classifyUserQuotaResetMiss(ctx, client, params.SubscriptionID, params.UserID, now, skipPersistedEarlyResetPolicy)
+	}
+
+	// Read the row through the same client/transaction so callers receive the
+	// post-decrement count and the normal user/group associations.  The service
+	// converts it before the surrounding transaction is committed.
+	m, err := client.UserSubscription.Query().
+		Where(usersubscription.IDEQ(params.SubscriptionID)).
+		WithUser().
+		WithGroup().
+		Only(ctx)
+	if err != nil {
+		return nil, translatePersistenceError(err, service.ErrSubscriptionNotFound, nil)
+	}
+	return userSubscriptionEntityToService(m), nil
+}
+
+// classifyUserQuotaResetMiss turns a conditional-update miss into a stable
+// business error without revealing whether an arbitrary subscription belongs
+// to another user.  The initial lookup in the service performs the same
+// ownership check for the normal path; this second check is for races.
+func (r *userSubscriptionRepository) classifyUserQuotaResetMiss(ctx context.Context, client *dbent.Client, id, userID int64, now time.Time, skipPersistedEarlyResetPolicy bool) error {
+	m, err := client.UserSubscription.Query().Where(usersubscription.IDEQ(id)).Only(ctx)
+	if err != nil {
+		return translatePersistenceError(err, service.ErrSubscriptionNotFound, nil)
+	}
+	if m.UserID != userID {
+		return service.ErrSubscriptionNotFound
+	}
+	if m.Status == service.SubscriptionStatusSuspended {
+		return service.ErrSubscriptionSuspended
+	}
+	if m.Status == "revoked" {
+		return service.ErrSubscriptionNotFound
+	}
+	if m.StartsAt.After(now) {
+		return service.ErrSubscriptionNotStarted
+	}
+	if m.Status != service.SubscriptionStatusActive || !normalizeSubscriptionExpiresAt(m.ExpiresAt).After(now) {
+		return service.ErrSubscriptionExpired
+	}
+	if !skipPersistedEarlyResetPolicy && (m.EarlyResetEnabled || m.EarlyResetDurationDays != 0) {
+		return service.ErrQuotaResetDisabled
+	}
+	if m.ResetCount <= 0 {
+		return service.ErrQuotaResetExhausted
+	}
+	return service.ErrQuotaResetConflict
+}
+
+// SetResetCount changes the remaining user reset allowance for one
+// subscription.  Positive allowances are never written to a subscription
+// carrying the one-time/early-reset policy.
+func (r *userSubscriptionRepository) SetResetCount(ctx context.Context, subscriptionID int64, count int) error {
+	return r.SetResetCountWithPolicy(ctx, subscriptionID, count, false)
+}
+
+// SetResetCountWithPolicy is the policy-aware variant used by the service
+// after it has resolved the current entitlement term. The default method
+// above keeps the persisted early-reset guard for direct callers.
+func (r *userSubscriptionRepository) SetResetCountWithPolicy(ctx context.Context, subscriptionID int64, count int, skipPersistedEarlyResetPolicy bool) error {
+	if subscriptionID <= 0 {
+		return service.ErrSubscriptionNotFound
+	}
+	if count < 0 || count > service.MaxUserQuotaResetCount {
+		return service.ErrInvalidQuotaResetCount
+	}
+	client := clientFromContext(ctx, r.client)
+	update := client.UserSubscription.Update().Where(
+		usersubscription.IDEQ(subscriptionID),
+		usersubscription.DeletedAtIsNil(),
+		usersubscription.StatusNEQ("revoked"),
+	)
+	if count > 0 && !skipPersistedEarlyResetPolicy {
+		update = update.Where(
+			usersubscription.EarlyResetEnabledEQ(false),
+			usersubscription.EarlyResetDurationDaysEQ(0),
+		)
+	}
+	affected, err := update.SetResetCount(count).Save(ctx)
+	if err != nil {
+		return translatePersistenceError(err, service.ErrSubscriptionNotFound, nil)
+	}
+	if affected > 0 {
+		return nil
+	}
+	if count > 0 {
+		m, lookupErr := client.UserSubscription.Query().Where(usersubscription.IDEQ(subscriptionID)).Only(ctx)
+		if lookupErr != nil {
+			return translatePersistenceError(lookupErr, service.ErrSubscriptionNotFound, nil)
+		}
+		if m.Status == "revoked" {
+			return service.ErrSubscriptionNotFound
+		}
+		if m.EarlyResetEnabled || m.EarlyResetDurationDays != 0 {
+			return service.ErrQuotaResetDisabled
+		}
+		return service.ErrQuotaResetConflict
+	}
+	return service.ErrSubscriptionNotFound
+}
+
+// BulkSetResetCount updates a bounded set of subscriptions in one statement.
+// The service filters current early-reset terms before calling this method;
+// the predicate below also protects against the persisted policy snapshot.
+func (r *userSubscriptionRepository) BulkSetResetCount(ctx context.Context, subscriptionIDs []int64, count int) (int64, error) {
+	return r.BulkSetResetCountWithPolicy(ctx, subscriptionIDs, count, false)
+}
+
+// BulkSetResetCountWithPolicy is the policy-aware variant used after the
+// service has resolved current entitlement snapshots for the selected rows.
+func (r *userSubscriptionRepository) BulkSetResetCountWithPolicy(ctx context.Context, subscriptionIDs []int64, count int, skipPersistedEarlyResetPolicy bool) (int64, error) {
+	if count < 0 || count > service.MaxUserQuotaResetCount {
+		return 0, service.ErrInvalidQuotaResetCount
+	}
+	if len(subscriptionIDs) > 1000 {
+		return 0, infraerrors.BadRequest("TOO_MANY_SUBSCRIPTIONS", "at most 1000 subscriptions may be updated at once")
+	}
+	if len(subscriptionIDs) == 0 {
+		return 0, nil
+	}
+	client := clientFromContext(ctx, r.client)
+	update := client.UserSubscription.Update().Where(
+		usersubscription.IDIn(subscriptionIDs...),
+		usersubscription.DeletedAtIsNil(),
+		usersubscription.StatusNEQ("revoked"),
+	)
+	if count > 0 && !skipPersistedEarlyResetPolicy {
+		update = update.Where(
+			usersubscription.EarlyResetEnabledEQ(false),
+			usersubscription.EarlyResetDurationDaysEQ(0),
+		)
+	}
+	affected, err := update.SetResetCount(count).Save(ctx)
+	return int64(affected), translatePersistenceError(err, nil, nil)
 }
 
 func (r *userSubscriptionRepository) EarlyReset(ctx context.Context, input service.EarlyResetSubscriptionParams) error {
@@ -804,6 +996,7 @@ func userSubscriptionEntityToService(m *dbent.UserSubscription) *service.UserSub
 		DailyUsageUSD:            m.DailyUsageUsd,
 		WeeklyUsageUSD:           m.WeeklyUsageUsd,
 		MonthlyUsageUSD:          m.MonthlyUsageUsd,
+		ResetCount:               m.ResetCount,
 		EarlyResetEnabled:        m.EarlyResetEnabled,
 		EarlyResetDurationDays:   m.EarlyResetDurationDays,
 		AssignedBy:               m.AssignedBy,
@@ -853,6 +1046,7 @@ func applyUserSubscriptionEntityToService(dst *service.UserSubscription, src *db
 		return
 	}
 	dst.ID = src.ID
+	dst.ResetCount = src.ResetCount
 	dst.CreatedAt = src.CreatedAt
 	dst.UpdatedAt = src.UpdatedAt
 }

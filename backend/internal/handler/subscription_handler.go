@@ -22,6 +22,7 @@ type SubscriptionSummaryItem struct {
 	DailyLimitUSD   float64 `json:"daily_limit_usd,omitempty"`
 	WeeklyUsedUSD   float64 `json:"weekly_used_usd,omitempty"`
 	WeeklyLimitUSD  float64 `json:"weekly_limit_usd,omitempty"`
+	ResetCount      int     `json:"reset_count,omitempty"`
 	MonthlyUsedUSD  float64 `json:"monthly_used_usd,omitempty"`
 	MonthlyLimitUSD float64 `json:"monthly_limit_usd,omitempty"`
 	ExpiresAt       *string `json:"expires_at,omitempty"`
@@ -87,6 +88,36 @@ func (h *SubscriptionHandler) EarlyReset(c *gin.Context) {
 		service.DefaultWriteIdempotencyTTL(),
 		func(ctx context.Context) (any, error) {
 			sub, resetErr := h.subscriptionService.EarlyResetSubscription(ctx, subject.UserID, subscriptionID)
+			if resetErr != nil {
+				return nil, resetErr
+			}
+			return dto.UserSubscriptionFromService(sub), nil
+		},
+	)
+}
+
+// ResetQuota lets a user spend one administrator-granted reset allowance to
+// restart the daily and weekly windows of their own subscription. The request
+// body is intentionally empty; ownership always comes from the auth subject.
+// POST /api/v1/subscriptions/:id/reset-quota
+func (h *SubscriptionHandler) ResetQuota(c *gin.Context) {
+	subject, ok := middleware2.GetAuthSubjectFromContext(c)
+	if !ok {
+		response.Unauthorized(c, "User not found in context")
+		return
+	}
+	subscriptionID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil || subscriptionID <= 0 {
+		response.BadRequest(c, "Invalid subscription ID")
+		return
+	}
+	executeUserIdempotentJSON(
+		c,
+		"user_subscription_quota_reset",
+		map[string]int64{"subscription_id": subscriptionID},
+		service.DefaultWriteIdempotencyTTL(),
+		func(ctx context.Context) (any, error) {
+			sub, resetErr := h.subscriptionService.ResetUserQuota(ctx, subject.UserID, subscriptionID)
 			if resetErr != nil {
 				return nil, resetErr
 			}
@@ -176,6 +207,7 @@ func (h *SubscriptionHandler) GetSummary(c *gin.Context) {
 			Status:         sub.Status,
 			DailyUsedUSD:   sub.DailyUsageUSD,
 			WeeklyUsedUSD:  sub.WeeklyUsageUSD,
+			ResetCount:     sub.ResetCount,
 			MonthlyUsedUSD: sub.MonthlyUsageUSD,
 		}
 

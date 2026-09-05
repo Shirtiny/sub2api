@@ -19,6 +19,7 @@ export interface SubscriptionSummary {
     daily_progress: number | null
     weekly_progress: number | null
     monthly_progress: number | null
+    reset_count?: number
     expires_at: string | null
     days_remaining: number | null
   }>
@@ -84,11 +85,36 @@ export async function earlyResetSubscription(
   return response.data
 }
 
+/**
+ * Consume one administrator-granted reset allowance and reset the current
+ * subscription's daily and weekly windows.
+ */
+export async function resetSubscriptionQuota(
+  subscriptionId: number,
+  idempotencyKey = createIdempotencyKey('subscription-quota-reset')
+): Promise<UserSubscription> {
+  const response = await apiClient.post<UserSubscription>(
+    `/subscriptions/${subscriptionId}/reset-quota`,
+    {},
+    {
+      headers: {
+        'Idempotency-Key': idempotencyKey
+      }
+    }
+  )
+  return response.data
+}
+
+// Short alias used by callers that share the admin/user quota terminology.
+export const resetQuota = resetSubscriptionQuota
+
 export default {
   getMySubscriptions,
   getActiveSubscriptions,
   getSubscriptionsProgress,
   getSubscriptionSummary,
   getSubscriptionProgress,
-  earlyResetSubscription
+  earlyResetSubscription,
+  resetSubscriptionQuota,
+  resetQuota
 }

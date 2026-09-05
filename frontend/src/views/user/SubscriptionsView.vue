@@ -72,6 +72,16 @@
                 {{ t(`userSubscriptions.status.${subscription.status}`) }}
               </span>
               <button
+                v-if="canShowQuotaReset(subscription)"
+                data-testid="subscription-quota-reset"
+                :disabled="quotaResetting"
+                class="rounded-lg border border-orange-300 px-3 py-1.5 text-xs font-semibold text-orange-700 transition-colors hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-orange-700 dark:text-orange-300 dark:hover:bg-orange-950/30"
+                @click="openQuotaResetDialog(subscription)"
+              >
+                {{ t('userSubscriptions.resetQuota') }}
+                <span class="ml-1 tabular-nums">({{ subscription.reset_count }})</span>
+              </button>
+              <button
                 v-if="subscription.status === 'active' && subscription.early_reset_enabled && (subscription.early_reset_duration_days || 0) > 0"
                 data-testid="subscription-early-reset"
                 :disabled="earlyResetting && earlyResetTarget?.id === subscription.id"
@@ -257,6 +267,17 @@
       @cancel="closeEarlyResetDialog"
       @confirm="confirmEarlyReset"
     />
+    <ConfirmDialog
+      data-testid="subscription-quota-reset-dialog"
+      :show="quotaResetTarget !== null"
+      :title="t('userSubscriptions.resetQuotaConfirmTitle')"
+      :message="quotaResetConfirmMessage"
+      :confirm-text="quotaResetting ? t('userSubscriptions.resetQuotaResetting') : t('userSubscriptions.resetQuotaConfirm')"
+      :confirm-disabled="quotaResetting"
+      :danger="true"
+      @cancel="closeQuotaResetDialog"
+      @confirm="confirmQuotaReset"
+    />
   </AppLayout>
 </template>
 
@@ -298,12 +319,24 @@ const loading = ref(true)
 const earlyResetTarget = ref<UserSubscription | null>(null)
 const earlyResetting = ref(false)
 const earlyResetIdempotencyKey = ref<string | null>(null)
+const quotaResetTarget = ref<UserSubscription | null>(null)
+const quotaResetting = ref(false)
+const quotaResetIdempotencyKey = ref<string | null>(null)
 const earlyResetConfirmMessage = computed(() => {
   const target = earlyResetTarget.value
   if (!target) return ''
   return t('userSubscriptions.earlyResetConfirmMessage', {
     name: subscriptionCustomPlanName(target) || `Group #${target.group_id}`,
     days: target.early_reset_duration_days || 0
+  })
+})
+
+const quotaResetConfirmMessage = computed(() => {
+  const target = quotaResetTarget.value
+  if (!target) return ''
+  return t('userSubscriptions.resetQuotaConfirmMessage', {
+    name: subscriptionCustomPlanName(target) || `Group #${target.group_id}`,
+    remaining: Math.max((target.reset_count || 0) - 1, 0)
   })
 })
 
@@ -363,6 +396,86 @@ async function confirmEarlyReset() {
   }
 }
 
+function canShowQuotaReset(subscription: UserSubscription): boolean {
+  const count = subscription.reset_count || 0
+  const now = Date.now()
+  const startsAt = Date.parse(subscription.starts_at)
+  const expiresAt = subscription.expires_at ? Date.parse(subscription.expires_at) : Number.POSITIVE_INFINITY
+  // The API can return a future subscription with status=active.  Keep the
+  // action hidden until the same temporal checks enforced by the backend pass.
+  if ((Number.isFinite(startsAt) && startsAt > now) || (Number.isFinite(expiresAt) && expiresAt <= now)) {
+    return false
+  }
+  const group = subscription.group
+  const hasLimitMetadata = Boolean(
+    group && (
+      Object.prototype.hasOwnProperty.call(group, 'subscription_type') ||
+      Object.prototype.hasOwnProperty.call(group, 'daily_limit_usd') ||
+      Object.prototype.hasOwnProperty.call(group, 'weekly_limit_usd') ||
+      Object.prototype.hasOwnProperty.call(group, 'monthly_limit_usd')
+    )
+  )
+  const hasQuotaWindow = !group || !hasLimitMetadata || Boolean(
+    (group.daily_limit_usd && group.daily_limit_usd > 0) ||
+    (group.weekly_limit_usd && group.weekly_limit_usd > 0)
+  )
+  // Treat omitted limit metadata as unknown (some legacy responses omit it),
+  // but suppress the action when the server explicitly reports no daily or
+  // weekly window.
+  return (
+    subscription.status === 'active' &&
+    (!group || !group.subscription_type || group.subscription_type === 'subscription') &&
+    !subscription.early_reset_enabled &&
+    (subscription.early_reset_duration_days || 0) === 0 &&
+    !isOneTimeDailyQuota(subscription) &&
+    count > 0 &&
+    hasQuotaWindow
+  )
+}
+
+function openQuotaResetDialog(subscription: UserSubscription) {
+  if (!canShowQuotaReset(subscription)) return
+  quotaResetTarget.value = subscription
+  quotaResetIdempotencyKey.value = createIdempotencyKey('subscription-quota-reset')
+}
+
+function closeQuotaResetDialog() {
+  if (!quotaResetting.value) {
+    quotaResetTarget.value = null
+    quotaResetIdempotencyKey.value = null
+  }
+}
+
+async function confirmQuotaReset() {
+  const target = quotaResetTarget.value
+  if (!target || quotaResetting.value) return
+  quotaResetting.value = true
+  try {
+    const idempotencyKey =
+      quotaResetIdempotencyKey.value || createIdempotencyKey('subscription-quota-reset')
+    quotaResetIdempotencyKey.value = idempotencyKey
+    const reset = subscriptionsAPI.resetSubscriptionQuota || subscriptionsAPI.resetQuota
+    if (!reset) throw new Error('Subscription quota reset is unavailable')
+    const updated = await reset(target.id, idempotencyKey)
+    const index = subscriptions.value.findIndex(subscription => subscription.id === updated.id)
+    if (index >= 0) subscriptions.value[index] = updated
+    subscriptionStore.syncActiveSubscription(updated)
+    appStore.showSuccess(t('userSubscriptions.resetQuotaSuccess'))
+    quotaResetTarget.value = null
+    quotaResetIdempotencyKey.value = null
+  } catch (error: unknown) {
+    appStore.showError(
+      extractI18nErrorMessage(
+        error,
+        t,
+        'userSubscriptions.resetQuotaErrors',
+        t('userSubscriptions.resetQuotaFailed'),
+      ),
+    )
+  } finally {
+    quotaResetting.value = false
+  }
+}
 
 function shouldShowCustomMultiplierBadge(subscription: UserSubscription): boolean {
   return subscriptionCustomMultiplier(subscription) != null && subscriptionCustomSourcePlanId(subscription) != null

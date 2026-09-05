@@ -116,6 +116,8 @@ func TestMigrationsRunner_IsIdempotent_AndSchemaIsUpToDate(t *testing.T) {
 
 	// user_subscriptions: deleted_at for soft delete support (migration 012)
 	requireColumn(t, tx, "user_subscriptions", "deleted_at", "timestamp with time zone", 0, true)
+	// user_subscriptions: bounded user-initiated daily/weekly reset allowance (migration 196)
+	requireColumn(t, tx, "user_subscriptions", "reset_count", "integer", 0, false)
 	requireColumn(t, tx, "user_subscriptions", "plan_concurrency", "integer", 0, true)
 	requireColumn(t, tx, "user_subscriptions", "plan_concurrency_expires_at", "timestamp with time zone", 0, true)
 	requireColumn(t, tx, "subscription_plans", "concurrency", "integer", 0, false)

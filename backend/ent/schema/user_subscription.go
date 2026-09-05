@@ -68,6 +68,11 @@ func (UserSubscription) Fields() []ent.Field {
 		field.Float("monthly_usage_usd").
 			SchemaType(map[string]string{dialect.Postgres: "decimal(20,10)"}).
 			Default(0),
+		field.Int("reset_count").
+			Default(0).
+			Min(0).
+			Max(1000).
+			Comment("remaining user-initiated daily/weekly quota resets"),
 		field.Bool("early_reset_enabled").
 			Default(false).
 			Comment("whether quota is one-time and may only be refreshed through an explicit early reset"),
