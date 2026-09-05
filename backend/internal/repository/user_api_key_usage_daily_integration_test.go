@@ -50,14 +50,16 @@ func (s *UserAPIKeyUsageDailySuite) TestHistoricalRollupCombinesWithLiveDayAndSu
 	account := mustCreateAccount(s.T(), s.client, &service.Account{Name: "durable"})
 
 	today := timezone.Today()
-	yesterday := today.AddDate(0, 0, -1)
+	// Keep the durable row outside today's settlement-delay window so this test
+	// remains deterministic when it runs before the daily rollup cutoff.
+	historicalDay := today.AddDate(0, 0, -2)
 	duration := 100
 	for _, row := range []struct {
 		at                                    time.Time
 		input, output, cacheCreate, cacheRead int
 		cost                                  float64
 	}{
-		{yesterday.Add(time.Hour), 10, 20, 3, 4, 1.0},
+		{historicalDay.Add(time.Hour), 10, 20, 3, 4, 1.0},
 		{today.Add(time.Hour), 5, 6, 1, 2, 0.5},
 	} {
 		_, err := s.usage.Create(s.ctx, &service.UsageLog{
@@ -78,7 +80,7 @@ func (s *UserAPIKeyUsageDailySuite) TestHistoricalRollupCombinesWithLiveDayAndSu
 		s.Require().NoError(err)
 	}
 
-	s.Require().NoError(s.aggregate.upsertUserAPIKeyUsageDaily(s.ctx, yesterday, today))
+	s.Require().NoError(s.aggregate.upsertUserAPIKeyUsageDaily(s.ctx, historicalDay, today))
 	s.Require().NoError(s.aggregate.upsertCompletedUserAPIKeyUsageDaily(s.ctx, today, today.AddDate(0, 0, 1)))
 	var currentRollupCount int
 	s.scanOne(`
@@ -91,7 +93,7 @@ func (s *UserAPIKeyUsageDailySuite) TestHistoricalRollupCombinesWithLiveDayAndSu
 		"DELETE FROM usage_logs WHERE user_id = $1 AND created_at < $2", user.ID, today)
 	s.Require().NoError(err)
 
-	stats, err := s.usage.GetUserStatsAggregated(s.ctx, user.ID, yesterday, today.AddDate(0, 0, 1))
+	stats, err := s.usage.GetUserStatsAggregated(s.ctx, user.ID, historicalDay, today.AddDate(0, 0, 1))
 	s.Require().NoError(err)
 	s.Equal(int64(2), stats.TotalRequests)
 	s.Equal(int64(15), stats.TotalInputTokens)
@@ -100,19 +102,19 @@ func (s *UserAPIKeyUsageDailySuite) TestHistoricalRollupCombinesWithLiveDayAndSu
 	s.Equal(int64(6), stats.TotalCacheReadTokens)
 	s.InDelta(1.5, stats.TotalActualCost, 0.0000001)
 
-	trend, err := s.usage.GetAPIKeyDailyUsageTrend(s.ctx, user.ID, key.ID, yesterday, today.AddDate(0, 0, 1))
+	trend, err := s.usage.GetAPIKeyDailyUsageTrend(s.ctx, user.ID, key.ID, historicalDay, today.AddDate(0, 0, 1))
 	s.Require().NoError(err)
 	s.Len(trend, 2)
 	s.Equal(int64(37), trend[0].TotalTokens)
 	s.Equal(int64(14), trend[1].TotalTokens)
 
-	s.Require().NoError(s.aggregate.recomputeRangeInTx(s.ctx, yesterday, today, yesterday, today))
+	s.Require().NoError(s.aggregate.recomputeRangeInTx(s.ctx, historicalDay, today, historicalDay, today))
 	var historicalCost float64
 	s.scanOne(`
 		SELECT COALESCE(SUM(actual_cost), 0)
 		FROM user_api_key_usage_daily
 		WHERE user_id = $1 AND bucket_date = $2::date
-	`, &historicalCost, user.ID, yesterday)
+	`, &historicalCost, user.ID, historicalDay)
 	s.InDelta(1.0, historicalCost, 0.0000001)
 }
 
