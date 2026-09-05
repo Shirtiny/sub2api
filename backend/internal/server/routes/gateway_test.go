@@ -115,7 +115,7 @@ func TestGatewayRoutesOpenAIImagesPathsAreRegistered(t *testing.T) {
 	}
 }
 
-func TestGatewayRoutesModelsIsPublicAndStatic(t *testing.T) {
+func TestGatewayRoutesModelsIsPublicAndPricingOnly(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
 
@@ -162,7 +162,7 @@ func TestGatewayRoutesModelsIsPublicAndStatic(t *testing.T) {
 			}
 			require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &got))
 			require.Equal(t, "list", got.Object)
-			require.Equal(t, openai.DefaultModels, got.Data)
+			require.Empty(t, got.Data)
 		})
 	}
 	require.Zero(t, authCalls, "public /v1/models must not invoke API-key auth")

@@ -209,6 +209,33 @@ func makeStandardRepo(ch Channel, groupPlatforms map[int64]string) *mockChannelR
 	}
 }
 
+func TestListConfiguredModelNamesByPlatform(t *testing.T) {
+	repo := makeStandardRepo(Channel{
+		ID:     1,
+		Status: StatusActive,
+		ModelPricing: []ChannelModelPricing{
+			{Platform: PlatformOpenAI, Models: []string{"gpt-6", "gpt-5.4", "gpt-*", "  "}},
+			{Platform: PlatformAnthropic, Models: []string{"claude-sonnet-4-6"}},
+		},
+	}, nil)
+
+	got := newTestChannelService(repo).ListConfiguredModelNamesByPlatform(context.Background(), PlatformOpenAI)
+	require.Equal(t, []string{"gpt-5.4", "gpt-6"}, got)
+}
+
+func TestListConfiguredModelNamesByPlatformSkipsInactiveChannels(t *testing.T) {
+	repo := &mockChannelRepository{
+		listAllFn: func(_ context.Context) ([]Channel, error) {
+			return []Channel{
+				{ID: 1, Status: StatusDisabled, ModelPricing: []ChannelModelPricing{{Platform: PlatformOpenAI, Models: []string{"gpt-disabled"}}}},
+			}, nil
+		},
+	}
+
+	got := newTestChannelService(repo).ListConfiguredModelNamesByPlatform(context.Background(), PlatformOpenAI)
+	require.Empty(t, got)
+}
+
 // ===========================================================================
 // 1. BuildModelMappingChain
 // ===========================================================================

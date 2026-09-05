@@ -979,18 +979,55 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 	}
 }
 
-// Models returns the public, static OpenAI model catalog.
+// Models returns the public OpenAI-compatible model catalog from this
+// deployment's active channel pricing. There is no built-in fallback list:
+// pricing is the sole source of truth for the returned model IDs.
 // GET /v1/models
 //
 // This endpoint deliberately does not inspect an API key, group, account
-// mapping, platform override, or group-level model-list configuration. Model
-// availability is enforced when requests are routed, not by this discovery
-// endpoint.
+// mapping, platform override, or group-level model-list configuration. The
+// deployment channel pricing is the source of truth for every returned ID.
 func (h *GatewayHandler) Models(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"object": "list",
-		"data":   openai.DefaultModels,
+		"data":   h.publicOpenAIModels(c.Request.Context()),
 	})
+}
+
+func (h *GatewayHandler) publicOpenAIModels(ctx context.Context) []openai.Model {
+	models := make([]openai.Model, 0)
+	if h == nil || h.gatewayService == nil {
+		return models
+	}
+
+	seen := make(map[string]struct{})
+	for _, id := range h.gatewayService.ListConfiguredOpenAIModelNames(ctx) {
+		id = strings.TrimSpace(id)
+		key := strings.ToLower(id)
+		if id == "" || key == "" {
+			continue
+		}
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		models = append(models, openAIModelForConfiguredID(id))
+		seen[key] = struct{}{}
+	}
+	return models
+}
+
+// openAIModelForConfiguredID keeps the response schema compatible with the
+// original /v1/models endpoint while taking the model ID directly from the
+// active channel pricing configuration.
+func openAIModelForConfiguredID(id string) openai.Model {
+	return openai.Model{
+		ID:          id,
+		Object:      "model",
+		Created:     1704067200, // 2024-01-01 UTC; no source timestamp.
+		OwnedBy:     "openai",
+		Type:        "model",
+		DisplayName: id,
+	}
 }
 
 // AntigravityModels 返回 Antigravity 支持的全部模型

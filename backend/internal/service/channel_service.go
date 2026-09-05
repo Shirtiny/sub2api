@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"sort"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -433,6 +434,59 @@ func (s *ChannelService) GetChannelForGroup(ctx context.Context, groupID int64) 
 	}
 
 	return ch.Clone(), nil
+}
+
+// ListConfiguredModelNamesByPlatform returns concrete model names explicitly
+// configured in active channel pricing for a platform. This reads the
+// deployment's channel configuration rather than the upstream LiteLLM pricing
+// catalog, so only models enabled by this installation are exposed.
+// Wildcard entries are omitted because they do not identify one model ID.
+func (s *ChannelService) ListConfiguredModelNamesByPlatform(ctx context.Context, platform string) []string {
+	platform = strings.ToLower(strings.TrimSpace(platform))
+	if s == nil || s.repo == nil || platform == "" {
+		return nil
+	}
+
+	cache, err := s.loadCache(ctx)
+	if err != nil {
+		slog.Warn("failed to load channel cache for configured model list", "platform", platform, "error", err)
+		return nil
+	}
+
+	namesByLower := make(map[string]string)
+	for _, ch := range cache.byID {
+		if ch == nil || !ch.IsActive() {
+			continue
+		}
+		for _, pricing := range ch.ModelPricing {
+			if !strings.EqualFold(strings.TrimSpace(pricing.Platform), platform) {
+				continue
+			}
+			for _, model := range pricing.Models {
+				model = strings.TrimSpace(model)
+				if model == "" || strings.HasSuffix(model, "*") {
+					continue
+				}
+				key := strings.ToLower(model)
+				if existing, exists := namesByLower[key]; !exists || model < existing {
+					namesByLower[key] = model
+				}
+			}
+		}
+	}
+
+	names := make([]string, 0, len(namesByLower))
+	for _, model := range namesByLower {
+		names = append(names, model)
+	}
+	sort.SliceStable(names, func(i, j int) bool {
+		left, right := strings.ToLower(names[i]), strings.ToLower(names[j])
+		if left == right {
+			return names[i] < names[j]
+		}
+		return left < right
+	})
+	return names
 }
 
 // GetGroupPlatform 获取分组的平台标识（从缓存）

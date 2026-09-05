@@ -9973,6 +9973,15 @@ func (s *GatewayService) validateUpstreamBaseURL(raw string) (string, error) {
 	return normalized, nil
 }
 
+// ListConfiguredOpenAIModelNames returns OpenAI model IDs explicitly configured
+// in this deployment's active channel pricing.
+func (s *GatewayService) ListConfiguredOpenAIModelNames(ctx context.Context) []string {
+	if s == nil || s.channelService == nil {
+		return nil
+	}
+	return s.channelService.ListConfiguredModelNamesByPlatform(ctx, PlatformOpenAI)
+}
+
 // GetAvailableModels returns the list of models available for a group
 // It aggregates model_mapping keys from all schedulable accounts in the group
 func (s *GatewayService) GetAvailableModels(ctx context.Context, groupID *int64, platform string) []string {

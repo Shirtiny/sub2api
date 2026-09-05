@@ -18,7 +18,7 @@ type gatewayModelsResponseForTest struct {
 	Data   []openai.Model `json:"data"`
 }
 
-func TestGatewayModels_ReturnsStaticOpenAICatalogWithoutAPIKeyContext(t *testing.T) {
+func TestGatewayModels_ReturnsEmptyWithoutPricingService(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	rec := httptest.NewRecorder()
@@ -27,7 +27,7 @@ func TestGatewayModels_ReturnsStaticOpenAICatalogWithoutAPIKeyContext(t *testing
 
 	(&GatewayHandler{}).Models(c)
 
-	assertStaticOpenAIModelsResponse(t, rec)
+	assertEmptyOpenAIModelsResponse(t, rec)
 }
 
 func TestGatewayModels_IgnoresAPIKeyGroupAndModelsListConfiguration(t *testing.T) {
@@ -72,12 +72,12 @@ func TestGatewayModels_IgnoresAPIKeyGroupAndModelsListConfiguration(t *testing.T
 
 			(&GatewayHandler{}).Models(c)
 
-			assertStaticOpenAIModelsResponse(t, rec)
+			assertEmptyOpenAIModelsResponse(t, rec)
 		})
 	}
 }
 
-func assertStaticOpenAIModelsResponse(t *testing.T, rec *httptest.ResponseRecorder) {
+func assertEmptyOpenAIModelsResponse(t *testing.T, rec *httptest.ResponseRecorder) {
 	t.Helper()
 
 	require.Equal(t, http.StatusOK, rec.Code)
@@ -85,14 +85,17 @@ func assertStaticOpenAIModelsResponse(t *testing.T, rec *httptest.ResponseRecord
 	var got gatewayModelsResponseForTest
 	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &got))
 	require.Equal(t, "list", got.Object)
-	require.Equal(t, openai.DefaultModels, got.Data)
+	require.Empty(t, got.Data)
+}
 
-	modelIDs := make(map[string]struct{}, len(got.Data))
-	for _, model := range got.Data {
-		modelIDs[model.ID] = struct{}{}
-	}
-	for _, modelID := range []string{"gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna"} {
-		_, ok := modelIDs[modelID]
-		require.Truef(t, ok, "static catalog must include %s", modelID)
-	}
+func TestConfiguredOpenAIModelKeepsOriginalShape(t *testing.T) {
+	got := openAIModelForConfiguredID("gpt-6-astra")
+	require.Equal(t, openai.Model{
+		ID:          "gpt-6-astra",
+		Object:      "model",
+		Created:     1704067200,
+		OwnedBy:     "openai",
+		Type:        "model",
+		DisplayName: "gpt-6-astra",
+	}, got)
 }
