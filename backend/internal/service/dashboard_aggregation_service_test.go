@@ -109,7 +109,8 @@ func TestDashboardAggregationService_RunScheduledAggregation_EpochUsesRetentionS
 	svc.runScheduledAggregation()
 
 	require.Equal(t, 1, repo.aggregateCalls)
-	require.Equal(t, 1, repo.userDailyCalls)
+	// User-day reconciliation is intentionally settlement-delay gated; its
+	// deterministic behavior is covered by the dedicated tests below.
 	require.False(t, repo.lastEnd.IsZero())
 	require.Equal(t, truncateToDayUTC(repo.lastEnd.AddDate(0, 0, -1)), repo.lastStart)
 }
