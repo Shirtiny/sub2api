@@ -7427,7 +7427,7 @@ export default {
     earlyResetting: '重置中...',
     earlyResetSuccess: '订阅额度已提前重置',
     earlyResetFailed: '提前重置失败',
-    resetQuota: '重置日/周额度',
+    resetQuota: '重置卡',
     resetQuotaConfirmTitle: '确认重置订阅额度',
     resetQuotaConfirmMessage: '将立即重置“{name}”的每日和每周额度，并消耗 1 次自助重置次数（剩余 {remaining} 次）。此操作不可撤销。',
     resetQuotaConfirm: '确认重置',
