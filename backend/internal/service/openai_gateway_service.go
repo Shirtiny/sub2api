@@ -3005,6 +3005,7 @@ func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, acco
 		// The HTTP/SSE overload wrapper must not add another WS replay layer.
 		if gate, ok := c.Writer.(*openAIStreamOpeningWriter); ok {
 			gate.replayUnsafe = true
+			gate.bypass = true
 			if err := gate.commit(); err != nil {
 				return nil, err
 			}
@@ -4223,7 +4224,7 @@ func (s *OpenAIGatewayService) handleStreamingResponsePassthrough(
 				}
 			}
 			eventType := strings.TrimSpace(gjson.Get(trimmedData, "type").String())
-			if overload := captureOpenAIStreamOverload(c, dataBytes); overload != nil {
+			if overload := captureOpenAIStreamRetryableError(c, dataBytes); overload != nil {
 				return resultWithUsage(), overload
 			}
 			cyberHit, cyberMessage := markOpenAIStreamingCyberPolicy(c, dataBytes, *usage)
@@ -5259,7 +5260,7 @@ func (s *OpenAIGatewayService) handleStreamingResponse(ctx context.Context, resp
 		// Extract data from SSE line (supports both "data: " and "data:" formats)
 		if data, ok := extractOpenAISSEDataLine(line); ok {
 			dataBytes := []byte(data)
-			if overload := captureOpenAIStreamOverload(c, dataBytes); overload != nil {
+			if overload := captureOpenAIStreamRetryableError(c, dataBytes); overload != nil {
 				streamFailoverErr = overload
 				return
 			}

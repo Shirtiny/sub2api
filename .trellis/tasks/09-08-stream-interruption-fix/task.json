@@ -1,0 +1,16 @@
+{
+  "id": "stream-interruption-fix",
+  "name": "stream-interruption-fix",
+  "title": "Pre-content stream interruption recovery and native Aether error compatibility",
+  "status": "completed",
+  "dev_type": "fix",
+  "scope": "backend",
+  "creator": "codex-agent",
+  "assignee": "codex-agent",
+  "createdAt": "2026-09-08",
+  "branch": "custom-prod",
+  "base_branch": "custom-prod",
+  "notes": "Implemented and locally validated: 28 focused top-level service/handler tests, all 40 default backend test-bearing packages, focused race, lint 0 issues. EOF and exact native Aether errors tested across six processors. User explicitly authorized commit/tag/push on 2026-09-08; production deployment remains separate. No environment variables or migrations. Trellis scripts absent; tracking manually.",
+  "completedAt": "2026-09-08",
+  "release_tag": "cafecode-v0.0.74"
+}

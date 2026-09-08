@@ -15,3 +15,20 @@ results: `../../tasks/09-08-stream-overload-retry/`.
 No production deployment, new environment variables, migrations or release tag.
 Unrelated untracked files were preserved. Recorded manually because this checkout
 has no `.trellis/scripts` directory.
+
+## 2026-09-08: Stream interruption follow-up
+
+Reused the same one-rescue budget for known pre-content EOF/read/missing-terminal
+failures; mapped native Aether error events before conversion. Healthy output
+remains immediate. No replay after content, tool activity, unknown/malformed
+output or explicit business denials; WebSocket forwarding bypasses the SSE gate.
+
+Validation: focused service/handler tests, all 40 default backend test-bearing
+packages, focused race tests and full lint (0 issues). Six processor tests cover
+both heartbeat-then-EOF and heartbeat-then-native-error. Task/results:
+`../../tasks/09-08-stream-interruption-fix/`.
+
+The user explicitly authorized source commit/tag/push for `cafecode-v0.0.74`,
+paired with Aether `backend-v0.7.115`. CI builds artifacts; no production deployment,
+config or DB changes are part of this publication. Existing unrelated files were
+preserved. Session recorded manually because Trellis scripts are absent.

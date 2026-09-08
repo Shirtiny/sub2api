@@ -39,6 +39,9 @@ func ForwardWithStreamRetry(ctx context.Context, c *gin.Context, account *Accoun
 		c.Writer = gate
 		result, err := forward()
 		c.Writer = original
+		if gate.bypass {
+			return result, err
+		}
 		if gate.writeErr != nil {
 			return result, gate.writeErr
 		}
@@ -47,16 +50,30 @@ func ForwardWithStreamRetry(ctx context.Context, c *gin.Context, account *Accoun
 		}
 		var failover *UpstreamFailoverError
 		errors.As(err, &failover)
-		if gate.overload == nil && failover != nil {
-			gate.overload = openAIOverloadError(failover.StatusCode, failover.ResponseBody)
+		if gate.retryFailure == nil && failover != nil {
+			gate.retryFailure = openAIStreamRetryableError(failover.StatusCode, failover.ResponseBody)
+		}
+		if gate.retryFailure == nil && !gate.httpErrorAfterHeartbeat && !gate.committed && !gate.replayUnsafe {
+			if interrupted := openAIStreamReadInterruption(err, failover); interrupted != nil {
+				if len(bytes.TrimSpace(gate.pending[gate.recordStart:])) != 0 {
+					gate.replayUnsafe = true // a partial/unknown frame is not a known empty opening
+				} else {
+					gate.retryFailure = interrupted
+				}
+			}
 		}
 		// Policy denials and image/tool results are never replayed, even if their
 		// service path chose to return them before writing the wire response.
 		canReplay := !gate.committed && !gate.replayUnsafe && GetOpsCyberPolicy(c) == nil && (result == nil || result.ImageCount == 0)
-		if gate.overload != nil && canReplay {
-			gate.overload.StopLocalRetry = true
-			gate.overload.ResponseUncommitted = true
-			setOpsUpstreamError(c, gate.overload.StatusCode, extractUpstreamErrorMessage(gate.overload.ResponseBody), "")
+		if gate.retryFailure != nil && canReplay {
+			retryEvent := "openai.stream_overload_retry"
+			if gjson.GetBytes(gate.retryFailure.ResponseBody, "error.code").String() == "stream_interrupted" {
+				retryEvent = "openai.stream_interruption_retry"
+			}
+
+			gate.retryFailure.StopLocalRetry = true
+			gate.retryFailure.ResponseUncommitted = true
+			setOpsUpstreamError(c, gate.retryFailure.StatusCode, extractUpstreamErrorMessage(gate.retryFailure.ResponseBody), "")
 			retryAfter := gate.retryAfter
 			if retryAfter == "" {
 				retryAfter = original.Header().Get("Retry-After")
@@ -66,11 +83,12 @@ func ForwardWithStreamRetry(ctx context.Context, c *gin.Context, account *Accoun
 				delay, allowed = openAIStreamOverloadRetryDelay(failover.ResponseHeaders.Get("Retry-After"))
 			}
 			if c.GetBool(openAIStreamOverloadRetriedKey) || !allowed {
-				logger.FromContext(ctx).Warn("openai.stream_overload_retry_exhausted", zap.Int64("account_id", account.ID))
-				return nil, gate.overload
+				logger.FromContext(ctx).Warn(retryEvent+"_exhausted", zap.Int64("account_id", account.ID))
+				return nil, gate.retryFailure
 			}
 			c.Set(openAIStreamOverloadRetriedKey, true)
-			logger.FromContext(ctx).Warn("openai.stream_overload_retry", zap.Int64("account_id", account.ID), zap.Duration("delay", delay))
+			c.Set("openai_stream_rescue_event", retryEvent)
+			logger.FromContext(ctx).Warn(retryEvent, zap.Int64("account_id", account.ID), zap.Duration("delay", delay))
 			timer := time.NewTimer(delay)
 			select {
 			case <-ctx.Done():
@@ -94,13 +112,18 @@ func ForwardWithStreamRetry(ctx context.Context, c *gin.Context, account *Accoun
 			copy.StopLocalRetry = copy.StopLocalRetry || c.GetBool(openAIStreamOverloadRetriedKey)
 			return result, &copy // discard failed preambles, preserve normal failover
 		}
+		if failover != nil && gate.replayUnsafe {
+			copy := *failover
+			copy.StopLocalRetry = true // tool/unknown activity may be invisible after conversion
+			err = &copy
+		}
 		if gate.httpErrorAfterHeartbeat {
 			// HTTP status/headers are already SSE on the wire. Let the handler
 			// send a native terminal event instead of inserting bare JSON/HTML.
 			return nil, &UpstreamFailoverError{StatusCode: gate.status, ResponseBody: append([]byte(nil), gate.pending...), StopLocalRetry: true, ResponseUncommitted: true}
 		}
-		if gate.overload != nil && err == nil {
-			err = gate.overload
+		if gate.retryFailure != nil && err == nil {
+			err = gate.retryFailure
 		}
 		if finishErr := gate.commit(); finishErr != nil {
 			return result, finishErr
@@ -113,7 +136,7 @@ func ForwardWithStreamRetry(ctx context.Context, c *gin.Context, account *Accoun
 			}
 		}
 		if err == nil && c.GetBool(openAIStreamOverloadRetriedKey) {
-			logger.FromContext(ctx).Info("openai.stream_overload_retry_recovered", zap.Int64("account_id", account.ID))
+			logger.FromContext(ctx).Info(c.GetString("openai_stream_rescue_event")+"_recovered", zap.Int64("account_id", account.ID))
 		}
 		return result, err
 	}
@@ -185,7 +208,7 @@ func rememberOpenAIStreamRetryHeaders(c *gin.Context, headers http.Header) {
 
 // Used before Responses -> Chat/Messages conversion, where an error event may
 // otherwise be dropped or turned into a successful finish by a converter.
-func captureOpenAIStreamOverload(c *gin.Context, payload []byte) *UpstreamFailoverError {
+func captureOpenAIStreamRetryableError(c *gin.Context, payload []byte) *UpstreamFailoverError {
 	if c == nil {
 		return nil
 	}
@@ -193,9 +216,9 @@ func captureOpenAIStreamOverload(c *gin.Context, payload []byte) *UpstreamFailov
 	if !ok {
 		return nil
 	}
-	err := openAIOverloadError(http.StatusOK, payload)
+	err := openAIStreamRetryableError(http.StatusOK, payload)
 	if err != nil {
-		gate.overload = err
+		gate.retryFailure = err
 	}
 	return err
 }
@@ -210,7 +233,20 @@ func observeOpenAIStreamRetrySource(c *gin.Context, payload []byte) {
 	if !ok {
 		return
 	}
-	if gjson.GetBytes(payload, "error").IsObject() || gjson.GetBytes(payload, "response.error").IsObject() {
+	e := gjson.GetBytes(payload, "response.error")
+	if !e.IsObject() {
+		e = gjson.GetBytes(payload, "error")
+	}
+	if e.IsObject() {
+		// A converter/refusal detector may omit a business error. Its later
+		// EOF must not be mistaken for a retryable transport interruption.
+		kind := strings.ToLower(e.Get("type").String() + " " + e.Get("code").String())
+		code := e.Get("code").Int()
+		denied := !openAIStreamFailedEventShouldFailover(payload, e.Get("message").String()) || (code >= 400 && code < 500)
+		for _, marker := range []string{"authentication", "unauthorized", "permission", "invalid_api_key", "insufficient_quota", "rate_limit"} {
+			denied = denied || strings.Contains(kind, marker)
+		}
+		gate.replayUnsafe = gate.replayUnsafe || denied
 		return
 	}
 	if classifyOpenAIStreamOpening(payload, "") == streamOpeningContent {
@@ -306,6 +342,7 @@ func classifyOpenAIStreamOpening(payload []byte, event string) streamOpeningDeci
 // This writer deliberately leaves Written/Size as real HTTP state. Only the
 // explicit flags on returned errors tell the handler that bytes were heartbeats.
 type openAIStreamOpeningWriter struct {
+	bypass                  bool
 	httpErrorAfterHeartbeat bool
 	retryAfter              string
 	gin.ResponseWriter
@@ -314,7 +351,7 @@ type openAIStreamOpeningWriter struct {
 	scanned, lineStart, recordStart int
 	committed, replayUnsafe         bool
 	writeErr                        error
-	overload                        *UpstreamFailoverError
+	retryFailure                    *UpstreamFailoverError
 	firstContentAt                  time.Time
 }
 
@@ -364,7 +401,7 @@ func (w *openAIStreamOpeningWriter) Write(data []byte) (int, error) {
 	if w.committed {
 		return w.ResponseWriter.Write(data)
 	}
-	if w.overload != nil {
+	if w.retryFailure != nil {
 		return len(data), nil
 	} // one held terminal error, not success
 	if len(w.pending)+len(data) > openAIStreamOpeningLimit {
@@ -385,8 +422,8 @@ func (w *openAIStreamOpeningWriter) Write(data []byte) (int, error) {
 			if !json.Valid(w.pending) {
 				return len(data), nil
 			}
-			w.overload = openAIOverloadError(w.status, w.pending)
-			if w.overload != nil {
+			w.retryFailure = openAIStreamRetryableError(w.status, w.pending)
+			if w.retryFailure != nil {
 				return len(data), nil
 			}
 			if w.httpErrorAfterHeartbeat {
@@ -409,7 +446,7 @@ func (w *openAIStreamOpeningWriter) Write(data []byte) (int, error) {
 			if bytes.HasPrefix(line, []byte("data:")) {
 				payload := bytes.TrimSpace(line[5:])
 				event, _, _ := parseStreamOpeningRecord(w.pending[w.recordStart : i+1])
-				if json.Valid(payload) && openAIOverloadError(200, payload) == nil && classifyOpenAIStreamOpening(payload, event) == streamOpeningContent {
+				if json.Valid(payload) && openAIStreamRetryableError(200, payload) == nil && classifyOpenAIStreamOpening(payload, event) == streamOpeningContent {
 					w.firstContentAt = time.Now()
 					return len(data), w.commit()
 				}
@@ -422,8 +459,8 @@ func (w *openAIStreamOpeningWriter) Write(data []byte) (int, error) {
 			return len(data), w.commit()
 		}
 		if len(payload) > 0 {
-			w.overload = openAIOverloadError(200, payload)
-			if w.overload != nil {
+			w.retryFailure = openAIStreamRetryableError(200, payload)
+			if w.retryFailure != nil {
 				return len(data), nil
 			}
 		}

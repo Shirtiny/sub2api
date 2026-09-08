@@ -668,6 +668,7 @@ func (s *OpenAIGatewayService) handleOpenAIMessagesPassthroughStreamingResponse(
 	usage := &OpenAIUsage{}
 	var firstTokenMs *int
 	clientDisconnected := false
+	sawTerminal := false
 	scanner := bufio.NewScanner(resp.Body)
 	maxLineSize := defaultMaxLineSize
 	if s.cfg != nil && s.cfg.Gateway.MaxLineSize > 0 {
@@ -677,13 +678,19 @@ func (s *OpenAIGatewayService) handleOpenAIMessagesPassthroughStreamingResponse(
 	for scanner.Scan() {
 		line := scanner.Text()
 		if data, ok := extractAnthropicSSEDataLine(line); ok {
-			if overload := captureOpenAIStreamOverload(c, []byte(data)); overload != nil {
+			event := gjson.Get(data, "type").String()
+			if event == "message_stop" || event == "error" {
+				sawTerminal = true
+			}
+
+			if overload := captureOpenAIStreamRetryableError(c, []byte(data)); overload != nil {
 				return &openAIMessagesPassthroughStreamResult{usage: usage, firstTokenMs: firstTokenMs}, overload
 			}
 
 			if hit, code, message := DetectCyberPolicyResponse(http.StatusOK, []byte(data)); hit {
 				MarkOpsCyberPolicy(c, CyberPolicyMark{Code: code, Message: message, Body: truncateString(data, 4096), UpstreamStatus: http.StatusOK})
 			}
+			observeOpenAIStreamRetrySource(c, []byte(data))
 			if firstTokenMs == nil && strings.TrimSpace(data) != "" && strings.TrimSpace(data) != "[DONE]" {
 				ms := int(time.Since(startTime).Milliseconds())
 				firstTokenMs = &ms
@@ -699,6 +706,9 @@ func (s *OpenAIGatewayService) handleOpenAIMessagesPassthroughStreamingResponse(
 				flusher.Flush()
 			}
 		}
+	}
+	if endErr := openAIStreamEndError(c, sawTerminal, scanner.Err()); endErr != nil {
+		return &openAIMessagesPassthroughStreamResult{usage: usage, firstTokenMs: firstTokenMs, clientDisconnect: clientDisconnected}, endErr
 	}
 	if err := scanner.Err(); err != nil {
 		if clientDisconnected || errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
@@ -1145,7 +1155,7 @@ func (s *OpenAIGatewayService) handleAnthropicStreamingResponse(
 
 	// processDataLine handles a single "data: ..." SSE line from upstream.
 	processDataLine := func(payload string) bool {
-		if overload := captureOpenAIStreamOverload(c, []byte(payload)); overload != nil {
+		if overload := captureOpenAIStreamRetryableError(c, []byte(payload)); overload != nil {
 			streamOverloadErr = overload
 			return true
 		}

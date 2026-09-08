@@ -122,7 +122,7 @@ func TestStreamRetryOpeningFragmentedSSE(t *testing.T) {
 			_, err := w.Write([]byte(wire[start:min(start+size, len(wire))]))
 			require.NoError(t, err)
 		}
-		require.NotNil(t, w.overload, "chunk size %d", size)
+		require.NotNil(t, w.retryFailure, "chunk size %d", size)
 		require.False(t, w.committed)
 		require.Empty(t, rec.Body.String())
 	}
@@ -221,7 +221,7 @@ func TestStreamRetryDoesNotReplayUnforwardedUpstreamToolActivity(t *testing.T) {
 	_, err := ForwardWithStreamRetry(context.Background(), c, account, true, func() (*OpenAIForwardResult, error) {
 		calls++
 		observeOpenAIStreamRetrySource(c, []byte(`{"type":"response.output_item.added","item":{"type":"web_search_call"}}`))
-		return nil, captureOpenAIStreamOverload(c, []byte(streamRetryError))
+		return nil, captureOpenAIStreamRetryableError(c, []byte(streamRetryError))
 	})
 	require.Error(t, err)
 	require.Equal(t, 1, calls)

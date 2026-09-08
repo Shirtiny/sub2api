@@ -361,6 +361,7 @@ func (s *OpenAIGatewayService) streamRawChatCompletions(
 
 	var usage OpenAIUsage
 	var streamOverloadErr error
+	sawTerminal := false
 	var firstTokenMs *int
 	clientDisconnected := false
 	clientOutputStarted := false
@@ -403,12 +404,22 @@ func (s *OpenAIGatewayService) streamRawChatCompletions(
 		line := scanner.Text()
 		refusalDetector.ObserveSSELine(line)
 		if payload, ok := extractOpenAISSEDataLine(line); ok {
-			if overload := captureOpenAIStreamOverload(c, []byte(payload)); overload != nil {
+			if overload := captureOpenAIStreamRetryableError(c, []byte(payload)); overload != nil {
 				streamOverloadErr = overload
 				break
 			}
 
+			observeOpenAIStreamRetrySource(c, []byte(payload))
 			trimmedPayload := strings.TrimSpace(payload)
+			if trimmedPayload == "[DONE]" || gjson.Get(payload, "error").IsObject() {
+				sawTerminal = true
+			}
+			for _, choice := range gjson.Get(payload, "choices").Array() {
+				if choice.Get("finish_reason").String() != "" {
+					sawTerminal = true
+				}
+			}
+
 			if trimmedPayload != "[DONE]" {
 				usageOnlyChunk := isOpenAIChatUsageOnlyStreamChunk(payload)
 				if u := extractCCStreamUsage(payload); u != nil {
@@ -433,6 +444,9 @@ func (s *OpenAIGatewayService) streamRawChatCompletions(
 		}
 	}
 
+	if streamOverloadErr == nil {
+		streamOverloadErr = openAIStreamEndError(c, sawTerminal, scanner.Err())
+	}
 	if err := scanner.Err(); err != nil {
 		if !errors.Is(err, context.Canceled) && !errors.Is(err, context.DeadlineExceeded) {
 			logger.L().Warn("openai chat_completions raw: stream read error",
