@@ -419,7 +419,9 @@ func (h *OpenAIGatewayHandler) Responses(c *gin.Context) {
 					accountReleaseFunc()
 				}
 			}()
-			return h.gatewayService.Forward(c.Request.Context(), c, account, forwardBody)
+			return service.ForwardWithStreamRetry(c.Request.Context(), c, account, reqStream, func() (*service.OpenAIForwardResult, error) {
+				return h.gatewayService.Forward(c.Request.Context(), c, account, forwardBody)
+			})
 		}()
 		h.recordCyberPolicyIfMarked(c, apiKey, account, reqModel)
 		finishOpenAIUsageResponseTiming(c, forwardStart, result)
@@ -443,8 +445,8 @@ func (h *OpenAIGatewayHandler) Responses(c *gin.Context) {
 			} else {
 				var failoverErr *service.UpstreamFailoverError
 				if errors.As(err, &failoverErr) {
-					if c.Writer.Size() != writerSizeBeforeForward {
-						h.handleFailoverExhausted(c, failoverErr, true)
+					if stopOpenAIStreamFailover(c, failoverErr, writerSizeBeforeForward) {
+						h.handleFailoverExhausted(c, failoverErr, streamStarted || c.Writer.Written())
 						return
 					}
 					h.gatewayService.ReportOpenAIAccountScheduleResult(account.ID, false, nil)
@@ -896,7 +898,9 @@ func (h *OpenAIGatewayHandler) Messages(c *gin.Context) {
 					accountReleaseFunc()
 				}
 			}()
-			return h.gatewayService.ForwardAsAnthropic(c.Request.Context(), c, account, forwardBody, promptCacheKey, defaultMappedModel)
+			return service.ForwardWithStreamRetry(c.Request.Context(), c, account, reqStream, func() (*service.OpenAIForwardResult, error) {
+				return h.gatewayService.ForwardAsAnthropic(c.Request.Context(), c, account, forwardBody, promptCacheKey, defaultMappedModel)
+			})
 		}()
 		h.recordCyberPolicyIfMarked(c, apiKey, account, reqModel)
 		finishOpenAIUsageResponseTiming(c, forwardStart, result)
@@ -921,8 +925,8 @@ func (h *OpenAIGatewayHandler) Messages(c *gin.Context) {
 			} else {
 				var failoverErr *service.UpstreamFailoverError
 				if errors.As(err, &failoverErr) {
-					if c.Writer.Size() != writerSizeBeforeForward {
-						h.handleAnthropicFailoverExhausted(c, failoverErr, true)
+					if stopOpenAIStreamFailover(c, failoverErr, writerSizeBeforeForward) {
+						h.handleAnthropicFailoverExhausted(c, failoverErr, streamStarted || c.Writer.Written())
 						return
 					}
 					h.gatewayService.ReportOpenAIAccountScheduleResult(account.ID, false, nil)

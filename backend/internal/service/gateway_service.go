@@ -582,7 +582,11 @@ type UpstreamFailoverError struct {
 	ForceCacheBilling      bool        // Antigravity 粘性会话切换时设为 true
 	RetryableOnSameAccount bool        // 临时性错误（如 Google 间歇性 400、空响应），应在同一账号上重试 N 次再切换
 	DoNotPenalizeAccount   bool        // 本地 pre-dispatch 配置变化可安全切换，但不代表账号健康失败
-	RetryAfterMS           int         // trusted middle-hop pre-dispatch retry hint; handler applies a bounded wait
+	// Set only by the OpenAI pre-content gate; heartbeat/header writes are not content.
+	ResponseUncommitted bool
+	// The request-wide overload rescue is exhausted; do not amplify nested retries.
+	StopLocalRetry bool
+	RetryAfterMS   int // trusted middle-hop pre-dispatch retry hint; handler applies a bounded wait
 	// MiddleRouteDisposition is set only by the trusted Aether route-v1
 	// control path. The zero value keeps legacy failover behavior (exclude).
 	MiddleRouteDisposition OpenAIWSMiddleRouteDisposition

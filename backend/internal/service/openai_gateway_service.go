@@ -3001,6 +3001,15 @@ func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, acco
 
 	// 命中 WS 时仅走 WebSocket Mode；不再自动回退 HTTP。
 	if wsDecision.Transport == OpenAIUpstreamTransportResponsesWebsocketV2 {
+		// Stateful WebSocket replay belongs to its existing step/session logic.
+		// The HTTP/SSE overload wrapper must not add another WS replay layer.
+		if gate, ok := c.Writer.(*openAIStreamOpeningWriter); ok {
+			gate.replayUnsafe = true
+			if err := gate.commit(); err != nil {
+				return nil, err
+			}
+		}
+
 		// WS 分支需要结构化 payload 与重连恢复，命中后再触发 full-map decode。
 		wsReqBody, err := ensureReqBody()
 		if err != nil {
@@ -3232,6 +3241,9 @@ func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, acco
 		// Send request
 		upstreamStart := time.Now()
 		resp, err := s.httpUpstream.Do(upstreamReq, proxyURL, account.ID, account.Concurrency)
+		if err == nil && resp != nil {
+			rememberOpenAIStreamRetryHeaders(c, resp.Header)
+		}
 		SetOpsLatencyMs(c, OpsUpstreamLatencyMsKey, time.Since(upstreamStart).Milliseconds())
 		if err != nil {
 			// Ensure the client receives an error response (handlers assume Forward writes on non-failover errors).
@@ -3581,6 +3593,9 @@ func (s *OpenAIGatewayService) forwardOpenAIPassthrough(
 
 	upstreamStart := time.Now()
 	resp, err := s.httpUpstream.Do(upstreamReq, proxyURL, account.ID, account.Concurrency)
+	if err == nil && resp != nil {
+		rememberOpenAIStreamRetryHeaders(c, resp.Header)
+	}
 	SetOpsLatencyMs(c, OpsUpstreamLatencyMsKey, time.Since(upstreamStart).Milliseconds())
 	if err != nil {
 		safeErr := sanitizeUpstreamErrorMessage(err.Error())
@@ -4208,6 +4223,9 @@ func (s *OpenAIGatewayService) handleStreamingResponsePassthrough(
 				}
 			}
 			eventType := strings.TrimSpace(gjson.Get(trimmedData, "type").String())
+			if overload := captureOpenAIStreamOverload(c, dataBytes); overload != nil {
+				return resultWithUsage(), overload
+			}
 			cyberHit, cyberMessage := markOpenAIStreamingCyberPolicy(c, dataBytes, *usage)
 			if eventType == "response.failed" || cyberHit {
 				failedMessage = extractOpenAISSEErrorMessage(dataBytes)
@@ -5241,6 +5259,10 @@ func (s *OpenAIGatewayService) handleStreamingResponse(ctx context.Context, resp
 		// Extract data from SSE line (supports both "data: " and "data:" formats)
 		if data, ok := extractOpenAISSEDataLine(line); ok {
 			dataBytes := []byte(data)
+			if overload := captureOpenAIStreamOverload(c, dataBytes); overload != nil {
+				streamFailoverErr = overload
+				return
+			}
 			if openAIStreamEventIsTerminal(data) {
 				sawTerminalEvent = true
 			}

@@ -299,6 +299,9 @@ func (s *OpenAIGatewayService) ForwardAsAnthropic(
 		proxyURL = account.Proxy.URL()
 	}
 	resp, err := s.httpUpstream.Do(upstreamReq, proxyURL, account.ID, account.Concurrency)
+	if err == nil && resp != nil {
+		rememberOpenAIStreamRetryHeaders(c, resp.Header)
+	}
 	if err != nil {
 		safeErr := sanitizeUpstreamErrorMessage(err.Error())
 		setOpsUpstreamError(c, 0, safeErr, "")
@@ -481,6 +484,9 @@ func (s *OpenAIGatewayService) forwardOpenAIMessagesPassthrough(
 
 	upstreamStart := time.Now()
 	resp, err := s.httpUpstream.Do(upstreamReq, proxyURL, account.ID, account.Concurrency)
+	if err == nil && resp != nil {
+		rememberOpenAIStreamRetryHeaders(c, resp.Header)
+	}
 	SetOpsLatencyMs(c, OpsUpstreamLatencyMsKey, time.Since(upstreamStart).Milliseconds())
 	if err != nil {
 		safeErr := sanitizeUpstreamErrorMessage(err.Error())
@@ -671,6 +677,10 @@ func (s *OpenAIGatewayService) handleOpenAIMessagesPassthroughStreamingResponse(
 	for scanner.Scan() {
 		line := scanner.Text()
 		if data, ok := extractAnthropicSSEDataLine(line); ok {
+			if overload := captureOpenAIStreamOverload(c, []byte(data)); overload != nil {
+				return &openAIMessagesPassthroughStreamResult{usage: usage, firstTokenMs: firstTokenMs}, overload
+			}
+
 			if hit, code, message := DetectCyberPolicyResponse(http.StatusOK, []byte(data)); hit {
 				MarkOpsCyberPolicy(c, CyberPolicyMark{Code: code, Message: message, Body: truncateString(data, 4096), UpstreamStatus: http.StatusOK})
 			}
@@ -1093,6 +1103,7 @@ func (s *OpenAIGatewayService) handleAnthropicStreamingResponse(
 	firstChunk := true
 	clientDisconnected := false
 	clientOutputStarted := false
+	var streamOverloadErr *UpstreamFailoverError
 
 	scanner := bufio.NewScanner(resp.Body)
 	maxLineSize := defaultMaxLineSize
@@ -1134,6 +1145,12 @@ func (s *OpenAIGatewayService) handleAnthropicStreamingResponse(
 
 	// processDataLine handles a single "data: ..." SSE line from upstream.
 	processDataLine := func(payload string) bool {
+		if overload := captureOpenAIStreamOverload(c, []byte(payload)); overload != nil {
+			streamOverloadErr = overload
+			return true
+		}
+		observeOpenAIStreamRetrySource(c, []byte(payload))
+
 		if firstChunk {
 			firstChunk = false
 			ms := int(time.Since(startTime).Milliseconds())
@@ -1212,6 +1229,10 @@ func (s *OpenAIGatewayService) handleAnthropicStreamingResponse(
 
 	// finalizeStream sends any remaining Anthropic events and returns the result.
 	finalizeStream := func() (*OpenAIForwardResult, error) {
+		if streamOverloadErr != nil {
+			return resultWithUsage(), streamOverloadErr
+		}
+
 		if finalEvents := apicompat.FinalizeResponsesAnthropicStream(state); len(finalEvents) > 0 && !clientDisconnected {
 			for _, evt := range finalEvents {
 				sse, err := apicompat.ResponsesAnthropicEventToSSE(evt)

@@ -1,0 +1,15 @@
+{
+  "id": "stream-overload-retry",
+  "name": "stream-overload-retry",
+  "title": "Bounded pre-content stream overload rescue",
+  "status": "completed",
+  "dev_type": "fix",
+  "scope": "backend",
+  "creator": "codex-agent",
+  "assignee": "codex-agent",
+  "createdAt": "2026-09-08",
+  "branch": "custom-prod",
+  "base_branch": "custom-prod",
+  "notes": "Implemented and validated: 20 focused tests, all 40 backend test-bearing packages, focused race, lint 0 issues. No production changes or release tag. Trellis scripts absent; session recorded manually.",
+  "completedAt": "2026-09-08"
+}

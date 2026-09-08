@@ -197,7 +197,9 @@ func (h *OpenAIGatewayHandler) ChatCompletions(c *gin.Context) {
 					accountReleaseFunc()
 				}
 			}()
-			return h.gatewayService.ForwardAsChatCompletions(c.Request.Context(), c, account, forwardBody, promptCacheKey, "")
+			return service.ForwardWithStreamRetry(c.Request.Context(), c, account, reqStream, func() (*service.OpenAIForwardResult, error) {
+				return h.gatewayService.ForwardAsChatCompletions(c.Request.Context(), c, account, forwardBody, promptCacheKey, "")
+			})
 		}()
 		h.recordCyberPolicyIfMarked(c, apiKey, account, reqModel)
 		finishOpenAIUsageResponseTiming(c, forwardStart, result)
@@ -222,8 +224,8 @@ func (h *OpenAIGatewayHandler) ChatCompletions(c *gin.Context) {
 			} else {
 				var failoverErr *service.UpstreamFailoverError
 				if errors.As(err, &failoverErr) {
-					if c.Writer.Size() != writerSizeBeforeForward {
-						h.handleFailoverExhausted(c, failoverErr, true)
+					if stopOpenAIStreamFailover(c, failoverErr, writerSizeBeforeForward) {
+						h.handleFailoverExhausted(c, failoverErr, streamStarted || c.Writer.Written())
 						return
 					}
 					h.gatewayService.ReportOpenAIAccountScheduleResult(account.ID, false, nil)

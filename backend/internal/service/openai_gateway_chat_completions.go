@@ -234,6 +234,9 @@ func (s *OpenAIGatewayService) ForwardAsChatCompletions(
 		proxyURL = account.Proxy.URL()
 	}
 	resp, err := s.httpUpstream.Do(upstreamReq, proxyURL, account.ID, account.Concurrency)
+	if err == nil && resp != nil {
+		rememberOpenAIStreamRetryHeaders(c, resp.Header)
+	}
 	if err != nil {
 		safeErr := sanitizeUpstreamErrorMessage(err.Error())
 		setOpsUpstreamError(c, 0, safeErr, "")
@@ -519,6 +522,12 @@ func (s *OpenAIGatewayService) handleChatStreamingResponse(
 	}
 
 	processDataLine := func(payload string) bool {
+		if overload := captureOpenAIStreamOverload(c, []byte(payload)); overload != nil {
+			streamFailoverErr = overload
+			return true
+		}
+		observeOpenAIStreamRetrySource(c, []byte(payload))
+
 		if firstChunk {
 			firstChunk = false
 			ms := int(time.Since(startTime).Milliseconds())
