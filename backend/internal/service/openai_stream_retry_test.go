@@ -12,7 +12,6 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
-	"testing/synctest"
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
@@ -62,29 +61,6 @@ func TestStreamRetryOpeningClassifier(t *testing.T) {
 		`{"type":"unknown"}`, `invalid json`,
 	} {
 		require.Equal(t, streamOpeningContent, classifyOpenAIStreamOpening([]byte(payload), ""), payload)
-	}
-}
-
-func TestStreamRetryErrorClassification(t *testing.T) {
-	for _, payload := range []string{streamRetryError,
-		`{"error":{"type":"overloaded_error","message":"overloaded"}}`,
-		`{"type":"error","error":{"code":503,"message":"server overloaded"}}`,
-	} {
-		require.NotNil(t, openAIOverloadError(200, []byte(payload)), payload)
-	}
-	for _, status := range []int{400, 401, 403, 429} {
-		require.Nil(t, openAIOverloadError(status, []byte(streamRetryError)))
-	}
-	for _, payload := range []string{
-		`{"error":{"code":401,"message":"Our servers are currently overloaded. Please try again later."}}`,
-		`{"error":{"code":503,"type":"authentication_error","message":"Our servers are currently overloaded. Please try again later."}}`,
-		`{"error":{"code":"invalid_api_key","message":"Our servers are currently overloaded. Please try again later."}}`,
-		`{"error":{"code":503,"message":"content policy violation: overloaded"}}`,
-		`{"error":{"code":503,"type":"invalid_request_error","message":"overloaded"}}`,
-		`{"type":"response.output_text.delta","delta":"Our servers are currently overloaded. Please try again later."}`,
-		`{"type":"response.output_text.delta","error":{"type":"overloaded_error","message":"overloaded"}}`,
-	} {
-		require.Nil(t, openAIOverloadError(200, []byte(payload)), payload)
 	}
 }
 
@@ -142,62 +118,6 @@ func TestStreamRetryOpeningBoundsAndUnsafeEventsCommit(t *testing.T) {
 	}
 }
 
-func TestStreamRetryOneRescueOnlyAndNoFailedOutputOrUsage(t *testing.T) {
-	c, rec, account := streamRetryContext()
-	calls := 0
-	result, err := ForwardWithStreamRetry(context.Background(), c, account, true, func() (*OpenAIForwardResult, error) {
-		calls++
-		c.Header("Content-Type", "text/event-stream")
-		if calls == 1 {
-			writeRetrySSE(c.Writer, streamRetryCreated)
-			c.Writer.Flush()
-			_, _ = c.Writer.WriteString(":\n\n")
-			c.Writer.Flush()
-			writeRetrySSE(c.Writer, streamRetryError)
-			return &OpenAIForwardResult{Usage: OpenAIUsage{OutputTokens: 999}}, errors.New("upstream response failed")
-		}
-		writeRetrySSE(c.Writer, streamRetryDelta)
-		c.Writer.Flush()
-		return &OpenAIForwardResult{Usage: OpenAIUsage{OutputTokens: 1}}, nil
-	})
-	require.NoError(t, err)
-	require.Equal(t, 2, calls)
-	require.Equal(t, 1, result.Usage.OutputTokens)
-	require.Contains(t, rec.Body.String(), "hello")
-	require.NotContains(t, rec.Body.String(), "resp-failed")
-	require.NotContains(t, rec.Body.String(), streamRetryMessage)
-	require.GreaterOrEqual(t, *result.FirstTokenMs, 500)
-	require.GreaterOrEqual(t, result.Duration, 500*time.Millisecond)
-	// The retry budget belongs to the inbound request, not to an account or
-	// an outer candidate. Calling again cannot add two more network attempts.
-	calls = 0
-	_, err = ForwardWithStreamRetry(context.Background(), c, account, true, func() (*OpenAIForwardResult, error) {
-		calls++
-		return nil, &UpstreamFailoverError{StatusCode: 503, ResponseBody: []byte(streamRetryError), RetryableOnSameAccount: true}
-	})
-	var exhausted *UpstreamFailoverError
-	require.ErrorAs(t, err, &exhausted)
-	require.True(t, exhausted.StopLocalRetry)
-	require.True(t, exhausted.ResponseUncommitted)
-	require.Equal(t, 1, calls)
-}
-
-func TestStreamRetryPreservesHTTPErrorStatusUntilExhaustion(t *testing.T) {
-	c, rec, account := streamRetryContext()
-	calls := 0
-	_, err := ForwardWithStreamRetry(context.Background(), c, account, true, func() (*OpenAIForwardResult, error) {
-		calls++
-		c.JSON(503, gin.H{"error": gin.H{"message": streamRetryMessage}})
-		return nil, errors.New("HTTP 503")
-	})
-	var exhausted *UpstreamFailoverError
-	require.ErrorAs(t, err, &exhausted)
-	require.True(t, exhausted.StopLocalRetry)
-	require.Equal(t, 2, calls)
-	require.False(t, c.Writer.Written())
-	require.Empty(t, rec.Body.String(), "handler owns the one final error")
-}
-
 func TestStreamRetryDoesNotReplayAfterTextReasoningOrTools(t *testing.T) {
 	for _, payload := range []string{streamRetryDelta, `{"type":"response.reasoning_text.delta","delta":"thinking"}`, `{"type":"response.output_item.added","item":{"type":"function_call","arguments":""}}`, `{"type":"content_block_start","content_block":{"type":"tool_use","input":{}}}`} {
 		c, rec, account := streamRetryContext()
@@ -224,36 +144,6 @@ func TestStreamRetryDoesNotReplayUnforwardedUpstreamToolActivity(t *testing.T) {
 		return nil, captureOpenAIStreamRetryableError(c, []byte(streamRetryError))
 	})
 	require.Error(t, err)
-	require.Equal(t, 1, calls)
-}
-
-func TestStreamRetryCancellationAndRetryAfter(t *testing.T) {
-	for _, value := range []string{"6", "900", "tomorrow", "-1"} {
-		_, ok := openAIStreamOverloadRetryDelay(value)
-		require.False(t, ok)
-	}
-	d, ok := openAIStreamOverloadRetryDelay("2")
-	require.True(t, ok)
-	require.Equal(t, 2*time.Second, d)
-	c, _, account := streamRetryContext()
-	ctx, cancel := context.WithCancel(context.Background())
-	calls := 0
-	_, err := ForwardWithStreamRetry(ctx, c, account, true, func() (*OpenAIForwardResult, error) {
-		calls++
-		cancel()
-		return nil, &UpstreamFailoverError{StatusCode: 503, ResponseBody: []byte(streamRetryError)}
-	})
-	require.ErrorIs(t, err, context.Canceled)
-	require.Equal(t, 1, calls)
-	c, _, account = streamRetryContext()
-	ctx, cancel = context.WithTimeout(context.Background(), 20*time.Millisecond)
-	defer cancel()
-	calls = 0
-	_, err = ForwardWithStreamRetry(ctx, c, account, true, func() (*OpenAIForwardResult, error) {
-		calls++
-		return nil, &UpstreamFailoverError{StatusCode: 503, ResponseBody: []byte(streamRetryError)}
-	})
-	require.ErrorIs(t, err, context.DeadlineExceeded)
 	require.Equal(t, 1, calls)
 }
 
@@ -491,44 +381,6 @@ func TestStreamRetryStopsOnDownstreamWriteFailure(t *testing.T) {
 	})
 	require.EqualError(t, err, "client disconnected")
 	require.Equal(t, 1, calls)
-}
-
-func TestStreamRetryLateOverloadWithRealKeepaliveHasNoContentDelay(t *testing.T) {
-	synctest.Test(t, func(t *testing.T) {
-		c, rec, account := streamRetryContext()
-		svc := &OpenAIGatewayService{cfg: &config.Config{Gateway: config.GatewayConfig{StreamKeepaliveInterval: 1}}}
-		calls := 0
-		result, err := ForwardWithStreamRetry(context.Background(), c, account, true, func() (*OpenAIForwardResult, error) {
-			calls++
-			var body io.ReadCloser
-			if calls == 1 {
-				r, w := io.Pipe()
-				body = r
-				go func() {
-					defer func() { _ = w.Close() }()
-					// Exercise the service's real 4 KiB buffer and heartbeat timer.
-					_, _ = fmt.Fprintf(w, "data: {\"type\":\"response.created\",\"response\":{\"id\":\"failed-%s\",\"output\":[]}}\n\n", strings.Repeat("x", 9000))
-					time.Sleep(47 * time.Second)
-					writeRetrySSE(w, streamRetryError)
-				}()
-			} else {
-				body = io.NopCloser(strings.NewReader("data: " + streamRetryDelta + "\n\ndata: {\"type\":\"response.completed\",\"response\":{\"status\":\"completed\",\"output\":[]}}\n\n"))
-			}
-			defer func() { _ = body.Close() }()
-			resp := &http.Response{StatusCode: 200, Header: http.Header{"Content-Type": []string{"text/event-stream"}}, Body: body}
-			r, e := svc.handleStreamingResponse(context.Background(), resp, c, account, time.Now(), "model", "model")
-			if r == nil {
-				return nil, e
-			}
-			return &OpenAIForwardResult{Usage: *r.usage, FirstTokenMs: r.firstTokenMs}, e
-		})
-		require.NoError(t, err)
-		require.Equal(t, 2, calls)
-		require.Contains(t, rec.Body.String(), ":\n\n")
-		require.NotContains(t, rec.Body.String(), "failed-")
-		require.Contains(t, rec.Body.String(), "hello")
-		require.Equal(t, 47500, *result.FirstTokenMs, "only upstream wait and the one backoff, no content lookahead delay")
-	})
 }
 
 type streamRetryFailedWriter struct{ gin.ResponseWriter }

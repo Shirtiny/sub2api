@@ -74,9 +74,9 @@ func newOpenAIStreamInterruption(message string) *UpstreamFailoverError {
 }
 
 func openAIStreamRetryableError(status int, payload []byte) *UpstreamFailoverError {
-	if overload := openAIOverloadError(status, payload); overload != nil {
-		return overload
-	}
+	// HTTP 503/529 overloaded responses are intentionally not retried on the
+	// same account/request. They are passed through to the normal failover
+	// policy; only explicit stream transport interruptions remain retryable.
 	if (status >= 400 && status != 502 && status != 504) || !gjson.ValidBytes(payload) {
 		return nil
 	}
