@@ -1397,6 +1397,26 @@ func (h *OpenAIGatewayHandler) ResponsesWebSocket(c *gin.Context) {
 	apiKey = leasedAPIKey
 	subject = middleware2.AuthSubject{UserID: apiKey.User.ID, Concurrency: apiKey.User.EffectiveConcurrencyAt(time.Now())}
 	authEpochLease := h.apiKeyService.AuthEpochLeaseForAuthenticatedKey(apiKey)
+	fallbackSessionKey := service.ResolveOpenAIWSHTTPFallbackKey(c, apiKey.GroupID, subject.UserID, apiKey.ID)
+	fallbackRequired, fallbackErr := h.gatewayService.OpenAIWSHTTPFallbackRequired(c.Request.Context(), fallbackSessionKey)
+	if fallbackErr != nil {
+		reqLog.Warn("openai.websocket_fallback_lookup_failed", zap.Error(fallbackErr))
+	}
+	if !fallbackRequired {
+		fallbackRequired, fallbackErr = h.gatewayService.OpenAIWSHTTPFallbackAvailable(c.Request.Context(), service.OpenAIAccountScheduleRequest{
+			GroupID:            apiKey.GroupID,
+			Platform:           openAICompatibleRequestPlatform(apiKey),
+			RequiredCapability: service.OpenAIEndpointCapabilityChatCompletions,
+		})
+		if fallbackErr != nil {
+			reqLog.Warn("openai.websocket_capability_lookup_failed", zap.Error(fallbackErr))
+		}
+	}
+	if fallbackRequired && fallbackErr == nil {
+		reqLog.Info("openai.websocket_http_fallback_before_upgrade")
+		h.errorResponse(c, http.StatusUpgradeRequired, "websocket_unavailable", "Responses WebSocket is unavailable; use HTTP Responses")
+		return
+	}
 	reqLog.Info("openai.websocket_ingress_started")
 	userAgent := strings.TrimSpace(c.GetHeader("User-Agent"))
 
@@ -1509,6 +1529,13 @@ func (h *OpenAIGatewayHandler) ResponsesWebSocket(c *gin.Context) {
 	if channelMappingWS.Mapped {
 		accountRoutingModel = channelMappingWS.MappedModel
 	}
+	fallbackRequest := service.OpenAIAccountScheduleRequest{
+		GroupID:             apiKey.GroupID,
+		Platform:            openAICompatibleRequestPlatform(apiKey),
+		RequestedModel:      reqModel,
+		AccountRoutingModel: accountRoutingModel,
+		RequiredCapability:  service.OpenAIEndpointCapabilityChatCompletions,
+	}
 
 	turnFinalizer := newOpenAIWSTurnFinalizer()
 	// Register before the first acquisition so every early return releases a
@@ -1578,6 +1605,9 @@ func (h *OpenAIGatewayHandler) ResponsesWebSocket(c *gin.Context) {
 		subject.UserID,
 		apiKey.ID,
 	)
+	if !routeSessionIdentity.Reliable {
+		fallbackSessionKey = ""
+	}
 	// Scheduling may retain the legacy sticky heuristic for non-route-v1
 	// clients. Cross-connection migration never uses that heuristic: only the
 	// authenticated canonical route session key is admitted below.
@@ -1617,6 +1647,19 @@ func (h *OpenAIGatewayHandler) ResponsesWebSocket(c *gin.Context) {
 			)
 		}
 	}
+	wsUnavailableAccountIDs := make(map[int64]struct{}, len(migrationAdmission.ExcludedAccountIDs))
+	for accountID := range migrationAdmission.ExcludedAccountIDs {
+		wsUnavailableAccountIDs[accountID] = struct{}{}
+	}
+	fallbackRequest.ExcludedIDs = wsUnavailableAccountIDs
+	fallbackProofComplete := true
+	closeForHTTPFallback := func() bool {
+		if !fallbackProofComplete || !h.prepareOpenAIWSHTTPFallback(c, fallbackSessionKey, fallbackRequest) {
+			return false
+		}
+		closeOpenAIClientWS(wsConn, coderws.StatusTryAgainLater, "websocket routes unavailable; reconnect")
+		return true
+	}
 
 	for {
 		reqLog.Debug("openai.websocket_account_selecting", zap.Int("excluded_account_count", len(failedAccountIDs)))
@@ -1638,6 +1681,11 @@ func (h *OpenAIGatewayHandler) ResponsesWebSocket(c *gin.Context) {
 				zap.Error(err),
 				zap.Int("excluded_account_count", len(failedAccountIDs)),
 			)
+			if scheduleDecision.CandidateCount == 0 &&
+				(errors.Is(err, service.ErrNoAvailableAccounts) || errors.Is(err, service.ErrNoAvailableOpenAIAccounts)) &&
+				closeForHTTPFallback() {
+				return
+			}
 			if lastFailoverErr != nil {
 				closeOpenAIWSFailoverExhausted(wsConn, lastFailoverErr)
 			} else {
@@ -1676,6 +1724,7 @@ func (h *OpenAIGatewayHandler) ResponsesWebSocket(c *gin.Context) {
 				return
 			}
 			if !fastAcquired {
+				fallbackProofComplete = false
 				failedAccountIDs[account.ID] = struct{}{}
 				if switchCount >= maxAccountSwitches {
 					closeOpenAIClientWS(wsConn, coderws.StatusTryAgainLater, "all websocket accounts are busy")
@@ -1703,6 +1752,7 @@ func (h *OpenAIGatewayHandler) ResponsesWebSocket(c *gin.Context) {
 
 		token, _, err := h.gatewayService.GetAccessToken(ctx, account)
 		if err != nil {
+			fallbackProofComplete = false
 			reqLog.Warn("openai.websocket_get_access_token_failed", zap.Int64("account_id", account.ID), zap.Error(err))
 			h.gatewayService.ReportOpenAIAccountScheduleResult(account.ID, false, nil)
 			turnFinalizer.ReleaseAccountNow()
@@ -1763,6 +1813,10 @@ func (h *OpenAIGatewayHandler) ResponsesWebSocket(c *gin.Context) {
 						zap.Int("max_migrations", admission.MaxMigrations),
 					)
 					return errors.New("route migration limit reached")
+				}
+				if control.WebSocketUnavailable && fallbackProofComplete {
+					wsUnavailableAccountIDs[account.ID] = struct{}{}
+					h.prepareOpenAIWSHTTPFallback(c, fallbackSessionKey, fallbackRequest)
 				}
 				reqLog.Info("openai.websocket_migration_admitted",
 					zap.Int64("account_id", account.ID),
@@ -1980,6 +2034,11 @@ func (h *OpenAIGatewayHandler) ResponsesWebSocket(c *gin.Context) {
 		proxyErr := h.gatewayService.ProxyResponsesWebSocketFromClient(ctx, c, wsConn, account, token, wsFirstMessage, hooks)
 		if proxyErr != nil {
 			if failoverErr := getOpenAIWSInitialStepFailover(proxyErr); failoverErr != nil {
+				if service.OpenAIWSFailoverRequiresHTTP(failoverErr) {
+					wsUnavailableAccountIDs[account.ID] = struct{}{}
+				} else {
+					fallbackProofComplete = false
+				}
 				retainMiddleRoute := failoverErr.MiddleRouteDisposition == service.OpenAIWSMiddleRouteDispositionRetain
 				if !failoverErr.DoNotPenalizeAccount {
 					h.gatewayService.ReportOpenAIAccountScheduleResult(account.ID, false, nil)
@@ -1995,6 +2054,9 @@ func (h *OpenAIGatewayHandler) ResponsesWebSocket(c *gin.Context) {
 					}
 				}
 				if switchCount >= maxAccountSwitches {
+					if service.OpenAIWSFailoverRequiresHTTP(failoverErr) && closeForHTTPFallback() {
+						return
+					}
 					closeOpenAIWSFailoverExhausted(wsConn, failoverErr)
 					return
 				}

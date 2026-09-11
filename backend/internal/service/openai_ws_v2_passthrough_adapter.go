@@ -1081,10 +1081,14 @@ func buildAetherWSReconnectDirective(
 ) openaiwsv2.UpstreamFrameDirective {
 	directive := openaiwsv2.UpstreamFrameDirective{Consume: true}
 	if decision.InitialStepFailover {
+		status := http.StatusServiceUnavailable
+		if decision.WebSocketUnavailable {
+			status = http.StatusUpgradeRequired
+		}
 		directive.Err = NewOpenAIWSInitialStepFailoverError(&UpstreamFailoverError{
-			StatusCode:             http.StatusServiceUnavailable,
+			StatusCode:             status,
 			ResponseHeaders:        cloneHeader(handshakeHeaders),
-			DoNotPenalizeAccount:   decision.MiddleRouteDisposition == OpenAIWSMiddleRouteDispositionRetain,
+			DoNotPenalizeAccount:   decision.WebSocketUnavailable || decision.MiddleRouteDisposition == OpenAIWSMiddleRouteDispositionRetain,
 			RetryAfterMS:           decision.RetryAfterMS,
 			MiddleRouteDisposition: decision.MiddleRouteDisposition,
 		})
@@ -1102,6 +1106,7 @@ func buildAetherWSReconnectDirective(
 		ControlID:              decision.ControlID,
 		BindingGeneration:      decision.BindingGeneration,
 		MiddleRouteDisposition: decision.MiddleRouteDisposition,
+		WebSocketUnavailable:   decision.WebSocketUnavailable,
 	}); admissionErr != nil {
 		directive.Err = NewOpenAIWSClientCloseError(
 			coderws.StatusTryAgainLater,

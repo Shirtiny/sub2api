@@ -92,6 +92,7 @@ type aetherWSRouteControlDecision struct {
 	CloseAfterTerminal     bool
 	SignalReconnect        bool
 	InitialStepFailover    bool
+	WebSocketUnavailable   bool
 }
 
 type aetherWSRouteControlIdentity struct {
@@ -694,6 +695,7 @@ func (c *aetherWSRouteControlConsumer) validateClientReconnectLocked(frame aethe
 		MiddleRouteDisposition: *frame.MiddleRouteDisposition,
 		SignalReconnect:        true,
 		InitialStepFailover:    initialStepFailover,
+		WebSocketUnavailable:   frame.Reason == "candidate_unavailable" && *frame.MiddleRouteDisposition == OpenAIWSMiddleRouteDispositionExclude,
 	}, identity, nil
 }
 
