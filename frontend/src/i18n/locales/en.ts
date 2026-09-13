@@ -6577,6 +6577,8 @@ export default {
         configGuide: 'Configuration Guide',
         enabled: 'Enable Payment',
         enabledHint: 'Enable or disable the payment system',
+        rechargeTabVisible: 'Show Balance Recharge Tab',
+        rechargeTabVisibleHint: 'When disabled, the balance recharge option is hidden and new balance recharge orders are blocked.',
         guestShopTitle: 'Homepage Guest Checkout',
         guestShopDescription: 'Controls homepage guest checkout independently. It only reuses the selected Stripe configuration and does not enable the main-site payment flow, create main-site orders, or grant balance.',
         guestShopEnabled: 'Enable Homepage Guest Checkout',

@@ -6581,6 +6581,8 @@ export default {
         configGuide: '支付配置指南',
         enabled: '启用支付',
         enabledHint: '启用或禁用支付系统',
+        rechargeTabVisible: '显示余额充值 Tab',
+        rechargeTabVisibleHint: '关闭后隐藏余额充值选项，并禁止创建余额充值订单。',
         guestShopTitle: '首页游客支付',
         guestShopDescription: '独立控制首页游客结账。只复用选中 Stripe 实例的配置，不会开启原站支付，也不会创建原站订单或发放余额。',
         guestShopEnabled: '启用首页游客支付',
