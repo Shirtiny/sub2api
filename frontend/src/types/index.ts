@@ -1317,6 +1317,9 @@ export interface UsageLog {
   model: string
   service_tier?: string | null
   reasoning_effort?: string | null
+  // Original public hostname and client IP for this request (historical rows may be missing).
+  request_host?: string | null
+  ip_address?: string | null
   inbound_endpoint?: string | null
   upstream_endpoint?: string | null
 
@@ -1390,9 +1393,6 @@ export interface AdminUsageLog extends UsageLog {
   // 渠道 ID 和计费等级（仅管理员可见）
   channel_id?: number | null
   billing_tier?: string | null
-
-  // 用户请求 IP（仅管理员可见）
-  ip_address?: string | null
 
   // 最小账号信息（仅管理员接口返回）
   account?: UsageLogAccountSummary

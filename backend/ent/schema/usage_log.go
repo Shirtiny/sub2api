@@ -130,6 +130,12 @@ func (UsageLog) Fields() []ent.Field {
 			Optional().
 			Nillable(),
 
+		field.String("request_host").
+			MaxLen(253).
+			Optional().
+			Nillable().
+			Comment("Normalized client-facing ingress hostname; NULL for historical rows"),
+
 		// 图片生成字段（仅 gemini-3-pro-image 等图片模型使用）
 		field.Int("image_count").
 			Default(0),

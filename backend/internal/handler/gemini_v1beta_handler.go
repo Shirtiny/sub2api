@@ -533,7 +533,6 @@ func (h *GatewayHandler) GeminiV1BetaModels(c *gin.Context) {
 
 		// 捕获请求信息（用于异步记录，避免在 goroutine 中访问 gin.Context）
 		userAgent := c.GetHeader("User-Agent")
-		clientIP := ip.GetClientIP(c)
 
 		// 保存 Gemini 内容摘要会话（用于 Fallback 匹配）
 		if useDigestFallback && geminiDigestChain != "" && geminiPrefixHash != "" {
@@ -553,6 +552,8 @@ func (h *GatewayHandler) GeminiV1BetaModels(c *gin.Context) {
 		// 使用量记录通过有界 worker 池提交，避免请求热路径创建无界 goroutine。
 		requestPayloadHash := service.HashUsageRequestPayload(body)
 		inboundEndpoint := GetInboundEndpoint(c)
+		requestHost := GetRequestHost(c)
+		usageClientIP := ip.GetTrustedClientIP(c)
 		upstreamEndpoint := GetUpstreamEndpoint(c, account.Platform)
 		// ForceCacheBilling 提前拍成标量，避免 worker 闭包保活 failover 状态里的响应体。
 		forceCacheBilling := fs.ForceCacheBilling
@@ -566,9 +567,10 @@ func (h *GatewayHandler) GeminiV1BetaModels(c *gin.Context) {
 				Account:               account,
 				Subscription:          subscription,
 				InboundEndpoint:       inboundEndpoint,
+				RequestHost:           requestHost,
 				UpstreamEndpoint:      upstreamEndpoint,
 				UserAgent:             userAgent,
-				IPAddress:             clientIP,
+				IPAddress:             usageClientIP,
 				RequestPayloadHash:    requestPayloadHash,
 				LongContextThreshold:  200000, // Gemini 200K 阈值
 				LongContextMultiplier: 2.0,    // 超出部分双倍计费

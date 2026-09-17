@@ -210,3 +210,42 @@ func TestUsageLogFromService_PreservesHistoricalMissingImageSize(t *testing.T) {
 func f64Ptr(value float64) *float64 {
 	return &value
 }
+
+func TestUsageLogFromService_IncludesOwnRequestSourceWithoutAdminFields(t *testing.T) {
+	t.Parallel()
+
+	host, ip, upstream := "nl.cafeshop.ai", "2001:db8::42", "internal-model"
+	log := &service.UsageLog{
+		RequestHost:           &host,
+		IPAddress:             &ip,
+		UpstreamModel:         &upstream,
+		AccountRateMultiplier: f64Ptr(0.5),
+		Account:               &service.Account{ID: 3, Name: "private upstream"},
+	}
+	user := UsageLogFromService(log)
+	admin := UsageLogFromServiceAdmin(log)
+	for _, got := range []*UsageLog{user, &admin.UsageLog} {
+		require.Equal(t, &host, got.RequestHost)
+		require.Equal(t, &ip, got.IPAddress)
+	}
+	body, err := json.Marshal(user)
+	require.NoError(t, err)
+	var fields map[string]any
+	require.NoError(t, json.Unmarshal(body, &fields))
+	require.Equal(t, host, fields["request_host"])
+	require.Equal(t, ip, fields["ip_address"])
+	for _, key := range []string{"account", "account_rate_multiplier", "account_stats_cost", "upstream_model", "channel_id", "model_mapping_chain", "billing_tier"} {
+		require.NotContains(t, fields, key)
+	}
+	require.Equal(t, "private upstream", admin.Account.Name)
+}
+
+func TestUsageLogFromService_HistoricalRequestSourceRemainsNull(t *testing.T) {
+	t.Parallel()
+	for _, got := range []any{UsageLogFromService(&service.UsageLog{}), UsageLogFromServiceAdmin(&service.UsageLog{})} {
+		body, err := json.Marshal(got)
+		require.NoError(t, err)
+		require.Contains(t, string(body), `"request_host":null`)
+		require.Contains(t, string(body), `"ip_address":null`)
+	}
+}

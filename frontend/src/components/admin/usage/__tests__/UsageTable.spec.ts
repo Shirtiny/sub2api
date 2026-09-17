@@ -103,6 +103,25 @@ const baseImageRow = {
   image_size_breakdown: null,
 }
 
+describe('admin UsageTable request source', () => {
+  it.each([
+    ['nl.cafeshop.ai', '203.0.113.42'],
+    ['www.cafeshop.ai', '2001:db8::42'],
+    [null, null],
+  ])('shows entry host %s separately from client IP %s', (host, ip) => {
+    const wrapper = mount(UsageTable, {
+      props: { data: [{ request_id: 'source-row', request_host: host, ip_address: ip }], loading: false, columns: [] },
+      global: { stubs: { DataTable: {
+        props: ['data'],
+        template: `<div><div data-test="request-host"><slot name="cell-request_host" :row="data[0]" /></div><div data-test="client-ip"><slot name="cell-ip_address" :row="data[0]" /></div></div>`,
+      }, EmptyState: true, Icon: true, Teleport: true } },
+    })
+    expect(wrapper.get('[data-test="request-host"]').text()).toBe(host ?? '-')
+    expect(wrapper.get('[data-test="client-ip"]').text()).toBe(ip ?? '-')
+    wrapper.unmount()
+  })
+})
+
 describe('admin UsageTable tooltip', () => {
   beforeEach(() => {
     vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({

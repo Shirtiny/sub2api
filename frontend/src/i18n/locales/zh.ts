@@ -960,6 +960,8 @@ export default {
     upstream: '上游',
     mapping: '映射',
     path: '路径',
+    requestHost: '访问入口',
+    clientIP: '客户端 IP',
     inboundEndpoint: '入站端点',
     upstreamEndpoint: '上游端点',
     type: '类型',

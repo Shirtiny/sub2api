@@ -520,9 +520,10 @@ func (h *OpenAIGatewayHandler) Responses(c *gin.Context) {
 
 		// 鎹曡幏璇锋眰淇℃伅锛堢敤浜庡紓姝ヨ褰曪紝閬垮厤鍦?goroutine 涓闂?gin.Context锛?
 		userAgent := c.GetHeader("User-Agent")
-		clientIP := ip.GetClientIP(c)
+		clientIP := ip.GetTrustedClientIP(c)
 		requestPayloadHash := service.HashUsageRequestPayload(body)
 		inboundEndpoint := GetInboundEndpoint(c)
+		requestHost := GetRequestHost(c)
 		upstreamEndpoint := GetUpstreamEndpoint(c, account.Platform)
 
 		// 浣跨敤閲忚褰曢€氳繃鏈夌晫 worker 姹犳彁浜わ紝閬垮厤璇锋眰鐑矾寰勫垱寤烘棤鐣?goroutine銆?
@@ -534,6 +535,7 @@ func (h *OpenAIGatewayHandler) Responses(c *gin.Context) {
 				Account:            account,
 				Subscription:       subscription,
 				InboundEndpoint:    inboundEndpoint,
+				RequestHost:        requestHost,
 				UpstreamEndpoint:   upstreamEndpoint,
 				UserAgent:          userAgent,
 				IPAddress:          clientIP,
@@ -993,9 +995,10 @@ func (h *OpenAIGatewayHandler) Messages(c *gin.Context) {
 		}
 
 		userAgent := c.GetHeader("User-Agent")
-		clientIP := ip.GetClientIP(c)
+		clientIP := ip.GetTrustedClientIP(c)
 		requestPayloadHash := service.HashUsageRequestPayload(body)
 		inboundEndpoint := GetInboundEndpoint(c)
+		requestHost := GetRequestHost(c)
 		upstreamEndpoint := GetUpstreamEndpoint(c, account.Platform)
 
 		// 閫忎紶璺緞涓嶅仛 Anthropic鈫扲esponses 杞崲銆佷笉浼氶璁?result.ReasoningEffort锛?		// 杩欓噷浠庡師濮嬭姹備綋鍏滃簳瑙ｆ瀽锛堜笌 Gateway.Messages 琛屼负涓€鑷达級銆?
@@ -1011,6 +1014,7 @@ func (h *OpenAIGatewayHandler) Messages(c *gin.Context) {
 				Account:            account,
 				Subscription:       subscription,
 				InboundEndpoint:    inboundEndpoint,
+				RequestHost:        requestHost,
 				UpstreamEndpoint:   upstreamEndpoint,
 				UserAgent:          userAgent,
 				IPAddress:          clientIP,
@@ -1373,6 +1377,7 @@ func (h *OpenAIGatewayHandler) ResponsesWebSocket(c *gin.Context) {
 		defer connectionLease.Release()
 	}
 	clientIP := ip.GetClientIP(c)
+	usageClientIP := ip.GetTrustedClientIP(c)
 	aclClientIP := ip.GetTrustedClientIP(c)
 	if h.cfg != nil && h.cfg.TrustForwardedIPForAPIKeyACL() {
 		aclClientIP = clientIP
@@ -1914,6 +1919,7 @@ func (h *OpenAIGatewayHandler) ResponsesWebSocket(c *gin.Context) {
 					return
 				}
 				inboundEndpoint := GetInboundEndpoint(c)
+				requestHost := GetRequestHost(c)
 				upstreamEndpoint := GetUpstreamEndpoint(c, account.Platform)
 				requestPayloadHash := ""
 				if value, ok := requestPayloadHashes.LoadAndDelete(turn); ok {
@@ -1941,9 +1947,10 @@ func (h *OpenAIGatewayHandler) ResponsesWebSocket(c *gin.Context) {
 						Account:            account,
 						Subscription:       subscription,
 						InboundEndpoint:    inboundEndpoint,
+						RequestHost:        requestHost,
 						UpstreamEndpoint:   upstreamEndpoint,
 						UserAgent:          userAgent,
-						IPAddress:          clientIP,
+						IPAddress:          usageClientIP,
 						RequestPayloadHash: requestPayloadHash,
 						APIKeyService:      h.apiKeyService,
 						ChannelUsageFields: channelMappingWS.ToUsageFields(reqModel, result.UpstreamModel),

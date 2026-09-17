@@ -62,6 +62,12 @@
           </span>
         </template>
 
+        <template #cell-request_host="{ row }">
+          <span class="block max-w-[240px] break-all font-mono text-sm text-content-secondary">
+            {{ row.request_host?.trim() || '-' }}
+          </span>
+        </template>
+
         <template #cell-endpoint="{ row }">
           <div class="max-w-[320px] space-y-1 text-xs">
             <div class="break-all text-content-secondary">

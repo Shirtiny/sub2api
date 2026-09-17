@@ -463,6 +463,20 @@ func (_c *UsageLogCreate) SetNillableIPAddress(v *string) *UsageLogCreate {
 	return _c
 }
 
+// SetRequestHost sets the "request_host" field.
+func (_c *UsageLogCreate) SetRequestHost(v string) *UsageLogCreate {
+	_c.mutation.SetRequestHost(v)
+	return _c
+}
+
+// SetNillableRequestHost sets the "request_host" field if the given value is not nil.
+func (_c *UsageLogCreate) SetNillableRequestHost(v *string) *UsageLogCreate {
+	if v != nil {
+		_c.SetRequestHost(*v)
+	}
+	return _c
+}
+
 // SetImageCount sets the "image_count" field.
 func (_c *UsageLogCreate) SetImageCount(v int) *UsageLogCreate {
 	_c.mutation.SetImageCount(v)
@@ -854,6 +868,11 @@ func (_c *UsageLogCreate) check() error {
 			return &ValidationError{Name: "ip_address", err: fmt.Errorf(`ent: validator failed for field "UsageLog.ip_address": %w`, err)}
 		}
 	}
+	if v, ok := _c.mutation.RequestHost(); ok {
+		if err := usagelog.RequestHostValidator(v); err != nil {
+			return &ValidationError{Name: "request_host", err: fmt.Errorf(`ent: validator failed for field "UsageLog.request_host": %w`, err)}
+		}
+	}
 	if _, ok := _c.mutation.ImageCount(); !ok {
 		return &ValidationError{Name: "image_count", err: errors.New(`ent: missing required field "UsageLog.image_count"`)}
 	}
@@ -1042,6 +1061,10 @@ func (_c *UsageLogCreate) createSpec() (*UsageLog, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.IPAddress(); ok {
 		_spec.SetField(usagelog.FieldIPAddress, field.TypeString, value)
 		_node.IPAddress = &value
+	}
+	if value, ok := _c.mutation.RequestHost(); ok {
+		_spec.SetField(usagelog.FieldRequestHost, field.TypeString, value)
+		_node.RequestHost = &value
 	}
 	if value, ok := _c.mutation.ImageCount(); ok {
 		_spec.SetField(usagelog.FieldImageCount, field.TypeInt, value)
@@ -1827,6 +1850,24 @@ func (u *UsageLogUpsert) UpdateIPAddress() *UsageLogUpsert {
 // ClearIPAddress clears the value of the "ip_address" field.
 func (u *UsageLogUpsert) ClearIPAddress() *UsageLogUpsert {
 	u.SetNull(usagelog.FieldIPAddress)
+	return u
+}
+
+// SetRequestHost sets the "request_host" field.
+func (u *UsageLogUpsert) SetRequestHost(v string) *UsageLogUpsert {
+	u.Set(usagelog.FieldRequestHost, v)
+	return u
+}
+
+// UpdateRequestHost sets the "request_host" field to the value that was provided on create.
+func (u *UsageLogUpsert) UpdateRequestHost() *UsageLogUpsert {
+	u.SetExcluded(usagelog.FieldRequestHost)
+	return u
+}
+
+// ClearRequestHost clears the value of the "request_host" field.
+func (u *UsageLogUpsert) ClearRequestHost() *UsageLogUpsert {
+	u.SetNull(usagelog.FieldRequestHost)
 	return u
 }
 
@@ -2759,6 +2800,27 @@ func (u *UsageLogUpsertOne) UpdateIPAddress() *UsageLogUpsertOne {
 func (u *UsageLogUpsertOne) ClearIPAddress() *UsageLogUpsertOne {
 	return u.Update(func(s *UsageLogUpsert) {
 		s.ClearIPAddress()
+	})
+}
+
+// SetRequestHost sets the "request_host" field.
+func (u *UsageLogUpsertOne) SetRequestHost(v string) *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.SetRequestHost(v)
+	})
+}
+
+// UpdateRequestHost sets the "request_host" field to the value that was provided on create.
+func (u *UsageLogUpsertOne) UpdateRequestHost() *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.UpdateRequestHost()
+	})
+}
+
+// ClearRequestHost clears the value of the "request_host" field.
+func (u *UsageLogUpsertOne) ClearRequestHost() *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.ClearRequestHost()
 	})
 }
 
@@ -3887,6 +3949,27 @@ func (u *UsageLogUpsertBulk) UpdateIPAddress() *UsageLogUpsertBulk {
 func (u *UsageLogUpsertBulk) ClearIPAddress() *UsageLogUpsertBulk {
 	return u.Update(func(s *UsageLogUpsert) {
 		s.ClearIPAddress()
+	})
+}
+
+// SetRequestHost sets the "request_host" field.
+func (u *UsageLogUpsertBulk) SetRequestHost(v string) *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.SetRequestHost(v)
+	})
+}
+
+// UpdateRequestHost sets the "request_host" field to the value that was provided on create.
+func (u *UsageLogUpsertBulk) UpdateRequestHost() *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.UpdateRequestHost()
+	})
+}
+
+// ClearRequestHost clears the value of the "request_host" field.
+func (u *UsageLogUpsertBulk) ClearRequestHost() *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.ClearRequestHost()
 	})
 }
 

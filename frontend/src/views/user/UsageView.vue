@@ -214,6 +214,16 @@
             </span>
           </template>
 
+          <template #cell-request_host="{ row }">
+            <span class="block max-w-[240px] break-all font-mono text-sm text-content-secondary">
+              {{ row.request_host?.trim() || '-' }}
+            </span>
+          </template>
+
+          <template #cell-ip_address="{ row }">
+            <span class="font-mono text-sm text-content-secondary">{{ row.ip_address?.trim() || '-' }}</span>
+          </template>
+
           <template #cell-endpoint="{ row }">
             <span class="text-sm text-gray-600 dark:text-gray-300 block max-w-[320px] whitespace-normal break-all">
               {{ formatUsageEndpoints(row) }}
@@ -696,6 +706,7 @@ const columns = computed<Column[]>(() => [
   { key: 'api_key', label: t('usage.apiKeyFilter'), sortable: false },
   { key: 'model', label: t('usage.model'), sortable: true },
   { key: 'reasoning_effort', label: t('usage.reasoningEffort'), sortable: false },
+  { key: 'request_host', label: t('usage.requestHost'), sortable: false },
   { key: 'endpoint', label: t('usage.endpoint'), sortable: false },
   { key: 'stream', label: t('usage.type'), sortable: false },
   { key: 'billing_mode', label: t('admin.usage.billingMode'), sortable: false },
@@ -703,7 +714,8 @@ const columns = computed<Column[]>(() => [
   { key: 'cost', label: t('usage.cost'), sortable: false },
   { key: 'latency', label: t('usage.latency'), sortable: false },
   { key: 'created_at', label: t('usage.time'), sortable: true },
-  { key: 'user_agent', label: t('usage.userAgent'), sortable: false }
+  { key: 'user_agent', label: t('usage.userAgent'), sortable: false },
+  { key: 'ip_address', label: t('usage.clientIP'), sortable: false }
 ])
 
 const usageLogs = ref<UsageLog[]>([])
@@ -990,6 +1002,8 @@ const exportToCSV = async () => {
       'API Key Name',
       'Model',
       'Reasoning Effort',
+      'Entry Host',
+      'Client IP',
       'Inbound Endpoint',
       'Type',
       'Billing Mode',
@@ -1009,6 +1023,8 @@ const exportToCSV = async () => {
         log.api_key?.name || '',
         log.model,
         formatReasoningEffort(log.reasoning_effort),
+        log.request_host?.trim() || '-',
+        log.ip_address?.trim() || '-',
         log.inbound_endpoint || '',
         getRequestTypeExportText(log),
         getBillingModeLabel(getDisplayBillingMode(log), t),

@@ -80,3 +80,9 @@ Key conventions observed in the codebase:
 - Migration runner and checksum enforcement: `backend/internal/repository/migrations_runner.go`
 - Checksum mismatch incident playbook: `docs/MIGRATION_CHECKSUM_PLAYBOOK.md`
 - Integration harness applying real migrations: `backend/internal/repository/integration_harness_test.go`
+
+## Usage request provenance
+
+- `usage_logs.request_host` is the normalized public ingress hostname, distinct from the API path in `inbound_endpoint`; historical unknown hosts remain NULL without inference/backfill.
+- Host and client IP must be captured using the configured trusted proxy chain before asynchronous usage recording. See `docs/USAGE_REQUEST_ORIGIN.md` for the cross-layer contract and rollout prerequisites.
+- Users may see `request_host` and `ip_address` only for their own usage rows. Keep existing ownership checks and all unrelated administrator-only metadata boundaries intact.

@@ -956,6 +956,8 @@ export default {
     upstream: 'Upstream',
     mapping: 'Mapping',
     path: 'Path',
+    requestHost: 'Entry Host',
+    clientIP: 'Client IP',
     inboundEndpoint: 'Inbound Endpoint',
     upstreamEndpoint: 'Upstream Endpoint',
     type: 'Type',

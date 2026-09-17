@@ -213,8 +213,9 @@ func (h *OpenAIGatewayHandler) Embeddings(c *gin.Context) {
 
 		h.gatewayService.ReportOpenAIAccountScheduleResult(account.ID, true, nil)
 		userAgent := c.GetHeader("User-Agent")
-		clientIP := ip.GetClientIP(c)
+		clientIP := ip.GetTrustedClientIP(c)
 		inboundEndpoint := GetInboundEndpoint(c)
+		requestHost := GetRequestHost(c)
 		upstreamEndpoint := GetUpstreamEndpoint(c, account.Platform)
 
 		h.submitOpenAIUsageRecordTask(c.Request.Context(), result, func(ctx context.Context) {
@@ -225,6 +226,7 @@ func (h *OpenAIGatewayHandler) Embeddings(c *gin.Context) {
 				Account:            account,
 				Subscription:       subscription,
 				InboundEndpoint:    inboundEndpoint,
+				RequestHost:        requestHost,
 				UpstreamEndpoint:   upstreamEndpoint,
 				UserAgent:          userAgent,
 				IPAddress:          clientIP,

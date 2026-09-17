@@ -105,6 +105,8 @@ const DataTableStub = {
   template: `
     <div>
       <div v-for="row in data" :key="row.request_id">
+        <div data-test="request-host"><slot name="cell-request_host" :row="row" /></div>
+        <div data-test="client-ip"><slot name="cell-ip_address" :row="row" /></div>
         <slot name="cell-stream" :row="row" />
         <slot name="cell-billing_mode" :row="row" />
         <slot name="cell-tokens" :row="row" />
@@ -141,6 +143,29 @@ describe('user UsageView tooltip', () => {
       observe() {}
       disconnect() {}
     }
+  })
+
+  it.each([
+    ['nl.cafeshop.ai', '203.0.113.42'],
+    ['www.cafeshop.ai', '2001:db8::42'],
+    [null, null],
+  ])('shows entry host %s and own client IP %s', async (host, ip) => {
+    query.mockResolvedValue({ items: [{
+      request_id: 'source-row', request_host: host, ip_address: ip,
+      actual_cost: 0, total_cost: 0, rate_multiplier: 1,
+      input_tokens: 0, output_tokens: 0,
+    }], total: 1, pages: 1 })
+    getStatsByDateRange.mockResolvedValue({ total_requests: 1 })
+    list.mockResolvedValue({ items: [] })
+    const wrapper = mount(UsageView, { global: { stubs: {
+      AppLayout: AppLayoutStub, TablePageLayout: TablePageLayoutStub,
+      Pagination: true, EmptyState: true, Select: true, DateRangePicker: true,
+      DataTable: DataTableStub, Icon: true, Teleport: true,
+    } } })
+    await flushPromises()
+    expect(wrapper.get('[data-test="request-host"]').text()).toBe(host ?? '-')
+    expect(wrapper.get('[data-test="client-ip"]').text()).toBe(ip ?? '-')
+    wrapper.unmount()
   })
 
   it('shows merged latency values and integer TPS', async () => {
@@ -483,6 +508,8 @@ describe('user UsageView tooltip', () => {
     const exportedLogs = [
       {
         request_id: 'req-user-export',
+        request_host: 'nl.cafeshop.ai',
+        ip_address: '203.0.113.42',
         actual_cost: 0.092883,
         total_cost: 0.092883,
         rate_multiplier: 1,
@@ -554,6 +581,14 @@ describe('user UsageView tooltip', () => {
     await setupState.exportToCSV()
 
     expect(exportedBlob).not.toBeNull()
+    const csv = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(String(reader.result))
+      reader.onerror = () => reject(reader.error)
+      reader.readAsText(exportedBlob!)
+    })
+    expect(csv).toContain('Entry Host,Client IP,Inbound Endpoint')
+    expect(csv).toContain('nl.cafeshop.ai,203.0.113.42')
     const hasSortedExportQuery = query.mock.calls.some((call) => {
       const params = call[0] as Record<string, unknown> | undefined
       const config = call[1]

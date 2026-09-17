@@ -363,11 +363,17 @@ func TestOpenAIGatewayServiceRecordUsage_IncludesEndpointMetadata(t *testing.T) 
 		User:             &User{ID: 2002},
 		Account:          &Account{ID: 3002},
 		InboundEndpoint:  " /v1/chat/completions ",
+		RequestHost:      "nl.cafeshop.ai",
+		IPAddress:        "203.0.113.9",
 		UpstreamEndpoint: " /v1/responses ",
 	})
 
 	require.NoError(t, err)
 	require.NotNil(t, usageRepo.lastLog)
+	require.NotNil(t, usageRepo.lastLog.RequestHost)
+	require.Equal(t, "nl.cafeshop.ai", *usageRepo.lastLog.RequestHost)
+	require.NotNil(t, usageRepo.lastLog.IPAddress)
+	require.Equal(t, "203.0.113.9", *usageRepo.lastLog.IPAddress)
 	require.NotNil(t, usageRepo.lastLog.InboundEndpoint)
 	require.Equal(t, "/v1/chat/completions", *usageRepo.lastLog.InboundEndpoint)
 	require.NotNil(t, usageRepo.lastLog.UpstreamEndpoint)

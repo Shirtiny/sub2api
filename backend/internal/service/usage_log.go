@@ -158,6 +158,8 @@ type UsageLog struct {
 	FirstByteMs  *int
 	UserAgent    *string
 	IPAddress    *string
+	// RequestHost is the normalized client-facing ingress hostname; nil for historical rows.
+	RequestHost *string
 
 	// Cache TTL Override 标记（管理员强制替换了缓存 TTL 计费）
 	CacheTTLOverridden bool

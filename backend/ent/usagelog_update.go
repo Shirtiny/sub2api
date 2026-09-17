@@ -725,6 +725,26 @@ func (_u *UsageLogUpdate) ClearIPAddress() *UsageLogUpdate {
 	return _u
 }
 
+// SetRequestHost sets the "request_host" field.
+func (_u *UsageLogUpdate) SetRequestHost(v string) *UsageLogUpdate {
+	_u.mutation.SetRequestHost(v)
+	return _u
+}
+
+// SetNillableRequestHost sets the "request_host" field if the given value is not nil.
+func (_u *UsageLogUpdate) SetNillableRequestHost(v *string) *UsageLogUpdate {
+	if v != nil {
+		_u.SetRequestHost(*v)
+	}
+	return _u
+}
+
+// ClearRequestHost clears the value of the "request_host" field.
+func (_u *UsageLogUpdate) ClearRequestHost() *UsageLogUpdate {
+	_u.mutation.ClearRequestHost()
+	return _u
+}
+
 // SetImageCount sets the "image_count" field.
 func (_u *UsageLogUpdate) SetImageCount(v int) *UsageLogUpdate {
 	_u.mutation.ResetImageCount()
@@ -1054,6 +1074,11 @@ func (_u *UsageLogUpdate) check() error {
 			return &ValidationError{Name: "ip_address", err: fmt.Errorf(`ent: validator failed for field "UsageLog.ip_address": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.RequestHost(); ok {
+		if err := usagelog.RequestHostValidator(v); err != nil {
+			return &ValidationError{Name: "request_host", err: fmt.Errorf(`ent: validator failed for field "UsageLog.request_host": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.ImageSize(); ok {
 		if err := usagelog.ImageSizeValidator(v); err != nil {
 			return &ValidationError{Name: "image_size", err: fmt.Errorf(`ent: validator failed for field "UsageLog.image_size": %w`, err)}
@@ -1282,6 +1307,12 @@ func (_u *UsageLogUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.IPAddressCleared() {
 		_spec.ClearField(usagelog.FieldIPAddress, field.TypeString)
+	}
+	if value, ok := _u.mutation.RequestHost(); ok {
+		_spec.SetField(usagelog.FieldRequestHost, field.TypeString, value)
+	}
+	if _u.mutation.RequestHostCleared() {
+		_spec.ClearField(usagelog.FieldRequestHost, field.TypeString)
 	}
 	if value, ok := _u.mutation.ImageCount(); ok {
 		_spec.SetField(usagelog.FieldImageCount, field.TypeInt, value)
@@ -2201,6 +2232,26 @@ func (_u *UsageLogUpdateOne) ClearIPAddress() *UsageLogUpdateOne {
 	return _u
 }
 
+// SetRequestHost sets the "request_host" field.
+func (_u *UsageLogUpdateOne) SetRequestHost(v string) *UsageLogUpdateOne {
+	_u.mutation.SetRequestHost(v)
+	return _u
+}
+
+// SetNillableRequestHost sets the "request_host" field if the given value is not nil.
+func (_u *UsageLogUpdateOne) SetNillableRequestHost(v *string) *UsageLogUpdateOne {
+	if v != nil {
+		_u.SetRequestHost(*v)
+	}
+	return _u
+}
+
+// ClearRequestHost clears the value of the "request_host" field.
+func (_u *UsageLogUpdateOne) ClearRequestHost() *UsageLogUpdateOne {
+	_u.mutation.ClearRequestHost()
+	return _u
+}
+
 // SetImageCount sets the "image_count" field.
 func (_u *UsageLogUpdateOne) SetImageCount(v int) *UsageLogUpdateOne {
 	_u.mutation.ResetImageCount()
@@ -2543,6 +2594,11 @@ func (_u *UsageLogUpdateOne) check() error {
 			return &ValidationError{Name: "ip_address", err: fmt.Errorf(`ent: validator failed for field "UsageLog.ip_address": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.RequestHost(); ok {
+		if err := usagelog.RequestHostValidator(v); err != nil {
+			return &ValidationError{Name: "request_host", err: fmt.Errorf(`ent: validator failed for field "UsageLog.request_host": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.ImageSize(); ok {
 		if err := usagelog.ImageSizeValidator(v); err != nil {
 			return &ValidationError{Name: "image_size", err: fmt.Errorf(`ent: validator failed for field "UsageLog.image_size": %w`, err)}
@@ -2788,6 +2844,12 @@ func (_u *UsageLogUpdateOne) sqlSave(ctx context.Context) (_node *UsageLog, err 
 	}
 	if _u.mutation.IPAddressCleared() {
 		_spec.ClearField(usagelog.FieldIPAddress, field.TypeString)
+	}
+	if value, ok := _u.mutation.RequestHost(); ok {
+		_spec.SetField(usagelog.FieldRequestHost, field.TypeString, value)
+	}
+	if _u.mutation.RequestHostCleared() {
+		_spec.ClearField(usagelog.FieldRequestHost, field.TypeString)
 	}
 	if value, ok := _u.mutation.ImageCount(); ok {
 		_spec.SetField(usagelog.FieldImageCount, field.TypeInt, value)

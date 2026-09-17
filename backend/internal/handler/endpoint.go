@@ -3,6 +3,8 @@ package handler
 import (
 	"strings"
 
+	"github.com/Wei-Shaw/sub2api/internal/pkg/httputil"
+
 	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/gin-gonic/gin"
 )
@@ -291,4 +293,12 @@ func GetUpstreamEndpoint(c *gin.Context, platform string) string {
 		rawPath = c.Request.URL.Path
 	}
 	return DeriveUpstreamEndpoint(inbound, rawPath, platform)
+}
+
+// GetRequestHost returns the trusted client-facing hostname, not the API path.
+func GetRequestHost(c *gin.Context) string {
+	if c == nil {
+		return ""
+	}
+	return httputil.RequestHost(c.Request)
 }

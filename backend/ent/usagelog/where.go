@@ -225,6 +225,11 @@ func IPAddress(v string) predicate.UsageLog {
 	return predicate.UsageLog(sql.FieldEQ(FieldIPAddress, v))
 }
 
+// RequestHost applies equality check predicate on the "request_host" field. It's identical to RequestHostEQ.
+func RequestHost(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldEQ(FieldRequestHost, v))
+}
+
 // ImageCount applies equality check predicate on the "image_count" field. It's identical to ImageCountEQ.
 func ImageCount(v int) predicate.UsageLog {
 	return predicate.UsageLog(sql.FieldEQ(FieldImageCount, v))
@@ -1868,6 +1873,81 @@ func IPAddressEqualFold(v string) predicate.UsageLog {
 // IPAddressContainsFold applies the ContainsFold predicate on the "ip_address" field.
 func IPAddressContainsFold(v string) predicate.UsageLog {
 	return predicate.UsageLog(sql.FieldContainsFold(FieldIPAddress, v))
+}
+
+// RequestHostEQ applies the EQ predicate on the "request_host" field.
+func RequestHostEQ(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldEQ(FieldRequestHost, v))
+}
+
+// RequestHostNEQ applies the NEQ predicate on the "request_host" field.
+func RequestHostNEQ(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldNEQ(FieldRequestHost, v))
+}
+
+// RequestHostIn applies the In predicate on the "request_host" field.
+func RequestHostIn(vs ...string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldIn(FieldRequestHost, vs...))
+}
+
+// RequestHostNotIn applies the NotIn predicate on the "request_host" field.
+func RequestHostNotIn(vs ...string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldNotIn(FieldRequestHost, vs...))
+}
+
+// RequestHostGT applies the GT predicate on the "request_host" field.
+func RequestHostGT(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldGT(FieldRequestHost, v))
+}
+
+// RequestHostGTE applies the GTE predicate on the "request_host" field.
+func RequestHostGTE(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldGTE(FieldRequestHost, v))
+}
+
+// RequestHostLT applies the LT predicate on the "request_host" field.
+func RequestHostLT(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldLT(FieldRequestHost, v))
+}
+
+// RequestHostLTE applies the LTE predicate on the "request_host" field.
+func RequestHostLTE(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldLTE(FieldRequestHost, v))
+}
+
+// RequestHostContains applies the Contains predicate on the "request_host" field.
+func RequestHostContains(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldContains(FieldRequestHost, v))
+}
+
+// RequestHostHasPrefix applies the HasPrefix predicate on the "request_host" field.
+func RequestHostHasPrefix(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldHasPrefix(FieldRequestHost, v))
+}
+
+// RequestHostHasSuffix applies the HasSuffix predicate on the "request_host" field.
+func RequestHostHasSuffix(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldHasSuffix(FieldRequestHost, v))
+}
+
+// RequestHostIsNil applies the IsNil predicate on the "request_host" field.
+func RequestHostIsNil() predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldIsNull(FieldRequestHost))
+}
+
+// RequestHostNotNil applies the NotNil predicate on the "request_host" field.
+func RequestHostNotNil() predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldNotNull(FieldRequestHost))
+}
+
+// RequestHostEqualFold applies the EqualFold predicate on the "request_host" field.
+func RequestHostEqualFold(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldEqualFold(FieldRequestHost, v))
+}
+
+// RequestHostContainsFold applies the ContainsFold predicate on the "request_host" field.
+func RequestHostContainsFold(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldContainsFold(FieldRequestHost, v))
 }
 
 // ImageCountEQ applies the EQ predicate on the "image_count" field.

@@ -445,6 +445,10 @@ type UsageLog struct {
 	// ReasoningEffort is the request's reasoning effort level.
 	// Supported values include "low", "medium", "high", "xhigh", "max", and "ultra".
 	ReasoningEffort *string `json:"reasoning_effort,omitempty"`
+	// RequestHost is the original public hostname used by the client, not the API path.
+	RequestHost *string `json:"request_host"`
+	// IPAddress is the client IP for this user-owned request.
+	IPAddress *string `json:"ip_address"`
 	// InboundEndpoint is the client-facing API endpoint path, e.g. /v1/chat/completions.
 	InboundEndpoint *string `json:"inbound_endpoint,omitempty"`
 	// UpstreamEndpoint is the normalized upstream endpoint path, e.g. /v1/responses.
@@ -524,9 +528,6 @@ type AdminUsageLog struct {
 	AccountRateMultiplier *float64 `json:"account_rate_multiplier"`
 	// AccountStatsCost 自定义定价规则计算的账号统计费用（nil 表示使用默认公式）
 	AccountStatsCost *float64 `json:"account_stats_cost,omitempty"`
-
-	// IPAddress 用户请求 IP（仅管理员可见）
-	IPAddress *string `json:"ip_address,omitempty"`
 
 	// Account 最小账号信息（避免泄露敏感字段）
 	Account *AccountSummary `json:"account,omitempty"`

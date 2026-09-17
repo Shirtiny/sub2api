@@ -310,12 +310,13 @@ func (h *OpenAIGatewayHandler) Images(c *gin.Context) {
 		}
 
 		userAgent := c.GetHeader("User-Agent")
-		clientIP := ip.GetClientIP(c)
+		clientIP := ip.GetTrustedClientIP(c)
 		requestPayloadHash := service.HashUsageRequestPayload(body)
 		if parsed.Multipart {
 			requestPayloadHash = service.HashUsageRequestPayload([]byte(parsed.StickySessionSeed()))
 		}
 		inboundEndpoint := GetInboundEndpoint(c)
+		requestHost := GetRequestHost(c)
 		upstreamEndpoint := GetUpstreamEndpoint(c, account.Platform)
 
 		upstreamModel := ""
@@ -330,6 +331,7 @@ func (h *OpenAIGatewayHandler) Images(c *gin.Context) {
 				Account:            account,
 				Subscription:       subscription,
 				InboundEndpoint:    inboundEndpoint,
+				RequestHost:        requestHost,
 				UpstreamEndpoint:   upstreamEndpoint,
 				UserAgent:          userAgent,
 				IPAddress:          clientIP,
