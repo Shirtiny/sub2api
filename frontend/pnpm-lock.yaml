@@ -36,6 +36,9 @@ importers:
       chart.js:
         specifier: ^4.4.1
         version: 4.5.1
+      d3-geo:
+        specifier: 3.1.1
+        version: 3.1.1
       dompurify:
         specifier: ^3.3.1
         version: 3.3.1
@@ -70,6 +73,9 @@ importers:
         specifier: ^4.2.5
         version: 4.6.4(vue@3.5.26(typescript@5.6.3))
     devDependencies:
+      '@types/d3-geo':
+        specifier: 3.1.0
+        version: 3.1.0
       '@types/dompurify':
         specifier: ^3.0.5
         version: 3.2.0

@@ -1,0 +1,10 @@
+{
+  "name": "public-home-redesign",
+  "title": "Visitor-first cafe homepage",
+  "status": "completed",
+  "type": "frontend",
+  "created_at": "2026-09-18",
+  "deployment": "not deployed",
+  "notes": "Source publication authorized on 2026-09-22 for custom-prod and cafecode-v0.0.78. Only homepage code, assets, dependencies, tests and task documentation are included. Validated the isolated staged snapshot; five unrelated frontend failures also reproduce on the parent commit. CI builds artifacts; production deployment is not authorized.",
+  "release_tag": "cafecode-v0.0.78"
+}

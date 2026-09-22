@@ -1,6 +1,135 @@
 export default {
   // Home Page
   home: {
+    landing: {
+      slides: {
+        navigation: 'Homepage chapters',
+        welcome: 'Welcome',
+        everyday: 'Everyday experience',
+        begin: 'Get started',
+        next: 'Next chapter',
+        backToTop: 'Back to the first chapter'
+      },
+      toolMarks: 'Creative tools: Codex and pi',
+      pauseToolAnimation: 'Pause Codex / pi icon animation',
+      resumeToolAnimation: 'Resume Codex / pi icon animation',
+      creativeTools: 'Creative tools',
+      skipToContent: 'Skip to main content',
+      navigation: 'Homepage navigation',
+      explore: 'Explore',
+      quickStart: 'Getting started',
+      faq: 'Questions',
+      eyebrow: 'AI, freshly brewed',
+      heroLineOne: 'Room for inspiration.',
+      heroLineTwo: 'AI for your everyday.',
+      subtitle: 'Your next creation starts here.',
+      description: 'Bring AI into the tools you love. Write code, find the right words, and explore ideas. Less setup. More focus.',
+      readGuide: 'How to connect',
+      heroNote: 'Take a look around. Sign in when you’re ready to connect.',
+      artCaption: 'A little coffee. A little inspiration.',
+      models: {
+        groups: 'ChatGPT model groups',
+        title: 'Supported models',
+        description: 'Only ChatGPT is currently supported. The other models are not yet available.',
+        available: 'Available now',
+        unavailable: 'Not available',
+        pause: 'Pause animation',
+        resume: 'Resume animation',
+        static: 'Static display'
+      },
+      possibilitiesEyebrow: 'Made for your everyday',
+      possibilitiesTitle: 'Less complexity. More room to create.',
+      possibilitiesDescription: 'From your first idea to your everyday work, make AI a familiar tool, not another thing to figure out.',
+      features: {
+        connect: {
+          title: 'A simpler connection',
+          description: 'Create an API key in your dashboard, then configure the endpoint and model using the documentation. No gateway to build from scratch.'
+        },
+        create: {
+          title: 'A place in your workflow',
+          description: 'Use AI in compatible coding tools, chat clients, or your own applications. Keep working where your ideas already happen.'
+        },
+        manage: {
+          title: 'Usage you can understand',
+          description: 'Manage keys, review request history, and set key limits in one place. Keep track of each call without losing focus on your work.'
+        }
+      },
+      featureShowcase: {
+        label: 'Intelligence, speed and trust',
+        carousel: 'carousel',
+        slide: 'slide',
+        choose: 'Choose a feature',
+        intelligenceStory: {
+          understand: '1. See the whole',
+          connect: '2. Connect the details',
+          resolve: '3. Find a clear path'
+        },
+        billingStory: {
+          summary: 'Each request on the left enters the billing area. Model unit prices are applied to input, output and cached usage, the costs are summed, and that request’s multiplier is applied. Its model, usage and actual cost are then printed as one matching usage record. One request corresponds to one receipt row. Shapes are illustrative, not real requests, usage or prices.'
+        },
+        intelligence: {
+          label: 'Intelligence'
+        },
+        speed: {
+          label: 'Speed'
+        },
+        trust: {
+          label: 'Trust'
+        }
+      },
+      guideEyebrow: 'Your first sip',
+      guideTitle: 'Three steps to your AI workflow.',
+      guideDescription: 'No complicated setup on this page. Start in your dashboard and connect at your own pace.',
+      keyNote: 'Your API key is an access credential. Keep it private, out of public code, and away from anyone you do not trust.',
+      steps: {
+        account: { title: 'Open your dashboard', description: 'Sign in to your account. If registration is enabled, you can create an account from the login page.' },
+        key: { title: 'Create an API key', description: 'Check the service groups available to your account, then create and save your key. Model access depends on your available services.' },
+        configure: { title: 'Connect Codex or Pi', description: 'Follow the documentation to enter the endpoint, API key, and model name. Send your first request, then review usage in your dashboard.' }
+      },
+      billing: {
+        eyebrow: 'Plans & Balance',
+        title: 'Subscriptions & balance',
+        description: 'Plan a month ahead, or top up when you need to.',
+        note: 'Check your dashboard for specific plans, available groups and prices.',
+        subscription: {
+          title: 'Subscription presale', badge: 'Presale only', unit: 'month / purchase', caption: 'One month per purchase',
+          accessLabel: 'Availability', access: 'Subscriptions are available only through presales. Watch for opening announcements.',
+          periodLabel: 'Service period', period: 'Usually from the start to the end of the same calendar month.',
+          pricingLabel: 'Pricing', pricing: 'Subscriptions offer a lower price. Plan details and prices are listed in each presale.'
+        },
+        balance: {
+          title: 'Prepaid balance', badge: 'Instant top-up', availability: 'Use anytime',
+          accessLabel: 'Top-ups', access: 'Top up immediately, without waiting for a subscription presale.',
+          periodLabel: 'Usage', period: 'Charged by actual usage. Review usage records and charges in your dashboard.'
+        }
+      },
+      requests: {
+        title: 'Request controls',
+        description: 'Follow the request format in the setup documentation. Request content is used only for auditing.',
+        audit: { title: 'Ordinary request content', retention: '1 day only' },
+        exceptions: { title: 'Cyber & rule-violating request content', retention: 'Retained permanently' }
+      },
+      faqEyebrow: 'Usage & Pricing',
+      faqTitle: 'A few things worth knowing.',
+      faqDescription: 'Usage policies and service-group pricing.',
+      questions: {
+        service: { title: 'Usage policy', answer: 'Redistributing the service, bypassing usage limits, and other prohibited use are strictly forbidden. All usage is monitored and checked. If AI review identifies a violation, the system will automatically ban the account without a refund. Please check your registered email for notices and reminders.' },
+        models: { title: 'Client restrictions', answer: 'Requests are subject to client restrictions. Use Codex or Pi to access this service and follow the setup documentation.' },
+        tools: { title: 'Subscriptions and balance', answer: 'Choose a subscription or prepaid balance. Subscriptions are available only through presales, with one month per purchase at a lower price. Service periods typically run from the start to the end of a calendar month. Balance can be topped up immediately; the Astra usage multiplier is 0.4–0.5.' },
+        account: { title: 'Do I need to sign in to browse?', answer: 'No. You can explore the service and connection guide first. Sign in when you want to create or manage keys or view your personal usage history.' }
+      },
+      policy: {
+        warning: 'Misuse: banned without refund',
+        subscription: 'Subscription presale',
+        subscriptionTerm: '1 month at a time',
+        subscriptionDescription: 'Subscriptions are available only through presales, with one month per purchase at a lower price. Service periods typically run from the start to the end of a calendar month.',
+        balance: 'Prepaid balance · Astra',
+        balanceDescription: 'The Astra usage multiplier is 0.4–0.5. Top up your balance immediately, without waiting for a subscription presale.'
+      },
+      closingEyebrow: 'Make room for an idea',
+      closingTitle: 'Your next idea deserves a fresh cup.',
+      closingDescription: 'When you’re ready, start with a simple connection.'
+    },
     viewOnGithub: 'View on GitHub',
     viewDocs: 'View Documentation',
     docs: 'Docs',
