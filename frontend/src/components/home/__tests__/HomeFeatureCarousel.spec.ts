@@ -179,7 +179,7 @@ describe('everyday SVG feature carousel', () => {
     expect(page.attributes('data-animated')).toBe('true')
     expect(page.find('.feature-stage').attributes('aria-live')).toBe('off')
     const firstScene = page.find('svg.intelligence-scene').element
-    const timings = [12600, 14720, 14880]
+    const timings = [13580, 14720, 14880]
     for (const [index, kind] of ['intelligence', 'speed', 'trust'].entries()) {
       expect(current(page)).toBe(kind)
       expect(page.findAll('.feature-clock')).toHaveLength(1)
@@ -215,8 +215,18 @@ describe('everyday SVG feature carousel', () => {
     expect(page.find('.feature-clock').attributes('data-phase')).toBe('play')
   })
 
+  it('keeps ambient world traffic moving during the completed-task hold, but not offscreen', () => {
+    const page = render()
+    const speed = page.find('.speed-scene')
+    const routes = speed.findAll('.world-request, .world-return, .port-echo, .globe-halo')
+    expect(routes.length).toBeGreaterThan(1)
+    expect(routes.every(route => route.classes().includes('scene-ambient'))).toBe(true)
+    expect(speed.find('.response-content').classes()).not.toContain('scene-ambient')
+    expect(source).toContain(".feature-carousel[data-animated='true'] .feature-frame.is-current[data-holding='true'] :deep(.scene-ambient) { animation-play-state: running !important; }")
+  })
+
   it.each([
-    [0, 'intelligence', 1400], [1, 'speed', 1280], [2, 'trust', 1120]
+    [0, 'intelligence', 420], [1, 'speed', 1280], [2, 'trust', 1120]
   ] as const)('manual selection of tab %s permanently stops rotation but keeps its extended animation looping', async (index, kind, outro) => {
     const page = render()
     await enter()

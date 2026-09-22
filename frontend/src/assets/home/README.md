@@ -307,3 +307,11 @@ The shared stage owns the stationary background; canvases are transparent, the f
 ### Balance card: use anytime (2026-09-22)
 
 The public balance card now highlights `随时使用` / `Use anytime`, instead of a hard-coded Astra multiplier. Removed the multiplier unit, caption and group-rate fact; the card retains top-up and usage details. Subscription information and its three facts are unchanged. This is a homepage copy change only, not a change to configured rates, billing calculations or the account usage UI.
+
+### Matched billing cards and completed-scene holds (2026-09-22)
+
+Both billing cards now use the same headline/unit/caption structure and two fact rows. Chinese highlights pair `按月 / 订阅` with `按需 / 充值`; the one-month purchase limit remains in the subscription caption, while anytime availability is a small balance caption instead of oversized text. Removed the subscription price-advantage row. Shared type sizes and equal fact tracks align both cards without fixing their overall heights or introducing a numeric unlimited-use claim.
+
+The intelligence hold now starts at 97% of its 14s cycle, after the last route highlight reaches the endpoint at 94% and disappears at 96%. The finished solution, backbone and ASTRA signature stay fully visible through 98%, so the additional 1.5s pause preserves a completed result rather than an in-flight signal or partially faded drawing. Speed's world routes, port echoes and globe breathing remain animated during its result hold; the client task stays completed. These ambient loops still pause when inactive, offscreen or backgrounded. The 900ms crossfade, manual cancellation and manually selected scene loops are retained.
+
+Header wordmarks scale to 90% on desktop and 79% rather than 87.5% on mobile (roughly a 10% reduction). The configured name, SVG letter geometry, steam/Codex/Pi story and header height are unchanged.

@@ -92,13 +92,12 @@ export default {
         description: 'Plan a month ahead, or top up when you need to.',
         note: 'Check your dashboard for specific plans, available groups and prices.',
         subscription: {
-          title: 'Subscription presale', badge: 'Presale only', unit: 'month / purchase', caption: 'One month per purchase',
+          title: 'Subscription presale', badge: 'Presale only', highlight: 'Monthly', unit: 'plan', caption: 'One month per purchase',
           accessLabel: 'Availability', access: 'Subscriptions are available only through presales. Watch for opening announcements.',
-          periodLabel: 'Service period', period: 'Usually from the start to the end of the same calendar month.',
-          pricingLabel: 'Pricing', pricing: 'Subscriptions offer a lower price. Plan details and prices are listed in each presale.'
+          periodLabel: 'Service period', period: 'Usually from the start to the end of the same calendar month.'
         },
         balance: {
-          title: 'Prepaid balance', badge: 'Instant top-up', availability: 'Use anytime',
+          title: 'Prepaid balance', badge: 'Instant top-up', highlight: 'Flexible', unit: 'top-ups', caption: 'Top up anytime. Use as needed.',
           accessLabel: 'Top-ups', access: 'Top up immediately, without waiting for a subscription presale.',
           periodLabel: 'Usage', period: 'Charged by actual usage. Review usage records and charges in your dashboard.'
         }

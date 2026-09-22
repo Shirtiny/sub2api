@@ -54,7 +54,7 @@ const toolLabel = computed(() => t(reducedMotion.value === 'reduce'
 
 <style scoped>
 .home-brand {
-  --brand-name-scale: 1;
+  --brand-name-scale: .9;
   --brand-tool-size: 32px;
   display: grid;
   grid-template-columns: minmax(0, 1fr) var(--brand-tool-size);
@@ -97,7 +97,7 @@ const toolLabel = computed(() => t(reducedMotion.value === 'reduce'
   to { opacity: 1; transform: translateY(0); }
 }
 @media (max-width: 767px) {
-  .home-brand { --brand-name-scale: .875; --brand-tool-size: 28px; }
+  .home-brand { --brand-name-scale: .79; --brand-tool-size: 28px; }
   .brand-tools { transform: translateY(-7px); }
 }
 @media (max-width: 359px) {

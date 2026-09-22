@@ -58,7 +58,7 @@
          projection. No planar spinning of the world or detached route endpoints. -->
     <g :transform="`translate(${globe.x} ${globe.y})`" data-detail="global-network">
       <ellipse cy="207" rx="151" ry="12" fill="var(--cafe-ink, #382a20)" opacity=".035" />
-      <circle class="globe-halo" r="226" :fill="`url(#${id('halo')})`" />
+      <circle class="globe-halo scene-ambient" r="226" :fill="`url(#${id('halo')})`" />
       <circle class="globe-body" :r="speedGlobe.radius" :fill="`url(#${id('ocean')})`" />
       <g :clip-path="`url(#${id('sphere')})`">
         <path class="world-graticule" :d="speedGlobe.graticule" stroke="var(--cafe-muted, #756456)" stroke-width=".7" opacity=".13" />
@@ -71,11 +71,11 @@
       <g data-detail="world-routes">
         <g v-for="(route, index) in speedGlobe.routes" :key="route.key" class="world-route" :data-origin="route.key" :data-destination="route.destination" :style="{ '--route-delay': `${index * -.47}s` }">
           <path class="world-route-track" :d="route.path" stroke="var(--cafe-accent, #865630)" stroke-width="1" />
-          <path class="world-packet world-request" :d="route.path" pathLength="100" stroke="var(--cafe-accent, #865630)" stroke-width="1.8" />
-          <path class="world-packet world-return" :d="route.path" pathLength="100" stroke="var(--cafe-ink, #382a20)" stroke-width="1.6" />
+          <path class="world-packet world-request scene-ambient" :d="route.path" pathLength="100" stroke="var(--cafe-accent, #865630)" stroke-width="1.8" />
+          <path class="world-packet world-return scene-ambient" :d="route.path" pathLength="100" stroke="var(--cafe-ink, #382a20)" stroke-width="1.6" />
           <g :transform="`translate(${route.origin.x} ${route.origin.y})`" class="world-port">
             <circle class="port-dot" r="2.5" fill="var(--cafe-page, #faf7f2)" stroke="var(--cafe-accent, #865630)" stroke-width="1.1" />
-            <circle class="port-echo" r="4" stroke="var(--cafe-accent, #865630)" />
+            <circle class="port-echo scene-ambient" r="4" stroke="var(--cafe-accent, #865630)" />
           </g>
         </g>
       </g>

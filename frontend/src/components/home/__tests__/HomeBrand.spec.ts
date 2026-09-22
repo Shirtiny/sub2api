@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount, type VueWrapper } from '@vue/test-utils'
 import { defineComponent, nextTick, ref } from 'vue'
 import HomeBrand from '../HomeBrand.vue'
+import source from '../HomeBrand.vue?raw'
 import { createWordmark } from '../brandGeometry'
 import { createBrandStory } from '../brandStory'
 
@@ -31,6 +32,13 @@ afterEach(() => {
 })
 
 describe('HomeBrand wordmark and independent tool marks', () => {
+  it('scales the complete vector wordmark down without changing its geometry or header height', () => {
+    expect(source).toContain('--brand-name-scale: .9;')
+    expect(source).toContain('--brand-name-scale: .79;')
+    expect(source).toContain('var(--brand-name-width) * var(--brand-name-scale)')
+    expect(source).not.toContain('--slider-header-height')
+  })
+
   it('keeps only the configured name, without an underline or annotation', () => {
     const page = render()
     expect(page.find('.brand-name').text()).toBe('Café Shop')

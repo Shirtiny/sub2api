@@ -102,9 +102,10 @@ import Icon from '@/components/icons/Icon.vue'
 import HomeFeatureScene from './HomeFeatureScene.vue'
 
 const { t } = useI18n()
-// Stop inside each completed-result plateau, before its native reset/fade.
+// Intelligence's last highlight clears the route at 96%; hold only after that,
+// on the fully visible result plateau, before the native reset/fade.
 const slides = [
-  { key: 'intelligence', copyKey: 'connect', icon: 'cpu', duration: 14000, completeAt: 12600 },
+  { key: 'intelligence', copyKey: 'connect', icon: 'cpu', duration: 14000, completeAt: 13580 },
   { key: 'speed', copyKey: 'create', icon: 'bolt', duration: 16000, completeAt: 14720 },
   { key: 'trust', copyKey: 'manage', icon: 'shield', duration: 16000, completeAt: 14880 }
 ] as const
@@ -254,8 +255,8 @@ function onSelectorKey(event: KeyboardEvent, index: number) {
 }
 @keyframes intelligence-finale {
   0%, 71%, 100% { opacity: 0; transform: scale(.97); }
-  76%, 91% { opacity: 1; transform: scale(1); }
-  98% { opacity: 0; transform: scale(1.035); }
+  76%, 98% { opacity: 1; transform: scale(1); }
+  99% { opacity: 0; transform: scale(1.035); }
 }
 @keyframes intelligence-inscription { 0%, 71% { stroke-dashoffset: 220; } 79%, 100% { stroke-dashoffset: 0; } }
 .feature-carousel[data-animated='false'] :deep(.feature-scene),
@@ -269,6 +270,9 @@ function onSelectorKey(event: KeyboardEvent, index: number) {
 .feature-frame[data-holding='true'] .intelligence-story :deep(*),
 .feature-frame[data-entering='true'] .intelligence-story :deep(*),
 .feature-carousel[data-animated='false'] .feature-clock { animation-play-state: paused !important; }
+/* Hold the completed task, not the surrounding network traffic. Ambient loops
+   must still stop when the tab is inactive, offscreen or the document is hidden. */
+.feature-carousel[data-animated='true'] .feature-frame.is-current[data-holding='true'] :deep(.scene-ambient) { animation-play-state: running !important; }
 .feature-carousel button:focus-visible { outline: 2px solid var(--cafe-accent); outline-offset: -3px; border-radius: 4px; }
 @media (max-width: 1023px) {
   .feature { padding-inline: 16px; }

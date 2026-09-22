@@ -92,13 +92,12 @@ export default {
         description: '提前安排一个月，或按需即时充值。',
         note: '具体套餐、可用分组与价格，请在控制台查看。',
         subscription: {
-          title: '订阅预售', badge: '预售获取', unit: '个月 / 次', caption: '每次限购一个月',
+          title: '订阅预售', badge: '预售获取', highlight: '按月', unit: '订阅', caption: '每次限购一个月',
           accessLabel: '获取方式', access: '订阅仅通过预售获取，请留意预售开放通知。',
-          periodLabel: '使用周期', period: '通常从月初开始，到当月月底结束。',
-          pricingLabel: '价格优势', pricing: '订阅价格更优惠，具体套餐与价格以当期预售为准。'
+          periodLabel: '使用周期', period: '通常从月初开始，到当月月底结束。'
         },
         balance: {
-          title: '余额充值', badge: '即时充值', availability: '随时使用',
+          title: '余额充值', badge: '即时充值', highlight: '按需', unit: '充值', caption: '即时充值，随时使用',
           accessLabel: '充值方式', access: '余额支持即时充值，无需等待订阅预售。',
           periodLabel: '使用方式', period: '按实际使用结算，使用记录与消费金额可在控制台查看。'
         }

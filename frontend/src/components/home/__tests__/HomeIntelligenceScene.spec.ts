@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { mount, type VueWrapper } from '@vue/test-utils'
 import source from '../HomeIntelligenceScene.vue?raw'
+import carouselSource from '../HomeFeatureCarousel.vue?raw'
 import HomeIntelligenceScene from '../HomeIntelligenceScene.vue'
 
 const pages: VueWrapper[] = []
@@ -12,6 +13,17 @@ function render(compact = false) {
 afterEach(() => pages.splice(0).forEach(page => page.unmount()))
 
 describe('native intelligence system illustration', () => {
+  it('finishes the last route highlight before holding a fully visible completed result', () => {
+    const holdAt = Number(carouselSource.match(/duration: 14000, completeAt: (\d+)/)?.[1]) / 14000 * 100
+    expect(holdAt).toBeGreaterThan(96)
+    expect(holdAt).toBeLessThan(98)
+    expect(source).toContain('96%, 100% { stroke-dashoffset: -102; opacity: 0; }')
+    expect(source).toContain('72%, 98% { stroke-dashoffset: 0; opacity: .9; }')
+    expect(source).toContain('70%, 98% { opacity: 1; }')
+    expect(source).toContain('75%, 98% { stroke-dashoffset: 0; opacity: 1; }')
+    expect(carouselSource).toContain('76%, 98% { opacity: 1; transform: scale(1); }')
+  })
+
   it('keeps one system with code, constraints, dependencies, relationships and a structured result', () => {
     const page = render()
     expect(page.element.tagName).toBe('svg')

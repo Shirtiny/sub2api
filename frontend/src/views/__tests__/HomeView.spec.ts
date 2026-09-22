@@ -152,7 +152,7 @@ describe('visitor-first homepage', () => {
     expect(billing.element.previousElementSibling).toBe(page.find('[data-home-slide="supported-models"]').element)
     expect(billing.element.nextElementSibling).toBe(page.find('[data-home-slide="questions"]').element)
     expect(billing.findAll('article')).toHaveLength(2)
-    expect(billing.findAll('.billing-facts > div')).toHaveLength(5)
+    expect(billing.findAll('.billing-facts > div')).toHaveLength(4)
     expect(billing.text()).toContain('每次限购一个月')
     expect(billing.text()).toContain('月初开始')
     expect(billing.text()).toContain('当月月底结束')
@@ -162,17 +162,25 @@ describe('visitor-first homepage', () => {
     expect(billing.find('a').attributes('href')).toBe('/login')
   })
 
-  it.each(['zh', 'en'] as const)('shows balance availability instead of a group multiplier (%s)', locale => {
+  it.each(['zh', 'en'] as const)('uses matching highlights, captions and two facts for both billing plans (%s)', locale => {
     const page = render(locale)
     const balance = page.find('[aria-labelledby="billing-balance-title"]')
-    expect(balance.find('.billing-metric strong').text()).toBe(locale === 'zh' ? '随时使用' : 'Use anytime')
-    expect(balance.find('.billing-metric span, .billing-caption').exists()).toBe(false)
+    expect(balance.find('.billing-metric strong').text()).toBe(locale === 'zh' ? '按需' : 'Flexible')
+    expect(balance.find('.billing-metric span').text()).toBe(locale === 'zh' ? '充值' : 'top-ups')
+    expect(balance.find('.billing-caption').text()).toBe(locale === 'zh' ? '即时充值，随时使用' : 'Top up anytime. Use as needed.')
     expect(balance.findAll('.billing-facts dt').map(label => label.text())).toEqual(locale === 'zh' ? ['充值方式', '使用方式'] : ['Top-ups', 'Usage'])
     expect(balance.text()).not.toMatch(/Astra|0\.4|0\.5|×|倍率|multiplier|Group rate/)
     const subscription = page.find('[aria-labelledby="billing-subscription-title"]')
-    expect(subscription.find('.billing-metric strong').text()).toBe('1')
-    expect(subscription.findAll('.billing-facts > div')).toHaveLength(3)
-    expect(subscription.find('.billing-caption').text()).not.toBe('')
+    expect(subscription.find('.billing-metric strong').text()).toBe(locale === 'zh' ? '按月' : 'Monthly')
+    expect(subscription.find('.billing-metric span').text()).toBe(locale === 'zh' ? '订阅' : 'plan')
+    expect(subscription.find('.billing-caption').text()).toBe(locale === 'zh' ? '每次限购一个月' : 'One month per purchase')
+    expect(subscription.findAll('.billing-facts dt').map(label => label.text())).toEqual(locale === 'zh' ? ['获取方式', '使用周期'] : ['Availability', 'Service period'])
+    expect(subscription.text()).not.toMatch(/价格优势|订阅价格更优惠|Pricing|lower price/)
+    for (const card of [subscription, balance]) {
+      expect(card.findAll('.billing-facts > div')).toHaveLength(2)
+      expect([...card.element.children].map(child => child.className || child.tagName))
+        .toEqual(['billing-option-heading', 'H3', 'billing-metric', 'billing-caption', 'billing-facts'])
+    }
   })
 
   it.each(['zh', 'en'] as const)('states one-day audit retention and permanent exceptions explicitly (%s)', locale => {

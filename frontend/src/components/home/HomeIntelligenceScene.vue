@@ -258,12 +258,12 @@ const selectedRoute = computed(() => {
 .solution-outline { animation: result-focus var(--intelligence-duration, 14s) ease-in-out infinite; }
 .solution-tree { stroke-dasharray: 100; animation: solution-organize var(--intelligence-duration, 14s) ease-in-out infinite; }
 .solution-check { stroke-dasharray: 100; animation: check-resolve var(--intelligence-duration, 14s) ease-in-out infinite; }
-@keyframes input-emphasis { 0%, 100% { opacity: .7; } 6%, 24% { opacity: 1; } 42%, 91% { opacity: .48; } }
+@keyframes input-emphasis { 0%, 100% { opacity: .7; } 6%, 24% { opacity: 1; } 42%, 98% { opacity: .48; } }
 @keyframes input-focus { 0%, 3%, 33%, 100% { opacity: 0; } 8%, 23% { opacity: .75; } }
-@keyframes context-read { 0%, 100% { stroke-dashoffset: 100; } 12%, 90% { stroke-dashoffset: 0; } }
+@keyframes context-read { 0%, 100% { stroke-dashoffset: 100; } 12%, 98% { stroke-dashoffset: 0; } }
 @keyframes sources-active { 0%, 38%, 100% { opacity: 0; } 4%, 25% { opacity: .9; } }
 @keyframes source-flow { from { stroke-dashoffset: 12; } to { stroke-dashoffset: -100; } }
-@keyframes network-emerge { 0%, 100% { opacity: .2; } 24%, 88% { opacity: 1; } }
+@keyframes network-emerge { 0%, 100% { opacity: .2; } 24%, 98% { opacity: 1; } }
 @keyframes associations-active {
   0%, 15%, 78%, 100% { opacity: 0; }
   25%, 52% { opacity: 1; }
@@ -281,8 +281,8 @@ const selectedRoute = computed(() => {
 @keyframes route-resolve {
   0%, 50% { stroke-dashoffset: 100; opacity: 0; }
   52% { stroke-dashoffset: 91; opacity: .9; }
-  72%, 91% { stroke-dashoffset: 0; opacity: .9; }
-  98%, 100% { stroke-dashoffset: 0; opacity: 0; }
+  72%, 98% { stroke-dashoffset: 0; opacity: .9; }
+  99%, 100% { stroke-dashoffset: 0; opacity: 0; }
 }
 @keyframes signal-travel {
   0%, 49% { stroke-dashoffset: 2; opacity: 0; }
@@ -294,21 +294,21 @@ const selectedRoute = computed(() => {
   94% { stroke-dashoffset: -100; opacity: .8; }
   96%, 100% { stroke-dashoffset: -102; opacity: 0; }
 }
-@keyframes entry-focus { 0%, 48%, 100% { opacity: 0; } 56%, 91% { opacity: 1; } }
-@keyframes junction-focus { 0%, 54%, 100% { opacity: 0; } 60%, 91% { opacity: 1; } }
-@keyframes exit-focus { 0%, 60%, 100% { opacity: 0; } 68%, 91% { opacity: 1; } }
+@keyframes entry-focus { 0%, 48%, 100% { opacity: 0; } 56%, 98% { opacity: 1; } }
+@keyframes junction-focus { 0%, 54%, 100% { opacity: 0; } 60%, 98% { opacity: 1; } }
+@keyframes exit-focus { 0%, 60%, 100% { opacity: 0; } 68%, 98% { opacity: 1; } }
 @keyframes core-breathe {
   0%, 20%, 100% { opacity: .12; transform: scale(.85); }
   32% { opacity: .85; transform: scale(1); }
   43% { opacity: 1; transform: scale(1.12); }
-  56%, 91% { opacity: .25; transform: scale(.94); }
+  56%, 98% { opacity: .25; transform: scale(.94); }
 }
-@keyframes core-focus { 0%, 19%, 100% { opacity: .4; } 29%, 49% { opacity: 1; } 65%, 91% { opacity: .6; } }
-@keyframes solution-arrive { 0%, 52%, 100% { opacity: 0; } 70%, 91% { opacity: 1; } }
-@keyframes output-emerge { 0%, 50%, 100% { opacity: 0; } 63%, 91% { opacity: .3; } }
-@keyframes result-focus { 0%, 56%, 100% { opacity: 0; } 72%, 91% { opacity: .8; } }
-@keyframes solution-organize { 0%, 58%, 100% { stroke-dashoffset: 100; } 73%, 91% { stroke-dashoffset: 0; } }
-@keyframes check-resolve { 0%, 68%, 100% { stroke-dashoffset: 100; opacity: 0; } 75%, 91% { stroke-dashoffset: 0; opacity: 1; } }
+@keyframes core-focus { 0%, 19%, 100% { opacity: .4; } 29%, 49% { opacity: 1; } 65%, 98% { opacity: .6; } }
+@keyframes solution-arrive { 0%, 52%, 100% { opacity: 0; } 70%, 98% { opacity: 1; } }
+@keyframes output-emerge { 0%, 50%, 100% { opacity: 0; } 63%, 98% { opacity: .3; } }
+@keyframes result-focus { 0%, 56%, 100% { opacity: 0; } 72%, 98% { opacity: .8; } }
+@keyframes solution-organize { 0%, 58%, 100% { stroke-dashoffset: 100; } 73%, 98% { stroke-dashoffset: 0; } }
+@keyframes check-resolve { 0%, 68%, 100% { stroke-dashoffset: 100; opacity: 0; } 75%, 98% { stroke-dashoffset: 0; opacity: 1; } }
 @media (prefers-reduced-motion: reduce) {
   .intelligence-scene * { animation: none !important; }
   .selected-nodes rect { opacity: 1; }
