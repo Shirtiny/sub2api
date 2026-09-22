@@ -5984,6 +5984,22 @@
                 </div>
                 <Toggle v-model="form.payment_enabled" />
               </div>
+              <!-- Recharge tab visibility (the backend setting is stored as disabled). -->
+              <div class="flex items-center justify-between border-t border-gray-100 pt-4 dark:border-dark-700">
+                <div>
+                  <label class="font-medium text-content-primary">{{
+                    t("admin.settings.payment.rechargeTabVisible")
+                  }}</label>
+                  <p class="text-sm text-gray-500 dark:text-gray-400">
+                    {{ t("admin.settings.payment.rechargeTabVisibleHint") }}
+                  </p>
+                </div>
+                <Toggle
+                  :model-value="!form.payment_balance_disabled"
+                  @update:model-value="form.payment_balance_disabled = !$event"
+                  data-testid="payment-recharge-tab-toggle"
+                />
+              </div>
               <template v-if="form.payment_enabled">
                 <!-- Row 1: Product name -->
                 <div class="grid grid-cols-3 gap-3">

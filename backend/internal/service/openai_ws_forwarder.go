@@ -261,6 +261,7 @@ type OpenAIWSReconnectControl struct {
 	ControlID              string
 	BindingGeneration      uint64
 	MiddleRouteDisposition OpenAIWSMiddleRouteDisposition
+	WebSocketUnavailable   bool
 }
 
 type OpenAIWSIngressHooks struct {

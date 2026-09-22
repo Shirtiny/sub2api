@@ -1,0 +1,10 @@
+{
+  "name": "public-home-redesign",
+  "title": "Visitor-first cafe homepage",
+  "status": "completed",
+  "type": "frontend",
+  "created_at": "2026-09-18",
+  "deployment": "not deployed",
+  "notes": "Source publication authorized on 2026-09-22 for custom-prod and cafecode-v0.0.79. Follow-up aligns billing cards, completes animation signals before holding, preserves ambient network motion, and reduces the header wordmark. Isolated staged snapshot passes 164 homepage tests, 107 CI-critical tests, lint, typecheck and build. Unrelated work stays local. CI builds artifacts; no production deployment is authorized.",
+  "release_tag": "cafecode-v0.0.79"
+}

@@ -1,6 +1,134 @@
 export default {
   // Home Page
   home: {
+    landing: {
+      slides: {
+        navigation: '首页章节',
+        welcome: '首页',
+        everyday: '服务体验',
+        begin: '即刻开始',
+        next: '下一章节',
+        backToTop: '返回首页首屏'
+      },
+      toolMarks: '创作工具：Codex 与 pi',
+      pauseToolAnimation: '暂停 Codex / pi 图标轮换',
+      resumeToolAnimation: '继续 Codex / pi 图标轮换',
+      creativeTools: '创作工具',
+      skipToContent: '跳转到主要内容',
+      navigation: '首页导航',
+      explore: '认识我们',
+      quickStart: '接入指南',
+      faq: '常见问题',
+      eyebrow: 'AI, freshly brewed · 为每一天的工作续杯',
+      heroLineOne: '让工作，多些从容。',
+      heroLineTwo: '让灵感，高效落地。',
+      subtitle: '从日常任务到项目推进，与你一起向前。',
+      description: '将 AI 接入熟悉的工作工具，辅助代码开发、问题排查、数据分析与日常任务处理。少一些重复操作，多一些时间解决真正重要的问题。',
+      readGuide: '了解如何接入',
+      heroNote: '先逛逛，再开始。接入服务时登录即可。',
+      artCaption: 'A little coffee. A little inspiration.',
+      models: {
+        groups: 'ChatGPT 模型分组',
+        title: '支持的模型',
+        description: '目前仅支持 ChatGPT，其余模型暂未开放。',
+        available: '当前支持',
+        unavailable: '暂未支持',
+        pause: '暂停动效',
+        resume: '继续动效',
+        static: '静态展示'
+      },
+      possibilitiesEyebrow: 'Made for your everyday',
+      possibilitiesTitle: '无论你何时需要，它都在这里。',
+      possibilitiesDescription: '从第一个想法到每一天的工作，让 AI 成为顺手的工具，而不是另一件需要折腾的事。',
+      features: {
+        connect: {
+          title: '原生智能 · Intelligence',
+          description: '长期不降智、风控规避方案。保留模型应有的完整能力，不以降智或风控受限的模型替代正常服务。让每一次思考，都发挥应有的水平。'
+        },
+        create: {
+          title: '快速响应 · Speed',
+          description: '三网顶级优化线路，WS 首字节约 0.3 秒，让交互更流畅，让思路不被等待打断。'
+        },
+        manage: {
+          title: '真实可信 · Trust',
+          description: '每一笔使用记录、消费金额真实可验，模型不冒名、不造假。你所选择的，就是你实际使用的，让信任来自真实的使用体验。'
+        }
+      },
+      featureShowcase: {
+        label: '智能、速度与可信',
+        carousel: '轮播',
+        slide: '特性展示',
+        choose: '选择特性',
+        intelligenceStory: {
+          understand: '1. 理解全貌',
+          connect: '2. 深入关联',
+          resolve: '3. 清晰落地'
+        },
+        billingStory: {
+          summary: '左侧每条请求依次进入计费区，按模型单价计算输入、输出与缓存用量的费用，汇总并应用该请求的倍率，再将模型、用量和实际费用打印为一条对应的使用记录。一条请求对应一行记录。图形仅为示意，不代表真实请求、用量或价格。'
+        },
+        intelligence: {
+          label: '智能'
+        },
+        speed: {
+          label: '速度'
+        },
+        trust: {
+          label: '可信'
+        }
+      },
+      guideEyebrow: 'Your first sip',
+      guideTitle: '三步，开始你的 AI 工作流。',
+      guideDescription: '不用在首页填写复杂配置。从进入控制台开始，按自己的节奏完成接入。',
+      keyNote: 'API 密钥是你的访问凭证。请妥善保管，不要放进公开代码或分享给他人。',
+      steps: {
+        account: { title: '进入你的控制台', description: '登录账号。若站点开放注册，可从登录页面创建账号。' },
+        key: { title: '创建 API 密钥', description: '在控制台确认可用服务分组，创建密钥并保存。具体模型与使用权限以账号可用服务为准。' },
+        configure: { title: '接入 Codex 或 Pi', description: '按照接入文档，为 Codex 或 Pi 配置服务地址、API 密钥与模型，开启你的 AI 工作流。使用记录可在控制台查看。' }
+      },
+      billing: {
+        eyebrow: 'Plans & Balance',
+        title: '订阅与余额',
+        description: '提前安排一个月，或按需即时充值。',
+        note: '具体套餐、可用分组与价格，请在控制台查看。',
+        subscription: {
+          title: '订阅预售', badge: '预售获取', highlight: '按月', unit: '订阅', caption: '每次限购一个月',
+          accessLabel: '获取方式', access: '订阅仅通过预售获取，请留意预售开放通知。',
+          periodLabel: '使用周期', period: '通常从月初开始，到当月月底结束。'
+        },
+        balance: {
+          title: '余额充值', badge: '即时充值', highlight: '按需', unit: '充值', caption: '即时充值，随时使用',
+          accessLabel: '充值方式', access: '余额支持即时充值，无需等待订阅预售。',
+          periodLabel: '使用方式', period: '按实际使用结算，使用记录与消费金额可在控制台查看。'
+        }
+      },
+      requests: {
+        title: '请求管控',
+        description: '请求须符合接入文档的格式要求；请求内容仅用于审计。',
+        audit: { title: '普通请求内容', retention: '仅保留 1 天' },
+        exceptions: { title: 'Cyber 及违规请求内容', retention: '永久保留' }
+      },
+      faqEyebrow: 'Usage & Pricing',
+      faqTitle: '开始之前，你可能想了解。',
+      faqDescription: '使用策略、分组定价',
+      questions: {
+        service: { title: '使用规范', answer: '严禁分发服务、突破使用限制及其他违规行为。所有使用行为均纳入监管与检测；经 AI 审查判定存在违规行为后，系统将自动封禁账号且不予退款。请留意注册邮箱中的通知与提醒。' },
+        models: { title: '客户端限制', answer: '本站对请求客户端设有限制，请使用 Codex 或 Pi 接入，并按照接入文档完成配置。' },
+        tools: { title: '订阅与余额', answer: '支持订阅与余额两种使用方式。订阅仅通过预售获取，每次限购一个月，价格更优惠，使用周期通常为月初开始、月底结束。余额支持即时充值；Astra 的使用倍率为 0.4–0.5。' },
+        account: { title: '浏览首页需要登录吗？', answer: '不需要。你可以先了解服务和接入流程；创建和管理密钥、查看个人记录时，需要登录账号。' }
+      },
+      policy: {
+        warning: '违规封禁 · 不予退款',
+        subscription: '订阅预售',
+        subscriptionTerm: '每次 1 个月',
+        subscriptionDescription: '订阅仅通过预售获取，每次限购一个月，价格更优惠。使用周期通常为月初开始、月底结束。',
+        balance: '余额充值 · Astra',
+        balanceDescription: 'Astra 使用倍率为 0.4–0.5。余额支持即时充值，无需等待订阅预售。'
+      },
+      closingEyebrow: 'Make room for an idea',
+      closingTitle: '下一杯，留给你的新想法。',
+      closingDescription: '准备好了，就从一次简单的连接开始。'
+    },
     viewOnGithub: '在 GitHub 上查看',
     viewDocs: '查看文档',
     docs: '文档',
@@ -6583,6 +6711,8 @@ export default {
         configGuide: '支付配置指南',
         enabled: '启用支付',
         enabledHint: '启用或禁用支付系统',
+        rechargeTabVisible: '显示余额充值 Tab',
+        rechargeTabVisibleHint: '关闭后隐藏余额充值选项，并禁止创建余额充值订单。',
         guestShopTitle: '首页游客支付',
         guestShopDescription: '独立控制首页游客结账。只复用选中 Stripe 实例的配置，不会开启原站支付，也不会创建原站订单或发放余额。',
         guestShopEnabled: '启用首页游客支付',

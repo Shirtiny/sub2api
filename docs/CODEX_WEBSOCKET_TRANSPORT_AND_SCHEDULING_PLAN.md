@@ -10,6 +10,41 @@ Repositories:
 
 This document replaces all earlier WebSocket design drafts. An implementation or review AI MUST use this file as the v1 source of truth. In particular, v1 does not contain an HTTP/SSE bridge and does not contain provider fallback on the Aether WebSocket route.
 
+### Client HTTP Fallback (2026-09-11)
+
+Codex CLI 0.154.0 treats an HTTP/1.1 WS handshake response of 426 as an immediate
+switch to HTTP/SSE for the current session. This is client-side transport fallback,
+not an HTTP-to-WS bridge, and does not change the route-v1 wire schema.
+
+- After refreshed API-key and IP authorization, sub2api returns 426 before Upgrade
+  when a read-only capability check finds an HTTP candidate but no WS candidate.
+  Unknown catalog/cache state never establishes transport unavailability.
+- After Upgrade, ordinary HTTP status codes cannot replace the established WS.
+  Initial-step failures still try remaining WS routes before falling back. Aether's
+  validated `candidate_unavailable` + `exclude` non-execution proof and upstream
+  handshake 426 identify WS-unavailable routes; unrelated failures do not.
+- When the remaining eligible WS routes are exhausted and HTTP is available,
+  sub2api records a 30-second shared Redis marker before closing. The next handshake
+  returns 426. SETNX keeps repeated failures from extending the window. Marker
+  lookup and writes occur only at admission/failover, never on the frame hot path.
+- Markers are isolated by authenticated user, API key, group, and canonical
+  session/thread identity. Official clients with only `x-client-request-id` use a
+  separate header-only thread scope, subject to the pinned UA/originator check and
+  first-frame identity validation. Missing/conflicting identity does not authorize
+  a marker. The existing route-v1 identity/proof rules remain unchanged.
+- Later-step fallback runs only after successful existing migration admission.
+  Temporarily excluded routes from that admission remain unavailable to the
+  session. A migration-limit error alone is not WS exhaustion; unknown execution,
+  rejected proof, generic errors, and local admission failures do not trigger replay.
+- Client fallback builds the HTTP request from its own history. Gateways must not
+  fabricate history, transplant response IDs, or replay a potentially executed step.
+  HTTP routing, authentication, billing, and policy enforcement stay unchanged.
+
+Redis key namespace: `openai_ws_http_fallback:`. No SQL migration, additional
+environment variable, protocol version, or account-setting change is required.
+Old Aether releases emitting `candidate_unavailable/retain` keep their previous
+behavior; both code changes are needed for the new Aether exhaustion fast path.
+
 ## 1. Goal
 
 Provide this path:
