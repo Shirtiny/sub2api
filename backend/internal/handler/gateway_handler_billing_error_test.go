@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/service"
@@ -70,13 +71,15 @@ func TestBillingErrorDetails_UnknownErrorFallsBackTo403(t *testing.T) {
 }
 
 func TestExtractQuotaResetSeconds_T19_HappyPath(t *testing.T) {
-	err := service.ErrUserPlatformDailyQuotaExhausted.WithMetadata(map[string]string{
-		"window_resets_at": time.Now().Add(10 * time.Second).UTC().Format(time.RFC3339),
+	synctest.Test(t, func(t *testing.T) {
+		err := service.ErrUserPlatformDailyQuotaExhausted.WithMetadata(map[string]string{
+			"window_resets_at": time.Now().Add(10 * time.Second).UTC().Format(time.RFC3339),
+		})
+		require.Equal(t, 10, extractQuotaResetSeconds(err))
+		// Fractional remaining seconds must round up without wall-clock races.
+		time.Sleep(1500 * time.Millisecond)
+		require.Equal(t, 9, extractQuotaResetSeconds(err))
 	})
-	got := extractQuotaResetSeconds(err)
-	if got < 10 || got > 11 {
-		t.Errorf("T19: got %d, want 10 or 11 (math.Ceil boundary)", got)
-	}
 }
 
 func TestExtractQuotaResetSeconds_T20_NoMetadataFallback(t *testing.T) {

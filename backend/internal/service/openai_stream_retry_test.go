@@ -23,6 +23,8 @@ import (
 
 const streamRetryMessage = "Our servers are currently overloaded. Please try again later."
 const streamRetryError = `{"type":"response.failed","response":{"id":"resp-failed","status":"failed","error":{"code":"503","message":"Our servers are currently overloaded. Please try again later."}}}`
+const streamRetryInterruptionMessage = "execution runtime stream ended before provider terminal event"
+const streamRetryInterruptionError = `{"error":{"type":"stream_missing_terminal_event","code":502,"message":"execution runtime stream ended before provider terminal event"}}`
 const streamRetryCreated = `{"type":"response.created","response":{"id":"resp-failed","status":"in_progress","output":[]}}`
 const streamRetryDelta = `{"type":"response.output_text.delta","delta":"hello"}`
 
@@ -89,7 +91,7 @@ func TestStreamRetryOpeningHeartbeatDoesNotFlushPreamble(t *testing.T) {
 }
 
 func TestStreamRetryOpeningFragmentedSSE(t *testing.T) {
-	wire := "event: response.created\r\ndata: {\"response\":{\"id\":\"中文\",\"output\":[]}}\r\n\r\nevent: error\r\ndata: {\"error\":{\r\ndata: \"code\":503,\"message\":\"Our servers are currently overloaded. Please try again later.\"}}\r\n\r\n"
+	wire := "event: response.created\r\ndata: {\"response\":{\"id\":\"中文\",\"output\":[]}}\r\n\r\nevent: error\r\ndata: {\"error\":{\r\ndata: \"type\":\"stream_missing_terminal_event\",\"code\":502,\"message\":\"" + streamRetryInterruptionMessage + "\"}}\r\n\r\n"
 	for size := 1; size <= len(wire); size++ {
 		c, rec, _ := streamRetryContext()
 		w := &openAIStreamOpeningWriter{ResponseWriter: c.Writer, status: 200}
@@ -190,7 +192,7 @@ func TestStreamRetryRealResponseProcessors(t *testing.T) {
 				calls++
 				wire := "data: " + streamRetryCreated + "\n\n"
 				if calls == 1 {
-					wire += "event: error\ndata: {\"error\":{\"code\":503,\"message\":\"" + streamRetryMessage + "\"}}\n\n"
+					wire += "event: error\ndata: " + streamRetryInterruptionError + "\n\n"
 				} else {
 					wire = "data: {\"type\":\"response.created\",\"response\":{\"id\":\"resp-good\",\"output\":[]}}\n\n" + "data: " + streamRetryDelta + "\n\ndata: {\"type\":\"response.completed\",\"response\":{\"id\":\"resp-good\",\"status\":\"completed\",\"output\":[],\"usage\":{\"input_tokens\":10,\"output_tokens\":1}}}\n\n"
 					if mode == "raw-chat" {
@@ -231,7 +233,7 @@ func TestStreamRetryRealResponseProcessors(t *testing.T) {
 			require.NoError(t, err)
 			require.Equal(t, 2, calls)
 			require.NotContains(t, rec.Body.String(), "resp-failed")
-			require.NotContains(t, rec.Body.String(), streamRetryMessage)
+			require.NotContains(t, rec.Body.String(), streamRetryInterruptionMessage)
 			require.Contains(t, rec.Body.String(), "hello")
 		})
 	}
@@ -271,15 +273,15 @@ func (u *streamRetryHTTPClient) DoWithTLS(req *http.Request, proxy string, accou
 }
 
 func TestStreamRetryForwardHTTPPreservesRequestAndRetriesAfterHeartbeat(t *testing.T) {
-	for _, firstStatus := range []int{200, 503} {
+	for _, firstStatus := range []int{200, 502} {
 		t.Run(fmt.Sprint(firstStatus), func(t *testing.T) {
 			var hits atomic.Int32
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				hit := hits.Add(1)
-				if hit == 1 && firstStatus == 503 {
+				if hit == 1 && firstStatus == 502 {
 					w.Header().Set("Content-Type", "application/json")
-					w.WriteHeader(503)
-					_, _ = fmt.Fprintf(w, `{"error":{"message":%q}}`, streamRetryMessage)
+					w.WriteHeader(502)
+					_, _ = io.WriteString(w, streamRetryInterruptionError)
 					return
 				}
 				w.Header().Set("Content-Type", "text/event-stream")
@@ -288,7 +290,7 @@ func TestStreamRetryForwardHTTPPreservesRequestAndRetriesAfterHeartbeat(t *testi
 					writeRetrySSE(w, `{"type":"response.aether_keepalive"}`)
 					_ = http.NewResponseController(w).Flush()
 					time.Sleep(80 * time.Millisecond)
-					writeRetrySSE(w, streamRetryError)
+					writeRetrySSE(w, streamRetryInterruptionError)
 					_ = http.NewResponseController(w).Flush()
 					// The forwarder must stop on the error, not wait for upstream
 					// EOF before retrying. Closing resp.Body cancels this request.
@@ -325,25 +327,30 @@ func TestStreamRetryForwardHTTPPreservesRequestAndRetriesAfterHeartbeat(t *testi
 			require.Equal(t, []int64{account.ID, account.ID}, upstream.accounts)
 			require.Equal(t, int64(1), int64(result.Usage.OutputTokens))
 			require.NotContains(t, rec.Body.String(), "resp-failed")
-			require.NotContains(t, rec.Body.String(), streamRetryMessage)
+			require.NotContains(t, rec.Body.String(), streamRetryInterruptionMessage)
 			require.Contains(t, rec.Body.String(), "hello")
 		})
 	}
 }
 
-func TestStreamRetryHonorsUpstreamRetryAfterEvenWhenNotForwarded(t *testing.T) {
-	c, rec, account := streamRetryContext()
-	calls := 0
-	_, err := ForwardWithStreamRetry(context.Background(), c, account, true, func() (*OpenAIForwardResult, error) {
-		calls++
-		rememberOpenAIStreamRetryHeaders(c, http.Header{"Retry-After": []string{"60"}})
-		return nil, &UpstreamFailoverError{StatusCode: 503, ResponseBody: []byte(streamRetryError)}
-	})
-	var exhausted *UpstreamFailoverError
-	require.ErrorAs(t, err, &exhausted)
-	require.True(t, exhausted.StopLocalRetry)
-	require.Equal(t, 1, calls)
-	require.Empty(t, rec.Body.String())
+func TestStreamRetryDoesNotReplayOverloadEvenWithRetryAfter(t *testing.T) {
+	for _, retryAfter := range []string{"", "1", "60"} {
+		t.Run(retryAfter, func(t *testing.T) {
+			c, rec, account := streamRetryContext()
+			calls := 0
+			_, err := ForwardWithStreamRetry(context.Background(), c, account, true, func() (*OpenAIForwardResult, error) {
+				calls++
+				rememberOpenAIStreamRetryHeaders(c, http.Header{"Retry-After": []string{retryAfter}})
+				return nil, &UpstreamFailoverError{StatusCode: 503, ResponseBody: []byte(streamRetryError)}
+			})
+			var exhausted *UpstreamFailoverError
+			require.ErrorAs(t, err, &exhausted)
+			require.Equal(t, http.StatusServiceUnavailable, exhausted.StatusCode)
+			require.False(t, c.GetBool(openAIStreamOverloadRetriedKey))
+			require.Equal(t, 1, calls)
+			require.Empty(t, rec.Body.String())
+		})
+	}
 }
 
 func TestStreamRetryHTTPFailureAfterHeartbeatDoesNotCorruptSSE(t *testing.T) {
@@ -354,8 +361,8 @@ func TestStreamRetryHTTPFailureAfterHeartbeatDoesNotCorruptSSE(t *testing.T) {
 		if calls == 1 {
 			c.Header("Content-Type", "text/event-stream")
 			_, _ = c.Writer.WriteString(":\n\n")
-			writeRetrySSE(c.Writer, streamRetryError)
-			return nil, errors.New("overloaded")
+			writeRetrySSE(c.Writer, streamRetryInterruptionError)
+			return nil, io.ErrUnexpectedEOF
 		}
 		c.JSON(401, gin.H{"error": gin.H{"message": "unauthorized"}})
 		return nil, errors.New("HTTP 401")

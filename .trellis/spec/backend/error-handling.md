@@ -47,6 +47,25 @@ Observed pattern:
 
 ---
 
+## Streaming delivery failures and billing
+
+OpenAI streaming processors can keep draining a detached upstream after the client
+cancels or a downstream write fails, returning a successful result with collected
+usage. Retry wrappers must not replace this processor-approved result with a
+client transport error and accidentally bypass the handler's `RecordUsage` path.
+
+- Cancellation/write failure still prohibits replay and further wrapper flushes.
+- Preserve a non-nil successful result only when no captured upstream/HTTP failure
+  contradicts it; never turn a processor error into billing success.
+- Reuse detached usage-task contexts, original request IDs and existing billing
+  idempotency. Do not invent token estimates or a second billing implementation.
+- Test cancellation during drain, heartbeat/first-write/final-flush failures,
+  upstream rejection, and actual usage-task/billing-command submission.
+
+Example: `backend/internal/service/openai_stream_retry.go` and its billing tests.
+
+---
+
 ## Common Mistakes
 
 - Do not leak raw DB or upstream error strings directly to clients when a typed application error exists.

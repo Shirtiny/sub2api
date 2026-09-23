@@ -616,7 +616,9 @@ func TestAPIContracts(t *testing.T) {
 							"media_type": null,
 							"cache_ttl_overridden": false,
 							"created_at": "2025-01-02T03:04:05Z",
-							"user_agent": null
+							"user_agent": null,
+							"request_host": null,
+							"ip_address": null
 						}
 					],
 					"total": 1,

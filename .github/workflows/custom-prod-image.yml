@@ -42,9 +42,9 @@ jobs:
             TAG="${GITHUB_REF_NAME}"
           fi
 
-          if [[ ! "$TAG" =~ ^cafecode-v[0-9]+\.[0-9]+\.[0-9]+(-(alpha|beta|rc|nl)\.[0-9]+)?$ ]]; then
+          if [[ ! "$TAG" =~ ^cafecode-v[0-9]+\.[0-9]+\.[0-9]+(-(alpha|beta|rc)\.[0-9]+)?$ ]]; then
             echo "Invalid release tag: $TAG" >&2
-            echo "Expected: cafecode-v1.2.3, cafecode-v1.2.3-alpha.1, cafecode-v1.2.3-beta.1, cafecode-v1.2.3-rc.1, or a pinned NL maintenance build cafecode-v1.2.3-nl.1" >&2
+            echo "Expected: cafecode-v1.2.3, cafecode-v1.2.3-alpha.1, cafecode-v1.2.3-beta.1, or cafecode-v1.2.3-rc.1" >&2
             exit 1
           fi
 

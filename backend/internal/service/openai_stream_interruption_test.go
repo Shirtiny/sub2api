@@ -17,7 +17,7 @@ import (
 )
 
 func TestStreamRetryInterruptionAfterHeartbeatUsesSameBudget(t *testing.T) {
-	for _, firstOverload := range []bool{false, true} {
+	for _, firstExplicitInterruption := range []bool{false, true} {
 		c, rec, account := streamRetryContext()
 		calls := 0
 		_, err := ForwardWithStreamRetry(context.Background(), c, account, true, func() (*OpenAIForwardResult, error) {
@@ -26,8 +26,8 @@ func TestStreamRetryInterruptionAfterHeartbeatUsesSameBudget(t *testing.T) {
 			writeRetrySSE(c.Writer, streamRetryCreated)
 			_, _ = c.Writer.WriteString(":\n\n")
 			c.Writer.Flush()
-			if (calls == 1) == firstOverload {
-				return nil, &UpstreamFailoverError{StatusCode: 503, ResponseBody: []byte(streamRetryError)}
+			if (calls == 1) == firstExplicitInterruption {
+				return nil, &UpstreamFailoverError{StatusCode: 502, ResponseBody: []byte(streamRetryInterruptionError)}
 			}
 			return nil, errors.New("stream usage incomplete: missing terminal event")
 		})

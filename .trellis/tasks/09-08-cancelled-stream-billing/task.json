@@ -1,0 +1,16 @@
+{
+  "id": "cancelled-stream-billing",
+  "name": "cancelled-stream-billing",
+  "title": "Preserve drained usage after stream cancellation or delivery failure",
+  "status": "completed",
+  "dev_type": "fix",
+  "scope": "backend",
+  "creator": "codex-agent",
+  "assignee": "codex-agent",
+  "createdAt": "2026-09-08",
+  "branch": "custom-prod",
+  "base_commit": "dfae89a3176980bad3ace48f02601ca768065c71",
+  "notes": "Implemented with changes limited to the stream retry wrapper; successful processor-approved results survive client cancellation/deadline/write failure without further replay/flush. Existing billing/pricing/idempotency unchanged. Validated: 8 new top-level tests, 36 focused stream-retry tests under race, all 40 default backend test-bearing packages, full lint 0 issues. No commit/tag/push/deployment or retroactive billing in this task; Trellis scripts absent, tracked manually.",
+  "completedAt": "2026-09-08",
+  "follow_up": "2026-09-23: consolidate in custom-prod; keep overloads non-retryable, preserve successful drained billing results, and independently track non-retryable upstream failures so client cancellation cannot turn them into success. No production changes."
+}

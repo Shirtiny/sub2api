@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
 import HelpTooltip from '@/components/common/HelpTooltip.vue'
@@ -12,7 +12,12 @@ function getTooltipElement(): HTMLDivElement {
 }
 
 describe('HelpTooltip', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+
   afterEach(() => {
+    vi.useRealTimers()
     document.body.innerHTML = ''
   })
 
@@ -30,10 +35,14 @@ describe('HelpTooltip', () => {
     expect(tooltip.style.display).toBe('none')
 
     await trigger.trigger('mouseenter')
+    expect(tooltip.style.display).toBe('none')
+    await vi.advanceTimersByTimeAsync(80)
     await nextTick()
     expect(tooltip.style.display).not.toBe('none')
 
     await trigger.trigger('mouseleave')
+    expect(tooltip.style.display).not.toBe('none')
+    await vi.advanceTimersByTimeAsync(180)
     await nextTick()
     expect(tooltip.style.display).toBe('none')
 

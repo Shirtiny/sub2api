@@ -7,7 +7,6 @@ import (
 	"errors"
 	"io"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -42,18 +41,19 @@ func ForwardWithStreamRetry(ctx context.Context, c *gin.Context, account *Accoun
 		if gate.bypass {
 			return result, err
 		}
-		if gate.writeErr != nil {
-			return result, gate.writeErr
+		deliveryErr := gate.writeErr
+		if deliveryErr == nil {
+			deliveryErr = ctx.Err()
 		}
-		if ctx.Err() != nil {
-			return result, ctx.Err()
+		if deliveryErr != nil {
+			return gate.finishAfterDeliveryFailure(result, err, deliveryErr, started)
 		}
 		var failover *UpstreamFailoverError
 		errors.As(err, &failover)
 		if gate.retryFailure == nil && failover != nil {
 			gate.retryFailure = openAIStreamRetryableError(failover.StatusCode, failover.ResponseBody)
 		}
-		if gate.retryFailure == nil && !gate.httpErrorAfterHeartbeat && !gate.committed && !gate.replayUnsafe {
+		if gate.retryFailure == nil && !gate.upstreamFailed && !gate.httpErrorAfterHeartbeat && !gate.committed && !gate.replayUnsafe {
 			if interrupted := openAIStreamReadInterruption(err, failover); interrupted != nil {
 				if len(bytes.TrimSpace(gate.pending[gate.recordStart:])) != 0 {
 					gate.replayUnsafe = true // a partial/unknown frame is not a known empty opening
@@ -66,23 +66,13 @@ func ForwardWithStreamRetry(ctx context.Context, c *gin.Context, account *Accoun
 		// service path chose to return them before writing the wire response.
 		canReplay := !gate.committed && !gate.replayUnsafe && GetOpsCyberPolicy(c) == nil && (result == nil || result.ImageCount == 0)
 		if gate.retryFailure != nil && canReplay {
-			retryEvent := "openai.stream_overload_retry"
-			if gjson.GetBytes(gate.retryFailure.ResponseBody, "error.code").String() == "stream_interrupted" {
-				retryEvent = "openai.stream_interruption_retry"
-			}
+			retryEvent := "openai.stream_interruption_retry"
 
 			gate.retryFailure.StopLocalRetry = true
 			gate.retryFailure.ResponseUncommitted = true
 			setOpsUpstreamError(c, gate.retryFailure.StatusCode, extractUpstreamErrorMessage(gate.retryFailure.ResponseBody), "")
-			retryAfter := gate.retryAfter
-			if retryAfter == "" {
-				retryAfter = original.Header().Get("Retry-After")
-			}
-			delay, allowed := openAIStreamOverloadRetryDelay(retryAfter)
-			if failover != nil && failover.ResponseHeaders.Get("Retry-After") != "" {
-				delay, allowed = openAIStreamOverloadRetryDelay(failover.ResponseHeaders.Get("Retry-After"))
-			}
-			if c.GetBool(openAIStreamOverloadRetriedKey) || !allowed {
+			delay := 500 * time.Millisecond
+			if c.GetBool(openAIStreamOverloadRetriedKey) {
 				logger.FromContext(ctx).Warn(retryEvent+"_exhausted", zap.Int64("account_id", account.ID))
 				return nil, gate.retryFailure
 			}
@@ -126,15 +116,9 @@ func ForwardWithStreamRetry(ctx context.Context, c *gin.Context, account *Accoun
 			err = gate.retryFailure
 		}
 		if finishErr := gate.commit(); finishErr != nil {
-			return result, finishErr
+			return gate.finishAfterDeliveryFailure(result, err, finishErr, started)
 		}
-		if result != nil {
-			result.Duration = time.Since(started)
-			if !gate.firstContentAt.IsZero() {
-				ms := int(gate.firstContentAt.Sub(started).Milliseconds())
-				result.FirstTokenMs = &ms
-			}
-		}
+		gate.updateResultTiming(result, started)
 		if err == nil && c.GetBool(openAIStreamOverloadRetriedKey) {
 			logger.FromContext(ctx).Info(c.GetString("openai_stream_rescue_event")+"_recovered", zap.Int64("account_id", account.ID))
 		}
@@ -142,59 +126,41 @@ func ForwardWithStreamRetry(ctx context.Context, c *gin.Context, account *Accoun
 	}
 }
 
-func openAIStreamOverloadRetryDelay(retryAfter string) (time.Duration, bool) {
-	if strings.TrimSpace(retryAfter) == "" {
-		return 500 * time.Millisecond, true
+// The processors deliberately drain a detached upstream after client disconnect
+// and may return a successful result containing authoritative billing usage.
+// A delivery failure stops replay/writes; it must not replace that result with an
+// error and make the handler skip RecordUsage. Upstream failures remain failures.
+func (w *openAIStreamOpeningWriter) finishAfterDeliveryFailure(result *OpenAIForwardResult, forwardErr, deliveryErr error, started time.Time) (*OpenAIForwardResult, error) {
+	if forwardErr == nil && result != nil && !w.upstreamFailed && w.retryFailure == nil &&
+		!w.httpErrorAfterHeartbeat && w.status >= 200 && w.status < 300 {
+		result.ClientDisconnect = true
+		w.updateResultTiming(result, started)
+		return result, nil
 	}
-	seconds, err := strconv.Atoi(strings.TrimSpace(retryAfter))
-	if err != nil || seconds < 0 || seconds > 5 {
-		return 0, false
-	}
-	delay := time.Duration(seconds) * time.Second
-	if delay < 500*time.Millisecond {
-		delay = 500 * time.Millisecond
-	}
-	return delay, true
+	return result, deliveryErr
 }
 
-func openAIOverloadError(status int, payload []byte) *UpstreamFailoverError {
-	if !gjson.ValidBytes(payload) {
-		return nil
+func (w *openAIStreamOpeningWriter) updateResultTiming(result *OpenAIForwardResult, started time.Time) {
+	if result == nil {
+		return
 	}
-	root := gjson.ParseBytes(payload)
-	if event := root.Get("type").String(); status < 400 && event != "" && event != "error" && event != "response.failed" {
-		return nil
+	result.Duration = time.Since(started)
+	if !w.firstContentAt.IsZero() {
+		ms := int(w.firstContentAt.Sub(started).Milliseconds())
+		result.FirstTokenMs = &ms
 	}
-	e := root.Get("response.error")
-	if !e.IsObject() {
-		e = root.Get("error")
+}
+
+// Failure detection is separate from retry eligibility: overload and business
+// errors must not become successful billing results after a client disconnect.
+func (w *openAIStreamOpeningWriter) observeUpstreamFailure(payload []byte, event string) {
+	if kind := gjson.GetBytes(payload, "type").String(); kind != "" {
+		event = kind
 	}
-	if !e.IsObject() {
-		return nil
+	if event == "error" || event == "response.failed" ||
+		gjson.GetBytes(payload, "error").IsObject() || gjson.GetBytes(payload, "response.error").IsObject() {
+		w.upstreamFailed = true
 	}
-	message := e.Get("message").String()
-	kind := strings.ToLower(e.Get("type").String() + " " + e.Get("code").String())
-	if code := e.Get("code").Int(); code >= 400 && code < 500 {
-		return nil
-	}
-	for _, marker := range []string{"authentication", "unauthorized", "permission", "invalid_api_key", "insufficient_quota", "rate_limit"} {
-		if strings.Contains(kind, marker) {
-			return nil
-		}
-	}
-	combined := strings.ToLower(message) + " " + kind
-	if !strings.Contains(combined, "overload") || !openAIStreamFailedEventShouldFailover(payload, message) {
-		return nil
-	}
-	if status >= 400 && status != 503 && status != 529 {
-		return nil
-	}
-	if status < 400 && e.Get("code").Int() != 503 && e.Get("code").Int() != 529 && !strings.Contains(kind, "overload") && !strings.Contains(strings.ToLower(message), "our servers are currently overloaded") {
-		return nil
-	}
-	status = http.StatusServiceUnavailable
-	body, _ := json.Marshal(gin.H{"error": gin.H{"type": "overloaded_error", "code": status, "message": sanitizeUpstreamErrorMessage(message)}})
-	return &UpstreamFailoverError{StatusCode: status, ResponseBody: body}
 }
 
 func rememberOpenAIStreamRetryHeaders(c *gin.Context, headers http.Header) {
@@ -216,6 +182,7 @@ func captureOpenAIStreamRetryableError(c *gin.Context, payload []byte) *Upstream
 	if !ok {
 		return nil
 	}
+	gate.observeUpstreamFailure(payload, "")
 	err := openAIStreamRetryableError(http.StatusOK, payload)
 	if err != nil {
 		gate.retryFailure = err
@@ -233,6 +200,7 @@ func observeOpenAIStreamRetrySource(c *gin.Context, payload []byte) {
 	if !ok {
 		return
 	}
+	gate.observeUpstreamFailure(payload, "")
 	e := gjson.GetBytes(payload, "response.error")
 	if !e.IsObject() {
 		e = gjson.GetBytes(payload, "error")
@@ -344,6 +312,7 @@ func classifyOpenAIStreamOpening(payload []byte, event string) streamOpeningDeci
 type openAIStreamOpeningWriter struct {
 	bypass                  bool
 	httpErrorAfterHeartbeat bool
+	upstreamFailed          bool
 	retryAfter              string
 	gin.ResponseWriter
 	status                          int
@@ -446,6 +415,9 @@ func (w *openAIStreamOpeningWriter) Write(data []byte) (int, error) {
 			if bytes.HasPrefix(line, []byte("data:")) {
 				payload := bytes.TrimSpace(line[5:])
 				event, _, _ := parseStreamOpeningRecord(w.pending[w.recordStart : i+1])
+				if json.Valid(payload) {
+					w.observeUpstreamFailure(payload, event)
+				}
 				if json.Valid(payload) && openAIStreamRetryableError(200, payload) == nil && classifyOpenAIStreamOpening(payload, event) == streamOpeningContent {
 					w.firstContentAt = time.Now()
 					return len(data), w.commit()
@@ -459,6 +431,7 @@ func (w *openAIStreamOpeningWriter) Write(data []byte) (int, error) {
 			return len(data), w.commit()
 		}
 		if len(payload) > 0 {
+			w.observeUpstreamFailure(payload, event)
 			w.retryFailure = openAIStreamRetryableError(200, payload)
 			if w.retryFailure != nil {
 				return len(data), nil

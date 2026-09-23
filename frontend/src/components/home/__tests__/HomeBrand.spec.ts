@@ -11,11 +11,6 @@ vi.mock('@vueuse/core', () => ({
   useDocumentVisibility: () => motion.visibility,
   usePreferredReducedMotion: () => motion.preference
 }))
-vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: (key: string) => ({
-  'home.landing.toolMarks': 'Creative tools: Codex and pi',
-  'home.landing.pauseToolAnimation': 'Pause Codex / pi icon animation',
-  'home.landing.resumeToolAnimation': 'Resume Codex / pi icon animation'
-})[key] || key }) }))
 const RouterLinkStub = defineComponent({ props: ['to'], template: '<a :href="to"><slot /></a>' })
 let wrapper: VueWrapper | undefined
 const render = (siteName = 'Café Shop') => {
@@ -31,10 +26,10 @@ afterEach(() => {
   vi.useRealTimers()
 })
 
-describe('HomeBrand wordmark and independent tool marks', () => {
+describe('HomeBrand wordmark and decorative tool marks', () => {
   it('scales the complete vector wordmark down without changing its geometry or header height', () => {
-    expect(source).toContain('--brand-name-scale: .9;')
-    expect(source).toContain('--brand-name-scale: .79;')
+    expect(source).toContain('--brand-name-scale: .7;')
+    expect(source).toContain('--brand-name-scale: .62;')
     expect(source).toContain('var(--brand-name-width) * var(--brand-name-scale)')
     expect(source).not.toContain('--slider-header-height')
   })
@@ -51,53 +46,51 @@ describe('HomeBrand wordmark and independent tool marks', () => {
     expect(page.text()).not.toMatch(/Codex|\bpi\b/)
   })
 
-  it('uses inline SVG path animations in an independently pausable control', async () => {
-    const page = render()
-    const control = page.find('.brand-tools')
-    expect(page.find('.brand-tools img, .brand-tools image').exists()).toBe(false)
-    expect(page.find('.accent-steam animate[attributeName="d"]').exists()).toBe(true)
-    expect(page.find('.accent-steam').attributes('fill')).toBe('currentColor')
-    expect(control.element.closest('a')).toBeNull()
-    expect(control.attributes('data-paused')).toBe('false')
-    expect(control.attributes('aria-label')).toBe('Pause Codex / pi icon animation')
-    await control.trigger('click')
-    expect(control.attributes('data-paused')).toBe('true')
-    expect(control.attributes('aria-pressed')).toBe('true')
-    expect(control.attributes('aria-label')).toBe('Resume Codex / pi icon animation')
-    await control.trigger('click')
-    expect(control.attributes('data-paused')).toBe('false')
+  it.each(['Café Shop', 'My Atelier'])('keeps native animations without a hover, focus or click control (%s)', async name => {
+    const page = render(name)
+    const animation = page.findComponent({ name: name === 'Café Shop' ? 'HomeBrandStory' : 'HomeToolGlyph' })
+    expect(page.find('animate').exists()).toBe(true)
+    expect(animation.props('paused')).toBe(false)
+    await page.trigger('mouseenter')
+    await page.trigger('focusin')
+    expect(page.find('button, [role="button"], [aria-pressed], .story-pause').exists()).toBe(false)
+    expect(animation.props('paused')).toBe(false)
+    expect(source).not.toMatch(/:hover|:focus-within|@click|toolLabel/)
+    if (name === 'Café Shop') {
+      expect(page.find('.brand-tools').exists()).toBe(false)
+      expect(page.find('.accent-steam animate[attributeName="d"]').exists()).toBe(true)
+    } else {
+      const marks = page.find('.brand-tools')
+      expect(marks.element.tagName).toBe('SPAN')
+      expect(marks.attributes('aria-hidden')).toBe('true')
+      expect(marks.attributes('tabindex')).toBeUndefined()
+      await marks.trigger('click')
+      expect(animation.props('paused')).toBe(false)
+    }
   })
 
-  it('pauses in background tabs without overriding a manual pause', async () => {
-    const page = render()
-    const control = page.find('.brand-tools')
+  it.each(['Café Shop', 'My Atelier'])('automatically pauses when backgrounded and resumes when visible (%s)', async name => {
+    const page = render(name)
+    const animation = page.findComponent({ name: name === 'Café Shop' ? 'HomeBrandStory' : 'HomeToolGlyph' })
     motion.visibility.value = 'hidden'
     await nextTick()
-    expect(control.attributes('data-paused')).toBe('true')
+    expect(animation.props('paused')).toBe(true)
     motion.visibility.value = 'visible'
     await nextTick()
-    expect(control.attributes('data-paused')).toBe('false')
-    await control.trigger('click')
-    motion.visibility.value = 'hidden'
-    await nextTick()
-    motion.visibility.value = 'visible'
-    await nextTick()
-    expect(control.attributes('data-paused')).toBe('true')
+    expect(animation.props('paused')).toBe(false)
   })
 
-  it('responds to reduced motion without exposing an unusable animation control', async () => {
-    const page = render()
+  it.each(['Café Shop', 'My Atelier'])('retains the system reduced-motion fallback without adding controls (%s)', async name => {
+    const page = render(name)
+    const animation = page.findComponent({ name: name === 'Café Shop' ? 'HomeBrandStory' : 'HomeToolGlyph' })
     motion.preference.value = 'reduce'
     await nextTick()
-    const control = page.find('.brand-tools')
-    expect(control.attributes('data-paused')).toBe('true')
-    expect(control.attributes('disabled')).toBeDefined()
-    expect(control.attributes('aria-label')).toBe('Creative tools: Codex and pi')
+    expect(animation.props('paused')).toBe(true)
+    expect(page.find('button, [role="button"]').exists()).toBe(false)
     expect(page.find('animate, animateTransform').exists()).toBe(false)
     motion.preference.value = 'no-preference'
     await nextTick()
-    expect(control.attributes('disabled')).toBeUndefined()
-    expect(control.attributes('data-paused')).toBe('false')
+    expect(animation.props('paused')).toBe(false)
     expect(page.find('animate').exists()).toBe(true)
   })
 

@@ -2,6 +2,7 @@ import { flushPromises, shallowMount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import SubscriptionsView from '../SubscriptionsView.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
+import { formatDateOnly } from '@/utils/format'
 
 const routerPush = vi.hoisted(() => vi.fn())
 const showError = vi.hoisted(() => vi.fn())
@@ -99,7 +100,7 @@ describe('SubscriptionsView renewal routing', () => {
     const multiplier = wrapper.find('[data-testid="subscription-custom-multiplier"]')
     expect(multiplier.exists()).toBe(true)
     expect(multiplier.text()).toContain('3x')
-    expect(wrapper.text()).toContain('2098/12/15')
+    expect(wrapper.text()).toContain(formatDateOnly('2098-12-15T00:00:00Z'))
   })
 
   it('shows the multiplier badge with the custom group suffix name', async () => {
@@ -281,7 +282,7 @@ describe('SubscriptionsView renewal routing', () => {
     expect(earlyResetSubscription).toHaveBeenCalledWith(8, expect.any(String))
     expect(showSuccess).toHaveBeenCalled()
     expect(syncActiveSubscription).toHaveBeenCalledWith(expect.objectContaining({ id: 8 }))
-    expect(wrapper.text()).toContain('2099/01/15')
+    expect(wrapper.text()).toContain(formatDateOnly('2099-01-15T00:00:00Z'))
   })
 
   it('shows quota expiry instead of an automatic reset for limited quota', async () => {

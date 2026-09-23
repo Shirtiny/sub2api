@@ -29,8 +29,11 @@ NL's setup on 2026-09-17 already satisfies the direct-edge path: edge `162.211.2
 
 Production deployment is separate from code completion; no images, production applications, proxy configuration or database rows are changed by these source edits/tests.
 
-## NL maintenance release
+## Unified release branch
 
-`cafecode-v0.0.75-nl.1` is based on the deployed v0.0.75 revision plus only this feature. It is deployed directly by immutable digest, not a phased/canary release. The NL suffix keeps the build off the shared `latest`/major-minor tags so other installations do not receive a maintenance branch accidentally. v0.0.76 WebSocket fallback, v0.0.77 recharge settings and unrelated dirty stream retry work are not included.
-
-Review scope: billable usage history and its export. The separate redacted failed-request tab is unchanged.
+Request-origin capture is maintained in `custom-prod` alongside the public UI,
+recharge settings, WebSocket fallback, and stream-cancellation billing fixes.
+All installations use the same release code; no NL-only branch or new `-nl`
+release is required. Trusted-proxy settings remain deployment-specific and must
+still satisfy the prerequisites above. Existing applied migration checksums are
+unchanged; do not recreate or backfill historical request hosts.

@@ -82,7 +82,8 @@ describe('model brand gallery', () => {
     expect(page.find('.model-solid path').exists()).toBe(true)
     expect(page.findAll('.model-echo')).toHaveLength(2)
     expect(page.findAll('.celestial-scene').map(scene => scene.attributes('data-scene'))).toEqual(['luna', 'terra', 'sol', 'astra'])
-    expect(page.findAll('.model-group-caption p').map(version => version.text())).toEqual(['GPT-5.6', 'GPT-5.6', 'GPT-5.6', 'GPT-6'])
+    expect(page.findAll('.model-group-caption p').map(version => version.text())).toEqual(['GPT-6', 'GPT-6', 'GPT-6', 'GPT-6'])
+    expect(page.text()).not.toContain('GPT-5.6')
   })
 
   it('starts the reveal on first entry without replaying it on every scroll', async () => {

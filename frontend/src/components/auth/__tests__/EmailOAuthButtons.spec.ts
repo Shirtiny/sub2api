@@ -42,6 +42,7 @@ describe('EmailOAuthButtons', () => {
       props: {
         githubEnabled: true,
         googleEnabled: false,
+        affiliateEnabled: true,
       },
       global: {
         stubs: {

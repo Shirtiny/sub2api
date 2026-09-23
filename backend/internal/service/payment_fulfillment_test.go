@@ -643,7 +643,7 @@ func createPaymentFulfillmentSubscriptionOrder(
 		SetExpiresAt(time.Now().Add(time.Hour)).
 		SetClientIP("127.0.0.1").
 		SetSrcHost("api.example.com").
-		SetUpdatedAt(updatedAt).
+		SetUpdatedAt(updatedAt.UTC()).
 		Save(ctx)
 	require.NoError(t, err)
 	return order
