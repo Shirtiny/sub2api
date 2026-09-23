@@ -58,6 +58,7 @@
     <!-- Order Detail Dialog -->
     <BaseDialog :show="showDetailDialog" :title="t('payment.admin.orderDetail')" width="wide" @close="showDetailDialog = false">
       <div v-if="selectedOrder" class="space-y-4">
+        <PresaleOrderTerm :order="selectedOrder" />
         <div class="grid grid-cols-2 gap-4">
           <div><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('payment.orders.orderId') }}</p><p class="font-mono text-sm font-medium text-content-primary">#{{ selectedOrder.id }}</p></div>
           <div><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('payment.orders.orderNo') }}</p><p class="text-sm font-medium text-content-primary">{{ selectedOrder.out_trade_no }}</p></div>
@@ -112,6 +113,7 @@
 </template>
 
 <script setup lang="ts">
+import PresaleOrderTerm from '@/components/presale/PresaleOrderTerm.vue'
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'

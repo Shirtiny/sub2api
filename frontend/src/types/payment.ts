@@ -76,6 +76,12 @@ export interface CheckoutInfoResponse {
 // ==================== Orders ====================
 
 export interface PaymentOrder {
+  presale_starts_at?: string
+  presale_expires_at?: string
+  presale_activated_at?: string
+  presale_renewal?: boolean
+  presale_plan_name?: string
+  presale_reset_cards?: number
   id: number
   user_id: number
   amount: number
@@ -110,6 +116,10 @@ export interface PaymentOrder {
 // ==================== Plans & Channels ====================
 
 export interface SubscriptionPlan {
+  presale_enabled?: boolean
+  presale_visible?: boolean
+  presale_badge?: string
+  presale_reset_cards?: number
   id: number
   group_id: number
   group_platform?: string
@@ -263,6 +273,7 @@ export interface ProviderInstance {
 // ==================== Request / Response ====================
 
 export interface CreateOrderRequest {
+  presale_month?: string
   amount: number
   payment_type: string
   order_type: string
@@ -328,6 +339,7 @@ export interface CafeCouponInfoResponse {
 }
 
 export interface CafeCouponPreviewRequest {
+  presale_month?: string
   code: string
   amount: number
   order_type: OrderType

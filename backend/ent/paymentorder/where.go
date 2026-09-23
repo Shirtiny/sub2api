@@ -145,6 +145,41 @@ func PlanID(v int64) predicate.PaymentOrder {
 	return predicate.PaymentOrder(sql.FieldEQ(FieldPlanID, v))
 }
 
+// PresaleStartsAt applies equality check predicate on the "presale_starts_at" field. It's identical to PresaleStartsAtEQ.
+func PresaleStartsAt(v time.Time) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldEQ(FieldPresaleStartsAt, v))
+}
+
+// PresaleExpiresAt applies equality check predicate on the "presale_expires_at" field. It's identical to PresaleExpiresAtEQ.
+func PresaleExpiresAt(v time.Time) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldEQ(FieldPresaleExpiresAt, v))
+}
+
+// PresaleActivatedAt applies equality check predicate on the "presale_activated_at" field. It's identical to PresaleActivatedAtEQ.
+func PresaleActivatedAt(v time.Time) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldEQ(FieldPresaleActivatedAt, v))
+}
+
+// PresaleSubscriptionID applies equality check predicate on the "presale_subscription_id" field. It's identical to PresaleSubscriptionIDEQ.
+func PresaleSubscriptionID(v int64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldEQ(FieldPresaleSubscriptionID, v))
+}
+
+// PresaleRenewal applies equality check predicate on the "presale_renewal" field. It's identical to PresaleRenewalEQ.
+func PresaleRenewal(v bool) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldEQ(FieldPresaleRenewal, v))
+}
+
+// PresalePlanName applies equality check predicate on the "presale_plan_name" field. It's identical to PresalePlanNameEQ.
+func PresalePlanName(v string) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldEQ(FieldPresalePlanName, v))
+}
+
+// PresaleResetCards applies equality check predicate on the "presale_reset_cards" field. It's identical to PresaleResetCardsEQ.
+func PresaleResetCards(v int) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldEQ(FieldPresaleResetCards, v))
+}
+
 // SubscriptionGroupID applies equality check predicate on the "subscription_group_id" field. It's identical to SubscriptionGroupIDEQ.
 func SubscriptionGroupID(v int64) predicate.PaymentOrder {
 	return predicate.PaymentOrder(sql.FieldEQ(FieldSubscriptionGroupID, v))
@@ -1358,6 +1393,321 @@ func PlanIDIsNil() predicate.PaymentOrder {
 // PlanIDNotNil applies the NotNil predicate on the "plan_id" field.
 func PlanIDNotNil() predicate.PaymentOrder {
 	return predicate.PaymentOrder(sql.FieldNotNull(FieldPlanID))
+}
+
+// PresaleStartsAtEQ applies the EQ predicate on the "presale_starts_at" field.
+func PresaleStartsAtEQ(v time.Time) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldEQ(FieldPresaleStartsAt, v))
+}
+
+// PresaleStartsAtNEQ applies the NEQ predicate on the "presale_starts_at" field.
+func PresaleStartsAtNEQ(v time.Time) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldNEQ(FieldPresaleStartsAt, v))
+}
+
+// PresaleStartsAtIn applies the In predicate on the "presale_starts_at" field.
+func PresaleStartsAtIn(vs ...time.Time) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldIn(FieldPresaleStartsAt, vs...))
+}
+
+// PresaleStartsAtNotIn applies the NotIn predicate on the "presale_starts_at" field.
+func PresaleStartsAtNotIn(vs ...time.Time) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldNotIn(FieldPresaleStartsAt, vs...))
+}
+
+// PresaleStartsAtGT applies the GT predicate on the "presale_starts_at" field.
+func PresaleStartsAtGT(v time.Time) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldGT(FieldPresaleStartsAt, v))
+}
+
+// PresaleStartsAtGTE applies the GTE predicate on the "presale_starts_at" field.
+func PresaleStartsAtGTE(v time.Time) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldGTE(FieldPresaleStartsAt, v))
+}
+
+// PresaleStartsAtLT applies the LT predicate on the "presale_starts_at" field.
+func PresaleStartsAtLT(v time.Time) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldLT(FieldPresaleStartsAt, v))
+}
+
+// PresaleStartsAtLTE applies the LTE predicate on the "presale_starts_at" field.
+func PresaleStartsAtLTE(v time.Time) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldLTE(FieldPresaleStartsAt, v))
+}
+
+// PresaleStartsAtIsNil applies the IsNil predicate on the "presale_starts_at" field.
+func PresaleStartsAtIsNil() predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldIsNull(FieldPresaleStartsAt))
+}
+
+// PresaleStartsAtNotNil applies the NotNil predicate on the "presale_starts_at" field.
+func PresaleStartsAtNotNil() predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldNotNull(FieldPresaleStartsAt))
+}
+
+// PresaleExpiresAtEQ applies the EQ predicate on the "presale_expires_at" field.
+func PresaleExpiresAtEQ(v time.Time) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldEQ(FieldPresaleExpiresAt, v))
+}
+
+// PresaleExpiresAtNEQ applies the NEQ predicate on the "presale_expires_at" field.
+func PresaleExpiresAtNEQ(v time.Time) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldNEQ(FieldPresaleExpiresAt, v))
+}
+
+// PresaleExpiresAtIn applies the In predicate on the "presale_expires_at" field.
+func PresaleExpiresAtIn(vs ...time.Time) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldIn(FieldPresaleExpiresAt, vs...))
+}
+
+// PresaleExpiresAtNotIn applies the NotIn predicate on the "presale_expires_at" field.
+func PresaleExpiresAtNotIn(vs ...time.Time) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldNotIn(FieldPresaleExpiresAt, vs...))
+}
+
+// PresaleExpiresAtGT applies the GT predicate on the "presale_expires_at" field.
+func PresaleExpiresAtGT(v time.Time) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldGT(FieldPresaleExpiresAt, v))
+}
+
+// PresaleExpiresAtGTE applies the GTE predicate on the "presale_expires_at" field.
+func PresaleExpiresAtGTE(v time.Time) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldGTE(FieldPresaleExpiresAt, v))
+}
+
+// PresaleExpiresAtLT applies the LT predicate on the "presale_expires_at" field.
+func PresaleExpiresAtLT(v time.Time) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldLT(FieldPresaleExpiresAt, v))
+}
+
+// PresaleExpiresAtLTE applies the LTE predicate on the "presale_expires_at" field.
+func PresaleExpiresAtLTE(v time.Time) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldLTE(FieldPresaleExpiresAt, v))
+}
+
+// PresaleExpiresAtIsNil applies the IsNil predicate on the "presale_expires_at" field.
+func PresaleExpiresAtIsNil() predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldIsNull(FieldPresaleExpiresAt))
+}
+
+// PresaleExpiresAtNotNil applies the NotNil predicate on the "presale_expires_at" field.
+func PresaleExpiresAtNotNil() predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldNotNull(FieldPresaleExpiresAt))
+}
+
+// PresaleActivatedAtEQ applies the EQ predicate on the "presale_activated_at" field.
+func PresaleActivatedAtEQ(v time.Time) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldEQ(FieldPresaleActivatedAt, v))
+}
+
+// PresaleActivatedAtNEQ applies the NEQ predicate on the "presale_activated_at" field.
+func PresaleActivatedAtNEQ(v time.Time) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldNEQ(FieldPresaleActivatedAt, v))
+}
+
+// PresaleActivatedAtIn applies the In predicate on the "presale_activated_at" field.
+func PresaleActivatedAtIn(vs ...time.Time) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldIn(FieldPresaleActivatedAt, vs...))
+}
+
+// PresaleActivatedAtNotIn applies the NotIn predicate on the "presale_activated_at" field.
+func PresaleActivatedAtNotIn(vs ...time.Time) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldNotIn(FieldPresaleActivatedAt, vs...))
+}
+
+// PresaleActivatedAtGT applies the GT predicate on the "presale_activated_at" field.
+func PresaleActivatedAtGT(v time.Time) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldGT(FieldPresaleActivatedAt, v))
+}
+
+// PresaleActivatedAtGTE applies the GTE predicate on the "presale_activated_at" field.
+func PresaleActivatedAtGTE(v time.Time) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldGTE(FieldPresaleActivatedAt, v))
+}
+
+// PresaleActivatedAtLT applies the LT predicate on the "presale_activated_at" field.
+func PresaleActivatedAtLT(v time.Time) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldLT(FieldPresaleActivatedAt, v))
+}
+
+// PresaleActivatedAtLTE applies the LTE predicate on the "presale_activated_at" field.
+func PresaleActivatedAtLTE(v time.Time) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldLTE(FieldPresaleActivatedAt, v))
+}
+
+// PresaleActivatedAtIsNil applies the IsNil predicate on the "presale_activated_at" field.
+func PresaleActivatedAtIsNil() predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldIsNull(FieldPresaleActivatedAt))
+}
+
+// PresaleActivatedAtNotNil applies the NotNil predicate on the "presale_activated_at" field.
+func PresaleActivatedAtNotNil() predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldNotNull(FieldPresaleActivatedAt))
+}
+
+// PresaleSubscriptionIDEQ applies the EQ predicate on the "presale_subscription_id" field.
+func PresaleSubscriptionIDEQ(v int64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldEQ(FieldPresaleSubscriptionID, v))
+}
+
+// PresaleSubscriptionIDNEQ applies the NEQ predicate on the "presale_subscription_id" field.
+func PresaleSubscriptionIDNEQ(v int64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldNEQ(FieldPresaleSubscriptionID, v))
+}
+
+// PresaleSubscriptionIDIn applies the In predicate on the "presale_subscription_id" field.
+func PresaleSubscriptionIDIn(vs ...int64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldIn(FieldPresaleSubscriptionID, vs...))
+}
+
+// PresaleSubscriptionIDNotIn applies the NotIn predicate on the "presale_subscription_id" field.
+func PresaleSubscriptionIDNotIn(vs ...int64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldNotIn(FieldPresaleSubscriptionID, vs...))
+}
+
+// PresaleSubscriptionIDGT applies the GT predicate on the "presale_subscription_id" field.
+func PresaleSubscriptionIDGT(v int64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldGT(FieldPresaleSubscriptionID, v))
+}
+
+// PresaleSubscriptionIDGTE applies the GTE predicate on the "presale_subscription_id" field.
+func PresaleSubscriptionIDGTE(v int64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldGTE(FieldPresaleSubscriptionID, v))
+}
+
+// PresaleSubscriptionIDLT applies the LT predicate on the "presale_subscription_id" field.
+func PresaleSubscriptionIDLT(v int64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldLT(FieldPresaleSubscriptionID, v))
+}
+
+// PresaleSubscriptionIDLTE applies the LTE predicate on the "presale_subscription_id" field.
+func PresaleSubscriptionIDLTE(v int64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldLTE(FieldPresaleSubscriptionID, v))
+}
+
+// PresaleSubscriptionIDIsNil applies the IsNil predicate on the "presale_subscription_id" field.
+func PresaleSubscriptionIDIsNil() predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldIsNull(FieldPresaleSubscriptionID))
+}
+
+// PresaleSubscriptionIDNotNil applies the NotNil predicate on the "presale_subscription_id" field.
+func PresaleSubscriptionIDNotNil() predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldNotNull(FieldPresaleSubscriptionID))
+}
+
+// PresaleRenewalEQ applies the EQ predicate on the "presale_renewal" field.
+func PresaleRenewalEQ(v bool) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldEQ(FieldPresaleRenewal, v))
+}
+
+// PresaleRenewalNEQ applies the NEQ predicate on the "presale_renewal" field.
+func PresaleRenewalNEQ(v bool) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldNEQ(FieldPresaleRenewal, v))
+}
+
+// PresalePlanNameEQ applies the EQ predicate on the "presale_plan_name" field.
+func PresalePlanNameEQ(v string) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldEQ(FieldPresalePlanName, v))
+}
+
+// PresalePlanNameNEQ applies the NEQ predicate on the "presale_plan_name" field.
+func PresalePlanNameNEQ(v string) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldNEQ(FieldPresalePlanName, v))
+}
+
+// PresalePlanNameIn applies the In predicate on the "presale_plan_name" field.
+func PresalePlanNameIn(vs ...string) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldIn(FieldPresalePlanName, vs...))
+}
+
+// PresalePlanNameNotIn applies the NotIn predicate on the "presale_plan_name" field.
+func PresalePlanNameNotIn(vs ...string) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldNotIn(FieldPresalePlanName, vs...))
+}
+
+// PresalePlanNameGT applies the GT predicate on the "presale_plan_name" field.
+func PresalePlanNameGT(v string) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldGT(FieldPresalePlanName, v))
+}
+
+// PresalePlanNameGTE applies the GTE predicate on the "presale_plan_name" field.
+func PresalePlanNameGTE(v string) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldGTE(FieldPresalePlanName, v))
+}
+
+// PresalePlanNameLT applies the LT predicate on the "presale_plan_name" field.
+func PresalePlanNameLT(v string) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldLT(FieldPresalePlanName, v))
+}
+
+// PresalePlanNameLTE applies the LTE predicate on the "presale_plan_name" field.
+func PresalePlanNameLTE(v string) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldLTE(FieldPresalePlanName, v))
+}
+
+// PresalePlanNameContains applies the Contains predicate on the "presale_plan_name" field.
+func PresalePlanNameContains(v string) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldContains(FieldPresalePlanName, v))
+}
+
+// PresalePlanNameHasPrefix applies the HasPrefix predicate on the "presale_plan_name" field.
+func PresalePlanNameHasPrefix(v string) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldHasPrefix(FieldPresalePlanName, v))
+}
+
+// PresalePlanNameHasSuffix applies the HasSuffix predicate on the "presale_plan_name" field.
+func PresalePlanNameHasSuffix(v string) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldHasSuffix(FieldPresalePlanName, v))
+}
+
+// PresalePlanNameEqualFold applies the EqualFold predicate on the "presale_plan_name" field.
+func PresalePlanNameEqualFold(v string) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldEqualFold(FieldPresalePlanName, v))
+}
+
+// PresalePlanNameContainsFold applies the ContainsFold predicate on the "presale_plan_name" field.
+func PresalePlanNameContainsFold(v string) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldContainsFold(FieldPresalePlanName, v))
+}
+
+// PresaleResetCardsEQ applies the EQ predicate on the "presale_reset_cards" field.
+func PresaleResetCardsEQ(v int) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldEQ(FieldPresaleResetCards, v))
+}
+
+// PresaleResetCardsNEQ applies the NEQ predicate on the "presale_reset_cards" field.
+func PresaleResetCardsNEQ(v int) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldNEQ(FieldPresaleResetCards, v))
+}
+
+// PresaleResetCardsIn applies the In predicate on the "presale_reset_cards" field.
+func PresaleResetCardsIn(vs ...int) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldIn(FieldPresaleResetCards, vs...))
+}
+
+// PresaleResetCardsNotIn applies the NotIn predicate on the "presale_reset_cards" field.
+func PresaleResetCardsNotIn(vs ...int) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldNotIn(FieldPresaleResetCards, vs...))
+}
+
+// PresaleResetCardsGT applies the GT predicate on the "presale_reset_cards" field.
+func PresaleResetCardsGT(v int) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldGT(FieldPresaleResetCards, v))
+}
+
+// PresaleResetCardsGTE applies the GTE predicate on the "presale_reset_cards" field.
+func PresaleResetCardsGTE(v int) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldGTE(FieldPresaleResetCards, v))
+}
+
+// PresaleResetCardsLT applies the LT predicate on the "presale_reset_cards" field.
+func PresaleResetCardsLT(v int) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldLT(FieldPresaleResetCards, v))
+}
+
+// PresaleResetCardsLTE applies the LTE predicate on the "presale_reset_cards" field.
+func PresaleResetCardsLTE(v int) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldLTE(FieldPresaleResetCards, v))
 }
 
 // SubscriptionGroupIDEQ applies the EQ predicate on the "subscription_group_id" field.

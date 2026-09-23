@@ -53,6 +53,7 @@
           <input
             id="deduct-balance"
             v-model="form.deduct_balance"
+            :disabled="!!order?.presale_starts_at"
             type="checkbox"
             class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
           />
@@ -91,6 +92,11 @@
         </div>
       </div>
 
+      <div v-if="order?.presale_starts_at" class="rounded-lg bg-surface-hover p-4 text-sm text-content-secondary">
+        <p>{{ t('presale.refundNotice') }}</p>
+        <p v-if="presaleQuote" class="mt-3 font-medium">{{ t('presale.refundAmount') }}: {{ formatPaymentAmount(presaleQuote.gateway_amount, presaleQuote.currency) }}</p>
+        <p v-if="presaleError" class="mt-2 text-red-500" role="alert">{{ presaleError }}</p>
+      </div>
       <!-- Refund Amount -->
       <div>
         <label class="input-label">{{ t('payment.admin.refundAmount') }}</label>
@@ -98,6 +104,7 @@
           <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">{{ order?.order_type === 'balance' ? '$' : '¥' }}</span>
           <input
             v-model.number="form.amount"
+            :disabled="!!order?.presale_starts_at"
             type="number"
             step="0.01"
             min="0.01"
@@ -153,7 +160,7 @@
         <button
           type="submit"
           form="refund-form"
-          :disabled="submitting || form.amount <= 0 || (requireForce && !form.force)"
+          :disabled="submitting || loadingQuote || (!!order?.presale_starts_at && !presaleQuote) || form.amount <= 0 || (requireForce && !form.force)"
           class="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 dark:focus:ring-offset-dark-800"
         >
           {{ submitting ? t('common.processing') : t('payment.admin.confirmRefund') }}
@@ -164,13 +171,21 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, computed, watch } from 'vue'
+import { ref, reactive, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import BaseDialog from '@/components/common/BaseDialog.vue'
 import type { PaymentOrder } from '@/types/payment'
 import { formatOrderDateTime } from '@/components/payment/orderUtils'
 
+import { adminPaymentAPI } from '@/api/admin/payment'
+import { extractI18nErrorMessage } from '@/utils/apiError'
+import { formatPaymentAmount } from '@/components/payment/currency'
+import type { PresaleRefundQuote } from '@/api/presale'
+
 const { t } = useI18n()
+const presaleQuote = ref<PresaleRefundQuote | null>(null)
+const presaleError = ref('')
+const loadingQuote = ref(false)
 
 const props = defineProps<{
   show: boolean
@@ -212,7 +227,7 @@ const balanceInsufficient = computed(() => {
   return props.userBalance < props.order.amount
 })
 
-watch(() => props.show, (val) => {
+watch(() => props.show, async (val) => {
   if (val && props.order) {
     // For REFUND_REQUESTED, pre-fill with the requested amount
     if (props.order.status === 'REFUND_REQUESTED' && props.order.refund_amount) {
@@ -223,6 +238,15 @@ watch(() => props.show, (val) => {
     form.reason = props.order.refund_request_reason || ''
     form.deduct_balance = true
     form.force = false
+    presaleQuote.value = null
+    presaleError.value = ''
+    if (props.order.presale_starts_at) {
+      form.deduct_balance = false
+      loadingQuote.value = true
+      try { presaleQuote.value = (await adminPaymentAPI.getPresaleRefundQuote(props.order.id)).data; form.amount = presaleQuote.value.refund_amount }
+      catch (err) { presaleError.value = extractI18nErrorMessage(err, t, 'presale.errors', t('common.error')) }
+      finally { loadingQuote.value = false }
+    }
   }
 })
 
@@ -231,6 +255,7 @@ function formatDateTime(dateStr: string): string {
 }
 
 function handleSubmit() {
+  if (props.order?.presale_starts_at && (!presaleQuote.value || loadingQuote.value || presaleError.value)) return
   if (form.amount <= 0 || form.amount > maxRefundable.value) return
   if (props.requireForce && !form.force) return
   emit('confirm', { ...form })

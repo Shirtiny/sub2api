@@ -117,7 +117,7 @@ export const paymentAPI = {
   },
 
   /** Request a refund for a completed order */
-  requestRefund(id: number, data: { reason: string }) {
+  requestRefund(id: number, data: { reason: string; expected_refund_amount?: number }) {
     return apiClient.post(`/payment/orders/${id}/refund-request`, data)
   },
 

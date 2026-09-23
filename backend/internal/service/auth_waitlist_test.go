@@ -33,6 +33,38 @@ func TestAuthWaitlistRegistrationAccess(t *testing.T) {
 	}
 }
 
+func TestAuthWaitlistExistingAccountUsesLogin(t *testing.T) {
+	ctx := context.Background()
+	now, userID := time.Now(), int64(42)
+	for _, open := range []string{"false", "true"} {
+		t.Run(open, func(t *testing.T) {
+			s := newAuthService(&userRepoStub{}, map[string]string{SettingKeyRegistrationEnabled: open}, nil, nil)
+			s.waitlistRepo = &waitlistApprovalRepoStub{entry: WaitlistEntry{
+				Email: "existing@example.com", ApprovedAt: &now, GrantedUserID: &userID,
+			}}
+			approved, err := s.checkEmailRegistrationAccess(ctx, " Existing@Example.COM ")
+			require.False(t, approved)
+			if open == "true" {
+				require.NoError(t, err) // ordinary public signup rules, not a fresh grant
+				return
+			}
+			require.ErrorIs(t, err, ErrWaitlistSignInRequired)
+			token, user, err := s.RegisterWithVerification(ctx, "existing@example.com", "new-password", "123456", "", "", "")
+			require.ErrorIs(t, err, ErrWaitlistSignInRequired)
+			require.Empty(t, token)
+			require.Nil(t, user)
+			require.ErrorIs(t, s.SendVerifyCode(ctx, "existing@example.com"), ErrWaitlistSignInRequired)
+			result, err := s.SendVerifyCodeAsync(ctx, "existing@example.com")
+			require.ErrorIs(t, err, ErrWaitlistSignInRequired)
+			require.Nil(t, result)
+			// The sign-in hint is not itself an admission credential.
+			allowed, err := s.hasWaitlistRegistrationApproval(ctx, "existing@example.com")
+			require.NoError(t, err)
+			require.False(t, allowed)
+		})
+	}
+}
+
 func TestAuthWaitlistAlwaysRequiresMailboxProof(t *testing.T) {
 	for _, open := range []string{"false", "true"} {
 		s := newAuthService(&userRepoStub{}, map[string]string{

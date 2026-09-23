@@ -180,6 +180,62 @@ func (_c *SubscriptionPlanCreate) SetNillableForSale(v *bool) *SubscriptionPlanC
 	return _c
 }
 
+// SetPresaleEnabled sets the "presale_enabled" field.
+func (_c *SubscriptionPlanCreate) SetPresaleEnabled(v bool) *SubscriptionPlanCreate {
+	_c.mutation.SetPresaleEnabled(v)
+	return _c
+}
+
+// SetNillablePresaleEnabled sets the "presale_enabled" field if the given value is not nil.
+func (_c *SubscriptionPlanCreate) SetNillablePresaleEnabled(v *bool) *SubscriptionPlanCreate {
+	if v != nil {
+		_c.SetPresaleEnabled(*v)
+	}
+	return _c
+}
+
+// SetPresaleVisible sets the "presale_visible" field.
+func (_c *SubscriptionPlanCreate) SetPresaleVisible(v bool) *SubscriptionPlanCreate {
+	_c.mutation.SetPresaleVisible(v)
+	return _c
+}
+
+// SetNillablePresaleVisible sets the "presale_visible" field if the given value is not nil.
+func (_c *SubscriptionPlanCreate) SetNillablePresaleVisible(v *bool) *SubscriptionPlanCreate {
+	if v != nil {
+		_c.SetPresaleVisible(*v)
+	}
+	return _c
+}
+
+// SetPresaleBadge sets the "presale_badge" field.
+func (_c *SubscriptionPlanCreate) SetPresaleBadge(v string) *SubscriptionPlanCreate {
+	_c.mutation.SetPresaleBadge(v)
+	return _c
+}
+
+// SetNillablePresaleBadge sets the "presale_badge" field if the given value is not nil.
+func (_c *SubscriptionPlanCreate) SetNillablePresaleBadge(v *string) *SubscriptionPlanCreate {
+	if v != nil {
+		_c.SetPresaleBadge(*v)
+	}
+	return _c
+}
+
+// SetPresaleResetCards sets the "presale_reset_cards" field.
+func (_c *SubscriptionPlanCreate) SetPresaleResetCards(v int) *SubscriptionPlanCreate {
+	_c.mutation.SetPresaleResetCards(v)
+	return _c
+}
+
+// SetNillablePresaleResetCards sets the "presale_reset_cards" field if the given value is not nil.
+func (_c *SubscriptionPlanCreate) SetNillablePresaleResetCards(v *int) *SubscriptionPlanCreate {
+	if v != nil {
+		_c.SetPresaleResetCards(*v)
+	}
+	return _c
+}
+
 // SetSortOrder sets the "sort_order" field.
 func (_c *SubscriptionPlanCreate) SetSortOrder(v int) *SubscriptionPlanCreate {
 	_c.mutation.SetSortOrder(v)
@@ -335,6 +391,22 @@ func (_c *SubscriptionPlanCreate) defaults() {
 		v := subscriptionplan.DefaultForSale
 		_c.mutation.SetForSale(v)
 	}
+	if _, ok := _c.mutation.PresaleEnabled(); !ok {
+		v := subscriptionplan.DefaultPresaleEnabled
+		_c.mutation.SetPresaleEnabled(v)
+	}
+	if _, ok := _c.mutation.PresaleVisible(); !ok {
+		v := subscriptionplan.DefaultPresaleVisible
+		_c.mutation.SetPresaleVisible(v)
+	}
+	if _, ok := _c.mutation.PresaleBadge(); !ok {
+		v := subscriptionplan.DefaultPresaleBadge
+		_c.mutation.SetPresaleBadge(v)
+	}
+	if _, ok := _c.mutation.PresaleResetCards(); !ok {
+		v := subscriptionplan.DefaultPresaleResetCards
+		_c.mutation.SetPresaleResetCards(v)
+	}
 	if _, ok := _c.mutation.SortOrder(); !ok {
 		v := subscriptionplan.DefaultSortOrder
 		_c.mutation.SetSortOrder(v)
@@ -423,6 +495,28 @@ func (_c *SubscriptionPlanCreate) check() error {
 	}
 	if _, ok := _c.mutation.ForSale(); !ok {
 		return &ValidationError{Name: "for_sale", err: errors.New(`ent: missing required field "SubscriptionPlan.for_sale"`)}
+	}
+	if _, ok := _c.mutation.PresaleEnabled(); !ok {
+		return &ValidationError{Name: "presale_enabled", err: errors.New(`ent: missing required field "SubscriptionPlan.presale_enabled"`)}
+	}
+	if _, ok := _c.mutation.PresaleVisible(); !ok {
+		return &ValidationError{Name: "presale_visible", err: errors.New(`ent: missing required field "SubscriptionPlan.presale_visible"`)}
+	}
+	if _, ok := _c.mutation.PresaleBadge(); !ok {
+		return &ValidationError{Name: "presale_badge", err: errors.New(`ent: missing required field "SubscriptionPlan.presale_badge"`)}
+	}
+	if v, ok := _c.mutation.PresaleBadge(); ok {
+		if err := subscriptionplan.PresaleBadgeValidator(v); err != nil {
+			return &ValidationError{Name: "presale_badge", err: fmt.Errorf(`ent: validator failed for field "SubscriptionPlan.presale_badge": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.PresaleResetCards(); !ok {
+		return &ValidationError{Name: "presale_reset_cards", err: errors.New(`ent: missing required field "SubscriptionPlan.presale_reset_cards"`)}
+	}
+	if v, ok := _c.mutation.PresaleResetCards(); ok {
+		if err := subscriptionplan.PresaleResetCardsValidator(v); err != nil {
+			return &ValidationError{Name: "presale_reset_cards", err: fmt.Errorf(`ent: validator failed for field "SubscriptionPlan.presale_reset_cards": %w`, err)}
+		}
 	}
 	if _, ok := _c.mutation.SortOrder(); !ok {
 		return &ValidationError{Name: "sort_order", err: errors.New(`ent: missing required field "SubscriptionPlan.sort_order"`)}
@@ -520,6 +614,22 @@ func (_c *SubscriptionPlanCreate) createSpec() (*SubscriptionPlan, *sqlgraph.Cre
 	if value, ok := _c.mutation.ForSale(); ok {
 		_spec.SetField(subscriptionplan.FieldForSale, field.TypeBool, value)
 		_node.ForSale = value
+	}
+	if value, ok := _c.mutation.PresaleEnabled(); ok {
+		_spec.SetField(subscriptionplan.FieldPresaleEnabled, field.TypeBool, value)
+		_node.PresaleEnabled = value
+	}
+	if value, ok := _c.mutation.PresaleVisible(); ok {
+		_spec.SetField(subscriptionplan.FieldPresaleVisible, field.TypeBool, value)
+		_node.PresaleVisible = value
+	}
+	if value, ok := _c.mutation.PresaleBadge(); ok {
+		_spec.SetField(subscriptionplan.FieldPresaleBadge, field.TypeString, value)
+		_node.PresaleBadge = value
+	}
+	if value, ok := _c.mutation.PresaleResetCards(); ok {
+		_spec.SetField(subscriptionplan.FieldPresaleResetCards, field.TypeInt, value)
+		_node.PresaleResetCards = value
 	}
 	if value, ok := _c.mutation.SortOrder(); ok {
 		_spec.SetField(subscriptionplan.FieldSortOrder, field.TypeInt, value)
@@ -792,6 +902,60 @@ func (u *SubscriptionPlanUpsert) SetForSale(v bool) *SubscriptionPlanUpsert {
 // UpdateForSale sets the "for_sale" field to the value that was provided on create.
 func (u *SubscriptionPlanUpsert) UpdateForSale() *SubscriptionPlanUpsert {
 	u.SetExcluded(subscriptionplan.FieldForSale)
+	return u
+}
+
+// SetPresaleEnabled sets the "presale_enabled" field.
+func (u *SubscriptionPlanUpsert) SetPresaleEnabled(v bool) *SubscriptionPlanUpsert {
+	u.Set(subscriptionplan.FieldPresaleEnabled, v)
+	return u
+}
+
+// UpdatePresaleEnabled sets the "presale_enabled" field to the value that was provided on create.
+func (u *SubscriptionPlanUpsert) UpdatePresaleEnabled() *SubscriptionPlanUpsert {
+	u.SetExcluded(subscriptionplan.FieldPresaleEnabled)
+	return u
+}
+
+// SetPresaleVisible sets the "presale_visible" field.
+func (u *SubscriptionPlanUpsert) SetPresaleVisible(v bool) *SubscriptionPlanUpsert {
+	u.Set(subscriptionplan.FieldPresaleVisible, v)
+	return u
+}
+
+// UpdatePresaleVisible sets the "presale_visible" field to the value that was provided on create.
+func (u *SubscriptionPlanUpsert) UpdatePresaleVisible() *SubscriptionPlanUpsert {
+	u.SetExcluded(subscriptionplan.FieldPresaleVisible)
+	return u
+}
+
+// SetPresaleBadge sets the "presale_badge" field.
+func (u *SubscriptionPlanUpsert) SetPresaleBadge(v string) *SubscriptionPlanUpsert {
+	u.Set(subscriptionplan.FieldPresaleBadge, v)
+	return u
+}
+
+// UpdatePresaleBadge sets the "presale_badge" field to the value that was provided on create.
+func (u *SubscriptionPlanUpsert) UpdatePresaleBadge() *SubscriptionPlanUpsert {
+	u.SetExcluded(subscriptionplan.FieldPresaleBadge)
+	return u
+}
+
+// SetPresaleResetCards sets the "presale_reset_cards" field.
+func (u *SubscriptionPlanUpsert) SetPresaleResetCards(v int) *SubscriptionPlanUpsert {
+	u.Set(subscriptionplan.FieldPresaleResetCards, v)
+	return u
+}
+
+// UpdatePresaleResetCards sets the "presale_reset_cards" field to the value that was provided on create.
+func (u *SubscriptionPlanUpsert) UpdatePresaleResetCards() *SubscriptionPlanUpsert {
+	u.SetExcluded(subscriptionplan.FieldPresaleResetCards)
+	return u
+}
+
+// AddPresaleResetCards adds v to the "presale_reset_cards" field.
+func (u *SubscriptionPlanUpsert) AddPresaleResetCards(v int) *SubscriptionPlanUpsert {
+	u.Add(subscriptionplan.FieldPresaleResetCards, v)
 	return u
 }
 
@@ -1146,6 +1310,69 @@ func (u *SubscriptionPlanUpsertOne) SetForSale(v bool) *SubscriptionPlanUpsertOn
 func (u *SubscriptionPlanUpsertOne) UpdateForSale() *SubscriptionPlanUpsertOne {
 	return u.Update(func(s *SubscriptionPlanUpsert) {
 		s.UpdateForSale()
+	})
+}
+
+// SetPresaleEnabled sets the "presale_enabled" field.
+func (u *SubscriptionPlanUpsertOne) SetPresaleEnabled(v bool) *SubscriptionPlanUpsertOne {
+	return u.Update(func(s *SubscriptionPlanUpsert) {
+		s.SetPresaleEnabled(v)
+	})
+}
+
+// UpdatePresaleEnabled sets the "presale_enabled" field to the value that was provided on create.
+func (u *SubscriptionPlanUpsertOne) UpdatePresaleEnabled() *SubscriptionPlanUpsertOne {
+	return u.Update(func(s *SubscriptionPlanUpsert) {
+		s.UpdatePresaleEnabled()
+	})
+}
+
+// SetPresaleVisible sets the "presale_visible" field.
+func (u *SubscriptionPlanUpsertOne) SetPresaleVisible(v bool) *SubscriptionPlanUpsertOne {
+	return u.Update(func(s *SubscriptionPlanUpsert) {
+		s.SetPresaleVisible(v)
+	})
+}
+
+// UpdatePresaleVisible sets the "presale_visible" field to the value that was provided on create.
+func (u *SubscriptionPlanUpsertOne) UpdatePresaleVisible() *SubscriptionPlanUpsertOne {
+	return u.Update(func(s *SubscriptionPlanUpsert) {
+		s.UpdatePresaleVisible()
+	})
+}
+
+// SetPresaleBadge sets the "presale_badge" field.
+func (u *SubscriptionPlanUpsertOne) SetPresaleBadge(v string) *SubscriptionPlanUpsertOne {
+	return u.Update(func(s *SubscriptionPlanUpsert) {
+		s.SetPresaleBadge(v)
+	})
+}
+
+// UpdatePresaleBadge sets the "presale_badge" field to the value that was provided on create.
+func (u *SubscriptionPlanUpsertOne) UpdatePresaleBadge() *SubscriptionPlanUpsertOne {
+	return u.Update(func(s *SubscriptionPlanUpsert) {
+		s.UpdatePresaleBadge()
+	})
+}
+
+// SetPresaleResetCards sets the "presale_reset_cards" field.
+func (u *SubscriptionPlanUpsertOne) SetPresaleResetCards(v int) *SubscriptionPlanUpsertOne {
+	return u.Update(func(s *SubscriptionPlanUpsert) {
+		s.SetPresaleResetCards(v)
+	})
+}
+
+// AddPresaleResetCards adds v to the "presale_reset_cards" field.
+func (u *SubscriptionPlanUpsertOne) AddPresaleResetCards(v int) *SubscriptionPlanUpsertOne {
+	return u.Update(func(s *SubscriptionPlanUpsert) {
+		s.AddPresaleResetCards(v)
+	})
+}
+
+// UpdatePresaleResetCards sets the "presale_reset_cards" field to the value that was provided on create.
+func (u *SubscriptionPlanUpsertOne) UpdatePresaleResetCards() *SubscriptionPlanUpsertOne {
+	return u.Update(func(s *SubscriptionPlanUpsert) {
+		s.UpdatePresaleResetCards()
 	})
 }
 
@@ -1679,6 +1906,69 @@ func (u *SubscriptionPlanUpsertBulk) SetForSale(v bool) *SubscriptionPlanUpsertB
 func (u *SubscriptionPlanUpsertBulk) UpdateForSale() *SubscriptionPlanUpsertBulk {
 	return u.Update(func(s *SubscriptionPlanUpsert) {
 		s.UpdateForSale()
+	})
+}
+
+// SetPresaleEnabled sets the "presale_enabled" field.
+func (u *SubscriptionPlanUpsertBulk) SetPresaleEnabled(v bool) *SubscriptionPlanUpsertBulk {
+	return u.Update(func(s *SubscriptionPlanUpsert) {
+		s.SetPresaleEnabled(v)
+	})
+}
+
+// UpdatePresaleEnabled sets the "presale_enabled" field to the value that was provided on create.
+func (u *SubscriptionPlanUpsertBulk) UpdatePresaleEnabled() *SubscriptionPlanUpsertBulk {
+	return u.Update(func(s *SubscriptionPlanUpsert) {
+		s.UpdatePresaleEnabled()
+	})
+}
+
+// SetPresaleVisible sets the "presale_visible" field.
+func (u *SubscriptionPlanUpsertBulk) SetPresaleVisible(v bool) *SubscriptionPlanUpsertBulk {
+	return u.Update(func(s *SubscriptionPlanUpsert) {
+		s.SetPresaleVisible(v)
+	})
+}
+
+// UpdatePresaleVisible sets the "presale_visible" field to the value that was provided on create.
+func (u *SubscriptionPlanUpsertBulk) UpdatePresaleVisible() *SubscriptionPlanUpsertBulk {
+	return u.Update(func(s *SubscriptionPlanUpsert) {
+		s.UpdatePresaleVisible()
+	})
+}
+
+// SetPresaleBadge sets the "presale_badge" field.
+func (u *SubscriptionPlanUpsertBulk) SetPresaleBadge(v string) *SubscriptionPlanUpsertBulk {
+	return u.Update(func(s *SubscriptionPlanUpsert) {
+		s.SetPresaleBadge(v)
+	})
+}
+
+// UpdatePresaleBadge sets the "presale_badge" field to the value that was provided on create.
+func (u *SubscriptionPlanUpsertBulk) UpdatePresaleBadge() *SubscriptionPlanUpsertBulk {
+	return u.Update(func(s *SubscriptionPlanUpsert) {
+		s.UpdatePresaleBadge()
+	})
+}
+
+// SetPresaleResetCards sets the "presale_reset_cards" field.
+func (u *SubscriptionPlanUpsertBulk) SetPresaleResetCards(v int) *SubscriptionPlanUpsertBulk {
+	return u.Update(func(s *SubscriptionPlanUpsert) {
+		s.SetPresaleResetCards(v)
+	})
+}
+
+// AddPresaleResetCards adds v to the "presale_reset_cards" field.
+func (u *SubscriptionPlanUpsertBulk) AddPresaleResetCards(v int) *SubscriptionPlanUpsertBulk {
+	return u.Update(func(s *SubscriptionPlanUpsert) {
+		s.AddPresaleResetCards(v)
+	})
+}
+
+// UpdatePresaleResetCards sets the "presale_reset_cards" field to the value that was provided on create.
+func (u *SubscriptionPlanUpsertBulk) UpdatePresaleResetCards() *SubscriptionPlanUpsertBulk {
+	return u.Update(func(s *SubscriptionPlanUpsert) {
+		s.UpdatePresaleResetCards()
 	})
 }
 

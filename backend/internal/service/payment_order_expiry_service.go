@@ -17,7 +17,7 @@ const (
 	// that only one instance issues the upstream payment-provider calls per cycle.
 	paymentOrderExpiryLeaderLockKey = "payment:order:expiry:leader"
 	// paymentOrderExpiryLeaderLockTTL must exceed the combined reconcile + expiry
-	// timeouts (2 * expiryCheckTimeout) so the lock never expires mid-run.
+	// timeouts (activation + reconciliation + expiry) so the lock never expires mid-run.
 	paymentOrderExpiryLeaderLockTTL = 3 * time.Minute
 )
 
@@ -97,6 +97,13 @@ func (s *PaymentOrderExpiryService) runOnce() {
 	}
 	defer release()
 
+	activateCtx, activateCancel := context.WithTimeout(context.Background(), expiryCheckTimeout)
+	if count, err := s.paymentSvc.ActivateDuePresales(activateCtx, time.Now()); err != nil {
+		slog.Error("[PaymentOrderExpiry] presale activation sweep failed", "error", err)
+	} else if count > 0 {
+		slog.Info("[PaymentOrderExpiry] activated presales", "count", count)
+	}
+	activateCancel()
 	reconcileCtx, cancel := context.WithTimeout(context.Background(), expiryCheckTimeout)
 	recovered, err := s.paymentSvc.ReconcilePendingWxpayOrders(reconcileCtx)
 	cancel()

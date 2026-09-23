@@ -1,4 +1,7 @@
+import presale from './presale.zh'
+
 export default {
+  presale,
   // Home Page
   home: {
     landing: {
@@ -597,9 +600,13 @@ export default {
     rememberMe: '记住我',
     dontHaveAccount: '还没有账户？',
     alreadyHaveAccount: '已有账户？',
-    registrationDisabled: '注册功能暂时关闭，请联系管理员。',
+    registrationDisabled: "暂未开放公开注册",
     waitlistRegistrationLink: "已通过候补审批？继续注册",
-    waitlistRegistrationHint: "请使用获批邮箱注册，并完成邮箱验证。候补审批仅对该邮箱有效，不代表开放注册。已有账号请直接登录。",
+    waitlistRegistrationHint: "首次使用请通过获批邮箱注册，并完成邮箱验证。候补审批仅对该邮箱有效。",
+    waitlistExistingAccountLink: "已有账号？直接登录，无需注册",
+    registrationSignInTitle: "无需重新注册",
+    registrationSignInHint: "请使用原来的登录方式进入控制台，无需重新注册。如忘记密码，可在登录页找回密码。",
+    registrationClosedHint: "已有账号请直接登录；首次使用需通过候补审批，并使用获批邮箱注册。",
     emailLabel: '邮箱',
     emailPlaceholder: '请输入邮箱',
     passwordLabel: '密码',
@@ -612,6 +619,8 @@ export default {
     passwordMinLength: '密码至少需要 6 个字符',
     loginFailed: '登录失败，请检查您的凭据后重试。',
     errors: {
+      WAITLIST_SIGN_IN_REQUIRED: "此候补申请已关联账号，请使用原账号登录，无需重新注册。",
+      EMAIL_EXISTS: "此邮箱已有账号，请直接登录，无需重新注册。",
       REGISTRATION_DISABLED: "暂未开放注册。请确认此邮箱已通过候补审批；已有账号请直接登录。",
       EMAIL_VERIFY_REQUIRED: "请通过候补审批注册入口完成邮箱验证后注册。",
       USER_NOT_ACTIVE: '暂无访问权限',

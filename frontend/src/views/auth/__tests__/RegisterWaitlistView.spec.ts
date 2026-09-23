@@ -53,6 +53,32 @@ describe('approved waiting-list signup entry', () => {
     expect(register).not.toHaveBeenCalled()
     expect(push).toHaveBeenCalledWith('/email-verify')
     expect(JSON.parse(sessionStorage.getItem('register_data') || '{}')).toMatchObject({ email: 'approved@example.com' })
+    expect(JSON.parse(sessionStorage.getItem('register_data') || '{}')).toHaveProperty('waitlist_registration', true)
+  })
+  it('offers a direct sign-in path before an existing user starts registration', async () => {
+    query.waitlist = '1'
+    sessionStorage.setItem('register_data', JSON.stringify({ password: 'stale-password' }))
+    render(); await flushPromises()
+    const login = page.findAll('button').find(button => button.text() === 'auth.waitlistExistingAccountLink')!
+    await login.trigger('click')
+    expect(push).toHaveBeenCalledWith('/login')
+    expect(sessionStorage.getItem('register_data')).toBeNull()
+    expect(register).not.toHaveBeenCalled()
+  })
+  it.each(['WAITLIST_SIGN_IN_REQUIRED', 'EMAIL_EXISTS'])('recovers direct signup errors with a sign-in action: %s', async (reason) => {
+    settings.mockResolvedValue({ registration_enabled: true, email_verify_enabled: false, invitation_code_enabled: false })
+    register.mockRejectedValueOnce({ reason })
+    render(); await flushPromises()
+    await page.get('#email').setValue('existing@example.com')
+    await page.get('#password').setValue('new-password')
+    await page.get('form').trigger('submit'); await flushPromises()
+    expect(page.find('form').exists()).toBe(false)
+    expect(page.get('[role="status"]').text()).toContain('auth.registrationSignInTitle')
+    expect(page.text()).not.toContain('auth.registrationDisabled')
+    expect(showError).not.toHaveBeenCalled()
+    await page.get('[role="status"] button').trigger('click')
+    expect(push).toHaveBeenCalledWith('/login')
+    expect(sessionStorage.getItem('register_data')).toBeNull()
   })
   it('retains normal open signup behavior without a waitlist entry', async () => {
     settings.mockResolvedValue({ registration_enabled: true, email_verify_enabled: false, invitation_code_enabled: false })

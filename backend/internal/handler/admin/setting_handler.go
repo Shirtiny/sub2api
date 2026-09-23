@@ -412,7 +412,7 @@ type UpdateSettingsRequest struct {
 	RegistrationEmailSuffixWhitelist []string                     `json:"registration_email_suffix_whitelist"`
 	PromoCodeEnabled                 bool                         `json:"promo_code_enabled"`
 	PasswordResetEnabled             bool                         `json:"password_reset_enabled"`
-	FrontendURL                      string                       `json:"frontend_url"`
+	FrontendURL                      *string                      `json:"frontend_url"`
 	InvitationCodeEnabled            bool                         `json:"invitation_code_enabled"`
 	TotpEnabled                      bool                         `json:"totp_enabled"` // TOTP 双因素认证
 	LoginAgreementEnabled            bool                         `json:"login_agreement_enabled"`
@@ -1406,12 +1406,16 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		}
 	}
 
-	// Frontend URL 验证
-	req.FrontendURL = strings.TrimSpace(req.FrontendURL)
-	if req.FrontendURL != "" {
-		if err := config.ValidateAbsoluteHTTPURL(req.FrontendURL); err != nil {
-			response.BadRequest(c, "Frontend URL must be an absolute http(s) URL")
-			return
+	// Omitted URLs must preserve the current value, not clear it or restore a
+	// stale settings page's value when an unrelated setting is saved.
+	frontendURL := previousSettings.FrontendURL
+	if req.FrontendURL != nil {
+		frontendURL = strings.TrimSpace(*req.FrontendURL)
+		if frontendURL != "" {
+			if err := config.ValidateAbsoluteHTTPURL(frontendURL); err != nil {
+				response.BadRequest(c, "Frontend URL must be an absolute http(s) URL")
+				return
+			}
 		}
 	}
 
@@ -1621,7 +1625,7 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		RegistrationEmailSuffixWhitelist: req.RegistrationEmailSuffixWhitelist,
 		PromoCodeEnabled:                 req.PromoCodeEnabled,
 		PasswordResetEnabled:             req.PasswordResetEnabled,
-		FrontendURL:                      req.FrontendURL,
+		FrontendURL:                      frontendURL,
 		InvitationCodeEnabled:            req.InvitationCodeEnabled,
 		TotpEnabled:                      req.TotpEnabled,
 		LoginAgreementEnabled:            req.LoginAgreementEnabled,
@@ -3215,37 +3219,7 @@ func (h *SettingHandler) SendTestEmail(c *gin.Context) {
 
 	siteName := h.settingService.GetSiteName(c.Request.Context())
 	subject := "[" + siteName + "] Test Email"
-	body := `
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f5f5f5; margin: 0; padding: 20px; }
-        .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; }
-        .content { padding: 40px 30px; text-align: center; }
-        .success { color: #10b981; font-size: 48px; margin-bottom: 20px; }
-        .footer { background-color: #f8f9fa; padding: 20px; text-align: center; color: #999; font-size: 12px; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>` + siteName + `</h1>
-        </div>
-        <div class="content">
-            <div class="success">✓</div>
-            <h2>Email Configuration Successful!</h2>
-            <p>This is a test email to verify your SMTP settings are working correctly.</p>
-        </div>
-        <div class="footer">
-            <p>This is an automated test message.</p>
-        </div>
-    </div>
-</body>
-</html>
-`
+	body := service.BuildSMTPTestEmailBody(siteName)
 
 	if err := h.emailService.SendEmailWithConfig(config, req.Email, subject, body); err != nil {
 		response.BadRequest(c, "Failed to send test email: "+err.Error())

@@ -55,6 +55,20 @@ type PaymentOrder struct {
 	OrderType string `json:"order_type,omitempty"`
 	// PlanID holds the value of the "plan_id" field.
 	PlanID *int64 `json:"plan_id,omitempty"`
+	// PresaleStartsAt holds the value of the "presale_starts_at" field.
+	PresaleStartsAt *time.Time `json:"presale_starts_at,omitempty"`
+	// PresaleExpiresAt holds the value of the "presale_expires_at" field.
+	PresaleExpiresAt *time.Time `json:"presale_expires_at,omitempty"`
+	// PresaleActivatedAt holds the value of the "presale_activated_at" field.
+	PresaleActivatedAt *time.Time `json:"presale_activated_at,omitempty"`
+	// PresaleSubscriptionID holds the value of the "presale_subscription_id" field.
+	PresaleSubscriptionID *int64 `json:"presale_subscription_id,omitempty"`
+	// PresaleRenewal holds the value of the "presale_renewal" field.
+	PresaleRenewal bool `json:"presale_renewal,omitempty"`
+	// PresalePlanName holds the value of the "presale_plan_name" field.
+	PresalePlanName string `json:"presale_plan_name,omitempty"`
+	// PresaleResetCards holds the value of the "presale_reset_cards" field.
+	PresaleResetCards int `json:"presale_reset_cards,omitempty"`
 	// SubscriptionGroupID holds the value of the "subscription_group_id" field.
 	SubscriptionGroupID *int64 `json:"subscription_group_id,omitempty"`
 	// SubscriptionDays holds the value of the "subscription_days" field.
@@ -65,7 +79,7 @@ type PaymentOrder struct {
 	SubscriptionBonusDays int `json:"subscription_bonus_days,omitempty"`
 	// plan concurrency snapshot used during subscription fulfillment
 	SubscriptionConcurrency *int `json:"subscription_concurrency,omitempty"`
-	// whether fulfilled subscriptions may use early reset
+	// whether fulfilled quota is one-time and may use early reset
 	SubscriptionEarlyResetEnabled bool `json:"subscription_early_reset_enabled,omitempty"`
 	// days deducted from the subscription period on early reset
 	SubscriptionEarlyResetDurationDays int `json:"subscription_early_reset_duration_days,omitempty"`
@@ -152,15 +166,15 @@ func (*PaymentOrder) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case paymentorder.FieldProviderSnapshot:
 			values[i] = new([]byte)
-		case paymentorder.FieldSubscriptionEarlyResetEnabled, paymentorder.FieldForceRefund:
+		case paymentorder.FieldPresaleRenewal, paymentorder.FieldSubscriptionEarlyResetEnabled, paymentorder.FieldForceRefund:
 			values[i] = new(sql.NullBool)
 		case paymentorder.FieldAmount, paymentorder.FieldPayAmount, paymentorder.FieldFeeRate, paymentorder.FieldCafeCouponDiscount, paymentorder.FieldSubscriptionSourcePrice, paymentorder.FieldSubscriptionSourceOriginalPrice, paymentorder.FieldRefundAmount:
 			values[i] = new(sql.NullFloat64)
-		case paymentorder.FieldID, paymentorder.FieldUserID, paymentorder.FieldPlanID, paymentorder.FieldSubscriptionGroupID, paymentorder.FieldSubscriptionDays, paymentorder.FieldSubscriptionBonusActivityID, paymentorder.FieldSubscriptionBonusDays, paymentorder.FieldSubscriptionConcurrency, paymentorder.FieldSubscriptionEarlyResetDurationDays, paymentorder.FieldSubscriptionMultiplier, paymentorder.FieldSubscriptionSourceGroupID:
+		case paymentorder.FieldID, paymentorder.FieldUserID, paymentorder.FieldPlanID, paymentorder.FieldPresaleSubscriptionID, paymentorder.FieldPresaleResetCards, paymentorder.FieldSubscriptionGroupID, paymentorder.FieldSubscriptionDays, paymentorder.FieldSubscriptionBonusActivityID, paymentorder.FieldSubscriptionBonusDays, paymentorder.FieldSubscriptionConcurrency, paymentorder.FieldSubscriptionEarlyResetDurationDays, paymentorder.FieldSubscriptionMultiplier, paymentorder.FieldSubscriptionSourceGroupID:
 			values[i] = new(sql.NullInt64)
-		case paymentorder.FieldUserEmail, paymentorder.FieldUserName, paymentorder.FieldUserNotes, paymentorder.FieldRechargeCode, paymentorder.FieldCafeCouponCode, paymentorder.FieldOutTradeNo, paymentorder.FieldPaymentType, paymentorder.FieldPaymentTradeNo, paymentorder.FieldPayURL, paymentorder.FieldQrCode, paymentorder.FieldQrCodeImg, paymentorder.FieldOrderType, paymentorder.FieldProviderInstanceID, paymentorder.FieldProviderKey, paymentorder.FieldStatus, paymentorder.FieldRefundReason, paymentorder.FieldRefundRequestReason, paymentorder.FieldRefundRequestedBy, paymentorder.FieldFailedReason, paymentorder.FieldClientIP, paymentorder.FieldSrcHost, paymentorder.FieldSrcURL:
+		case paymentorder.FieldUserEmail, paymentorder.FieldUserName, paymentorder.FieldUserNotes, paymentorder.FieldRechargeCode, paymentorder.FieldCafeCouponCode, paymentorder.FieldOutTradeNo, paymentorder.FieldPaymentType, paymentorder.FieldPaymentTradeNo, paymentorder.FieldPayURL, paymentorder.FieldQrCode, paymentorder.FieldQrCodeImg, paymentorder.FieldOrderType, paymentorder.FieldPresalePlanName, paymentorder.FieldProviderInstanceID, paymentorder.FieldProviderKey, paymentorder.FieldStatus, paymentorder.FieldRefundReason, paymentorder.FieldRefundRequestReason, paymentorder.FieldRefundRequestedBy, paymentorder.FieldFailedReason, paymentorder.FieldClientIP, paymentorder.FieldSrcHost, paymentorder.FieldSrcURL:
 			values[i] = new(sql.NullString)
-		case paymentorder.FieldRefundAt, paymentorder.FieldRefundRequestedAt, paymentorder.FieldExpiresAt, paymentorder.FieldPaidAt, paymentorder.FieldCompletedAt, paymentorder.FieldFailedAt, paymentorder.FieldCreatedAt, paymentorder.FieldUpdatedAt:
+		case paymentorder.FieldPresaleStartsAt, paymentorder.FieldPresaleExpiresAt, paymentorder.FieldPresaleActivatedAt, paymentorder.FieldRefundAt, paymentorder.FieldRefundRequestedAt, paymentorder.FieldExpiresAt, paymentorder.FieldPaidAt, paymentorder.FieldCompletedAt, paymentorder.FieldFailedAt, paymentorder.FieldCreatedAt, paymentorder.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -296,6 +310,52 @@ func (_m *PaymentOrder) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.PlanID = new(int64)
 				*_m.PlanID = value.Int64
+			}
+		case paymentorder.FieldPresaleStartsAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field presale_starts_at", values[i])
+			} else if value.Valid {
+				_m.PresaleStartsAt = new(time.Time)
+				*_m.PresaleStartsAt = value.Time
+			}
+		case paymentorder.FieldPresaleExpiresAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field presale_expires_at", values[i])
+			} else if value.Valid {
+				_m.PresaleExpiresAt = new(time.Time)
+				*_m.PresaleExpiresAt = value.Time
+			}
+		case paymentorder.FieldPresaleActivatedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field presale_activated_at", values[i])
+			} else if value.Valid {
+				_m.PresaleActivatedAt = new(time.Time)
+				*_m.PresaleActivatedAt = value.Time
+			}
+		case paymentorder.FieldPresaleSubscriptionID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field presale_subscription_id", values[i])
+			} else if value.Valid {
+				_m.PresaleSubscriptionID = new(int64)
+				*_m.PresaleSubscriptionID = value.Int64
+			}
+		case paymentorder.FieldPresaleRenewal:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field presale_renewal", values[i])
+			} else if value.Valid {
+				_m.PresaleRenewal = value.Bool
+			}
+		case paymentorder.FieldPresalePlanName:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field presale_plan_name", values[i])
+			} else if value.Valid {
+				_m.PresalePlanName = value.String
+			}
+		case paymentorder.FieldPresaleResetCards:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field presale_reset_cards", values[i])
+			} else if value.Valid {
+				_m.PresaleResetCards = int(value.Int64)
 			}
 		case paymentorder.FieldSubscriptionGroupID:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -617,6 +677,35 @@ func (_m *PaymentOrder) String() string {
 		builder.WriteString("plan_id=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
+	builder.WriteString(", ")
+	if v := _m.PresaleStartsAt; v != nil {
+		builder.WriteString("presale_starts_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.PresaleExpiresAt; v != nil {
+		builder.WriteString("presale_expires_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.PresaleActivatedAt; v != nil {
+		builder.WriteString("presale_activated_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.PresaleSubscriptionID; v != nil {
+		builder.WriteString("presale_subscription_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	builder.WriteString("presale_renewal=")
+	builder.WriteString(fmt.Sprintf("%v", _m.PresaleRenewal))
+	builder.WriteString(", ")
+	builder.WriteString("presale_plan_name=")
+	builder.WriteString(_m.PresalePlanName)
+	builder.WriteString(", ")
+	builder.WriteString("presale_reset_cards=")
+	builder.WriteString(fmt.Sprintf("%v", _m.PresaleResetCards))
 	builder.WriteString(", ")
 	if v := _m.SubscriptionGroupID; v != nil {
 		builder.WriteString("subscription_group_id=")

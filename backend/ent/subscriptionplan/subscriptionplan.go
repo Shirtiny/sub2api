@@ -39,6 +39,14 @@ const (
 	FieldProductName = "product_name"
 	// FieldForSale holds the string denoting the for_sale field in the database.
 	FieldForSale = "for_sale"
+	// FieldPresaleEnabled holds the string denoting the presale_enabled field in the database.
+	FieldPresaleEnabled = "presale_enabled"
+	// FieldPresaleVisible holds the string denoting the presale_visible field in the database.
+	FieldPresaleVisible = "presale_visible"
+	// FieldPresaleBadge holds the string denoting the presale_badge field in the database.
+	FieldPresaleBadge = "presale_badge"
+	// FieldPresaleResetCards holds the string denoting the presale_reset_cards field in the database.
+	FieldPresaleResetCards = "presale_reset_cards"
 	// FieldSortOrder holds the string denoting the sort_order field in the database.
 	FieldSortOrder = "sort_order"
 	// FieldCustomMultiplierEnabled holds the string denoting the custom_multiplier_enabled field in the database.
@@ -71,6 +79,10 @@ var Columns = []string{
 	FieldFeatures,
 	FieldProductName,
 	FieldForSale,
+	FieldPresaleEnabled,
+	FieldPresaleVisible,
+	FieldPresaleBadge,
+	FieldPresaleResetCards,
 	FieldSortOrder,
 	FieldCustomMultiplierEnabled,
 	FieldCustomMultiplierMin,
@@ -118,6 +130,18 @@ var (
 	ProductNameValidator func(string) error
 	// DefaultForSale holds the default value on creation for the "for_sale" field.
 	DefaultForSale bool
+	// DefaultPresaleEnabled holds the default value on creation for the "presale_enabled" field.
+	DefaultPresaleEnabled bool
+	// DefaultPresaleVisible holds the default value on creation for the "presale_visible" field.
+	DefaultPresaleVisible bool
+	// DefaultPresaleBadge holds the default value on creation for the "presale_badge" field.
+	DefaultPresaleBadge string
+	// PresaleBadgeValidator is a validator for the "presale_badge" field. It is called by the builders before save.
+	PresaleBadgeValidator func(string) error
+	// DefaultPresaleResetCards holds the default value on creation for the "presale_reset_cards" field.
+	DefaultPresaleResetCards int
+	// PresaleResetCardsValidator is a validator for the "presale_reset_cards" field. It is called by the builders before save.
+	PresaleResetCardsValidator func(int) error
 	// DefaultSortOrder holds the default value on creation for the "sort_order" field.
 	DefaultSortOrder int
 	// DefaultCustomMultiplierEnabled holds the default value on creation for the "custom_multiplier_enabled" field.
@@ -205,6 +229,26 @@ func ByProductName(opts ...sql.OrderTermOption) OrderOption {
 // ByForSale orders the results by the for_sale field.
 func ByForSale(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldForSale, opts...).ToFunc()
+}
+
+// ByPresaleEnabled orders the results by the presale_enabled field.
+func ByPresaleEnabled(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPresaleEnabled, opts...).ToFunc()
+}
+
+// ByPresaleVisible orders the results by the presale_visible field.
+func ByPresaleVisible(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPresaleVisible, opts...).ToFunc()
+}
+
+// ByPresaleBadge orders the results by the presale_badge field.
+func ByPresaleBadge(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPresaleBadge, opts...).ToFunc()
+}
+
+// ByPresaleResetCards orders the results by the presale_reset_cards field.
+func ByPresaleResetCards(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPresaleResetCards, opts...).ToFunc()
 }
 
 // BySortOrder orders the results by the sort_order field.

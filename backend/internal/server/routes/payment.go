@@ -25,6 +25,9 @@ func RegisterPaymentRoutes(
 	authenticated.Use(gin.HandlerFunc(jwtAuth))
 	authenticated.Use(middleware.BackendModeUserGuard(settingService))
 	{
+		authenticated.GET("/presale/my", paymentHandler.GetMyPresales)
+		authenticated.GET("/presale/:id/quote", paymentHandler.GetPresaleQuote)
+		authenticated.GET("/presale/orders/:id/refund-quote", paymentHandler.GetPresaleRefundQuote)
 		authenticated.GET("/config", paymentHandler.GetPaymentConfig)
 		authenticated.GET("/checkout-info", paymentHandler.GetCheckoutInfo)
 		authenticated.GET("/plans", paymentHandler.GetPlans)
@@ -59,6 +62,7 @@ func RegisterPaymentRoutes(
 	// persisted-state compatibility path for staggered upgrades.
 	public := v1.Group("/payment/public")
 	{
+		public.GET("/presale", paymentHandler.GetPresaleCatalog)
 		public.POST("/orders/verify", paymentHandler.VerifyOrderPublic)
 		public.POST("/orders/resolve", paymentHandler.ResolveOrderPublicByResumeToken)
 		public.GET("/shop/config", paymentHandler.GetGuestShopConfig)
@@ -93,6 +97,7 @@ func RegisterPaymentRoutes(
 		adminOrders := adminGroup.Group("/orders")
 		{
 			adminOrders.GET("", adminPaymentHandler.ListOrders)
+			adminOrders.GET("/:id/presale-refund-quote", adminPaymentHandler.GetPresaleRefundQuote)
 			adminOrders.GET("/:id", adminPaymentHandler.GetOrderDetail)
 			adminOrders.POST("/:id/cancel", adminPaymentHandler.CancelOrder)
 			adminOrders.POST("/:id/retry", adminPaymentHandler.RetryFulfillment)

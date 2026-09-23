@@ -31,7 +31,7 @@ type SubscriptionPlan struct {
 	ValidityDays int `json:"validity_days,omitempty"`
 	// maximum user concurrency while the purchased plan is active
 	Concurrency int `json:"concurrency,omitempty"`
-	// whether purchased subscriptions may reset quota before the normal window
+	// whether quota is one-time for accumulated subscription validity and may be reset early by deducting days
 	EarlyResetEnabled bool `json:"early_reset_enabled,omitempty"`
 	// subscription days deducted for each early quota reset
 	EarlyResetDurationDays int `json:"early_reset_duration_days,omitempty"`
@@ -43,6 +43,14 @@ type SubscriptionPlan struct {
 	ProductName string `json:"product_name,omitempty"`
 	// ForSale holds the value of the "for_sale" field.
 	ForSale bool `json:"for_sale,omitempty"`
+	// PresaleEnabled holds the value of the "presale_enabled" field.
+	PresaleEnabled bool `json:"presale_enabled,omitempty"`
+	// PresaleVisible holds the value of the "presale_visible" field.
+	PresaleVisible bool `json:"presale_visible,omitempty"`
+	// PresaleBadge holds the value of the "presale_badge" field.
+	PresaleBadge string `json:"presale_badge,omitempty"`
+	// PresaleResetCards holds the value of the "presale_reset_cards" field.
+	PresaleResetCards int `json:"presale_reset_cards,omitempty"`
 	// SortOrder holds the value of the "sort_order" field.
 	SortOrder int `json:"sort_order,omitempty"`
 	// whether this plan allows integer multiplier purchase
@@ -63,13 +71,13 @@ func (*SubscriptionPlan) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case subscriptionplan.FieldEarlyResetEnabled, subscriptionplan.FieldForSale, subscriptionplan.FieldCustomMultiplierEnabled:
+		case subscriptionplan.FieldEarlyResetEnabled, subscriptionplan.FieldForSale, subscriptionplan.FieldPresaleEnabled, subscriptionplan.FieldPresaleVisible, subscriptionplan.FieldCustomMultiplierEnabled:
 			values[i] = new(sql.NullBool)
 		case subscriptionplan.FieldPrice, subscriptionplan.FieldOriginalPrice:
 			values[i] = new(sql.NullFloat64)
-		case subscriptionplan.FieldID, subscriptionplan.FieldGroupID, subscriptionplan.FieldValidityDays, subscriptionplan.FieldConcurrency, subscriptionplan.FieldEarlyResetDurationDays, subscriptionplan.FieldSortOrder, subscriptionplan.FieldCustomMultiplierMin, subscriptionplan.FieldCustomMultiplierMax:
+		case subscriptionplan.FieldID, subscriptionplan.FieldGroupID, subscriptionplan.FieldValidityDays, subscriptionplan.FieldConcurrency, subscriptionplan.FieldEarlyResetDurationDays, subscriptionplan.FieldPresaleResetCards, subscriptionplan.FieldSortOrder, subscriptionplan.FieldCustomMultiplierMin, subscriptionplan.FieldCustomMultiplierMax:
 			values[i] = new(sql.NullInt64)
-		case subscriptionplan.FieldName, subscriptionplan.FieldDescription, subscriptionplan.FieldValidityUnit, subscriptionplan.FieldFeatures, subscriptionplan.FieldProductName:
+		case subscriptionplan.FieldName, subscriptionplan.FieldDescription, subscriptionplan.FieldValidityUnit, subscriptionplan.FieldFeatures, subscriptionplan.FieldProductName, subscriptionplan.FieldPresaleBadge:
 			values[i] = new(sql.NullString)
 		case subscriptionplan.FieldCreatedAt, subscriptionplan.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -172,6 +180,30 @@ func (_m *SubscriptionPlan) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field for_sale", values[i])
 			} else if value.Valid {
 				_m.ForSale = value.Bool
+			}
+		case subscriptionplan.FieldPresaleEnabled:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field presale_enabled", values[i])
+			} else if value.Valid {
+				_m.PresaleEnabled = value.Bool
+			}
+		case subscriptionplan.FieldPresaleVisible:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field presale_visible", values[i])
+			} else if value.Valid {
+				_m.PresaleVisible = value.Bool
+			}
+		case subscriptionplan.FieldPresaleBadge:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field presale_badge", values[i])
+			} else if value.Valid {
+				_m.PresaleBadge = value.String
+			}
+		case subscriptionplan.FieldPresaleResetCards:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field presale_reset_cards", values[i])
+			} else if value.Valid {
+				_m.PresaleResetCards = int(value.Int64)
 			}
 		case subscriptionplan.FieldSortOrder:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -285,6 +317,18 @@ func (_m *SubscriptionPlan) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("for_sale=")
 	builder.WriteString(fmt.Sprintf("%v", _m.ForSale))
+	builder.WriteString(", ")
+	builder.WriteString("presale_enabled=")
+	builder.WriteString(fmt.Sprintf("%v", _m.PresaleEnabled))
+	builder.WriteString(", ")
+	builder.WriteString("presale_visible=")
+	builder.WriteString(fmt.Sprintf("%v", _m.PresaleVisible))
+	builder.WriteString(", ")
+	builder.WriteString("presale_badge=")
+	builder.WriteString(_m.PresaleBadge)
+	builder.WriteString(", ")
+	builder.WriteString("presale_reset_cards=")
+	builder.WriteString(fmt.Sprintf("%v", _m.PresaleResetCards))
 	builder.WriteString(", ")
 	builder.WriteString("sort_order=")
 	builder.WriteString(fmt.Sprintf("%v", _m.SortOrder))

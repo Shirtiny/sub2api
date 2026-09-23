@@ -934,6 +934,13 @@ var (
 		{Name: "qr_code_img", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
 		{Name: "order_type", Type: field.TypeString, Size: 20, Default: "balance"},
 		{Name: "plan_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "presale_starts_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "presale_expires_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "presale_activated_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "presale_subscription_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "presale_renewal", Type: field.TypeBool, Default: false},
+		{Name: "presale_plan_name", Type: field.TypeString, Size: 100, Default: ""},
+		{Name: "presale_reset_cards", Type: field.TypeInt, Default: 0},
 		{Name: "subscription_group_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "subscription_days", Type: field.TypeInt, Nullable: true},
 		{Name: "subscription_bonus_activity_id", Type: field.TypeInt64, Nullable: true},
@@ -976,7 +983,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "payment_orders_users_payment_orders",
-				Columns:    []*schema.Column{PaymentOrdersColumns[50]},
+				Columns:    []*schema.Column{PaymentOrdersColumns[57]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -993,32 +1000,32 @@ var (
 			{
 				Name:    "paymentorder_user_id",
 				Unique:  false,
-				Columns: []*schema.Column{PaymentOrdersColumns[50]},
+				Columns: []*schema.Column{PaymentOrdersColumns[57]},
 			},
 			{
 				Name:    "paymentorder_status",
 				Unique:  false,
-				Columns: []*schema.Column{PaymentOrdersColumns[32]},
+				Columns: []*schema.Column{PaymentOrdersColumns[39]},
 			},
 			{
 				Name:    "paymentorder_expires_at",
 				Unique:  false,
-				Columns: []*schema.Column{PaymentOrdersColumns[40]},
+				Columns: []*schema.Column{PaymentOrdersColumns[47]},
 			},
 			{
 				Name:    "paymentorder_created_at",
 				Unique:  false,
-				Columns: []*schema.Column{PaymentOrdersColumns[48]},
+				Columns: []*schema.Column{PaymentOrdersColumns[55]},
 			},
 			{
 				Name:    "paymentorder_paid_at",
 				Unique:  false,
-				Columns: []*schema.Column{PaymentOrdersColumns[41]},
+				Columns: []*schema.Column{PaymentOrdersColumns[48]},
 			},
 			{
 				Name:    "paymentorder_payment_type_paid_at",
 				Unique:  false,
-				Columns: []*schema.Column{PaymentOrdersColumns[11], PaymentOrdersColumns[41]},
+				Columns: []*schema.Column{PaymentOrdersColumns[11], PaymentOrdersColumns[48]},
 			},
 			{
 				Name:    "paymentorder_order_type",
@@ -1026,9 +1033,14 @@ var (
 				Columns: []*schema.Column{PaymentOrdersColumns[16]},
 			},
 			{
+				Name:    "paymentorder_presale_starts_at_status",
+				Unique:  false,
+				Columns: []*schema.Column{PaymentOrdersColumns[18], PaymentOrdersColumns[39]},
+			},
+			{
 				Name:    "paymentorder_subscription_bonus_activity_id",
 				Unique:  false,
-				Columns: []*schema.Column{PaymentOrdersColumns[20]},
+				Columns: []*schema.Column{PaymentOrdersColumns[27]},
 				Annotation: &entsql.IndexAnnotation{
 					Where: "subscription_bonus_activity_id IS NOT NULL",
 				},
@@ -1036,7 +1048,7 @@ var (
 			{
 				Name:    "paymentorder_user_id_plan_id_status_expires_at",
 				Unique:  false,
-				Columns: []*schema.Column{PaymentOrdersColumns[50], PaymentOrdersColumns[17], PaymentOrdersColumns[32], PaymentOrdersColumns[40]},
+				Columns: []*schema.Column{PaymentOrdersColumns[57], PaymentOrdersColumns[17], PaymentOrdersColumns[39], PaymentOrdersColumns[47]},
 				Annotation: &entsql.IndexAnnotation{
 					Where: "subscription_multiplier >= 1",
 				},
@@ -1544,6 +1556,10 @@ var (
 		{Name: "features", Type: field.TypeString, Default: "", SchemaType: map[string]string{"postgres": "text"}},
 		{Name: "product_name", Type: field.TypeString, Size: 100, Default: ""},
 		{Name: "for_sale", Type: field.TypeBool, Default: true},
+		{Name: "presale_enabled", Type: field.TypeBool, Default: false},
+		{Name: "presale_visible", Type: field.TypeBool, Default: true},
+		{Name: "presale_badge", Type: field.TypeString, Size: 40, Default: ""},
+		{Name: "presale_reset_cards", Type: field.TypeInt, Default: 0},
 		{Name: "sort_order", Type: field.TypeInt, Default: 0},
 		{Name: "custom_multiplier_enabled", Type: field.TypeBool, Default: false},
 		{Name: "custom_multiplier_min", Type: field.TypeInt, Default: 1},

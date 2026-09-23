@@ -29,6 +29,10 @@
       </article>
     </div>
 
+    <div class="billing-presale" data-reveal style="--reveal-delay: 500ms">
+      <div class="billing-presale-heading"><div><p class="eyebrow">{{ t('presale.philosophy') }}</p><h3>{{ t('presale.valueTitle') }}</h3></div><RouterLink to="/presale" class="btn btn-primary">{{ t('presale.browse') }} <Icon name="arrowRight" size="sm" /></RouterLink></div>
+      <PresaleBenefits compact />
+    </div>
     <div class="billing-footnote" data-reveal style="--reveal-delay: 550ms">
       <p>{{ t('home.landing.billing.note') }}</p>
       <RouterLink :to="entryPath">{{ t('home.dashboard') }} <Icon name="arrowRight" size="sm" aria-hidden="true" /></RouterLink>
@@ -38,6 +42,7 @@
 
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
+import PresaleBenefits from '@/components/presale/PresaleBenefits.vue'
 import Icon from '@/components/icons/Icon.vue'
 
 defineProps<{ entryPath: string }>()
@@ -67,6 +72,10 @@ const facts = ['access', 'period'] as const
 .billing-facts dt { color: var(--cafe-ink); font-weight: 500; }
 .billing-facts dd { color: var(--cafe-muted); }
 .billing-facts > div:last-child { padding-bottom: 0; }
+.billing-presale { margin-top: 28px; padding-top: 24px; border-top: 1px solid var(--cafe-line); }
+.billing-presale-heading { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 20px; }
+.billing-presale-heading h3 { margin-top: 8px; font: 500 21px Georgia, 'Noto Serif CJK SC', serif; }
+.billing-presale-heading a { display: inline-flex; gap: 10px; flex-shrink: 0; font-size: 12px; }
 .billing-footnote { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-top: var(--chapter-gap); font-size: 12px; line-height: 1.8; color: var(--cafe-muted); }
 .billing-footnote a { display: inline-flex; align-items: center; gap: 10px; flex-shrink: 0; color: var(--cafe-accent); }
 .billing-footnote a:hover { text-decoration: underline; text-underline-offset: 4px; }
@@ -79,6 +88,7 @@ const facts = ['access', 'period'] as const
   .billing-facts > div { padding-block: 10px; }
 }
 @media (max-width: 767px) {
+  .billing-presale-heading { flex-direction: column; align-items: start; }
   .billing-heading { flex-direction: column; align-items: start; gap: 16px; }
   .billing-options { grid-template-columns: 1fr; gap: 18px; }
   .billing-footnote { flex-direction: column; align-items: start; gap: 12px; }

@@ -258,6 +258,69 @@ func (_u *SubscriptionPlanUpdate) SetNillableForSale(v *bool) *SubscriptionPlanU
 	return _u
 }
 
+// SetPresaleEnabled sets the "presale_enabled" field.
+func (_u *SubscriptionPlanUpdate) SetPresaleEnabled(v bool) *SubscriptionPlanUpdate {
+	_u.mutation.SetPresaleEnabled(v)
+	return _u
+}
+
+// SetNillablePresaleEnabled sets the "presale_enabled" field if the given value is not nil.
+func (_u *SubscriptionPlanUpdate) SetNillablePresaleEnabled(v *bool) *SubscriptionPlanUpdate {
+	if v != nil {
+		_u.SetPresaleEnabled(*v)
+	}
+	return _u
+}
+
+// SetPresaleVisible sets the "presale_visible" field.
+func (_u *SubscriptionPlanUpdate) SetPresaleVisible(v bool) *SubscriptionPlanUpdate {
+	_u.mutation.SetPresaleVisible(v)
+	return _u
+}
+
+// SetNillablePresaleVisible sets the "presale_visible" field if the given value is not nil.
+func (_u *SubscriptionPlanUpdate) SetNillablePresaleVisible(v *bool) *SubscriptionPlanUpdate {
+	if v != nil {
+		_u.SetPresaleVisible(*v)
+	}
+	return _u
+}
+
+// SetPresaleBadge sets the "presale_badge" field.
+func (_u *SubscriptionPlanUpdate) SetPresaleBadge(v string) *SubscriptionPlanUpdate {
+	_u.mutation.SetPresaleBadge(v)
+	return _u
+}
+
+// SetNillablePresaleBadge sets the "presale_badge" field if the given value is not nil.
+func (_u *SubscriptionPlanUpdate) SetNillablePresaleBadge(v *string) *SubscriptionPlanUpdate {
+	if v != nil {
+		_u.SetPresaleBadge(*v)
+	}
+	return _u
+}
+
+// SetPresaleResetCards sets the "presale_reset_cards" field.
+func (_u *SubscriptionPlanUpdate) SetPresaleResetCards(v int) *SubscriptionPlanUpdate {
+	_u.mutation.ResetPresaleResetCards()
+	_u.mutation.SetPresaleResetCards(v)
+	return _u
+}
+
+// SetNillablePresaleResetCards sets the "presale_reset_cards" field if the given value is not nil.
+func (_u *SubscriptionPlanUpdate) SetNillablePresaleResetCards(v *int) *SubscriptionPlanUpdate {
+	if v != nil {
+		_u.SetPresaleResetCards(*v)
+	}
+	return _u
+}
+
+// AddPresaleResetCards adds value to the "presale_reset_cards" field.
+func (_u *SubscriptionPlanUpdate) AddPresaleResetCards(v int) *SubscriptionPlanUpdate {
+	_u.mutation.AddPresaleResetCards(v)
+	return _u
+}
+
 // SetSortOrder sets the "sort_order" field.
 func (_u *SubscriptionPlanUpdate) SetSortOrder(v int) *SubscriptionPlanUpdate {
 	_u.mutation.ResetSortOrder()
@@ -409,6 +472,16 @@ func (_u *SubscriptionPlanUpdate) check() error {
 			return &ValidationError{Name: "product_name", err: fmt.Errorf(`ent: validator failed for field "SubscriptionPlan.product_name": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.PresaleBadge(); ok {
+		if err := subscriptionplan.PresaleBadgeValidator(v); err != nil {
+			return &ValidationError{Name: "presale_badge", err: fmt.Errorf(`ent: validator failed for field "SubscriptionPlan.presale_badge": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.PresaleResetCards(); ok {
+		if err := subscriptionplan.PresaleResetCardsValidator(v); err != nil {
+			return &ValidationError{Name: "presale_reset_cards", err: fmt.Errorf(`ent: validator failed for field "SubscriptionPlan.presale_reset_cards": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -483,6 +556,21 @@ func (_u *SubscriptionPlanUpdate) sqlSave(ctx context.Context) (_node int, err e
 	}
 	if value, ok := _u.mutation.ForSale(); ok {
 		_spec.SetField(subscriptionplan.FieldForSale, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.PresaleEnabled(); ok {
+		_spec.SetField(subscriptionplan.FieldPresaleEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.PresaleVisible(); ok {
+		_spec.SetField(subscriptionplan.FieldPresaleVisible, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.PresaleBadge(); ok {
+		_spec.SetField(subscriptionplan.FieldPresaleBadge, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.PresaleResetCards(); ok {
+		_spec.SetField(subscriptionplan.FieldPresaleResetCards, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedPresaleResetCards(); ok {
+		_spec.AddField(subscriptionplan.FieldPresaleResetCards, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.SortOrder(); ok {
 		_spec.SetField(subscriptionplan.FieldSortOrder, field.TypeInt, value)
@@ -758,6 +846,69 @@ func (_u *SubscriptionPlanUpdateOne) SetNillableForSale(v *bool) *SubscriptionPl
 	return _u
 }
 
+// SetPresaleEnabled sets the "presale_enabled" field.
+func (_u *SubscriptionPlanUpdateOne) SetPresaleEnabled(v bool) *SubscriptionPlanUpdateOne {
+	_u.mutation.SetPresaleEnabled(v)
+	return _u
+}
+
+// SetNillablePresaleEnabled sets the "presale_enabled" field if the given value is not nil.
+func (_u *SubscriptionPlanUpdateOne) SetNillablePresaleEnabled(v *bool) *SubscriptionPlanUpdateOne {
+	if v != nil {
+		_u.SetPresaleEnabled(*v)
+	}
+	return _u
+}
+
+// SetPresaleVisible sets the "presale_visible" field.
+func (_u *SubscriptionPlanUpdateOne) SetPresaleVisible(v bool) *SubscriptionPlanUpdateOne {
+	_u.mutation.SetPresaleVisible(v)
+	return _u
+}
+
+// SetNillablePresaleVisible sets the "presale_visible" field if the given value is not nil.
+func (_u *SubscriptionPlanUpdateOne) SetNillablePresaleVisible(v *bool) *SubscriptionPlanUpdateOne {
+	if v != nil {
+		_u.SetPresaleVisible(*v)
+	}
+	return _u
+}
+
+// SetPresaleBadge sets the "presale_badge" field.
+func (_u *SubscriptionPlanUpdateOne) SetPresaleBadge(v string) *SubscriptionPlanUpdateOne {
+	_u.mutation.SetPresaleBadge(v)
+	return _u
+}
+
+// SetNillablePresaleBadge sets the "presale_badge" field if the given value is not nil.
+func (_u *SubscriptionPlanUpdateOne) SetNillablePresaleBadge(v *string) *SubscriptionPlanUpdateOne {
+	if v != nil {
+		_u.SetPresaleBadge(*v)
+	}
+	return _u
+}
+
+// SetPresaleResetCards sets the "presale_reset_cards" field.
+func (_u *SubscriptionPlanUpdateOne) SetPresaleResetCards(v int) *SubscriptionPlanUpdateOne {
+	_u.mutation.ResetPresaleResetCards()
+	_u.mutation.SetPresaleResetCards(v)
+	return _u
+}
+
+// SetNillablePresaleResetCards sets the "presale_reset_cards" field if the given value is not nil.
+func (_u *SubscriptionPlanUpdateOne) SetNillablePresaleResetCards(v *int) *SubscriptionPlanUpdateOne {
+	if v != nil {
+		_u.SetPresaleResetCards(*v)
+	}
+	return _u
+}
+
+// AddPresaleResetCards adds value to the "presale_reset_cards" field.
+func (_u *SubscriptionPlanUpdateOne) AddPresaleResetCards(v int) *SubscriptionPlanUpdateOne {
+	_u.mutation.AddPresaleResetCards(v)
+	return _u
+}
+
 // SetSortOrder sets the "sort_order" field.
 func (_u *SubscriptionPlanUpdateOne) SetSortOrder(v int) *SubscriptionPlanUpdateOne {
 	_u.mutation.ResetSortOrder()
@@ -922,6 +1073,16 @@ func (_u *SubscriptionPlanUpdateOne) check() error {
 			return &ValidationError{Name: "product_name", err: fmt.Errorf(`ent: validator failed for field "SubscriptionPlan.product_name": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.PresaleBadge(); ok {
+		if err := subscriptionplan.PresaleBadgeValidator(v); err != nil {
+			return &ValidationError{Name: "presale_badge", err: fmt.Errorf(`ent: validator failed for field "SubscriptionPlan.presale_badge": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.PresaleResetCards(); ok {
+		if err := subscriptionplan.PresaleResetCardsValidator(v); err != nil {
+			return &ValidationError{Name: "presale_reset_cards", err: fmt.Errorf(`ent: validator failed for field "SubscriptionPlan.presale_reset_cards": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -1013,6 +1174,21 @@ func (_u *SubscriptionPlanUpdateOne) sqlSave(ctx context.Context) (_node *Subscr
 	}
 	if value, ok := _u.mutation.ForSale(); ok {
 		_spec.SetField(subscriptionplan.FieldForSale, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.PresaleEnabled(); ok {
+		_spec.SetField(subscriptionplan.FieldPresaleEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.PresaleVisible(); ok {
+		_spec.SetField(subscriptionplan.FieldPresaleVisible, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.PresaleBadge(); ok {
+		_spec.SetField(subscriptionplan.FieldPresaleBadge, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.PresaleResetCards(); ok {
+		_spec.SetField(subscriptionplan.FieldPresaleResetCards, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedPresaleResetCards(); ok {
+		_spec.AddField(subscriptionplan.FieldPresaleResetCards, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.SortOrder(); ok {
 		_spec.SetField(subscriptionplan.FieldSortOrder, field.TypeInt, value)

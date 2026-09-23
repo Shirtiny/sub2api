@@ -1,4 +1,7 @@
+import presale from './presale.en'
+
 export default {
+  presale,
   // Home Page
   home: {
     landing: {
@@ -597,9 +600,13 @@ export default {
     rememberMe: 'Remember me',
     dontHaveAccount: "Don't have an account?",
     alreadyHaveAccount: 'Already have an account?',
-    registrationDisabled: 'Registration is currently disabled. Please contact the administrator.',
+    registrationDisabled: "Public registration is closed",
     waitlistRegistrationLink: "Approved from the waiting list? Continue signup",
-    waitlistRegistrationHint: "Use your approved email and verify ownership to register. Approval only applies to that email; public signup remains closed. Already have an account? Sign in.",
+    waitlistRegistrationHint: "New here? Register with your approved email and verify ownership. Approval applies only to that email.",
+    waitlistExistingAccountLink: "Already have an account? Sign in instead",
+    registrationSignInTitle: "No need to register again",
+    registrationSignInHint: "Use your original sign-in method to access the console instead of registering again. If you forgot your password, you can reset it from the sign-in page.",
+    registrationClosedHint: "Existing users can sign in directly. New users need waiting-list approval and must register with the approved email.",
     emailLabel: 'Email',
     emailPlaceholder: 'Enter your email',
     passwordLabel: 'Password',
@@ -612,6 +619,8 @@ export default {
     passwordMinLength: 'Password must be at least 6 characters',
     loginFailed: 'Login failed. Please check your credentials and try again.',
     errors: {
+      WAITLIST_SIGN_IN_REQUIRED: "This approval is already linked to an account. Sign in with your existing account instead of registering again.",
+      EMAIL_EXISTS: "This email already has an account. Sign in instead of registering again.",
       REGISTRATION_DISABLED: "Registration is closed. Make sure this email has been approved; existing users should sign in.",
       EMAIL_VERIFY_REQUIRED: "Please use the approved waiting-list signup option and verify your email before registering.",
       USER_NOT_ACTIVE: 'Access is not available at the moment.',

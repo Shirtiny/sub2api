@@ -455,4 +455,74 @@ describe('EmailVerifyView', () => {
     expect(apiClientPostMock).not.toHaveBeenCalled()
     expect(pushMock).toHaveBeenCalledWith('/dashboard')
   })
+  it.each(['WAITLIST_SIGN_IN_REQUIRED', 'EMAIL_EXISTS'])('shows sign-in recovery instead of an unusable OTP form for %s', async (reason) => {
+    sessionStorage.setItem('register_data', JSON.stringify({
+      email: 'existing@example.com', password: 'new-password', waitlist_registration: true
+    }))
+    sendVerifyCodeMock.mockRejectedValueOnce({ reason })
+    const wrapper = mount(EmailVerifyView, { global: { stubs: {
+      AuthLayout: { template: '<main><slot /><slot name="footer" /></main>' }, Icon: true, TurnstileWidget: true
+    } } })
+    await flushPromises()
+    expect(wrapper.get('[role="status"]').text()).toContain('auth.registrationSignInTitle')
+    expect(wrapper.find('form').exists()).toBe(false)
+    expect(wrapper.text()).not.toContain('auth.sendCodeDesc')
+    expect(wrapper.text()).not.toContain('auth.registrationDisabled')
+    expect(sessionStorage.getItem('register_data')).toBeNull()
+    expect(showErrorMock).not.toHaveBeenCalled()
+    expect(registerMock).not.toHaveBeenCalled()
+    await wrapper.get('[role="status"] button').trigger('click')
+    expect(pushMock).toHaveBeenCalledWith('/login')
+    wrapper.unmount()
+  })
+
+  it('keeps unapproved signup neutral and preserves the approved-entry route when going back', async () => {
+    sessionStorage.setItem('register_data', JSON.stringify({
+      email: 'pending@example.com', password: 'new-password', waitlist_registration: true
+    }))
+    sendVerifyCodeMock.mockRejectedValueOnce({ reason: 'REGISTRATION_DISABLED' })
+    const wrapper = mount(EmailVerifyView, { global: { stubs: {
+      AuthLayout: { template: '<main><slot /><slot name="footer" /></main>' }, Icon: true, TurnstileWidget: true
+    } } })
+    await flushPromises()
+    expect(wrapper.get('[role="status"]').text()).toContain('auth.registrationClosedHint')
+    expect(wrapper.text()).not.toContain('auth.registrationSignInTitle')
+    expect(wrapper.find('#code').exists()).toBe(false)
+    const back = wrapper.findAll('button').find(button => button.text().includes('auth.backToRegistration'))!
+    await back.trigger('click')
+    expect(pushMock).toHaveBeenCalledWith('/register?waitlist=1')
+    wrapper.unmount()
+  })
+
+  it('also recovers if an account is created after the verification code was sent', async () => {
+    sessionStorage.setItem('register_data', JSON.stringify({ email: 'existing@example.com', password: 'new-password' }))
+    registerMock.mockRejectedValueOnce({ response: { data: { reason: 'WAITLIST_SIGN_IN_REQUIRED' } } })
+    const wrapper = mount(EmailVerifyView, { global: { stubs: {
+      AuthLayout: { template: '<main><slot /><slot name="footer" /></main>' }, Icon: true, TurnstileWidget: true
+    } } })
+    await flushPromises()
+    await wrapper.get('#code').setValue('123456')
+    await wrapper.get('form').trigger('submit'); await flushPromises()
+    expect(wrapper.get('[role="status"]').text()).toContain('auth.registrationSignInTitle')
+    expect(wrapper.find('#code').exists()).toBe(false)
+    expect(sessionStorage.getItem('register_data')).toBeNull()
+    expect(showSuccessMock).not.toHaveBeenCalled()
+    expect(setTokenMock).not.toHaveBeenCalled()
+    wrapper.unmount()
+  })
+
+  it('does not replace OAuth binding recovery with email/password signup recovery', async () => {
+    authStoreState.pendingAuthSession = { token: 'pending-token', token_field: 'pending_auth_token', provider: 'oidc' }
+    sessionStorage.setItem('register_data', JSON.stringify({ email: 'existing@example.com', password: 'new-password' }))
+    sendPendingOAuthVerifyCodeMock.mockRejectedValueOnce({ reason: 'EMAIL_EXISTS', message: 'Bind existing account' })
+    const wrapper = mount(EmailVerifyView, { global: { stubs: {
+      AuthLayout: { template: '<main><slot /><slot name="footer" /></main>' }, Icon: true, TurnstileWidget: true
+    } } })
+    await flushPromises()
+    expect(wrapper.find('[role="status"]').exists()).toBe(false)
+    expect(sessionStorage.getItem('register_data')).not.toBeNull()
+    expect(showErrorMock).toHaveBeenCalled()
+    wrapper.unmount()
+  })
+
 })

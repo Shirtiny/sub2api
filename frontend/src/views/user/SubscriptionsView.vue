@@ -1,6 +1,7 @@
 <template>
   <AppLayout>
     <div class="space-y-6">
+      <MyPresales />
       <!-- Loading State -->
       <div v-if="loading" class="flex justify-center py-12">
         <div
@@ -282,6 +283,7 @@
 </template>
 
 <script setup lang="ts">
+import MyPresales from '@/components/presale/MyPresales.vue'
 import { computed, ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'

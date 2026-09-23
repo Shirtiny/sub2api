@@ -2,6 +2,7 @@ package admin
 
 import (
 	"strconv"
+	"time"
 
 	dbent "github.com/Wei-Shaw/sub2api/ent"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
@@ -478,4 +479,23 @@ func (h *PaymentHandler) UpdateConfig(c *gin.Context) {
 		return
 	}
 	response.Success(c, gin.H{"message": "updated"})
+}
+
+// GetPresaleRefundQuote lets admins review the server-calculated policy amount.
+func (h *PaymentHandler) GetPresaleRefundQuote(c *gin.Context) {
+	id, ok := parseIDParam(c, "id")
+	if !ok {
+		return
+	}
+	order, err := h.paymentService.GetOrderByID(c.Request.Context(), id)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	quote, err := service.PresaleRefundQuoteForOrder(order, time.Now())
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, quote)
 }

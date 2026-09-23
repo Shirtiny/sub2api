@@ -104,6 +104,23 @@ func (r *waitlistRepository) HasRegistrationApproval(ctx context.Context, email 
 	).Exist(ctx)
 }
 
+// Only reviewed applications can provide a sign-in hint during closed signup.
+// Do not look up arbitrary user accounts or expose their status through this flow.
+func (r *waitlistRepository) GetApprovedEntryByEmail(ctx context.Context, email string) (*service.WaitlistEntry, error) {
+	entry, err := r.client.WaitlistEntry.Query().Where(
+		waitlistentry.EmailEQ(strings.ToLower(strings.TrimSpace(email))),
+		waitlistentry.ApprovedAtNotNil(),
+	).Only(ctx)
+	if dbent.IsNotFound(err) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("get waitlist approval: %w", err)
+	}
+	result := waitlistEntryDTO(entry)
+	return &result, nil
+}
+
 // A grant can only be consumed inside the same transaction that creates the user.
 func (r *waitlistRepository) ConsumeRegistrationApproval(ctx context.Context, email string, userID int64) error {
 	tx := dbent.TxFromContext(ctx)

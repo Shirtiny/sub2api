@@ -2,7 +2,7 @@
   <AuthLayout>
     <div class="space-y-6">
       <!-- Title -->
-      <div class="text-center">
+      <div v-if="!registrationRecovery" class="text-center">
         <h2 class="text-2xl font-bold text-content-primary">
           {{ t('auth.createAccount') }}
         </h2>
@@ -11,29 +11,24 @@
         </p>
       </div>
 
-      <!-- Registration Disabled Message -->
-      <div
-        v-if="!registrationEnabled && !waitlistRegistration && settingsLoaded"
-        class="rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-800/50 dark:bg-amber-900/20"
+      <RegistrationRecoveryNotice v-if="registrationRecovery" :mode="registrationRecovery" @login="goToLogin" />
+      <RegistrationRecoveryNotice
+        v-else-if="!registrationEnabled && !waitlistRegistration && settingsLoaded"
+        mode="closed" @login="goToLogin"
       >
-        <div class="flex items-start gap-3">
-          <div class="flex-shrink-0">
-            <Icon name="exclamationCircle" size="md" class="text-amber-500" />
-          </div>
-          <p class="text-sm text-amber-700 dark:text-amber-400">
-            {{ t('auth.registrationDisabled') }}
-          </p>
-        </div>
-        <RouterLink :to="{ path: '/register', query: { ...route.query, waitlist: '1' } }" class="mt-3 inline-block text-sm font-medium text-primary-600 dark:text-primary-400">
+        <RouterLink :to="{ path: '/register', query: { ...route.query, waitlist: '1' } }" class="mt-4 block text-center text-sm font-medium text-primary-600 dark:text-primary-400">
           {{ t('auth.waitlistRegistrationLink') }}
         </RouterLink>
-      </div>
+      </RegistrationRecoveryNotice>
 
       <!-- Registration Form -->
       <form v-else @submit.prevent="handleRegister" class="space-y-5">
-        <p v-if="waitlistRegistration" class="rounded-xl border border-stroke-subtle bg-surface-secondary p-4 text-sm leading-relaxed text-content-secondary">
-          {{ t('auth.waitlistRegistrationHint') }}
-        </p>
+        <div v-if="waitlistRegistration" class="rounded-xl border border-stroke-subtle bg-surface-secondary p-4 text-sm leading-relaxed text-content-secondary">
+          <p>{{ t('auth.waitlistRegistrationHint') }}</p>
+          <button type="button" class="mt-3 text-left font-medium text-primary-600 dark:text-primary-400" @click="goToLogin">
+            {{ t('auth.waitlistExistingAccountLink') }}
+          </button>
+        </div>
         <!-- Email Input -->
         <div>
           <label for="email" class="input-label">
@@ -249,7 +244,7 @@
 
       </form>
 
-      <div v-if="showOAuthLogin && !waitlistRegistration" class="space-y-3 pt-1">
+      <div v-if="showOAuthLogin && !waitlistRegistration && !registrationRecovery" class="space-y-3 pt-1">
         <div class="flex items-center gap-3">
           <div class="h-px flex-1 bg-stroke-subtle"></div>
           <span class="text-xs text-content-tertiary">
@@ -317,6 +312,7 @@ import OidcOAuthSection from '@/components/auth/OidcOAuthSection.vue'
 import WechatOAuthSection from '@/components/auth/WechatOAuthSection.vue'
 import EmailOAuthButtons from '@/components/auth/EmailOAuthButtons.vue'
 import LoginAgreementPrompt from '@/components/auth/LoginAgreementPrompt.vue'
+import RegistrationRecoveryNotice from '@/components/auth/RegistrationRecoveryNotice.vue'
 import Icon from '@/components/icons/Icon.vue'
 import TurnstileWidget from '@/components/TurnstileWidget.vue'
 import { useAuthStore, useAppStore } from '@/stores'
@@ -326,7 +322,7 @@ import {
   validatePromoCode,
   validateInvitationCode
 } from '@/api/auth'
-import { buildAuthErrorMessage } from '@/utils/authError'
+import { buildAuthErrorMessage, getRegistrationRecoveryMode, type RegistrationRecoveryMode } from '@/utils/authError'
 import {
   formatRegistrationEmailSuffixWhitelistForMessage,
   isRegistrationEmailSuffixAllowed,
@@ -356,6 +352,7 @@ const appStore = useAppStore()
 const isLoading = ref<boolean>(false)
 const settingsLoaded = ref<boolean>(false)
 const errorMessage = ref<string>('')
+const registrationRecovery = ref<RegistrationRecoveryMode | null>(null)
 const showPassword = ref<boolean>(false)
 
 // Public settings
@@ -834,7 +831,14 @@ function validateForm(): boolean {
 
 // ==================== Form Handlers ====================
 
+function goToLogin(): void {
+  formData.password = ''
+  sessionStorage.removeItem('register_data')
+  void router.push('/login')
+}
+
 async function handleRegister(): Promise<void> {
+  if (registrationRecovery.value) return
   // Clear previous error
   errorMessage.value = ''
 
@@ -897,6 +901,7 @@ async function handleRegister(): Promise<void> {
         JSON.stringify({
           email: formData.email,
           password: formData.password,
+          ...(waitlistRegistration.value ? { waitlist_registration: true } : {}),
           turnstile_token: turnstileToken.value,
           promo_code: formData.promo_code || undefined,
           invitation_code: formData.invitation_code || undefined,
@@ -930,6 +935,14 @@ async function handleRegister(): Promise<void> {
     if (turnstileRef.value) {
       turnstileRef.value.reset()
       turnstileToken.value = ''
+    }
+
+    const recovery = getRegistrationRecoveryMode(error)
+    if (recovery) {
+      registrationRecovery.value = recovery
+      formData.password = ''
+      sessionStorage.removeItem('register_data')
+      return
     }
 
     // Handle registration error

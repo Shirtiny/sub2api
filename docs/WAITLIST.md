@@ -46,6 +46,10 @@ pixels, images, links or dynamic recipient markup are included. The receipt does
 not claim email ownership verification, a guaranteed place or an opening date.
 SMTP sender settings and the delivery workflow below are unchanged.
 
+The receipt and approval letter now share the [transactional email layout](EMAIL_TEMPLATES.md)
+with verification, billing and service notifications, rather than maintaining a
+separate visual theme.
+
 1. Persist the application before attempting delivery. No database transaction is
    held while SMTP runs.
 2. Atomically claim an unsent confirmation. A two-minute database-backed lease
@@ -106,6 +110,19 @@ Subject: **访问权限已开通**
 
 > 您已获得访问权限，可以注册或进入控制台了。
 
+This paragraph is used for a new applicant without a linked account. The primary
+action is **验证邮箱并注册**; a secondary sign-in link covers applicants who have
+already completed signup by the time they read the notice.
+
+For an application with `granted_user_id` (an existing account activated by
+approval, or a grant consumed before a notification retry), the message is:
+
+> 您已获得访问权限，请使用原账号登录并进入控制台，无需重新注册。
+
+That notice has **one sign-in action**, not a registration CTA. It tells the
+recipient to use the original login method; approval does not set or replace a
+password and an email link does not authenticate the recipient.
+
 The letter uses the same responsive espresso/cream design as the receipt and
 includes registration/login links derived **only** from the existing configured
 frontend URL. Invalid/missing URLs fall back to instructions, never the request
@@ -120,6 +137,25 @@ a retryable result. Successful notices are not resent. Browser disconnects do no
 cancel the bounded SMTP/marker completion. As with the receipt, SMTP acceptance
 followed by a crash before marker persistence may cause a duplicate on retry; no
 exactly-once or inbox-placement claim is made.
+
+### Existing-account recovery during signup
+
+When public registration is closed, the existing registration/verification-code
+endpoints return `WAITLIST_SIGN_IN_REQUIRED` if the reviewed application is
+already linked to an account, instead of the generic `REGISTRATION_DISABLED`.
+This is a sign-in hint only: it grants no fresh signup allowance, changes no user
+status/password and issues no login token. Unreviewed or missing applications
+keep the neutral closed-registration response without querying arbitrary user
+accounts. Public signup retains its ordinary existence/verification rules, and
+unconsumed approved grants still require mailbox verification.
+
+The signup and email-verification pages turn that reason (or `EMAIL_EXISTS`) into
+an explicit **no need to register again / sign in** panel. It clears temporary
+registration credentials and stops the OTP form/countdown instead of trapping
+the user behind a disappearing error toast. The waiting-list signup form also
+offers direct sign-in before submission. Going back from mailbox verification
+preserves the waiting-list form selector, which is never an admission credential.
+OAuth pending-session binding/recovery continues to use its separate flow.
 
 ### Registration while public signup is closed
 

@@ -211,6 +211,104 @@ func (_c *PaymentOrderCreate) SetNillablePlanID(v *int64) *PaymentOrderCreate {
 	return _c
 }
 
+// SetPresaleStartsAt sets the "presale_starts_at" field.
+func (_c *PaymentOrderCreate) SetPresaleStartsAt(v time.Time) *PaymentOrderCreate {
+	_c.mutation.SetPresaleStartsAt(v)
+	return _c
+}
+
+// SetNillablePresaleStartsAt sets the "presale_starts_at" field if the given value is not nil.
+func (_c *PaymentOrderCreate) SetNillablePresaleStartsAt(v *time.Time) *PaymentOrderCreate {
+	if v != nil {
+		_c.SetPresaleStartsAt(*v)
+	}
+	return _c
+}
+
+// SetPresaleExpiresAt sets the "presale_expires_at" field.
+func (_c *PaymentOrderCreate) SetPresaleExpiresAt(v time.Time) *PaymentOrderCreate {
+	_c.mutation.SetPresaleExpiresAt(v)
+	return _c
+}
+
+// SetNillablePresaleExpiresAt sets the "presale_expires_at" field if the given value is not nil.
+func (_c *PaymentOrderCreate) SetNillablePresaleExpiresAt(v *time.Time) *PaymentOrderCreate {
+	if v != nil {
+		_c.SetPresaleExpiresAt(*v)
+	}
+	return _c
+}
+
+// SetPresaleActivatedAt sets the "presale_activated_at" field.
+func (_c *PaymentOrderCreate) SetPresaleActivatedAt(v time.Time) *PaymentOrderCreate {
+	_c.mutation.SetPresaleActivatedAt(v)
+	return _c
+}
+
+// SetNillablePresaleActivatedAt sets the "presale_activated_at" field if the given value is not nil.
+func (_c *PaymentOrderCreate) SetNillablePresaleActivatedAt(v *time.Time) *PaymentOrderCreate {
+	if v != nil {
+		_c.SetPresaleActivatedAt(*v)
+	}
+	return _c
+}
+
+// SetPresaleSubscriptionID sets the "presale_subscription_id" field.
+func (_c *PaymentOrderCreate) SetPresaleSubscriptionID(v int64) *PaymentOrderCreate {
+	_c.mutation.SetPresaleSubscriptionID(v)
+	return _c
+}
+
+// SetNillablePresaleSubscriptionID sets the "presale_subscription_id" field if the given value is not nil.
+func (_c *PaymentOrderCreate) SetNillablePresaleSubscriptionID(v *int64) *PaymentOrderCreate {
+	if v != nil {
+		_c.SetPresaleSubscriptionID(*v)
+	}
+	return _c
+}
+
+// SetPresaleRenewal sets the "presale_renewal" field.
+func (_c *PaymentOrderCreate) SetPresaleRenewal(v bool) *PaymentOrderCreate {
+	_c.mutation.SetPresaleRenewal(v)
+	return _c
+}
+
+// SetNillablePresaleRenewal sets the "presale_renewal" field if the given value is not nil.
+func (_c *PaymentOrderCreate) SetNillablePresaleRenewal(v *bool) *PaymentOrderCreate {
+	if v != nil {
+		_c.SetPresaleRenewal(*v)
+	}
+	return _c
+}
+
+// SetPresalePlanName sets the "presale_plan_name" field.
+func (_c *PaymentOrderCreate) SetPresalePlanName(v string) *PaymentOrderCreate {
+	_c.mutation.SetPresalePlanName(v)
+	return _c
+}
+
+// SetNillablePresalePlanName sets the "presale_plan_name" field if the given value is not nil.
+func (_c *PaymentOrderCreate) SetNillablePresalePlanName(v *string) *PaymentOrderCreate {
+	if v != nil {
+		_c.SetPresalePlanName(*v)
+	}
+	return _c
+}
+
+// SetPresaleResetCards sets the "presale_reset_cards" field.
+func (_c *PaymentOrderCreate) SetPresaleResetCards(v int) *PaymentOrderCreate {
+	_c.mutation.SetPresaleResetCards(v)
+	return _c
+}
+
+// SetNillablePresaleResetCards sets the "presale_reset_cards" field if the given value is not nil.
+func (_c *PaymentOrderCreate) SetNillablePresaleResetCards(v *int) *PaymentOrderCreate {
+	if v != nil {
+		_c.SetPresaleResetCards(*v)
+	}
+	return _c
+}
+
 // SetSubscriptionGroupID sets the "subscription_group_id" field.
 func (_c *PaymentOrderCreate) SetSubscriptionGroupID(v int64) *PaymentOrderCreate {
 	_c.mutation.SetSubscriptionGroupID(v)
@@ -683,6 +781,18 @@ func (_c *PaymentOrderCreate) defaults() {
 		v := paymentorder.DefaultOrderType
 		_c.mutation.SetOrderType(v)
 	}
+	if _, ok := _c.mutation.PresaleRenewal(); !ok {
+		v := paymentorder.DefaultPresaleRenewal
+		_c.mutation.SetPresaleRenewal(v)
+	}
+	if _, ok := _c.mutation.PresalePlanName(); !ok {
+		v := paymentorder.DefaultPresalePlanName
+		_c.mutation.SetPresalePlanName(v)
+	}
+	if _, ok := _c.mutation.PresaleResetCards(); !ok {
+		v := paymentorder.DefaultPresaleResetCards
+		_c.mutation.SetPresaleResetCards(v)
+	}
 	if _, ok := _c.mutation.SubscriptionBonusDays(); !ok {
 		v := paymentorder.DefaultSubscriptionBonusDays
 		_c.mutation.SetSubscriptionBonusDays(v)
@@ -793,6 +903,25 @@ func (_c *PaymentOrderCreate) check() error {
 	if v, ok := _c.mutation.OrderType(); ok {
 		if err := paymentorder.OrderTypeValidator(v); err != nil {
 			return &ValidationError{Name: "order_type", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.order_type": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.PresaleRenewal(); !ok {
+		return &ValidationError{Name: "presale_renewal", err: errors.New(`ent: missing required field "PaymentOrder.presale_renewal"`)}
+	}
+	if _, ok := _c.mutation.PresalePlanName(); !ok {
+		return &ValidationError{Name: "presale_plan_name", err: errors.New(`ent: missing required field "PaymentOrder.presale_plan_name"`)}
+	}
+	if v, ok := _c.mutation.PresalePlanName(); ok {
+		if err := paymentorder.PresalePlanNameValidator(v); err != nil {
+			return &ValidationError{Name: "presale_plan_name", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.presale_plan_name": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.PresaleResetCards(); !ok {
+		return &ValidationError{Name: "presale_reset_cards", err: errors.New(`ent: missing required field "PaymentOrder.presale_reset_cards"`)}
+	}
+	if v, ok := _c.mutation.PresaleResetCards(); ok {
+		if err := paymentorder.PresaleResetCardsValidator(v); err != nil {
+			return &ValidationError{Name: "presale_reset_cards", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.presale_reset_cards": %w`, err)}
 		}
 	}
 	if _, ok := _c.mutation.SubscriptionBonusDays(); !ok {
@@ -970,6 +1099,34 @@ func (_c *PaymentOrderCreate) createSpec() (*PaymentOrder, *sqlgraph.CreateSpec)
 	if value, ok := _c.mutation.PlanID(); ok {
 		_spec.SetField(paymentorder.FieldPlanID, field.TypeInt64, value)
 		_node.PlanID = &value
+	}
+	if value, ok := _c.mutation.PresaleStartsAt(); ok {
+		_spec.SetField(paymentorder.FieldPresaleStartsAt, field.TypeTime, value)
+		_node.PresaleStartsAt = &value
+	}
+	if value, ok := _c.mutation.PresaleExpiresAt(); ok {
+		_spec.SetField(paymentorder.FieldPresaleExpiresAt, field.TypeTime, value)
+		_node.PresaleExpiresAt = &value
+	}
+	if value, ok := _c.mutation.PresaleActivatedAt(); ok {
+		_spec.SetField(paymentorder.FieldPresaleActivatedAt, field.TypeTime, value)
+		_node.PresaleActivatedAt = &value
+	}
+	if value, ok := _c.mutation.PresaleSubscriptionID(); ok {
+		_spec.SetField(paymentorder.FieldPresaleSubscriptionID, field.TypeInt64, value)
+		_node.PresaleSubscriptionID = &value
+	}
+	if value, ok := _c.mutation.PresaleRenewal(); ok {
+		_spec.SetField(paymentorder.FieldPresaleRenewal, field.TypeBool, value)
+		_node.PresaleRenewal = value
+	}
+	if value, ok := _c.mutation.PresalePlanName(); ok {
+		_spec.SetField(paymentorder.FieldPresalePlanName, field.TypeString, value)
+		_node.PresalePlanName = value
+	}
+	if value, ok := _c.mutation.PresaleResetCards(); ok {
+		_spec.SetField(paymentorder.FieldPresaleResetCards, field.TypeInt, value)
+		_node.PresaleResetCards = value
 	}
 	if value, ok := _c.mutation.SubscriptionGroupID(); ok {
 		_spec.SetField(paymentorder.FieldSubscriptionGroupID, field.TypeInt64, value)
@@ -1447,6 +1604,126 @@ func (u *PaymentOrderUpsert) AddPlanID(v int64) *PaymentOrderUpsert {
 // ClearPlanID clears the value of the "plan_id" field.
 func (u *PaymentOrderUpsert) ClearPlanID() *PaymentOrderUpsert {
 	u.SetNull(paymentorder.FieldPlanID)
+	return u
+}
+
+// SetPresaleStartsAt sets the "presale_starts_at" field.
+func (u *PaymentOrderUpsert) SetPresaleStartsAt(v time.Time) *PaymentOrderUpsert {
+	u.Set(paymentorder.FieldPresaleStartsAt, v)
+	return u
+}
+
+// UpdatePresaleStartsAt sets the "presale_starts_at" field to the value that was provided on create.
+func (u *PaymentOrderUpsert) UpdatePresaleStartsAt() *PaymentOrderUpsert {
+	u.SetExcluded(paymentorder.FieldPresaleStartsAt)
+	return u
+}
+
+// ClearPresaleStartsAt clears the value of the "presale_starts_at" field.
+func (u *PaymentOrderUpsert) ClearPresaleStartsAt() *PaymentOrderUpsert {
+	u.SetNull(paymentorder.FieldPresaleStartsAt)
+	return u
+}
+
+// SetPresaleExpiresAt sets the "presale_expires_at" field.
+func (u *PaymentOrderUpsert) SetPresaleExpiresAt(v time.Time) *PaymentOrderUpsert {
+	u.Set(paymentorder.FieldPresaleExpiresAt, v)
+	return u
+}
+
+// UpdatePresaleExpiresAt sets the "presale_expires_at" field to the value that was provided on create.
+func (u *PaymentOrderUpsert) UpdatePresaleExpiresAt() *PaymentOrderUpsert {
+	u.SetExcluded(paymentorder.FieldPresaleExpiresAt)
+	return u
+}
+
+// ClearPresaleExpiresAt clears the value of the "presale_expires_at" field.
+func (u *PaymentOrderUpsert) ClearPresaleExpiresAt() *PaymentOrderUpsert {
+	u.SetNull(paymentorder.FieldPresaleExpiresAt)
+	return u
+}
+
+// SetPresaleActivatedAt sets the "presale_activated_at" field.
+func (u *PaymentOrderUpsert) SetPresaleActivatedAt(v time.Time) *PaymentOrderUpsert {
+	u.Set(paymentorder.FieldPresaleActivatedAt, v)
+	return u
+}
+
+// UpdatePresaleActivatedAt sets the "presale_activated_at" field to the value that was provided on create.
+func (u *PaymentOrderUpsert) UpdatePresaleActivatedAt() *PaymentOrderUpsert {
+	u.SetExcluded(paymentorder.FieldPresaleActivatedAt)
+	return u
+}
+
+// ClearPresaleActivatedAt clears the value of the "presale_activated_at" field.
+func (u *PaymentOrderUpsert) ClearPresaleActivatedAt() *PaymentOrderUpsert {
+	u.SetNull(paymentorder.FieldPresaleActivatedAt)
+	return u
+}
+
+// SetPresaleSubscriptionID sets the "presale_subscription_id" field.
+func (u *PaymentOrderUpsert) SetPresaleSubscriptionID(v int64) *PaymentOrderUpsert {
+	u.Set(paymentorder.FieldPresaleSubscriptionID, v)
+	return u
+}
+
+// UpdatePresaleSubscriptionID sets the "presale_subscription_id" field to the value that was provided on create.
+func (u *PaymentOrderUpsert) UpdatePresaleSubscriptionID() *PaymentOrderUpsert {
+	u.SetExcluded(paymentorder.FieldPresaleSubscriptionID)
+	return u
+}
+
+// AddPresaleSubscriptionID adds v to the "presale_subscription_id" field.
+func (u *PaymentOrderUpsert) AddPresaleSubscriptionID(v int64) *PaymentOrderUpsert {
+	u.Add(paymentorder.FieldPresaleSubscriptionID, v)
+	return u
+}
+
+// ClearPresaleSubscriptionID clears the value of the "presale_subscription_id" field.
+func (u *PaymentOrderUpsert) ClearPresaleSubscriptionID() *PaymentOrderUpsert {
+	u.SetNull(paymentorder.FieldPresaleSubscriptionID)
+	return u
+}
+
+// SetPresaleRenewal sets the "presale_renewal" field.
+func (u *PaymentOrderUpsert) SetPresaleRenewal(v bool) *PaymentOrderUpsert {
+	u.Set(paymentorder.FieldPresaleRenewal, v)
+	return u
+}
+
+// UpdatePresaleRenewal sets the "presale_renewal" field to the value that was provided on create.
+func (u *PaymentOrderUpsert) UpdatePresaleRenewal() *PaymentOrderUpsert {
+	u.SetExcluded(paymentorder.FieldPresaleRenewal)
+	return u
+}
+
+// SetPresalePlanName sets the "presale_plan_name" field.
+func (u *PaymentOrderUpsert) SetPresalePlanName(v string) *PaymentOrderUpsert {
+	u.Set(paymentorder.FieldPresalePlanName, v)
+	return u
+}
+
+// UpdatePresalePlanName sets the "presale_plan_name" field to the value that was provided on create.
+func (u *PaymentOrderUpsert) UpdatePresalePlanName() *PaymentOrderUpsert {
+	u.SetExcluded(paymentorder.FieldPresalePlanName)
+	return u
+}
+
+// SetPresaleResetCards sets the "presale_reset_cards" field.
+func (u *PaymentOrderUpsert) SetPresaleResetCards(v int) *PaymentOrderUpsert {
+	u.Set(paymentorder.FieldPresaleResetCards, v)
+	return u
+}
+
+// UpdatePresaleResetCards sets the "presale_reset_cards" field to the value that was provided on create.
+func (u *PaymentOrderUpsert) UpdatePresaleResetCards() *PaymentOrderUpsert {
+	u.SetExcluded(paymentorder.FieldPresaleResetCards)
+	return u
+}
+
+// AddPresaleResetCards adds v to the "presale_reset_cards" field.
+func (u *PaymentOrderUpsert) AddPresaleResetCards(v int) *PaymentOrderUpsert {
+	u.Add(paymentorder.FieldPresaleResetCards, v)
 	return u
 }
 
@@ -2385,6 +2662,146 @@ func (u *PaymentOrderUpsertOne) UpdatePlanID() *PaymentOrderUpsertOne {
 func (u *PaymentOrderUpsertOne) ClearPlanID() *PaymentOrderUpsertOne {
 	return u.Update(func(s *PaymentOrderUpsert) {
 		s.ClearPlanID()
+	})
+}
+
+// SetPresaleStartsAt sets the "presale_starts_at" field.
+func (u *PaymentOrderUpsertOne) SetPresaleStartsAt(v time.Time) *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.SetPresaleStartsAt(v)
+	})
+}
+
+// UpdatePresaleStartsAt sets the "presale_starts_at" field to the value that was provided on create.
+func (u *PaymentOrderUpsertOne) UpdatePresaleStartsAt() *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.UpdatePresaleStartsAt()
+	})
+}
+
+// ClearPresaleStartsAt clears the value of the "presale_starts_at" field.
+func (u *PaymentOrderUpsertOne) ClearPresaleStartsAt() *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.ClearPresaleStartsAt()
+	})
+}
+
+// SetPresaleExpiresAt sets the "presale_expires_at" field.
+func (u *PaymentOrderUpsertOne) SetPresaleExpiresAt(v time.Time) *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.SetPresaleExpiresAt(v)
+	})
+}
+
+// UpdatePresaleExpiresAt sets the "presale_expires_at" field to the value that was provided on create.
+func (u *PaymentOrderUpsertOne) UpdatePresaleExpiresAt() *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.UpdatePresaleExpiresAt()
+	})
+}
+
+// ClearPresaleExpiresAt clears the value of the "presale_expires_at" field.
+func (u *PaymentOrderUpsertOne) ClearPresaleExpiresAt() *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.ClearPresaleExpiresAt()
+	})
+}
+
+// SetPresaleActivatedAt sets the "presale_activated_at" field.
+func (u *PaymentOrderUpsertOne) SetPresaleActivatedAt(v time.Time) *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.SetPresaleActivatedAt(v)
+	})
+}
+
+// UpdatePresaleActivatedAt sets the "presale_activated_at" field to the value that was provided on create.
+func (u *PaymentOrderUpsertOne) UpdatePresaleActivatedAt() *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.UpdatePresaleActivatedAt()
+	})
+}
+
+// ClearPresaleActivatedAt clears the value of the "presale_activated_at" field.
+func (u *PaymentOrderUpsertOne) ClearPresaleActivatedAt() *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.ClearPresaleActivatedAt()
+	})
+}
+
+// SetPresaleSubscriptionID sets the "presale_subscription_id" field.
+func (u *PaymentOrderUpsertOne) SetPresaleSubscriptionID(v int64) *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.SetPresaleSubscriptionID(v)
+	})
+}
+
+// AddPresaleSubscriptionID adds v to the "presale_subscription_id" field.
+func (u *PaymentOrderUpsertOne) AddPresaleSubscriptionID(v int64) *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.AddPresaleSubscriptionID(v)
+	})
+}
+
+// UpdatePresaleSubscriptionID sets the "presale_subscription_id" field to the value that was provided on create.
+func (u *PaymentOrderUpsertOne) UpdatePresaleSubscriptionID() *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.UpdatePresaleSubscriptionID()
+	})
+}
+
+// ClearPresaleSubscriptionID clears the value of the "presale_subscription_id" field.
+func (u *PaymentOrderUpsertOne) ClearPresaleSubscriptionID() *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.ClearPresaleSubscriptionID()
+	})
+}
+
+// SetPresaleRenewal sets the "presale_renewal" field.
+func (u *PaymentOrderUpsertOne) SetPresaleRenewal(v bool) *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.SetPresaleRenewal(v)
+	})
+}
+
+// UpdatePresaleRenewal sets the "presale_renewal" field to the value that was provided on create.
+func (u *PaymentOrderUpsertOne) UpdatePresaleRenewal() *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.UpdatePresaleRenewal()
+	})
+}
+
+// SetPresalePlanName sets the "presale_plan_name" field.
+func (u *PaymentOrderUpsertOne) SetPresalePlanName(v string) *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.SetPresalePlanName(v)
+	})
+}
+
+// UpdatePresalePlanName sets the "presale_plan_name" field to the value that was provided on create.
+func (u *PaymentOrderUpsertOne) UpdatePresalePlanName() *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.UpdatePresalePlanName()
+	})
+}
+
+// SetPresaleResetCards sets the "presale_reset_cards" field.
+func (u *PaymentOrderUpsertOne) SetPresaleResetCards(v int) *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.SetPresaleResetCards(v)
+	})
+}
+
+// AddPresaleResetCards adds v to the "presale_reset_cards" field.
+func (u *PaymentOrderUpsertOne) AddPresaleResetCards(v int) *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.AddPresaleResetCards(v)
+	})
+}
+
+// UpdatePresaleResetCards sets the "presale_reset_cards" field to the value that was provided on create.
+func (u *PaymentOrderUpsertOne) UpdatePresaleResetCards() *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.UpdatePresaleResetCards()
 	})
 }
 
@@ -3583,6 +4000,146 @@ func (u *PaymentOrderUpsertBulk) UpdatePlanID() *PaymentOrderUpsertBulk {
 func (u *PaymentOrderUpsertBulk) ClearPlanID() *PaymentOrderUpsertBulk {
 	return u.Update(func(s *PaymentOrderUpsert) {
 		s.ClearPlanID()
+	})
+}
+
+// SetPresaleStartsAt sets the "presale_starts_at" field.
+func (u *PaymentOrderUpsertBulk) SetPresaleStartsAt(v time.Time) *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.SetPresaleStartsAt(v)
+	})
+}
+
+// UpdatePresaleStartsAt sets the "presale_starts_at" field to the value that was provided on create.
+func (u *PaymentOrderUpsertBulk) UpdatePresaleStartsAt() *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.UpdatePresaleStartsAt()
+	})
+}
+
+// ClearPresaleStartsAt clears the value of the "presale_starts_at" field.
+func (u *PaymentOrderUpsertBulk) ClearPresaleStartsAt() *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.ClearPresaleStartsAt()
+	})
+}
+
+// SetPresaleExpiresAt sets the "presale_expires_at" field.
+func (u *PaymentOrderUpsertBulk) SetPresaleExpiresAt(v time.Time) *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.SetPresaleExpiresAt(v)
+	})
+}
+
+// UpdatePresaleExpiresAt sets the "presale_expires_at" field to the value that was provided on create.
+func (u *PaymentOrderUpsertBulk) UpdatePresaleExpiresAt() *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.UpdatePresaleExpiresAt()
+	})
+}
+
+// ClearPresaleExpiresAt clears the value of the "presale_expires_at" field.
+func (u *PaymentOrderUpsertBulk) ClearPresaleExpiresAt() *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.ClearPresaleExpiresAt()
+	})
+}
+
+// SetPresaleActivatedAt sets the "presale_activated_at" field.
+func (u *PaymentOrderUpsertBulk) SetPresaleActivatedAt(v time.Time) *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.SetPresaleActivatedAt(v)
+	})
+}
+
+// UpdatePresaleActivatedAt sets the "presale_activated_at" field to the value that was provided on create.
+func (u *PaymentOrderUpsertBulk) UpdatePresaleActivatedAt() *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.UpdatePresaleActivatedAt()
+	})
+}
+
+// ClearPresaleActivatedAt clears the value of the "presale_activated_at" field.
+func (u *PaymentOrderUpsertBulk) ClearPresaleActivatedAt() *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.ClearPresaleActivatedAt()
+	})
+}
+
+// SetPresaleSubscriptionID sets the "presale_subscription_id" field.
+func (u *PaymentOrderUpsertBulk) SetPresaleSubscriptionID(v int64) *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.SetPresaleSubscriptionID(v)
+	})
+}
+
+// AddPresaleSubscriptionID adds v to the "presale_subscription_id" field.
+func (u *PaymentOrderUpsertBulk) AddPresaleSubscriptionID(v int64) *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.AddPresaleSubscriptionID(v)
+	})
+}
+
+// UpdatePresaleSubscriptionID sets the "presale_subscription_id" field to the value that was provided on create.
+func (u *PaymentOrderUpsertBulk) UpdatePresaleSubscriptionID() *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.UpdatePresaleSubscriptionID()
+	})
+}
+
+// ClearPresaleSubscriptionID clears the value of the "presale_subscription_id" field.
+func (u *PaymentOrderUpsertBulk) ClearPresaleSubscriptionID() *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.ClearPresaleSubscriptionID()
+	})
+}
+
+// SetPresaleRenewal sets the "presale_renewal" field.
+func (u *PaymentOrderUpsertBulk) SetPresaleRenewal(v bool) *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.SetPresaleRenewal(v)
+	})
+}
+
+// UpdatePresaleRenewal sets the "presale_renewal" field to the value that was provided on create.
+func (u *PaymentOrderUpsertBulk) UpdatePresaleRenewal() *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.UpdatePresaleRenewal()
+	})
+}
+
+// SetPresalePlanName sets the "presale_plan_name" field.
+func (u *PaymentOrderUpsertBulk) SetPresalePlanName(v string) *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.SetPresalePlanName(v)
+	})
+}
+
+// UpdatePresalePlanName sets the "presale_plan_name" field to the value that was provided on create.
+func (u *PaymentOrderUpsertBulk) UpdatePresalePlanName() *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.UpdatePresalePlanName()
+	})
+}
+
+// SetPresaleResetCards sets the "presale_reset_cards" field.
+func (u *PaymentOrderUpsertBulk) SetPresaleResetCards(v int) *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.SetPresaleResetCards(v)
+	})
+}
+
+// AddPresaleResetCards adds v to the "presale_reset_cards" field.
+func (u *PaymentOrderUpsertBulk) AddPresaleResetCards(v int) *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.AddPresaleResetCards(v)
+	})
+}
+
+// UpdatePresaleResetCards sets the "presale_reset_cards" field to the value that was provided on create.
+func (u *PaymentOrderUpsertBulk) UpdatePresaleResetCards() *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.UpdatePresaleResetCards()
 	})
 }
 

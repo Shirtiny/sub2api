@@ -588,6 +588,9 @@ func (s *PaymentService) ExecuteSubscriptionFulfillment(ctx context.Context, oid
 }
 
 func (s *PaymentService) doSub(ctx context.Context, o *dbent.PaymentOrder, lease *paymentFulfillmentLease) error {
+	if o.PresaleStartsAt != nil {
+		return s.completePresale(ctx, o, lease)
+	}
 	gid := *o.SubscriptionGroupID
 	days, err := subscriptionOrderTotalDays(o)
 	if err != nil {

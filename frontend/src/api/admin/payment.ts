@@ -3,6 +3,7 @@
  * Handles payment management operations for administrators
  */
 
+import type { PresaleRefundQuote } from '../presale'
 import { apiClient } from '../client'
 import type {
   DashboardStats,
@@ -59,6 +60,7 @@ export interface UpdatePaymentConfigRequest {
 }
 
 export const adminPaymentAPI = {
+  getPresaleRefundQuote(id: number) { return apiClient.get<PresaleRefundQuote>(`/admin/payment/orders/${id}/presale-refund-quote`) },
   // ==================== Config ====================
 
   /** Get payment configuration (admin view) */

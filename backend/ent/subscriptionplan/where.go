@@ -119,6 +119,26 @@ func ForSale(v bool) predicate.SubscriptionPlan {
 	return predicate.SubscriptionPlan(sql.FieldEQ(FieldForSale, v))
 }
 
+// PresaleEnabled applies equality check predicate on the "presale_enabled" field. It's identical to PresaleEnabledEQ.
+func PresaleEnabled(v bool) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldEQ(FieldPresaleEnabled, v))
+}
+
+// PresaleVisible applies equality check predicate on the "presale_visible" field. It's identical to PresaleVisibleEQ.
+func PresaleVisible(v bool) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldEQ(FieldPresaleVisible, v))
+}
+
+// PresaleBadge applies equality check predicate on the "presale_badge" field. It's identical to PresaleBadgeEQ.
+func PresaleBadge(v string) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldEQ(FieldPresaleBadge, v))
+}
+
+// PresaleResetCards applies equality check predicate on the "presale_reset_cards" field. It's identical to PresaleResetCardsEQ.
+func PresaleResetCards(v int) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldEQ(FieldPresaleResetCards, v))
+}
+
 // SortOrder applies equality check predicate on the "sort_order" field. It's identical to SortOrderEQ.
 func SortOrder(v int) predicate.SubscriptionPlan {
 	return predicate.SubscriptionPlan(sql.FieldEQ(FieldSortOrder, v))
@@ -742,6 +762,131 @@ func ForSaleEQ(v bool) predicate.SubscriptionPlan {
 // ForSaleNEQ applies the NEQ predicate on the "for_sale" field.
 func ForSaleNEQ(v bool) predicate.SubscriptionPlan {
 	return predicate.SubscriptionPlan(sql.FieldNEQ(FieldForSale, v))
+}
+
+// PresaleEnabledEQ applies the EQ predicate on the "presale_enabled" field.
+func PresaleEnabledEQ(v bool) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldEQ(FieldPresaleEnabled, v))
+}
+
+// PresaleEnabledNEQ applies the NEQ predicate on the "presale_enabled" field.
+func PresaleEnabledNEQ(v bool) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldNEQ(FieldPresaleEnabled, v))
+}
+
+// PresaleVisibleEQ applies the EQ predicate on the "presale_visible" field.
+func PresaleVisibleEQ(v bool) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldEQ(FieldPresaleVisible, v))
+}
+
+// PresaleVisibleNEQ applies the NEQ predicate on the "presale_visible" field.
+func PresaleVisibleNEQ(v bool) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldNEQ(FieldPresaleVisible, v))
+}
+
+// PresaleBadgeEQ applies the EQ predicate on the "presale_badge" field.
+func PresaleBadgeEQ(v string) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldEQ(FieldPresaleBadge, v))
+}
+
+// PresaleBadgeNEQ applies the NEQ predicate on the "presale_badge" field.
+func PresaleBadgeNEQ(v string) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldNEQ(FieldPresaleBadge, v))
+}
+
+// PresaleBadgeIn applies the In predicate on the "presale_badge" field.
+func PresaleBadgeIn(vs ...string) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldIn(FieldPresaleBadge, vs...))
+}
+
+// PresaleBadgeNotIn applies the NotIn predicate on the "presale_badge" field.
+func PresaleBadgeNotIn(vs ...string) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldNotIn(FieldPresaleBadge, vs...))
+}
+
+// PresaleBadgeGT applies the GT predicate on the "presale_badge" field.
+func PresaleBadgeGT(v string) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldGT(FieldPresaleBadge, v))
+}
+
+// PresaleBadgeGTE applies the GTE predicate on the "presale_badge" field.
+func PresaleBadgeGTE(v string) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldGTE(FieldPresaleBadge, v))
+}
+
+// PresaleBadgeLT applies the LT predicate on the "presale_badge" field.
+func PresaleBadgeLT(v string) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldLT(FieldPresaleBadge, v))
+}
+
+// PresaleBadgeLTE applies the LTE predicate on the "presale_badge" field.
+func PresaleBadgeLTE(v string) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldLTE(FieldPresaleBadge, v))
+}
+
+// PresaleBadgeContains applies the Contains predicate on the "presale_badge" field.
+func PresaleBadgeContains(v string) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldContains(FieldPresaleBadge, v))
+}
+
+// PresaleBadgeHasPrefix applies the HasPrefix predicate on the "presale_badge" field.
+func PresaleBadgeHasPrefix(v string) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldHasPrefix(FieldPresaleBadge, v))
+}
+
+// PresaleBadgeHasSuffix applies the HasSuffix predicate on the "presale_badge" field.
+func PresaleBadgeHasSuffix(v string) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldHasSuffix(FieldPresaleBadge, v))
+}
+
+// PresaleBadgeEqualFold applies the EqualFold predicate on the "presale_badge" field.
+func PresaleBadgeEqualFold(v string) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldEqualFold(FieldPresaleBadge, v))
+}
+
+// PresaleBadgeContainsFold applies the ContainsFold predicate on the "presale_badge" field.
+func PresaleBadgeContainsFold(v string) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldContainsFold(FieldPresaleBadge, v))
+}
+
+// PresaleResetCardsEQ applies the EQ predicate on the "presale_reset_cards" field.
+func PresaleResetCardsEQ(v int) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldEQ(FieldPresaleResetCards, v))
+}
+
+// PresaleResetCardsNEQ applies the NEQ predicate on the "presale_reset_cards" field.
+func PresaleResetCardsNEQ(v int) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldNEQ(FieldPresaleResetCards, v))
+}
+
+// PresaleResetCardsIn applies the In predicate on the "presale_reset_cards" field.
+func PresaleResetCardsIn(vs ...int) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldIn(FieldPresaleResetCards, vs...))
+}
+
+// PresaleResetCardsNotIn applies the NotIn predicate on the "presale_reset_cards" field.
+func PresaleResetCardsNotIn(vs ...int) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldNotIn(FieldPresaleResetCards, vs...))
+}
+
+// PresaleResetCardsGT applies the GT predicate on the "presale_reset_cards" field.
+func PresaleResetCardsGT(v int) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldGT(FieldPresaleResetCards, v))
+}
+
+// PresaleResetCardsGTE applies the GTE predicate on the "presale_reset_cards" field.
+func PresaleResetCardsGTE(v int) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldGTE(FieldPresaleResetCards, v))
+}
+
+// PresaleResetCardsLT applies the LT predicate on the "presale_reset_cards" field.
+func PresaleResetCardsLT(v int) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldLT(FieldPresaleResetCards, v))
+}
+
+// PresaleResetCardsLTE applies the LTE predicate on the "presale_reset_cards" field.
+func PresaleResetCardsLTE(v int) predicate.SubscriptionPlan {
+	return predicate.SubscriptionPlan(sql.FieldLTE(FieldPresaleResetCards, v))
 }
 
 // SortOrderEQ applies the EQ predicate on the "sort_order" field.

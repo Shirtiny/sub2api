@@ -48,6 +48,7 @@
           </span>
           <span v-else class="text-xs text-gray-400">—</span>
         </template>
+        <template #cell-presale_enabled="{ row }"><span :class="row.presale_enabled && row.presale_visible ? 'text-primary-600 dark:text-primary-400' : 'text-content-tertiary'">{{ t(row.presale_enabled && row.presale_visible ? 'presale.nav' : 'presale.admin.unpublished') }}</span></template>
         <template #cell-for_sale="{ value, row }">
           <button
             type="button"
@@ -160,6 +161,7 @@ const planColumns = computed((): Column[] => [
   { key: 'validity_days', label: t('payment.admin.validityDays') },
   { key: 'concurrency', label: t('payment.admin.concurrency') },
   { key: 'custom_multiplier_enabled', label: t('payment.admin.customMultiplier') },
+  { key: 'presale_enabled', label: t('presale.admin.title') },
   { key: 'for_sale', label: t('payment.admin.forSale') },
   { key: 'sort_order', label: t('payment.admin.sortOrder') },
   { key: 'actions', label: t('common.actions') },

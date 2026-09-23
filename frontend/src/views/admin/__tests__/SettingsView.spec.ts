@@ -570,6 +570,70 @@ describe("admin SettingsView payment visible method controls", () => {
     adminSettingsFetch.mockResolvedValue(undefined);
   });
 
+  it("does not overwrite a corrected domain when an old settings page saves unrelated changes", async () => {
+    getSettings.mockResolvedValue({
+      ...baseSettingsResponse,
+      email_verify_enabled: true,
+      password_reset_enabled: true,
+      frontend_url: "https://old.example.com",
+    });
+    // Another administrator corrected the domain after this page was opened.
+    updateSettings.mockImplementation(async (payload) => ({
+      ...baseSettingsResponse,
+      ...payload,
+      frontend_url: "https://current.example.com",
+    }));
+    const wrapper = mountView();
+    await flushPromises();
+    await openPaymentTab(wrapper);
+    await wrapper.find("form").trigger("submit.prevent");
+    await flushPromises();
+
+    expect(updateSettings).toHaveBeenCalledTimes(1);
+    expect(updateSettings.mock.calls[0]?.[0]).not.toHaveProperty("frontend_url");
+    await openSecurityTab(wrapper);
+    const input = wrapper.get<HTMLInputElement>(
+      'input[placeholder="admin.settings.registration.frontendUrlPlaceholder"]',
+    );
+    expect(input.element.value).toBe("https://current.example.com");
+
+    // The returned domain becomes the new baseline, not an apparent local edit.
+    await wrapper.find("form").trigger("submit.prevent");
+    await flushPromises();
+    expect(updateSettings).toHaveBeenCalledTimes(2);
+    expect(updateSettings.mock.calls[1]?.[0]).not.toHaveProperty("frontend_url");
+    wrapper.unmount();
+  });
+
+  it.each([
+    [" https://new.example.com ", "https://new.example.com"],
+    ["", ""],
+  ])("submits an intentional frontend URL edit %j only once", async (inputValue, expected) => {
+    getSettings.mockResolvedValue({
+      ...baseSettingsResponse,
+      email_verify_enabled: true,
+      password_reset_enabled: true,
+      frontend_url: "https://current.example.com",
+    });
+    const wrapper = mountView();
+    await flushPromises();
+    await openSecurityTab(wrapper);
+    await wrapper.get(
+      'input[placeholder="admin.settings.registration.frontendUrlPlaceholder"]',
+    ).setValue(inputValue);
+    await wrapper.find("form").trigger("submit.prevent");
+    await flushPromises();
+
+    expect(updateSettings).toHaveBeenCalledTimes(1);
+    expect(updateSettings.mock.calls[0]?.[0]).toHaveProperty("frontend_url", expected);
+
+    await wrapper.find("form").trigger("submit.prevent");
+    await flushPromises();
+    expect(updateSettings).toHaveBeenCalledTimes(2);
+    expect(updateSettings.mock.calls[1]?.[0]).not.toHaveProperty("frontend_url");
+    wrapper.unmount();
+  });
+
   it("does not render legacy visible payment method controls", async () => {
     const wrapper = mountView();
 

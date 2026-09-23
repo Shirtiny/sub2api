@@ -23,6 +23,9 @@ const showWarning = vi.hoisted(() => vi.fn())
 const showSuccess = vi.hoisted(() => vi.fn())
 const getCheckoutInfo = vi.hoisted(() => vi.fn())
 const createPaymentOrderIdempotencyKey = vi.hoisted(() => vi.fn(() => 'payment-order-test-key'))
+const getPresaleQuote = vi.hoisted(() => vi.fn())
+vi.mock('@/api/presale', () => ({ presaleAPI: { quote: getPresaleQuote } }))
+
 const bridgeInvoke = vi.hoisted(() => vi.fn())
 
 function deferred<T>() {
@@ -61,6 +64,7 @@ vi.mock('vue-i18n', async () => {
     ...actual,
     useI18n: () => ({
       t: (key: string) => messages[key] ?? key,
+      locale: { value: 'zh' },
     }),
   }
 })
@@ -226,6 +230,7 @@ const SubscriptionPlanCardCouponPreviewStub = {
 
 describe('PaymentView WeChat JSAPI flow', () => {
   beforeEach(() => {
+    getPresaleQuote.mockResolvedValue({ data: { month: '2026-10', starts_at: '2026-10-01T00:00:00+08:00', expires_at: '2026-11-01T00:00:00+08:00', full_refund_before: '2026-09-28T00:00:00+08:00', renewal: false } })
     routeState.path = '/purchase'
     routeState.query = {
       wechat_resume: '1',
@@ -272,7 +277,7 @@ describe('PaymentView WeChat JSAPI flow', () => {
     expect((wrapper.vm as unknown as { activeTab: string }).activeTab).toBe('recharge')
   })
 
-  it('defaults to subscription tab and lists it before top up', async () => {
+  it('defaults to balance recharge without subscription tabs', async () => {
     routeState.query = {}
 
     const wrapper = shallowMount(PaymentView, {
@@ -289,12 +294,12 @@ describe('PaymentView WeChat JSAPI flow', () => {
       activeTab: string
       tabs: Array<{ key: string; label: string }>
     }
-    expect(vm.tabs.map((tab) => tab.key)).toEqual(['subscription', 'recharge'])
-    expect(vm.activeTab).toBe('subscription')
+    expect(vm.activeTab).toBe('recharge')
+    expect(vm.tabs).toBeUndefined()
   })
 
-  it('shows the usage warning when only the subscription tab is available', async () => {
-    routeState.query = { tab: 'subscription' }
+  it('does not re-enable subscriptions when balance recharge is disabled', async () => {
+    routeState.query = {}
     getCheckoutInfo.mockResolvedValue({
       data: {
         ...checkoutInfoWithPlansFixture().data,
@@ -314,12 +319,12 @@ describe('PaymentView WeChat JSAPI flow', () => {
     await flushPromises()
 
     const vm = wrapper.vm as unknown as { tabs: Array<{ key: string; label: string }> }
-    expect(vm.tabs.map((tab) => tab.key)).toEqual(['subscription'])
+    expect(vm.tabs).toBeUndefined()
     expect(wrapper.text()).toContain('payment.usagePolicyWarning')
   })
 
   it('keeps the usage warning visible while confirming a selected plan', async () => {
-    routeState.query = { tab: 'subscription' }
+    routeState.query = {}
     getCheckoutInfo.mockResolvedValue(checkoutInfoWithPlansFixture())
 
     const wrapper = shallowMount(PaymentView, {
@@ -345,45 +350,14 @@ describe('PaymentView WeChat JSAPI flow', () => {
     expect(wrapper.text()).toContain('payment.usagePolicyWarning')
   })
 
-  it('selects the source plan when renewal route points at an active custom subscription group', async () => {
-    routeState.query = { tab: 'subscription', group: '99' }
-    activeSubscriptionsState.push({
-      id: 44,
-      group_id: 99,
-      status: 'active',
-      expires_at: '2099-01-01T00:00:00Z',
-      group: {
-        id: 99,
-        name: 'Starter-custom-user',
-        is_custom_subscription_group: true,
-        custom_source_plan_id: 7,
-        custom_source_group_id: 3,
-        custom_multiplier: 3,
-      },
-    })
-    getCheckoutInfo.mockResolvedValue(checkoutInfoWithPlansFixture())
-
-    const wrapper = shallowMount(PaymentView, {
-      global: {
-        stubs: {
-          Teleport: true,
-          Transition: false,
-        },
-      },
-    })
+  it('redirects legacy subscription renewal links to the presale page', async () => {
+    routeState.query = { tab: 'subscription', plan: '7' }
+    const wrapper = shallowMount(PaymentView)
     await flushPromises()
-
-    const vm = wrapper.vm as unknown as {
-      activeTab: string
-      selectedPlan: { id: number } | null
-      selectedSubscriptionMultiplier: number
-    }
-    expect(fetchActiveSubscriptions).toHaveBeenCalled()
-    expect(vm.activeTab).toBe('subscription')
-    expect(vm.selectedPlan?.id).toBe(7)
-    expect(vm.selectedSubscriptionMultiplier).toBe(3)
+    expect(routerReplace).toHaveBeenCalledWith({ path: '/presale', query: { plan: '7' } })
+    expect(getCheckoutInfo).not.toHaveBeenCalled()
+    wrapper.unmount()
   })
-
 
   it('displays billing rate instead of custom subscription multiplier in purchase details', async () => {
     routeState.query = { tab: 'subscription', plan: '7', multiplier: '4' }
@@ -411,6 +385,7 @@ describe('PaymentView WeChat JSAPI flow', () => {
     getCheckoutInfo.mockResolvedValue(checkout)
 
     const wrapper = shallowMount(PaymentView, {
+      props: { presalePlanId: 7, presaleMonth: '2026-10' },
       global: {
         stubs: {
           Teleport: true,
@@ -805,6 +780,7 @@ describe('PaymentView WeChat JSAPI flow', () => {
     })
 
     const wrapper = shallowMount(PaymentView, {
+      props: { presalePlanId: 7, presaleMonth: '2026-10' },
       global: {
         stubs: {
           AppLayout: { template: '<div><slot /></div>' },
@@ -831,7 +807,7 @@ describe('PaymentView WeChat JSAPI flow', () => {
     expect(vm.canSubmitSubscription).toBe(false)
   })
 
-  it('calculates Cafe coupon plan-card amount from one coupon info lookup', async () => {
+  it('does not restore the removed subscription catalog for a coupon deep link', async () => {
     routeState.query = { cafe_coupon_code: 'CAFEPREVIEW' }
     getCheckoutInfo.mockResolvedValue({
       data: {
@@ -857,52 +833,25 @@ describe('PaymentView WeChat JSAPI flow', () => {
     await flushPromises()
     await flushPromises()
 
-    expect(getCafeCouponInfo).toHaveBeenCalledTimes(1)
-    expect(getCafeCouponInfo).toHaveBeenCalledWith({ code: 'CAFEPREVIEW' })
-    expect(previewCafeCoupon).not.toHaveBeenCalled()
-    expect(wrapper.find('[data-testid="plan-card-7"]').attributes('data-coupon-pay-amount')).toBe('200')
+    expect(wrapper.find('[data-testid="plan-card-7"]').exists()).toBe(false)
+    expect((wrapper.vm as unknown as { activeTab: string }).activeTab).toBe('recharge')
+    wrapper.unmount()
   })
 
-  it('uses coupon info for the selected subscription confirmation amount before preview returns', async () => {
-    routeState.query = { cafe_coupon_code: 'CAFEPREVIEW' }
-    getCheckoutInfo.mockResolvedValue({
-      data: {
-        ...checkoutInfoWithPlansFixture().data,
-        balance_disabled: true,
-      },
-    })
-    getCafeCouponInfo.mockResolvedValueOnce({
-      valid: true,
-      coupon: { code: 'CAFEPREVIEW', type: 'cash', value: 56 },
-    })
-
-    const wrapper = shallowMount(PaymentView, {
-      global: {
-        stubs: {
-          AppLayout: { template: '<div><slot /></div>' },
-          Teleport: true,
-          Transition: false,
-          SubscriptionPlanCard: SubscriptionPlanCardCouponPreviewStub,
-        },
-      },
-    })
+  it('requires presale consent and includes the reviewed month in the order', async () => {
+    routeState.query = {}
+    getCheckoutInfo.mockResolvedValue(checkoutInfoWithPlansFixture())
+    createOrder.mockResolvedValue({ ...jsapiOrderFixture('presale-resume'), result_type: 'order_created', qr_code: 'weixin://wxpay/presale', payment_mode: 'qrcode', status: 'PENDING' })
+    const wrapper = shallowMount(PaymentView, { props: { presalePlanId: 7, presaleMonth: '2026-10' }, global: { stubs: { Teleport: true, Transition: false } } })
     await flushPromises()
-    await flushPromises()
-
-    const vm = wrapper.vm as unknown as {
-      checkout: { plans: Array<Record<string, unknown>> }
-      selectPlan: (plan: Record<string, unknown>, multiplier?: number) => void
-      effectiveSelectedCouponPrice: number | null
-      subscriptionCouponPayableAmount: number | null
-      subscriptionButtonAmount: number
-    }
-    vm.selectPlan(vm.checkout.plans[0], 2)
-    await flushPromises()
-
-    expect(previewCafeCoupon).not.toHaveBeenCalled()
-    expect(vm.effectiveSelectedCouponPrice).toBe(200)
-    expect(vm.subscriptionCouponPayableAmount).toBe(200)
-    expect(vm.subscriptionButtonAmount).toBe(200)
+    const vm = wrapper.vm as unknown as { canSubmitSubscription: boolean; presaleConsent: boolean; confirmSubscribe: () => Promise<void> }
+    expect(vm.canSubmitSubscription).toBe(false)
+    await vm.confirmSubscribe(); expect(createOrder).not.toHaveBeenCalled()
+    vm.presaleConsent = true; await flushPromises()
+    expect(vm.canSubmitSubscription).toBe(true)
+    await vm.confirmSubscribe(); await flushPromises()
+    expect(createOrder).toHaveBeenCalledWith(expect.objectContaining({ order_type: 'subscription', plan_id: 7, presale_month: '2026-10' }), 'payment-order-test-key')
+    wrapper.unmount()
   })
 
   it('ignores stale Cafe coupon responses after switching order context', async () => {

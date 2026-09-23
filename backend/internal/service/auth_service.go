@@ -458,14 +458,27 @@ func (s *AuthService) checkEmailRegistrationAccess(ctx context.Context, email st
 	if s.settingService == nil {
 		return false, ErrRegDisabled
 	}
-	approved, err := s.hasWaitlistRegistrationApproval(ctx, email)
-	if err != nil {
-		return false, err
+	var approval *WaitlistEntry
+	if s.waitlistRepo != nil {
+		var err error
+		approval, err = s.waitlistRepo.GetApprovedEntryByEmail(ctx, strings.ToLower(strings.TrimSpace(email)))
+		if err != nil {
+			return false, ErrServiceUnavailable.WithCause(err)
+		}
+		if approval != nil && approval.GrantedUserID == nil {
+			return true, nil
+		}
 	}
-	if !approved && !s.settingService.IsRegistrationEnabled(ctx) {
+	if !s.settingService.IsRegistrationEnabled(ctx) {
+		// A linked/consumed approval points to sign-in, not another signup.
+		// Do not look up unapproved users or alter account status/credentials.
+		if approval != nil {
+			return false, ErrWaitlistSignInRequired
+		}
 		return false, ErrRegDisabled
 	}
-	return approved, nil
+	// Public signup keeps its existing email-existence and verification policy.
+	return false, nil
 }
 
 // VerifyTurnstile 验证Turnstile token

@@ -8,6 +8,8 @@ import HomeView from '../HomeView.vue'
 import homeSource from '../HomeView.vue?raw'
 import Icon from '@/components/icons/Icon.vue'
 
+vi.mock('@/api/presale', () => ({ presaleAPI: { catalog: vi.fn().mockResolvedValue({ data: { enabled: true } }) } }))
+
 const state = vi.hoisted(() => ({
   locale: 'zh' as 'zh' | 'en',
   app: {
@@ -170,7 +172,8 @@ describe('visitor-first homepage', () => {
     expect(billing.text()).toContain('余额支持即时充值')
     expect(billing.text()).toContain('随时使用')
     expect(billing.text()).not.toMatch(/Astra|0\.4|0\.5|倍率/)
-    expect(billing.find('a').attributes('href')).toBe('/login')
+    expect(billing.find('a[href="/presale"]').exists()).toBe(true)
+    expect(billing.find('.billing-footnote a').attributes('href')).toBe('/login')
   })
 
   it.each(['zh', 'en'] as const)('uses matching highlights, captions and two facts for both billing plans (%s)', locale => {
@@ -284,7 +287,7 @@ describe('visitor-first homepage', () => {
     expect(page.text()).not.toMatch(/账户余额|升级套餐|总请求数|平均耗时|免费试用|最新公告/)
     expect(page.find('.hero-actions a').attributes('href')).toBe('/login')
     expect(page.find('.header-entry').attributes('href')).toBe('/login')
-    expect(page.find('.home-header nav').exists()).toBe(false)
+    expect(page.find('.home-header nav a[href="/presale"]').exists()).toBe(true)
     expect(page.find('.home-header a[href^="#"]').exists()).toBe(false)
     expect(state.app.fetchPublicSettings).not.toHaveBeenCalled()
     // Authentication restoration belongs to the router, not a public landing component.

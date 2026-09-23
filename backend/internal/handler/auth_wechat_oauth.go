@@ -86,6 +86,7 @@ type wechatOAuthUserInfoResponse struct {
 }
 
 type wechatPaymentOAuthContext struct {
+	PresaleMonth                        string `json:"presale_month,omitempty"`
 	UserID                              int64  `json:"user_id,omitempty"`
 	PaymentType                         string `json:"payment_type"`
 	Amount                              string `json:"amount,omitempty"`
@@ -379,6 +380,7 @@ func (h *AuthHandler) WeChatPaymentOAuthStart(c *gin.Context) {
 		Multiplier:                          contextClaims.Multiplier,
 		CafeCouponCode:                      strings.TrimSpace(contextClaims.CafeCouponCode),
 		ExpectedSubscriptionBonusActivityID: contextClaims.ExpectedSubscriptionBonusActivityID,
+		PresaleMonth:                        contextClaims.PresaleMonth,
 		RedirectTo:                          redirectTo,
 		Scope:                               paymentScope,
 	}
@@ -454,6 +456,7 @@ func (h *AuthHandler) WeChatPaymentOAuthCallback(c *gin.Context) {
 		Multiplier:                          contextClaims.Multiplier,
 		CafeCouponCode:                      strings.TrimSpace(contextClaims.CafeCouponCode),
 		ExpectedSubscriptionBonusActivityID: contextClaims.ExpectedSubscriptionBonusActivityID,
+		PresaleMonth:                        contextClaims.PresaleMonth,
 		RedirectTo:                          redirectTo,
 		Scope:                               scope,
 	}
@@ -495,6 +498,7 @@ func (h *AuthHandler) WeChatPaymentOAuthCallback(c *gin.Context) {
 		Multiplier:                          paymentContext.Multiplier,
 		CafeCouponCode:                      paymentContext.CafeCouponCode,
 		ExpectedSubscriptionBonusActivityID: paymentContext.ExpectedSubscriptionBonusActivityID,
+		PresaleMonth:                        paymentContext.PresaleMonth,
 		RedirectTo:                          redirectTo,
 		Scope:                               scope,
 	})

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildAuthErrorMessage } from '@/utils/authError'
+import { buildAuthErrorMessage, getRegistrationRecoveryMode } from '@/utils/authError'
 
 describe('buildAuthErrorMessage', () => {
   it('prefers response detail message when available', () => {
@@ -60,5 +60,18 @@ describe('buildAuthErrorMessage', () => {
 
   it('uses fallback when no message can be extracted', () => {
     expect(buildAuthErrorMessage({}, { fallback: 'fallback' })).toBe('fallback')
+  })
+})
+
+describe('registration recovery reasons', () => {
+  it.each(['WAITLIST_SIGN_IN_REQUIRED', 'EMAIL_EXISTS'])('recognizes %s without parsing English messages', (reason) => {
+    expect(getRegistrationRecoveryMode({ reason })).toBe('login')
+    expect(getRegistrationRecoveryMode({ response: { data: { reason } } })).toBe('login')
+  })
+  it('keeps an unapproved or unknown account neutral', () => {
+    expect(getRegistrationRecoveryMode({ reason: 'REGISTRATION_DISABLED' })).toBe('closed')
+    expect(getRegistrationRecoveryMode({ status: 403, message: 'email already exists' })).toBeNull()
+    expect(getRegistrationRecoveryMode({ reason: 'SERVICE_UNAVAILABLE' })).toBeNull()
+    expect(getRegistrationRecoveryMode(null)).toBeNull()
   })
 })

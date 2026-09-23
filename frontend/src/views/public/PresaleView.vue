@@ -1,0 +1,136 @@
+<template>
+  <div class="presale-page">
+    <header class="presale-header">
+      <RouterLink to="/" class="wordmark">{{ app.siteName }}</RouterLink>
+      <nav :aria-label="t('home.landing.navigation')"><LocaleSwitcher /><RouterLink :to="auth.isAuthenticated ? '/subscriptions' : '/login'">{{ t(auth.isAuthenticated ? 'presale.viewSubscriptions' : 'home.login') }} <span aria-hidden="true">↗</span></RouterLink></nav>
+    </header>
+    <main>
+      <section class="presale-hero">
+        <div class="hero-copy">
+          <p class="eyebrow">{{ t('presale.eyebrow') }}</p>
+          <h1>{{ t('presale.title') }}<em>{{ t('presale.titleAccent') }}</em></h1>
+          <p class="intro">{{ t('presale.intro') }}</p>
+          <div class="hero-actions"><a href="#presale-plans" class="btn btn-primary">{{ t('presale.browse') }} <Icon name="arrowRight" size="sm" /></a><RouterLink :to="balancePath" class="quiet-link">{{ t('presale.balance') }} <span aria-hidden="true">↗</span></RouterLink></div>
+        </div>
+        <div class="month-art" aria-hidden="true">
+          <svg class="month-orbits" viewBox="0 0 520 440" fill="none">
+            <defs><radialGradient id="presale-halo"><stop stop-color="currentColor" stop-opacity=".14"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/></radialGradient><linearGradient id="presale-line"><stop stop-color="currentColor" stop-opacity="0"/><stop offset=".55" stop-color="currentColor"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/></linearGradient></defs>
+            <circle cx="260" cy="220" r="215" fill="url(#presale-halo)"/>
+            <g class="orbit-turn"><ellipse cx="260" cy="220" rx="233" ry="125" stroke="currentColor" opacity=".16" transform="rotate(-28 260 220)"/><ellipse cx="260" cy="220" rx="213" ry="155" stroke="url(#presale-line)" opacity=".5" transform="rotate(34 260 220)"/><circle cx="63" cy="208" r="3" fill="currentColor"/></g>
+            <path d="M70 362H450M260 43V80M260 360V395" stroke="currentColor" opacity=".18"/>
+          </svg>
+          <div class="month-ticket"><span class="ticket-kicker">NEXT / {{ catalog?.period.month.split('-')[0] || '—' }}</span><strong>{{ catalog?.period.month.split('-')[1] || '—' }}</strong><span class="ticket-month">{{ date(catalog?.period.starts_at, true) }}</span><div class="ticket-perforation"/><div class="ticket-footer"><span>{{ t('presale.calendar') }}</span><span>01 — {{ daysInPeriod }}</span></div></div>
+          <span class="art-note">RESERVED FOR YOUR NEXT CHAPTER</span>
+        </div>
+      </section>
+      <section v-if="catalog" class="timeline" :aria-label="t('presale.calendar')">
+        <div v-for="(step, index) in timeline" :key="step.label" class="timeline-step"><span class="step-index">0{{ index + 1 }}</span><div><p class="step-label">{{ step.label }}</p><p class="step-date">{{ step.date }}</p><p class="step-copy">{{ step.copy }}</p></div></div>
+        <p class="timezone">{{ t('presale.timezone') }}</p>
+      </section>
+      <section id="presale-plans" class="plans-section">
+        <div class="section-heading"><div><p class="eyebrow">{{ t('presale.collection') }}</p><h2>{{ t('presale.plansTitle') }}</h2></div><p>{{ t('presale.plansIntro') }}</p></div>
+        <div v-if="loading" class="empty-state" role="status">{{ t('common.loading') }}</div>
+        <div v-else-if="error" class="empty-state" role="alert"><p>{{ error }}</p><button class="btn btn-secondary mt-5" @click="load">{{ t('presale.retry') }}</button></div>
+        <div v-else-if="!catalog?.enabled" class="empty-state"><p class="eyebrow">COMING NEXT</p><h3>{{ t('presale.empty') }}</h3><p>{{ t('presale.emptyCopy') }}</p><RouterLink :to="balancePath" class="quiet-link">{{ t('presale.balance') }} →</RouterLink></div>
+        <div v-else class="plan-grid">
+          <article v-for="(plan, index) in catalog.plans" :key="plan.id" class="presale-plan" :style="{ '--plan-index': index }">
+            <div class="plan-top"><span class="plan-index">{{ String(index + 1).padStart(2, '0') }} / {{ plan.group_platform?.toUpperCase() }}</span><span v-if="plan.presale_badge" class="plan-badge">{{ plan.presale_badge }}</span></div>
+            <h3>{{ plan.name }}</h3><p class="plan-description">{{ plan.description }}</p>
+            <div class="plan-price"><span v-if="plan.original_price && plan.original_price > plan.price" class="old-price">{{ plan.original_price }}</span><strong>{{ plan.price.toLocaleString(locale) }}</strong><span>{{ t('presale.perMonth') }}</span></div>
+            <dl class="plan-quotas"><template v-for="quota in quotas(plan)" :key="quota.label"><div><dt>{{ quota.label }}</dt><dd>{{ quota.value }}</dd></div></template></dl>
+            <ul class="plan-features"><li><Icon name="check" size="sm"/>{{ t('presale.concurrency', { count: plan.concurrency }) }}</li><li v-if="plan.presale_reset_cards"><Icon name="check" size="sm"/>{{ t('presale.resetCards', { count: plan.presale_reset_cards }) }}</li><li v-for="feature in plan.features" :key="feature"><Icon name="check" size="sm"/>{{ feature }}</li></ul>
+            <button class="btn btn-primary plan-buy" @click="selectPlan(plan)">{{ t(auth.isAuthenticated ? 'presale.buy' : 'presale.loginBuy') }} <Icon name="arrowRight" size="sm" /></button>
+          </article>
+        </div>
+        <p class="price-note">{{ t('presale.priceNote') }}</p>
+      </section>
+      <section class="value-section"><div class="section-heading"><div><p class="eyebrow">{{ t('presale.philosophy') }}</p><h2>{{ t('presale.valueTitle') }}</h2></div></div><PresaleBenefits /></section>
+      <section v-if="catalog" class="policy-section"><div><p class="eyebrow">{{ t('presale.policy') }}</p><h2>{{ t('presale.policyTitle') }}</h2><p class="timezone">{{ t('presale.timezone') }}</p></div><div class="policy-details"><div><span class="policy-figure">100<span>%</span></span><div><h3>{{ t('presale.refundFull') }}</h3><p>{{ t('presale.refundFullCopy', { date: date(catalog.period.full_refund_before) }) }}</p></div></div><div><span class="policy-figure">80<span>%</span></span><div><h3>{{ t('presale.refundFee') }}</h3><p>{{ t('presale.refundFeeCopy', { date: date(catalog.period.full_refund_before) }) }}</p></div></div><div><span class="policy-figure">DAY</span><div><h3>{{ t('presale.refundDaily') }}</h3><p>{{ t('presale.refundDailyCopy') }}</p></div></div><div class="period-note">{{ t('presale.termCopy', { start: date(catalog.period.starts_at), end: date(catalog.period.expires_at) }) }}</div></div></section>
+      <section class="balance-callout"><div><p class="eyebrow">NO NEED TO WAIT</p><h2>{{ t('presale.balanceTitle') }}</h2><p>{{ t('presale.balanceCopy') }}</p></div><RouterLink :to="balancePath" class="btn btn-primary">{{ t('presale.balance') }} <Icon name="arrowRight" size="sm" /></RouterLink></section>
+    </main>
+    <footer><RouterLink to="/">{{ app.siteName }}</RouterLink><span>{{ t('presale.timezone') }}</span></footer>
+    <BaseDialog :show="!!selectedPlanId" :title="t('presale.checkout')" width="wide" @close="closeCheckout">
+      <PaymentView v-if="selectedPlanId && catalog && auth.isAuthenticated" :key="selectedPlanId" :presale-plan-id="selectedPlanId" :presale-month="catalog.period.month" @close="closeCheckout" />
+    </BaseDialog>
+  </div>
+</template>
+<script setup lang="ts">
+import { computed, onMounted, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useRoute, useRouter } from 'vue-router'
+import { useAppStore } from '@/stores/app'
+import { useAuthStore } from '@/stores/auth'
+import { presaleAPI, type PresaleCatalog } from '@/api/presale'
+import type { SubscriptionPlan } from '@/types/payment'
+import { formatPresaleDate } from '@/utils/presale'
+import Icon from '@/components/icons/Icon.vue'
+import LocaleSwitcher from '@/components/common/LocaleSwitcher.vue'
+import BaseDialog from '@/components/common/BaseDialog.vue'
+import PresaleBenefits from '@/components/presale/PresaleBenefits.vue'
+import PaymentView from '@/views/user/PaymentView.vue'
+
+const { t, locale } = useI18n()
+const app = useAppStore(), auth = useAuthStore(), route = useRoute(), router = useRouter()
+const catalog = ref<PresaleCatalog | null>(null), loading = ref(true), error = ref(''), selectedPlanId = ref<number | null>(null)
+const balancePath = computed(() => auth.isAuthenticated ? '/purchase' : { path: '/login', query: { redirect: '/purchase' } })
+const date = (value?: string, monthOnly = false) => formatPresaleDate(value, locale.value, monthOnly)
+const daysInPeriod = computed(() => catalog.value ? Math.round((Date.parse(catalog.value.period.expires_at) - Date.parse(catalog.value.period.starts_at)) / 86400000) : '—')
+const timeline = computed(() => [
+  { label: t('presale.reserve'), date: t('presale.reserveCopy'), copy: t('presale.notImmediate') },
+  { label: t('presale.prepare'), date: date(catalog.value?.period.full_refund_before), copy: t('presale.prepareCopy') },
+  { label: t('presale.activate'), date: date(catalog.value?.period.starts_at), copy: t('presale.activateCopy') },
+])
+function quotas(plan: SubscriptionPlan) {
+  return ([['daily', plan.daily_limit_usd], ['weekly', plan.weekly_limit_usd], ['monthly', plan.monthly_limit_usd]] as const)
+    .filter(([, value]) => value != null && value > 0)
+    .map(([key, value]) => ({ label: t(`presale.${key}`), value: `$${value}` }))
+}
+function selectPlan(plan: SubscriptionPlan) {
+  const redirect = `/presale?plan=${plan.id}`
+  if (!auth.isAuthenticated) { void router.push({ path: '/login', query: { redirect } }); return }
+  selectedPlanId.value = plan.id
+  void router.replace({ path: '/presale', query: { plan: String(plan.id) } })
+}
+function restoreSelection() {
+  const plan = catalog.value?.enabled && catalog.value.plans.find(p => p.id === Number(route.query.plan))
+  if (auth.isAuthenticated && plan) selectedPlanId.value = plan.id
+}
+function closeCheckout() {
+  selectedPlanId.value = null
+  void router.replace({ path: '/presale' })
+}
+async function load() {
+  loading.value = true; error.value = ''
+  try { catalog.value = (await presaleAPI.catalog()).data; restoreSelection() }
+  catch { error.value = t('presale.failed') }
+  finally { loading.value = false }
+}
+watch(() => route.query.plan, restoreSelection)
+onMounted(load)
+</script>
+<style scoped>
+.presale-page { --cafe-page: #f6f3ed; --cafe-surface: #fffdf8; --cafe-ink: #302b26; --cafe-muted: #797268; --cafe-accent: #987647; --cafe-line: #ded8cf; min-height: 100vh; color: var(--cafe-ink); background: var(--cafe-page); }
+.dark .presale-page { --cafe-page: #141513; --cafe-surface: #1b1c19; --cafe-ink: #eae5dc; --cafe-muted: #a29c90; --cafe-accent: #c6ac7c; --cafe-line: #33342f; }
+.presale-header, main, footer { width: min(1200px, calc(100% - 80px)); margin-inline: auto; }
+.presale-header { height: 100px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--cafe-line); }
+.wordmark { font: italic 30px Georgia, 'Noto Serif CJK SC', serif; letter-spacing: -.04em; }
+nav { display: flex; align-items: center; gap: 28px; font-size: 12px; color: var(--cafe-muted); } nav a span { margin-left: 8px; }
+.presale-hero { display: grid; grid-template-columns: 1.2fr 1fr; align-items: center; gap: 28px; min-height: 580px; padding: 65px 0 55px; }
+.eyebrow { color: var(--cafe-accent); font: italic 14px Georgia, serif; letter-spacing: .035em; }
+h1 { font: 400 clamp(32px, 3.5vw, 48px)/1.55 Georgia, 'Noto Serif CJK SC', 'Songti SC', serif; margin-top: 24px; letter-spacing: -.035em; }
+h1 em { display: block; font-style: normal; color: var(--cafe-accent); }
+.intro { max-width: 400px; color: var(--cafe-muted); font-size: 14px; line-height: 1.9; margin-top: 24px; }
+.hero-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 24px; margin-top: 32px; }.btn { gap: 12px; padding: 13px 20px; border-radius: 8px; font-size: 13px; }.quiet-link { color: var(--cafe-muted); font-size: 12px; }.quiet-link:hover { color: var(--cafe-accent); }
+.month-art { position: relative; height: 420px; display: grid; place-items: center; color: var(--cafe-accent); }.month-orbits { position: absolute; width: 115%; max-width: 560px; height: 100%; }.orbit-turn { transform-origin: 260px 220px; animation: slow-orbit 70s linear infinite; }
+.month-ticket { position: relative; width: 225px; background: var(--cafe-surface); border: 1px solid var(--cafe-line); border-radius: 10px; text-align: center; box-shadow: 0 25px 70px #00000016; transform: rotate(-6deg); padding: 25px 0 0; animation: ticket-arrive 900ms ease both; }
+.ticket-kicker { font-size: 9px; letter-spacing: .28em; }.month-ticket strong { display: block; font: 400 126px/.98 Georgia, serif; letter-spacing: -.065em; margin: 15px 0 12px; padding-right: 8px; }.ticket-month { font-size: 11px; letter-spacing: .08em; color: var(--cafe-muted); }.ticket-perforation { border-top: 1px dashed var(--cafe-line); margin: 22px 0 0; }.ticket-footer { display: flex; justify-content: space-between; padding: 17px 20px; font-size: 9px; color: var(--cafe-muted); }.art-note { position: absolute; bottom: 2px; font-size: 8px; letter-spacing: .25em; opacity: .6; }
+.timeline { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 24px; border-block: 1px solid var(--cafe-line); padding: 30px 0 20px; }.timeline-step { display: flex; gap: 16px; }.step-index { font: italic 20px Georgia, serif; color: var(--cafe-accent); }.step-label { font-size: 12px; color: var(--cafe-muted); }.step-date { font-size: 16px; margin: 10px 0 8px; }.step-copy { font-size: 11px; color: var(--cafe-muted); }.timezone { color: var(--cafe-muted); font-size: 10px; line-height: 1.7; }.timeline .timezone { grid-column: 1/-1; margin-top: 25px; }
+.plans-section, .value-section { padding: 78px 0; }.section-heading { display: flex; align-items: end; justify-content: space-between; gap: 24px; margin-bottom: 32px; }h2 { font: 400 28px/1.5 Georgia, 'Noto Serif CJK SC', 'Songti SC', serif; margin-top: 12px; letter-spacing: -.02em; }.section-heading>p { max-width: 330px; color: var(--cafe-muted); font-size: 12px; line-height: 1.8; }
+.plan-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(245px, 1fr)); gap: 18px; }.presale-plan { padding: 27px; border: 1px solid var(--cafe-line); border-radius: 12px; background: var(--cafe-surface); display: flex; flex-direction: column; min-width: 0; transition: border-color .3s, transform .3s; }.presale-plan:hover { border-color: var(--cafe-accent); transform: translateY(-4px); }.plan-top { display: flex; align-items: center; justify-content: space-between; min-height: 24px; gap: 8px; }.plan-index { color: var(--cafe-muted); font-size: 9px; letter-spacing: .08em; }.plan-badge { color: var(--cafe-accent); font-size: 10px; padding: 3px 8px; border: 1px solid var(--cafe-line); border-radius: 20px; }.presale-plan h3 { font: 400 26px Georgia, serif; margin-top: 22px; }.plan-description { font-size: 12px; color: var(--cafe-muted); line-height: 1.8; margin-top: 12px; min-height: 44px; }.plan-price { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px; padding: 25px 0; }.plan-price strong { font: 400 40px Georgia, serif; }.plan-price>span { font-size: 10px; color: var(--cafe-muted); }.old-price { text-decoration: line-through; }.plan-quotas { border-block: 1px solid var(--cafe-line); padding: 10px 0; }.plan-quotas div { display: flex; justify-content: space-between; gap: 12px; font-size: 12px; padding: 7px 0; }.plan-quotas dt { color: var(--cafe-muted); }.plan-features { flex: 1; margin-block: 22px 30px; }.plan-features li { display: flex; align-items: start; gap: 9px; font-size: 12px; line-height: 1.8; margin-bottom: 9px; }.plan-features svg { flex-shrink: 0; margin-top: 3px; color: var(--cafe-accent); }.plan-buy { width: 100%; }.price-note { margin-top: 20px; color: var(--cafe-muted); font-size: 10px; }.empty-state { border: 1px dashed var(--cafe-line); border-radius: 12px; padding: 55px 28px; text-align: center; }.empty-state h3 { font: 400 23px Georgia, serif; margin-top: 12px; }.empty-state>p:not(.eyebrow) { color: var(--cafe-muted); font-size: 13px; margin-top: 14px; }.empty-state .quiet-link { display: inline-block; margin-top: 22px; }
+.value-section { border-top: 1px solid var(--cafe-line); }.policy-section { display: grid; grid-template-columns: 1fr 1.4fr; gap: 60px; padding: 60px 0 80px; border-top: 1px solid var(--cafe-line); }.policy-section .timezone { margin-top: 18px; }.policy-details>div:not(.period-note) { display: flex; align-items: start; gap: 25px; padding-block: 20px; border-bottom: 1px solid var(--cafe-line); }.policy-details>div:first-child { padding-top: 0; }.policy-figure { width: 85px; flex-shrink: 0; font: 400 30px Georgia, serif; color: var(--cafe-accent); }.policy-figure>span { font-size: 15px; }.policy-details h3 { font-size: 13px; margin-bottom: 8px; }.policy-details p,.period-note { color: var(--cafe-muted); font-size: 12px; line-height: 1.8; }.period-note { padding-top: 20px; }
+.balance-callout { display: flex; justify-content: space-between; align-items: center; gap: 25px; padding: 35px; border-radius: 12px; border: 1px solid var(--cafe-line); background: var(--cafe-surface); margin-bottom: 60px; }.balance-callout h2 { font-size: 23px; }.balance-callout p:last-child { font-size: 12px; line-height: 1.8; max-width: 530px; color: var(--cafe-muted); margin-top: 12px; }.balance-callout .btn { flex-shrink: 0; }footer { padding: 30px 0; border-top: 1px solid var(--cafe-line); display: flex; justify-content: space-between; gap: 20px; color: var(--cafe-muted); font-size: 11px; }
+@keyframes slow-orbit { to { transform: rotate(360deg); } }@keyframes ticket-arrive { from { opacity: 0; transform: translateY(15px) rotate(-3deg); } }
+@media(max-width: 900px) { .presale-header, main, footer { width: calc(100% - 48px); }.presale-hero { gap: 0; min-height: 480px; }.month-art { height: 340px; }.month-ticket { width: 185px; }.month-ticket strong { font-size: 104px; }.step-date { font-size: 13px; }.policy-section { gap: 30px; }.balance-callout { flex-direction: column; align-items: start; } }
+@media(max-width: 640px) { .presale-header, main, footer { width: calc(100% - 36px); }.presale-header { height: 78px; }.wordmark { font-size: 24px; }nav { gap: 12px; font-size: 11px; }.presale-hero { grid-template-columns: 1fr; padding: 45px 0 28px; }.month-art { height: 310px; margin-top: 24px; overflow: hidden; }.month-ticket { width: 175px; }.month-ticket strong { font-size: 88px; }.timeline { grid-template-columns: 1fr; gap: 24px; }.timeline .timezone { margin-top: 0; }.step-date { font-size: 15px; }.section-heading { flex-direction: column; align-items: start; gap: 14px; }h2 { font-size: 24px; }.plans-section,.value-section { padding: 45px 0; }.policy-section { grid-template-columns: 1fr; padding-block: 40px; }.balance-callout { padding: 24px; }.hero-actions { gap: 18px; }footer { flex-wrap: wrap; } }
+@media(prefers-reduced-motion: reduce) { .orbit-turn,.month-ticket { animation: none; }.presale-plan { transition: none; } }
+</style>

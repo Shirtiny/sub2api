@@ -38,6 +38,7 @@ const routes: RouteRecordRaw[] = [
       title: 'Home'
     }
   },
+  { path: '/presale', name: 'Presale', component: () => import('@/views/public/PresaleView.vue'), meta: { requiresAuth: false, title: 'Subscription presale', titleKey: 'presale.nav' } },
   {
     path: '/login',
     name: 'Login',

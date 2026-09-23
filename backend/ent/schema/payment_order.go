@@ -88,6 +88,14 @@ func (PaymentOrder) Fields() []ent.Field {
 		field.Int64("plan_id").
 			Optional().
 			Nillable(),
+		// Immutable calendar-month presale contract; nil dates mean a legacy order.
+		field.Time("presale_starts_at").Optional().Nillable().SchemaType(map[string]string{dialect.Postgres: "timestamptz"}),
+		field.Time("presale_expires_at").Optional().Nillable().SchemaType(map[string]string{dialect.Postgres: "timestamptz"}),
+		field.Time("presale_activated_at").Optional().Nillable().SchemaType(map[string]string{dialect.Postgres: "timestamptz"}),
+		field.Int64("presale_subscription_id").Optional().Nillable(),
+		field.Bool("presale_renewal").Default(false),
+		field.String("presale_plan_name").MaxLen(100).Default(""),
+		field.Int("presale_reset_cards").Default(0).Min(0).Max(1000),
 		field.Int64("subscription_group_id").
 			Optional().
 			Nillable(),
@@ -243,6 +251,7 @@ func (PaymentOrder) Indexes() []ent.Index {
 		index.Fields("paid_at"),
 		index.Fields("payment_type", "paid_at"),
 		index.Fields("order_type"),
+		index.Fields("presale_starts_at", "status"),
 		index.Fields("subscription_bonus_activity_id").
 			Annotations(entsql.IndexWhere("subscription_bonus_activity_id IS NOT NULL")),
 		index.Fields("user_id", "plan_id", "status", "expires_at").

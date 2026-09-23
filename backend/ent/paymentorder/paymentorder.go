@@ -50,6 +50,20 @@ const (
 	FieldOrderType = "order_type"
 	// FieldPlanID holds the string denoting the plan_id field in the database.
 	FieldPlanID = "plan_id"
+	// FieldPresaleStartsAt holds the string denoting the presale_starts_at field in the database.
+	FieldPresaleStartsAt = "presale_starts_at"
+	// FieldPresaleExpiresAt holds the string denoting the presale_expires_at field in the database.
+	FieldPresaleExpiresAt = "presale_expires_at"
+	// FieldPresaleActivatedAt holds the string denoting the presale_activated_at field in the database.
+	FieldPresaleActivatedAt = "presale_activated_at"
+	// FieldPresaleSubscriptionID holds the string denoting the presale_subscription_id field in the database.
+	FieldPresaleSubscriptionID = "presale_subscription_id"
+	// FieldPresaleRenewal holds the string denoting the presale_renewal field in the database.
+	FieldPresaleRenewal = "presale_renewal"
+	// FieldPresalePlanName holds the string denoting the presale_plan_name field in the database.
+	FieldPresalePlanName = "presale_plan_name"
+	// FieldPresaleResetCards holds the string denoting the presale_reset_cards field in the database.
+	FieldPresaleResetCards = "presale_reset_cards"
 	// FieldSubscriptionGroupID holds the string denoting the subscription_group_id field in the database.
 	FieldSubscriptionGroupID = "subscription_group_id"
 	// FieldSubscriptionDays holds the string denoting the subscription_days field in the database.
@@ -148,6 +162,13 @@ var Columns = []string{
 	FieldQrCodeImg,
 	FieldOrderType,
 	FieldPlanID,
+	FieldPresaleStartsAt,
+	FieldPresaleExpiresAt,
+	FieldPresaleActivatedAt,
+	FieldPresaleSubscriptionID,
+	FieldPresaleRenewal,
+	FieldPresalePlanName,
+	FieldPresaleResetCards,
 	FieldSubscriptionGroupID,
 	FieldSubscriptionDays,
 	FieldSubscriptionBonusActivityID,
@@ -217,6 +238,16 @@ var (
 	DefaultOrderType string
 	// OrderTypeValidator is a validator for the "order_type" field. It is called by the builders before save.
 	OrderTypeValidator func(string) error
+	// DefaultPresaleRenewal holds the default value on creation for the "presale_renewal" field.
+	DefaultPresaleRenewal bool
+	// DefaultPresalePlanName holds the default value on creation for the "presale_plan_name" field.
+	DefaultPresalePlanName string
+	// PresalePlanNameValidator is a validator for the "presale_plan_name" field. It is called by the builders before save.
+	PresalePlanNameValidator func(string) error
+	// DefaultPresaleResetCards holds the default value on creation for the "presale_reset_cards" field.
+	DefaultPresaleResetCards int
+	// PresaleResetCardsValidator is a validator for the "presale_reset_cards" field. It is called by the builders before save.
+	PresaleResetCardsValidator func(int) error
 	// DefaultSubscriptionBonusDays holds the default value on creation for the "subscription_bonus_days" field.
 	DefaultSubscriptionBonusDays int
 	// SubscriptionBonusDaysValidator is a validator for the "subscription_bonus_days" field. It is called by the builders before save.
@@ -351,6 +382,41 @@ func ByOrderType(opts ...sql.OrderTermOption) OrderOption {
 // ByPlanID orders the results by the plan_id field.
 func ByPlanID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPlanID, opts...).ToFunc()
+}
+
+// ByPresaleStartsAt orders the results by the presale_starts_at field.
+func ByPresaleStartsAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPresaleStartsAt, opts...).ToFunc()
+}
+
+// ByPresaleExpiresAt orders the results by the presale_expires_at field.
+func ByPresaleExpiresAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPresaleExpiresAt, opts...).ToFunc()
+}
+
+// ByPresaleActivatedAt orders the results by the presale_activated_at field.
+func ByPresaleActivatedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPresaleActivatedAt, opts...).ToFunc()
+}
+
+// ByPresaleSubscriptionID orders the results by the presale_subscription_id field.
+func ByPresaleSubscriptionID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPresaleSubscriptionID, opts...).ToFunc()
+}
+
+// ByPresaleRenewal orders the results by the presale_renewal field.
+func ByPresaleRenewal(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPresaleRenewal, opts...).ToFunc()
+}
+
+// ByPresalePlanName orders the results by the presale_plan_name field.
+func ByPresalePlanName(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPresalePlanName, opts...).ToFunc()
+}
+
+// ByPresaleResetCards orders the results by the presale_reset_cards field.
+func ByPresaleResetCards(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPresaleResetCards, opts...).ToFunc()
 }
 
 // BySubscriptionGroupID orders the results by the subscription_group_id field.

@@ -221,11 +221,12 @@ func buildCyberPolicyNoticeEmailBody(siteName string, cfg *ContentModerationConf
 	if name == "" && log.UserID != nil {
 		name = fmt.Sprintf("UID %d", *log.UserID)
 	}
-	return fmt.Sprintf(`<!doctype html><html><body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:#f5f6fb;color:#222;padding:32px"><div style="max-width:680px;margin:auto;background:#fff;padding:36px;border-top:8px solid #ef4444"><p style="color:#888;letter-spacing:2px">RISK CONTROL / 网络安全策略</p><h1>请求被网络安全策略拦截</h1><p>尊敬的用户 <strong>%s</strong>，%s</p><table style="width:100%%"><tr><td>触发时间</td><td>%s</td></tr><tr><td>模型</td><td>%s</td></tr><tr><td>上游说明</td><td>%s</td></tr></table><p>请调整请求内容后重试；如认为系误判，请联系管理员。</p><p style="color:#777">此邮件由 %s 自动发送，请勿回复。</p></div></body></html>`,
-		html.EscapeString(name),
-		html.EscapeString(cyberPolicyEmailMessage(cfg, defaultCyberPolicyEmailMessageZH)),
-		html.EscapeString(log.CreatedAt.Format("2006-01-02 15:04:05")),
-		html.EscapeString(defaultContentModerationString(log.Model, "-")),
-		html.EscapeString(defaultContentModerationString(log.Error, "-")),
-		html.EscapeString(siteName))
+	content := `<p>尊敬的用户 <strong>` + html.EscapeString(name) + `</strong>，` + html.EscapeString(cyberPolicyEmailMessage(cfg, defaultCyberPolicyEmailMessageZH)) + `</p>`
+	content += emailDetails(
+		[2]string{"触发时间", log.CreatedAt.Format("2006-01-02 15:04:05")},
+		[2]string{"模型", defaultContentModerationString(log.Model, "-")},
+		[2]string{"上游说明", defaultContentModerationString(log.Error, "-")},
+	)
+	content += `<p>请调整请求内容后重试；如认为系误判，请联系管理员。</p>`
+	return renderEmailCard(siteName, notificationEmailLocaleChinese, "请求被网络安全策略拦截", content)
 }

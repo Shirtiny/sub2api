@@ -34,6 +34,7 @@
         </div>
         <!-- Order Info -->
         <div v-if="order" class="rounded-xl bg-white p-5 shadow-sm dark:bg-dark-800">
+          <PresaleOrderTerm :order="order" class="mb-4" />
           <div class="space-y-3 text-sm">
             <div class="flex justify-between">
               <span class="text-gray-500 dark:text-gray-400">{{ t('payment.orders.orderId') }}</span>
@@ -105,6 +106,7 @@
 </template>
 
 <script setup lang="ts">
+import PresaleOrderTerm from '@/components/presale/PresaleOrderTerm.vue'
 import { ref, computed, onBeforeUnmount, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'

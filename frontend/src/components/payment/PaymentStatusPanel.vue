@@ -9,7 +9,7 @@
           <div class="flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
             <Icon name="check" size="lg" class="text-green-500" />
           </div>
-          <p class="text-lg font-bold text-content-primary">{{ props.orderType === 'subscription' ? t('payment.result.subscriptionSuccess') : t('payment.result.success') }}</p>
+          <p class="text-lg font-bold text-content-primary">{{ paidOrder?.presale_starts_at ? t('presale.purchased') : props.orderType === 'subscription' ? t('payment.result.subscriptionSuccess') : t('payment.result.success') }}</p>
           <div v-if="paidOrder" class="w-full rounded-xl bg-gray-50 p-4 dark:bg-dark-800">
             <div class="space-y-2 text-sm">
               <div class="flex justify-between">
@@ -30,6 +30,7 @@
               </div>
             </div>
           </div>
+          <PresaleOrderTerm v-if="paidOrder?.presale_starts_at" :order="paidOrder" class="w-full" />
           <button class="btn btn-primary" @click="handleDone">{{ t('common.confirm') }}</button>
         </div>
       </div>
@@ -122,6 +123,7 @@
 </template>
 
 <script setup lang="ts">
+import PresaleOrderTerm from '@/components/presale/PresaleOrderTerm.vue'
 import { ref, computed, watch, onUnmounted, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { usePaymentStore } from '@/stores/payment'

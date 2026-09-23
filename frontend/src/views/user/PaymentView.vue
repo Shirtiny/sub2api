@@ -1,5 +1,5 @@
 <template>
-  <AppLayout>
+  <component :is="presalePlanId ? 'div' : AppLayout">
     <div class="mx-auto max-w-6xl space-y-6">
       <div v-if="loading" class="flex items-center justify-center py-20">
         <div class="h-8 w-8 animate-spin rounded-full border-4 border-primary-500 border-t-transparent"></div>
@@ -9,13 +9,21 @@
         <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium leading-6 text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
           {{ t('payment.usagePolicyWarning') }}
         </div>
-        <!-- Tab Switcher (hide during payment and subscription confirm) -->
-        <div v-if="tabs.length > 1 && paymentPhase === 'select' && !selectedPlan" class="flex space-x-1 rounded-xl bg-gray-100 p-1 dark:bg-dark-800">
-          <button v-for="tab in tabs" :key="tab.key"
-            class="flex-1 rounded-lg px-4 py-2.5 text-sm font-medium transition-all"
-            :class="activeTab === tab.key ? 'bg-white text-gray-900 shadow dark:bg-dark-700 dark:text-white' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'"
-            @click="activeTab = tab.key">{{ tab.label }}</button>
+        <RouterLink v-if="!presalePlanId && paymentPhase === 'select'" to="/presale" class="card flex items-center justify-between gap-4 p-5">
+          <div><p class="text-sm font-medium text-content-primary">{{ t('presale.nav') }}</p><p class="mt-1 text-xs text-content-tertiary">{{ t('presale.intro') }}</p></div><Icon name="arrowRight" size="md" />
+        </RouterLink>
+        <div v-if="presalePlanId && presaleQuote && paymentPhase === 'select'" class="card space-y-3 border-primary-300 p-5 dark:border-primary-700">
+          <p class="text-sm font-medium text-primary-600 dark:text-primary-300">{{ t(presaleQuote.renewal ? 'presale.renewal' : 'presale.newSubscription') }}</p>
+          <p v-if="presaleQuote.current_expires_at" class="text-xs leading-relaxed text-content-secondary">{{ t('presale.renewalCopy', { date: presaleDate(presaleQuote.current_expires_at) }) }}</p>
+          <p class="text-sm text-content-primary">{{ t('presale.termCopy', { start: presaleDate(presaleQuote.starts_at), end: presaleDate(presaleQuote.expires_at) }) }}</p>
+          <p class="text-xs text-content-tertiary">{{ t('presale.timezone') }}</p>
+          <p class="text-xs leading-relaxed text-content-secondary">{{ t('presale.refundFullCopy', { date: presaleDate(presaleQuote.full_refund_before) }) }}</p>
+          <p class="text-xs leading-relaxed text-content-secondary">{{ t('presale.refundFeeCopy', { date: presaleDate(presaleQuote.full_refund_before) }) }}</p>
+          <p class="text-xs leading-relaxed text-content-secondary">{{ t('presale.refundDailyCopy') }}</p>
+          <label class="flex cursor-pointer items-start gap-3 border-t border-gray-200 pt-4 text-xs leading-relaxed text-content-secondary dark:border-dark-600"><input v-model="presaleConsent" type="checkbox" class="mt-0.5 rounded" />{{ t('presale.consent') }}</label>
         </div>
+        <div v-if="presalePlanId && presalePaid" class="card p-5" role="status"><h3 class="text-lg text-content-primary">{{ t('presale.purchased') }}</h3><p class="mt-2 text-sm text-content-secondary">{{ t('presale.purchasedCopy') }}</p><RouterLink to="/subscriptions" class="btn btn-primary mt-4">{{ t('presale.viewSubscriptions') }}</RouterLink></div>
+        <!-- Tab Switcher (hide during payment and subscription confirm) -->
         <!-- Payment in progress (shared by recharge and subscription) -->
         <template v-if="paymentPhase === 'paying'">
           <PaymentStatusPanel
@@ -41,7 +49,7 @@
               <p class="mt-1 text-base font-semibold text-content-primary">{{ user?.username || '' }}</p>
               <p class="mt-0.5 text-sm font-medium text-green-600 dark:text-green-400">{{ t('payment.currentBalance') }}: {{ user?.balance?.toFixed(2) || '0.00' }}</p>
             </div>
-            <div v-if="enabledMethods.length === 0" class="card py-16 text-center">
+            <div v-if="enabledMethods.length === 0 || checkout.balance_disabled" class="card py-16 text-center">
               <p class="text-gray-500 dark:text-gray-400">{{ t('payment.notAvailable') }}</p>
             </div>
             <template v-else>
@@ -168,6 +176,9 @@
                 <p v-if="selectedPlan.description" class="mt-2 text-sm leading-relaxed text-gray-500 dark:text-gray-400">
                   {{ selectedPlan.description }}
                 </p>
+                <label v-if="presalePlanId && selectedPlan.custom_multiplier_enabled" class="mt-4 block text-sm text-content-secondary">{{ t('payment.admin.customMultiplierEnabled') }}
+                  <input v-model.number="selectedSubscriptionMultiplier" type="number" class="input mt-2" :min="selectedPlan.custom_multiplier_min || 1" :max="selectedPlan.custom_multiplier_max || 1" step="1" />
+                </label>
                 <!-- Rate + Limits grid -->
                 <div class="mt-3 grid grid-cols-2 gap-3">
                   <div>
@@ -262,7 +273,7 @@
                 </span>
                 <span v-else>{{ t('payment.createOrder') }} {{ formatSelectedPaymentAmount(subscriptionButtonAmount) }}</span>
               </button>
-              <button class="btn btn-secondary w-full" @click="selectedPlan = null">{{ t('common.cancel') }}</button>
+              <button class="btn btn-secondary w-full" @click="presalePlanId ? emit('close') : selectedPlan = null">{{ t('common.cancel') }}</button>
             </template>
             <!-- Plan list -->
             <template v-else>
@@ -350,7 +361,7 @@
         </div>
       </Transition>
     </Teleport>
-  </AppLayout>
+  </component>
 </template>
 
 <script setup lang="ts">
@@ -391,6 +402,16 @@ import type { PaymentMethodOption } from '@/components/payment/PaymentMethodSele
 import { buildPaymentErrorToastMessage, describePaymentScenarioError } from './paymentUx'
 import { hasWechatResumeQuery, parseWechatResumeRoute, stripWechatResumeQuery } from './paymentWechatResume'
 
+import { presaleAPI, type PresaleQuote } from '@/api/presale'
+import { formatPresaleDate } from '@/utils/presale'
+
+const props = defineProps<{ presalePlanId?: number; presaleMonth?: string }>()
+const emit = defineEmits<{ close: [] }>()
+const presaleQuote = ref<PresaleQuote | null>(null)
+const presaleConsent = ref(false)
+const presalePaid = ref(false)
+const presaleDate = (value: string) => formatPresaleDate(value, i18n.locale.value)
+
 const RECHARGE_QUICK_AMOUNTS = [20, 50, 100, 200, 500]
 const MIN_ACTUAL_PAYMENT_AMOUNT = 1
 
@@ -416,7 +437,7 @@ const submitting = ref(false)
 const createOrderIdempotencyKey = ref('')
 const errorMessage = ref('')
 const errorHintMessage = ref('')
-const activeTab = ref<'recharge' | 'subscription'>('subscription')
+const activeTab = ref<'recharge' | 'subscription'>(props.presalePlanId ? 'subscription' : 'recharge')
 const amount = ref<number | null>(null)
 const selectedMethod = ref('')
 const selectedPlan = ref<SubscriptionPlan | null>(null)
@@ -573,6 +594,7 @@ function buildWechatOAuthAuthorizeUrl(authorizeUrl: string): string {
 
 
 function onPaymentDone() {
+  if (props.presalePlanId && presalePaid.value) { emit('close'); return }
   const wasSubscription = paymentState.value.orderType === 'subscription'
   resetPayment()
   selectedPlan.value = null
@@ -582,6 +604,7 @@ function onPaymentDone() {
 }
 
 function onPaymentSuccess() {
+  if (props.presalePlanId) presalePaid.value = true
   removeRecoverySnapshot()
   authStore.refreshUser()
   if (paymentState.value.orderType === 'subscription') {
@@ -597,13 +620,6 @@ function onPaymentSettled() {
 const checkout = ref<CheckoutInfoResponse>({
   methods: {}, global_min: 0, global_max: 0,
   plans: [], balance_disabled: false, balance_recharge_multiplier: 1, recharge_fee_rate: 0, help_text: '', help_image_url: '', stripe_publishable_key: '',
-})
-
-const tabs = computed(() => {
-  const result: { key: 'recharge' | 'subscription'; label: string }[] = []
-  result.push({ key: 'subscription', label: t('payment.tabSubscribe') })
-  if (!checkout.value.balance_disabled) result.push({ key: 'recharge', label: t('payment.tabTopUp') })
-  return result
 })
 
 const defaultRechargeAmount = RECHARGE_QUICK_AMOUNTS[0] ?? 0
@@ -930,7 +946,8 @@ const subscriptionPayAmountBelowMinimum = computed(() =>
 )
 
 const canSubmitSubscription = computed(() =>
-  selectedPlan.value !== null
+  (!props.presalePlanId || (!!presaleQuote.value && presaleConsent.value && !presalePaid.value))
+    && selectedPlan.value !== null
     && !selectedMultiplierConflictsActiveCustom.value
     && !subscriptionPayAmountBelowMinimum.value
     && amountFitsMethod(effectiveSubscriptionMethodAmount(), selectedMethod.value)
@@ -1096,6 +1113,7 @@ async function previewCafeCoupon() {
   cafeCouponPreviewPromise = (async () => {
     try {
       const response = await paymentStore.previewCafeCoupon({
+        ...(props.presalePlanId ? { presale_month: props.presaleMonth } : {}),
         code,
         amount: requestAmount,
         order_type: requestOrderType,
@@ -1204,6 +1222,7 @@ const renewalPlans = computed(() => {
 })
 
 const planValiditySuffix = computed(() => {
+  if (props.presalePlanId) return t('presale.perMonth').replace(/^\/\s*/, '')
   if (!selectedPlan.value) return ''
   const u = selectedPlan.value.validity_unit || 'day'
   if (u === 'month') return t('payment.perMonth')
@@ -1251,6 +1270,7 @@ function initialMultiplierForPlan(plan: SubscriptionPlan | null | undefined, mul
 }
 
 function selectPlan(plan: SubscriptionPlan, multiplier = 1) {
+  activeTab.value = 'subscription'
   selectedPlan.value = plan
   selectedSubscriptionMultiplier.value = initialMultiplierForPlan(plan, multiplier, false)
   errorMessage.value = ''
@@ -1291,6 +1311,7 @@ async function confirmSubscribe() {
   if (!canSubmitSubscription.value || submitting.value) return
   const plan = selectedPlan.value
   if (!plan) return
+  if (props.presalePlanId && !presaleConsent.value) return
   if (!await ensureCafeCouponReady()) return
   await createOrder(effectiveSelectedPlanPrice.value, 'subscription', plan.id)
 }
@@ -1316,6 +1337,10 @@ async function createOrder(orderAmount: number, orderType: OrderType, planId?: n
         ? selectedPlan.value?.subscription_bonus?.activity_id
         : undefined,
     })
+    if (orderType === 'subscription' && props.presalePlanId) {
+      payload.presale_month = props.presaleMonth
+      delete payload.expected_subscription_bonus_activity_id
+    }
     if (options.openid) {
       payload.openid = options.openid
     }
@@ -1473,7 +1498,7 @@ async function createOrder(orderAmount: number, orderType: OrderType, planId?: n
         normalizeVisibleMethod(options.paymentType || selectedMethod.value) || selectedMethod.value,
       )
       if (!handled) {
-        errorMessage.value = extractI18nErrorMessage(err, t, 'payment.errors', extractApiErrorMessage(err, t('payment.result.failed')))
+        errorMessage.value = extractI18nErrorMessage(err, t, props.presalePlanId ? 'presale.errors' : 'payment.errors', extractApiErrorMessage(err, t('payment.result.failed')))
         errorHintMessage.value = ''
       }
       if (handled) {
@@ -1548,6 +1573,10 @@ async function attemptMobileQrFallback(err: unknown, context: MobileQrFallbackCo
         ? selectedPlan.value?.subscription_bonus?.activity_id
         : undefined,
     })
+    if (context.orderType === 'subscription' && props.presalePlanId) {
+      payload.presale_month = props.presaleMonth
+      delete payload.expected_subscription_bonus_activity_id
+    }
     const result = await paymentStore.createOrder(payload) as CreateOrderResult & { resume_token?: string }
     const stripeMethod = visibleMethod === 'wxpay' ? 'wechat_pay' : 'alipay'
     const stripeRouteUrl = result.client_secret
@@ -1631,6 +1660,7 @@ async function resumeWechatPaymentFromQuery() {
     return
   }
 
+  if (resume.wechatResumeToken && props.presalePlanId) { resume.orderType = 'subscription'; resume.planId = props.presalePlanId }
   selectedMethod.value = resume.paymentType
   if (resume.orderType === 'balance' && resume.orderAmount > 0) {
     amount.value = resume.orderAmount
@@ -1665,6 +1695,10 @@ async function resumeWechatPaymentFromQuery() {
 }
 
 onMounted(async () => {
+  if (!props.presalePlanId && route.query.tab === 'subscription' && !hasWechatResumeQuery(route.query)) {
+    await router.replace({ path: '/presale', query: route.query.plan ? { plan: String(route.query.plan) } : {} })
+    return
+  }
   try {
     const res = await paymentAPI.getCheckoutInfo()
     checkout.value = res.data
@@ -1705,7 +1739,7 @@ onMounted(async () => {
     const routeTab = firstRouteQueryString(route.query.tab)
     if (routeTab === 'recharge' && !checkout.value.balance_disabled) {
       activeTab.value = 'recharge'
-    } else if (routeTab === 'subscription' || checkout.value.balance_disabled) {
+    } else if (props.presalePlanId) {
       activeTab.value = 'subscription'
     }
     applyRouteCafeCouponCode()
@@ -1718,11 +1752,11 @@ onMounted(async () => {
       await subscriptionStore.fetchActiveSubscriptions().catch(() => {})
       activeSubscriptionsFetchedForRoute = true
     }
-    if (route.query.tab === 'subscription') {
+    if (props.presalePlanId || (route.query.tab === 'subscription' && hasWechatResumeQuery(route.query))) {
       activeTab.value = 'subscription'
       const routeMultiplier = positiveRouteNumber(route.query.multiplier)
       const multiplier = routeMultiplier ?? 1
-      const planId = positiveRouteNumber(route.query.plan)
+      const planId = props.presalePlanId || positiveRouteNumber(route.query.plan)
       const groupId = positiveRouteNumber(route.query.group)
       const plan = planId
         ? (checkout.value.plans.find(p => p.id === planId) ?? null)
@@ -1732,10 +1766,15 @@ onMounted(async () => {
         selectedSubscriptionMultiplier.value = initialMultiplierForPlan(plan, multiplier, routeMultiplier == null)
       }
     }
+    if (props.presalePlanId) {
+      presaleQuote.value = (await presaleAPI.quote(props.presalePlanId)).data
+      if (presaleQuote.value.month !== props.presaleMonth) { presaleQuote.value = null; throw new Error(t('presale.errors.PRESALE_MONTH_CHANGED')) }
+      if (selectedPlan.value) selectedPlan.value = { ...selectedPlan.value, subscription_bonus: undefined }
+    }
     if (!activeSubscriptionsFetchedForRoute) {
       subscriptionStore.fetchActiveSubscriptions().catch(() => {})
     }
-  } catch (err: unknown) { appStore.showError(extractI18nErrorMessage(err, t, 'payment.errors', t('common.error'))) }
+  } catch (err: unknown) { appStore.showError(extractI18nErrorMessage(err, t, props.presalePlanId ? 'presale.errors' : 'payment.errors', t('common.error'))) }
   finally { loading.value = false }
 })
 </script>

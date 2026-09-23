@@ -356,7 +356,7 @@ func (s *OpsScheduledReportService) runReport(ctx context.Context, report *opsSc
 				ReminderKey:    now.UTC().Format("2006-01-02T15:04"),
 				Variables:      templateVariables,
 				RawHTMLVariables: map[string]string{
-					"report_html": content,
+					"report_html": styleBuiltinEmailContent(content),
 				},
 			}); err == nil {
 				continue
@@ -364,7 +364,7 @@ func (s *OpsScheduledReportService) runReport(ctx context.Context, report *opsSc
 				continue
 			}
 		}
-		if err := s.emailService.SendEmail(ctx, addr, subject, content); err != nil {
+		if err := s.emailService.SendEmail(ctx, addr, subject, s.emailService.renderOpsEmail(ctx, "Ops report", content)); err != nil {
 			// Ignore per-recipient failures; continue best-effort.
 			continue
 		}
@@ -581,7 +581,7 @@ func buildOpsErrorDigestEmailHTML(title string, start, end time.Time, list *OpsE
 <p><b>Period</b>: %s ~ %s (UTC)</p>
 <p><b>Total Errors</b>: %d</p>
 <h3>Recent</h3>
-<table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;">
+<table style="width:100%%;border-collapse:collapse;">
   <thead><tr><th>Time</th><th>Platform</th><th>Status</th><th>Message</th></tr></thead>
   <tbody>%s</tbody>
 </table>

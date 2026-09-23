@@ -80,6 +80,7 @@ func generateRandomString(n int) string {
 }
 
 type CreateOrderRequest struct {
+	PresaleMonth                        string
 	UserID                              int64
 	Amount                              float64
 	PaymentType                         string

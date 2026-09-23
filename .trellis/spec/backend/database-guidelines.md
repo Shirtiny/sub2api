@@ -86,3 +86,16 @@ Key conventions observed in the codebase:
 - `usage_logs.request_host` is the normalized public ingress hostname, distinct from the API path in `inbound_endpoint`; historical unknown hosts remain NULL without inference/backfill.
 - Host and client IP must be captured using the configured trusted proxy chain before asynchronous usage recording. See `docs/USAGE_REQUEST_ORIGIN.md` for the cross-layer contract and rollout prerequisites.
 - Users may see `request_host` and `ip_address` only for their own usage rows. Keep existing ownership checks and all unrelated administrator-only metadata boundaries intact.
+
+## Calendar-month presale entitlements
+
+- A completed presale payment is a pending entitlement, not an immediately usable
+  subscription. Keep the immutable order window and activate it atomically at the
+  business-calendar start. See `docs/SUBSCRIPTION_PRESALES.md`.
+- Serialize user/group/month reservation checks under the payment user lock. Lock
+  user, then order, then subscription when activation/refund can race; use the
+  activation marker and transactional audit record for retry safety.
+- Freeze the reviewed refund amount and request timestamp before cancelling only
+  that order's exact term. Never subtract pending presale days from an unrelated
+  currently active subscription; never restore a cancelled presale to COMPLETED
+  after a failed refund retry.

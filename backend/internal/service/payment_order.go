@@ -216,6 +216,9 @@ func (s *PaymentService) completeDevAutoSuccessOrder(ctx context.Context, order 
 }
 
 func (s *PaymentService) validateOrderInput(ctx context.Context, req CreateOrderRequest, cfg *PaymentConfig) (*dbent.SubscriptionPlan, error) {
+	if req.PresaleMonth != "" && req.OrderType != payment.OrderTypeSubscription {
+		return nil, infraerrors.BadRequest("INVALID_ORDER_TYPE", "presale requires a subscription")
+	}
 	if req.OrderType != payment.OrderTypeBalance && req.OrderType != payment.OrderTypeSubscription {
 		return nil, infraerrors.BadRequest("INVALID_ORDER_TYPE", "unsupported order type")
 	}
@@ -242,6 +245,9 @@ func (s *PaymentService) validateSubOrder(ctx context.Context, req CreateOrderRe
 	plan, err := s.configService.GetPlan(ctx, req.PlanID)
 	if err != nil || !plan.ForSale {
 		return nil, infraerrors.NotFound("PLAN_NOT_AVAILABLE", "plan not found or not for sale")
+	}
+	if err := validatePresaleOrderPlan(plan, req, time.Now()); err != nil {
+		return nil, err
 	}
 	group, err := s.groupRepo.GetByID(ctx, plan.GroupID)
 	if err != nil || group.Status != payment.EntityStatusActive {
@@ -434,6 +440,7 @@ func (s *PaymentService) createOrderInTx(ctx context.Context, req CreateOrderReq
 	if err := lockPaymentUserForUpdate(txCtx, tx, req.UserID); err != nil {
 		return nil, err
 	}
+	var presale *PresaleQuote
 	var subscriptionBonus *SubscriptionBonusBenefit
 	subscriptionDays := 0
 	if plan != nil {
@@ -445,18 +452,32 @@ func (s *PaymentService) createOrderInTx(ctx context.Context, req CreateOrderReq
 		if resolvedMultiplier != req.Multiplier {
 			return nil, infraerrors.Conflict("SUBSCRIPTION_STATE_CHANGED", "subscription state changed, please retry")
 		}
-		subscriptionBonus, err = resolveSubscriptionBonusForOrder(txCtx, tx.Client(), req.UserID, plan.ID, req.ExpectedSubscriptionBonusActivityID, time.Now())
-		if err != nil {
-			return nil, err
+		if req.PresaleMonth == "" {
+			subscriptionBonus, err = resolveSubscriptionBonusForOrder(txCtx, tx.Client(), req.UserID, plan.ID, req.ExpectedSubscriptionBonusActivityID, time.Now())
+			if err != nil {
+				return nil, err
+			}
 		}
 		lockedPlan, err := lockPaymentSubscriptionPlanForOrder(txCtx, tx, plan.ID, plan.UpdatedAt)
 		if err != nil {
 			return nil, err
 		}
 		plan = lockedPlan
+		if err := validatePresaleOrderPlan(plan, req, time.Now()); err != nil {
+			return nil, err
+		}
+		if req.PresaleMonth != "" {
+			presale, err = txSvc.presaleQuoteForPlan(txCtx, req.UserID, plan, time.Now(), 0)
+			if err != nil {
+				return nil, err
+			}
+		}
 		subscriptionDays, err = validateSubscriptionPlanValidity(plan.ValidityDays, plan.ValidityUnit)
 		if err != nil {
 			return nil, err
+		}
+		if presale != nil {
+			subscriptionDays = int(presale.ExpiresAt.Sub(presale.StartsAt).Hours() / 24)
 		}
 		if subscriptionBonus != nil && subscriptionBonus.Days > MaxValidityDays-subscriptionDays {
 			return nil, infraerrors.Conflict("ACTIVITY_BENEFIT_CHANGED", "subscription bonus exceeds the maximum subscription validity; refresh and retry")
@@ -481,6 +502,9 @@ func (s *PaymentService) createOrderInTx(ctx context.Context, req CreateOrderReq
 		tm = defaultOrderTimeoutMin
 	}
 	exp := time.Now().Add(time.Duration(tm) * time.Minute)
+	if presale != nil && exp.After(presale.StartsAt) {
+		exp = presale.StartsAt
+	}
 	outTradeNo, err := s.allocateOutTradeNo(ctx, tx)
 	if err != nil {
 		return nil, err
@@ -542,6 +566,10 @@ func (s *PaymentService) createOrderInTx(ctx context.Context, req CreateOrderReq
 			b.SetSubscriptionBonusActivityID(subscriptionBonus.ActivityID).
 				SetSubscriptionBonusDays(subscriptionBonus.Days)
 		}
+	}
+	if presale != nil {
+		b.SetPresaleStartsAt(presale.StartsAt).SetPresaleExpiresAt(presale.ExpiresAt).
+			SetPresaleRenewal(presale.Renewal).SetPresalePlanName(plan.Name).SetPresaleResetCards(plan.PresaleResetCards)
 	}
 	order, err := b.Save(txCtx)
 	if err != nil {
@@ -1015,6 +1043,7 @@ func (s *PaymentService) buildWeChatOAuthRequiredResponse(ctx context.Context, r
 		Multiplier:                          req.Multiplier,
 		CafeCouponCode:                      req.CafeCouponCode,
 		ExpectedSubscriptionBonusActivityID: req.ExpectedSubscriptionBonusActivityID,
+		PresaleMonth:                        req.PresaleMonth,
 		RedirectTo:                          paymentRedirectPathFromURL(req.SrcURL),
 		Scope:                               "snsapi_base",
 	})
@@ -1042,6 +1071,23 @@ func (s *PaymentService) buildWeChatOAuthRequiredResponse(ctx context.Context, r
 }
 
 func (s *PaymentService) validateSelectedCreateOrderInstance(ctx context.Context, req CreateOrderRequest, sel *payment.InstanceSelection) error {
+	if req.PresaleMonth != "" {
+		if sel == nil {
+			return infraerrors.BadRequest("PRESALE_REFUND_CHANNEL_REQUIRED", "presale requires a refundable payment channel")
+		}
+		id, err := strconv.ParseInt(sel.InstanceID, 10, 64)
+		if err != nil {
+			return fmt.Errorf("invalid presale provider instance: %w", err)
+		}
+		instance, err := s.entClient.PaymentProviderInstance.Get(ctx, id)
+		if err != nil {
+			return fmt.Errorf("load presale payment channel: %w", err)
+		}
+		if !instance.RefundEnabled {
+			return infraerrors.BadRequest("PRESALE_REFUND_CHANNEL_REQUIRED", "this payment channel must enable refunds before accepting presales")
+		}
+	}
+
 	if !requiresWeChatJSAPICompatibleSelection(req, sel) {
 		return nil
 	}

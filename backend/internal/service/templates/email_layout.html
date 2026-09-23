@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="{{LANG}}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -10,12 +10,19 @@
     :root { color-scheme: light dark; supported-color-schemes: light dark; }
     body, table, td, p, h1 { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
     table, td { mso-table-lspace: 0; mso-table-rspace: 0; }
+    .content p { margin: 0 0 18px; }
+    .content p:last-child { margin-bottom: 0; }
+    .content a { color: #865630; }
+    .content .button { color: #ffffff; }
+    .content table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    .content td, .content th { overflow-wrap: anywhere; word-wrap: break-word; }
     @media screen and (max-width: 480px) {
       .outer-pad { padding: 20px 12px !important; }
       .masthead { padding: 28px 24px !important; }
       .letter { padding: 36px 24px 30px !important; }
       .headline { font-size: 28px !important; line-height: 1.5 !important; letter-spacing: -0.6px !important; }
       .brand { font-size: 30px !important; }
+      .code { font-size: 28px !important; letter-spacing: 5px !important; }
       .signoff { padding: 24px !important; }
     }
     @media (prefers-color-scheme: dark) {
@@ -23,6 +30,8 @@
       .paper { background-color: #27211b !important; border-color: #493c30 !important; }
       .masthead { background-color: #201b16 !important; }
       .ink { color: #f2e9dc !important; }
+      .content a:not(.button) { color: #d8ad7d !important; }
+      .notice { background-color: #382721 !important; color: #f0c3ad !important; border-color: #a27057 !important; }
       .body-copy { color: #d6c9b9 !important; }
       .muted { color: #b6a492 !important; }
       .accent { color: #d8ad7d !important; }
@@ -52,25 +61,14 @@
               <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:24px 0;">
                 <tr><td class="small-rule" width="32" height="2" bgcolor="#ad8158" style="width:32px;height:2px;background-color:#ad8158;font-size:0;line-height:0;">&nbsp;</td></tr>
               </table>
-              <p class="body-copy" style="margin:0;color:#685648;font-size:15px;line-height:2;">{{MESSAGE}}</p>
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;margin-top:30px;">
-                <tr>
-                  <td class="receipt" style="padding:16px 20px;background-color:#f0e9df;border:1px solid #e4d8c8;border-radius:6px;">
-                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;">
-                      <tr>
-                        <td class="muted" style="color:#796653;font-size:12px;line-height:22px;">申请状态</td>
-                        <td class="accent" align="right" style="color:#865630;font-size:13px;font-weight:500;line-height:22px;">{{STATUS}}</td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-              </table>
-              {{NEXT_STEPS}}
+              <div class="content body-copy" style="color:#685648;font-size:15px;line-height:1.9;overflow-wrap:anywhere;word-wrap:break-word;">
+                {{CONTENT}}
+              </div>
             </td>
           </tr>
           <tr>
             <td class="signoff rule" style="padding:26px 44px 28px;border-top:1px solid #e4d9ca;">
-              <p class="ink" style="margin:0 0 7px;color:#382a20;font-family:'Songti SC','STSong','Noto Serif CJK SC',Georgia,serif;font-size:16px;line-height:26px;">让灵感，高效落地。</p>
+              <p class="ink" style="margin:0 0 7px;color:#382a20;font-family:'Songti SC','STSong','Noto Serif CJK SC',Georgia,serif;font-size:16px;line-height:26px;">{{TAGLINE}}</p>
               <p class="muted" style="margin:0;color:#8b7662;font-size:11px;line-height:20px;letter-spacing:0.3px;">{{SIGNOFF}}</p>
             </td>
           </tr>

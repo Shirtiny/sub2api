@@ -57,6 +57,7 @@ type ResumeTokenClaims struct {
 }
 
 type WeChatPaymentResumeClaims struct {
+	PresaleMonth                        string `json:"pm,omitempty"`
 	TokenType                           string `json:"tk,omitempty"`
 	OpenID                              string `json:"openid"`
 	UserID                              int64  `json:"uid,omitempty"`
@@ -74,6 +75,7 @@ type WeChatPaymentResumeClaims struct {
 }
 
 type WeChatPaymentOAuthContextClaims struct {
+	PresaleMonth                        string `json:"pm,omitempty"`
 	TokenType                           string `json:"tk,omitempty"`
 	UserID                              int64  `json:"uid,omitempty"`
 	PaymentType                         string `json:"pt,omitempty"`

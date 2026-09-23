@@ -701,7 +701,7 @@ func (s *OpsAlertEvaluatorService) maybeSendAlertEmail(ctx context.Context, runt
 				continue
 			}
 		}
-		if err := s.emailService.SendEmail(ctx, addr, subject, body); err != nil {
+		if err := s.emailService.SendEmail(ctx, addr, subject, s.emailService.renderOpsEmail(ctx, "Ops alert", body)); err != nil {
 			// Ignore per-recipient failures; continue best-effort.
 			continue
 		}
@@ -768,7 +768,6 @@ func buildOpsAlertEmailBody(rule *OpsAlertRule, event *OpsAlertEvent) string {
 		threshold = fmt.Sprintf("%.2f", *event.ThresholdValue)
 	}
 	return fmt.Sprintf(`
-<h2>Ops Alert</h2>
 <p><b>Rule</b>: %s</p>
 <p><b>Severity</b>: %s</p>
 <p><b>Status</b>: %s</p>

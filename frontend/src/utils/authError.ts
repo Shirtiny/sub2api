@@ -25,6 +25,22 @@ function extractErrorCode(error: unknown): string {
   return code != null ? String(code) : ''
 }
 
+export type RegistrationRecoveryMode = 'login' | 'closed'
+
+// Only explicit server reasons select account recovery. Never infer that an
+// account exists from free-text messages or a generic 403 response.
+export function getRegistrationRecoveryMode(error: unknown): RegistrationRecoveryMode | null {
+  switch (extractErrorCode(error)) {
+    case 'WAITLIST_SIGN_IN_REQUIRED':
+    case 'EMAIL_EXISTS':
+      return 'login'
+    case 'REGISTRATION_DISABLED':
+      return 'closed'
+    default:
+      return null
+  }
+}
+
 export function buildAuthErrorMessage(
   error: unknown,
   options: {

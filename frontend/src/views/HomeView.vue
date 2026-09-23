@@ -21,11 +21,13 @@
           <div class="home-container header-row">
             <HomeBrand :site-name="siteName" />
 
-            <nav v-if="docUrl" class="hidden items-center gap-7 lg:flex" :aria-label="t('home.landing.navigation')">
-              <a v-if="docUrl" :href="docUrl" target="_blank" rel="noopener noreferrer">
-                {{ t('home.docs') }} <Icon name="externalLink" size="xs" aria-hidden="true" />
-              </a>
-            </nav>
+            <div class="header-navigation hidden lg:grid">
+              <nav :class="{ 'navigation-hidden': compact }" :inert="compact" class="header-menu" :aria-label="t('home.landing.navigation')">
+                <RouterLink to="/presale">{{ t('presale.nav') }}</RouterLink>
+                <a v-if="docUrl" :href="docUrl" target="_blank" rel="noopener noreferrer">{{ t('home.docs') }} <Icon name="externalLink" size="xs" aria-hidden="true" /></a>
+              </nav>
+              <RouterLink v-if="presaleOpen" to="/presale" class="presale-header-banner" :class="{ 'navigation-hidden': !compact }" :inert="!compact"><span class="presale-live-dot" aria-hidden="true" />{{ t('presale.banner') }} <Icon name="arrowRight" size="sm" /></RouterLink>
+            </div>
 
             <div class="header-actions flex shrink-0 items-center gap-1 sm:gap-3">
               <LocaleSwitcher />
@@ -44,8 +46,9 @@
               </RouterLink>
             </div>
           </div>
-          <nav v-if="docUrl" class="mobile-nav home-container lg:hidden" :aria-label="t('home.landing.navigation')">
-            <a v-if="docUrl" :href="docUrl" target="_blank" rel="noopener noreferrer">{{ t('home.docs') }}</a>
+          <nav class="mobile-nav home-container lg:hidden" :aria-label="t('home.landing.navigation')">
+            <template v-if="!compact"><RouterLink to="/presale">{{ t('presale.nav') }}</RouterLink><a v-if="docUrl" :href="docUrl" target="_blank" rel="noopener noreferrer">{{ t('home.docs') }}</a></template>
+            <RouterLink v-else-if="presaleOpen" to="/presale" class="presale-mobile-banner"><span class="presale-live-dot" aria-hidden="true" />{{ t('presale.banner') }} →</RouterLink>
           </nav>
         </div>
       </header>
@@ -237,6 +240,7 @@ import HomeSectionSlider from '@/components/home/HomeSectionSlider.vue'
 import Icon from '@/components/icons/Icon.vue'
 import cafeBanner from '@/assets/home/cafe-banner.webp'
 import codexMark from '@/assets/home/codex-mark.svg'
+import { presaleAPI } from '@/api/presale'
 import piMark from '@/assets/home/pi-mark.svg'
 
 const { t } = useI18n()
@@ -256,6 +260,7 @@ const entryPath = computed(() => !isAuthenticated.value ? '/login' : authStore.i
 // Share the same explicit preference / dark default as the console and bootstrap.
 const isDark = ref(initializeTheme())
 const showWaitlist = ref(false)
+const presaleOpen = ref(false)
 const currentYear = new Date().getFullYear()
 
 const steps = ['account', 'key', 'configure'] as const
@@ -275,6 +280,7 @@ function toggleTheme() {
 }
 
 onMounted(() => {
+  void presaleAPI.catalog().then(({ data }) => { presaleOpen.value = data.enabled }).catch(() => {})
   if (!appStore.publicSettingsLoaded) {
     void appStore.fetchPublicSettings()
   }
@@ -393,6 +399,13 @@ onMounted(() => {
   gap: 24px;
   min-height: 88px;
 }
+.header-navigation { min-width: 240px; align-items: center; }
+.header-menu, .presale-header-banner { grid-area: 1 / 1; transition: opacity .32s ease, transform .32s ease; }
+.header-menu { display: flex; justify-content: center; align-items: center; gap: 28px; }
+.navigation-hidden { opacity: 0; pointer-events: none; transform: translateY(4px); }
+.presale-header-banner { display: inline-flex; align-items: center; justify-content: center; gap: 10px; border: 1px solid var(--cafe-line); background: color-mix(in srgb, var(--cafe-accent) 7%, transparent); border-radius: 999px; padding: 9px 15px; color: var(--cafe-accent); font-size: 12px; }
+.presale-live-dot { display: inline-block; width: 5px; height: 5px; background: currentColor; border-radius: 50%; box-shadow: 0 0 0 4px color-mix(in srgb, currentColor 10%, transparent); }
+.presale-mobile-banner { display: flex; align-items: center; gap: 10px; }
 .header-actions {
   grid-column: -2;
   justify-self: end;

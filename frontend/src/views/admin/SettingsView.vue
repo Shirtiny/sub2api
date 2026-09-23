@@ -7204,6 +7204,9 @@ const { copyToClipboard } = useClipboard();
 
 const loading = ref(true);
 const loadFailed = ref(false);
+// Only submit this value when deliberately edited; an open settings page may
+// predate an administrator's domain correction.
+let loadedFrontendURL = "";
 const saving = ref(false);
 // Keep guest checkout fields out of a save when an older/partial settings
 // response did not include them; default form values must never clear the
@@ -8244,6 +8247,7 @@ async function loadSettings() {
   loadFailed.value = false;
   try {
     const settings = await adminAPI.settings.getSettings();
+    loadedFrontendURL = (settings.frontend_url ?? "").trim();
     guestShopSettingsLoaded.value =
       settings.payment_guest_shop_enabled != null &&
       settings.payment_guest_shop_stripe_instance_id != null;
@@ -8673,7 +8677,6 @@ async function saveSettings() {
       table_page_size_options: form.table_page_size_options,
       custom_menu_items: form.custom_menu_items,
       custom_endpoints: form.custom_endpoints,
-      frontend_url: form.frontend_url,
       smtp_host: form.smtp_host,
       smtp_port: form.smtp_port,
       smtp_username: form.smtp_username,
@@ -8885,6 +8888,10 @@ async function saveSettings() {
     payload.default_platform_quotas = sanitizePlatformQuotasMap(form.default_platform_quotas);
     appendAuthSourceDefaultsToUpdateRequest(payload, authSourceDefaults);
 
+    if (form.frontend_url.trim() !== loadedFrontendURL) {
+      payload.frontend_url = form.frontend_url.trim();
+    }
+
     const updated = await adminAPI.settings.updateSettings(payload);
     if (
       updated.payment_guest_shop_enabled != null &&
@@ -8899,6 +8906,7 @@ async function saveSettings() {
       }
     }
     Object.assign(authSourceDefaults, buildAuthSourceDefaultsState(updated));
+    loadedFrontendURL = form.frontend_url.trim();
     form.cafe_coupon_config = normalizeCafeCouponConfig(updated.cafe_coupon_config);
     form.default_platform_quotas = normalizePlatformQuotasMap(updated.default_platform_quotas);
     registrationEmailSuffixWhitelistTags.value =

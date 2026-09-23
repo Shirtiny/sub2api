@@ -2,7 +2,7 @@
   <AuthLayout>
     <div class="space-y-6">
       <!-- Title -->
-      <div class="text-center">
+      <div v-if="!registrationRecovery" class="text-center">
         <h2 class="text-2xl font-bold text-content-primary">
           {{ t('auth.verifyYourEmail') }}
         </h2>
@@ -12,9 +12,11 @@
         </p>
       </div>
 
+      <RegistrationRecoveryNotice v-if="registrationRecovery" :mode="registrationRecovery" @login="goToLogin" />
+
       <!-- No Data Warning -->
       <div
-        v-if="!hasRegisterData"
+        v-else-if="!hasRegisterData"
         class="rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-800/50 dark:bg-amber-900/20"
       >
         <div class="flex items-start gap-3">
@@ -135,6 +137,7 @@
     <!-- Footer -->
     <template #footer>
       <button
+        v-if="registrationRecovery !== 'login'"
         @click="handleBack"
         class="flex items-center gap-2 text-gray-500 transition-colors hover:text-gray-700 dark:text-dark-400 dark:hover:text-gray-300"
       >
@@ -151,6 +154,7 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { AuthLayout } from '@/components/layout'
 import Icon from '@/components/icons/Icon.vue'
+import RegistrationRecoveryNotice from '@/components/auth/RegistrationRecoveryNotice.vue'
 import TurnstileWidget from '@/components/TurnstileWidget.vue'
 import { useAuthStore, useAppStore } from '@/stores'
 import {
@@ -162,7 +166,7 @@ import {
   sendVerifyCode,
 } from '@/api/auth'
 import { apiClient } from '@/api/client'
-import { buildAuthErrorMessage } from '@/utils/authError'
+import { buildAuthErrorMessage, getRegistrationRecoveryMode, type RegistrationRecoveryMode } from '@/utils/authError'
 import {
   formatRegistrationEmailSuffixWhitelistForMessage,
   isRegistrationEmailSuffixAllowed,
@@ -187,6 +191,8 @@ const appStore = useAppStore()
 const isLoading = ref<boolean>(false)
 const isSendingCode = ref<boolean>(false)
 const errorMessage = ref<string>('')
+const registrationRecovery = ref<RegistrationRecoveryMode | null>(null)
+const waitlistRegistration = ref(false)
 const codeSent = ref<boolean>(false)
 const verifyCode = ref<string>('')
 const countdown = ref<number>(0)
@@ -263,6 +269,7 @@ onMounted(async () => {
     try {
       const registerData = JSON.parse(registerDataStr)
       email.value = registerData.email || ''
+      waitlistRegistration.value = registerData.waitlist_registration === true
       password.value = registerData.password || ''
       initialTurnstileToken.value = registerData.turnstile_token || ''
       promoCode.value = registerData.promo_code || ''
@@ -396,6 +403,7 @@ function persistPendingOAuthSession(provider: string, redirect?: string): void {
 // ==================== Send Code ====================
 
 async function sendCode(): Promise<void> {
+  if (registrationRecovery.value) return
   isSendingCode.value = true
   errorMessage.value = ''
 
@@ -439,6 +447,7 @@ async function sendCode(): Promise<void> {
     showResendTurnstile.value = false
     resendTurnstileToken.value = ''
   } catch (error: unknown) {
+    if (recoverRegistration(error)) return
     errorMessage.value = buildAuthErrorMessage(error, {
       fallback: t('auth.sendCodeFailed'),
       t,
@@ -486,6 +495,7 @@ function validateForm(): boolean {
 }
 
 async function handleVerify(): Promise<void> {
+  if (registrationRecovery.value) return
   errorMessage.value = ''
 
   if (!validateForm()) {
@@ -550,6 +560,7 @@ async function handleVerify(): Promise<void> {
     // Redirect to dashboard
     await router.push(pendingRedirect.value || '/dashboard')
   } catch (error: unknown) {
+    if (recoverRegistration(error)) return
     errorMessage.value = buildAuthErrorMessage(error, {
       fallback: t('auth.verifyFailed'),
       t,
@@ -562,12 +573,41 @@ async function handleVerify(): Promise<void> {
   }
 }
 
+function recoverRegistration(error: unknown): boolean {
+  // OAuth binding has its own recovery and pending-session contract.
+  if (isPendingOAuthFlow() || pendingAuthToken.value) return false
+  const recovery = getRegistrationRecoveryMode(error)
+  if (!recovery) return false
+  registrationRecovery.value = recovery
+  clearRegistrationCredentials()
+  return true
+}
+
+function clearRegistrationCredentials(): void {
+  sessionStorage.removeItem('register_data')
+  password.value = ''
+  verifyCode.value = ''
+  initialTurnstileToken.value = ''
+  resendTurnstileToken.value = ''
+  codeSent.value = false
+  countdown.value = 0
+  if (countdownTimer) {
+    clearInterval(countdownTimer)
+    countdownTimer = null
+  }
+}
+
+function goToLogin(): void {
+  clearRegistrationCredentials()
+  void router.push('/login')
+}
+
 function handleBack(): void {
   // Clear session data
   sessionStorage.removeItem('register_data')
 
   // Go back to registration
-  router.push('/register')
+  void router.push(waitlistRegistration.value ? '/register?waitlist=1' : '/register')
 }
 
 function buildEmailSuffixNotAllowedMessage(): string {

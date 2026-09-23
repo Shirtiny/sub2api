@@ -57,6 +57,20 @@ func (r *waitlistApprovalRepoStub) HasRegistrationApproval(_ context.Context, em
 	return email != "" && email == r.allowedEmail, r.lookupErr
 }
 
+func (r *waitlistApprovalRepoStub) GetApprovedEntryByEmail(_ context.Context, email string) (*WaitlistEntry, error) {
+	if r.lookupErr != nil {
+		return nil, r.lookupErr
+	}
+	if email != "" && email == r.entry.Email && r.entry.ApprovedAt != nil {
+		return &r.entry, nil
+	}
+	if email != "" && email == r.allowedEmail {
+		now := time.Now()
+		return &WaitlistEntry{Email: email, ApprovedAt: &now}, nil
+	}
+	return nil, nil
+}
+
 type waitlistCacheSpy struct {
 	APIKeyAuthCacheInvalidator
 	users []int64
@@ -83,7 +97,9 @@ func TestWaitlistApprovalNotificationRetry(t *testing.T) {
 	require.True(t, repo.approvalSent)
 	require.Equal(t, "approved@example.com", mailer.to)
 	require.Equal(t, waitlistApprovalSubject, mailer.subject)
-	require.Contains(t, mailer.body, waitlistApprovalMessage)
+	require.Contains(t, mailer.body, waitlistExistingAccountApprovalMessage)
+	require.NotContains(t, mailer.body, "/register")
+	require.Contains(t, mailer.body, `href="https://example.com/login"`)
 	require.Contains(t, mailer.body, "Test &amp; Site")
 	require.NoError(t, svc.Approve(context.Background(), 1, 8))
 	require.Equal(t, 1, repo.approvals)
@@ -132,7 +148,7 @@ func TestWaitlistApprovalNoticeSurvivesBrowserDisconnect(t *testing.T) {
 }
 
 func TestWaitlistApprovalHTML(t *testing.T) {
-	body := waitlistApprovalHTML(`Site <script> & "x"`, "https://example.com/app/?untrusted=1#fragment")
+	body := waitlistApprovalHTML(`Site <script> & "x"`, "https://example.com/app/?untrusted=1#fragment", false)
 	require.Equal(t, 1, strings.Count(body, waitlistApprovalMessage))
 	require.Contains(t, body, "Site &lt;script&gt; &amp; &#34;x&#34;")
 	require.Contains(t, body, `href="https://example.com/app/register?waitlist=1"`)
@@ -141,9 +157,26 @@ func TestWaitlistApprovalHTML(t *testing.T) {
 	require.NotContains(t, body, "{{")
 	require.NotContains(t, body, "<script>")
 	for _, invalid := range []string{"", "javascript:alert(1)", "//example.com", "https://u:p@example.com", "/app", "https://"} {
-		body := waitlistApprovalHTML("", invalid)
+		body := waitlistApprovalHTML("", invalid, false)
 		require.NotContains(t, body, "href=")
 		require.Contains(t, body, "候补审批注册")
 		require.Contains(t, body, "Sub2API")
+	}
+}
+
+func TestWaitlistApprovalHTMLExistingAccount(t *testing.T) {
+	for _, base := range []string{"https://cafeshop.ai", ""} {
+		body := waitlistApprovalHTML("Café Shop", base, true)
+		require.Contains(t, body, waitlistExistingAccountApprovalMessage)
+		require.Contains(t, body, "无需重新注册")
+		require.NotContains(t, body, waitlistApprovalMessage)
+		require.NotContains(t, body, "/register")
+		require.NotContains(t, body, "验证邮箱并注册")
+		if base != "" {
+			require.Contains(t, body, `href="https://cafeshop.ai/login"`)
+			require.Equal(t, 1, strings.Count(body, "href="))
+		} else {
+			require.NotContains(t, body, "href=")
+		}
 	}
 }

@@ -352,6 +352,142 @@ func (_u *PaymentOrderUpdate) ClearPlanID() *PaymentOrderUpdate {
 	return _u
 }
 
+// SetPresaleStartsAt sets the "presale_starts_at" field.
+func (_u *PaymentOrderUpdate) SetPresaleStartsAt(v time.Time) *PaymentOrderUpdate {
+	_u.mutation.SetPresaleStartsAt(v)
+	return _u
+}
+
+// SetNillablePresaleStartsAt sets the "presale_starts_at" field if the given value is not nil.
+func (_u *PaymentOrderUpdate) SetNillablePresaleStartsAt(v *time.Time) *PaymentOrderUpdate {
+	if v != nil {
+		_u.SetPresaleStartsAt(*v)
+	}
+	return _u
+}
+
+// ClearPresaleStartsAt clears the value of the "presale_starts_at" field.
+func (_u *PaymentOrderUpdate) ClearPresaleStartsAt() *PaymentOrderUpdate {
+	_u.mutation.ClearPresaleStartsAt()
+	return _u
+}
+
+// SetPresaleExpiresAt sets the "presale_expires_at" field.
+func (_u *PaymentOrderUpdate) SetPresaleExpiresAt(v time.Time) *PaymentOrderUpdate {
+	_u.mutation.SetPresaleExpiresAt(v)
+	return _u
+}
+
+// SetNillablePresaleExpiresAt sets the "presale_expires_at" field if the given value is not nil.
+func (_u *PaymentOrderUpdate) SetNillablePresaleExpiresAt(v *time.Time) *PaymentOrderUpdate {
+	if v != nil {
+		_u.SetPresaleExpiresAt(*v)
+	}
+	return _u
+}
+
+// ClearPresaleExpiresAt clears the value of the "presale_expires_at" field.
+func (_u *PaymentOrderUpdate) ClearPresaleExpiresAt() *PaymentOrderUpdate {
+	_u.mutation.ClearPresaleExpiresAt()
+	return _u
+}
+
+// SetPresaleActivatedAt sets the "presale_activated_at" field.
+func (_u *PaymentOrderUpdate) SetPresaleActivatedAt(v time.Time) *PaymentOrderUpdate {
+	_u.mutation.SetPresaleActivatedAt(v)
+	return _u
+}
+
+// SetNillablePresaleActivatedAt sets the "presale_activated_at" field if the given value is not nil.
+func (_u *PaymentOrderUpdate) SetNillablePresaleActivatedAt(v *time.Time) *PaymentOrderUpdate {
+	if v != nil {
+		_u.SetPresaleActivatedAt(*v)
+	}
+	return _u
+}
+
+// ClearPresaleActivatedAt clears the value of the "presale_activated_at" field.
+func (_u *PaymentOrderUpdate) ClearPresaleActivatedAt() *PaymentOrderUpdate {
+	_u.mutation.ClearPresaleActivatedAt()
+	return _u
+}
+
+// SetPresaleSubscriptionID sets the "presale_subscription_id" field.
+func (_u *PaymentOrderUpdate) SetPresaleSubscriptionID(v int64) *PaymentOrderUpdate {
+	_u.mutation.ResetPresaleSubscriptionID()
+	_u.mutation.SetPresaleSubscriptionID(v)
+	return _u
+}
+
+// SetNillablePresaleSubscriptionID sets the "presale_subscription_id" field if the given value is not nil.
+func (_u *PaymentOrderUpdate) SetNillablePresaleSubscriptionID(v *int64) *PaymentOrderUpdate {
+	if v != nil {
+		_u.SetPresaleSubscriptionID(*v)
+	}
+	return _u
+}
+
+// AddPresaleSubscriptionID adds value to the "presale_subscription_id" field.
+func (_u *PaymentOrderUpdate) AddPresaleSubscriptionID(v int64) *PaymentOrderUpdate {
+	_u.mutation.AddPresaleSubscriptionID(v)
+	return _u
+}
+
+// ClearPresaleSubscriptionID clears the value of the "presale_subscription_id" field.
+func (_u *PaymentOrderUpdate) ClearPresaleSubscriptionID() *PaymentOrderUpdate {
+	_u.mutation.ClearPresaleSubscriptionID()
+	return _u
+}
+
+// SetPresaleRenewal sets the "presale_renewal" field.
+func (_u *PaymentOrderUpdate) SetPresaleRenewal(v bool) *PaymentOrderUpdate {
+	_u.mutation.SetPresaleRenewal(v)
+	return _u
+}
+
+// SetNillablePresaleRenewal sets the "presale_renewal" field if the given value is not nil.
+func (_u *PaymentOrderUpdate) SetNillablePresaleRenewal(v *bool) *PaymentOrderUpdate {
+	if v != nil {
+		_u.SetPresaleRenewal(*v)
+	}
+	return _u
+}
+
+// SetPresalePlanName sets the "presale_plan_name" field.
+func (_u *PaymentOrderUpdate) SetPresalePlanName(v string) *PaymentOrderUpdate {
+	_u.mutation.SetPresalePlanName(v)
+	return _u
+}
+
+// SetNillablePresalePlanName sets the "presale_plan_name" field if the given value is not nil.
+func (_u *PaymentOrderUpdate) SetNillablePresalePlanName(v *string) *PaymentOrderUpdate {
+	if v != nil {
+		_u.SetPresalePlanName(*v)
+	}
+	return _u
+}
+
+// SetPresaleResetCards sets the "presale_reset_cards" field.
+func (_u *PaymentOrderUpdate) SetPresaleResetCards(v int) *PaymentOrderUpdate {
+	_u.mutation.ResetPresaleResetCards()
+	_u.mutation.SetPresaleResetCards(v)
+	return _u
+}
+
+// SetNillablePresaleResetCards sets the "presale_reset_cards" field if the given value is not nil.
+func (_u *PaymentOrderUpdate) SetNillablePresaleResetCards(v *int) *PaymentOrderUpdate {
+	if v != nil {
+		_u.SetPresaleResetCards(*v)
+	}
+	return _u
+}
+
+// AddPresaleResetCards adds value to the "presale_reset_cards" field.
+func (_u *PaymentOrderUpdate) AddPresaleResetCards(v int) *PaymentOrderUpdate {
+	_u.mutation.AddPresaleResetCards(v)
+	return _u
+}
+
 // SetSubscriptionGroupID sets the "subscription_group_id" field.
 func (_u *PaymentOrderUpdate) SetSubscriptionGroupID(v int64) *PaymentOrderUpdate {
 	_u.mutation.ResetSubscriptionGroupID()
@@ -1067,6 +1203,16 @@ func (_u *PaymentOrderUpdate) check() error {
 			return &ValidationError{Name: "order_type", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.order_type": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.PresalePlanName(); ok {
+		if err := paymentorder.PresalePlanNameValidator(v); err != nil {
+			return &ValidationError{Name: "presale_plan_name", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.presale_plan_name": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.PresaleResetCards(); ok {
+		if err := paymentorder.PresaleResetCardsValidator(v); err != nil {
+			return &ValidationError{Name: "presale_reset_cards", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.presale_reset_cards": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.SubscriptionBonusDays(); ok {
 		if err := paymentorder.SubscriptionBonusDaysValidator(v); err != nil {
 			return &ValidationError{Name: "subscription_bonus_days", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.subscription_bonus_days": %w`, err)}
@@ -1213,6 +1359,45 @@ func (_u *PaymentOrderUpdate) sqlSave(ctx context.Context) (_node int, err error
 	}
 	if _u.mutation.PlanIDCleared() {
 		_spec.ClearField(paymentorder.FieldPlanID, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.PresaleStartsAt(); ok {
+		_spec.SetField(paymentorder.FieldPresaleStartsAt, field.TypeTime, value)
+	}
+	if _u.mutation.PresaleStartsAtCleared() {
+		_spec.ClearField(paymentorder.FieldPresaleStartsAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.PresaleExpiresAt(); ok {
+		_spec.SetField(paymentorder.FieldPresaleExpiresAt, field.TypeTime, value)
+	}
+	if _u.mutation.PresaleExpiresAtCleared() {
+		_spec.ClearField(paymentorder.FieldPresaleExpiresAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.PresaleActivatedAt(); ok {
+		_spec.SetField(paymentorder.FieldPresaleActivatedAt, field.TypeTime, value)
+	}
+	if _u.mutation.PresaleActivatedAtCleared() {
+		_spec.ClearField(paymentorder.FieldPresaleActivatedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.PresaleSubscriptionID(); ok {
+		_spec.SetField(paymentorder.FieldPresaleSubscriptionID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedPresaleSubscriptionID(); ok {
+		_spec.AddField(paymentorder.FieldPresaleSubscriptionID, field.TypeInt64, value)
+	}
+	if _u.mutation.PresaleSubscriptionIDCleared() {
+		_spec.ClearField(paymentorder.FieldPresaleSubscriptionID, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.PresaleRenewal(); ok {
+		_spec.SetField(paymentorder.FieldPresaleRenewal, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.PresalePlanName(); ok {
+		_spec.SetField(paymentorder.FieldPresalePlanName, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.PresaleResetCards(); ok {
+		_spec.SetField(paymentorder.FieldPresaleResetCards, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedPresaleResetCards(); ok {
+		_spec.AddField(paymentorder.FieldPresaleResetCards, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.SubscriptionGroupID(); ok {
 		_spec.SetField(paymentorder.FieldSubscriptionGroupID, field.TypeInt64, value)
@@ -1772,6 +1957,142 @@ func (_u *PaymentOrderUpdateOne) AddPlanID(v int64) *PaymentOrderUpdateOne {
 // ClearPlanID clears the value of the "plan_id" field.
 func (_u *PaymentOrderUpdateOne) ClearPlanID() *PaymentOrderUpdateOne {
 	_u.mutation.ClearPlanID()
+	return _u
+}
+
+// SetPresaleStartsAt sets the "presale_starts_at" field.
+func (_u *PaymentOrderUpdateOne) SetPresaleStartsAt(v time.Time) *PaymentOrderUpdateOne {
+	_u.mutation.SetPresaleStartsAt(v)
+	return _u
+}
+
+// SetNillablePresaleStartsAt sets the "presale_starts_at" field if the given value is not nil.
+func (_u *PaymentOrderUpdateOne) SetNillablePresaleStartsAt(v *time.Time) *PaymentOrderUpdateOne {
+	if v != nil {
+		_u.SetPresaleStartsAt(*v)
+	}
+	return _u
+}
+
+// ClearPresaleStartsAt clears the value of the "presale_starts_at" field.
+func (_u *PaymentOrderUpdateOne) ClearPresaleStartsAt() *PaymentOrderUpdateOne {
+	_u.mutation.ClearPresaleStartsAt()
+	return _u
+}
+
+// SetPresaleExpiresAt sets the "presale_expires_at" field.
+func (_u *PaymentOrderUpdateOne) SetPresaleExpiresAt(v time.Time) *PaymentOrderUpdateOne {
+	_u.mutation.SetPresaleExpiresAt(v)
+	return _u
+}
+
+// SetNillablePresaleExpiresAt sets the "presale_expires_at" field if the given value is not nil.
+func (_u *PaymentOrderUpdateOne) SetNillablePresaleExpiresAt(v *time.Time) *PaymentOrderUpdateOne {
+	if v != nil {
+		_u.SetPresaleExpiresAt(*v)
+	}
+	return _u
+}
+
+// ClearPresaleExpiresAt clears the value of the "presale_expires_at" field.
+func (_u *PaymentOrderUpdateOne) ClearPresaleExpiresAt() *PaymentOrderUpdateOne {
+	_u.mutation.ClearPresaleExpiresAt()
+	return _u
+}
+
+// SetPresaleActivatedAt sets the "presale_activated_at" field.
+func (_u *PaymentOrderUpdateOne) SetPresaleActivatedAt(v time.Time) *PaymentOrderUpdateOne {
+	_u.mutation.SetPresaleActivatedAt(v)
+	return _u
+}
+
+// SetNillablePresaleActivatedAt sets the "presale_activated_at" field if the given value is not nil.
+func (_u *PaymentOrderUpdateOne) SetNillablePresaleActivatedAt(v *time.Time) *PaymentOrderUpdateOne {
+	if v != nil {
+		_u.SetPresaleActivatedAt(*v)
+	}
+	return _u
+}
+
+// ClearPresaleActivatedAt clears the value of the "presale_activated_at" field.
+func (_u *PaymentOrderUpdateOne) ClearPresaleActivatedAt() *PaymentOrderUpdateOne {
+	_u.mutation.ClearPresaleActivatedAt()
+	return _u
+}
+
+// SetPresaleSubscriptionID sets the "presale_subscription_id" field.
+func (_u *PaymentOrderUpdateOne) SetPresaleSubscriptionID(v int64) *PaymentOrderUpdateOne {
+	_u.mutation.ResetPresaleSubscriptionID()
+	_u.mutation.SetPresaleSubscriptionID(v)
+	return _u
+}
+
+// SetNillablePresaleSubscriptionID sets the "presale_subscription_id" field if the given value is not nil.
+func (_u *PaymentOrderUpdateOne) SetNillablePresaleSubscriptionID(v *int64) *PaymentOrderUpdateOne {
+	if v != nil {
+		_u.SetPresaleSubscriptionID(*v)
+	}
+	return _u
+}
+
+// AddPresaleSubscriptionID adds value to the "presale_subscription_id" field.
+func (_u *PaymentOrderUpdateOne) AddPresaleSubscriptionID(v int64) *PaymentOrderUpdateOne {
+	_u.mutation.AddPresaleSubscriptionID(v)
+	return _u
+}
+
+// ClearPresaleSubscriptionID clears the value of the "presale_subscription_id" field.
+func (_u *PaymentOrderUpdateOne) ClearPresaleSubscriptionID() *PaymentOrderUpdateOne {
+	_u.mutation.ClearPresaleSubscriptionID()
+	return _u
+}
+
+// SetPresaleRenewal sets the "presale_renewal" field.
+func (_u *PaymentOrderUpdateOne) SetPresaleRenewal(v bool) *PaymentOrderUpdateOne {
+	_u.mutation.SetPresaleRenewal(v)
+	return _u
+}
+
+// SetNillablePresaleRenewal sets the "presale_renewal" field if the given value is not nil.
+func (_u *PaymentOrderUpdateOne) SetNillablePresaleRenewal(v *bool) *PaymentOrderUpdateOne {
+	if v != nil {
+		_u.SetPresaleRenewal(*v)
+	}
+	return _u
+}
+
+// SetPresalePlanName sets the "presale_plan_name" field.
+func (_u *PaymentOrderUpdateOne) SetPresalePlanName(v string) *PaymentOrderUpdateOne {
+	_u.mutation.SetPresalePlanName(v)
+	return _u
+}
+
+// SetNillablePresalePlanName sets the "presale_plan_name" field if the given value is not nil.
+func (_u *PaymentOrderUpdateOne) SetNillablePresalePlanName(v *string) *PaymentOrderUpdateOne {
+	if v != nil {
+		_u.SetPresalePlanName(*v)
+	}
+	return _u
+}
+
+// SetPresaleResetCards sets the "presale_reset_cards" field.
+func (_u *PaymentOrderUpdateOne) SetPresaleResetCards(v int) *PaymentOrderUpdateOne {
+	_u.mutation.ResetPresaleResetCards()
+	_u.mutation.SetPresaleResetCards(v)
+	return _u
+}
+
+// SetNillablePresaleResetCards sets the "presale_reset_cards" field if the given value is not nil.
+func (_u *PaymentOrderUpdateOne) SetNillablePresaleResetCards(v *int) *PaymentOrderUpdateOne {
+	if v != nil {
+		_u.SetPresaleResetCards(*v)
+	}
+	return _u
+}
+
+// AddPresaleResetCards adds value to the "presale_reset_cards" field.
+func (_u *PaymentOrderUpdateOne) AddPresaleResetCards(v int) *PaymentOrderUpdateOne {
+	_u.mutation.AddPresaleResetCards(v)
 	return _u
 }
 
@@ -2503,6 +2824,16 @@ func (_u *PaymentOrderUpdateOne) check() error {
 			return &ValidationError{Name: "order_type", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.order_type": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.PresalePlanName(); ok {
+		if err := paymentorder.PresalePlanNameValidator(v); err != nil {
+			return &ValidationError{Name: "presale_plan_name", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.presale_plan_name": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.PresaleResetCards(); ok {
+		if err := paymentorder.PresaleResetCardsValidator(v); err != nil {
+			return &ValidationError{Name: "presale_reset_cards", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.presale_reset_cards": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.SubscriptionBonusDays(); ok {
 		if err := paymentorder.SubscriptionBonusDaysValidator(v); err != nil {
 			return &ValidationError{Name: "subscription_bonus_days", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.subscription_bonus_days": %w`, err)}
@@ -2666,6 +2997,45 @@ func (_u *PaymentOrderUpdateOne) sqlSave(ctx context.Context) (_node *PaymentOrd
 	}
 	if _u.mutation.PlanIDCleared() {
 		_spec.ClearField(paymentorder.FieldPlanID, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.PresaleStartsAt(); ok {
+		_spec.SetField(paymentorder.FieldPresaleStartsAt, field.TypeTime, value)
+	}
+	if _u.mutation.PresaleStartsAtCleared() {
+		_spec.ClearField(paymentorder.FieldPresaleStartsAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.PresaleExpiresAt(); ok {
+		_spec.SetField(paymentorder.FieldPresaleExpiresAt, field.TypeTime, value)
+	}
+	if _u.mutation.PresaleExpiresAtCleared() {
+		_spec.ClearField(paymentorder.FieldPresaleExpiresAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.PresaleActivatedAt(); ok {
+		_spec.SetField(paymentorder.FieldPresaleActivatedAt, field.TypeTime, value)
+	}
+	if _u.mutation.PresaleActivatedAtCleared() {
+		_spec.ClearField(paymentorder.FieldPresaleActivatedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.PresaleSubscriptionID(); ok {
+		_spec.SetField(paymentorder.FieldPresaleSubscriptionID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedPresaleSubscriptionID(); ok {
+		_spec.AddField(paymentorder.FieldPresaleSubscriptionID, field.TypeInt64, value)
+	}
+	if _u.mutation.PresaleSubscriptionIDCleared() {
+		_spec.ClearField(paymentorder.FieldPresaleSubscriptionID, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.PresaleRenewal(); ok {
+		_spec.SetField(paymentorder.FieldPresaleRenewal, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.PresalePlanName(); ok {
+		_spec.SetField(paymentorder.FieldPresalePlanName, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.PresaleResetCards(); ok {
+		_spec.SetField(paymentorder.FieldPresaleResetCards, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedPresaleResetCards(); ok {
+		_spec.AddField(paymentorder.FieldPresaleResetCards, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.SubscriptionGroupID(); ok {
 		_spec.SetField(paymentorder.FieldSubscriptionGroupID, field.TypeInt64, value)

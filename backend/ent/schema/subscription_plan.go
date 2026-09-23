@@ -69,6 +69,10 @@ func (SubscriptionPlan) Fields() []ent.Field {
 			Default(""),
 		field.Bool("for_sale").
 			Default(true),
+		field.Bool("presale_enabled").Default(false),
+		field.Bool("presale_visible").Default(true),
+		field.String("presale_badge").MaxLen(40).Default(""),
+		field.Int("presale_reset_cards").Default(0).Min(0).Max(1000),
 		field.Int("sort_order").
 			Default(0),
 		field.Bool("custom_multiplier_enabled").

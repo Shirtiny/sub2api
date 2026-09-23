@@ -23005,6 +23005,15 @@ type PaymentOrderMutation struct {
 	order_type                                *string
 	plan_id                                   *int64
 	addplan_id                                *int64
+	presale_starts_at                         *time.Time
+	presale_expires_at                        *time.Time
+	presale_activated_at                      *time.Time
+	presale_subscription_id                   *int64
+	addpresale_subscription_id                *int64
+	presale_renewal                           *bool
+	presale_plan_name                         *string
+	presale_reset_cards                       *int
+	addpresale_reset_cards                    *int
 	subscription_group_id                     *int64
 	addsubscription_group_id                  *int64
 	subscription_days                         *int
@@ -23979,6 +23988,351 @@ func (m *PaymentOrderMutation) ResetPlanID() {
 	m.plan_id = nil
 	m.addplan_id = nil
 	delete(m.clearedFields, paymentorder.FieldPlanID)
+}
+
+// SetPresaleStartsAt sets the "presale_starts_at" field.
+func (m *PaymentOrderMutation) SetPresaleStartsAt(t time.Time) {
+	m.presale_starts_at = &t
+}
+
+// PresaleStartsAt returns the value of the "presale_starts_at" field in the mutation.
+func (m *PaymentOrderMutation) PresaleStartsAt() (r time.Time, exists bool) {
+	v := m.presale_starts_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPresaleStartsAt returns the old "presale_starts_at" field's value of the PaymentOrder entity.
+// If the PaymentOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PaymentOrderMutation) OldPresaleStartsAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPresaleStartsAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPresaleStartsAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPresaleStartsAt: %w", err)
+	}
+	return oldValue.PresaleStartsAt, nil
+}
+
+// ClearPresaleStartsAt clears the value of the "presale_starts_at" field.
+func (m *PaymentOrderMutation) ClearPresaleStartsAt() {
+	m.presale_starts_at = nil
+	m.clearedFields[paymentorder.FieldPresaleStartsAt] = struct{}{}
+}
+
+// PresaleStartsAtCleared returns if the "presale_starts_at" field was cleared in this mutation.
+func (m *PaymentOrderMutation) PresaleStartsAtCleared() bool {
+	_, ok := m.clearedFields[paymentorder.FieldPresaleStartsAt]
+	return ok
+}
+
+// ResetPresaleStartsAt resets all changes to the "presale_starts_at" field.
+func (m *PaymentOrderMutation) ResetPresaleStartsAt() {
+	m.presale_starts_at = nil
+	delete(m.clearedFields, paymentorder.FieldPresaleStartsAt)
+}
+
+// SetPresaleExpiresAt sets the "presale_expires_at" field.
+func (m *PaymentOrderMutation) SetPresaleExpiresAt(t time.Time) {
+	m.presale_expires_at = &t
+}
+
+// PresaleExpiresAt returns the value of the "presale_expires_at" field in the mutation.
+func (m *PaymentOrderMutation) PresaleExpiresAt() (r time.Time, exists bool) {
+	v := m.presale_expires_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPresaleExpiresAt returns the old "presale_expires_at" field's value of the PaymentOrder entity.
+// If the PaymentOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PaymentOrderMutation) OldPresaleExpiresAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPresaleExpiresAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPresaleExpiresAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPresaleExpiresAt: %w", err)
+	}
+	return oldValue.PresaleExpiresAt, nil
+}
+
+// ClearPresaleExpiresAt clears the value of the "presale_expires_at" field.
+func (m *PaymentOrderMutation) ClearPresaleExpiresAt() {
+	m.presale_expires_at = nil
+	m.clearedFields[paymentorder.FieldPresaleExpiresAt] = struct{}{}
+}
+
+// PresaleExpiresAtCleared returns if the "presale_expires_at" field was cleared in this mutation.
+func (m *PaymentOrderMutation) PresaleExpiresAtCleared() bool {
+	_, ok := m.clearedFields[paymentorder.FieldPresaleExpiresAt]
+	return ok
+}
+
+// ResetPresaleExpiresAt resets all changes to the "presale_expires_at" field.
+func (m *PaymentOrderMutation) ResetPresaleExpiresAt() {
+	m.presale_expires_at = nil
+	delete(m.clearedFields, paymentorder.FieldPresaleExpiresAt)
+}
+
+// SetPresaleActivatedAt sets the "presale_activated_at" field.
+func (m *PaymentOrderMutation) SetPresaleActivatedAt(t time.Time) {
+	m.presale_activated_at = &t
+}
+
+// PresaleActivatedAt returns the value of the "presale_activated_at" field in the mutation.
+func (m *PaymentOrderMutation) PresaleActivatedAt() (r time.Time, exists bool) {
+	v := m.presale_activated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPresaleActivatedAt returns the old "presale_activated_at" field's value of the PaymentOrder entity.
+// If the PaymentOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PaymentOrderMutation) OldPresaleActivatedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPresaleActivatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPresaleActivatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPresaleActivatedAt: %w", err)
+	}
+	return oldValue.PresaleActivatedAt, nil
+}
+
+// ClearPresaleActivatedAt clears the value of the "presale_activated_at" field.
+func (m *PaymentOrderMutation) ClearPresaleActivatedAt() {
+	m.presale_activated_at = nil
+	m.clearedFields[paymentorder.FieldPresaleActivatedAt] = struct{}{}
+}
+
+// PresaleActivatedAtCleared returns if the "presale_activated_at" field was cleared in this mutation.
+func (m *PaymentOrderMutation) PresaleActivatedAtCleared() bool {
+	_, ok := m.clearedFields[paymentorder.FieldPresaleActivatedAt]
+	return ok
+}
+
+// ResetPresaleActivatedAt resets all changes to the "presale_activated_at" field.
+func (m *PaymentOrderMutation) ResetPresaleActivatedAt() {
+	m.presale_activated_at = nil
+	delete(m.clearedFields, paymentorder.FieldPresaleActivatedAt)
+}
+
+// SetPresaleSubscriptionID sets the "presale_subscription_id" field.
+func (m *PaymentOrderMutation) SetPresaleSubscriptionID(i int64) {
+	m.presale_subscription_id = &i
+	m.addpresale_subscription_id = nil
+}
+
+// PresaleSubscriptionID returns the value of the "presale_subscription_id" field in the mutation.
+func (m *PaymentOrderMutation) PresaleSubscriptionID() (r int64, exists bool) {
+	v := m.presale_subscription_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPresaleSubscriptionID returns the old "presale_subscription_id" field's value of the PaymentOrder entity.
+// If the PaymentOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PaymentOrderMutation) OldPresaleSubscriptionID(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPresaleSubscriptionID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPresaleSubscriptionID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPresaleSubscriptionID: %w", err)
+	}
+	return oldValue.PresaleSubscriptionID, nil
+}
+
+// AddPresaleSubscriptionID adds i to the "presale_subscription_id" field.
+func (m *PaymentOrderMutation) AddPresaleSubscriptionID(i int64) {
+	if m.addpresale_subscription_id != nil {
+		*m.addpresale_subscription_id += i
+	} else {
+		m.addpresale_subscription_id = &i
+	}
+}
+
+// AddedPresaleSubscriptionID returns the value that was added to the "presale_subscription_id" field in this mutation.
+func (m *PaymentOrderMutation) AddedPresaleSubscriptionID() (r int64, exists bool) {
+	v := m.addpresale_subscription_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearPresaleSubscriptionID clears the value of the "presale_subscription_id" field.
+func (m *PaymentOrderMutation) ClearPresaleSubscriptionID() {
+	m.presale_subscription_id = nil
+	m.addpresale_subscription_id = nil
+	m.clearedFields[paymentorder.FieldPresaleSubscriptionID] = struct{}{}
+}
+
+// PresaleSubscriptionIDCleared returns if the "presale_subscription_id" field was cleared in this mutation.
+func (m *PaymentOrderMutation) PresaleSubscriptionIDCleared() bool {
+	_, ok := m.clearedFields[paymentorder.FieldPresaleSubscriptionID]
+	return ok
+}
+
+// ResetPresaleSubscriptionID resets all changes to the "presale_subscription_id" field.
+func (m *PaymentOrderMutation) ResetPresaleSubscriptionID() {
+	m.presale_subscription_id = nil
+	m.addpresale_subscription_id = nil
+	delete(m.clearedFields, paymentorder.FieldPresaleSubscriptionID)
+}
+
+// SetPresaleRenewal sets the "presale_renewal" field.
+func (m *PaymentOrderMutation) SetPresaleRenewal(b bool) {
+	m.presale_renewal = &b
+}
+
+// PresaleRenewal returns the value of the "presale_renewal" field in the mutation.
+func (m *PaymentOrderMutation) PresaleRenewal() (r bool, exists bool) {
+	v := m.presale_renewal
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPresaleRenewal returns the old "presale_renewal" field's value of the PaymentOrder entity.
+// If the PaymentOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PaymentOrderMutation) OldPresaleRenewal(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPresaleRenewal is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPresaleRenewal requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPresaleRenewal: %w", err)
+	}
+	return oldValue.PresaleRenewal, nil
+}
+
+// ResetPresaleRenewal resets all changes to the "presale_renewal" field.
+func (m *PaymentOrderMutation) ResetPresaleRenewal() {
+	m.presale_renewal = nil
+}
+
+// SetPresalePlanName sets the "presale_plan_name" field.
+func (m *PaymentOrderMutation) SetPresalePlanName(s string) {
+	m.presale_plan_name = &s
+}
+
+// PresalePlanName returns the value of the "presale_plan_name" field in the mutation.
+func (m *PaymentOrderMutation) PresalePlanName() (r string, exists bool) {
+	v := m.presale_plan_name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPresalePlanName returns the old "presale_plan_name" field's value of the PaymentOrder entity.
+// If the PaymentOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PaymentOrderMutation) OldPresalePlanName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPresalePlanName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPresalePlanName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPresalePlanName: %w", err)
+	}
+	return oldValue.PresalePlanName, nil
+}
+
+// ResetPresalePlanName resets all changes to the "presale_plan_name" field.
+func (m *PaymentOrderMutation) ResetPresalePlanName() {
+	m.presale_plan_name = nil
+}
+
+// SetPresaleResetCards sets the "presale_reset_cards" field.
+func (m *PaymentOrderMutation) SetPresaleResetCards(i int) {
+	m.presale_reset_cards = &i
+	m.addpresale_reset_cards = nil
+}
+
+// PresaleResetCards returns the value of the "presale_reset_cards" field in the mutation.
+func (m *PaymentOrderMutation) PresaleResetCards() (r int, exists bool) {
+	v := m.presale_reset_cards
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPresaleResetCards returns the old "presale_reset_cards" field's value of the PaymentOrder entity.
+// If the PaymentOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PaymentOrderMutation) OldPresaleResetCards(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPresaleResetCards is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPresaleResetCards requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPresaleResetCards: %w", err)
+	}
+	return oldValue.PresaleResetCards, nil
+}
+
+// AddPresaleResetCards adds i to the "presale_reset_cards" field.
+func (m *PaymentOrderMutation) AddPresaleResetCards(i int) {
+	if m.addpresale_reset_cards != nil {
+		*m.addpresale_reset_cards += i
+	} else {
+		m.addpresale_reset_cards = &i
+	}
+}
+
+// AddedPresaleResetCards returns the value that was added to the "presale_reset_cards" field in this mutation.
+func (m *PaymentOrderMutation) AddedPresaleResetCards() (r int, exists bool) {
+	v := m.addpresale_reset_cards
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetPresaleResetCards resets all changes to the "presale_reset_cards" field.
+func (m *PaymentOrderMutation) ResetPresaleResetCards() {
+	m.presale_reset_cards = nil
+	m.addpresale_reset_cards = nil
 }
 
 // SetSubscriptionGroupID sets the "subscription_group_id" field.
@@ -25695,7 +26049,7 @@ func (m *PaymentOrderMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PaymentOrderMutation) Fields() []string {
-	fields := make([]string, 0, 50)
+	fields := make([]string, 0, 57)
 	if m.user != nil {
 		fields = append(fields, paymentorder.FieldUserID)
 	}
@@ -25749,6 +26103,27 @@ func (m *PaymentOrderMutation) Fields() []string {
 	}
 	if m.plan_id != nil {
 		fields = append(fields, paymentorder.FieldPlanID)
+	}
+	if m.presale_starts_at != nil {
+		fields = append(fields, paymentorder.FieldPresaleStartsAt)
+	}
+	if m.presale_expires_at != nil {
+		fields = append(fields, paymentorder.FieldPresaleExpiresAt)
+	}
+	if m.presale_activated_at != nil {
+		fields = append(fields, paymentorder.FieldPresaleActivatedAt)
+	}
+	if m.presale_subscription_id != nil {
+		fields = append(fields, paymentorder.FieldPresaleSubscriptionID)
+	}
+	if m.presale_renewal != nil {
+		fields = append(fields, paymentorder.FieldPresaleRenewal)
+	}
+	if m.presale_plan_name != nil {
+		fields = append(fields, paymentorder.FieldPresalePlanName)
+	}
+	if m.presale_reset_cards != nil {
+		fields = append(fields, paymentorder.FieldPresaleResetCards)
 	}
 	if m.subscription_group_id != nil {
 		fields = append(fields, paymentorder.FieldSubscriptionGroupID)
@@ -25890,6 +26265,20 @@ func (m *PaymentOrderMutation) Field(name string) (ent.Value, bool) {
 		return m.OrderType()
 	case paymentorder.FieldPlanID:
 		return m.PlanID()
+	case paymentorder.FieldPresaleStartsAt:
+		return m.PresaleStartsAt()
+	case paymentorder.FieldPresaleExpiresAt:
+		return m.PresaleExpiresAt()
+	case paymentorder.FieldPresaleActivatedAt:
+		return m.PresaleActivatedAt()
+	case paymentorder.FieldPresaleSubscriptionID:
+		return m.PresaleSubscriptionID()
+	case paymentorder.FieldPresaleRenewal:
+		return m.PresaleRenewal()
+	case paymentorder.FieldPresalePlanName:
+		return m.PresalePlanName()
+	case paymentorder.FieldPresaleResetCards:
+		return m.PresaleResetCards()
 	case paymentorder.FieldSubscriptionGroupID:
 		return m.SubscriptionGroupID()
 	case paymentorder.FieldSubscriptionDays:
@@ -25999,6 +26388,20 @@ func (m *PaymentOrderMutation) OldField(ctx context.Context, name string) (ent.V
 		return m.OldOrderType(ctx)
 	case paymentorder.FieldPlanID:
 		return m.OldPlanID(ctx)
+	case paymentorder.FieldPresaleStartsAt:
+		return m.OldPresaleStartsAt(ctx)
+	case paymentorder.FieldPresaleExpiresAt:
+		return m.OldPresaleExpiresAt(ctx)
+	case paymentorder.FieldPresaleActivatedAt:
+		return m.OldPresaleActivatedAt(ctx)
+	case paymentorder.FieldPresaleSubscriptionID:
+		return m.OldPresaleSubscriptionID(ctx)
+	case paymentorder.FieldPresaleRenewal:
+		return m.OldPresaleRenewal(ctx)
+	case paymentorder.FieldPresalePlanName:
+		return m.OldPresalePlanName(ctx)
+	case paymentorder.FieldPresaleResetCards:
+		return m.OldPresaleResetCards(ctx)
 	case paymentorder.FieldSubscriptionGroupID:
 		return m.OldSubscriptionGroupID(ctx)
 	case paymentorder.FieldSubscriptionDays:
@@ -26197,6 +26600,55 @@ func (m *PaymentOrderMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetPlanID(v)
+		return nil
+	case paymentorder.FieldPresaleStartsAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPresaleStartsAt(v)
+		return nil
+	case paymentorder.FieldPresaleExpiresAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPresaleExpiresAt(v)
+		return nil
+	case paymentorder.FieldPresaleActivatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPresaleActivatedAt(v)
+		return nil
+	case paymentorder.FieldPresaleSubscriptionID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPresaleSubscriptionID(v)
+		return nil
+	case paymentorder.FieldPresaleRenewal:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPresaleRenewal(v)
+		return nil
+	case paymentorder.FieldPresalePlanName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPresalePlanName(v)
+		return nil
+	case paymentorder.FieldPresaleResetCards:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPresaleResetCards(v)
 		return nil
 	case paymentorder.FieldSubscriptionGroupID:
 		v, ok := value.(int64)
@@ -26445,6 +26897,12 @@ func (m *PaymentOrderMutation) AddedFields() []string {
 	if m.addplan_id != nil {
 		fields = append(fields, paymentorder.FieldPlanID)
 	}
+	if m.addpresale_subscription_id != nil {
+		fields = append(fields, paymentorder.FieldPresaleSubscriptionID)
+	}
+	if m.addpresale_reset_cards != nil {
+		fields = append(fields, paymentorder.FieldPresaleResetCards)
+	}
 	if m.addsubscription_group_id != nil {
 		fields = append(fields, paymentorder.FieldSubscriptionGroupID)
 	}
@@ -26496,6 +26954,10 @@ func (m *PaymentOrderMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedCafeCouponDiscount()
 	case paymentorder.FieldPlanID:
 		return m.AddedPlanID()
+	case paymentorder.FieldPresaleSubscriptionID:
+		return m.AddedPresaleSubscriptionID()
+	case paymentorder.FieldPresaleResetCards:
+		return m.AddedPresaleResetCards()
 	case paymentorder.FieldSubscriptionGroupID:
 		return m.AddedSubscriptionGroupID()
 	case paymentorder.FieldSubscriptionDays:
@@ -26561,6 +27023,20 @@ func (m *PaymentOrderMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddPlanID(v)
+		return nil
+	case paymentorder.FieldPresaleSubscriptionID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddPresaleSubscriptionID(v)
+		return nil
+	case paymentorder.FieldPresaleResetCards:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddPresaleResetCards(v)
 		return nil
 	case paymentorder.FieldSubscriptionGroupID:
 		v, ok := value.(int64)
@@ -26665,6 +27141,18 @@ func (m *PaymentOrderMutation) ClearedFields() []string {
 	if m.FieldCleared(paymentorder.FieldPlanID) {
 		fields = append(fields, paymentorder.FieldPlanID)
 	}
+	if m.FieldCleared(paymentorder.FieldPresaleStartsAt) {
+		fields = append(fields, paymentorder.FieldPresaleStartsAt)
+	}
+	if m.FieldCleared(paymentorder.FieldPresaleExpiresAt) {
+		fields = append(fields, paymentorder.FieldPresaleExpiresAt)
+	}
+	if m.FieldCleared(paymentorder.FieldPresaleActivatedAt) {
+		fields = append(fields, paymentorder.FieldPresaleActivatedAt)
+	}
+	if m.FieldCleared(paymentorder.FieldPresaleSubscriptionID) {
+		fields = append(fields, paymentorder.FieldPresaleSubscriptionID)
+	}
 	if m.FieldCleared(paymentorder.FieldSubscriptionGroupID) {
 		fields = append(fields, paymentorder.FieldSubscriptionGroupID)
 	}
@@ -26759,6 +27247,18 @@ func (m *PaymentOrderMutation) ClearField(name string) error {
 		return nil
 	case paymentorder.FieldPlanID:
 		m.ClearPlanID()
+		return nil
+	case paymentorder.FieldPresaleStartsAt:
+		m.ClearPresaleStartsAt()
+		return nil
+	case paymentorder.FieldPresaleExpiresAt:
+		m.ClearPresaleExpiresAt()
+		return nil
+	case paymentorder.FieldPresaleActivatedAt:
+		m.ClearPresaleActivatedAt()
+		return nil
+	case paymentorder.FieldPresaleSubscriptionID:
+		m.ClearPresaleSubscriptionID()
 		return nil
 	case paymentorder.FieldSubscriptionGroupID:
 		m.ClearSubscriptionGroupID()
@@ -26884,6 +27384,27 @@ func (m *PaymentOrderMutation) ResetField(name string) error {
 		return nil
 	case paymentorder.FieldPlanID:
 		m.ResetPlanID()
+		return nil
+	case paymentorder.FieldPresaleStartsAt:
+		m.ResetPresaleStartsAt()
+		return nil
+	case paymentorder.FieldPresaleExpiresAt:
+		m.ResetPresaleExpiresAt()
+		return nil
+	case paymentorder.FieldPresaleActivatedAt:
+		m.ResetPresaleActivatedAt()
+		return nil
+	case paymentorder.FieldPresaleSubscriptionID:
+		m.ResetPresaleSubscriptionID()
+		return nil
+	case paymentorder.FieldPresaleRenewal:
+		m.ResetPresaleRenewal()
+		return nil
+	case paymentorder.FieldPresalePlanName:
+		m.ResetPresalePlanName()
+		return nil
+	case paymentorder.FieldPresaleResetCards:
+		m.ResetPresaleResetCards()
 		return nil
 	case paymentorder.FieldSubscriptionGroupID:
 		m.ResetSubscriptionGroupID()
@@ -38982,6 +39503,11 @@ type SubscriptionPlanMutation struct {
 	features                     *string
 	product_name                 *string
 	for_sale                     *bool
+	presale_enabled              *bool
+	presale_visible              *bool
+	presale_badge                *string
+	presale_reset_cards          *int
+	addpresale_reset_cards       *int
 	sort_order                   *int
 	addsort_order                *int
 	custom_multiplier_enabled    *bool
@@ -39697,6 +40223,170 @@ func (m *SubscriptionPlanMutation) ResetForSale() {
 	m.for_sale = nil
 }
 
+// SetPresaleEnabled sets the "presale_enabled" field.
+func (m *SubscriptionPlanMutation) SetPresaleEnabled(b bool) {
+	m.presale_enabled = &b
+}
+
+// PresaleEnabled returns the value of the "presale_enabled" field in the mutation.
+func (m *SubscriptionPlanMutation) PresaleEnabled() (r bool, exists bool) {
+	v := m.presale_enabled
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPresaleEnabled returns the old "presale_enabled" field's value of the SubscriptionPlan entity.
+// If the SubscriptionPlan object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SubscriptionPlanMutation) OldPresaleEnabled(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPresaleEnabled is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPresaleEnabled requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPresaleEnabled: %w", err)
+	}
+	return oldValue.PresaleEnabled, nil
+}
+
+// ResetPresaleEnabled resets all changes to the "presale_enabled" field.
+func (m *SubscriptionPlanMutation) ResetPresaleEnabled() {
+	m.presale_enabled = nil
+}
+
+// SetPresaleVisible sets the "presale_visible" field.
+func (m *SubscriptionPlanMutation) SetPresaleVisible(b bool) {
+	m.presale_visible = &b
+}
+
+// PresaleVisible returns the value of the "presale_visible" field in the mutation.
+func (m *SubscriptionPlanMutation) PresaleVisible() (r bool, exists bool) {
+	v := m.presale_visible
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPresaleVisible returns the old "presale_visible" field's value of the SubscriptionPlan entity.
+// If the SubscriptionPlan object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SubscriptionPlanMutation) OldPresaleVisible(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPresaleVisible is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPresaleVisible requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPresaleVisible: %w", err)
+	}
+	return oldValue.PresaleVisible, nil
+}
+
+// ResetPresaleVisible resets all changes to the "presale_visible" field.
+func (m *SubscriptionPlanMutation) ResetPresaleVisible() {
+	m.presale_visible = nil
+}
+
+// SetPresaleBadge sets the "presale_badge" field.
+func (m *SubscriptionPlanMutation) SetPresaleBadge(s string) {
+	m.presale_badge = &s
+}
+
+// PresaleBadge returns the value of the "presale_badge" field in the mutation.
+func (m *SubscriptionPlanMutation) PresaleBadge() (r string, exists bool) {
+	v := m.presale_badge
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPresaleBadge returns the old "presale_badge" field's value of the SubscriptionPlan entity.
+// If the SubscriptionPlan object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SubscriptionPlanMutation) OldPresaleBadge(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPresaleBadge is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPresaleBadge requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPresaleBadge: %w", err)
+	}
+	return oldValue.PresaleBadge, nil
+}
+
+// ResetPresaleBadge resets all changes to the "presale_badge" field.
+func (m *SubscriptionPlanMutation) ResetPresaleBadge() {
+	m.presale_badge = nil
+}
+
+// SetPresaleResetCards sets the "presale_reset_cards" field.
+func (m *SubscriptionPlanMutation) SetPresaleResetCards(i int) {
+	m.presale_reset_cards = &i
+	m.addpresale_reset_cards = nil
+}
+
+// PresaleResetCards returns the value of the "presale_reset_cards" field in the mutation.
+func (m *SubscriptionPlanMutation) PresaleResetCards() (r int, exists bool) {
+	v := m.presale_reset_cards
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPresaleResetCards returns the old "presale_reset_cards" field's value of the SubscriptionPlan entity.
+// If the SubscriptionPlan object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SubscriptionPlanMutation) OldPresaleResetCards(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPresaleResetCards is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPresaleResetCards requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPresaleResetCards: %w", err)
+	}
+	return oldValue.PresaleResetCards, nil
+}
+
+// AddPresaleResetCards adds i to the "presale_reset_cards" field.
+func (m *SubscriptionPlanMutation) AddPresaleResetCards(i int) {
+	if m.addpresale_reset_cards != nil {
+		*m.addpresale_reset_cards += i
+	} else {
+		m.addpresale_reset_cards = &i
+	}
+}
+
+// AddedPresaleResetCards returns the value that was added to the "presale_reset_cards" field in this mutation.
+func (m *SubscriptionPlanMutation) AddedPresaleResetCards() (r int, exists bool) {
+	v := m.addpresale_reset_cards
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetPresaleResetCards resets all changes to the "presale_reset_cards" field.
+func (m *SubscriptionPlanMutation) ResetPresaleResetCards() {
+	m.presale_reset_cards = nil
+	m.addpresale_reset_cards = nil
+}
+
 // SetSortOrder sets the "sort_order" field.
 func (m *SubscriptionPlanMutation) SetSortOrder(i int) {
 	m.sort_order = &i
@@ -40007,7 +40697,7 @@ func (m *SubscriptionPlanMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *SubscriptionPlanMutation) Fields() []string {
-	fields := make([]string, 0, 19)
+	fields := make([]string, 0, 23)
 	if m.group_id != nil {
 		fields = append(fields, subscriptionplan.FieldGroupID)
 	}
@@ -40046,6 +40736,18 @@ func (m *SubscriptionPlanMutation) Fields() []string {
 	}
 	if m.for_sale != nil {
 		fields = append(fields, subscriptionplan.FieldForSale)
+	}
+	if m.presale_enabled != nil {
+		fields = append(fields, subscriptionplan.FieldPresaleEnabled)
+	}
+	if m.presale_visible != nil {
+		fields = append(fields, subscriptionplan.FieldPresaleVisible)
+	}
+	if m.presale_badge != nil {
+		fields = append(fields, subscriptionplan.FieldPresaleBadge)
+	}
+	if m.presale_reset_cards != nil {
+		fields = append(fields, subscriptionplan.FieldPresaleResetCards)
 	}
 	if m.sort_order != nil {
 		fields = append(fields, subscriptionplan.FieldSortOrder)
@@ -40099,6 +40801,14 @@ func (m *SubscriptionPlanMutation) Field(name string) (ent.Value, bool) {
 		return m.ProductName()
 	case subscriptionplan.FieldForSale:
 		return m.ForSale()
+	case subscriptionplan.FieldPresaleEnabled:
+		return m.PresaleEnabled()
+	case subscriptionplan.FieldPresaleVisible:
+		return m.PresaleVisible()
+	case subscriptionplan.FieldPresaleBadge:
+		return m.PresaleBadge()
+	case subscriptionplan.FieldPresaleResetCards:
+		return m.PresaleResetCards()
 	case subscriptionplan.FieldSortOrder:
 		return m.SortOrder()
 	case subscriptionplan.FieldCustomMultiplierEnabled:
@@ -40146,6 +40856,14 @@ func (m *SubscriptionPlanMutation) OldField(ctx context.Context, name string) (e
 		return m.OldProductName(ctx)
 	case subscriptionplan.FieldForSale:
 		return m.OldForSale(ctx)
+	case subscriptionplan.FieldPresaleEnabled:
+		return m.OldPresaleEnabled(ctx)
+	case subscriptionplan.FieldPresaleVisible:
+		return m.OldPresaleVisible(ctx)
+	case subscriptionplan.FieldPresaleBadge:
+		return m.OldPresaleBadge(ctx)
+	case subscriptionplan.FieldPresaleResetCards:
+		return m.OldPresaleResetCards(ctx)
 	case subscriptionplan.FieldSortOrder:
 		return m.OldSortOrder(ctx)
 	case subscriptionplan.FieldCustomMultiplierEnabled:
@@ -40258,6 +40976,34 @@ func (m *SubscriptionPlanMutation) SetField(name string, value ent.Value) error 
 		}
 		m.SetForSale(v)
 		return nil
+	case subscriptionplan.FieldPresaleEnabled:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPresaleEnabled(v)
+		return nil
+	case subscriptionplan.FieldPresaleVisible:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPresaleVisible(v)
+		return nil
+	case subscriptionplan.FieldPresaleBadge:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPresaleBadge(v)
+		return nil
+	case subscriptionplan.FieldPresaleResetCards:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPresaleResetCards(v)
+		return nil
 	case subscriptionplan.FieldSortOrder:
 		v, ok := value.(int)
 		if !ok {
@@ -40326,6 +41072,9 @@ func (m *SubscriptionPlanMutation) AddedFields() []string {
 	if m.addearly_reset_duration_days != nil {
 		fields = append(fields, subscriptionplan.FieldEarlyResetDurationDays)
 	}
+	if m.addpresale_reset_cards != nil {
+		fields = append(fields, subscriptionplan.FieldPresaleResetCards)
+	}
 	if m.addsort_order != nil {
 		fields = append(fields, subscriptionplan.FieldSortOrder)
 	}
@@ -40355,6 +41104,8 @@ func (m *SubscriptionPlanMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedConcurrency()
 	case subscriptionplan.FieldEarlyResetDurationDays:
 		return m.AddedEarlyResetDurationDays()
+	case subscriptionplan.FieldPresaleResetCards:
+		return m.AddedPresaleResetCards()
 	case subscriptionplan.FieldSortOrder:
 		return m.AddedSortOrder()
 	case subscriptionplan.FieldCustomMultiplierMin:
@@ -40411,6 +41162,13 @@ func (m *SubscriptionPlanMutation) AddField(name string, value ent.Value) error 
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddEarlyResetDurationDays(v)
+		return nil
+	case subscriptionplan.FieldPresaleResetCards:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddPresaleResetCards(v)
 		return nil
 	case subscriptionplan.FieldSortOrder:
 		v, ok := value.(int)
@@ -40507,6 +41265,18 @@ func (m *SubscriptionPlanMutation) ResetField(name string) error {
 		return nil
 	case subscriptionplan.FieldForSale:
 		m.ResetForSale()
+		return nil
+	case subscriptionplan.FieldPresaleEnabled:
+		m.ResetPresaleEnabled()
+		return nil
+	case subscriptionplan.FieldPresaleVisible:
+		m.ResetPresaleVisible()
+		return nil
+	case subscriptionplan.FieldPresaleBadge:
+		m.ResetPresaleBadge()
+		return nil
+	case subscriptionplan.FieldPresaleResetCards:
+		m.ResetPresaleResetCards()
 		return nil
 	case subscriptionplan.FieldSortOrder:
 		m.ResetSortOrder()

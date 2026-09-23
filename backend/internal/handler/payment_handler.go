@@ -228,7 +228,8 @@ func (h *PaymentHandler) GetCheckoutInfo(c *gin.Context) {
 	for _, p := range plans {
 		gi := groupInfo[p.GroupID]
 		planList = append(planList, checkoutPlan{
-			ID: int64(p.ID), GroupID: p.GroupID,
+			PresaleEnabled: p.PresaleEnabled,
+			ID:             int64(p.ID), GroupID: p.GroupID,
 			GroupPlatform: gi.Platform, GroupName: gi.Name,
 			RateMultiplier: gi.RateMultiplier, DailyLimitUSD: gi.DailyLimitUSD,
 			WeeklyLimitUSD: gi.WeeklyLimitUSD, MonthlyLimitUSD: gi.MonthlyLimitUSD,
@@ -287,6 +288,7 @@ type checkoutInfoResponse struct {
 }
 
 type checkoutPlan struct {
+	PresaleEnabled          bool                              `json:"presale_enabled"`
 	ID                      int64                             `json:"id"`
 	GroupID                 int64                             `json:"group_id"`
 	GroupPlatform           string                            `json:"group_platform"`
@@ -369,11 +371,12 @@ type CafeCouponInfoResponse struct {
 }
 
 type CafeCouponPreviewRequest struct {
-	Code       string  `json:"code" binding:"required"`
-	Amount     float64 `json:"amount"`
-	OrderType  string  `json:"order_type"`
-	PlanID     int64   `json:"plan_id"`
-	Multiplier int     `json:"multiplier"`
+	PresaleMonth string  `json:"presale_month,omitempty"`
+	Code         string  `json:"code" binding:"required"`
+	Amount       float64 `json:"amount"`
+	OrderType    string  `json:"order_type"`
+	PlanID       int64   `json:"plan_id"`
+	Multiplier   int     `json:"multiplier"`
 }
 
 type CafeCouponPreviewResponse struct {
@@ -469,6 +472,7 @@ func (h *PaymentHandler) previewCafeCoupon(c *gin.Context) {
 		return
 	}
 	preview, err := h.paymentService.PreviewCafeCouponForOrder(c.Request.Context(), service.CreateOrderRequest{
+		PresaleMonth:   req.PresaleMonth,
 		UserID:         subject.UserID,
 		Amount:         req.Amount,
 		OrderType:      req.OrderType,
@@ -560,6 +564,7 @@ func cafeCouponDisplayName(couponType string, value float64) string {
 
 // CreateOrderRequest is the request body for creating a payment order.
 type CreateOrderRequest struct {
+	PresaleMonth                        string  `json:"presale_month"`
 	Amount                              float64 `json:"amount"`
 	PaymentType                         string  `json:"payment_type" binding:"required"`
 	OpenID                              string  `json:"openid"`
@@ -625,6 +630,7 @@ func (h *PaymentHandler) CreateOrder(c *gin.Context) {
 		mobile = *req.IsMobile
 	}
 	svcReq := service.CreateOrderRequest{
+		PresaleMonth:                        req.PresaleMonth,
 		UserID:                              subject.UserID,
 		Amount:                              req.Amount,
 		PaymentType:                         req.PaymentType,
@@ -656,6 +662,7 @@ func (h *PaymentHandler) CreateOrder(c *gin.Context) {
 }
 
 type paymentCreateOrderIdempotencyRequest struct {
+	PresaleMonth                        string  `json:"presale_month,omitempty"`
 	Amount                              float64 `json:"amount"`
 	PaymentType                         string  `json:"payment_type"`
 	OpenID                              string  `json:"openid,omitempty"`
@@ -672,6 +679,7 @@ type paymentCreateOrderIdempotencyRequest struct {
 
 func paymentCreateOrderIdempotencyPayload(req service.CreateOrderRequest) paymentCreateOrderIdempotencyRequest {
 	return paymentCreateOrderIdempotencyRequest{
+		PresaleMonth:                        req.PresaleMonth,
 		Amount:                              req.Amount,
 		PaymentType:                         req.PaymentType,
 		OpenID:                              req.OpenID,
@@ -734,6 +742,7 @@ func applyWeChatPaymentResumeClaims(req *CreateOrderRequest, claims *service.WeC
 	}
 	req.CafeCouponCode = strings.TrimSpace(claims.CafeCouponCode)
 	req.ExpectedSubscriptionBonusActivityID = claims.ExpectedSubscriptionBonusActivityID
+	req.PresaleMonth = claims.PresaleMonth
 	return nil
 }
 
@@ -806,7 +815,8 @@ func (h *PaymentHandler) CancelOrder(c *gin.Context) {
 
 // RefundRequestBody is the request body for requesting a refund.
 type RefundRequestBody struct {
-	Reason string `json:"reason"`
+	ExpectedRefundAmount *float64 `json:"expected_refund_amount"`
+	Reason               string   `json:"reason"`
 }
 
 // RequestRefund submits a refund request for a completed order.
@@ -829,7 +839,11 @@ func (h *PaymentHandler) RequestRefund(c *gin.Context) {
 		return
 	}
 
-	if err := h.paymentService.RequestRefund(c.Request.Context(), orderID, subject.UserID, req.Reason); err != nil {
+	var expected []float64
+	if req.ExpectedRefundAmount != nil {
+		expected = append(expected, *req.ExpectedRefundAmount)
+	}
+	if err := h.paymentService.RequestRefund(c.Request.Context(), orderID, subject.UserID, req.Reason, expected...); err != nil {
 		response.ErrorFrom(c, err)
 		return
 	}
@@ -881,6 +895,7 @@ func (h *PaymentHandler) VerifyOrder(c *gin.Context) {
 // PublicOrderResult is the limited order info returned by the public verify endpoint.
 // No user details are exposed — only payment status information.
 type PublicOrderResult struct {
+	PresaleOrderInfo
 	ID                  int64      `json:"id"`
 	OutTradeNo          string     `json:"out_trade_no"`
 	Amount              float64    `json:"amount"`
@@ -905,6 +920,7 @@ type PublicOrderResult struct {
 
 func buildPublicOrderResult(order *dbent.PaymentOrder) PublicOrderResult {
 	return PublicOrderResult{
+		PresaleOrderInfo:    presaleOrderInfo(order),
 		ID:                  order.ID,
 		OutTradeNo:          order.OutTradeNo,
 		Amount:              order.Amount,
@@ -986,6 +1002,7 @@ func isMobile(c *gin.Context) bool {
 }
 
 type PaymentOrderResult struct {
+	PresaleOrderInfo
 	ID                              int64      `json:"id"`
 	UserID                          int64      `json:"user_id"`
 	Amount                          float64    `json:"amount"`
@@ -1030,6 +1047,7 @@ func sanitizePaymentOrderForResponse(order *dbent.PaymentOrder) *PaymentOrderRes
 		return nil
 	}
 	return &PaymentOrderResult{
+		PresaleOrderInfo:                presaleOrderInfo(order),
 		ID:                              order.ID,
 		UserID:                          order.UserID,
 		Amount:                          order.Amount,

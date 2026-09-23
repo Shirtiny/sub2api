@@ -16,11 +16,13 @@ var ErrWaitlistConfirmationFailed = infraerrors.ServiceUnavailable("WAITLIST_CON
 var ErrWaitlistNotFound = infraerrors.NotFound("WAITLIST_NOT_FOUND", "Waiting list application not found")
 var ErrWaitlistAccountConflict = infraerrors.Conflict("WAITLIST_ACCOUNT_CONFLICT", "Multiple accounts match this email. Please resolve the conflict before approving")
 var ErrWaitlistApprovalNoticeFailed = infraerrors.ServiceUnavailable("WAITLIST_APPROVAL_NOTICE_FAILED", "Access has been granted, but the notification email is not complete. Please retry the notification")
+var ErrWaitlistSignInRequired = infraerrors.Conflict("WAITLIST_SIGN_IN_REQUIRED", "This approval is already linked to an account. Please sign in with your existing account instead of registering again")
 
 const waitlistConfirmationSubject = "Waiting List 申请成功"
 const waitlistConfirmationMessage = "欢迎，您已经加入到Waiting List，请耐心等待。关注邮件消息，开放后会即时通知。"
 const waitlistApprovalSubject = "访问权限已开通"
 const waitlistApprovalMessage = "您已获得访问权限，可以注册或进入控制台了。"
+const waitlistExistingAccountApprovalMessage = "您已获得访问权限，请使用原账号登录并进入控制台，无需重新注册。"
 
 // Longer than the bounded SMTP dial / I/O operation; abandoned attempts can be retried.
 const WaitlistConfirmationLease = 2 * time.Minute
@@ -48,6 +50,7 @@ type WaitlistRepository interface {
 	ClaimApprovalNotice(ctx context.Context, id int64, attempt time.Time) (bool, error)
 	FinishApprovalNotice(ctx context.Context, id int64, attempt time.Time, sent bool) error
 	HasRegistrationApproval(ctx context.Context, email string) (bool, error)
+	GetApprovedEntryByEmail(ctx context.Context, email string) (*WaitlistEntry, error)
 	ConsumeRegistrationApproval(ctx context.Context, email string, userID int64) error
 }
 
@@ -163,7 +166,7 @@ func (s *WaitlistService) Approve(ctx context.Context, id, adminID int64) error 
 	if !claimed {
 		return nil
 	}
-	body := waitlistApprovalHTML(s.branding.GetSiteName(workCtx), s.branding.GetFrontendURL(workCtx))
+	body := waitlistApprovalHTML(s.branding.GetSiteName(workCtx), s.branding.GetFrontendURL(workCtx), entry.GrantedUserID != nil)
 	sendErr := s.mailer.SendEmail(workCtx, entry.Email, waitlistApprovalSubject, body)
 	finishCtx, finishCancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
 	defer finishCancel()
