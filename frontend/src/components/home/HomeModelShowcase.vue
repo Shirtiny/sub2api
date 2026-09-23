@@ -69,7 +69,7 @@ const { t } = useI18n()
 const chatgpt = modelMarks.find(model => model.id === 'chatgpt')!
 const groups = [
   { name: 'Luna', version: 'GPT-6', kind: 'luna' },
-  { name: 'Terra', version: 'GPT-6', kind: 'terra' },
+  { name: 'Terra', version: 'GPT-5.6', kind: 'terra' },
   { name: 'Sol', version: 'GPT-6', kind: 'sol' },
   { name: 'Astra', version: 'GPT-6', kind: 'astra' }
 ] as const

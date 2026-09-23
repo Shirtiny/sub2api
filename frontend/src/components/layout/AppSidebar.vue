@@ -185,6 +185,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAdminSettingsStore, useAppStore, useAuthStore, useOnboardingStore } from '@/stores'
 import { sanitizeSvg } from '@/utils/sanitize'
+import { initializeTheme } from '@/utils/theme'
 import { FeatureFlags, makeSidebarFlag } from '@/utils/featureFlags'
 
 interface NavItem {
@@ -863,11 +864,7 @@ function handleGroupClick(item: NavItem) {
 }
 
 // Initialize theme
-const savedTheme = localStorage.getItem('theme')
-if (savedTheme !== 'light') {
-  isDark.value = true
-  document.documentElement.classList.add('dark')
-}
+isDark.value = initializeTheme()
 
 // Fetch admin settings (for feature-gated nav items like Ops).
 watch(

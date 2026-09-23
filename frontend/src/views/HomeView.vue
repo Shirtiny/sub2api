@@ -227,6 +227,7 @@ import { useAuthStore, useAppStore } from '@/stores'
 import { sanitizeUrl } from '@/utils/url'
 import LocaleSwitcher from '@/components/common/LocaleSwitcher.vue'
 import HomeBrand from '@/components/home/HomeBrand.vue'
+import { initializeTheme } from '@/utils/theme'
 import HomeBillingSection from '@/components/home/HomeBillingSection.vue'
 import HomeFeatureCarousel from '@/components/home/HomeFeatureCarousel.vue'
 import HomeModelShowcase from '@/components/home/HomeModelShowcase.vue'
@@ -250,8 +251,8 @@ const legalDocuments = computed(() => appStore.cachedPublicSettings?.login_agree
 
 const isAuthenticated = computed(() => authStore.isAuthenticated)
 const entryPath = computed(() => !isAuthenticated.value ? '/login' : authStore.isAdmin ? '/admin/dashboard' : '/dashboard')
-// main.ts initializes the global theme and the router restores authentication.
-const isDark = ref(document.documentElement.classList.contains('dark'))
+// Share the same explicit preference / dark default as the console and bootstrap.
+const isDark = ref(initializeTheme())
 const currentYear = new Date().getFullYear()
 
 const steps = ['account', 'key', 'configure'] as const

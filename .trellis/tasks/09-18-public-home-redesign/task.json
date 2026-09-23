@@ -5,6 +5,6 @@
   "type": "frontend",
   "created_at": "2026-09-18",
   "deployment": "not deployed",
-  "notes": "Source publication authorized on 2026-09-22 for custom-prod and cafecode-v0.0.79. Follow-up aligns billing cards, completes animation signals before holding, preserves ambient network motion, and reduces the header wordmark. Isolated staged snapshot passes 164 homepage tests, 107 CI-critical tests, lint, typecheck and build. Unrelated work stays local. CI builds artifacts; no production deployment is authorized.",
-  "release_tag": "cafecode-v0.0.79"
+  "notes": "Source publication authorized on 2026-09-23 for custom-prod and cafecode-v0.0.80. This follow-up shares a dark-by-default theme across homepage and console without following the OS, preserves explicit user preferences, and corrects Terra to GPT-5.6. The isolated staged snapshot passes all 1088 frontend tests, lint (12 existing warnings), typecheck and build. Unrelated local files remain excluded. CI builds artifacts; production deployment is not authorized.",
+  "release_tag": "cafecode-v0.0.80"
 }

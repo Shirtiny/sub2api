@@ -430,7 +430,16 @@ describe('visitor-first homepage', () => {
     expect(localStorage.getItem('theme')).toBe('dark')
   })
 
-  it('does not force a light page back into dark mode', () => {
+  it('defaults a fresh homepage to dark without saving a preference', () => {
+    const page = render()
+    expect(document.documentElement.classList.contains('dark')).toBe(true)
+    expect(page.find('.theme-toggle').attributes('aria-label')).toBe('切换到浅色模式')
+    expect(localStorage.getItem('theme')).toBeNull()
+  })
+
+  it('preserves an explicitly saved light preference', () => {
+    localStorage.setItem('theme', 'light')
+    document.documentElement.classList.add('dark')
     const page = render()
     expect(document.documentElement.classList.contains('dark')).toBe(false)
     expect(page.find('.theme-toggle').attributes('aria-label')).toBe('切换到深色模式')
