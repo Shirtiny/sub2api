@@ -27,6 +27,7 @@
         <!-- Payment in progress (shared by recharge and subscription) -->
         <template v-if="paymentPhase === 'paying'">
           <PaymentStatusPanel
+            :key="paymentState.orderId"
             :order-id="paymentState.orderId"
             :qr-code="paymentState.qrCode"
             :expires-at="paymentState.expiresAt"
@@ -375,7 +376,7 @@ import { useAppStore } from '@/stores'
 import { createPaymentOrderIdempotencyKey, paymentAPI } from '@/api/payment'
 import { extractApiErrorMessage, extractI18nErrorMessage } from '@/utils/apiError'
 import { isMobileDevice } from '@/utils/device'
-import type { SubscriptionPlan, CheckoutInfoResponse, CreateOrderResult, OrderType, CafeCouponSummary } from '@/types/payment'
+import type { SubscriptionPlan, CheckoutInfoResponse, CreateOrderResult, OrderType, CafeCouponSummary, PaymentOrder } from '@/types/payment'
 import type { UserSubscription } from '@/types'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import AmountInput from '@/components/payment/AmountInput.vue'
@@ -403,7 +404,7 @@ import { buildPaymentErrorToastMessage, describePaymentScenarioError } from './p
 import { hasWechatResumeQuery, parseWechatResumeRoute, stripWechatResumeQuery } from './paymentWechatResume'
 
 import { presaleAPI, type PresaleQuote } from '@/api/presale'
-import { formatPresaleDate } from '@/utils/presale'
+import { formatPresaleDate, matchesPresaleCheckout } from '@/utils/presale'
 
 const props = defineProps<{ presalePlanId?: number; presaleMonth?: string }>()
 const emit = defineEmits<{ close: [] }>()
@@ -594,20 +595,24 @@ function buildWechatOAuthAuthorizeUrl(authorizeUrl: string): string {
 
 
 function onPaymentDone() {
-  if (props.presalePlanId && presalePaid.value) { emit('close'); return }
   const wasSubscription = paymentState.value.orderType === 'subscription'
   resetPayment()
+  if (props.presalePlanId) { emit('close'); return }
   selectedPlan.value = null
   if (wasSubscription) {
     subscriptionStore.fetchActiveSubscriptions(true).catch(() => {})
   }
 }
 
-function onPaymentSuccess() {
-  if (props.presalePlanId) presalePaid.value = true
+function onPaymentSuccess(order: PaymentOrder) {
+  if (order.id !== paymentState.value.orderId) return
+  if (props.presalePlanId) {
+    if (!matchesPresaleCheckout(order, props.presalePlanId, props.presaleMonth)) return
+    presalePaid.value = true
+  }
   removeRecoverySnapshot()
   authStore.refreshUser()
-  if (paymentState.value.orderType === 'subscription') {
+  if (order.order_type === 'subscription') {
     subscriptionStore.fetchActiveSubscriptions(true).catch(() => {})
   }
 }
@@ -1427,44 +1432,37 @@ async function createOrder(orderAmount: number, orderType: OrderType, planId?: n
       return
     }
     if (decision.kind === 'wechat_jsapi' && decision.jsapi) {
+      let jsapiError: unknown
+      let errMsg = ''
       try {
         const jsapiResult = await invokeWechatJsapiPayment(decision.jsapi as Record<string, unknown>)
-        const errMsg = String(jsapiResult.err_msg || '').toLowerCase()
-        if (errMsg.includes('cancel')) {
-          appStore.showInfo(t('payment.qr.cancelled'))
-          resetPayment()
-        } else if (errMsg && !errMsg.includes('ok')) {
-          resetPayment()
-          const fallbackApplied = await attemptMobileQrFallback(
-            { reason: 'WECHAT_JSAPI_FAILED', message: errMsg },
-            {
-              orderAmount,
-              orderType,
-              planId,
-              paymentType: visibleMethod,
-              attempted: options.mobileQrFallbackAttempted === true,
-            },
-          )
-          if (!fallbackApplied) {
-            applyScenarioError({ reason: 'WECHAT_JSAPI_FAILED', message: errMsg }, visibleMethod)
-          }
-        } else {
-          const resultState = { ...decision.paymentState }
-          resetPayment()
-          await redirectToPaymentResult(resultState)
-        }
+        errMsg = String(jsapiResult.err_msg || '').toLowerCase()
       } catch (err: unknown) {
-        resetPayment()
-        const fallbackApplied = await attemptMobileQrFallback(err, {
+        jsapiError = err
+      }
+      if (errMsg.includes('cancel')) {
+        if (await cancelPaymentBeforeRetry(decision.paymentState.orderId)) {
+          appStore.showInfo(t('payment.qr.cancelled'))
+        } else {
+          appStore.showWarning(t('payment.errors.originalOrderUnsettled'))
+        }
+      } else if (jsapiError || !errMsg.includes('ok')) {
+        const failure = jsapiError || { reason: 'WECHAT_JSAPI_FAILED', message: errMsg }
+        const fallbackApplied = await attemptMobileQrFallback(failure, {
           orderAmount,
           orderType,
           planId,
           paymentType: visibleMethod,
           attempted: options.mobileQrFallbackAttempted === true,
+          pendingOrderId: decision.paymentState.orderId,
         })
         if (!fallbackApplied) {
-          throw err
+          applyScenarioError(failure, visibleMethod)
         }
+      } else {
+        const resultState = { ...decision.paymentState }
+        resetPayment()
+        await redirectToPaymentResult(resultState)
       }
       return
     }
@@ -1517,6 +1515,22 @@ interface MobileQrFallbackContext {
   planId?: number
   paymentType: string
   attempted: boolean
+  pendingOrderId?: number
+}
+
+// Dismissing a native payment sheet does not cancel its server-side order.
+// Keep recovery/polling until cancellation is confirmed, including when the
+// cancellation request races with a successful payment or its response is lost.
+async function cancelPaymentBeforeRetry(orderId: number): Promise<boolean> {
+  try {
+    await paymentAPI.cancelOrder(orderId)
+    const { data: order } = await paymentAPI.getOrder(orderId)
+    if (order.id !== orderId || !['CANCELLED', 'EXPIRED'].includes(order.status)) return false
+    resetPayment()
+    return true
+  } catch {
+    return false
+  }
 }
 
 function shouldFallbackToDesktopQr(err: unknown, paymentMethod: string, attempted: boolean): boolean {
@@ -1555,6 +1569,11 @@ function shouldFallbackToDesktopQr(err: unknown, paymentMethod: string, attempte
 async function attemptMobileQrFallback(err: unknown, context: MobileQrFallbackContext): Promise<boolean> {
   if (!shouldFallbackToDesktopQr(err, context.paymentType, context.attempted)) {
     return false
+  }
+
+  if (context.pendingOrderId && !await cancelPaymentBeforeRetry(context.pendingOrderId)) {
+    appStore.showWarning(t('payment.errors.originalOrderUnsettled'))
+    return true // Handled by the original order's status panel; never create a second order.
   }
 
   try {
@@ -1601,6 +1620,13 @@ async function attemptMobileQrFallback(err: unknown, context: MobileQrFallbackCo
     })
 
     if (decision.kind !== 'qr_waiting' || !decision.paymentState.qrCode) {
+      // A provider may still create an order without returning the expected QR.
+      // Do not strand it or discard its signed recovery token.
+      if (decision.paymentState.orderId && decision.kind !== 'wechat_oauth') {
+        paymentState.value = decision.paymentState
+        paymentPhase.value = 'paying'
+        persistRecoverySnapshot(decision.recovery)
+      }
       return false
     }
 
@@ -1725,11 +1751,16 @@ onMounted(async () => {
         { resumeToken: routeResumeToken },
       )
       if (restored) {
-        paymentState.value = restored
-        paymentPhase.value = 'paying'
-        const restoredMethod = normalizeVisibleMethod(restored.paymentType)
-        if (restoredMethod) {
-          selectedMethod.value = restoredMethod
+        // The recovery slot is shared with balance and other plan/month orders.
+        // Use the authenticated server order, not browser state, as the identity.
+        const matchesCheckout = !props.presalePlanId || matchesPresaleCheckout(
+          (await paymentAPI.getOrder(restored.orderId)).data, props.presalePlanId, props.presaleMonth,
+        )
+        if (matchesCheckout) {
+          paymentState.value = restored
+          paymentPhase.value = 'paying'
+          const restoredMethod = normalizeVisibleMethod(restored.paymentType)
+          if (restoredMethod) selectedMethod.value = restoredMethod
         }
       } else {
         removeRecoverySnapshot()
@@ -1767,8 +1798,12 @@ onMounted(async () => {
       }
     }
     if (props.presalePlanId) {
-      presaleQuote.value = (await presaleAPI.quote(props.presalePlanId)).data
-      if (presaleQuote.value.month !== props.presaleMonth) { presaleQuote.value = null; throw new Error(t('presale.errors.PRESALE_MONTH_CHANGED')) }
+      // A resumed order already occupies the month. Eligibility is only for a
+      // new purchase; asking again would incorrectly reject our own reservation.
+      if (paymentPhase.value === 'select') {
+        presaleQuote.value = (await presaleAPI.quote(props.presalePlanId)).data
+        if (presaleQuote.value.month !== props.presaleMonth) { presaleQuote.value = null; throw new Error(t('presale.errors.PRESALE_MONTH_CHANGED')) }
+      }
       if (selectedPlan.value) selectedPlan.value = { ...selectedPlan.value, subscription_bonus: undefined }
     }
     if (!activeSubscriptionsFetchedForRoute) {

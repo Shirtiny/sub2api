@@ -30,6 +30,10 @@ type PresaleRefundQuote struct {
 }
 
 func PresaleRefundQuoteForOrder(o *dbent.PaymentOrder, now time.Time) (*PresaleRefundQuote, error) {
+	return presaleRefundQuoteForTerm(o, now, time.Time{})
+}
+
+func presaleRefundQuoteForTerm(o *dbent.PaymentOrder, now, effectiveEnd time.Time) (*PresaleRefundQuote, error) {
 	if o == nil || o.PresaleStartsAt == nil || o.PresaleExpiresAt == nil {
 		return nil, infraerrors.BadRequest("NOT_PRESALE", "not a presale order")
 	}
@@ -44,6 +48,11 @@ func PresaleRefundQuoteForOrder(o *dbent.PaymentOrder, now time.Time) (*PresaleR
 	days := int(end.Sub(start).Hours() / 24)
 	if days <= 0 {
 		return nil, fmt.Errorf("invalid presale period")
+	}
+	// Early resets spend purchased days. Refund the remaining actual term,
+	// still at the original month's per-day price, not an inflated shorter rate.
+	if !effectiveEnd.IsZero() {
+		end = effectiveEnd
 	}
 	q := &PresaleRefundQuote{Policy: "full", Currency: PaymentOrderCurrency(o), UnusedDays: days}
 	ratio := 1.0
@@ -64,6 +73,87 @@ func PresaleRefundQuoteForOrder(o *dbent.PaymentOrder, now time.Time) (*PresaleR
 	q.RefundAmount = math.Round(o.Amount*ratio*100) / 100
 	q.GatewayAmount = decimal.NewFromFloat(o.PayAmount).Mul(decimal.NewFromFloat(ratio)).Round(int32(payment.CurrencyMaxFractionDigits(q.Currency))).InexactFloat64()
 	return q, nil
+}
+
+// GetPresaleRefundQuote is shared by user/admin review and refund execution.
+// Order dates stay immutable; the source-order entitlement holds supported
+// early-reset deductions. Once accepted, use the audited quote even after the
+// subscription is cancelled or renewed, rather than reading its new window.
+func (s *PaymentService) GetPresaleRefundQuote(ctx context.Context, o *dbent.PaymentOrder, now time.Time) (*PresaleRefundQuote, error) {
+	base, err := PresaleRefundQuoteForOrder(o, now)
+	if err != nil {
+		return nil, err
+	}
+	client := s.entClient
+	if tx := dbent.TxFromContext(ctx); tx != nil {
+		client = tx.Client()
+	}
+	if o.RefundRequestedAt != nil {
+		audit, err := client.PaymentAuditLog.Query().Where(paymentauditlog.OrderIDEQ(strconv.FormatInt(o.ID, 10)), paymentauditlog.ActionEQ("PRESALE_REFUND_REQUESTED")).Only(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("load accepted presale refund quote: %w", err)
+		}
+		var accepted struct {
+			Quote *PresaleRefundQuote `json:"quote"`
+		}
+		if err := json.Unmarshal([]byte(audit.Detail), &accepted); err != nil {
+			return nil, fmt.Errorf("decode accepted presale refund quote: %w", err)
+		}
+		if accepted.Quote != nil {
+			return accepted.Quote, nil
+		}
+		// Older requests could only be accepted for an unchanged term. Preserve
+		// their original snapshot/time calculation; never inspect the cancelled row.
+		return base, nil
+	}
+	if o.PresaleActivatedAt == nil {
+		return base, nil
+	}
+	sub, err := presaleRefundSubscription(ctx, client, o)
+	if err != nil {
+		return nil, err
+	}
+	return presaleRefundQuoteForTerm(o, now, sub.ExpiresAt)
+}
+
+// Lock the subscription when called inside the refund transaction. Early-reset
+// writes lock this same row, so a concurrent reset cannot change a reviewed amount
+// between revalidation and cancellation. Manual edits/later purchases still fail
+// closed: both the row and this order's entitlement must describe the same term.
+func presaleRefundSubscription(ctx context.Context, client *dbent.Client, o *dbent.PaymentOrder) (*dbent.UserSubscription, error) {
+	if o.PresaleSubscriptionID == nil || o.SubscriptionGroupID == nil || o.PresaleStartsAt == nil || o.PresaleExpiresAt == nil {
+		return nil, fmt.Errorf("missing presale entitlement")
+	}
+	query := client.UserSubscription.Query().Where(usersubscription.IDEQ(*o.PresaleSubscriptionID), usersubscription.UserIDEQ(o.UserID), usersubscription.GroupIDEQ(*o.SubscriptionGroupID), usersubscription.DeletedAtIsNil())
+	if dbent.TxFromContext(ctx) != nil && supportsForUpdate(client) {
+		query = query.ForUpdate()
+	}
+	sub, err := query.Only(ctx)
+	if err != nil {
+		return nil, err
+	}
+	term, err := client.SubscriptionEarlyResetEntitlement.Query().Where(
+		subscriptionearlyresetentitlement.SourceOrderIDEQ(o.ID),
+		subscriptionearlyresetentitlement.UserIDEQ(o.UserID),
+		subscriptionearlyresetentitlement.SubscriptionIDEQ(sub.ID),
+	).Only(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("load presale refund term: %w", err)
+	}
+	changed := !sub.StartsAt.Equal(*o.PresaleStartsAt) || !term.StartsAt.Equal(*o.PresaleStartsAt) ||
+		!sub.ExpiresAt.Equal(term.ExpiresAt) || term.ExpiresAt.After(*o.PresaleExpiresAt) || !term.ExpiresAt.After(term.StartsAt)
+	if term.ExpiresAt.Before(*o.PresaleExpiresAt) {
+		changed = changed || !o.SubscriptionEarlyResetEnabled || !term.Enabled || term.DurationDays <= 0 || term.DurationDays != o.SubscriptionEarlyResetDurationDays
+	}
+	custom := o.SubscriptionMultiplier != nil && *o.SubscriptionMultiplier > 1
+	changed = changed || term.CustomTerm != custom
+	if custom {
+		changed = changed || sub.CustomExpiresAt == nil || !sub.CustomExpiresAt.Equal(term.ExpiresAt)
+	}
+	if changed {
+		return nil, infraerrors.Conflict("PRESALE_ENTITLEMENT_CHANGED", "subscription term changed; contact support for a reconciled refund")
+	}
+	return sub, nil
 }
 
 // User requests freeze the policy timestamp and stop only this order's term in
@@ -94,7 +184,7 @@ func (s *PaymentService) requestPresaleRefund(ctx context.Context, o *dbent.Paym
 		return infraerrors.Conflict("CONFLICT", "presale order status changed")
 	}
 	now := time.Now()
-	quote, err := PresaleRefundQuoteForOrder(current, now)
+	quote, err := s.GetPresaleRefundQuote(txCtx, current, now)
 	if err != nil {
 		return err
 	}
@@ -107,7 +197,7 @@ func (s *PaymentService) requestPresaleRefund(ctx context.Context, o *dbent.Paym
 	if _, err := tx.PaymentOrder.UpdateOneID(current.ID).SetStatus(OrderStatusRefundRequested).SetRefundRequestedAt(now).SetRefundRequestedBy(fmt.Sprint(uid)).SetRefundRequestReason(strings.TrimSpace(reason)).SetRefundAmount(quote.RefundAmount).Save(txCtx); err != nil {
 		return err
 	}
-	if err := s.writeAuditLogStrict(txCtx, current.ID, "PRESALE_REFUND_REQUESTED", operator, map[string]any{"policy": quote.Policy, "amount": quote.RefundAmount, "gateway_amount": quote.GatewayAmount, "at": now}); err != nil {
+	if err := s.writeAuditLogStrict(txCtx, current.ID, "PRESALE_REFUND_REQUESTED", operator, map[string]any{"policy": quote.Policy, "amount": quote.RefundAmount, "gateway_amount": quote.GatewayAmount, "at": now, "quote": quote}); err != nil {
 		return err
 	}
 	if err := tx.Commit(); err != nil {
@@ -123,19 +213,9 @@ func cancelPresaleEntitlementTx(ctx context.Context, tx *dbent.Tx, o *dbent.Paym
 	if o.PresaleActivatedAt == nil {
 		return nil
 	} // never deduct an unrelated current subscription
-	if o.PresaleSubscriptionID == nil || o.PresaleExpiresAt == nil {
-		return fmt.Errorf("missing presale entitlement")
-	}
-	query := tx.UserSubscription.Query().Where(usersubscription.IDEQ(*o.PresaleSubscriptionID), usersubscription.UserIDEQ(o.UserID), usersubscription.DeletedAtIsNil())
-	if supportsForUpdate(tx.Client()) {
-		query = query.ForUpdate()
-	}
-	sub, err := query.Only(ctx)
+	sub, err := presaleRefundSubscription(ctx, tx.Client(), o)
 	if err != nil {
 		return err
-	}
-	if !sub.ExpiresAt.Equal(*o.PresaleExpiresAt) || !sub.StartsAt.Equal(*o.PresaleStartsAt) {
-		return infraerrors.Conflict("PRESALE_ENTITLEMENT_CHANGED", "subscription term changed; contact support for a reconciled refund")
 	}
 	// The grant may have been capped at 1000. Revoke the actual credited
 	// resets, not the larger advertised snapshot, to preserve prior grants.
@@ -167,7 +247,7 @@ func cancelPresaleEntitlementTx(ctx context.Context, tx *dbent.Tx, o *dbent.Paym
 }
 
 func (s *PaymentService) preparePresaleRefund(ctx context.Context, o *dbent.PaymentOrder, amount float64, reason string) (*RefundPlan, error) {
-	quote, err := PresaleRefundQuoteForOrder(o, time.Now())
+	quote, err := s.GetPresaleRefundQuote(ctx, o, time.Now())
 	if err != nil {
 		return nil, err
 	}
@@ -192,7 +272,7 @@ func (s *PaymentService) claimPresaleRefund(ctx context.Context, p *RefundPlan) 
 	if err != nil {
 		return err
 	}
-	quote, err := PresaleRefundQuoteForOrder(current, time.Now())
+	quote, err := s.GetPresaleRefundQuote(ctx, current, time.Now())
 	if err != nil {
 		return err
 	}

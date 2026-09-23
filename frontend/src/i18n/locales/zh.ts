@@ -7950,6 +7950,7 @@ export default {
       wechatScanOnDesktopHint: '电脑端请直接使用微信扫一扫完成支付；移动端请在微信内打开当前页面。',
       wechatSwitchBrowserHint: '请改用电脑端微信扫码，或在外部浏览器重新打开本页后再试。',
       mobilePaymentFallbackToQr: '当前商户未开通移动支付，已自动切换为扫码支付。',
+      originalOrderUnsettled: '原订单尚未确认取消，已保留支付状态。请先确认原订单的支付结果，避免重复付款。',
       alipayDesktopUnavailable: '当前支付宝桌面支付未成功生成二维码。',
       alipayDesktopQrHint: '电脑端支付宝应展示扫码单，请刷新后重试，或确认浏览器未拦截当前支付页。',
       alipayMobileUnavailable: '当前页面未成功跳转到支付宝。',

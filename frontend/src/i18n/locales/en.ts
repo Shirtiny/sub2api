@@ -7922,6 +7922,7 @@ export default {
       wechatScanOnDesktopHint: 'On desktop, use WeChat Scan to pay; on mobile, reopen the current page inside WeChat.',
       wechatSwitchBrowserHint: 'Switch to desktop WeChat QR payment, or reopen this page in an external browser and retry.',
       mobilePaymentFallbackToQr: 'This merchant has not enabled mobile payment. The flow has been switched to QR payment automatically.',
+      originalOrderUnsettled: 'The original order has not been confirmed cancelled. Its payment status is preserved; check the result before paying again.',
       alipayDesktopUnavailable: 'The desktop Alipay flow could not generate a QR code.',
       alipayDesktopQrHint: 'Desktop Alipay should render a QR code. Refresh and retry, or make sure the payment page was not blocked.',
       alipayMobileUnavailable: 'This page could not hand off to Alipay.',

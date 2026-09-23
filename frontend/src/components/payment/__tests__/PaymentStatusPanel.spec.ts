@@ -5,6 +5,7 @@ const pollOrderStatus = vi.hoisted(() => vi.fn())
 const cancelOrder = vi.hoisted(() => vi.fn())
 const verifyOrder = vi.hoisted(() => vi.fn())
 const showError = vi.hoisted(() => vi.fn())
+const showWarning = vi.hoisted(() => vi.fn())
 const toCanvas = vi.hoisted(() => vi.fn())
 
 vi.mock('vue-i18n', async () => {
@@ -26,6 +27,7 @@ vi.mock('@/stores/payment', () => ({
 vi.mock('@/stores', () => ({
   useAppStore: () => ({
     showError,
+    showWarning,
   }),
 }))
 
@@ -66,11 +68,43 @@ describe('PaymentStatusPanel', () => {
     cancelOrder.mockReset()
     verifyOrder.mockReset()
     showError.mockReset()
+    showWarning.mockReset()
     toCanvas.mockReset().mockResolvedValue(undefined)
   })
 
   afterEach(() => {
     vi.useRealTimers()
+  })
+
+  it.each([
+    ['CANCELLED', 'cancelled'],
+    ['PAID', 'success'],
+    ['PENDING', null],
+    [null, null],
+  ])('checks the actual order after cancellation: %s', async (status, expectedOutcome) => {
+    cancelOrder.mockResolvedValue({ data: { message: 'ok' } })
+    pollOrderStatus.mockResolvedValue(status ? orderFactory(status) : null)
+    const wrapper = mount(PaymentStatusPanel, {
+      props: { orderId: 42, qrCode: '', expiresAt: '2099-01-01T12:30:00Z', paymentType: 'alipay' },
+      global: { stubs: { Icon: true } },
+    })
+    await wrapper.get('button').trigger('click')
+    await flushPromises()
+    expect(cancelOrder).toHaveBeenCalledWith(42)
+    expect(pollOrderStatus).toHaveBeenCalledWith(42)
+    if (expectedOutcome) {
+      expect(wrapper.emitted('settled')).toEqual([[expectedOutcome]])
+      expect(showWarning).not.toHaveBeenCalled()
+      if (expectedOutcome === 'success') {
+        expect(wrapper.emitted('success')).toEqual([[orderFactory('PAID')]])
+      }
+    } else {
+      expect(wrapper.emitted('settled')).toBeUndefined()
+      expect(showWarning).toHaveBeenCalledWith('payment.errors.originalOrderUnsettled')
+      await vi.advanceTimersByTimeAsync(3000)
+      expect(pollOrderStatus).toHaveBeenCalledTimes(2)
+    }
+    wrapper.unmount()
   })
 
   it('treats RECHARGING as a successful terminal state', async () => {
@@ -98,6 +132,7 @@ describe('PaymentStatusPanel', () => {
     expect(pollOrderStatus).toHaveBeenCalledWith(42)
     expect(wrapper.text()).toContain('payment.result.success')
     expect(wrapper.emitted('success')).toHaveLength(1)
+    expect(wrapper.emitted('success')?.[0]).toEqual([orderFactory('RECHARGING')])
   })
 
   it('shows reopen button in QR mode when payUrl is also available', async () => {
@@ -161,5 +196,6 @@ describe('PaymentStatusPanel', () => {
     expect(verifyOrder).toHaveBeenCalledWith('sub2_20260420abcd1234')
     expect(wrapper.text()).toContain('payment.result.success')
     expect(wrapper.emitted('success')).toHaveLength(1)
+    expect(wrapper.emitted('success')?.[0]).toEqual([orderFactory('COMPLETED')])
   })
 })

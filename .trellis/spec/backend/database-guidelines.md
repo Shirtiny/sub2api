@@ -68,6 +68,9 @@ Key conventions observed in the codebase:
 - Do not put direct repository imports into handlers or most services; the layering rules in `backend/.golangci.yml` enforce this.
 - Do not write ad-hoc SQL in handlers.
 - Do not skip error translation or contextual wrapping around DB failures.
+- Do not clear and set a nullable time field in one Ent mutation. PostgreSQL can
+  reject the duplicate column assignment even when SQLite tests pass; use
+  mutually exclusive clear/set branches and a real PostgreSQL regression test.
 
 ---
 
@@ -99,3 +102,8 @@ Key conventions observed in the codebase:
   that order's exact term. Never subtract pending presale days from an unrelated
   currently active subscription; never restore a cancelled presale to COMPLETED
   after a failed refund retry.
+- Supported early resets change the source-order entitlement's expiry, not the
+  immutable purchase window. Validate it against the locked subscription when
+  refunding, keep the original month as the daily-price divisor, and save the full
+  accepted quote in the existing refund audit event. Retries must not recalculate
+  from the cancelled or subsequently renewed subscription row.

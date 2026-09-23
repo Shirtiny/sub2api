@@ -150,7 +150,7 @@ const props = defineProps<{
 
 type PaymentOutcome = 'success' | 'cancelled' | 'expired'
 
-const emit = defineEmits<{ done: []; success: []; settled: [outcome: PaymentOutcome] }>()
+const emit = defineEmits<{ done: []; success: [order: PaymentOrder]; settled: [outcome: PaymentOutcome] }>()
 
 const i18n = useI18n()
 const { t } = i18n
@@ -278,7 +278,7 @@ async function pollStatus() {
     cleanup()
     paidOrder.value = order
     setOutcome('success')
-    emit('success')
+    emit('success', order)
   } else if (order.status === 'CANCELLED') {
     cleanup()
     setOutcome('cancelled')
@@ -302,8 +302,10 @@ async function handleCancel() {
   cancelling.value = true
   try {
     await paymentAPI.cancelOrder(props.orderId)
-    cleanup()
-    setOutcome('cancelled')
+    // Cancellation can report HTTP success for an already-paid order. Resolve
+    // its actual state before settling or dropping the signed recovery token.
+    await pollStatus()
+    if (!outcome.value) appStore.showWarning(t('payment.errors.originalOrderUnsettled'))
   } catch (err: unknown) {
     appStore.showError(extractI18nErrorMessage(err, t, 'payment.errors', t('common.error')))
   } finally {

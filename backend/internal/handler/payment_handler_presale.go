@@ -100,7 +100,7 @@ func (h *PaymentHandler) GetPresaleRefundQuote(c *gin.Context) {
 		response.ErrorFrom(c, err)
 		return
 	}
-	quote, err := service.PresaleRefundQuoteForOrder(order, time.Now())
+	quote, err := h.paymentService.GetPresaleRefundQuote(c.Request.Context(), order, time.Now())
 	if err != nil {
 		response.ErrorFrom(c, err)
 		return

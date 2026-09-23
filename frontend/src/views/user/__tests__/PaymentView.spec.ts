@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, shallowMount } from '@vue/test-utils'
 import PaymentView from '../PaymentView.vue'
 import { PAYMENT_RECOVERY_STORAGE_KEY } from '@/components/payment/paymentFlow'
+import type { PaymentOrder } from '@/types/payment'
 
 const routeState = vi.hoisted(() => ({
   path: '/purchase',
@@ -22,6 +23,8 @@ const showInfo = vi.hoisted(() => vi.fn())
 const showWarning = vi.hoisted(() => vi.fn())
 const showSuccess = vi.hoisted(() => vi.fn())
 const getCheckoutInfo = vi.hoisted(() => vi.fn())
+const getOrder = vi.hoisted(() => vi.fn())
+const cancelOrder = vi.hoisted(() => vi.fn())
 const createPaymentOrderIdempotencyKey = vi.hoisted(() => vi.fn(() => 'payment-order-test-key'))
 const getPresaleQuote = vi.hoisted(() => vi.fn())
 vi.mock('@/api/presale', () => ({ presaleAPI: { quote: getPresaleQuote } }))
@@ -107,6 +110,8 @@ vi.mock('@/api/payment', () => ({
   createPaymentOrderIdempotencyKey,
   paymentAPI: {
     getCheckoutInfo,
+    getOrder,
+    cancelOrder,
   },
 }))
 
@@ -195,6 +200,47 @@ function jsapiOrderFixture(resumeToken: string) {
   }
 }
 
+function serverPresaleOrder(overrides: Partial<PaymentOrder> = {}): PaymentOrder {
+  return {
+    id: 123, user_id: 1, amount: 128, pay_amount: 128, fee_rate: 0,
+    payment_type: 'wxpay', out_trade_no: 'sub2_jsapi_123', status: 'PENDING',
+    order_type: 'subscription', plan_id: 7, created_at: '2026-09-23T00:00:00Z',
+    expires_at: '2099-01-01T00:00:00Z', refund_amount: 0,
+    presale_starts_at: '2026-09-30T16:00:00Z', ...overrides,
+  }
+}
+
+function saveRecovery(orderType: 'balance' | 'subscription' = 'subscription') {
+  window.localStorage.setItem(PAYMENT_RECOVERY_STORAGE_KEY, JSON.stringify({
+    orderId: 123, amount: 128, qrCode: 'weixin://original', expiresAt: '2099-01-01T00:00:00Z',
+    paymentType: 'wxpay', payUrl: '', outTradeNo: 'sub2_jsapi_123', clientSecret: '',
+    payAmount: 128, orderType, paymentMode: 'qrcode', resumeToken: 'original-resume', createdAt: Date.now(),
+  }))
+}
+
+interface PresaleCheckoutVM {
+  presaleConsent: boolean
+  presalePaid: boolean
+  canSubmitSubscription: boolean
+  paymentPhase: string
+  paymentState: { orderId: number }
+  confirmSubscribe: () => Promise<void>
+  onPaymentSuccess: (order: PaymentOrder) => void
+  onPaymentDone: () => void
+}
+
+async function mountPresaleCheckout() {
+  routeState.path = '/presale'
+  routeState.query = { plan: '7' }
+  getCheckoutInfo.mockResolvedValue(checkoutInfoWithPlansFixture())
+  const wrapper = shallowMount(PaymentView, {
+    props: { presalePlanId: 7, presaleMonth: '2026-10' },
+    global: { stubs: { Teleport: true, Transition: false, RouterLink: true } },
+  })
+  await flushPromises()
+  return { wrapper, vm: wrapper.vm as unknown as PresaleCheckoutVM }
+}
+
 function oauthOrderFixture() {
   return {
     order_id: 456,
@@ -230,7 +276,7 @@ const SubscriptionPlanCardCouponPreviewStub = {
 
 describe('PaymentView WeChat JSAPI flow', () => {
   beforeEach(() => {
-    getPresaleQuote.mockResolvedValue({ data: { month: '2026-10', starts_at: '2026-10-01T00:00:00+08:00', expires_at: '2026-11-01T00:00:00+08:00', full_refund_before: '2026-09-28T00:00:00+08:00', renewal: false } })
+    getPresaleQuote.mockReset().mockResolvedValue({ data: { month: '2026-10', starts_at: '2026-10-01T00:00:00+08:00', expires_at: '2026-11-01T00:00:00+08:00', full_refund_before: '2026-09-28T00:00:00+08:00', renewal: false } })
     routeState.path = '/purchase'
     routeState.query = {
       wechat_resume: '1',
@@ -250,6 +296,8 @@ describe('PaymentView WeChat JSAPI flow', () => {
     showSuccess.mockReset()
     activeSubscriptionsState.splice(0)
     getCheckoutInfo.mockReset().mockResolvedValue(checkoutInfoFixture())
+    cancelOrder.mockReset().mockResolvedValue({ data: { message: 'cancelled' } })
+    getOrder.mockReset().mockResolvedValue({ data: serverPresaleOrder({ status: 'CANCELLED' }) })
     createPaymentOrderIdempotencyKey.mockReset().mockReturnValue('payment-order-test-key')
     bridgeInvoke.mockReset()
     window.localStorage.clear()
@@ -450,18 +498,22 @@ describe('PaymentView WeChat JSAPI flow', () => {
     await flushPromises()
 
     expect(showInfo).toHaveBeenCalledWith('payment.qr.cancelled')
+    expect(cancelOrder).toHaveBeenCalledWith(123)
+    expect(getOrder).toHaveBeenCalledWith(123)
     expect(routerPush).not.toHaveBeenCalled()
     expect(window.localStorage.getItem(PAYMENT_RECOVERY_STORAGE_KEY)).toBeNull()
   })
 
-  it('clears stale recovery state when JSAPI never becomes available', async () => {
+  it('keeps recovery when JSAPI is unavailable and cancellation cannot be confirmed', async () => {
     vi.useFakeTimers()
+    cancelOrder.mockRejectedValue(new Error('offline'))
     createOrder.mockResolvedValue(jsapiOrderFixture('resume-token-missing-bridge'))
     ;(window as Window & { WeixinJSBridge?: { invoke: typeof bridgeInvoke } }).WeixinJSBridge = undefined
 
     const wrapper = shallowMount(PaymentView, {
       global: {
         stubs: {
+          AppLayout: { template: '<div><slot /></div>' },
           Teleport: true,
           Transition: false,
         },
@@ -473,12 +525,13 @@ describe('PaymentView WeChat JSAPI flow', () => {
     await flushPromises()
     await flushPromises()
 
-    expect(showError).toHaveBeenCalledWith(
-      'payment.errors.wechatJsapiUnavailable payment.errors.wechatOpenInWeChatHint',
-    )
+    expect(showWarning).toHaveBeenCalledWith('payment.errors.originalOrderUnsettled')
+    expect(createOrder).toHaveBeenCalledTimes(1)
     expect(routerPush).not.toHaveBeenCalled()
-    expect(window.localStorage.getItem(PAYMENT_RECOVERY_STORAGE_KEY)).toBeNull()
-    expect(wrapper.html()).not.toContain('payment-status-panel-stub')
+    expect(window.localStorage.getItem(PAYMENT_RECOVERY_STORAGE_KEY)).toContain('resume-token-missing-bridge')
+    expect(wrapper.html()).toContain('payment-status-panel-stub')
+    wrapper.unmount()
+    vi.useRealTimers()
   })
 
   it('clears a stale recovery snapshot before handling wechat resume callback params', async () => {
@@ -851,6 +904,132 @@ describe('PaymentView WeChat JSAPI flow', () => {
     expect(vm.canSubmitSubscription).toBe(true)
     await vm.confirmSubscribe(); await flushPromises()
     expect(createOrder).toHaveBeenCalledWith(expect.objectContaining({ order_type: 'subscription', plan_id: 7, presale_month: '2026-10' }), 'payment-order-test-key')
+    wrapper.unmount()
+  })
+
+  it.each([
+    { order_type: 'balance' as const, presale_starts_at: undefined },
+    { plan_id: 8 },
+    { presale_starts_at: '2026-11-01T00:00:00+08:00' },
+  ])('does not restore another checkout into a presale: %j', async (other) => {
+    saveRecovery()
+    getOrder.mockResolvedValue({ data: serverPresaleOrder(other) })
+    const { wrapper, vm } = await mountPresaleCheckout()
+    expect(getOrder).toHaveBeenCalledWith(123)
+    expect(vm.paymentPhase).toBe('select')
+    expect(vm.paymentState.orderId).toBe(0)
+    expect(vm.presalePaid).toBe(false)
+    expect(getPresaleQuote).toHaveBeenCalledWith(7)
+    expect(createOrder).not.toHaveBeenCalled()
+    expect(window.localStorage.getItem(PAYMENT_RECOVERY_STORAGE_KEY)).toContain('original-resume')
+    wrapper.unmount()
+  })
+
+  it('restores the matching order without rejecting its own reserved month', async () => {
+    saveRecovery()
+    getOrder.mockResolvedValue({ data: serverPresaleOrder() })
+    getPresaleQuote.mockRejectedValue({ reason: 'PRESALE_ALREADY_RESERVED' })
+    const { wrapper, vm } = await mountPresaleCheckout()
+    expect(vm.paymentState.orderId).toBe(123)
+    expect(vm.paymentPhase).toBe('paying')
+    expect(getPresaleQuote).not.toHaveBeenCalled()
+    expect(showError).not.toHaveBeenCalled()
+    vm.onPaymentSuccess(serverPresaleOrder({ status: 'COMPLETED' }))
+    await flushPromises()
+    expect(vm.presalePaid).toBe(true)
+    expect(wrapper.text()).toContain('presale.purchased')
+    vm.onPaymentDone()
+    expect(wrapper.emitted('close')).toHaveLength(1)
+    wrapper.unmount()
+  })
+
+  it('does not report balance, another plan/month or a stale order event as presale success', async () => {
+    saveRecovery()
+    getOrder.mockResolvedValue({ data: serverPresaleOrder() })
+    const { wrapper, vm } = await mountPresaleCheckout()
+    for (const other of [
+      serverPresaleOrder({ order_type: 'balance', presale_starts_at: undefined }),
+      serverPresaleOrder({ plan_id: 8 }),
+      serverPresaleOrder({ presale_starts_at: '2026-11-01T00:00:00+08:00' }),
+      serverPresaleOrder({ id: 999 }),
+    ]) {
+      vm.onPaymentSuccess(other)
+      expect(vm.presalePaid).toBe(false)
+    }
+    wrapper.unmount()
+  })
+
+  it('does not trust recovery when the authenticated order cannot be read', async () => {
+    saveRecovery()
+    getOrder.mockRejectedValue(new Error('offline'))
+    const { wrapper, vm } = await mountPresaleCheckout()
+    expect(vm.paymentState.orderId).toBe(0)
+    expect(vm.canSubmitSubscription).toBe(false)
+    expect(createOrder).not.toHaveBeenCalled()
+    expect(window.localStorage.getItem(PAYMENT_RECOVERY_STORAGE_KEY)).toContain('original-resume')
+    wrapper.unmount()
+  })
+
+  it('waits for confirmed cancellation before creating a presale QR fallback', async () => {
+    const cancelled = deferred<{ data: { message: string } }>()
+    cancelOrder.mockReturnValue(cancelled.promise)
+    createOrder.mockResolvedValueOnce(jsapiOrderFixture('original-resume')).mockResolvedValueOnce({
+      ...jsapiOrderFixture('qr-resume'), order_id: 124, result_type: 'order_created', payment_mode: 'qrcode', qr_code: 'weixin://fallback',
+    })
+    bridgeInvoke.mockImplementation((_action, _payload, callback) => callback({ err_msg: 'get_brand_wcpay_request:fail' }))
+    const { wrapper, vm } = await mountPresaleCheckout()
+    vm.presaleConsent = true
+    const submitting = vm.confirmSubscribe()
+    await flushPromises()
+    expect(cancelOrder).toHaveBeenCalledWith(123)
+    expect(createOrder).toHaveBeenCalledTimes(1)
+    expect(vm.paymentState.orderId).toBe(123)
+    expect(window.localStorage.getItem(PAYMENT_RECOVERY_STORAGE_KEY)).toContain('original-resume')
+    cancelled.resolve({ data: { message: 'cancelled' } })
+    await submitting
+    expect(getOrder).toHaveBeenCalledWith(123)
+    expect(getOrder.mock.invocationCallOrder[0]).toBeLessThan(createOrder.mock.invocationCallOrder[1])
+    expect(createOrder.mock.calls[1][0]).toMatchObject({ order_type: 'subscription', plan_id: 7, presale_month: '2026-10', is_mobile: false })
+    expect(vm.paymentState.orderId).toBe(124)
+    expect(vm.paymentPhase).toBe('paying')
+    expect(window.localStorage.getItem(PAYMENT_RECOVERY_STORAGE_KEY)).toContain('qr-resume')
+    wrapper.unmount()
+  })
+
+  it.each(['PAID', 'COMPLETED', 'PENDING'] as const)('does not retry if cancellation leaves the original order %s', async (status) => {
+    getOrder.mockResolvedValue({ data: serverPresaleOrder({ status }) })
+    createOrder.mockResolvedValue(jsapiOrderFixture('original-resume'))
+    bridgeInvoke.mockImplementation((_action, _payload, callback) => callback({ err_msg: 'get_brand_wcpay_request:fail' }))
+    const { wrapper, vm } = await mountPresaleCheckout()
+    vm.presaleConsent = true
+    await vm.confirmSubscribe()
+    expect(createOrder).toHaveBeenCalledTimes(1)
+    expect(vm.paymentState.orderId).toBe(123)
+    expect(vm.paymentPhase).toBe('paying')
+    expect(window.localStorage.getItem(PAYMENT_RECOVERY_STORAGE_KEY)).toContain('original-resume')
+    expect(showWarning).toHaveBeenCalledWith('payment.errors.originalOrderUnsettled')
+    wrapper.unmount()
+  })
+
+  it('preserves the original order when cancellation fails after JSAPI dismissal', async () => {
+    createOrder.mockResolvedValue(jsapiOrderFixture('original-resume'))
+    cancelOrder.mockRejectedValue(new Error('response lost'))
+    bridgeInvoke.mockImplementation((_action, _payload, callback) => callback({ err_msg: 'get_brand_wcpay_request:cancel' }))
+    const { wrapper, vm } = await mountPresaleCheckout()
+    vm.presaleConsent = true
+    await vm.confirmSubscribe()
+    expect(vm.paymentState.orderId).toBe(123)
+    expect(vm.paymentPhase).toBe('paying')
+    expect(showInfo).not.toHaveBeenCalledWith('payment.qr.cancelled')
+    expect(createOrder).toHaveBeenCalledTimes(1)
+    expect(window.localStorage.getItem(PAYMENT_RECOVERY_STORAGE_KEY)).toContain('original-resume')
+    wrapper.unmount()
+  })
+
+  it('closes a settled presale without exposing unrelated plan selection', async () => {
+    const { wrapper, vm } = await mountPresaleCheckout()
+    vm.onPaymentDone()
+    expect(wrapper.emitted('close')).toHaveLength(1)
     wrapper.unmount()
   })
 

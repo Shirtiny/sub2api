@@ -1,7 +1,16 @@
 import { describe, expect, it } from 'vitest'
-import { formatPresaleDate, presaleStatus } from '../presale'
+import { formatPresaleDate, matchesPresaleCheckout, presaleStatus } from '../presale'
 import type { PaymentOrder } from '@/types/payment'
 describe('presale dates', () => {
+  it('matches only the server-confirmed plan and business month', () => {
+    const order = { order_type: 'subscription', plan_id: 7, presale_starts_at: '2026-09-30T16:00:00Z' } as PaymentOrder
+    expect(matchesPresaleCheckout(order, 7, '2026-10')).toBe(true)
+    expect(matchesPresaleCheckout(order, 8, '2026-10')).toBe(false)
+    expect(matchesPresaleCheckout(order, 7, '2026-09')).toBe(false)
+    expect(matchesPresaleCheckout(order, 7, undefined)).toBe(false)
+    expect(matchesPresaleCheckout({ ...order, order_type: 'balance' }, 7, '2026-10')).toBe(false)
+    expect(matchesPresaleCheckout({ ...order, presale_starts_at: undefined }, 7, '2026-10')).toBe(false)
+  })
   it('uses the business timezone, not the browser timezone', () => {
     expect(formatPresaleDate('2026-09-30T16:00:00Z', 'zh')).toContain('2026/10/01 00:00')
     expect(formatPresaleDate('invalid', 'zh')).toBe('—')

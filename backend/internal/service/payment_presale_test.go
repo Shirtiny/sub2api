@@ -261,7 +261,7 @@ func TestPresaleCatalogFiltering(t *testing.T) {
 
 func presaleTestRefundAmount(t *testing.T, s *PaymentService, id int64) float64 {
 	t.Helper()
-	q, err := PresaleRefundQuoteForOrder(s.entClient.PaymentOrder.GetX(context.Background(), id), time.Now())
+	q, err := s.GetPresaleRefundQuote(context.Background(), s.entClient.PaymentOrder.GetX(context.Background(), id), time.Now())
 	require.NoError(t, err)
 	return q.GatewayAmount
 }

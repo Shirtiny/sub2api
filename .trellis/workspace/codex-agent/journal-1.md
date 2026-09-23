@@ -458,3 +458,19 @@ only the authorized 4178 preview; local/external HTTP 200. See verification log.
   proxy/database edits, release tag, image publication or historical rebilling.
   Source push is authorized; production deployment remains separate. Artifacts:
   `/root/backups/custom-prod-consolidation-20260922T235441Z`.
+
+### 2026-09-23 — Presale review fixes
+- Matched recovered/successful payments to the server-confirmed presale plan/month;
+  preserved uncertain native payments and verified cancellation before QR retry.
+- Refunds now recognize source-order early-reset deductions, lock before confirming
+  the amount, and preserve the complete accepted quote for provider retries.
+- Frontend 1190/1190 tests, typecheck and lint passed (12 existing warnings).
+  Focused backend regressions passed; backend lint reported 0 issues. Broader HTTP
+  fixtures and disposable-Postgres execution are blocked by sandbox socket access;
+  the integration package compiled. No production actions or publication.
+- Details: `.trellis/tasks/09-23-presale-review-fixes/verification.md`.
+- Publication follow-up: restored permissions allowed the full affected backend
+  unit packages and disposable PostgreSQL tests to run. Fixed the newly exposed
+  custom-presale activation clear/set collision with exclusive Ent mutation
+  branches. User authorized source/tag publication as `cafecode-v0.0.85`, not a
+  production update; final results and safety boundaries are in the verification.

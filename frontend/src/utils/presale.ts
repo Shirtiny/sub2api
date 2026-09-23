@@ -1,5 +1,12 @@
 import type { PaymentOrder } from '@/types/payment'
 
+export function matchesPresaleCheckout(order: PaymentOrder, planId: number, month: string | undefined): boolean {
+  if (order.order_type !== 'subscription' || order.plan_id !== planId || !month || !/^\d{4}-\d{2}$/.test(month)) return false
+  // Compare instants: the API may serialize the UTC+8 start in UTC instead.
+  const startsAt = Date.parse(order.presale_starts_at || '')
+  return Number.isFinite(startsAt) && startsAt === Date.parse(`${month}-01T00:00:00+08:00`)
+}
+
 export function formatPresaleDate(value: string | undefined, locale: string, monthOnly = false): string {
   if (!value) return '—'
   const date = new Date(value)

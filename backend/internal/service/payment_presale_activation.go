@@ -157,14 +157,17 @@ func (s *PaymentService) activatePresale(ctx context.Context, orderID int64, now
 		SetDailyUsageUsd(0).SetWeeklyUsageUsd(0).SetMonthlyUsageUsd(0).
 		ClearDailyWindowStart().ClearWeeklyWindowStart().ClearMonthlyWindowStart().
 		SetResetCount(resetCards).SetNotes(appendSubscriptionNotes(psStringValue(sub.Notes), paymentSubscriptionOrderNote(o.ID))).
-		SetEarlyResetEnabled(o.SubscriptionEarlyResetEnabled).SetEarlyResetDurationDays(o.SubscriptionEarlyResetDurationDays).
-		ClearCustomMultiplier().ClearCustomSourcePlanID().ClearCustomSourceGroupID().ClearCustomExpiresAt().ClearCustomDisplayName()
+		SetEarlyResetEnabled(o.SubscriptionEarlyResetEnabled).SetEarlyResetDurationDays(o.SubscriptionEarlyResetDurationDays)
 	multiplier := 1
 	if o.SubscriptionMultiplier != nil {
 		multiplier = *o.SubscriptionMultiplier
 	}
 	if multiplier > 1 {
 		update.SetCustomMultiplier(multiplier).SetCustomSourcePlanID(*o.PlanID).SetCustomSourceGroupID(*o.SubscriptionGroupID).SetCustomExpiresAt(*o.PresaleExpiresAt).SetCustomDisplayName(o.PresalePlanName)
+	} else {
+		// Do not clear and set nullable custom fields in the same mutation:
+		// PostgreSQL rejects the duplicate column assignment for custom expiry.
+		update.ClearCustomMultiplier().ClearCustomSourcePlanID().ClearCustomSourceGroupID().ClearCustomExpiresAt().ClearCustomDisplayName()
 	}
 	if _, err := update.Save(txCtx); err != nil {
 		return false, err

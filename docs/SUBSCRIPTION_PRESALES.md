@@ -33,6 +33,16 @@ The ordinary `/purchase` page is balance-first and no longer has a subscription
 catalog tab. Old subscription purchase links lead to `/presale`; in-flight signed
 WeChat payment resumes are retained for compatibility.
 
+The shared payment recovery slot is not proof of a presale purchase. A presale
+checkout restores it only after the authenticated order API confirms the selected
+plan and UTC+8 month; success uses the same server-order identity. Unrelated
+balance/plan/month recovery is left intact for its own flow. A resumed order does
+not request new-purchase eligibility against the reservation it already holds.
+After a native WeChat failure or dismissal, keep the original order and recovery
+until the server confirms cancellation/expiry. Only then may QR fallback create a
+replacement. Cancellation HTTP success alone is insufficient: it may mean the
+original payment already succeeded. The status panel also verifies this state.
+
 ## Calendar and purchase contract
 
 The business timezone is **Asia/Shanghai / UTC+8**, independent of host and browser
@@ -117,15 +127,20 @@ being examined. No reverse migration, account enabling or database cleanup runs.
 - During the last 72 hours before start: 80% of actual payment returned (20% fee).
 - After activation, before the final seven days: remaining **whole 24-hour days**
   divided by total purchased calendar-month days. No refund during the final seven
-  days, including the exact seven-day boundary.
+  days, including the exact seven-day boundary. Supported early resets shorten the
+  remaining term and its final-week cutoff, not the original purchased-day divisor.
 - A paid term that was never activated because fulfillment failed remains fully
   refundable rather than being charged for unavailable service.
 
-A user request atomically freezes its timestamp/amount, changes the order to
+A user request atomically freezes its timestamp and full quote in the existing
+`PRESALE_REFUND_REQUESTED` audit event, changes the order to
 `REFUND_REQUESTED`, and cancels only this presale term. For pending presales no
-current unrelated subscription is deducted. For active terms the exact subscription
-window must still match; otherwise support must reconcile instead of blindly
-subtracting days from later purchases. Its concurrency/early-reset entitlements
+current unrelated subscription is deducted. For active terms the subscription and
+this order's early-reset entitlement must still describe the same purchased term;
+valid early-reset deductions are supported, but manual edits/extensions or a later
+term still require support reconciliation. Lock the subscription before recomputing
+the reviewed amount and cancelling it, so a concurrent reset cannot silently change
+the refund. Its concurrency/early-reset entitlements
 and unused reset grant are removed alongside the term. Refund requests prevent
 future activation even if provider processing crosses the start date.
 The activation audit records the reset count actually credited after the 1000-count
@@ -135,6 +150,9 @@ so reaching the cap does not cause an extra deduction from earlier reset credits
 Refund execution is **admin-processed**, not instant user-initiated money movement.
 The original provider instance and existing refund machinery are reused. Provider
 failure keeps the frozen request retryable; it does not reactivate cancelled quota.
+Retries use the audited quote even if the subscription row now holds a later term.
+Older accepted requests without a full audited quote retain their original
+snapshot/request-time calculation; do not reinterpret the cancelled row's dates.
 Provider settlement timing and existing pending-response behavior remain unchanged.
 A 20% fee refund can be `PARTIALLY_REFUNDED` financially while the subscription is
 fully cancelled. It cannot activate again or receive another automatic refund.
@@ -147,8 +165,9 @@ live sale state, and has no backfill. Apply frontend/backend together through th
 normal authorized release; do not ship the UI against the old backend.
 
 Verification includes unit refund/calendar/ownership/visibility tests, signed
-resume and idempotency contracts, real disposable-Postgres concurrent purchase and
-activation tests, frontend checkout consent/admin persistence/refund review tests,
+resume and idempotency contracts, disposable-Postgres concurrent purchase,
+activation and early-reset/refund tests, frontend checkout recovery/cancellation,
+consent/admin persistence/refund review tests,
 and browser fixtures (no real payment requests).
 
 This implementation does not automatically deploy, run production migrations,
