@@ -132,11 +132,11 @@ describe('visitor-first homepage', () => {
     expect(page.find('#questions .policy-billing-options').exists()).toBe(false)
   })
 
-  it('opens the waiting-list form from the secondary hero button', async () => {
-    const page = render()
+  it.each(['zh', 'en'] as const)('opens the localized waiting-list form from the secondary hero button (%s)', async locale => {
+    const page = render(locale)
     const button = page.get('.hero-actions .cafe-button-secondary')
     expect(button.element.tagName).toBe('BUTTON')
-    expect(button.text()).toBe('Join waiting list')
+    expect(button.text()).toBe(locale === 'zh' ? '加入候补名单' : 'Join waiting list')
     expect(button.attributes('href')).toBeUndefined()
     expect(page.find('home-waitlist-dialog-stub').exists()).toBe(false)
     await button.trigger('click')
@@ -459,8 +459,13 @@ describe('visitor-first homepage', () => {
   it('renders all landing copy in English without unresolved translation keys', async () => {
     const page = render('en')
     await nextTick()
-    expect(page.find('h1').text()).toContain('Room for inspiration.')
-    expect(page.find('h1').text()).toContain('AI for your everyday.')
+    expect(page.find('h1').text()).toContain('Work with more ease.')
+    expect(page.find('h1').text()).toContain('Bring ideas to life, faster.')
+    expect(page.get('#possibilities-title').text()).toBe('Whenever you need it, it’s right here.')
+    expect(page.findAll('.feature-selector').map(button => button.text())).toEqual(['Native intelligence', 'Fast response', 'Verifiable trust'])
+    expect(page.get('#everyday-description-intelligence').text()).toContain('No downgraded or risk-limited substitutes')
+    expect(page.get('#everyday-description-speed').text()).toContain('WebSocket time to first byte around 0.3 seconds')
+    expect(page.get('#everyday-description-trust').text()).toContain('Every usage record and charge is verifiable')
     expect(page.text()).not.toContain('home.landing.')
     expect(page.text()).not.toMatch(/[\u4e00-\u9fff]/)
   })

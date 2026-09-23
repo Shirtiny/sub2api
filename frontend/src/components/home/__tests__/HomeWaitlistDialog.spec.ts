@@ -39,6 +39,29 @@ beforeEach(() => {
 afterEach(() => { page?.unmount(); document.body.innerHTML = '' })
 
 describe('waiting-list dialog', () => {
+  it.each([
+    ['zh', '加入候补名单'],
+    ['en', 'Join waiting list'],
+  ])('localizes the submit button (%s)', (locale, label) => {
+    render(locale)
+    expect(page.get('button[type="submit"]').text()).toBe(label)
+  })
+  it.each(['zh', 'en'])('keeps the success icon beside localized copy and the close action below (%s)', async locale => {
+    render(locale)
+    await page.get('input').setValue('person@example.com')
+    await page.get('form').trigger('submit')
+    await flushPromises()
+    const status = page.get('[role="status"]')
+    expect(status.classes()).toEqual(expect.arrayContaining(['flex', 'items-center', 'gap-3']))
+    expect(status.element.children).toHaveLength(2)
+    expect(status.get('[aria-hidden="true"]').classes()).toContain('shrink-0')
+    expect(status.get('p').text()).toBe((locale === 'zh' ? zh : en).home.landing.waitlist.success)
+    expect(status.find('button').exists()).toBe(false)
+    const closeButton = page.get('.modal-body button')
+    expect(status.element.nextElementSibling).toBe(closeButton.element)
+    await closeButton.trigger('click')
+    expect(page.emitted('close')).toHaveLength(1)
+  })
   it('focuses a required email input and rejects invalid syntax without a request', async () => {
     render(); await flushPromises()
     const input = page.get('input')
@@ -64,7 +87,7 @@ describe('waiting-list dialog', () => {
     resolve(); await flushPromises()
     expect(page.get('[role="status"]').text()).toContain('已加入候补名单')
     expect(page.find('input').exists()).toBe(false)
-    await page.get('[role="status"] button').trigger('click')
+    await page.get('.modal-body button').trigger('click')
     expect(page.emitted('close')).toHaveLength(1)
   })
   it('keeps the form and email on a server error so the visitor can retry', async () => {

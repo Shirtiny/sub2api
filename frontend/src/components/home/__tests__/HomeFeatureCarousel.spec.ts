@@ -421,10 +421,10 @@ describe('everyday SVG feature carousel', () => {
   it('preserves the localized original feature titles without a second selector row', () => {
     state.locale = 'en'
     const page = render()
-    expect(page.findAll('.feature-selector').map(button => button.text())).toEqual(['A simpler connection', 'A place in your workflow', 'Usage you can understand'])
+    expect(page.findAll('.feature-selector').map(button => button.text())).toEqual(['Native intelligence', 'Fast response', 'Verifiable trust'])
     expect(page.text()).not.toMatch(/home\.landing|智能|速度|可信/)
     expect(page.find('.feature-grid p').exists()).toBe(false)
     expect(page.find('.feature-frame .feature-description').text()).toBe(en.home.landing.features.connect.description)
-    expect(page.findAll('.intelligence-line').map(line => line.text())).toEqual(['1. See the whole', '2. Connect the details', '3. Find a clear path'])
+    expect(page.findAll('.intelligence-line').map(line => line.text())).toEqual(['1. See the whole picture', '2. Explore deeper connections', '3. Turn insight into action'])
   })
 })

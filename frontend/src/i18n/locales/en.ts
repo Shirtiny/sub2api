@@ -3,7 +3,7 @@ export default {
   home: {
     landing: {
       waitlist: {
-        mailFailed: 'Your application is saved, but the confirmation email is not complete. Please try again shortly.',
+        mailFailed: 'Your application has been saved, but email confirmation is not yet complete. Please try again shortly.',
         title: "Join the waiting list",
         button: "Join waiting list",
         description: "Leave your email to join our waiting list.",
@@ -11,9 +11,9 @@ export default {
         invalidEmail: "Please enter a valid email address.",
         submitting: "Submitting…",
         success: "You’re on the waiting list. Thank you for your interest.",
-        privacy: "By submitting, you agree to use this email for the waiting list and availability updates. No account is created.",
+        privacy: "By submitting, you consent to this email address being used for the waiting list and opening notifications. No account will be created automatically.",
         rateLimited: "Too many submissions. Please try again shortly.",
-        failed: "Unable to submit right now. Please try again.",
+        failed: "Unable to submit right now. Please try again later.",
       },
       slides: {
         navigation: 'Homepage chapters',
@@ -32,11 +32,11 @@ export default {
       explore: 'Explore',
       quickStart: 'Getting started',
       faq: 'Questions',
-      eyebrow: 'AI, freshly brewed',
-      heroLineOne: 'Room for inspiration.',
-      heroLineTwo: 'AI for your everyday.',
-      subtitle: 'Your next creation starts here.',
-      description: 'Bring AI into the tools you love. Write code, find the right words, and explore ideas. Less setup. More focus.',
+      eyebrow: 'AI, freshly brewed · A refill for your workday',
+      heroLineOne: 'Work with more ease.',
+      heroLineTwo: 'Bring ideas to life, faster.',
+      subtitle: 'From everyday tasks to project progress, moving forward with you.',
+      description: 'Bring AI into familiar work tools for coding, troubleshooting, data analysis and everyday tasks. Less repetitive work. More time for the problems that truly matter.',
       readGuide: 'How to connect',
       heroNote: 'Take a look around. Sign in when you’re ready to connect.',
       artCaption: 'A little coffee. A little inspiration.',
@@ -51,20 +51,20 @@ export default {
         static: 'Static display'
       },
       possibilitiesEyebrow: 'Made for your everyday',
-      possibilitiesTitle: 'Less complexity. More room to create.',
-      possibilitiesDescription: 'From your first idea to your everyday work, make AI a familiar tool, not another thing to figure out.',
+      possibilitiesTitle: 'Whenever you need it, it’s right here.',
+      possibilitiesDescription: 'From your first idea to everyday work, let AI be a tool that fits naturally—not one more thing to wrestle with.',
       features: {
         connect: {
-          title: 'A simpler connection',
-          description: 'Create an API key in your dashboard, then configure the endpoint and model using the documentation. No gateway to build from scratch.'
+          title: 'Native intelligence',
+          description: 'Full model capability over time, with measures to avoid risk-control restrictions. No downgraded or risk-limited substitutes. Every request gets the model’s full ability.'
         },
         create: {
-          title: 'A place in your workflow',
-          description: 'Use AI in compatible coding tools, chat clients, or your own applications. Keep working where your ideas already happen.'
+          title: 'Fast response',
+          description: 'Premium routes optimized across all three major Chinese carriers. WebSocket time to first byte around 0.3 seconds, for smoother interaction and uninterrupted thinking.'
         },
         manage: {
-          title: 'Usage you can understand',
-          description: 'Manage keys, review request history, and set key limits in one place. Keep track of each call without losing focus on your work.'
+          title: 'Verifiable trust',
+          description: 'Every usage record and charge is verifiable. No misrepresented or fake models—what you choose is what you actually use. Trust built on a genuine experience.'
         }
       },
       featureShowcase: {
@@ -73,9 +73,9 @@ export default {
         slide: 'slide',
         choose: 'Choose a feature',
         intelligenceStory: {
-          understand: '1. See the whole',
-          connect: '2. Connect the details',
-          resolve: '3. Find a clear path'
+          understand: '1. See the whole picture',
+          connect: '2. Explore deeper connections',
+          resolve: '3. Turn insight into action'
         },
         billingStory: {
           summary: 'Each request on the left enters the billing area. Model unit prices are applied to input, output and cached usage, the costs are summed, and that request’s multiplier is applied. Its model, usage and actual cost are then printed as one matching usage record. One request corresponds to one receipt row. Shapes are illustrative, not real requests, usage or prices.'
@@ -93,11 +93,11 @@ export default {
       guideEyebrow: 'Your first sip',
       guideTitle: 'Three steps to your AI workflow.',
       guideDescription: 'No complicated setup on this page. Start in your dashboard and connect at your own pace.',
-      keyNote: 'Your API key is an access credential. Keep it private, out of public code, and away from anyone you do not trust.',
+      keyNote: 'Your API key is an access credential. Keep it safe. Do not put it in public code or share it with others.',
       steps: {
         account: { title: 'Open your dashboard', description: 'Sign in to your account. If registration is enabled, you can create an account from the login page.' },
         key: { title: 'Create an API key', description: 'Check the service groups available to your account, then create and save your key. Model access depends on your available services.' },
-        configure: { title: 'Connect Codex or Pi', description: 'Follow the documentation to enter the endpoint, API key, and model name. Send your first request, then review usage in your dashboard.' }
+        configure: { title: 'Connect Codex or Pi', description: 'Follow the setup documentation to configure the endpoint, API key and model in Codex or Pi, then start your AI workflow. Usage records are available in your dashboard.' }
       },
       billing: {
         eyebrow: 'Plans & Balance',
@@ -122,7 +122,7 @@ export default {
         exceptions: { title: 'Cyber & rule-violating request content', retention: 'Retained permanently' }
       },
       faqEyebrow: 'Usage & Pricing',
-      faqTitle: 'A few things worth knowing.',
+      faqTitle: 'Before you start, a few things to know.',
       faqDescription: 'Usage policies and service-group pricing.',
       questions: {
         service: { title: 'Usage policy', answer: 'Redistributing the service, bypassing usage limits, and other prohibited use are strictly forbidden. All usage is monitored and checked. If AI review identifies a violation, the system will automatically ban the account without a refund. Please check your registered email for notices and reminders.' },
@@ -139,7 +139,7 @@ export default {
         balanceDescription: 'The Astra usage multiplier is 0.4–0.5. Top up your balance immediately, without waiting for a subscription presale.'
       },
       closingEyebrow: 'Make room for an idea',
-      closingTitle: 'Your next idea deserves a fresh cup.',
+      closingTitle: 'The next cup is for your next idea.',
       closingDescription: 'When you’re ready, start with a simple connection.'
     },
     viewOnGithub: 'View on GitHub',
@@ -610,7 +610,7 @@ export default {
     passwordMinLength: 'Password must be at least 6 characters',
     loginFailed: 'Login failed. Please check your credentials and try again.',
     errors: {
-      USER_NOT_ACTIVE: 'Account has been disabled.',
+      USER_NOT_ACTIVE: 'Access is not available at the moment.',
       AFFILIATE_INVITE_LIMIT_REACHED: 'Affiliate invite limit reached'
     },
     registrationFailed: 'Registration failed. Please try again.',

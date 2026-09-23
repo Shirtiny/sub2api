@@ -1,10 +1,12 @@
 <template>
   <BaseDialog :show="true" :title="t('home.landing.waitlist.title')" width="narrow" :z-index="100" @close="close">
-    <div v-if="submitted" class="space-y-5 py-2" role="status">
-      <div class="flex h-12 w-12 items-center justify-center rounded-full bg-primary-100 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400">
-        <Icon name="check" size="lg" />
+    <div v-if="submitted" class="space-y-5 py-2">
+      <div class="flex items-center gap-3" role="status" aria-atomic="true">
+        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400" aria-hidden="true">
+          <Icon name="check" size="md" />
+        </div>
+        <p class="min-w-0 flex-1 text-sm leading-6 text-content-primary">{{ t('home.landing.waitlist.success') }}</p>
       </div>
-      <p class="text-content-primary">{{ t('home.landing.waitlist.success') }}</p>
       <button type="button" class="btn btn-primary w-full" @click="close">{{ t('common.close') }}</button>
     </div>
     <form v-else class="space-y-5" novalidate :aria-busy="submitting" @submit.prevent="submit">

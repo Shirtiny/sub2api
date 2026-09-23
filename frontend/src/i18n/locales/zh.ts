@@ -5,7 +5,7 @@ export default {
       waitlist: {
         mailFailed: '申请已保存，确认邮件暂未完成，请稍后重试。',
         title: "加入候补名单",
-        button: "Join waiting list",
+        button: "加入候补名单",
         description: "留下邮箱，加入我们的候补名单。",
         email: "邮箱地址",
         invalidEmail: "请输入格式正确的邮箱地址",
@@ -610,7 +610,7 @@ export default {
     passwordMinLength: '密码至少需要 6 个字符',
     loginFailed: '登录失败，请检查您的凭据后重试。',
     errors: {
-      USER_NOT_ACTIVE: '账号已被禁用',
+      USER_NOT_ACTIVE: '暂无访问权限',
       AFFILIATE_INVITE_LIMIT_REACHED: '此注册链接邀请人数已达到上限'
     },
     registrationFailed: '注册失败，请重试。',
