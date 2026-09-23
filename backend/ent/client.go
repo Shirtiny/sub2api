@@ -56,6 +56,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/userattributevalue"
 	"github.com/Wei-Shaw/sub2api/ent/userplatformquota"
 	"github.com/Wei-Shaw/sub2api/ent/usersubscription"
+	"github.com/Wei-Shaw/sub2api/ent/waitlistentry"
 
 	stdsql "database/sql"
 )
@@ -147,6 +148,8 @@ type Client struct {
 	UserPlatformQuota *UserPlatformQuotaClient
 	// UserSubscription is the client for interacting with the UserSubscription builders.
 	UserSubscription *UserSubscriptionClient
+	// WaitlistEntry is the client for interacting with the WaitlistEntry builders.
+	WaitlistEntry *WaitlistEntryClient
 }
 
 // NewClient creates a new client configured with the given options.
@@ -199,6 +202,7 @@ func (c *Client) init() {
 	c.UserAttributeValue = NewUserAttributeValueClient(c.config)
 	c.UserPlatformQuota = NewUserPlatformQuotaClient(c.config)
 	c.UserSubscription = NewUserSubscriptionClient(c.config)
+	c.WaitlistEntry = NewWaitlistEntryClient(c.config)
 }
 
 type (
@@ -332,6 +336,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		UserAttributeValue:                 NewUserAttributeValueClient(cfg),
 		UserPlatformQuota:                  NewUserPlatformQuotaClient(cfg),
 		UserSubscription:                   NewUserSubscriptionClient(cfg),
+		WaitlistEntry:                      NewWaitlistEntryClient(cfg),
 	}, nil
 }
 
@@ -392,6 +397,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		UserAttributeValue:                 NewUserAttributeValueClient(cfg),
 		UserPlatformQuota:                  NewUserPlatformQuotaClient(cfg),
 		UserSubscription:                   NewUserSubscriptionClient(cfg),
+		WaitlistEntry:                      NewWaitlistEntryClient(cfg),
 	}, nil
 }
 
@@ -432,7 +438,7 @@ func (c *Client) Use(hooks ...Hook) {
 		c.SubscriptionConcurrencyEntitlement, c.SubscriptionEarlyResetEntitlement,
 		c.SubscriptionPlan, c.TLSFingerprintProfile, c.UsageCleanupTask, c.UsageLog,
 		c.User, c.UserAllowedGroup, c.UserAttributeDefinition, c.UserAttributeValue,
-		c.UserPlatformQuota, c.UserSubscription,
+		c.UserPlatformQuota, c.UserSubscription, c.WaitlistEntry,
 	} {
 		n.Use(hooks...)
 	}
@@ -453,7 +459,7 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.SubscriptionConcurrencyEntitlement, c.SubscriptionEarlyResetEntitlement,
 		c.SubscriptionPlan, c.TLSFingerprintProfile, c.UsageCleanupTask, c.UsageLog,
 		c.User, c.UserAllowedGroup, c.UserAttributeDefinition, c.UserAttributeValue,
-		c.UserPlatformQuota, c.UserSubscription,
+		c.UserPlatformQuota, c.UserSubscription, c.WaitlistEntry,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -544,6 +550,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.UserPlatformQuota.mutate(ctx, m)
 	case *UserSubscriptionMutation:
 		return c.UserSubscription.mutate(ctx, m)
+	case *WaitlistEntryMutation:
+		return c.WaitlistEntry.mutate(ctx, m)
 	default:
 		return nil, fmt.Errorf("ent: unknown mutation type %T", m)
 	}
@@ -7200,6 +7208,139 @@ func (c *UserSubscriptionClient) mutate(ctx context.Context, m *UserSubscription
 	}
 }
 
+// WaitlistEntryClient is a client for the WaitlistEntry schema.
+type WaitlistEntryClient struct {
+	config
+}
+
+// NewWaitlistEntryClient returns a client for the WaitlistEntry from the given config.
+func NewWaitlistEntryClient(c config) *WaitlistEntryClient {
+	return &WaitlistEntryClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `waitlistentry.Hooks(f(g(h())))`.
+func (c *WaitlistEntryClient) Use(hooks ...Hook) {
+	c.hooks.WaitlistEntry = append(c.hooks.WaitlistEntry, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `waitlistentry.Intercept(f(g(h())))`.
+func (c *WaitlistEntryClient) Intercept(interceptors ...Interceptor) {
+	c.inters.WaitlistEntry = append(c.inters.WaitlistEntry, interceptors...)
+}
+
+// Create returns a builder for creating a WaitlistEntry entity.
+func (c *WaitlistEntryClient) Create() *WaitlistEntryCreate {
+	mutation := newWaitlistEntryMutation(c.config, OpCreate)
+	return &WaitlistEntryCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of WaitlistEntry entities.
+func (c *WaitlistEntryClient) CreateBulk(builders ...*WaitlistEntryCreate) *WaitlistEntryCreateBulk {
+	return &WaitlistEntryCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *WaitlistEntryClient) MapCreateBulk(slice any, setFunc func(*WaitlistEntryCreate, int)) *WaitlistEntryCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &WaitlistEntryCreateBulk{err: fmt.Errorf("calling to WaitlistEntryClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*WaitlistEntryCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &WaitlistEntryCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for WaitlistEntry.
+func (c *WaitlistEntryClient) Update() *WaitlistEntryUpdate {
+	mutation := newWaitlistEntryMutation(c.config, OpUpdate)
+	return &WaitlistEntryUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *WaitlistEntryClient) UpdateOne(_m *WaitlistEntry) *WaitlistEntryUpdateOne {
+	mutation := newWaitlistEntryMutation(c.config, OpUpdateOne, withWaitlistEntry(_m))
+	return &WaitlistEntryUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *WaitlistEntryClient) UpdateOneID(id int64) *WaitlistEntryUpdateOne {
+	mutation := newWaitlistEntryMutation(c.config, OpUpdateOne, withWaitlistEntryID(id))
+	return &WaitlistEntryUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for WaitlistEntry.
+func (c *WaitlistEntryClient) Delete() *WaitlistEntryDelete {
+	mutation := newWaitlistEntryMutation(c.config, OpDelete)
+	return &WaitlistEntryDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *WaitlistEntryClient) DeleteOne(_m *WaitlistEntry) *WaitlistEntryDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *WaitlistEntryClient) DeleteOneID(id int64) *WaitlistEntryDeleteOne {
+	builder := c.Delete().Where(waitlistentry.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &WaitlistEntryDeleteOne{builder}
+}
+
+// Query returns a query builder for WaitlistEntry.
+func (c *WaitlistEntryClient) Query() *WaitlistEntryQuery {
+	return &WaitlistEntryQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeWaitlistEntry},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a WaitlistEntry entity by its id.
+func (c *WaitlistEntryClient) Get(ctx context.Context, id int64) (*WaitlistEntry, error) {
+	return c.Query().Where(waitlistentry.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *WaitlistEntryClient) GetX(ctx context.Context, id int64) *WaitlistEntry {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *WaitlistEntryClient) Hooks() []Hook {
+	return c.hooks.WaitlistEntry
+}
+
+// Interceptors returns the client interceptors.
+func (c *WaitlistEntryClient) Interceptors() []Interceptor {
+	return c.inters.WaitlistEntry
+}
+
+func (c *WaitlistEntryClient) mutate(ctx context.Context, m *WaitlistEntryMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&WaitlistEntryCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&WaitlistEntryUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&WaitlistEntryUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&WaitlistEntryDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown WaitlistEntry mutation op: %q", m.Op())
+	}
+}
+
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
@@ -7213,7 +7354,7 @@ type (
 		SubscriptionConcurrencyEntitlement, SubscriptionEarlyResetEntitlement,
 		SubscriptionPlan, TLSFingerprintProfile, UsageCleanupTask, UsageLog, User,
 		UserAllowedGroup, UserAttributeDefinition, UserAttributeValue,
-		UserPlatformQuota, UserSubscription []ent.Hook
+		UserPlatformQuota, UserSubscription, WaitlistEntry []ent.Hook
 	}
 	inters struct {
 		APIKey, Account, AccountGroup, Announcement, AnnouncementRead, AuthIdentity,
@@ -7226,7 +7367,7 @@ type (
 		SubscriptionConcurrencyEntitlement, SubscriptionEarlyResetEntitlement,
 		SubscriptionPlan, TLSFingerprintProfile, UsageCleanupTask, UsageLog, User,
 		UserAllowedGroup, UserAttributeDefinition, UserAttributeValue,
-		UserPlatformQuota, UserSubscription []ent.Interceptor
+		UserPlatformQuota, UserSubscription, WaitlistEntry []ent.Interceptor
 	}
 )
 

@@ -54,6 +54,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/userattributevalue"
 	"github.com/Wei-Shaw/sub2api/ent/userplatformquota"
 	"github.com/Wei-Shaw/sub2api/ent/usersubscription"
+	"github.com/Wei-Shaw/sub2api/ent/waitlistentry"
 	"github.com/Wei-Shaw/sub2api/internal/domain"
 )
 
@@ -107,6 +108,7 @@ const (
 	TypeUserAttributeValue                 = "UserAttributeValue"
 	TypeUserPlatformQuota                  = "UserPlatformQuota"
 	TypeUserSubscription                   = "UserSubscription"
+	TypeWaitlistEntry                      = "WaitlistEntry"
 )
 
 // APIKeyMutation represents an operation that mutates the APIKey nodes in the graph.
@@ -56485,4 +56487,533 @@ func (m *UserSubscriptionMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown UserSubscription edge %s", name)
+}
+
+// WaitlistEntryMutation represents an operation that mutates the WaitlistEntry nodes in the graph.
+type WaitlistEntryMutation struct {
+	config
+	op                        Op
+	typ                       string
+	id                        *int64
+	email                     *string
+	created_at                *time.Time
+	confirmation_attempted_at *time.Time
+	confirmation_sent_at      *time.Time
+	clearedFields             map[string]struct{}
+	done                      bool
+	oldValue                  func(context.Context) (*WaitlistEntry, error)
+	predicates                []predicate.WaitlistEntry
+}
+
+var _ ent.Mutation = (*WaitlistEntryMutation)(nil)
+
+// waitlistentryOption allows management of the mutation configuration using functional options.
+type waitlistentryOption func(*WaitlistEntryMutation)
+
+// newWaitlistEntryMutation creates new mutation for the WaitlistEntry entity.
+func newWaitlistEntryMutation(c config, op Op, opts ...waitlistentryOption) *WaitlistEntryMutation {
+	m := &WaitlistEntryMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeWaitlistEntry,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withWaitlistEntryID sets the ID field of the mutation.
+func withWaitlistEntryID(id int64) waitlistentryOption {
+	return func(m *WaitlistEntryMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *WaitlistEntry
+		)
+		m.oldValue = func(ctx context.Context) (*WaitlistEntry, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().WaitlistEntry.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withWaitlistEntry sets the old WaitlistEntry of the mutation.
+func withWaitlistEntry(node *WaitlistEntry) waitlistentryOption {
+	return func(m *WaitlistEntryMutation) {
+		m.oldValue = func(context.Context) (*WaitlistEntry, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m WaitlistEntryMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m WaitlistEntryMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *WaitlistEntryMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *WaitlistEntryMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().WaitlistEntry.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetEmail sets the "email" field.
+func (m *WaitlistEntryMutation) SetEmail(s string) {
+	m.email = &s
+}
+
+// Email returns the value of the "email" field in the mutation.
+func (m *WaitlistEntryMutation) Email() (r string, exists bool) {
+	v := m.email
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEmail returns the old "email" field's value of the WaitlistEntry entity.
+// If the WaitlistEntry object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WaitlistEntryMutation) OldEmail(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEmail is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEmail requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEmail: %w", err)
+	}
+	return oldValue.Email, nil
+}
+
+// ResetEmail resets all changes to the "email" field.
+func (m *WaitlistEntryMutation) ResetEmail() {
+	m.email = nil
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *WaitlistEntryMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *WaitlistEntryMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the WaitlistEntry entity.
+// If the WaitlistEntry object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WaitlistEntryMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *WaitlistEntryMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetConfirmationAttemptedAt sets the "confirmation_attempted_at" field.
+func (m *WaitlistEntryMutation) SetConfirmationAttemptedAt(t time.Time) {
+	m.confirmation_attempted_at = &t
+}
+
+// ConfirmationAttemptedAt returns the value of the "confirmation_attempted_at" field in the mutation.
+func (m *WaitlistEntryMutation) ConfirmationAttemptedAt() (r time.Time, exists bool) {
+	v := m.confirmation_attempted_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldConfirmationAttemptedAt returns the old "confirmation_attempted_at" field's value of the WaitlistEntry entity.
+// If the WaitlistEntry object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WaitlistEntryMutation) OldConfirmationAttemptedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldConfirmationAttemptedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldConfirmationAttemptedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldConfirmationAttemptedAt: %w", err)
+	}
+	return oldValue.ConfirmationAttemptedAt, nil
+}
+
+// ClearConfirmationAttemptedAt clears the value of the "confirmation_attempted_at" field.
+func (m *WaitlistEntryMutation) ClearConfirmationAttemptedAt() {
+	m.confirmation_attempted_at = nil
+	m.clearedFields[waitlistentry.FieldConfirmationAttemptedAt] = struct{}{}
+}
+
+// ConfirmationAttemptedAtCleared returns if the "confirmation_attempted_at" field was cleared in this mutation.
+func (m *WaitlistEntryMutation) ConfirmationAttemptedAtCleared() bool {
+	_, ok := m.clearedFields[waitlistentry.FieldConfirmationAttemptedAt]
+	return ok
+}
+
+// ResetConfirmationAttemptedAt resets all changes to the "confirmation_attempted_at" field.
+func (m *WaitlistEntryMutation) ResetConfirmationAttemptedAt() {
+	m.confirmation_attempted_at = nil
+	delete(m.clearedFields, waitlistentry.FieldConfirmationAttemptedAt)
+}
+
+// SetConfirmationSentAt sets the "confirmation_sent_at" field.
+func (m *WaitlistEntryMutation) SetConfirmationSentAt(t time.Time) {
+	m.confirmation_sent_at = &t
+}
+
+// ConfirmationSentAt returns the value of the "confirmation_sent_at" field in the mutation.
+func (m *WaitlistEntryMutation) ConfirmationSentAt() (r time.Time, exists bool) {
+	v := m.confirmation_sent_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldConfirmationSentAt returns the old "confirmation_sent_at" field's value of the WaitlistEntry entity.
+// If the WaitlistEntry object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WaitlistEntryMutation) OldConfirmationSentAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldConfirmationSentAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldConfirmationSentAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldConfirmationSentAt: %w", err)
+	}
+	return oldValue.ConfirmationSentAt, nil
+}
+
+// ClearConfirmationSentAt clears the value of the "confirmation_sent_at" field.
+func (m *WaitlistEntryMutation) ClearConfirmationSentAt() {
+	m.confirmation_sent_at = nil
+	m.clearedFields[waitlistentry.FieldConfirmationSentAt] = struct{}{}
+}
+
+// ConfirmationSentAtCleared returns if the "confirmation_sent_at" field was cleared in this mutation.
+func (m *WaitlistEntryMutation) ConfirmationSentAtCleared() bool {
+	_, ok := m.clearedFields[waitlistentry.FieldConfirmationSentAt]
+	return ok
+}
+
+// ResetConfirmationSentAt resets all changes to the "confirmation_sent_at" field.
+func (m *WaitlistEntryMutation) ResetConfirmationSentAt() {
+	m.confirmation_sent_at = nil
+	delete(m.clearedFields, waitlistentry.FieldConfirmationSentAt)
+}
+
+// Where appends a list predicates to the WaitlistEntryMutation builder.
+func (m *WaitlistEntryMutation) Where(ps ...predicate.WaitlistEntry) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the WaitlistEntryMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *WaitlistEntryMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.WaitlistEntry, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *WaitlistEntryMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *WaitlistEntryMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (WaitlistEntry).
+func (m *WaitlistEntryMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *WaitlistEntryMutation) Fields() []string {
+	fields := make([]string, 0, 4)
+	if m.email != nil {
+		fields = append(fields, waitlistentry.FieldEmail)
+	}
+	if m.created_at != nil {
+		fields = append(fields, waitlistentry.FieldCreatedAt)
+	}
+	if m.confirmation_attempted_at != nil {
+		fields = append(fields, waitlistentry.FieldConfirmationAttemptedAt)
+	}
+	if m.confirmation_sent_at != nil {
+		fields = append(fields, waitlistentry.FieldConfirmationSentAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *WaitlistEntryMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case waitlistentry.FieldEmail:
+		return m.Email()
+	case waitlistentry.FieldCreatedAt:
+		return m.CreatedAt()
+	case waitlistentry.FieldConfirmationAttemptedAt:
+		return m.ConfirmationAttemptedAt()
+	case waitlistentry.FieldConfirmationSentAt:
+		return m.ConfirmationSentAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *WaitlistEntryMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case waitlistentry.FieldEmail:
+		return m.OldEmail(ctx)
+	case waitlistentry.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case waitlistentry.FieldConfirmationAttemptedAt:
+		return m.OldConfirmationAttemptedAt(ctx)
+	case waitlistentry.FieldConfirmationSentAt:
+		return m.OldConfirmationSentAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown WaitlistEntry field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *WaitlistEntryMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case waitlistentry.FieldEmail:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEmail(v)
+		return nil
+	case waitlistentry.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case waitlistentry.FieldConfirmationAttemptedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetConfirmationAttemptedAt(v)
+		return nil
+	case waitlistentry.FieldConfirmationSentAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetConfirmationSentAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown WaitlistEntry field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *WaitlistEntryMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *WaitlistEntryMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *WaitlistEntryMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown WaitlistEntry numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *WaitlistEntryMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(waitlistentry.FieldConfirmationAttemptedAt) {
+		fields = append(fields, waitlistentry.FieldConfirmationAttemptedAt)
+	}
+	if m.FieldCleared(waitlistentry.FieldConfirmationSentAt) {
+		fields = append(fields, waitlistentry.FieldConfirmationSentAt)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *WaitlistEntryMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *WaitlistEntryMutation) ClearField(name string) error {
+	switch name {
+	case waitlistentry.FieldConfirmationAttemptedAt:
+		m.ClearConfirmationAttemptedAt()
+		return nil
+	case waitlistentry.FieldConfirmationSentAt:
+		m.ClearConfirmationSentAt()
+		return nil
+	}
+	return fmt.Errorf("unknown WaitlistEntry nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *WaitlistEntryMutation) ResetField(name string) error {
+	switch name {
+	case waitlistentry.FieldEmail:
+		m.ResetEmail()
+		return nil
+	case waitlistentry.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case waitlistentry.FieldConfirmationAttemptedAt:
+		m.ResetConfirmationAttemptedAt()
+		return nil
+	case waitlistentry.FieldConfirmationSentAt:
+		m.ResetConfirmationSentAt()
+		return nil
+	}
+	return fmt.Errorf("unknown WaitlistEntry field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *WaitlistEntryMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *WaitlistEntryMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *WaitlistEntryMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *WaitlistEntryMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *WaitlistEntryMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *WaitlistEntryMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *WaitlistEntryMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown WaitlistEntry unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *WaitlistEntryMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown WaitlistEntry edge %s", name)
 }

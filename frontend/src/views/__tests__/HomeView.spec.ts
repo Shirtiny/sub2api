@@ -55,7 +55,7 @@ function render(locale: 'zh' | 'en' = 'zh') {
   state.locale = locale
   wrapper = mount(HomeView, {
     global: {
-      stubs: { RouterLink: RouterLinkStub, LocaleSwitcher: true }
+      stubs: { RouterLink: RouterLinkStub, LocaleSwitcher: true, HomeWaitlistDialog: true }
     }
   })
   return wrapper
@@ -130,6 +130,17 @@ describe('visitor-first homepage', () => {
     expect(items[2].findAll('dt').map(item => item.text())).toEqual(['普通请求内容', 'Cyber 及违规请求内容'])
     expect(items[2].findAll('dd').map(item => item.text())).toEqual(['仅保留 1 天', '永久保留'])
     expect(page.find('#questions .policy-billing-options').exists()).toBe(false)
+  })
+
+  it('opens the waiting-list form from the secondary hero button', async () => {
+    const page = render()
+    const button = page.get('.hero-actions .cafe-button-secondary')
+    expect(button.element.tagName).toBe('BUTTON')
+    expect(button.text()).toBe('Join waiting list')
+    expect(button.attributes('href')).toBeUndefined()
+    expect(page.find('home-waitlist-dialog-stub').exists()).toBe(false)
+    await button.trigger('click')
+    expect(page.find('home-waitlist-dialog-stub').exists()).toBe(true)
   })
 
   it('moves the simplified first-sip guide ahead of the usage policies', () => {

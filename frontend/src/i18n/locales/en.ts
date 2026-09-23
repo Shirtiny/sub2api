@@ -2,6 +2,19 @@ export default {
   // Home Page
   home: {
     landing: {
+      waitlist: {
+        mailFailed: 'Your application is saved, but the confirmation email is not complete. Please try again shortly.',
+        title: "Join the waiting list",
+        button: "Join waiting list",
+        description: "Leave your email to join our waiting list.",
+        email: "Email address",
+        invalidEmail: "Please enter a valid email address.",
+        submitting: "Submitting…",
+        success: "You’re on the waiting list. Thank you for your interest.",
+        privacy: "By submitting, you agree to use this email for the waiting list and availability updates. No account is created.",
+        rateLimited: "Too many submissions. Please try again shortly.",
+        failed: "Unable to submit right now. Please try again.",
+      },
       slides: {
         navigation: 'Homepage chapters',
         welcome: 'Welcome',
@@ -1661,6 +1674,12 @@ export default {
 
   // Admin
   admin: {
+    waitlist: {
+      title: "Waiting list",
+      description: "Emails collected on the homepage and their join dates. Mailbox ownership is not verified.",
+      joinedAt: "Joined at",
+      failed: "Failed to load the waiting list. Please retry.",
+    },
     // Dashboard
     dashboard: {
       title: 'Admin Dashboard',

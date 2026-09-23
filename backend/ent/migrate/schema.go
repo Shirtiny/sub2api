@@ -2096,6 +2096,20 @@ var (
 			},
 		},
 	}
+	// WaitlistEntriesColumns holds the columns for the "waitlist_entries" table.
+	WaitlistEntriesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "email", Type: field.TypeString, Unique: true, Size: 254},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "confirmation_attempted_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "confirmation_sent_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+	}
+	// WaitlistEntriesTable holds the schema information for the "waitlist_entries" table.
+	WaitlistEntriesTable = &schema.Table{
+		Name:       "waitlist_entries",
+		Columns:    WaitlistEntriesColumns,
+		PrimaryKey: []*schema.Column{WaitlistEntriesColumns[0]},
+	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		APIKeysTable,
@@ -2139,6 +2153,7 @@ var (
 		UserAttributeValuesTable,
 		UserPlatformQuotasTable,
 		UserSubscriptionsTable,
+		WaitlistEntriesTable,
 	}
 )
 
@@ -2303,5 +2318,8 @@ func init() {
 	UserSubscriptionsTable.ForeignKeys[2].RefTable = UsersTable
 	UserSubscriptionsTable.Annotation = &entsql.Annotation{
 		Table: "user_subscriptions",
+	}
+	WaitlistEntriesTable.Annotation = &entsql.Annotation{
+		Table: "waitlist_entries",
 	}
 }

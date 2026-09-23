@@ -128,3 +128,6 @@ type UserPlatformQuota func(*sql.Selector)
 
 // UserSubscription is the predicate function for usersubscription builders.
 type UserSubscription func(*sql.Selector)
+
+// WaitlistEntry is the predicate function for waitlistentry builders.
+type WaitlistEntry func(*sql.Selector)

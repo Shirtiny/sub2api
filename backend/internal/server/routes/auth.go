@@ -210,6 +210,11 @@ func RegisterAuthRoutes(
 		)
 	}
 
+	// Public opt-in remains available while account registration is closed.
+	v1.POST("/waitlist", rateLimiter.LimitWithOptions("waitlist-join", 5, time.Minute, middleware.RateLimitOptions{
+		FailureMode: middleware.RateLimitFailClose,
+	}), h.Waitlist.Join)
+
 	// 公开设置（无需认证）
 	settings := v1.Group("/settings")
 	{

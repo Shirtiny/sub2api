@@ -1,0 +1,125 @@
+package service
+
+import (
+	"context"
+	"fmt"
+	"regexp"
+	"strings"
+	"time"
+
+	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
+)
+
+var ErrWaitlistEmailInvalid = infraerrors.BadRequest("WAITLIST_EMAIL_INVALID", "Please enter a valid email address")
+var ErrWaitlistConfirmationFailed = infraerrors.ServiceUnavailable("WAITLIST_CONFIRMATION_FAILED", "Your application is saved, but the confirmation email is not complete. Please try again shortly")
+
+const waitlistConfirmationSubject = "Waiting List 申请成功"
+const waitlistConfirmationMessage = "欢迎，您已经加入到Waiting List，请耐心等待。关注邮件消息，开放后会即时通知。"
+
+// Longer than the bounded SMTP dial / I/O operation; abandoned attempts can be retried.
+const WaitlistConfirmationLease = 2 * time.Minute
+
+var waitlistDomainLetter = regexp.MustCompile(`[a-z]`)
+var waitlistLocalPart = regexp.MustCompile("^[a-z0-9!#$%&'*+/=?^_`{|}~.-]+$")
+var waitlistDomainLabel = regexp.MustCompile(`^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$`)
+
+type WaitlistEntry struct {
+	ID        int64     `json:"id"`
+	Email     string    `json:"email"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+type WaitlistRepository interface {
+	Join(ctx context.Context, email string) error
+	ClaimConfirmation(ctx context.Context, email string, attempt time.Time) (bool, error)
+	FinishConfirmation(ctx context.Context, email string, attempt time.Time, sent bool) error
+	List(ctx context.Context, params pagination.PaginationParams) ([]WaitlistEntry, int64, error)
+}
+
+type WaitlistEmailSender interface {
+	SendEmail(ctx context.Context, to, subject, body string) error
+}
+
+type WaitlistBranding interface {
+	GetSiteName(ctx context.Context) string
+}
+
+type WaitlistService struct {
+	repo     WaitlistRepository
+	mailer   WaitlistEmailSender
+	branding WaitlistBranding
+}
+
+func NewWaitlistService(repo WaitlistRepository, mailer WaitlistEmailSender, branding WaitlistBranding) *WaitlistService {
+	return &WaitlistService{repo: repo, mailer: mailer, branding: branding}
+}
+
+// NormalizeWaitlistEmail validates a common ASCII mailbox without a DNS lookup.
+// This validates syntax only, not ownership or deliverability.
+func NormalizeWaitlistEmail(value string) (string, error) {
+	email := strings.ToLower(strings.TrimSpace(value))
+	parts := strings.Split(email, "@")
+	if len(email) > 254 || len(parts) != 2 {
+		return "", ErrWaitlistEmailInvalid
+	}
+	local, domain := parts[0], parts[1]
+	if len(local) == 0 || len(local) > 64 || !waitlistLocalPart.MatchString(local) || strings.HasPrefix(local, ".") || strings.HasSuffix(local, ".") || strings.Contains(local, "..") {
+		return "", ErrWaitlistEmailInvalid
+	}
+	labels := strings.Split(domain, ".")
+	if len(labels) < 2 {
+		return "", ErrWaitlistEmailInvalid
+	}
+	for _, label := range labels {
+		if !waitlistDomainLabel.MatchString(label) {
+			return "", ErrWaitlistEmailInvalid
+		}
+	}
+	// Reject numeric top-level domains / IP addresses, not ordinary mailbox aliases.
+	if !waitlistDomainLetter.MatchString(labels[len(labels)-1]) {
+		return "", ErrWaitlistEmailInvalid
+	}
+	return email, nil
+}
+
+func (s *WaitlistService) Join(ctx context.Context, email string) error {
+	normalized, err := NormalizeWaitlistEmail(email)
+	if err != nil {
+		return err
+	}
+	if err := s.repo.Join(ctx, normalized); err != nil {
+		return fmt.Errorf("join waitlist: %w", err)
+	}
+	// The application is durable before any SMTP traffic. A database-backed claim
+	// prevents simultaneous submissions from sending the same confirmation.
+	attempt := time.Now().UTC().Truncate(time.Microsecond)
+	claimed, err := s.repo.ClaimConfirmation(ctx, normalized, attempt)
+	if err != nil {
+		return ErrWaitlistConfirmationFailed.WithCause(err)
+	}
+	if !claimed {
+		return nil
+	} // Already sent; repeated requests remain idempotent.
+
+	// Finish a persisted opt-in even if the browser disconnects. SMTP itself uses
+	// the shared dial/I/O deadlines; do not keep a DB transaction open during SMTP.
+	mailCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 35*time.Second)
+	body := waitlistConfirmationHTML(s.branding.GetSiteName(mailCtx))
+	sendErr := s.mailer.SendEmail(mailCtx, normalized, waitlistConfirmationSubject, body)
+	cancel()
+	finishCtx, finishCancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
+	defer finishCancel()
+	finishErr := s.repo.FinishConfirmation(finishCtx, normalized, attempt, sendErr == nil)
+	if sendErr != nil {
+		return ErrWaitlistConfirmationFailed.WithCause(sendErr)
+	}
+	if finishErr != nil {
+		return ErrWaitlistConfirmationFailed.WithCause(finishErr)
+	}
+	return nil
+}
+
+func (s *WaitlistService) List(ctx context.Context, params pagination.PaginationParams) ([]WaitlistEntry, int64, error) {
+	return s.repo.List(ctx, params)
+}

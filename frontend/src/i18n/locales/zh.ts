@@ -2,6 +2,19 @@ export default {
   // Home Page
   home: {
     landing: {
+      waitlist: {
+        mailFailed: '申请已保存，确认邮件暂未完成，请稍后重试。',
+        title: "加入候补名单",
+        button: "Join waiting list",
+        description: "留下邮箱，加入我们的候补名单。",
+        email: "邮箱地址",
+        invalidEmail: "请输入格式正确的邮箱地址",
+        submitting: "提交中…",
+        success: "已加入候补名单，感谢你的关注。",
+        privacy: "提交即表示同意将此邮箱用于候补名单及开放通知，不会自动创建账号。",
+        rateLimited: "提交过于频繁，请稍后再试。",
+        failed: "暂时无法提交，请稍后重试。",
+      },
       slides: {
         navigation: '首页章节',
         welcome: '首页',
@@ -1665,6 +1678,12 @@ export default {
 
   // Admin
   admin: {
+    waitlist: {
+      title: "候补名单",
+      description: "首页提交的邮箱与加入时间；邮箱未经所有权验证。",
+      joinedAt: "加入时间",
+      failed: "候补名单加载失败，请重试。",
+    },
     // Dashboard
     dashboard: {
       title: '管理控制台',

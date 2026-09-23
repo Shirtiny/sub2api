@@ -71,10 +71,10 @@
                   {{ t(isAuthenticated ? 'home.goToDashboard' : 'home.getStarted') }}
                   <Icon name="arrowRight" size="md" aria-hidden="true" />
                 </RouterLink>
-                <a href="#getting-started" class="cafe-button cafe-button-secondary" data-reveal style="--reveal-delay: 330ms">
-                  <Icon name="book" size="md" aria-hidden="true" />
-                  {{ t('home.landing.readGuide') }}
-                </a>
+                <button type="button" class="cafe-button cafe-button-secondary" data-reveal style="--reveal-delay: 330ms" @click="showWaitlist = true">
+                  <Icon name="mail" size="md" aria-hidden="true" />
+                  {{ t('home.landing.waitlist.button') }}
+                </button>
               </div>
               <p class="hero-note" data-reveal style="--reveal-delay: 430ms">{{ t('home.landing.heroNote') }}</p>
             </div>
@@ -218,6 +218,7 @@
     </div>
 
   </HomeSectionSlider>
+  <HomeWaitlistDialog v-if="showWaitlist && !homeContent" :is-dark="isDark" @close="showWaitlist = false" />
 </template>
 
 <script setup lang="ts">
@@ -227,6 +228,7 @@ import { useAuthStore, useAppStore } from '@/stores'
 import { sanitizeUrl } from '@/utils/url'
 import LocaleSwitcher from '@/components/common/LocaleSwitcher.vue'
 import HomeBrand from '@/components/home/HomeBrand.vue'
+import HomeWaitlistDialog from '@/components/home/HomeWaitlistDialog.vue'
 import { initializeTheme } from '@/utils/theme'
 import HomeBillingSection from '@/components/home/HomeBillingSection.vue'
 import HomeFeatureCarousel from '@/components/home/HomeFeatureCarousel.vue'
@@ -253,6 +255,7 @@ const isAuthenticated = computed(() => authStore.isAuthenticated)
 const entryPath = computed(() => !isAuthenticated.value ? '/login' : authStore.isAdmin ? '/admin/dashboard' : '/dashboard')
 // Share the same explicit preference / dark default as the console and bootstrap.
 const isDark = ref(initializeTheme())
+const showWaitlist = ref(false)
 const currentYear = new Date().getFullYear()
 
 const steps = ['account', 'key', 'configure'] as const

@@ -47,6 +47,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/userattributevalue"
 	"github.com/Wei-Shaw/sub2api/ent/userplatformquota"
 	"github.com/Wei-Shaw/sub2api/ent/usersubscription"
+	"github.com/Wei-Shaw/sub2api/ent/waitlistentry"
 	"github.com/Wei-Shaw/sub2api/internal/domain"
 )
 
@@ -2623,6 +2624,30 @@ func init() {
 	usersubscriptionDescCustomDisplayName := usersubscriptionFields[23].Descriptor()
 	// usersubscription.CustomDisplayNameValidator is a validator for the "custom_display_name" field. It is called by the builders before save.
 	usersubscription.CustomDisplayNameValidator = usersubscriptionDescCustomDisplayName.Validators[0].(func(string) error)
+	waitlistentryFields := schema.WaitlistEntry{}.Fields()
+	_ = waitlistentryFields
+	// waitlistentryDescEmail is the schema descriptor for email field.
+	waitlistentryDescEmail := waitlistentryFields[0].Descriptor()
+	// waitlistentry.EmailValidator is a validator for the "email" field. It is called by the builders before save.
+	waitlistentry.EmailValidator = func() func(string) error {
+		validators := waitlistentryDescEmail.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(email string) error {
+			for _, fn := range fns {
+				if err := fn(email); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// waitlistentryDescCreatedAt is the schema descriptor for created_at field.
+	waitlistentryDescCreatedAt := waitlistentryFields[1].Descriptor()
+	// waitlistentry.DefaultCreatedAt holds the default value on creation for the created_at field.
+	waitlistentry.DefaultCreatedAt = waitlistentryDescCreatedAt.Default.(func() time.Time)
 }
 
 const (

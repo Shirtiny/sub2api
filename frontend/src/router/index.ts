@@ -490,6 +490,15 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/admin/waitlist',
+    name: 'AdminWaitlist',
+    component: () => import('@/views/admin/WaitlistView.vue'),
+    meta: {
+      requiresAuth: true, requiresAdmin: true,
+      title: 'Waiting list', titleKey: 'admin.waitlist.title', descriptionKey: 'admin.waitlist.description'
+    }
+  },
+  {
     path: '/admin/announcements',
     name: 'AdminAnnouncements',
     component: () => import('@/views/admin/AnnouncementsView.vue'),
