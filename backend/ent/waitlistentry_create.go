@@ -70,6 +70,76 @@ func (_c *WaitlistEntryCreate) SetNillableConfirmationSentAt(v *time.Time) *Wait
 	return _c
 }
 
+// SetApprovedAt sets the "approved_at" field.
+func (_c *WaitlistEntryCreate) SetApprovedAt(v time.Time) *WaitlistEntryCreate {
+	_c.mutation.SetApprovedAt(v)
+	return _c
+}
+
+// SetNillableApprovedAt sets the "approved_at" field if the given value is not nil.
+func (_c *WaitlistEntryCreate) SetNillableApprovedAt(v *time.Time) *WaitlistEntryCreate {
+	if v != nil {
+		_c.SetApprovedAt(*v)
+	}
+	return _c
+}
+
+// SetApprovedBy sets the "approved_by" field.
+func (_c *WaitlistEntryCreate) SetApprovedBy(v int64) *WaitlistEntryCreate {
+	_c.mutation.SetApprovedBy(v)
+	return _c
+}
+
+// SetNillableApprovedBy sets the "approved_by" field if the given value is not nil.
+func (_c *WaitlistEntryCreate) SetNillableApprovedBy(v *int64) *WaitlistEntryCreate {
+	if v != nil {
+		_c.SetApprovedBy(*v)
+	}
+	return _c
+}
+
+// SetGrantedUserID sets the "granted_user_id" field.
+func (_c *WaitlistEntryCreate) SetGrantedUserID(v int64) *WaitlistEntryCreate {
+	_c.mutation.SetGrantedUserID(v)
+	return _c
+}
+
+// SetNillableGrantedUserID sets the "granted_user_id" field if the given value is not nil.
+func (_c *WaitlistEntryCreate) SetNillableGrantedUserID(v *int64) *WaitlistEntryCreate {
+	if v != nil {
+		_c.SetGrantedUserID(*v)
+	}
+	return _c
+}
+
+// SetApprovalNoticeAttemptedAt sets the "approval_notice_attempted_at" field.
+func (_c *WaitlistEntryCreate) SetApprovalNoticeAttemptedAt(v time.Time) *WaitlistEntryCreate {
+	_c.mutation.SetApprovalNoticeAttemptedAt(v)
+	return _c
+}
+
+// SetNillableApprovalNoticeAttemptedAt sets the "approval_notice_attempted_at" field if the given value is not nil.
+func (_c *WaitlistEntryCreate) SetNillableApprovalNoticeAttemptedAt(v *time.Time) *WaitlistEntryCreate {
+	if v != nil {
+		_c.SetApprovalNoticeAttemptedAt(*v)
+	}
+	return _c
+}
+
+// SetApprovalNoticeSentAt sets the "approval_notice_sent_at" field.
+func (_c *WaitlistEntryCreate) SetApprovalNoticeSentAt(v time.Time) *WaitlistEntryCreate {
+	_c.mutation.SetApprovalNoticeSentAt(v)
+	return _c
+}
+
+// SetNillableApprovalNoticeSentAt sets the "approval_notice_sent_at" field if the given value is not nil.
+func (_c *WaitlistEntryCreate) SetNillableApprovalNoticeSentAt(v *time.Time) *WaitlistEntryCreate {
+	if v != nil {
+		_c.SetApprovalNoticeSentAt(*v)
+	}
+	return _c
+}
+
 // Mutation returns the WaitlistEntryMutation object of the builder.
 func (_c *WaitlistEntryCreate) Mutation() *WaitlistEntryMutation {
 	return _c.mutation
@@ -167,6 +237,26 @@ func (_c *WaitlistEntryCreate) createSpec() (*WaitlistEntry, *sqlgraph.CreateSpe
 		_spec.SetField(waitlistentry.FieldConfirmationSentAt, field.TypeTime, value)
 		_node.ConfirmationSentAt = &value
 	}
+	if value, ok := _c.mutation.ApprovedAt(); ok {
+		_spec.SetField(waitlistentry.FieldApprovedAt, field.TypeTime, value)
+		_node.ApprovedAt = &value
+	}
+	if value, ok := _c.mutation.ApprovedBy(); ok {
+		_spec.SetField(waitlistentry.FieldApprovedBy, field.TypeInt64, value)
+		_node.ApprovedBy = &value
+	}
+	if value, ok := _c.mutation.GrantedUserID(); ok {
+		_spec.SetField(waitlistentry.FieldGrantedUserID, field.TypeInt64, value)
+		_node.GrantedUserID = &value
+	}
+	if value, ok := _c.mutation.ApprovalNoticeAttemptedAt(); ok {
+		_spec.SetField(waitlistentry.FieldApprovalNoticeAttemptedAt, field.TypeTime, value)
+		_node.ApprovalNoticeAttemptedAt = &value
+	}
+	if value, ok := _c.mutation.ApprovalNoticeSentAt(); ok {
+		_spec.SetField(waitlistentry.FieldApprovalNoticeSentAt, field.TypeTime, value)
+		_node.ApprovalNoticeSentAt = &value
+	}
 	return _node, _spec
 }
 
@@ -252,6 +342,108 @@ func (u *WaitlistEntryUpsert) UpdateConfirmationSentAt() *WaitlistEntryUpsert {
 // ClearConfirmationSentAt clears the value of the "confirmation_sent_at" field.
 func (u *WaitlistEntryUpsert) ClearConfirmationSentAt() *WaitlistEntryUpsert {
 	u.SetNull(waitlistentry.FieldConfirmationSentAt)
+	return u
+}
+
+// SetApprovedAt sets the "approved_at" field.
+func (u *WaitlistEntryUpsert) SetApprovedAt(v time.Time) *WaitlistEntryUpsert {
+	u.Set(waitlistentry.FieldApprovedAt, v)
+	return u
+}
+
+// UpdateApprovedAt sets the "approved_at" field to the value that was provided on create.
+func (u *WaitlistEntryUpsert) UpdateApprovedAt() *WaitlistEntryUpsert {
+	u.SetExcluded(waitlistentry.FieldApprovedAt)
+	return u
+}
+
+// ClearApprovedAt clears the value of the "approved_at" field.
+func (u *WaitlistEntryUpsert) ClearApprovedAt() *WaitlistEntryUpsert {
+	u.SetNull(waitlistentry.FieldApprovedAt)
+	return u
+}
+
+// SetApprovedBy sets the "approved_by" field.
+func (u *WaitlistEntryUpsert) SetApprovedBy(v int64) *WaitlistEntryUpsert {
+	u.Set(waitlistentry.FieldApprovedBy, v)
+	return u
+}
+
+// UpdateApprovedBy sets the "approved_by" field to the value that was provided on create.
+func (u *WaitlistEntryUpsert) UpdateApprovedBy() *WaitlistEntryUpsert {
+	u.SetExcluded(waitlistentry.FieldApprovedBy)
+	return u
+}
+
+// AddApprovedBy adds v to the "approved_by" field.
+func (u *WaitlistEntryUpsert) AddApprovedBy(v int64) *WaitlistEntryUpsert {
+	u.Add(waitlistentry.FieldApprovedBy, v)
+	return u
+}
+
+// ClearApprovedBy clears the value of the "approved_by" field.
+func (u *WaitlistEntryUpsert) ClearApprovedBy() *WaitlistEntryUpsert {
+	u.SetNull(waitlistentry.FieldApprovedBy)
+	return u
+}
+
+// SetGrantedUserID sets the "granted_user_id" field.
+func (u *WaitlistEntryUpsert) SetGrantedUserID(v int64) *WaitlistEntryUpsert {
+	u.Set(waitlistentry.FieldGrantedUserID, v)
+	return u
+}
+
+// UpdateGrantedUserID sets the "granted_user_id" field to the value that was provided on create.
+func (u *WaitlistEntryUpsert) UpdateGrantedUserID() *WaitlistEntryUpsert {
+	u.SetExcluded(waitlistentry.FieldGrantedUserID)
+	return u
+}
+
+// AddGrantedUserID adds v to the "granted_user_id" field.
+func (u *WaitlistEntryUpsert) AddGrantedUserID(v int64) *WaitlistEntryUpsert {
+	u.Add(waitlistentry.FieldGrantedUserID, v)
+	return u
+}
+
+// ClearGrantedUserID clears the value of the "granted_user_id" field.
+func (u *WaitlistEntryUpsert) ClearGrantedUserID() *WaitlistEntryUpsert {
+	u.SetNull(waitlistentry.FieldGrantedUserID)
+	return u
+}
+
+// SetApprovalNoticeAttemptedAt sets the "approval_notice_attempted_at" field.
+func (u *WaitlistEntryUpsert) SetApprovalNoticeAttemptedAt(v time.Time) *WaitlistEntryUpsert {
+	u.Set(waitlistentry.FieldApprovalNoticeAttemptedAt, v)
+	return u
+}
+
+// UpdateApprovalNoticeAttemptedAt sets the "approval_notice_attempted_at" field to the value that was provided on create.
+func (u *WaitlistEntryUpsert) UpdateApprovalNoticeAttemptedAt() *WaitlistEntryUpsert {
+	u.SetExcluded(waitlistentry.FieldApprovalNoticeAttemptedAt)
+	return u
+}
+
+// ClearApprovalNoticeAttemptedAt clears the value of the "approval_notice_attempted_at" field.
+func (u *WaitlistEntryUpsert) ClearApprovalNoticeAttemptedAt() *WaitlistEntryUpsert {
+	u.SetNull(waitlistentry.FieldApprovalNoticeAttemptedAt)
+	return u
+}
+
+// SetApprovalNoticeSentAt sets the "approval_notice_sent_at" field.
+func (u *WaitlistEntryUpsert) SetApprovalNoticeSentAt(v time.Time) *WaitlistEntryUpsert {
+	u.Set(waitlistentry.FieldApprovalNoticeSentAt, v)
+	return u
+}
+
+// UpdateApprovalNoticeSentAt sets the "approval_notice_sent_at" field to the value that was provided on create.
+func (u *WaitlistEntryUpsert) UpdateApprovalNoticeSentAt() *WaitlistEntryUpsert {
+	u.SetExcluded(waitlistentry.FieldApprovalNoticeSentAt)
+	return u
+}
+
+// ClearApprovalNoticeSentAt clears the value of the "approval_notice_sent_at" field.
+func (u *WaitlistEntryUpsert) ClearApprovalNoticeSentAt() *WaitlistEntryUpsert {
+	u.SetNull(waitlistentry.FieldApprovalNoticeSentAt)
 	return u
 }
 
@@ -342,6 +534,125 @@ func (u *WaitlistEntryUpsertOne) UpdateConfirmationSentAt() *WaitlistEntryUpsert
 func (u *WaitlistEntryUpsertOne) ClearConfirmationSentAt() *WaitlistEntryUpsertOne {
 	return u.Update(func(s *WaitlistEntryUpsert) {
 		s.ClearConfirmationSentAt()
+	})
+}
+
+// SetApprovedAt sets the "approved_at" field.
+func (u *WaitlistEntryUpsertOne) SetApprovedAt(v time.Time) *WaitlistEntryUpsertOne {
+	return u.Update(func(s *WaitlistEntryUpsert) {
+		s.SetApprovedAt(v)
+	})
+}
+
+// UpdateApprovedAt sets the "approved_at" field to the value that was provided on create.
+func (u *WaitlistEntryUpsertOne) UpdateApprovedAt() *WaitlistEntryUpsertOne {
+	return u.Update(func(s *WaitlistEntryUpsert) {
+		s.UpdateApprovedAt()
+	})
+}
+
+// ClearApprovedAt clears the value of the "approved_at" field.
+func (u *WaitlistEntryUpsertOne) ClearApprovedAt() *WaitlistEntryUpsertOne {
+	return u.Update(func(s *WaitlistEntryUpsert) {
+		s.ClearApprovedAt()
+	})
+}
+
+// SetApprovedBy sets the "approved_by" field.
+func (u *WaitlistEntryUpsertOne) SetApprovedBy(v int64) *WaitlistEntryUpsertOne {
+	return u.Update(func(s *WaitlistEntryUpsert) {
+		s.SetApprovedBy(v)
+	})
+}
+
+// AddApprovedBy adds v to the "approved_by" field.
+func (u *WaitlistEntryUpsertOne) AddApprovedBy(v int64) *WaitlistEntryUpsertOne {
+	return u.Update(func(s *WaitlistEntryUpsert) {
+		s.AddApprovedBy(v)
+	})
+}
+
+// UpdateApprovedBy sets the "approved_by" field to the value that was provided on create.
+func (u *WaitlistEntryUpsertOne) UpdateApprovedBy() *WaitlistEntryUpsertOne {
+	return u.Update(func(s *WaitlistEntryUpsert) {
+		s.UpdateApprovedBy()
+	})
+}
+
+// ClearApprovedBy clears the value of the "approved_by" field.
+func (u *WaitlistEntryUpsertOne) ClearApprovedBy() *WaitlistEntryUpsertOne {
+	return u.Update(func(s *WaitlistEntryUpsert) {
+		s.ClearApprovedBy()
+	})
+}
+
+// SetGrantedUserID sets the "granted_user_id" field.
+func (u *WaitlistEntryUpsertOne) SetGrantedUserID(v int64) *WaitlistEntryUpsertOne {
+	return u.Update(func(s *WaitlistEntryUpsert) {
+		s.SetGrantedUserID(v)
+	})
+}
+
+// AddGrantedUserID adds v to the "granted_user_id" field.
+func (u *WaitlistEntryUpsertOne) AddGrantedUserID(v int64) *WaitlistEntryUpsertOne {
+	return u.Update(func(s *WaitlistEntryUpsert) {
+		s.AddGrantedUserID(v)
+	})
+}
+
+// UpdateGrantedUserID sets the "granted_user_id" field to the value that was provided on create.
+func (u *WaitlistEntryUpsertOne) UpdateGrantedUserID() *WaitlistEntryUpsertOne {
+	return u.Update(func(s *WaitlistEntryUpsert) {
+		s.UpdateGrantedUserID()
+	})
+}
+
+// ClearGrantedUserID clears the value of the "granted_user_id" field.
+func (u *WaitlistEntryUpsertOne) ClearGrantedUserID() *WaitlistEntryUpsertOne {
+	return u.Update(func(s *WaitlistEntryUpsert) {
+		s.ClearGrantedUserID()
+	})
+}
+
+// SetApprovalNoticeAttemptedAt sets the "approval_notice_attempted_at" field.
+func (u *WaitlistEntryUpsertOne) SetApprovalNoticeAttemptedAt(v time.Time) *WaitlistEntryUpsertOne {
+	return u.Update(func(s *WaitlistEntryUpsert) {
+		s.SetApprovalNoticeAttemptedAt(v)
+	})
+}
+
+// UpdateApprovalNoticeAttemptedAt sets the "approval_notice_attempted_at" field to the value that was provided on create.
+func (u *WaitlistEntryUpsertOne) UpdateApprovalNoticeAttemptedAt() *WaitlistEntryUpsertOne {
+	return u.Update(func(s *WaitlistEntryUpsert) {
+		s.UpdateApprovalNoticeAttemptedAt()
+	})
+}
+
+// ClearApprovalNoticeAttemptedAt clears the value of the "approval_notice_attempted_at" field.
+func (u *WaitlistEntryUpsertOne) ClearApprovalNoticeAttemptedAt() *WaitlistEntryUpsertOne {
+	return u.Update(func(s *WaitlistEntryUpsert) {
+		s.ClearApprovalNoticeAttemptedAt()
+	})
+}
+
+// SetApprovalNoticeSentAt sets the "approval_notice_sent_at" field.
+func (u *WaitlistEntryUpsertOne) SetApprovalNoticeSentAt(v time.Time) *WaitlistEntryUpsertOne {
+	return u.Update(func(s *WaitlistEntryUpsert) {
+		s.SetApprovalNoticeSentAt(v)
+	})
+}
+
+// UpdateApprovalNoticeSentAt sets the "approval_notice_sent_at" field to the value that was provided on create.
+func (u *WaitlistEntryUpsertOne) UpdateApprovalNoticeSentAt() *WaitlistEntryUpsertOne {
+	return u.Update(func(s *WaitlistEntryUpsert) {
+		s.UpdateApprovalNoticeSentAt()
+	})
+}
+
+// ClearApprovalNoticeSentAt clears the value of the "approval_notice_sent_at" field.
+func (u *WaitlistEntryUpsertOne) ClearApprovalNoticeSentAt() *WaitlistEntryUpsertOne {
+	return u.Update(func(s *WaitlistEntryUpsert) {
+		s.ClearApprovalNoticeSentAt()
 	})
 }
 
@@ -598,6 +909,125 @@ func (u *WaitlistEntryUpsertBulk) UpdateConfirmationSentAt() *WaitlistEntryUpser
 func (u *WaitlistEntryUpsertBulk) ClearConfirmationSentAt() *WaitlistEntryUpsertBulk {
 	return u.Update(func(s *WaitlistEntryUpsert) {
 		s.ClearConfirmationSentAt()
+	})
+}
+
+// SetApprovedAt sets the "approved_at" field.
+func (u *WaitlistEntryUpsertBulk) SetApprovedAt(v time.Time) *WaitlistEntryUpsertBulk {
+	return u.Update(func(s *WaitlistEntryUpsert) {
+		s.SetApprovedAt(v)
+	})
+}
+
+// UpdateApprovedAt sets the "approved_at" field to the value that was provided on create.
+func (u *WaitlistEntryUpsertBulk) UpdateApprovedAt() *WaitlistEntryUpsertBulk {
+	return u.Update(func(s *WaitlistEntryUpsert) {
+		s.UpdateApprovedAt()
+	})
+}
+
+// ClearApprovedAt clears the value of the "approved_at" field.
+func (u *WaitlistEntryUpsertBulk) ClearApprovedAt() *WaitlistEntryUpsertBulk {
+	return u.Update(func(s *WaitlistEntryUpsert) {
+		s.ClearApprovedAt()
+	})
+}
+
+// SetApprovedBy sets the "approved_by" field.
+func (u *WaitlistEntryUpsertBulk) SetApprovedBy(v int64) *WaitlistEntryUpsertBulk {
+	return u.Update(func(s *WaitlistEntryUpsert) {
+		s.SetApprovedBy(v)
+	})
+}
+
+// AddApprovedBy adds v to the "approved_by" field.
+func (u *WaitlistEntryUpsertBulk) AddApprovedBy(v int64) *WaitlistEntryUpsertBulk {
+	return u.Update(func(s *WaitlistEntryUpsert) {
+		s.AddApprovedBy(v)
+	})
+}
+
+// UpdateApprovedBy sets the "approved_by" field to the value that was provided on create.
+func (u *WaitlistEntryUpsertBulk) UpdateApprovedBy() *WaitlistEntryUpsertBulk {
+	return u.Update(func(s *WaitlistEntryUpsert) {
+		s.UpdateApprovedBy()
+	})
+}
+
+// ClearApprovedBy clears the value of the "approved_by" field.
+func (u *WaitlistEntryUpsertBulk) ClearApprovedBy() *WaitlistEntryUpsertBulk {
+	return u.Update(func(s *WaitlistEntryUpsert) {
+		s.ClearApprovedBy()
+	})
+}
+
+// SetGrantedUserID sets the "granted_user_id" field.
+func (u *WaitlistEntryUpsertBulk) SetGrantedUserID(v int64) *WaitlistEntryUpsertBulk {
+	return u.Update(func(s *WaitlistEntryUpsert) {
+		s.SetGrantedUserID(v)
+	})
+}
+
+// AddGrantedUserID adds v to the "granted_user_id" field.
+func (u *WaitlistEntryUpsertBulk) AddGrantedUserID(v int64) *WaitlistEntryUpsertBulk {
+	return u.Update(func(s *WaitlistEntryUpsert) {
+		s.AddGrantedUserID(v)
+	})
+}
+
+// UpdateGrantedUserID sets the "granted_user_id" field to the value that was provided on create.
+func (u *WaitlistEntryUpsertBulk) UpdateGrantedUserID() *WaitlistEntryUpsertBulk {
+	return u.Update(func(s *WaitlistEntryUpsert) {
+		s.UpdateGrantedUserID()
+	})
+}
+
+// ClearGrantedUserID clears the value of the "granted_user_id" field.
+func (u *WaitlistEntryUpsertBulk) ClearGrantedUserID() *WaitlistEntryUpsertBulk {
+	return u.Update(func(s *WaitlistEntryUpsert) {
+		s.ClearGrantedUserID()
+	})
+}
+
+// SetApprovalNoticeAttemptedAt sets the "approval_notice_attempted_at" field.
+func (u *WaitlistEntryUpsertBulk) SetApprovalNoticeAttemptedAt(v time.Time) *WaitlistEntryUpsertBulk {
+	return u.Update(func(s *WaitlistEntryUpsert) {
+		s.SetApprovalNoticeAttemptedAt(v)
+	})
+}
+
+// UpdateApprovalNoticeAttemptedAt sets the "approval_notice_attempted_at" field to the value that was provided on create.
+func (u *WaitlistEntryUpsertBulk) UpdateApprovalNoticeAttemptedAt() *WaitlistEntryUpsertBulk {
+	return u.Update(func(s *WaitlistEntryUpsert) {
+		s.UpdateApprovalNoticeAttemptedAt()
+	})
+}
+
+// ClearApprovalNoticeAttemptedAt clears the value of the "approval_notice_attempted_at" field.
+func (u *WaitlistEntryUpsertBulk) ClearApprovalNoticeAttemptedAt() *WaitlistEntryUpsertBulk {
+	return u.Update(func(s *WaitlistEntryUpsert) {
+		s.ClearApprovalNoticeAttemptedAt()
+	})
+}
+
+// SetApprovalNoticeSentAt sets the "approval_notice_sent_at" field.
+func (u *WaitlistEntryUpsertBulk) SetApprovalNoticeSentAt(v time.Time) *WaitlistEntryUpsertBulk {
+	return u.Update(func(s *WaitlistEntryUpsert) {
+		s.SetApprovalNoticeSentAt(v)
+	})
+}
+
+// UpdateApprovalNoticeSentAt sets the "approval_notice_sent_at" field to the value that was provided on create.
+func (u *WaitlistEntryUpsertBulk) UpdateApprovalNoticeSentAt() *WaitlistEntryUpsertBulk {
+	return u.Update(func(s *WaitlistEntryUpsert) {
+		s.UpdateApprovalNoticeSentAt()
+	})
+}
+
+// ClearApprovalNoticeSentAt clears the value of the "approval_notice_sent_at" field.
+func (u *WaitlistEntryUpsertBulk) ClearApprovalNoticeSentAt() *WaitlistEntryUpsertBulk {
+	return u.Update(func(s *WaitlistEntryUpsert) {
+		s.ClearApprovalNoticeSentAt()
 	})
 }
 

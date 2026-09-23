@@ -21,6 +21,16 @@ const (
 	FieldConfirmationAttemptedAt = "confirmation_attempted_at"
 	// FieldConfirmationSentAt holds the string denoting the confirmation_sent_at field in the database.
 	FieldConfirmationSentAt = "confirmation_sent_at"
+	// FieldApprovedAt holds the string denoting the approved_at field in the database.
+	FieldApprovedAt = "approved_at"
+	// FieldApprovedBy holds the string denoting the approved_by field in the database.
+	FieldApprovedBy = "approved_by"
+	// FieldGrantedUserID holds the string denoting the granted_user_id field in the database.
+	FieldGrantedUserID = "granted_user_id"
+	// FieldApprovalNoticeAttemptedAt holds the string denoting the approval_notice_attempted_at field in the database.
+	FieldApprovalNoticeAttemptedAt = "approval_notice_attempted_at"
+	// FieldApprovalNoticeSentAt holds the string denoting the approval_notice_sent_at field in the database.
+	FieldApprovalNoticeSentAt = "approval_notice_sent_at"
 	// Table holds the table name of the waitlistentry in the database.
 	Table = "waitlist_entries"
 )
@@ -32,6 +42,11 @@ var Columns = []string{
 	FieldCreatedAt,
 	FieldConfirmationAttemptedAt,
 	FieldConfirmationSentAt,
+	FieldApprovedAt,
+	FieldApprovedBy,
+	FieldGrantedUserID,
+	FieldApprovalNoticeAttemptedAt,
+	FieldApprovalNoticeSentAt,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -77,4 +92,29 @@ func ByConfirmationAttemptedAt(opts ...sql.OrderTermOption) OrderOption {
 // ByConfirmationSentAt orders the results by the confirmation_sent_at field.
 func ByConfirmationSentAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldConfirmationSentAt, opts...).ToFunc()
+}
+
+// ByApprovedAt orders the results by the approved_at field.
+func ByApprovedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldApprovedAt, opts...).ToFunc()
+}
+
+// ByApprovedBy orders the results by the approved_by field.
+func ByApprovedBy(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldApprovedBy, opts...).ToFunc()
+}
+
+// ByGrantedUserID orders the results by the granted_user_id field.
+func ByGrantedUserID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldGrantedUserID, opts...).ToFunc()
+}
+
+// ByApprovalNoticeAttemptedAt orders the results by the approval_notice_attempted_at field.
+func ByApprovalNoticeAttemptedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldApprovalNoticeAttemptedAt, opts...).ToFunc()
+}
+
+// ByApprovalNoticeSentAt orders the results by the approval_notice_sent_at field.
+func ByApprovalNoticeSentAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldApprovalNoticeSentAt, opts...).ToFunc()
 }

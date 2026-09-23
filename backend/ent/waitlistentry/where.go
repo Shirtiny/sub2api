@@ -74,6 +74,31 @@ func ConfirmationSentAt(v time.Time) predicate.WaitlistEntry {
 	return predicate.WaitlistEntry(sql.FieldEQ(FieldConfirmationSentAt, v))
 }
 
+// ApprovedAt applies equality check predicate on the "approved_at" field. It's identical to ApprovedAtEQ.
+func ApprovedAt(v time.Time) predicate.WaitlistEntry {
+	return predicate.WaitlistEntry(sql.FieldEQ(FieldApprovedAt, v))
+}
+
+// ApprovedBy applies equality check predicate on the "approved_by" field. It's identical to ApprovedByEQ.
+func ApprovedBy(v int64) predicate.WaitlistEntry {
+	return predicate.WaitlistEntry(sql.FieldEQ(FieldApprovedBy, v))
+}
+
+// GrantedUserID applies equality check predicate on the "granted_user_id" field. It's identical to GrantedUserIDEQ.
+func GrantedUserID(v int64) predicate.WaitlistEntry {
+	return predicate.WaitlistEntry(sql.FieldEQ(FieldGrantedUserID, v))
+}
+
+// ApprovalNoticeAttemptedAt applies equality check predicate on the "approval_notice_attempted_at" field. It's identical to ApprovalNoticeAttemptedAtEQ.
+func ApprovalNoticeAttemptedAt(v time.Time) predicate.WaitlistEntry {
+	return predicate.WaitlistEntry(sql.FieldEQ(FieldApprovalNoticeAttemptedAt, v))
+}
+
+// ApprovalNoticeSentAt applies equality check predicate on the "approval_notice_sent_at" field. It's identical to ApprovalNoticeSentAtEQ.
+func ApprovalNoticeSentAt(v time.Time) predicate.WaitlistEntry {
+	return predicate.WaitlistEntry(sql.FieldEQ(FieldApprovalNoticeSentAt, v))
+}
+
 // EmailEQ applies the EQ predicate on the "email" field.
 func EmailEQ(v string) predicate.WaitlistEntry {
 	return predicate.WaitlistEntry(sql.FieldEQ(FieldEmail, v))
@@ -277,6 +302,256 @@ func ConfirmationSentAtIsNil() predicate.WaitlistEntry {
 // ConfirmationSentAtNotNil applies the NotNil predicate on the "confirmation_sent_at" field.
 func ConfirmationSentAtNotNil() predicate.WaitlistEntry {
 	return predicate.WaitlistEntry(sql.FieldNotNull(FieldConfirmationSentAt))
+}
+
+// ApprovedAtEQ applies the EQ predicate on the "approved_at" field.
+func ApprovedAtEQ(v time.Time) predicate.WaitlistEntry {
+	return predicate.WaitlistEntry(sql.FieldEQ(FieldApprovedAt, v))
+}
+
+// ApprovedAtNEQ applies the NEQ predicate on the "approved_at" field.
+func ApprovedAtNEQ(v time.Time) predicate.WaitlistEntry {
+	return predicate.WaitlistEntry(sql.FieldNEQ(FieldApprovedAt, v))
+}
+
+// ApprovedAtIn applies the In predicate on the "approved_at" field.
+func ApprovedAtIn(vs ...time.Time) predicate.WaitlistEntry {
+	return predicate.WaitlistEntry(sql.FieldIn(FieldApprovedAt, vs...))
+}
+
+// ApprovedAtNotIn applies the NotIn predicate on the "approved_at" field.
+func ApprovedAtNotIn(vs ...time.Time) predicate.WaitlistEntry {
+	return predicate.WaitlistEntry(sql.FieldNotIn(FieldApprovedAt, vs...))
+}
+
+// ApprovedAtGT applies the GT predicate on the "approved_at" field.
+func ApprovedAtGT(v time.Time) predicate.WaitlistEntry {
+	return predicate.WaitlistEntry(sql.FieldGT(FieldApprovedAt, v))
+}
+
+// ApprovedAtGTE applies the GTE predicate on the "approved_at" field.
+func ApprovedAtGTE(v time.Time) predicate.WaitlistEntry {
+	return predicate.WaitlistEntry(sql.FieldGTE(FieldApprovedAt, v))
+}
+
+// ApprovedAtLT applies the LT predicate on the "approved_at" field.
+func ApprovedAtLT(v time.Time) predicate.WaitlistEntry {
+	return predicate.WaitlistEntry(sql.FieldLT(FieldApprovedAt, v))
+}
+
+// ApprovedAtLTE applies the LTE predicate on the "approved_at" field.
+func ApprovedAtLTE(v time.Time) predicate.WaitlistEntry {
+	return predicate.WaitlistEntry(sql.FieldLTE(FieldApprovedAt, v))
+}
+
+// ApprovedAtIsNil applies the IsNil predicate on the "approved_at" field.
+func ApprovedAtIsNil() predicate.WaitlistEntry {
+	return predicate.WaitlistEntry(sql.FieldIsNull(FieldApprovedAt))
+}
+
+// ApprovedAtNotNil applies the NotNil predicate on the "approved_at" field.
+func ApprovedAtNotNil() predicate.WaitlistEntry {
+	return predicate.WaitlistEntry(sql.FieldNotNull(FieldApprovedAt))
+}
+
+// ApprovedByEQ applies the EQ predicate on the "approved_by" field.
+func ApprovedByEQ(v int64) predicate.WaitlistEntry {
+	return predicate.WaitlistEntry(sql.FieldEQ(FieldApprovedBy, v))
+}
+
+// ApprovedByNEQ applies the NEQ predicate on the "approved_by" field.
+func ApprovedByNEQ(v int64) predicate.WaitlistEntry {
+	return predicate.WaitlistEntry(sql.FieldNEQ(FieldApprovedBy, v))
+}
+
+// ApprovedByIn applies the In predicate on the "approved_by" field.
+func ApprovedByIn(vs ...int64) predicate.WaitlistEntry {
+	return predicate.WaitlistEntry(sql.FieldIn(FieldApprovedBy, vs...))
+}
+
+// ApprovedByNotIn applies the NotIn predicate on the "approved_by" field.
+func ApprovedByNotIn(vs ...int64) predicate.WaitlistEntry {
+	return predicate.WaitlistEntry(sql.FieldNotIn(FieldApprovedBy, vs...))
+}
+
+// ApprovedByGT applies the GT predicate on the "approved_by" field.
+func ApprovedByGT(v int64) predicate.WaitlistEntry {
+	return predicate.WaitlistEntry(sql.FieldGT(FieldApprovedBy, v))
+}
+
+// ApprovedByGTE applies the GTE predicate on the "approved_by" field.
+func ApprovedByGTE(v int64) predicate.WaitlistEntry {
+	return predicate.WaitlistEntry(sql.FieldGTE(FieldApprovedBy, v))
+}
+
+// ApprovedByLT applies the LT predicate on the "approved_by" field.
+func ApprovedByLT(v int64) predicate.WaitlistEntry {
+	return predicate.WaitlistEntry(sql.FieldLT(FieldApprovedBy, v))
+}
+
+// ApprovedByLTE applies the LTE predicate on the "approved_by" field.
+func ApprovedByLTE(v int64) predicate.WaitlistEntry {
+	return predicate.WaitlistEntry(sql.FieldLTE(FieldApprovedBy, v))
+}
+
+// ApprovedByIsNil applies the IsNil predicate on the "approved_by" field.
+func ApprovedByIsNil() predicate.WaitlistEntry {
+	return predicate.WaitlistEntry(sql.FieldIsNull(FieldApprovedBy))
+}
+
+// ApprovedByNotNil applies the NotNil predicate on the "approved_by" field.
+func ApprovedByNotNil() predicate.WaitlistEntry {
+	return predicate.WaitlistEntry(sql.FieldNotNull(FieldApprovedBy))
+}
+
+// GrantedUserIDEQ applies the EQ predicate on the "granted_user_id" field.
+func GrantedUserIDEQ(v int64) predicate.WaitlistEntry {
+	return predicate.WaitlistEntry(sql.FieldEQ(FieldGrantedUserID, v))
+}
+
+// GrantedUserIDNEQ applies the NEQ predicate on the "granted_user_id" field.
+func GrantedUserIDNEQ(v int64) predicate.WaitlistEntry {
+	return predicate.WaitlistEntry(sql.FieldNEQ(FieldGrantedUserID, v))
+}
+
+// GrantedUserIDIn applies the In predicate on the "granted_user_id" field.
+func GrantedUserIDIn(vs ...int64) predicate.WaitlistEntry {
+	return predicate.WaitlistEntry(sql.FieldIn(FieldGrantedUserID, vs...))
+}
+
+// GrantedUserIDNotIn applies the NotIn predicate on the "granted_user_id" field.
+func GrantedUserIDNotIn(vs ...int64) predicate.WaitlistEntry {
+	return predicate.WaitlistEntry(sql.FieldNotIn(FieldGrantedUserID, vs...))
+}
+
+// GrantedUserIDGT applies the GT predicate on the "granted_user_id" field.
+func GrantedUserIDGT(v int64) predicate.WaitlistEntry {
+	return predicate.WaitlistEntry(sql.FieldGT(FieldGrantedUserID, v))
+}
+
+// GrantedUserIDGTE applies the GTE predicate on the "granted_user_id" field.
+func GrantedUserIDGTE(v int64) predicate.WaitlistEntry {
+	return predicate.WaitlistEntry(sql.FieldGTE(FieldGrantedUserID, v))
+}
+
+// GrantedUserIDLT applies the LT predicate on the "granted_user_id" field.
+func GrantedUserIDLT(v int64) predicate.WaitlistEntry {
+	return predicate.WaitlistEntry(sql.FieldLT(FieldGrantedUserID, v))
+}
+
+// GrantedUserIDLTE applies the LTE predicate on the "granted_user_id" field.
+func GrantedUserIDLTE(v int64) predicate.WaitlistEntry {
+	return predicate.WaitlistEntry(sql.FieldLTE(FieldGrantedUserID, v))
+}
+
+// GrantedUserIDIsNil applies the IsNil predicate on the "granted_user_id" field.
+func GrantedUserIDIsNil() predicate.WaitlistEntry {
+	return predicate.WaitlistEntry(sql.FieldIsNull(FieldGrantedUserID))
+}
+
+// GrantedUserIDNotNil applies the NotNil predicate on the "granted_user_id" field.
+func GrantedUserIDNotNil() predicate.WaitlistEntry {
+	return predicate.WaitlistEntry(sql.FieldNotNull(FieldGrantedUserID))
+}
+
+// ApprovalNoticeAttemptedAtEQ applies the EQ predicate on the "approval_notice_attempted_at" field.
+func ApprovalNoticeAttemptedAtEQ(v time.Time) predicate.WaitlistEntry {
+	return predicate.WaitlistEntry(sql.FieldEQ(FieldApprovalNoticeAttemptedAt, v))
+}
+
+// ApprovalNoticeAttemptedAtNEQ applies the NEQ predicate on the "approval_notice_attempted_at" field.
+func ApprovalNoticeAttemptedAtNEQ(v time.Time) predicate.WaitlistEntry {
+	return predicate.WaitlistEntry(sql.FieldNEQ(FieldApprovalNoticeAttemptedAt, v))
+}
+
+// ApprovalNoticeAttemptedAtIn applies the In predicate on the "approval_notice_attempted_at" field.
+func ApprovalNoticeAttemptedAtIn(vs ...time.Time) predicate.WaitlistEntry {
+	return predicate.WaitlistEntry(sql.FieldIn(FieldApprovalNoticeAttemptedAt, vs...))
+}
+
+// ApprovalNoticeAttemptedAtNotIn applies the NotIn predicate on the "approval_notice_attempted_at" field.
+func ApprovalNoticeAttemptedAtNotIn(vs ...time.Time) predicate.WaitlistEntry {
+	return predicate.WaitlistEntry(sql.FieldNotIn(FieldApprovalNoticeAttemptedAt, vs...))
+}
+
+// ApprovalNoticeAttemptedAtGT applies the GT predicate on the "approval_notice_attempted_at" field.
+func ApprovalNoticeAttemptedAtGT(v time.Time) predicate.WaitlistEntry {
+	return predicate.WaitlistEntry(sql.FieldGT(FieldApprovalNoticeAttemptedAt, v))
+}
+
+// ApprovalNoticeAttemptedAtGTE applies the GTE predicate on the "approval_notice_attempted_at" field.
+func ApprovalNoticeAttemptedAtGTE(v time.Time) predicate.WaitlistEntry {
+	return predicate.WaitlistEntry(sql.FieldGTE(FieldApprovalNoticeAttemptedAt, v))
+}
+
+// ApprovalNoticeAttemptedAtLT applies the LT predicate on the "approval_notice_attempted_at" field.
+func ApprovalNoticeAttemptedAtLT(v time.Time) predicate.WaitlistEntry {
+	return predicate.WaitlistEntry(sql.FieldLT(FieldApprovalNoticeAttemptedAt, v))
+}
+
+// ApprovalNoticeAttemptedAtLTE applies the LTE predicate on the "approval_notice_attempted_at" field.
+func ApprovalNoticeAttemptedAtLTE(v time.Time) predicate.WaitlistEntry {
+	return predicate.WaitlistEntry(sql.FieldLTE(FieldApprovalNoticeAttemptedAt, v))
+}
+
+// ApprovalNoticeAttemptedAtIsNil applies the IsNil predicate on the "approval_notice_attempted_at" field.
+func ApprovalNoticeAttemptedAtIsNil() predicate.WaitlistEntry {
+	return predicate.WaitlistEntry(sql.FieldIsNull(FieldApprovalNoticeAttemptedAt))
+}
+
+// ApprovalNoticeAttemptedAtNotNil applies the NotNil predicate on the "approval_notice_attempted_at" field.
+func ApprovalNoticeAttemptedAtNotNil() predicate.WaitlistEntry {
+	return predicate.WaitlistEntry(sql.FieldNotNull(FieldApprovalNoticeAttemptedAt))
+}
+
+// ApprovalNoticeSentAtEQ applies the EQ predicate on the "approval_notice_sent_at" field.
+func ApprovalNoticeSentAtEQ(v time.Time) predicate.WaitlistEntry {
+	return predicate.WaitlistEntry(sql.FieldEQ(FieldApprovalNoticeSentAt, v))
+}
+
+// ApprovalNoticeSentAtNEQ applies the NEQ predicate on the "approval_notice_sent_at" field.
+func ApprovalNoticeSentAtNEQ(v time.Time) predicate.WaitlistEntry {
+	return predicate.WaitlistEntry(sql.FieldNEQ(FieldApprovalNoticeSentAt, v))
+}
+
+// ApprovalNoticeSentAtIn applies the In predicate on the "approval_notice_sent_at" field.
+func ApprovalNoticeSentAtIn(vs ...time.Time) predicate.WaitlistEntry {
+	return predicate.WaitlistEntry(sql.FieldIn(FieldApprovalNoticeSentAt, vs...))
+}
+
+// ApprovalNoticeSentAtNotIn applies the NotIn predicate on the "approval_notice_sent_at" field.
+func ApprovalNoticeSentAtNotIn(vs ...time.Time) predicate.WaitlistEntry {
+	return predicate.WaitlistEntry(sql.FieldNotIn(FieldApprovalNoticeSentAt, vs...))
+}
+
+// ApprovalNoticeSentAtGT applies the GT predicate on the "approval_notice_sent_at" field.
+func ApprovalNoticeSentAtGT(v time.Time) predicate.WaitlistEntry {
+	return predicate.WaitlistEntry(sql.FieldGT(FieldApprovalNoticeSentAt, v))
+}
+
+// ApprovalNoticeSentAtGTE applies the GTE predicate on the "approval_notice_sent_at" field.
+func ApprovalNoticeSentAtGTE(v time.Time) predicate.WaitlistEntry {
+	return predicate.WaitlistEntry(sql.FieldGTE(FieldApprovalNoticeSentAt, v))
+}
+
+// ApprovalNoticeSentAtLT applies the LT predicate on the "approval_notice_sent_at" field.
+func ApprovalNoticeSentAtLT(v time.Time) predicate.WaitlistEntry {
+	return predicate.WaitlistEntry(sql.FieldLT(FieldApprovalNoticeSentAt, v))
+}
+
+// ApprovalNoticeSentAtLTE applies the LTE predicate on the "approval_notice_sent_at" field.
+func ApprovalNoticeSentAtLTE(v time.Time) predicate.WaitlistEntry {
+	return predicate.WaitlistEntry(sql.FieldLTE(FieldApprovalNoticeSentAt, v))
+}
+
+// ApprovalNoticeSentAtIsNil applies the IsNil predicate on the "approval_notice_sent_at" field.
+func ApprovalNoticeSentAtIsNil() predicate.WaitlistEntry {
+	return predicate.WaitlistEntry(sql.FieldIsNull(FieldApprovalNoticeSentAt))
+}
+
+// ApprovalNoticeSentAtNotNil applies the NotNil predicate on the "approval_notice_sent_at" field.
+func ApprovalNoticeSentAtNotNil() predicate.WaitlistEntry {
+	return predicate.WaitlistEntry(sql.FieldNotNull(FieldApprovalNoticeSentAt))
 }
 
 // And groups predicates with the AND operator between them.

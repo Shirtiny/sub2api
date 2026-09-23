@@ -75,6 +75,7 @@ type AuthService struct {
 	affiliateService      *AffiliateService
 	defaultSubAssigner    DefaultSubscriptionAssigner
 	userPlatformQuotaRepo UserPlatformQuotaRepository
+	waitlistRepo          WaitlistRepository
 }
 
 type DefaultSubscriptionAssigner interface {
@@ -103,6 +104,7 @@ func NewAuthService(
 	defaultSubAssigner DefaultSubscriptionAssigner,
 	affiliateService *AffiliateService,
 	userPlatformQuotaRepo UserPlatformQuotaRepository,
+	waitlistRepo WaitlistRepository,
 ) *AuthService {
 	return &AuthService{
 		entClient:             entClient,
@@ -118,6 +120,7 @@ func NewAuthService(
 		affiliateService:      affiliateService,
 		defaultSubAssigner:    defaultSubAssigner,
 		userPlatformQuotaRepo: userPlatformQuotaRepo,
+		waitlistRepo:          waitlistRepo,
 	}
 }
 
@@ -135,9 +138,12 @@ func (s *AuthService) Register(ctx context.Context, email, password string) (str
 
 // RegisterWithVerification 用户注册（支持邮件验证、优惠码、邀请码和邀请返利码），返回token和用户。
 func (s *AuthService) RegisterWithVerification(ctx context.Context, email, password, verifyCode, promoCode, invitationCode, affiliateCode string) (string, *User, error) {
-	// 检查是否开放注册（默认关闭：settingService 未配置时不允许注册）
-	if s.settingService == nil || !s.settingService.IsRegistrationEnabled(ctx) {
-		return "", nil, ErrRegDisabled
+	approved, err := s.checkEmailRegistrationAccess(ctx, email)
+	if err != nil {
+		return "", nil, err
+	}
+	if approved {
+		email = strings.ToLower(strings.TrimSpace(email))
 	}
 
 	// 防止用户注册 LinuxDo OAuth 合成邮箱，避免第三方登录与本地账号发生碰撞。
@@ -150,7 +156,14 @@ func (s *AuthService) RegisterWithVerification(ctx context.Context, email, passw
 
 	// 检查注册准入凭证：一次性注册邀请码优先；如果同一输入不是可用注册邀请码，
 	// 则按邀请返利码尝试。通过 aff 参数传入的返利码仍只在返利开关开启时生效。
-	admission, err := s.resolveSignupInvitationAdmission(ctx, invitationCode, affiliateCode)
+	var admission *signupInvitationAdmission
+	if approved && strings.TrimSpace(invitationCode) == "" {
+		// The reviewed waitlist grant is itself the admission credential. Optional
+		// referral codes still pass through the existing validation/application.
+		admission = &signupInvitationAdmission{affiliateCode: s.normalizeSignupAffiliateCode(ctx, affiliateCode)}
+	} else {
+		admission, err = s.resolveSignupInvitationAdmission(ctx, invitationCode, affiliateCode)
+	}
 	if err != nil {
 		if errors.Is(err, ErrInvitationCodeInvalid) {
 			logger.LegacyPrintf("service.auth", "[Auth] Invalid invitation code or affiliate code: invitation=%s affiliate=%s", invitationCode, affiliateCode)
@@ -166,7 +179,7 @@ func (s *AuthService) RegisterWithVerification(ctx context.Context, email, passw
 	}
 
 	// 检查是否需要邮件验证
-	if s.settingService != nil && s.settingService.IsEmailVerifyEnabled(ctx) {
+	if approved || (s.settingService != nil && s.settingService.IsEmailVerifyEnabled(ctx)) {
 		// 如果邮件验证已开启但邮件服务未配置，拒绝注册
 		// 这是一个配置错误，不应该允许绕过验证
 		if s.emailService == nil {
@@ -219,7 +232,10 @@ func (s *AuthService) RegisterWithVerification(ctx context.Context, email, passw
 
 	registrationCtx := ctx
 	var registrationTx *dbent.Tx
-	if s.entClient != nil && (invitationRedeemCode != nil || affiliateCode != "") {
+	if approved && s.entClient == nil {
+		return "", nil, ErrServiceUnavailable
+	}
+	if s.entClient != nil && (approved || invitationRedeemCode != nil || affiliateCode != "") {
 		tx, err := s.entClient.Tx(ctx)
 		if err != nil {
 			logger.LegacyPrintf("service.auth", "[Auth] Failed to begin transaction for email registration: %v", err)
@@ -269,6 +285,11 @@ func (s *AuthService) RegisterWithVerification(ctx context.Context, email, passw
 			return rollbackCreatedUser(err)
 		}
 	}
+	if approved {
+		if err := s.waitlistRepo.ConsumeRegistrationApproval(registrationCtx, email, user.ID); err != nil {
+			return rollbackCreatedUser(err)
+		}
+	}
 	if registrationTx != nil {
 		if err := registrationTx.Commit(); err != nil {
 			logger.LegacyPrintf("service.auth", "[Auth] Failed to commit email registration transaction: %v", err)
@@ -309,9 +330,12 @@ type SendVerifyCodeResult struct {
 
 // SendVerifyCode 发送邮箱验证码（同步方式）
 func (s *AuthService) SendVerifyCode(ctx context.Context, email string, locale ...string) error {
-	// 检查是否开放注册（默认关闭）
-	if s.settingService == nil || !s.settingService.IsRegistrationEnabled(ctx) {
-		return ErrRegDisabled
+	approved, err := s.checkEmailRegistrationAccess(ctx, email)
+	if err != nil {
+		return err
+	}
+	if approved {
+		email = strings.ToLower(strings.TrimSpace(email))
 	}
 
 	if isReservedEmail(email) {
@@ -349,10 +373,12 @@ func (s *AuthService) SendVerifyCode(ctx context.Context, email string, locale .
 func (s *AuthService) SendVerifyCodeAsync(ctx context.Context, email string, locale ...string) (*SendVerifyCodeResult, error) {
 	logger.LegacyPrintf("service.auth", "[Auth] SendVerifyCodeAsync called for email: %s", email)
 
-	// 检查是否开放注册（默认关闭）
-	if s.settingService == nil || !s.settingService.IsRegistrationEnabled(ctx) {
-		logger.LegacyPrintf("service.auth", "%s", "[Auth] Registration is disabled")
-		return nil, ErrRegDisabled
+	approved, err := s.checkEmailRegistrationAccess(ctx, email)
+	if err != nil {
+		return nil, err
+	}
+	if approved {
+		email = strings.ToLower(strings.TrimSpace(email))
 	}
 
 	if isReservedEmail(email) {
@@ -401,12 +427,45 @@ func (s *AuthService) SendVerifyCodeAsync(ctx context.Context, email string, loc
 // VerifyTurnstileForRegister 在注册场景下验证 Turnstile。
 // 当邮箱验证开启且已提交验证码时，说明验证码发送阶段已完成 Turnstile 校验，
 // 此处跳过二次校验，避免一次性 token 在注册提交时重复使用导致误报失败。
-func (s *AuthService) VerifyTurnstileForRegister(ctx context.Context, token, remoteIP, verifyCode string) error {
-	if s.IsEmailVerifyEnabled(ctx) && strings.TrimSpace(verifyCode) != "" {
-		logger.LegacyPrintf("service.auth", "%s", "[Auth] Email verify flow detected, skip duplicate Turnstile check on register")
-		return nil
+func (s *AuthService) VerifyTurnstileForRegister(ctx context.Context, token, remoteIP, verifyCode, email string) error {
+	if strings.TrimSpace(verifyCode) != "" {
+		approved, err := s.hasWaitlistRegistrationApproval(ctx, email)
+		if err != nil {
+			return err
+		}
+		if s.IsEmailVerifyEnabled(ctx) || approved {
+			logger.LegacyPrintf("service.auth", "%s", "[Auth] Email verify flow detected, skip duplicate Turnstile check on register")
+			return nil
+		}
 	}
 	return s.VerifyTurnstile(ctx, token, remoteIP)
+}
+
+func (s *AuthService) hasWaitlistRegistrationApproval(ctx context.Context, email string) (bool, error) {
+	if s.waitlistRepo == nil {
+		return false, nil
+	}
+	approved, err := s.waitlistRepo.HasRegistrationApproval(ctx, strings.ToLower(strings.TrimSpace(email)))
+	if err != nil {
+		return false, ErrServiceUnavailable.WithCause(err)
+	}
+	return approved, nil
+}
+
+// A query flag in the registration UI is not a credential. Only a durable,
+// unconsumed administrator approval admits an email while signup is closed.
+func (s *AuthService) checkEmailRegistrationAccess(ctx context.Context, email string) (bool, error) {
+	if s.settingService == nil {
+		return false, ErrRegDisabled
+	}
+	approved, err := s.hasWaitlistRegistrationApproval(ctx, email)
+	if err != nil {
+		return false, err
+	}
+	if !approved && !s.settingService.IsRegistrationEnabled(ctx) {
+		return false, ErrRegDisabled
+	}
+	return approved, nil
 }
 
 // VerifyTurnstile 验证Turnstile token

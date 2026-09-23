@@ -22,6 +22,7 @@ func RegisterAdminRoutes(
 
 		// Waiting-list emails are never exposed by a public endpoint.
 		admin.GET("/waitlist", h.Waitlist.List)
+		admin.POST("/waitlist/:id/approve", h.Waitlist.Approve)
 
 		// 用户管理
 		registerUserManagementRoutes(admin, h)

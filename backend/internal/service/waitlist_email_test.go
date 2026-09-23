@@ -66,7 +66,7 @@ func TestWaitlistConfirmationHTMLBranding(t *testing.T) {
 
 func TestWaitlistConfirmationUsesConfiguredBrand(t *testing.T) {
 	mailer := &waitlistMailerStub{}
-	svc := NewWaitlistService(&waitlistRepoStub{}, mailer, waitlistBrandingStub("Another & Site"))
+	svc := NewWaitlistService(&waitlistRepoStub{}, mailer, waitlistBrandingStub("Another & Site"), nil)
 	require.NoError(t, svc.Join(context.Background(), "person@example.com"))
 	require.Equal(t, waitlistConfirmationHTML("Another & Site"), mailer.body)
 	require.NotContains(t, mailer.body, "Café Shop")

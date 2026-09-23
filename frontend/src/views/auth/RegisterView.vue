@@ -13,7 +13,7 @@
 
       <!-- Registration Disabled Message -->
       <div
-        v-if="!registrationEnabled && settingsLoaded"
+        v-if="!registrationEnabled && !waitlistRegistration && settingsLoaded"
         class="rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-800/50 dark:bg-amber-900/20"
       >
         <div class="flex items-start gap-3">
@@ -24,10 +24,16 @@
             {{ t('auth.registrationDisabled') }}
           </p>
         </div>
+        <RouterLink :to="{ path: '/register', query: { ...route.query, waitlist: '1' } }" class="mt-3 inline-block text-sm font-medium text-primary-600 dark:text-primary-400">
+          {{ t('auth.waitlistRegistrationLink') }}
+        </RouterLink>
       </div>
 
       <!-- Registration Form -->
       <form v-else @submit.prevent="handleRegister" class="space-y-5">
+        <p v-if="waitlistRegistration" class="rounded-xl border border-stroke-subtle bg-surface-secondary p-4 text-sm leading-relaxed text-content-secondary">
+          {{ t('auth.waitlistRegistrationHint') }}
+        </p>
         <!-- Email Input -->
         <div>
           <label for="email" class="input-label">
@@ -235,7 +241,7 @@
           {{
             isLoading
               ? t('auth.processing')
-              : emailVerifyEnabled
+              : requiresEmailVerification
                 ? t('auth.continue')
                 : t('auth.createAccount')
           }}
@@ -243,7 +249,7 @@
 
       </form>
 
-      <div v-if="showOAuthLogin" class="space-y-3 pt-1">
+      <div v-if="showOAuthLogin && !waitlistRegistration" class="space-y-3 pt-1">
         <div class="flex items-center gap-3">
           <div class="h-px flex-1 bg-stroke-subtle"></div>
           <span class="text-xs text-content-tertiary">
@@ -340,6 +346,8 @@ const LOGIN_AGREEMENT_STORAGE_KEY = 'sub2api_login_agreement_consent'
 
 const router = useRouter()
 const route = useRoute()
+// This selects a form, not access. The server independently checks approval and OTP.
+const waitlistRegistration = computed(() => route.query.waitlist === '1')
 const authStore = useAuthStore()
 const appStore = useAppStore()
 
@@ -353,6 +361,7 @@ const showPassword = ref<boolean>(false)
 // Public settings
 const registrationEnabled = ref<boolean>(true)
 const emailVerifyEnabled = ref<boolean>(false)
+const requiresEmailVerification = computed(() => emailVerifyEnabled.value || waitlistRegistration.value)
 const promoCodeEnabled = ref<boolean>(true)
 const invitationCodeEnabled = ref<boolean>(false)
 const turnstileEnabled = ref<boolean>(false)
@@ -441,7 +450,7 @@ const registrationActionDisabled = computed(
 
 const hasAffiliateReferralCode = computed(() => affiliateEnabled.value && Boolean(formData.aff_code.trim() || loadAffiliateReferralCode()))
 
-const invitationCodeRequired = computed(() => invitationCodeEnabled.value && !hasAffiliateReferralCode.value)
+const invitationCodeRequired = computed(() => !waitlistRegistration.value && invitationCodeEnabled.value && !hasAffiliateReferralCode.value)
 
 watch(validationToastMessage, (value, previousValue) => {
   if (value && value !== previousValue) {
@@ -881,7 +890,7 @@ async function handleRegister(): Promise<void> {
     }
 
     // If email verification is enabled, redirect to verification page
-    if (emailVerifyEnabled.value) {
+    if (requiresEmailVerification.value) {
       // Store registration data in sessionStorage
       sessionStorage.setItem(
         'register_data',

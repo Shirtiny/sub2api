@@ -598,6 +598,8 @@ export default {
     dontHaveAccount: "Don't have an account?",
     alreadyHaveAccount: 'Already have an account?',
     registrationDisabled: 'Registration is currently disabled. Please contact the administrator.',
+    waitlistRegistrationLink: "Approved from the waiting list? Continue signup",
+    waitlistRegistrationHint: "Use your approved email and verify ownership to register. Approval only applies to that email; public signup remains closed. Already have an account? Sign in.",
     emailLabel: 'Email',
     emailPlaceholder: 'Enter your email',
     passwordLabel: 'Password',
@@ -610,6 +612,8 @@ export default {
     passwordMinLength: 'Password must be at least 6 characters',
     loginFailed: 'Login failed. Please check your credentials and try again.',
     errors: {
+      REGISTRATION_DISABLED: "Registration is closed. Make sure this email has been approved; existing users should sign in.",
+      EMAIL_VERIFY_REQUIRED: "Please use the approved waiting-list signup option and verify your email before registering.",
       USER_NOT_ACTIVE: 'Access is not available at the moment.',
       AFFILIATE_INVITE_LIMIT_REACHED: 'Affiliate invite limit reached'
     },
@@ -1679,6 +1683,25 @@ export default {
       description: "Emails collected on the homepage and their join dates. Mailbox ownership is not verified.",
       joinedAt: "Joined at",
       failed: "Failed to load the waiting list. Please retry.",
+      status: "Approval",
+      notification: "Notification",
+      pending: "Pending",
+      approved: "Approved",
+      notified: "Sent",
+      notificationPending: "Pending — retry available",
+      approve: "Approve",
+      retryNotice: "Retry notification",
+      processing: "Processing…",
+      completed: "Completed",
+      confirmTitle: "Approve waiting-list application",
+      confirmMessage: "Grant access to {email}? An existing account will be reactivated; a new email will receive one signup allowance even when public registration is disabled. Passwords, roles, balances and subscriptions stay unchanged. An approval email will be sent.",
+      success: "Access granted and notification email sent.",
+      approveFailed: "The operation could not be confirmed. Refresh to check approval and email status before retrying.",
+      errors: {
+        WAITLIST_NOT_FOUND: "This application no longer exists. Refresh the list.",
+        WAITLIST_ACCOUNT_CONFLICT: "Multiple accounts match this email. Resolve the conflict before approving.",
+        WAITLIST_APPROVAL_NOTICE_FAILED: "Access has been granted, but the notification email is not complete. Choose “Retry notification”.",
+      },
     },
     // Dashboard
     dashboard: {

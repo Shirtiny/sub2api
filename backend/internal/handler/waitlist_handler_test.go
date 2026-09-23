@@ -10,12 +10,14 @@ import (
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
+	"github.com/Wei-Shaw/sub2api/internal/server/middleware"
 	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
 )
 
 type waitlistTestRepo struct {
+	service.WaitlistRepository
 	emails []string
 	err    error
 	sent   bool
@@ -69,7 +71,7 @@ func waitlistRequest(h *WaitlistHandler, body string) *httptest.ResponseRecorder
 func TestWaitlistHandlerJoin(t *testing.T) {
 	repo := &waitlistTestRepo{}
 	challenge := &waitlistTestChallenge{}
-	h := &WaitlistHandler{waitlist: service.NewWaitlistService(repo, &waitlistTestMailer{}, waitlistTestBranding{}), challenge: challenge}
+	h := &WaitlistHandler{waitlist: service.NewWaitlistService(repo, &waitlistTestMailer{}, waitlistTestBranding{}, nil), challenge: challenge}
 	for _, body := range []string{`{}`, `{"email":"bad"}`, `{"email":3}`, `{`, `{"email":"` + strings.Repeat("a", 5000) + `"}`} {
 		require.Equal(t, http.StatusBadRequest, waitlistRequest(h, body).Code)
 	}
@@ -94,7 +96,7 @@ func TestWaitlistHandlerJoin(t *testing.T) {
 func TestWaitlistHandlerList(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	repo := &waitlistTestRepo{}
-	h := &WaitlistHandler{waitlist: service.NewWaitlistService(repo, &waitlistTestMailer{}, waitlistTestBranding{})}
+	h := &WaitlistHandler{waitlist: service.NewWaitlistService(repo, &waitlistTestMailer{}, waitlistTestBranding{}, nil)}
 	r := gin.New()
 	r.GET("/waitlist", h.List)
 	w := httptest.NewRecorder()
@@ -108,7 +110,7 @@ func TestWaitlistHandlerList(t *testing.T) {
 func TestWaitlistHandlerMailFailureIsRetryable(t *testing.T) {
 	repo := &waitlistTestRepo{}
 	mailer := &waitlistTestMailer{err: errors.New("private SMTP failure")}
-	h := &WaitlistHandler{waitlist: service.NewWaitlistService(repo, mailer, waitlistTestBranding{}), challenge: &waitlistTestChallenge{}}
+	h := &WaitlistHandler{waitlist: service.NewWaitlistService(repo, mailer, waitlistTestBranding{}, nil), challenge: &waitlistTestChallenge{}}
 	failed := waitlistRequest(h, `{"email":"a@example.com"}`)
 	require.Equal(t, http.StatusServiceUnavailable, failed.Code)
 	require.Contains(t, failed.Body.String(), "WAITLIST_CONFIRMATION_FAILED")
@@ -117,4 +119,60 @@ func TestWaitlistHandlerMailFailureIsRetryable(t *testing.T) {
 	mailer.err = nil
 	require.Equal(t, http.StatusOK, waitlistRequest(h, `{"email":"a@example.com"}`).Code)
 	require.True(t, repo.sent)
+}
+
+func (waitlistTestBranding) GetFrontendURL(context.Context) string { return "https://example.com" }
+
+type waitlistApproveRepo struct {
+	waitlistTestRepo
+	id, adminID int64
+}
+
+func (r *waitlistApproveRepo) Approve(_ context.Context, id, adminID int64) (*service.WaitlistEntry, error) {
+	r.id, r.adminID = id, adminID
+	if r.err != nil {
+		return nil, r.err
+	}
+	return &service.WaitlistEntry{ID: id, Email: "approved@example.com"}, nil
+}
+func (*waitlistApproveRepo) ClaimApprovalNotice(context.Context, int64, time.Time) (bool, error) {
+	return true, nil
+}
+func (*waitlistApproveRepo) FinishApprovalNotice(context.Context, int64, time.Time, bool) error {
+	return nil
+}
+
+func TestWaitlistHandlerApprove(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	repo := &waitlistApproveRepo{}
+	mailer := &waitlistTestMailer{}
+	h := NewWaitlistHandler(service.NewWaitlistService(repo, mailer, waitlistTestBranding{}, nil), nil)
+	r := gin.New()
+	r.POST("/waitlist/:id/approve", func(c *gin.Context) {
+		c.Set(string(middleware.ContextKeyUser), middleware.AuthSubject{UserID: 42})
+		h.Approve(c)
+	})
+	request := func(id string) *httptest.ResponseRecorder {
+		w := httptest.NewRecorder()
+		// A client-supplied administrator ID must never override the authenticated subject.
+		r.ServeHTTP(w, httptest.NewRequest(http.MethodPost, "/waitlist/"+id+"/approve", strings.NewReader(`{"approved_by":1}`)))
+		return w
+	}
+	for _, id := range []string{"0", "-1", "abc", "9223372036854775808"} {
+		require.Equal(t, http.StatusBadRequest, request(id).Code)
+	}
+	require.Zero(t, repo.id)
+	w := request("12")
+	require.Equal(t, http.StatusOK, w.Code)
+	require.EqualValues(t, 12, repo.id)
+	require.EqualValues(t, 42, repo.adminID)
+	require.Equal(t, "no-store", w.Header().Get("Cache-Control"))
+	repo.err = service.ErrWaitlistNotFound
+	require.Equal(t, http.StatusNotFound, request("99").Code)
+	repo.err = nil
+	mailer.err = errors.New("private SMTP failure")
+	w = request("12")
+	require.Equal(t, http.StatusServiceUnavailable, w.Code)
+	require.Contains(t, w.Body.String(), "WAITLIST_APPROVAL_NOTICE_FAILED")
+	require.NotContains(t, w.Body.String(), "private SMTP")
 }

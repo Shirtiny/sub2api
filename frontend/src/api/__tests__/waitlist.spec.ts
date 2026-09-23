@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { joinWaitlist } from '../waitlist'
-import { listWaitlist } from '../admin/waitlist'
+import { approveWaitlist, listWaitlist } from '../admin/waitlist'
 const client = vi.hoisted(() => ({ post: vi.fn(), get: vi.fn() }))
 vi.mock('../client', () => ({ default: client }))
 beforeEach(() => { vi.clearAllMocks() })
@@ -21,4 +21,14 @@ describe('waiting-list API', () => {
     expect(await listWaitlist(2, 20, signal)).toEqual(data)
     expect(client.get).toHaveBeenCalledWith('/admin/waitlist', { params: { page: 2, page_size: 20 }, signal })
   })
+  it('approves only through the administrator endpoint', async () => {
+    client.post.mockResolvedValue({ data: { approved: true } })
+    await approveWaitlist(7)
+    expect(client.post).toHaveBeenCalledWith('/admin/waitlist/7/approve', {}, { timeout: 60000 })
+  })
+  it.each([undefined, {}, { approved: false }])('does not claim an unacknowledged approval succeeded', async data => {
+    client.post.mockResolvedValue({ data })
+    await expect(approveWaitlist(7)).rejects.toThrow('not acknowledged')
+  })
+
 })

@@ -13,9 +13,14 @@ import (
 
 var ErrWaitlistEmailInvalid = infraerrors.BadRequest("WAITLIST_EMAIL_INVALID", "Please enter a valid email address")
 var ErrWaitlistConfirmationFailed = infraerrors.ServiceUnavailable("WAITLIST_CONFIRMATION_FAILED", "Your application is saved, but the confirmation email is not complete. Please try again shortly")
+var ErrWaitlistNotFound = infraerrors.NotFound("WAITLIST_NOT_FOUND", "Waiting list application not found")
+var ErrWaitlistAccountConflict = infraerrors.Conflict("WAITLIST_ACCOUNT_CONFLICT", "Multiple accounts match this email. Please resolve the conflict before approving")
+var ErrWaitlistApprovalNoticeFailed = infraerrors.ServiceUnavailable("WAITLIST_APPROVAL_NOTICE_FAILED", "Access has been granted, but the notification email is not complete. Please retry the notification")
 
 const waitlistConfirmationSubject = "Waiting List 申请成功"
 const waitlistConfirmationMessage = "欢迎，您已经加入到Waiting List，请耐心等待。关注邮件消息，开放后会即时通知。"
+const waitlistApprovalSubject = "访问权限已开通"
+const waitlistApprovalMessage = "您已获得访问权限，可以注册或进入控制台了。"
 
 // Longer than the bounded SMTP dial / I/O operation; abandoned attempts can be retried.
 const WaitlistConfirmationLease = 2 * time.Minute
@@ -25,9 +30,13 @@ var waitlistLocalPart = regexp.MustCompile("^[a-z0-9!#$%&'*+/=?^_`{|}~.-]+$")
 var waitlistDomainLabel = regexp.MustCompile(`^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$`)
 
 type WaitlistEntry struct {
-	ID        int64     `json:"id"`
-	Email     string    `json:"email"`
-	CreatedAt time.Time `json:"created_at"`
+	ID                   int64      `json:"id"`
+	Email                string     `json:"email"`
+	CreatedAt            time.Time  `json:"created_at"`
+	ApprovedAt           *time.Time `json:"approved_at"`
+	ApprovedBy           *int64     `json:"approved_by"`
+	GrantedUserID        *int64     `json:"granted_user_id"`
+	ApprovalNoticeSentAt *time.Time `json:"approval_notice_sent_at"`
 }
 
 type WaitlistRepository interface {
@@ -35,6 +44,11 @@ type WaitlistRepository interface {
 	ClaimConfirmation(ctx context.Context, email string, attempt time.Time) (bool, error)
 	FinishConfirmation(ctx context.Context, email string, attempt time.Time, sent bool) error
 	List(ctx context.Context, params pagination.PaginationParams) ([]WaitlistEntry, int64, error)
+	Approve(ctx context.Context, id, adminID int64) (*WaitlistEntry, error)
+	ClaimApprovalNotice(ctx context.Context, id int64, attempt time.Time) (bool, error)
+	FinishApprovalNotice(ctx context.Context, id int64, attempt time.Time, sent bool) error
+	HasRegistrationApproval(ctx context.Context, email string) (bool, error)
+	ConsumeRegistrationApproval(ctx context.Context, email string, userID int64) error
 }
 
 type WaitlistEmailSender interface {
@@ -43,16 +57,18 @@ type WaitlistEmailSender interface {
 
 type WaitlistBranding interface {
 	GetSiteName(ctx context.Context) string
+	GetFrontendURL(ctx context.Context) string
 }
 
 type WaitlistService struct {
-	repo     WaitlistRepository
-	mailer   WaitlistEmailSender
-	branding WaitlistBranding
+	repo      WaitlistRepository
+	mailer    WaitlistEmailSender
+	branding  WaitlistBranding
+	authCache APIKeyAuthCacheInvalidator
 }
 
-func NewWaitlistService(repo WaitlistRepository, mailer WaitlistEmailSender, branding WaitlistBranding) *WaitlistService {
-	return &WaitlistService{repo: repo, mailer: mailer, branding: branding}
+func NewWaitlistService(repo WaitlistRepository, mailer WaitlistEmailSender, branding WaitlistBranding, authCache APIKeyAuthCacheInvalidator) *WaitlistService {
+	return &WaitlistService{repo: repo, mailer: mailer, branding: branding, authCache: authCache}
 }
 
 // NormalizeWaitlistEmail validates a common ASCII mailbox without a DNS lookup.
@@ -122,4 +138,41 @@ func (s *WaitlistService) Join(ctx context.Context, email string) error {
 
 func (s *WaitlistService) List(ctx context.Context, params pagination.PaginationParams) ([]WaitlistEntry, int64, error) {
 	return s.repo.List(ctx, params)
+}
+
+// Approve durably grants access before SMTP. Retrying only retries notification;
+// it must never undo a later account suspension.
+func (s *WaitlistService) Approve(ctx context.Context, id, adminID int64) error {
+	if id <= 0 || adminID <= 0 {
+		return infraerrors.BadRequest("WAITLIST_APPROVAL_INVALID", "Invalid approval request")
+	}
+	entry, err := s.repo.Approve(ctx, id, adminID)
+	if err != nil {
+		return err
+	}
+	workCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 35*time.Second)
+	defer cancel()
+	if entry.GrantedUserID != nil && s.authCache != nil {
+		s.authCache.InvalidateAuthCacheByUserID(workCtx, *entry.GrantedUserID)
+	}
+	attempt := time.Now().UTC().Truncate(time.Microsecond)
+	claimed, err := s.repo.ClaimApprovalNotice(workCtx, id, attempt)
+	if err != nil {
+		return ErrWaitlistApprovalNoticeFailed.WithCause(err)
+	}
+	if !claimed {
+		return nil
+	}
+	body := waitlistApprovalHTML(s.branding.GetSiteName(workCtx), s.branding.GetFrontendURL(workCtx))
+	sendErr := s.mailer.SendEmail(workCtx, entry.Email, waitlistApprovalSubject, body)
+	finishCtx, finishCancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
+	defer finishCancel()
+	finishErr := s.repo.FinishApprovalNotice(finishCtx, id, attempt, sendErr == nil)
+	if sendErr != nil {
+		return ErrWaitlistApprovalNoticeFailed.WithCause(sendErr)
+	}
+	if finishErr != nil {
+		return ErrWaitlistApprovalNoticeFailed.WithCause(finishErr)
+	}
+	return nil
 }

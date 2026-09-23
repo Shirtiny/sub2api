@@ -25,7 +25,17 @@ type WaitlistEntry struct {
 	ConfirmationAttemptedAt *time.Time `json:"confirmation_attempted_at,omitempty"`
 	// ConfirmationSentAt holds the value of the "confirmation_sent_at" field.
 	ConfirmationSentAt *time.Time `json:"confirmation_sent_at,omitempty"`
-	selectValues       sql.SelectValues
+	// ApprovedAt holds the value of the "approved_at" field.
+	ApprovedAt *time.Time `json:"approved_at,omitempty"`
+	// ApprovedBy holds the value of the "approved_by" field.
+	ApprovedBy *int64 `json:"approved_by,omitempty"`
+	// GrantedUserID holds the value of the "granted_user_id" field.
+	GrantedUserID *int64 `json:"granted_user_id,omitempty"`
+	// ApprovalNoticeAttemptedAt holds the value of the "approval_notice_attempted_at" field.
+	ApprovalNoticeAttemptedAt *time.Time `json:"approval_notice_attempted_at,omitempty"`
+	// ApprovalNoticeSentAt holds the value of the "approval_notice_sent_at" field.
+	ApprovalNoticeSentAt *time.Time `json:"approval_notice_sent_at,omitempty"`
+	selectValues         sql.SelectValues
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -33,11 +43,11 @@ func (*WaitlistEntry) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case waitlistentry.FieldID:
+		case waitlistentry.FieldID, waitlistentry.FieldApprovedBy, waitlistentry.FieldGrantedUserID:
 			values[i] = new(sql.NullInt64)
 		case waitlistentry.FieldEmail:
 			values[i] = new(sql.NullString)
-		case waitlistentry.FieldCreatedAt, waitlistentry.FieldConfirmationAttemptedAt, waitlistentry.FieldConfirmationSentAt:
+		case waitlistentry.FieldCreatedAt, waitlistentry.FieldConfirmationAttemptedAt, waitlistentry.FieldConfirmationSentAt, waitlistentry.FieldApprovedAt, waitlistentry.FieldApprovalNoticeAttemptedAt, waitlistentry.FieldApprovalNoticeSentAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -85,6 +95,41 @@ func (_m *WaitlistEntry) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.ConfirmationSentAt = new(time.Time)
 				*_m.ConfirmationSentAt = value.Time
+			}
+		case waitlistentry.FieldApprovedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field approved_at", values[i])
+			} else if value.Valid {
+				_m.ApprovedAt = new(time.Time)
+				*_m.ApprovedAt = value.Time
+			}
+		case waitlistentry.FieldApprovedBy:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field approved_by", values[i])
+			} else if value.Valid {
+				_m.ApprovedBy = new(int64)
+				*_m.ApprovedBy = value.Int64
+			}
+		case waitlistentry.FieldGrantedUserID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field granted_user_id", values[i])
+			} else if value.Valid {
+				_m.GrantedUserID = new(int64)
+				*_m.GrantedUserID = value.Int64
+			}
+		case waitlistentry.FieldApprovalNoticeAttemptedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field approval_notice_attempted_at", values[i])
+			} else if value.Valid {
+				_m.ApprovalNoticeAttemptedAt = new(time.Time)
+				*_m.ApprovalNoticeAttemptedAt = value.Time
+			}
+		case waitlistentry.FieldApprovalNoticeSentAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field approval_notice_sent_at", values[i])
+			} else if value.Valid {
+				_m.ApprovalNoticeSentAt = new(time.Time)
+				*_m.ApprovalNoticeSentAt = value.Time
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -135,6 +180,31 @@ func (_m *WaitlistEntry) String() string {
 	builder.WriteString(", ")
 	if v := _m.ConfirmationSentAt; v != nil {
 		builder.WriteString("confirmation_sent_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.ApprovedAt; v != nil {
+		builder.WriteString("approved_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.ApprovedBy; v != nil {
+		builder.WriteString("approved_by=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.GrantedUserID; v != nil {
+		builder.WriteString("granted_user_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.ApprovalNoticeAttemptedAt; v != nil {
+		builder.WriteString("approval_notice_attempted_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.ApprovalNoticeSentAt; v != nil {
+		builder.WriteString("approval_notice_sent_at=")
 		builder.WriteString(v.Format(time.ANSIC))
 	}
 	builder.WriteByte(')')

@@ -598,6 +598,8 @@ export default {
     dontHaveAccount: '还没有账户？',
     alreadyHaveAccount: '已有账户？',
     registrationDisabled: '注册功能暂时关闭，请联系管理员。',
+    waitlistRegistrationLink: "已通过候补审批？继续注册",
+    waitlistRegistrationHint: "请使用获批邮箱注册，并完成邮箱验证。候补审批仅对该邮箱有效，不代表开放注册。已有账号请直接登录。",
     emailLabel: '邮箱',
     emailPlaceholder: '请输入邮箱',
     passwordLabel: '密码',
@@ -610,6 +612,8 @@ export default {
     passwordMinLength: '密码至少需要 6 个字符',
     loginFailed: '登录失败，请检查您的凭据后重试。',
     errors: {
+      REGISTRATION_DISABLED: "暂未开放注册。请确认此邮箱已通过候补审批；已有账号请直接登录。",
+      EMAIL_VERIFY_REQUIRED: "请通过候补审批注册入口完成邮箱验证后注册。",
       USER_NOT_ACTIVE: '暂无访问权限',
       AFFILIATE_INVITE_LIMIT_REACHED: '此注册链接邀请人数已达到上限'
     },
@@ -1683,6 +1687,25 @@ export default {
       description: "首页提交的邮箱与加入时间；邮箱未经所有权验证。",
       joinedAt: "加入时间",
       failed: "候补名单加载失败，请重试。",
+      status: "审批状态",
+      notification: "通知邮件",
+      pending: "待审批",
+      approved: "已通过",
+      notified: "已发送",
+      notificationPending: "待发送，可重试",
+      approve: "通过申请",
+      retryNotice: "重试通知",
+      processing: "处理中…",
+      completed: "已完成",
+      confirmTitle: "通过候补申请",
+      confirmMessage: "确认向 {email} 开放访问？已有账号将恢复访问；尚未注册的邮箱将获得一次注册资格，即使开放注册已关闭。不会变更密码、角色、余额或订阅。通过后将发送通知邮件。",
+      success: "访问权限已开通，通知邮件已发送。",
+      approveFailed: "操作未确认完成，请刷新查看审批和邮件状态后重试。",
+      errors: {
+        WAITLIST_NOT_FOUND: "该候补申请不存在，请刷新列表。",
+        WAITLIST_ACCOUNT_CONFLICT: "此邮箱对应多个账号，请先处理账号冲突后再通过。",
+        WAITLIST_APPROVAL_NOTICE_FAILED: "访问权限已开通，但通知邮件暂未完成，请点击“重试通知”。",
+      },
     },
     // Dashboard
     dashboard: {

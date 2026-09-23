@@ -68,6 +68,120 @@ func (_u *WaitlistEntryUpdate) ClearConfirmationSentAt() *WaitlistEntryUpdate {
 	return _u
 }
 
+// SetApprovedAt sets the "approved_at" field.
+func (_u *WaitlistEntryUpdate) SetApprovedAt(v time.Time) *WaitlistEntryUpdate {
+	_u.mutation.SetApprovedAt(v)
+	return _u
+}
+
+// SetNillableApprovedAt sets the "approved_at" field if the given value is not nil.
+func (_u *WaitlistEntryUpdate) SetNillableApprovedAt(v *time.Time) *WaitlistEntryUpdate {
+	if v != nil {
+		_u.SetApprovedAt(*v)
+	}
+	return _u
+}
+
+// ClearApprovedAt clears the value of the "approved_at" field.
+func (_u *WaitlistEntryUpdate) ClearApprovedAt() *WaitlistEntryUpdate {
+	_u.mutation.ClearApprovedAt()
+	return _u
+}
+
+// SetApprovedBy sets the "approved_by" field.
+func (_u *WaitlistEntryUpdate) SetApprovedBy(v int64) *WaitlistEntryUpdate {
+	_u.mutation.ResetApprovedBy()
+	_u.mutation.SetApprovedBy(v)
+	return _u
+}
+
+// SetNillableApprovedBy sets the "approved_by" field if the given value is not nil.
+func (_u *WaitlistEntryUpdate) SetNillableApprovedBy(v *int64) *WaitlistEntryUpdate {
+	if v != nil {
+		_u.SetApprovedBy(*v)
+	}
+	return _u
+}
+
+// AddApprovedBy adds value to the "approved_by" field.
+func (_u *WaitlistEntryUpdate) AddApprovedBy(v int64) *WaitlistEntryUpdate {
+	_u.mutation.AddApprovedBy(v)
+	return _u
+}
+
+// ClearApprovedBy clears the value of the "approved_by" field.
+func (_u *WaitlistEntryUpdate) ClearApprovedBy() *WaitlistEntryUpdate {
+	_u.mutation.ClearApprovedBy()
+	return _u
+}
+
+// SetGrantedUserID sets the "granted_user_id" field.
+func (_u *WaitlistEntryUpdate) SetGrantedUserID(v int64) *WaitlistEntryUpdate {
+	_u.mutation.ResetGrantedUserID()
+	_u.mutation.SetGrantedUserID(v)
+	return _u
+}
+
+// SetNillableGrantedUserID sets the "granted_user_id" field if the given value is not nil.
+func (_u *WaitlistEntryUpdate) SetNillableGrantedUserID(v *int64) *WaitlistEntryUpdate {
+	if v != nil {
+		_u.SetGrantedUserID(*v)
+	}
+	return _u
+}
+
+// AddGrantedUserID adds value to the "granted_user_id" field.
+func (_u *WaitlistEntryUpdate) AddGrantedUserID(v int64) *WaitlistEntryUpdate {
+	_u.mutation.AddGrantedUserID(v)
+	return _u
+}
+
+// ClearGrantedUserID clears the value of the "granted_user_id" field.
+func (_u *WaitlistEntryUpdate) ClearGrantedUserID() *WaitlistEntryUpdate {
+	_u.mutation.ClearGrantedUserID()
+	return _u
+}
+
+// SetApprovalNoticeAttemptedAt sets the "approval_notice_attempted_at" field.
+func (_u *WaitlistEntryUpdate) SetApprovalNoticeAttemptedAt(v time.Time) *WaitlistEntryUpdate {
+	_u.mutation.SetApprovalNoticeAttemptedAt(v)
+	return _u
+}
+
+// SetNillableApprovalNoticeAttemptedAt sets the "approval_notice_attempted_at" field if the given value is not nil.
+func (_u *WaitlistEntryUpdate) SetNillableApprovalNoticeAttemptedAt(v *time.Time) *WaitlistEntryUpdate {
+	if v != nil {
+		_u.SetApprovalNoticeAttemptedAt(*v)
+	}
+	return _u
+}
+
+// ClearApprovalNoticeAttemptedAt clears the value of the "approval_notice_attempted_at" field.
+func (_u *WaitlistEntryUpdate) ClearApprovalNoticeAttemptedAt() *WaitlistEntryUpdate {
+	_u.mutation.ClearApprovalNoticeAttemptedAt()
+	return _u
+}
+
+// SetApprovalNoticeSentAt sets the "approval_notice_sent_at" field.
+func (_u *WaitlistEntryUpdate) SetApprovalNoticeSentAt(v time.Time) *WaitlistEntryUpdate {
+	_u.mutation.SetApprovalNoticeSentAt(v)
+	return _u
+}
+
+// SetNillableApprovalNoticeSentAt sets the "approval_notice_sent_at" field if the given value is not nil.
+func (_u *WaitlistEntryUpdate) SetNillableApprovalNoticeSentAt(v *time.Time) *WaitlistEntryUpdate {
+	if v != nil {
+		_u.SetApprovalNoticeSentAt(*v)
+	}
+	return _u
+}
+
+// ClearApprovalNoticeSentAt clears the value of the "approval_notice_sent_at" field.
+func (_u *WaitlistEntryUpdate) ClearApprovalNoticeSentAt() *WaitlistEntryUpdate {
+	_u.mutation.ClearApprovalNoticeSentAt()
+	return _u
+}
+
 // Mutation returns the WaitlistEntryMutation object of the builder.
 func (_u *WaitlistEntryUpdate) Mutation() *WaitlistEntryMutation {
 	return _u.mutation
@@ -120,6 +234,42 @@ func (_u *WaitlistEntryUpdate) sqlSave(ctx context.Context) (_node int, err erro
 	}
 	if _u.mutation.ConfirmationSentAtCleared() {
 		_spec.ClearField(waitlistentry.FieldConfirmationSentAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.ApprovedAt(); ok {
+		_spec.SetField(waitlistentry.FieldApprovedAt, field.TypeTime, value)
+	}
+	if _u.mutation.ApprovedAtCleared() {
+		_spec.ClearField(waitlistentry.FieldApprovedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.ApprovedBy(); ok {
+		_spec.SetField(waitlistentry.FieldApprovedBy, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedApprovedBy(); ok {
+		_spec.AddField(waitlistentry.FieldApprovedBy, field.TypeInt64, value)
+	}
+	if _u.mutation.ApprovedByCleared() {
+		_spec.ClearField(waitlistentry.FieldApprovedBy, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.GrantedUserID(); ok {
+		_spec.SetField(waitlistentry.FieldGrantedUserID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedGrantedUserID(); ok {
+		_spec.AddField(waitlistentry.FieldGrantedUserID, field.TypeInt64, value)
+	}
+	if _u.mutation.GrantedUserIDCleared() {
+		_spec.ClearField(waitlistentry.FieldGrantedUserID, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.ApprovalNoticeAttemptedAt(); ok {
+		_spec.SetField(waitlistentry.FieldApprovalNoticeAttemptedAt, field.TypeTime, value)
+	}
+	if _u.mutation.ApprovalNoticeAttemptedAtCleared() {
+		_spec.ClearField(waitlistentry.FieldApprovalNoticeAttemptedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.ApprovalNoticeSentAt(); ok {
+		_spec.SetField(waitlistentry.FieldApprovalNoticeSentAt, field.TypeTime, value)
+	}
+	if _u.mutation.ApprovalNoticeSentAtCleared() {
+		_spec.ClearField(waitlistentry.FieldApprovalNoticeSentAt, field.TypeTime)
 	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -178,6 +328,120 @@ func (_u *WaitlistEntryUpdateOne) SetNillableConfirmationSentAt(v *time.Time) *W
 // ClearConfirmationSentAt clears the value of the "confirmation_sent_at" field.
 func (_u *WaitlistEntryUpdateOne) ClearConfirmationSentAt() *WaitlistEntryUpdateOne {
 	_u.mutation.ClearConfirmationSentAt()
+	return _u
+}
+
+// SetApprovedAt sets the "approved_at" field.
+func (_u *WaitlistEntryUpdateOne) SetApprovedAt(v time.Time) *WaitlistEntryUpdateOne {
+	_u.mutation.SetApprovedAt(v)
+	return _u
+}
+
+// SetNillableApprovedAt sets the "approved_at" field if the given value is not nil.
+func (_u *WaitlistEntryUpdateOne) SetNillableApprovedAt(v *time.Time) *WaitlistEntryUpdateOne {
+	if v != nil {
+		_u.SetApprovedAt(*v)
+	}
+	return _u
+}
+
+// ClearApprovedAt clears the value of the "approved_at" field.
+func (_u *WaitlistEntryUpdateOne) ClearApprovedAt() *WaitlistEntryUpdateOne {
+	_u.mutation.ClearApprovedAt()
+	return _u
+}
+
+// SetApprovedBy sets the "approved_by" field.
+func (_u *WaitlistEntryUpdateOne) SetApprovedBy(v int64) *WaitlistEntryUpdateOne {
+	_u.mutation.ResetApprovedBy()
+	_u.mutation.SetApprovedBy(v)
+	return _u
+}
+
+// SetNillableApprovedBy sets the "approved_by" field if the given value is not nil.
+func (_u *WaitlistEntryUpdateOne) SetNillableApprovedBy(v *int64) *WaitlistEntryUpdateOne {
+	if v != nil {
+		_u.SetApprovedBy(*v)
+	}
+	return _u
+}
+
+// AddApprovedBy adds value to the "approved_by" field.
+func (_u *WaitlistEntryUpdateOne) AddApprovedBy(v int64) *WaitlistEntryUpdateOne {
+	_u.mutation.AddApprovedBy(v)
+	return _u
+}
+
+// ClearApprovedBy clears the value of the "approved_by" field.
+func (_u *WaitlistEntryUpdateOne) ClearApprovedBy() *WaitlistEntryUpdateOne {
+	_u.mutation.ClearApprovedBy()
+	return _u
+}
+
+// SetGrantedUserID sets the "granted_user_id" field.
+func (_u *WaitlistEntryUpdateOne) SetGrantedUserID(v int64) *WaitlistEntryUpdateOne {
+	_u.mutation.ResetGrantedUserID()
+	_u.mutation.SetGrantedUserID(v)
+	return _u
+}
+
+// SetNillableGrantedUserID sets the "granted_user_id" field if the given value is not nil.
+func (_u *WaitlistEntryUpdateOne) SetNillableGrantedUserID(v *int64) *WaitlistEntryUpdateOne {
+	if v != nil {
+		_u.SetGrantedUserID(*v)
+	}
+	return _u
+}
+
+// AddGrantedUserID adds value to the "granted_user_id" field.
+func (_u *WaitlistEntryUpdateOne) AddGrantedUserID(v int64) *WaitlistEntryUpdateOne {
+	_u.mutation.AddGrantedUserID(v)
+	return _u
+}
+
+// ClearGrantedUserID clears the value of the "granted_user_id" field.
+func (_u *WaitlistEntryUpdateOne) ClearGrantedUserID() *WaitlistEntryUpdateOne {
+	_u.mutation.ClearGrantedUserID()
+	return _u
+}
+
+// SetApprovalNoticeAttemptedAt sets the "approval_notice_attempted_at" field.
+func (_u *WaitlistEntryUpdateOne) SetApprovalNoticeAttemptedAt(v time.Time) *WaitlistEntryUpdateOne {
+	_u.mutation.SetApprovalNoticeAttemptedAt(v)
+	return _u
+}
+
+// SetNillableApprovalNoticeAttemptedAt sets the "approval_notice_attempted_at" field if the given value is not nil.
+func (_u *WaitlistEntryUpdateOne) SetNillableApprovalNoticeAttemptedAt(v *time.Time) *WaitlistEntryUpdateOne {
+	if v != nil {
+		_u.SetApprovalNoticeAttemptedAt(*v)
+	}
+	return _u
+}
+
+// ClearApprovalNoticeAttemptedAt clears the value of the "approval_notice_attempted_at" field.
+func (_u *WaitlistEntryUpdateOne) ClearApprovalNoticeAttemptedAt() *WaitlistEntryUpdateOne {
+	_u.mutation.ClearApprovalNoticeAttemptedAt()
+	return _u
+}
+
+// SetApprovalNoticeSentAt sets the "approval_notice_sent_at" field.
+func (_u *WaitlistEntryUpdateOne) SetApprovalNoticeSentAt(v time.Time) *WaitlistEntryUpdateOne {
+	_u.mutation.SetApprovalNoticeSentAt(v)
+	return _u
+}
+
+// SetNillableApprovalNoticeSentAt sets the "approval_notice_sent_at" field if the given value is not nil.
+func (_u *WaitlistEntryUpdateOne) SetNillableApprovalNoticeSentAt(v *time.Time) *WaitlistEntryUpdateOne {
+	if v != nil {
+		_u.SetApprovalNoticeSentAt(*v)
+	}
+	return _u
+}
+
+// ClearApprovalNoticeSentAt clears the value of the "approval_notice_sent_at" field.
+func (_u *WaitlistEntryUpdateOne) ClearApprovalNoticeSentAt() *WaitlistEntryUpdateOne {
+	_u.mutation.ClearApprovalNoticeSentAt()
 	return _u
 }
 
@@ -263,6 +527,42 @@ func (_u *WaitlistEntryUpdateOne) sqlSave(ctx context.Context) (_node *WaitlistE
 	}
 	if _u.mutation.ConfirmationSentAtCleared() {
 		_spec.ClearField(waitlistentry.FieldConfirmationSentAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.ApprovedAt(); ok {
+		_spec.SetField(waitlistentry.FieldApprovedAt, field.TypeTime, value)
+	}
+	if _u.mutation.ApprovedAtCleared() {
+		_spec.ClearField(waitlistentry.FieldApprovedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.ApprovedBy(); ok {
+		_spec.SetField(waitlistentry.FieldApprovedBy, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedApprovedBy(); ok {
+		_spec.AddField(waitlistentry.FieldApprovedBy, field.TypeInt64, value)
+	}
+	if _u.mutation.ApprovedByCleared() {
+		_spec.ClearField(waitlistentry.FieldApprovedBy, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.GrantedUserID(); ok {
+		_spec.SetField(waitlistentry.FieldGrantedUserID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedGrantedUserID(); ok {
+		_spec.AddField(waitlistentry.FieldGrantedUserID, field.TypeInt64, value)
+	}
+	if _u.mutation.GrantedUserIDCleared() {
+		_spec.ClearField(waitlistentry.FieldGrantedUserID, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.ApprovalNoticeAttemptedAt(); ok {
+		_spec.SetField(waitlistentry.FieldApprovalNoticeAttemptedAt, field.TypeTime, value)
+	}
+	if _u.mutation.ApprovalNoticeAttemptedAtCleared() {
+		_spec.ClearField(waitlistentry.FieldApprovalNoticeAttemptedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.ApprovalNoticeSentAt(); ok {
+		_spec.SetField(waitlistentry.FieldApprovalNoticeSentAt, field.TypeTime, value)
+	}
+	if _u.mutation.ApprovalNoticeSentAtCleared() {
+		_spec.ClearField(waitlistentry.FieldApprovalNoticeSentAt, field.TypeTime)
 	}
 	_node = &WaitlistEntry{config: _u.config}
 	_spec.Assign = _node.assignValues

@@ -2103,6 +2103,11 @@ var (
 		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
 		{Name: "confirmation_attempted_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
 		{Name: "confirmation_sent_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "approved_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "approved_by", Type: field.TypeInt64, Nullable: true},
+		{Name: "granted_user_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "approval_notice_attempted_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "approval_notice_sent_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
 	}
 	// WaitlistEntriesTable holds the schema information for the "waitlist_entries" table.
 	WaitlistEntriesTable = &schema.Table{

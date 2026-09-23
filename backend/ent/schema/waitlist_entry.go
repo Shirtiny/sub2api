@@ -23,5 +23,11 @@ func (WaitlistEntry) Fields() []ent.Field {
 		field.Time("created_at").Default(time.Now).Immutable().SchemaType(map[string]string{dialect.Postgres: "timestamptz"}),
 		field.Time("confirmation_attempted_at").Optional().Nillable().SchemaType(map[string]string{dialect.Postgres: "timestamptz"}),
 		field.Time("confirmation_sent_at").Optional().Nillable().SchemaType(map[string]string{dialect.Postgres: "timestamptz"}),
+		field.Time("approved_at").Optional().Nillable().SchemaType(map[string]string{dialect.Postgres: "timestamptz"}),
+		field.Int64("approved_by").Optional().Nillable(),
+		// Keep the consumed grant even if the associated account is later deleted.
+		field.Int64("granted_user_id").Optional().Nillable(),
+		field.Time("approval_notice_attempted_at").Optional().Nillable().SchemaType(map[string]string{dialect.Postgres: "timestamptz"}),
+		field.Time("approval_notice_sent_at").Optional().Nillable().SchemaType(map[string]string{dialect.Postgres: "timestamptz"}),
 	}
 }

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
   <meta name="supported-color-schemes" content="light dark">
-  <title>Waiting List 申请成功 · {{SITE_NAME}}</title>
+  <title>{{SUBJECT}} · {{SITE_NAME}}</title>
   <style>
     :root { color-scheme: light dark; supported-color-schemes: light dark; }
     body, table, td, p, h1 { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
@@ -33,7 +33,7 @@
   </style>
 </head>
 <body class="page" style="margin:0;padding:0;width:100%;background-color:#eee8df;color:#382a20;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB','Microsoft YaHei',Arial,sans-serif;">
-  <div style="display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;">申请已收到。感谢你的耐心与期待，开放后会通过邮件通知。</div>
+  <div style="display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;">{{PREHEADER}}</div>
   <table role="presentation" class="page" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;background-color:#eee8df;">
     <tr>
       <td class="outer-pad" align="center" style="padding:48px 20px;">
@@ -47,8 +47,8 @@
           </tr>
           <tr>
             <td class="letter" style="padding:44px 44px 36px;">
-              <p class="accent" style="margin:0 0 18px;color:#865630;font-size:10px;line-height:18px;letter-spacing:2px;">YOU’RE ON THE LIST</p>
-              <h1 class="headline ink" style="margin:0;color:#382a20;font-family:'Songti SC','STSong','Noto Serif CJK SC',Georgia,serif;font-size:36px;font-weight:400;line-height:1.5;letter-spacing:-0.8px;">好事，正在酝酿。</h1>
+              <p class="accent" style="margin:0 0 18px;color:#865630;font-size:10px;line-height:18px;letter-spacing:2px;">{{KICKER}}</p>
+              <h1 class="headline ink" style="margin:0;color:#382a20;font-family:'Songti SC','STSong','Noto Serif CJK SC',Georgia,serif;font-size:36px;font-weight:400;line-height:1.5;letter-spacing:-0.8px;">{{HEADLINE}}</h1>
               <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:24px 0;">
                 <tr><td class="small-rule" width="32" height="2" bgcolor="#ad8158" style="width:32px;height:2px;background-color:#ad8158;font-size:0;line-height:0;">&nbsp;</td></tr>
               </table>
@@ -59,18 +59,19 @@
                     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;">
                       <tr>
                         <td class="muted" style="color:#796653;font-size:12px;line-height:22px;">申请状态</td>
-                        <td class="accent" align="right" style="color:#865630;font-size:13px;font-weight:500;line-height:22px;">已加入 Waiting List</td>
+                        <td class="accent" align="right" style="color:#865630;font-size:13px;font-weight:500;line-height:22px;">{{STATUS}}</td>
                       </tr>
                     </table>
                   </td>
                 </tr>
               </table>
+              {{NEXT_STEPS}}
             </td>
           </tr>
           <tr>
             <td class="signoff rule" style="padding:26px 44px 28px;border-top:1px solid #e4d9ca;">
               <p class="ink" style="margin:0 0 7px;color:#382a20;font-family:'Songti SC','STSong','Noto Serif CJK SC',Georgia,serif;font-size:16px;line-height:26px;">让灵感，高效落地。</p>
-              <p class="muted" style="margin:0;color:#8b7662;font-size:11px;line-height:20px;letter-spacing:0.3px;">感谢你的耐心与期待。</p>
+              <p class="muted" style="margin:0;color:#8b7662;font-size:11px;line-height:20px;letter-spacing:0.3px;">{{SIGNOFF}}</p>
             </td>
           </tr>
         </table>

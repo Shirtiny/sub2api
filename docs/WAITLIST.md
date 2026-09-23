@@ -64,9 +64,9 @@ SMTP sender settings and the delivery workflow below are unchanged.
 This is retry-on-submission, not a new background queue or automatic mailing
 campaign. In the unavoidable crash window between SMTP acceptance and persistence
 of the sent marker, a retry may deliver another copy; exactly-once SMTP delivery
-or inbox placement is not guaranteed. The feature sends the application receipt
-only: the wording about future availability does not add a broadcast/opening
-notification trigger.
+or inbox placement is not guaranteed. Joining sends the application receipt only; administrator approval now triggers a
+separate access notification (below). There is no automatic broadcast when public
+registration is opened.
 
 ## Administrator access
 
@@ -76,10 +76,74 @@ middleware (not just a frontend guard). Results use `Cache-Control: no-store`.
 Ordinary users and anonymous visitors cannot read the collection. Administrators
 are reminded that collected addresses are not ownership-verified.
 
+## Administrator approval
+
+`POST /api/v1/admin/waitlist/:id/approve` is protected by the same administrator
+middleware as the list (JWT or admin API key). The ID must be positive. The acting
+administrator comes from the authenticated subject, never the request body. The
+admin page offers **通过申请 / Approve**, a confirmation of its effects, the approval
+time, notification state, and **重试通知 / Retry notification** after mail failure.
+
+- First approval locks the application row. For one matching non-deleted account,
+  update only its status to `active` and invalidate its API-key auth cache. Match
+  the same trimmed, case-insensitive mailbox as signup. Ambiguous legacy account
+  matches require manual resolution. Never change passwords, roles, balances,
+  subscription entitlements, or moderation history, and never restore deleted users.
+- If no account exists, persist a single-email signup allowance. This does **not**
+  change `registration_enabled`, create an account, or verify mailbox ownership.
+- Approval time and administrator ID are recorded alongside the granted/consuming
+  user ID. Account creation and allowance consumption use **one transaction**;
+  any admission failure rolls both back. Consumed allowances stay consumed after
+  account deletion. Concurrent approvals of the same entry are idempotent.
+- Already-approved entries do not change account status again. Retrying mail must
+  not undo a suspension imposed after the initial approval. “Approved” describes
+  this application decision, not a live guarantee that an account is still active.
+
+After committing access, send a separate branded HTML letter through the existing
+SMTP settings/sender (no new email-provider configuration):
+
+Subject: **访问权限已开通**
+
+> 您已获得访问权限，可以注册或进入控制台了。
+
+The letter uses the same responsive espresso/cream design as the receipt and
+includes registration/login links derived **only** from the existing configured
+frontend URL. Invalid/missing URLs fall back to instructions, never the request
+Host or a hardcoded production domain. Set the existing frontend URL correctly to
+include usable buttons; existing SMTP sender settings determine the From address.
+
+Approval-notice delivery has its own two-minute lease and sent timestamp, separate
+from the application receipt. A known SMTP failure releases that lease, leaves
+access intact, and returns `WAITLIST_APPROVAL_NOTICE_FAILED`; the admin reloads the
+saved state and can retry notification. Concurrent/in-progress attempts also return
+a retryable result. Successful notices are not resent. Browser disconnects do not
+cancel the bounded SMTP/marker completion. As with the receipt, SMTP acceptance
+followed by a crash before marker persistence may cause a duplicate on retry; no
+exactly-once or inbox-placement claim is made.
+
+### Registration while public signup is closed
+
+- Email links open `/register?waitlist=1`; the closed-registration page also has an
+  **已通过候补审批？继续注册** entry. The query flag only selects the form: it is not
+  authorization and carries no credential or email address.
+- Both verification-code sending and email/password registration independently
+  check the approved, unconsumed email grant. Unapproved emails remain rejected
+  while global registration is closed. Database lookup failures fail closed.
+- Approved applicants **must verify ownership with the existing email OTP flow**,
+  even if ordinary email verification is disabled. The approval replaces the need
+  for an admission invitation code, not mailbox proof. Turnstile, reserved-email
+  and allowed-domain policies still apply; the registration stage does not reuse
+  the one-time Turnstile token already checked when the code was sent.
+- The allowance applies to email/password signup. Approval-mode UI omits new-account
+  OAuth shortcuts; it does not globally enable third-party registration. Existing
+  reactivated accounts continue to use their existing login methods. New users can
+  bind supported third-party methods after signup using the normal account flow.
+
 ## Release and preview boundaries
 
 `backend/migrations/198_waitlist_entries.sql` adds the table and
-`199_waitlist_confirmation.sql` adds nullable delivery-state columns without
+`199_waitlist_confirmation.sql` adds nullable delivery-state columns, and
+`200_waitlist_approval.sql` adds nullable approval/audit/notification state without
 modifying existing users or migration history. Ent schema and generated code,
 repository, service, handler, routes and Wire providers are included. The normal migration
 runner applies these migrations only when a later authorized backend deployment
@@ -109,3 +173,12 @@ change.
   integration harness, **never production**. Under a restricted environment this
   test may be compiled without running its container-based harness; report that
   limitation explicitly rather than treating compilation as an integration pass.
+
+Approval verification also covers admin-only access, invalid IDs and trusted actor
+identity, SMTP retries and disconnects, URL/HTML escaping, closed-signup and OTP
+requirements, and registration-view behavior. The PostgreSQL harness tests initial
+activation, concurrent approval and SMTP leases, rollback of both account and grant,
+actual approved signup with public registration and ordinary verification disabled,
+consumed-grant reuse rejection, and preservation of later suspensions. These tests
+use disposable PostgreSQL/Redis containers and fake mail/codes, never production
+accounts or real SMTP.

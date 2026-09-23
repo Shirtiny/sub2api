@@ -56492,17 +56492,24 @@ func (m *UserSubscriptionMutation) ResetEdge(name string) error {
 // WaitlistEntryMutation represents an operation that mutates the WaitlistEntry nodes in the graph.
 type WaitlistEntryMutation struct {
 	config
-	op                        Op
-	typ                       string
-	id                        *int64
-	email                     *string
-	created_at                *time.Time
-	confirmation_attempted_at *time.Time
-	confirmation_sent_at      *time.Time
-	clearedFields             map[string]struct{}
-	done                      bool
-	oldValue                  func(context.Context) (*WaitlistEntry, error)
-	predicates                []predicate.WaitlistEntry
+	op                           Op
+	typ                          string
+	id                           *int64
+	email                        *string
+	created_at                   *time.Time
+	confirmation_attempted_at    *time.Time
+	confirmation_sent_at         *time.Time
+	approved_at                  *time.Time
+	approved_by                  *int64
+	addapproved_by               *int64
+	granted_user_id              *int64
+	addgranted_user_id           *int64
+	approval_notice_attempted_at *time.Time
+	approval_notice_sent_at      *time.Time
+	clearedFields                map[string]struct{}
+	done                         bool
+	oldValue                     func(context.Context) (*WaitlistEntry, error)
+	predicates                   []predicate.WaitlistEntry
 }
 
 var _ ent.Mutation = (*WaitlistEntryMutation)(nil)
@@ -56773,6 +56780,293 @@ func (m *WaitlistEntryMutation) ResetConfirmationSentAt() {
 	delete(m.clearedFields, waitlistentry.FieldConfirmationSentAt)
 }
 
+// SetApprovedAt sets the "approved_at" field.
+func (m *WaitlistEntryMutation) SetApprovedAt(t time.Time) {
+	m.approved_at = &t
+}
+
+// ApprovedAt returns the value of the "approved_at" field in the mutation.
+func (m *WaitlistEntryMutation) ApprovedAt() (r time.Time, exists bool) {
+	v := m.approved_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldApprovedAt returns the old "approved_at" field's value of the WaitlistEntry entity.
+// If the WaitlistEntry object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WaitlistEntryMutation) OldApprovedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldApprovedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldApprovedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldApprovedAt: %w", err)
+	}
+	return oldValue.ApprovedAt, nil
+}
+
+// ClearApprovedAt clears the value of the "approved_at" field.
+func (m *WaitlistEntryMutation) ClearApprovedAt() {
+	m.approved_at = nil
+	m.clearedFields[waitlistentry.FieldApprovedAt] = struct{}{}
+}
+
+// ApprovedAtCleared returns if the "approved_at" field was cleared in this mutation.
+func (m *WaitlistEntryMutation) ApprovedAtCleared() bool {
+	_, ok := m.clearedFields[waitlistentry.FieldApprovedAt]
+	return ok
+}
+
+// ResetApprovedAt resets all changes to the "approved_at" field.
+func (m *WaitlistEntryMutation) ResetApprovedAt() {
+	m.approved_at = nil
+	delete(m.clearedFields, waitlistentry.FieldApprovedAt)
+}
+
+// SetApprovedBy sets the "approved_by" field.
+func (m *WaitlistEntryMutation) SetApprovedBy(i int64) {
+	m.approved_by = &i
+	m.addapproved_by = nil
+}
+
+// ApprovedBy returns the value of the "approved_by" field in the mutation.
+func (m *WaitlistEntryMutation) ApprovedBy() (r int64, exists bool) {
+	v := m.approved_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldApprovedBy returns the old "approved_by" field's value of the WaitlistEntry entity.
+// If the WaitlistEntry object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WaitlistEntryMutation) OldApprovedBy(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldApprovedBy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldApprovedBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldApprovedBy: %w", err)
+	}
+	return oldValue.ApprovedBy, nil
+}
+
+// AddApprovedBy adds i to the "approved_by" field.
+func (m *WaitlistEntryMutation) AddApprovedBy(i int64) {
+	if m.addapproved_by != nil {
+		*m.addapproved_by += i
+	} else {
+		m.addapproved_by = &i
+	}
+}
+
+// AddedApprovedBy returns the value that was added to the "approved_by" field in this mutation.
+func (m *WaitlistEntryMutation) AddedApprovedBy() (r int64, exists bool) {
+	v := m.addapproved_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearApprovedBy clears the value of the "approved_by" field.
+func (m *WaitlistEntryMutation) ClearApprovedBy() {
+	m.approved_by = nil
+	m.addapproved_by = nil
+	m.clearedFields[waitlistentry.FieldApprovedBy] = struct{}{}
+}
+
+// ApprovedByCleared returns if the "approved_by" field was cleared in this mutation.
+func (m *WaitlistEntryMutation) ApprovedByCleared() bool {
+	_, ok := m.clearedFields[waitlistentry.FieldApprovedBy]
+	return ok
+}
+
+// ResetApprovedBy resets all changes to the "approved_by" field.
+func (m *WaitlistEntryMutation) ResetApprovedBy() {
+	m.approved_by = nil
+	m.addapproved_by = nil
+	delete(m.clearedFields, waitlistentry.FieldApprovedBy)
+}
+
+// SetGrantedUserID sets the "granted_user_id" field.
+func (m *WaitlistEntryMutation) SetGrantedUserID(i int64) {
+	m.granted_user_id = &i
+	m.addgranted_user_id = nil
+}
+
+// GrantedUserID returns the value of the "granted_user_id" field in the mutation.
+func (m *WaitlistEntryMutation) GrantedUserID() (r int64, exists bool) {
+	v := m.granted_user_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldGrantedUserID returns the old "granted_user_id" field's value of the WaitlistEntry entity.
+// If the WaitlistEntry object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WaitlistEntryMutation) OldGrantedUserID(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldGrantedUserID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldGrantedUserID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldGrantedUserID: %w", err)
+	}
+	return oldValue.GrantedUserID, nil
+}
+
+// AddGrantedUserID adds i to the "granted_user_id" field.
+func (m *WaitlistEntryMutation) AddGrantedUserID(i int64) {
+	if m.addgranted_user_id != nil {
+		*m.addgranted_user_id += i
+	} else {
+		m.addgranted_user_id = &i
+	}
+}
+
+// AddedGrantedUserID returns the value that was added to the "granted_user_id" field in this mutation.
+func (m *WaitlistEntryMutation) AddedGrantedUserID() (r int64, exists bool) {
+	v := m.addgranted_user_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearGrantedUserID clears the value of the "granted_user_id" field.
+func (m *WaitlistEntryMutation) ClearGrantedUserID() {
+	m.granted_user_id = nil
+	m.addgranted_user_id = nil
+	m.clearedFields[waitlistentry.FieldGrantedUserID] = struct{}{}
+}
+
+// GrantedUserIDCleared returns if the "granted_user_id" field was cleared in this mutation.
+func (m *WaitlistEntryMutation) GrantedUserIDCleared() bool {
+	_, ok := m.clearedFields[waitlistentry.FieldGrantedUserID]
+	return ok
+}
+
+// ResetGrantedUserID resets all changes to the "granted_user_id" field.
+func (m *WaitlistEntryMutation) ResetGrantedUserID() {
+	m.granted_user_id = nil
+	m.addgranted_user_id = nil
+	delete(m.clearedFields, waitlistentry.FieldGrantedUserID)
+}
+
+// SetApprovalNoticeAttemptedAt sets the "approval_notice_attempted_at" field.
+func (m *WaitlistEntryMutation) SetApprovalNoticeAttemptedAt(t time.Time) {
+	m.approval_notice_attempted_at = &t
+}
+
+// ApprovalNoticeAttemptedAt returns the value of the "approval_notice_attempted_at" field in the mutation.
+func (m *WaitlistEntryMutation) ApprovalNoticeAttemptedAt() (r time.Time, exists bool) {
+	v := m.approval_notice_attempted_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldApprovalNoticeAttemptedAt returns the old "approval_notice_attempted_at" field's value of the WaitlistEntry entity.
+// If the WaitlistEntry object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WaitlistEntryMutation) OldApprovalNoticeAttemptedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldApprovalNoticeAttemptedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldApprovalNoticeAttemptedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldApprovalNoticeAttemptedAt: %w", err)
+	}
+	return oldValue.ApprovalNoticeAttemptedAt, nil
+}
+
+// ClearApprovalNoticeAttemptedAt clears the value of the "approval_notice_attempted_at" field.
+func (m *WaitlistEntryMutation) ClearApprovalNoticeAttemptedAt() {
+	m.approval_notice_attempted_at = nil
+	m.clearedFields[waitlistentry.FieldApprovalNoticeAttemptedAt] = struct{}{}
+}
+
+// ApprovalNoticeAttemptedAtCleared returns if the "approval_notice_attempted_at" field was cleared in this mutation.
+func (m *WaitlistEntryMutation) ApprovalNoticeAttemptedAtCleared() bool {
+	_, ok := m.clearedFields[waitlistentry.FieldApprovalNoticeAttemptedAt]
+	return ok
+}
+
+// ResetApprovalNoticeAttemptedAt resets all changes to the "approval_notice_attempted_at" field.
+func (m *WaitlistEntryMutation) ResetApprovalNoticeAttemptedAt() {
+	m.approval_notice_attempted_at = nil
+	delete(m.clearedFields, waitlistentry.FieldApprovalNoticeAttemptedAt)
+}
+
+// SetApprovalNoticeSentAt sets the "approval_notice_sent_at" field.
+func (m *WaitlistEntryMutation) SetApprovalNoticeSentAt(t time.Time) {
+	m.approval_notice_sent_at = &t
+}
+
+// ApprovalNoticeSentAt returns the value of the "approval_notice_sent_at" field in the mutation.
+func (m *WaitlistEntryMutation) ApprovalNoticeSentAt() (r time.Time, exists bool) {
+	v := m.approval_notice_sent_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldApprovalNoticeSentAt returns the old "approval_notice_sent_at" field's value of the WaitlistEntry entity.
+// If the WaitlistEntry object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WaitlistEntryMutation) OldApprovalNoticeSentAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldApprovalNoticeSentAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldApprovalNoticeSentAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldApprovalNoticeSentAt: %w", err)
+	}
+	return oldValue.ApprovalNoticeSentAt, nil
+}
+
+// ClearApprovalNoticeSentAt clears the value of the "approval_notice_sent_at" field.
+func (m *WaitlistEntryMutation) ClearApprovalNoticeSentAt() {
+	m.approval_notice_sent_at = nil
+	m.clearedFields[waitlistentry.FieldApprovalNoticeSentAt] = struct{}{}
+}
+
+// ApprovalNoticeSentAtCleared returns if the "approval_notice_sent_at" field was cleared in this mutation.
+func (m *WaitlistEntryMutation) ApprovalNoticeSentAtCleared() bool {
+	_, ok := m.clearedFields[waitlistentry.FieldApprovalNoticeSentAt]
+	return ok
+}
+
+// ResetApprovalNoticeSentAt resets all changes to the "approval_notice_sent_at" field.
+func (m *WaitlistEntryMutation) ResetApprovalNoticeSentAt() {
+	m.approval_notice_sent_at = nil
+	delete(m.clearedFields, waitlistentry.FieldApprovalNoticeSentAt)
+}
+
 // Where appends a list predicates to the WaitlistEntryMutation builder.
 func (m *WaitlistEntryMutation) Where(ps ...predicate.WaitlistEntry) {
 	m.predicates = append(m.predicates, ps...)
@@ -56807,7 +57101,7 @@ func (m *WaitlistEntryMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *WaitlistEntryMutation) Fields() []string {
-	fields := make([]string, 0, 4)
+	fields := make([]string, 0, 9)
 	if m.email != nil {
 		fields = append(fields, waitlistentry.FieldEmail)
 	}
@@ -56819,6 +57113,21 @@ func (m *WaitlistEntryMutation) Fields() []string {
 	}
 	if m.confirmation_sent_at != nil {
 		fields = append(fields, waitlistentry.FieldConfirmationSentAt)
+	}
+	if m.approved_at != nil {
+		fields = append(fields, waitlistentry.FieldApprovedAt)
+	}
+	if m.approved_by != nil {
+		fields = append(fields, waitlistentry.FieldApprovedBy)
+	}
+	if m.granted_user_id != nil {
+		fields = append(fields, waitlistentry.FieldGrantedUserID)
+	}
+	if m.approval_notice_attempted_at != nil {
+		fields = append(fields, waitlistentry.FieldApprovalNoticeAttemptedAt)
+	}
+	if m.approval_notice_sent_at != nil {
+		fields = append(fields, waitlistentry.FieldApprovalNoticeSentAt)
 	}
 	return fields
 }
@@ -56836,6 +57145,16 @@ func (m *WaitlistEntryMutation) Field(name string) (ent.Value, bool) {
 		return m.ConfirmationAttemptedAt()
 	case waitlistentry.FieldConfirmationSentAt:
 		return m.ConfirmationSentAt()
+	case waitlistentry.FieldApprovedAt:
+		return m.ApprovedAt()
+	case waitlistentry.FieldApprovedBy:
+		return m.ApprovedBy()
+	case waitlistentry.FieldGrantedUserID:
+		return m.GrantedUserID()
+	case waitlistentry.FieldApprovalNoticeAttemptedAt:
+		return m.ApprovalNoticeAttemptedAt()
+	case waitlistentry.FieldApprovalNoticeSentAt:
+		return m.ApprovalNoticeSentAt()
 	}
 	return nil, false
 }
@@ -56853,6 +57172,16 @@ func (m *WaitlistEntryMutation) OldField(ctx context.Context, name string) (ent.
 		return m.OldConfirmationAttemptedAt(ctx)
 	case waitlistentry.FieldConfirmationSentAt:
 		return m.OldConfirmationSentAt(ctx)
+	case waitlistentry.FieldApprovedAt:
+		return m.OldApprovedAt(ctx)
+	case waitlistentry.FieldApprovedBy:
+		return m.OldApprovedBy(ctx)
+	case waitlistentry.FieldGrantedUserID:
+		return m.OldGrantedUserID(ctx)
+	case waitlistentry.FieldApprovalNoticeAttemptedAt:
+		return m.OldApprovalNoticeAttemptedAt(ctx)
+	case waitlistentry.FieldApprovalNoticeSentAt:
+		return m.OldApprovalNoticeSentAt(ctx)
 	}
 	return nil, fmt.Errorf("unknown WaitlistEntry field %s", name)
 }
@@ -56890,6 +57219,41 @@ func (m *WaitlistEntryMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetConfirmationSentAt(v)
 		return nil
+	case waitlistentry.FieldApprovedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetApprovedAt(v)
+		return nil
+	case waitlistentry.FieldApprovedBy:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetApprovedBy(v)
+		return nil
+	case waitlistentry.FieldGrantedUserID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetGrantedUserID(v)
+		return nil
+	case waitlistentry.FieldApprovalNoticeAttemptedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetApprovalNoticeAttemptedAt(v)
+		return nil
+	case waitlistentry.FieldApprovalNoticeSentAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetApprovalNoticeSentAt(v)
+		return nil
 	}
 	return fmt.Errorf("unknown WaitlistEntry field %s", name)
 }
@@ -56897,13 +57261,26 @@ func (m *WaitlistEntryMutation) SetField(name string, value ent.Value) error {
 // AddedFields returns all numeric fields that were incremented/decremented during
 // this mutation.
 func (m *WaitlistEntryMutation) AddedFields() []string {
-	return nil
+	var fields []string
+	if m.addapproved_by != nil {
+		fields = append(fields, waitlistentry.FieldApprovedBy)
+	}
+	if m.addgranted_user_id != nil {
+		fields = append(fields, waitlistentry.FieldGrantedUserID)
+	}
+	return fields
 }
 
 // AddedField returns the numeric value that was incremented/decremented on a field
 // with the given name. The second boolean return value indicates that this field
 // was not set, or was not defined in the schema.
 func (m *WaitlistEntryMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case waitlistentry.FieldApprovedBy:
+		return m.AddedApprovedBy()
+	case waitlistentry.FieldGrantedUserID:
+		return m.AddedGrantedUserID()
+	}
 	return nil, false
 }
 
@@ -56912,6 +57289,20 @@ func (m *WaitlistEntryMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *WaitlistEntryMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case waitlistentry.FieldApprovedBy:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddApprovedBy(v)
+		return nil
+	case waitlistentry.FieldGrantedUserID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddGrantedUserID(v)
+		return nil
 	}
 	return fmt.Errorf("unknown WaitlistEntry numeric field %s", name)
 }
@@ -56925,6 +57316,21 @@ func (m *WaitlistEntryMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(waitlistentry.FieldConfirmationSentAt) {
 		fields = append(fields, waitlistentry.FieldConfirmationSentAt)
+	}
+	if m.FieldCleared(waitlistentry.FieldApprovedAt) {
+		fields = append(fields, waitlistentry.FieldApprovedAt)
+	}
+	if m.FieldCleared(waitlistentry.FieldApprovedBy) {
+		fields = append(fields, waitlistentry.FieldApprovedBy)
+	}
+	if m.FieldCleared(waitlistentry.FieldGrantedUserID) {
+		fields = append(fields, waitlistentry.FieldGrantedUserID)
+	}
+	if m.FieldCleared(waitlistentry.FieldApprovalNoticeAttemptedAt) {
+		fields = append(fields, waitlistentry.FieldApprovalNoticeAttemptedAt)
+	}
+	if m.FieldCleared(waitlistentry.FieldApprovalNoticeSentAt) {
+		fields = append(fields, waitlistentry.FieldApprovalNoticeSentAt)
 	}
 	return fields
 }
@@ -56946,6 +57352,21 @@ func (m *WaitlistEntryMutation) ClearField(name string) error {
 	case waitlistentry.FieldConfirmationSentAt:
 		m.ClearConfirmationSentAt()
 		return nil
+	case waitlistentry.FieldApprovedAt:
+		m.ClearApprovedAt()
+		return nil
+	case waitlistentry.FieldApprovedBy:
+		m.ClearApprovedBy()
+		return nil
+	case waitlistentry.FieldGrantedUserID:
+		m.ClearGrantedUserID()
+		return nil
+	case waitlistentry.FieldApprovalNoticeAttemptedAt:
+		m.ClearApprovalNoticeAttemptedAt()
+		return nil
+	case waitlistentry.FieldApprovalNoticeSentAt:
+		m.ClearApprovalNoticeSentAt()
+		return nil
 	}
 	return fmt.Errorf("unknown WaitlistEntry nullable field %s", name)
 }
@@ -56965,6 +57386,21 @@ func (m *WaitlistEntryMutation) ResetField(name string) error {
 		return nil
 	case waitlistentry.FieldConfirmationSentAt:
 		m.ResetConfirmationSentAt()
+		return nil
+	case waitlistentry.FieldApprovedAt:
+		m.ResetApprovedAt()
+		return nil
+	case waitlistentry.FieldApprovedBy:
+		m.ResetApprovedBy()
+		return nil
+	case waitlistentry.FieldGrantedUserID:
+		m.ResetGrantedUserID()
+		return nil
+	case waitlistentry.FieldApprovalNoticeAttemptedAt:
+		m.ResetApprovalNoticeAttemptedAt()
+		return nil
+	case waitlistentry.FieldApprovalNoticeSentAt:
+		m.ResetApprovalNoticeSentAt()
 		return nil
 	}
 	return fmt.Errorf("unknown WaitlistEntry field %s", name)

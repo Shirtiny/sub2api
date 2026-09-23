@@ -1,0 +1,149 @@
+package service
+
+import (
+	"context"
+	"errors"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/stretchr/testify/require"
+)
+
+type waitlistApprovalRepoStub struct {
+	waitlistRepoStub
+	entry             WaitlistEntry
+	approveErr        error
+	approvals         int
+	approvalSent      bool
+	approvalInFlight  bool
+	approvalFinishErr error
+	allowedEmail      string
+	lookupErr         error
+}
+
+func (r *waitlistApprovalRepoStub) Approve(_ context.Context, id, adminID int64) (*WaitlistEntry, error) {
+	if r.approveErr != nil {
+		return nil, r.approveErr
+	}
+	if r.entry.ApprovedAt == nil {
+		now := time.Now()
+		r.entry.ID, r.entry.ApprovedAt, r.entry.ApprovedBy = id, &now, &adminID
+		r.approvals++
+	}
+	return &r.entry, nil
+}
+func (r *waitlistApprovalRepoStub) ClaimApprovalNotice(context.Context, int64, time.Time) (bool, error) {
+	if r.approvalSent {
+		return false, nil
+	}
+	if r.approvalInFlight {
+		return false, ErrWaitlistApprovalNoticeFailed
+	}
+	r.approvalInFlight = true
+	return true, nil
+}
+func (r *waitlistApprovalRepoStub) FinishApprovalNotice(ctx context.Context, _ int64, _ time.Time, sent bool) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	if r.approvalFinishErr != nil {
+		return r.approvalFinishErr
+	}
+	r.approvalSent, r.approvalInFlight = sent, false
+	return nil
+}
+func (r *waitlistApprovalRepoStub) HasRegistrationApproval(_ context.Context, email string) (bool, error) {
+	return email != "" && email == r.allowedEmail, r.lookupErr
+}
+
+type waitlistCacheSpy struct {
+	APIKeyAuthCacheInvalidator
+	users []int64
+}
+
+func (s *waitlistCacheSpy) InvalidateAuthCacheByUserID(_ context.Context, id int64) {
+	s.users = append(s.users, id)
+}
+
+func TestWaitlistApprovalNotificationRetry(t *testing.T) {
+	id := int64(9)
+	repo := &waitlistApprovalRepoStub{entry: WaitlistEntry{Email: "approved@example.com", GrantedUserID: &id}}
+	mailer := &waitlistMailerStub{err: ErrEmailNotConfigured}
+	cache := &waitlistCacheSpy{}
+	svc := NewWaitlistService(repo, mailer, waitlistBrandingStub("Test & Site"), cache)
+	require.ErrorIs(t, svc.Approve(context.Background(), 1, 7), ErrWaitlistApprovalNoticeFailed)
+	require.NotNil(t, repo.entry.ApprovedAt)
+	require.Equal(t, int64(7), *repo.entry.ApprovedBy)
+	require.False(t, repo.approvalSent)
+	require.False(t, repo.approvalInFlight)
+	require.Equal(t, []int64{9}, cache.users)
+	mailer.err = nil
+	require.NoError(t, svc.Approve(context.Background(), 1, 8))
+	require.True(t, repo.approvalSent)
+	require.Equal(t, "approved@example.com", mailer.to)
+	require.Equal(t, waitlistApprovalSubject, mailer.subject)
+	require.Contains(t, mailer.body, waitlistApprovalMessage)
+	require.Contains(t, mailer.body, "Test &amp; Site")
+	require.NoError(t, svc.Approve(context.Background(), 1, 8))
+	require.Equal(t, 1, repo.approvals)
+	require.Equal(t, int64(7), *repo.entry.ApprovedBy)
+	require.Equal(t, 2, mailer.calls)
+}
+
+func TestWaitlistApprovalDoesNotEmailOnApprovalFailure(t *testing.T) {
+	repo := &waitlistApprovalRepoStub{approveErr: ErrWaitlistNotFound}
+	mailer := &waitlistMailerStub{}
+	svc := NewWaitlistService(repo, mailer, waitlistBrandingStub("Site"), nil)
+	require.ErrorIs(t, svc.Approve(context.Background(), 1, 7), ErrWaitlistNotFound)
+	require.Error(t, svc.Approve(context.Background(), 0, 7))
+	require.Error(t, svc.Approve(context.Background(), 1, 0))
+	require.Zero(t, mailer.calls)
+}
+
+func TestWaitlistApprovalNoticeClaimAndPersistenceErrors(t *testing.T) {
+	for _, inFlight := range []bool{false, true} {
+		repo := &waitlistApprovalRepoStub{entry: WaitlistEntry{Email: "a@example.com"}, approvalInFlight: inFlight, approvalFinishErr: errors.New("db failed")}
+		mailer := &waitlistMailerStub{}
+		svc := NewWaitlistService(repo, mailer, waitlistBrandingStub("Site"), nil)
+		require.ErrorIs(t, svc.Approve(context.Background(), 1, 7), ErrWaitlistApprovalNoticeFailed)
+		require.False(t, repo.approvalSent)
+		if inFlight {
+			require.Zero(t, mailer.calls)
+		} else {
+			require.Equal(t, 1, mailer.calls)
+		}
+	}
+}
+
+func TestWaitlistApprovalNoticeSurvivesBrowserDisconnect(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	repo := &waitlistApprovalRepoStub{entry: WaitlistEntry{Email: "a@example.com"}}
+	mailer := &waitlistMailerStub{send: func(ctx context.Context) error {
+		cancel()
+		require.NoError(t, ctx.Err())
+		_, bounded := ctx.Deadline()
+		require.True(t, bounded)
+		return nil
+	}}
+	require.NoError(t, NewWaitlistService(repo, mailer, waitlistBrandingStub("Site"), nil).Approve(ctx, 1, 7))
+	require.True(t, repo.approvalSent)
+}
+
+func TestWaitlistApprovalHTML(t *testing.T) {
+	body := waitlistApprovalHTML(`Site <script> & "x"`, "https://example.com/app/?untrusted=1#fragment")
+	require.Equal(t, 1, strings.Count(body, waitlistApprovalMessage))
+	require.Contains(t, body, "Site &lt;script&gt; &amp; &#34;x&#34;")
+	require.Contains(t, body, `href="https://example.com/app/register?waitlist=1"`)
+	require.Contains(t, body, `href="https://example.com/app/login"`)
+	require.NotContains(t, body, "untrusted")
+	require.NotContains(t, body, "{{")
+	require.NotContains(t, body, "<script>")
+	for _, invalid := range []string{"", "javascript:alert(1)", "//example.com", "https://u:p@example.com", "/app", "https://"} {
+		body := waitlistApprovalHTML("", invalid)
+		require.NotContains(t, body, "href=")
+		require.Contains(t, body, "候补审批注册")
+		require.Contains(t, body, "Sub2API")
+	}
+}

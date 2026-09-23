@@ -3,9 +3,11 @@ package handler
 import (
 	"context"
 	"net/http"
+	"strconv"
 
 	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
+	"github.com/Wei-Shaw/sub2api/internal/server/middleware"
 	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/gin-gonic/gin"
 )
@@ -60,4 +62,24 @@ func (h *WaitlistHandler) List(c *gin.Context) {
 	}
 	c.Header("Cache-Control", "no-store")
 	response.Paginated(c, items, total, page, pageSize)
+}
+
+// Approve is mounted exclusively behind administrator authentication.
+func (h *WaitlistHandler) Approve(c *gin.Context) {
+	c.Header("Cache-Control", "no-store")
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil || id <= 0 {
+		response.BadRequest(c, "Invalid waiting list ID")
+		return
+	}
+	subject, ok := middleware.GetAuthSubjectFromContext(c)
+	if !ok || subject.UserID <= 0 {
+		response.Unauthorized(c, "Authentication required")
+		return
+	}
+	if err := h.waitlist.Approve(c.Request.Context(), id, subject.UserID); err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, gin.H{"approved": true})
 }

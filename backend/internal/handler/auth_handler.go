@@ -176,7 +176,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 
 	// Turnstile 验证（邮箱验证码注册场景避免重复校验一次性 token）。
 	// 安全敏感的 remote IP 使用 Gin 可信代理链解析结果，避免直接信任可伪造转发头。
-	if err := h.authService.VerifyTurnstileForRegister(c.Request.Context(), req.TurnstileToken, ip.GetTrustedClientIP(c), req.VerifyCode); err != nil {
+	if err := h.authService.VerifyTurnstileForRegister(c.Request.Context(), req.TurnstileToken, ip.GetTrustedClientIP(c), req.VerifyCode, req.Email); err != nil {
 		response.ErrorFrom(c, err)
 		return
 	}
