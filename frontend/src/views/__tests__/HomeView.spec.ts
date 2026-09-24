@@ -172,8 +172,11 @@ describe('visitor-first homepage', () => {
     expect(billing.text()).toContain('余额支持即时充值')
     expect(billing.text()).toContain('随时使用')
     expect(billing.text()).not.toMatch(/Astra|0\.4|0\.5|倍率/)
-    expect(billing.find('a[href="/presale"]').exists()).toBe(true)
-    expect(billing.find('.billing-footnote a').attributes('href')).toBe('/login')
+    expect(billing.find('.billing-presale-actions a[href="/presale"]').exists()).toBe(true)
+    expect(billing.find('.billing-presale-heading a').exists()).toBe(false)
+    expect(billing.find('.billing-presale').element.lastElementChild).toBe(billing.find('.billing-presale-actions').element)
+    expect(billing.find('.billing-footnote').exists()).toBe(false)
+    expect(billing.text()).not.toContain('具体套餐、可用分组与价格')
   })
 
   it.each(['zh', 'en'] as const)('uses matching highlights, captions and two facts for both billing plans (%s)', locale => {

@@ -123,14 +123,22 @@ being examined. No reverse migration, account enabling or database cleanup runs.
 
 ## Refund policy and safety
 
-- Before start minus 72 hours: unconditional full refund.
-- During the last 72 hours before start: 80% of actual payment returned (20% fee).
+For new refund requests, the refundable payment base excludes the payment-channel
+fee. Reconstruct that fee using the order's immutable `amount`, coupon discount
+and `fee_rate`, rounding upward exactly as checkout does for the payment currency;
+subtract it from `pay_amount` before applying the policies below. Do not use live
+plan prices or channel settings. Accounting `refund_amount` still prorates the
+original order amount; only `gateway_amount` determines the actual money returned.
+
+- Before start minus 72 hours: unconditional refund of the refundable payment base.
+- During the last 72 hours before start: 80% of that base returned (20% cancellation fee).
 - After activation, before the final seven days: remaining **whole 24-hour days**
-  divided by total purchased calendar-month days. No refund during the final seven
+  divided by total purchased calendar-month days, then a **20% fee** is deducted
+  from that prorated refundable amount (multiply by 0.8). No refund during the final seven
   days, including the exact seven-day boundary. Supported early resets shorten the
   remaining term and its final-week cutoff, not the original purchased-day divisor.
-- A paid term that was never activated because fulfillment failed remains fully
-  refundable rather than being charged for unavailable service.
+- A paid term that was never activated because fulfillment failed returns the
+  refundable payment base without a cancellation fee.
 
 A user request atomically freezes its timestamp and full quote in the existing
 `PRESALE_REFUND_REQUESTED` audit event, changes the order to
@@ -151,8 +159,9 @@ Refund execution is **admin-processed**, not instant user-initiated money moveme
 The original provider instance and existing refund machinery are reused. Provider
 failure keeps the frozen request retryable; it does not reactivate cancelled quota.
 Retries use the audited quote even if the subscription row now holds a later term.
-Older accepted requests without a full audited quote retain their original
-snapshot/request-time calculation; do not reinterpret the cancelled row's dates.
+Older accepted requests, with or without a full audited quote, retain their audited
+amounts; do not retroactively deduct daily-refund/payment fees or reinterpret the
+cancelled row's dates.
 Provider settlement timing and existing pending-response behavior remain unchanged.
 A 20% fee refund can be `PARTIALLY_REFUNDED` financially while the subscription is
 fully cancelled. It cannot activate again or receive another automatic refund.

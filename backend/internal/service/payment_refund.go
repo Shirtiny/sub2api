@@ -50,6 +50,10 @@ func (s *PaymentService) getRefundOrderProviderInstance(ctx context.Context, o *
 	if s == nil || s.entClient == nil || o == nil {
 		return nil, nil
 	}
+	if s.isDevAutoSuccessOrder(ctx, o) {
+		// In-memory permissions only; no merchant or provider instance is created.
+		return &dbent.PaymentProviderInstance{RefundEnabled: true, AllowUserRefund: true}, nil
+	}
 
 	if snapshot := psOrderProviderSnapshot(o); snapshot != nil {
 		return s.resolveSnapshotOrderProviderInstance(ctx, o, snapshot)
@@ -387,6 +391,10 @@ func (s *PaymentService) ExecuteRefund(ctx context.Context, p *RefundPlan) (*Ref
 }
 
 func (s *PaymentService) gwRefund(ctx context.Context, p *RefundPlan) error {
+	if s.isDevAutoSuccessOrder(ctx, p.Order) {
+		s.writeAuditLog(ctx, p.Order.ID, "DEV_PAYMENT_REFUND_SUCCESS", "admin", map[string]any{"gatewayAmount": p.GatewayAmount})
+		return nil
+	}
 	if p.Order.PaymentTradeNo == "" {
 		s.writeAuditLog(ctx, p.Order.ID, "REFUND_NO_TRADE_NO", "admin", map[string]any{"detail": "skipped"})
 		return nil

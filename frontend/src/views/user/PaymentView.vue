@@ -12,16 +12,6 @@
         <RouterLink v-if="!presalePlanId && paymentPhase === 'select'" to="/presale" class="card flex items-center justify-between gap-4 p-5">
           <div><p class="text-sm font-medium text-content-primary">{{ t('presale.nav') }}</p><p class="mt-1 text-xs text-content-tertiary">{{ t('presale.intro') }}</p></div><Icon name="arrowRight" size="md" />
         </RouterLink>
-        <div v-if="presalePlanId && presaleQuote && paymentPhase === 'select'" class="card space-y-3 border-primary-300 p-5 dark:border-primary-700">
-          <p class="text-sm font-medium text-primary-600 dark:text-primary-300">{{ t(presaleQuote.renewal ? 'presale.renewal' : 'presale.newSubscription') }}</p>
-          <p v-if="presaleQuote.current_expires_at" class="text-xs leading-relaxed text-content-secondary">{{ t('presale.renewalCopy', { date: presaleDate(presaleQuote.current_expires_at) }) }}</p>
-          <p class="text-sm text-content-primary">{{ t('presale.termCopy', { start: presaleDate(presaleQuote.starts_at), end: presaleDate(presaleQuote.expires_at) }) }}</p>
-          <p class="text-xs text-content-tertiary">{{ t('presale.timezone') }}</p>
-          <p class="text-xs leading-relaxed text-content-secondary">{{ t('presale.refundFullCopy', { date: presaleDate(presaleQuote.full_refund_before) }) }}</p>
-          <p class="text-xs leading-relaxed text-content-secondary">{{ t('presale.refundFeeCopy', { date: presaleDate(presaleQuote.full_refund_before) }) }}</p>
-          <p class="text-xs leading-relaxed text-content-secondary">{{ t('presale.refundDailyCopy') }}</p>
-          <label class="flex cursor-pointer items-start gap-3 border-t border-gray-200 pt-4 text-xs leading-relaxed text-content-secondary dark:border-dark-600"><input v-model="presaleConsent" type="checkbox" class="mt-0.5 rounded" />{{ t('presale.consent') }}</label>
-        </div>
         <div v-if="presalePlanId && presalePaid" class="card p-5" role="status"><h3 class="text-lg text-content-primary">{{ t('presale.purchased') }}</h3><p class="mt-2 text-sm text-content-secondary">{{ t('presale.purchasedCopy') }}</p><RouterLink to="/subscriptions" class="btn btn-primary mt-4">{{ t('presale.viewSubscriptions') }}</RouterLink></div>
         <!-- Tab Switcher (hide during payment and subscription confirm) -->
         <!-- Payment in progress (shared by recharge and subscription) -->
@@ -177,9 +167,6 @@
                 <p v-if="selectedPlan.description" class="mt-2 text-sm leading-relaxed text-gray-500 dark:text-gray-400">
                   {{ selectedPlan.description }}
                 </p>
-                <label v-if="presalePlanId && selectedPlan.custom_multiplier_enabled" class="mt-4 block text-sm text-content-secondary">{{ t('payment.admin.customMultiplierEnabled') }}
-                  <input v-model.number="selectedSubscriptionMultiplier" type="number" class="input mt-2" :min="selectedPlan.custom_multiplier_min || 1" :max="selectedPlan.custom_multiplier_max || 1" step="1" />
-                </label>
                 <!-- Rate + Limits grid -->
                 <div class="mt-3 grid grid-cols-2 gap-3">
                   <div>
@@ -404,14 +391,12 @@ import { buildPaymentErrorToastMessage, describePaymentScenarioError } from './p
 import { hasWechatResumeQuery, parseWechatResumeRoute, stripWechatResumeQuery } from './paymentWechatResume'
 
 import { presaleAPI, type PresaleQuote } from '@/api/presale'
-import { formatPresaleDate, matchesPresaleCheckout } from '@/utils/presale'
+import { matchesPresaleCheckout } from '@/utils/presale'
 
-const props = defineProps<{ presalePlanId?: number; presaleMonth?: string }>()
+const props = defineProps<{ presalePlanId?: number; presaleMonth?: string; presaleMultiplier?: number }>()
 const emit = defineEmits<{ close: [] }>()
 const presaleQuote = ref<PresaleQuote | null>(null)
-const presaleConsent = ref(false)
 const presalePaid = ref(false)
-const presaleDate = (value: string) => formatPresaleDate(value, i18n.locale.value)
 
 const RECHARGE_QUICK_AMOUNTS = [20, 50, 100, 200, 500]
 const MIN_ACTUAL_PAYMENT_AMOUNT = 1
@@ -679,6 +664,9 @@ function maxCustomMultiplierForPlan(plan: SubscriptionPlan | null | undefined): 
 function clampCustomMultiplierForPlan(plan: SubscriptionPlan | null | undefined, multiplier: number): number {
   const fallback = activeSubscriptionMultiplierForPlan(plan) ?? defaultCustomMultiplierForPlan(plan)
   const parsed = Math.trunc(Number(multiplier || fallback || 1))
+  // Existing custom subscriptions retain their multiplier even if new-purchase
+  // limits changed, matching the server's renewal rules.
+  if (parsed === activeSubscriptionMultiplierForPlan(plan)) return parsed
   if (!plan?.custom_multiplier_enabled) {
     return Math.max(1, Number.isFinite(parsed) ? parsed : fallback)
   }
@@ -951,7 +939,7 @@ const subscriptionPayAmountBelowMinimum = computed(() =>
 )
 
 const canSubmitSubscription = computed(() =>
-  (!props.presalePlanId || (!!presaleQuote.value && presaleConsent.value && !presalePaid.value))
+  (!props.presalePlanId || (!!presaleQuote.value && !presalePaid.value))
     && selectedPlan.value !== null
     && !selectedMultiplierConflictsActiveCustom.value
     && !subscriptionPayAmountBelowMinimum.value
@@ -1316,7 +1304,6 @@ async function confirmSubscribe() {
   if (!canSubmitSubscription.value || submitting.value) return
   const plan = selectedPlan.value
   if (!plan) return
-  if (props.presalePlanId && !presaleConsent.value) return
   if (!await ensureCafeCouponReady()) return
   await createOrder(effectiveSelectedPlanPrice.value, 'subscription', plan.id)
 }
@@ -1779,13 +1766,13 @@ onMounted(async () => {
     }
     // Handle renewal navigation: ?tab=subscription&plan=7 or ?tab=subscription&group=123
     let activeSubscriptionsFetchedForRoute = false
-    if (route.query.tab === 'subscription' && (route.query.plan || route.query.group)) {
+    if (props.presalePlanId || (route.query.tab === 'subscription' && (route.query.plan || route.query.group))) {
       await subscriptionStore.fetchActiveSubscriptions().catch(() => {})
       activeSubscriptionsFetchedForRoute = true
     }
     if (props.presalePlanId || (route.query.tab === 'subscription' && hasWechatResumeQuery(route.query))) {
       activeTab.value = 'subscription'
-      const routeMultiplier = positiveRouteNumber(route.query.multiplier)
+      const routeMultiplier = props.presaleMultiplier ?? positiveRouteNumber(route.query.multiplier)
       const multiplier = routeMultiplier ?? 1
       const planId = props.presalePlanId || positiveRouteNumber(route.query.plan)
       const groupId = positiveRouteNumber(route.query.group)

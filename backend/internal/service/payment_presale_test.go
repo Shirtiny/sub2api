@@ -172,8 +172,10 @@ func TestPresaleRefundPolicyBoundaries(t *testing.T) {
 		{"before cutoff", start.Add(-72*time.Hour - time.Nanosecond), false, 100, "full", ""},
 		{"exact cutoff", start.Add(-72 * time.Hour), false, 80, "preparation", ""},
 		{"last second", start.Add(-time.Second), false, 80, "preparation", ""},
-		{"at start", start, true, 100, "unused_days", ""},
-		{"one used day", start.Add(24 * time.Hour), true, 96.77, "unused_days", ""},
+		{"at start", start, true, 80, "unused_days", ""},
+		{"one used day", start.Add(24 * time.Hour), true, 77.42, "unused_days", ""},
+		{"partial used day", start.Add(time.Hour), true, 77.42, "unused_days", ""},
+		{"just before last week", end.Add(-7*24*time.Hour - time.Second), true, 18.06, "unused_days", ""},
 		{"last week", end.Add(-7 * 24 * time.Hour), true, 0, "", "PRESALE_REFUND_LAST_WEEK"},
 		{"failed activation", start, false, 100, "unfulfilled", ""},
 		{"missed whole period", end.Add(time.Hour), false, 100, "unfulfilled", ""},
@@ -191,8 +193,16 @@ func TestPresaleRefundPolicyBoundaries(t *testing.T) {
 			require.NoError(t, err)
 			require.Equal(t, tc.amount, q.RefundAmount)
 			require.Equal(t, tc.policy, q.Policy)
+			if tc.policy == "preparation" || tc.policy == "unused_days" {
+				require.Equal(t, 20, q.FeePercent)
+			} else {
+				require.Zero(t, q.FeePercent)
+			}
 			if tc.amount == 80 {
 				require.Equal(t, 72.0, q.GatewayAmount)
+			}
+			if tc.amount == 77.42 {
+				require.Equal(t, 69.68, q.GatewayAmount)
 			}
 		})
 	}

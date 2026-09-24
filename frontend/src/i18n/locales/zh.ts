@@ -106,7 +106,6 @@ export default {
         eyebrow: 'Plans & Balance',
         title: '订阅与余额',
         description: '提前安排一个月，或按需即时充值。',
-        note: '具体套餐、可用分组与价格，请在控制台查看。',
         subscription: {
           title: '订阅预售', badge: '预售获取', highlight: '按月', unit: '订阅', caption: '每次限购一个月',
           accessLabel: '获取方式', access: '订阅仅通过预售获取，请留意预售开放通知。',
@@ -1707,7 +1706,7 @@ export default {
       processing: "处理中…",
       completed: "已完成",
       confirmTitle: "通过候补申请",
-      confirmMessage: "确认向 {email} 开放访问？已有账号将恢复访问；尚未注册的邮箱将获得一次注册资格，即使开放注册已关闭。不会变更密码、角色、余额或订阅。通过后将发送通知邮件。",
+      confirmMessage: "确认向 {email} 开放访问？已有账号将恢复访问，并按用户默认值发放赠送余额、写入充值记录；尚未注册的邮箱将获得一次注册资格，注册时发放并记账，即使开放注册已关闭。不会变更密码、角色或订阅。通过后将发送通知邮件，重试通知不会重复赠送。",
       success: "访问权限已开通，通知邮件已发送。",
       approveFailed: "操作未确认完成，请刷新查看审批和邮件状态后重试。",
       errors: {
@@ -7581,11 +7580,15 @@ export default {
   userSubscriptions: {
     title: '我的订阅',
     description: '查看您的订阅计划和用量',
-    noActiveSubscriptions: '暂无有效订阅',
+    activeSection: '生效中的订阅',
+    activeSectionHint: '当前可用 · 额度与用量',
+    otherSection: '其他订阅',
+    noActiveSubscriptions: '暂无生效中的订阅',
     noActiveSubscriptionsDesc: '您没有任何有效订阅。请联系管理员获取订阅。',
     failedToLoad: '加载订阅失败',
     status: {
-      active: '有效',
+      active: '生效中',
+      pending: '待生效',
       expired: '已过期',
       revoked: '已撤销'
     },
@@ -7893,6 +7896,8 @@ export default {
       failed: '支付失败',
       backToRecharge: '返回充值',
       viewOrders: '查看订单',
+      viewSubscriptions: '查看订阅',
+      viewBalance: '查看余额',
     },
     currentBalance: '当前余额',
     groupFallback: '分组 #{id}',

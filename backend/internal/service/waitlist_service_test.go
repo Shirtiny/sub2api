@@ -13,6 +13,8 @@ import (
 
 type waitlistBrandingStub string
 
+func (waitlistBrandingStub) GetDefaultBalance(context.Context) float64 { return 0 }
+
 func (b waitlistBrandingStub) GetSiteName(context.Context) string { return string(b) }
 
 type waitlistRepoStub struct {
@@ -89,7 +91,7 @@ func TestNormalizeWaitlistEmail(t *testing.T) {
 func TestWaitlistServiceValidationAndPersistence(t *testing.T) {
 	repo := &waitlistRepoStub{}
 	mailer := &waitlistMailerStub{}
-	svc := NewWaitlistService(repo, mailer, waitlistBrandingStub("Café Shop"), nil)
+	svc := NewWaitlistService(repo, mailer, waitlistBrandingStub("Café Shop"), nil, nil)
 	require.ErrorIs(t, svc.Join(context.Background(), "bad-email"), ErrWaitlistEmailInvalid)
 	require.Empty(t, repo.emails)
 	require.Zero(t, mailer.calls)
@@ -109,7 +111,7 @@ func TestWaitlistServiceValidationAndPersistence(t *testing.T) {
 func TestWaitlistConfirmationRetryAfterSMTPFailure(t *testing.T) {
 	repo := &waitlistRepoStub{}
 	mailer := &waitlistMailerStub{err: ErrEmailNotConfigured}
-	svc := NewWaitlistService(repo, mailer, waitlistBrandingStub("Café Shop"), nil)
+	svc := NewWaitlistService(repo, mailer, waitlistBrandingStub("Café Shop"), nil, nil)
 	err := svc.Join(context.Background(), "a@example.com")
 	require.ErrorIs(t, err, ErrWaitlistConfirmationFailed)
 	require.ErrorIs(t, err, ErrEmailNotConfigured)
@@ -127,7 +129,7 @@ func TestWaitlistConfirmationRetryAfterSMTPFailure(t *testing.T) {
 func TestWaitlistConfirmationSkipsActiveClaim(t *testing.T) {
 	repo := &waitlistRepoStub{inFlight: true}
 	mailer := &waitlistMailerStub{}
-	err := NewWaitlistService(repo, mailer, waitlistBrandingStub("Café Shop"), nil).Join(context.Background(), "a@example.com")
+	err := NewWaitlistService(repo, mailer, waitlistBrandingStub("Café Shop"), nil, nil).Join(context.Background(), "a@example.com")
 	require.ErrorIs(t, err, ErrWaitlistConfirmationFailed)
 	require.Zero(t, mailer.calls)
 }
@@ -143,14 +145,14 @@ func TestWaitlistConfirmationPreservesSentMarkerAfterBrowserDisconnect(t *testin
 		require.True(t, bounded)
 		return nil
 	}}
-	require.NoError(t, NewWaitlistService(repo, mailer, waitlistBrandingStub("Café Shop"), nil).Join(ctx, "a@example.com"))
+	require.NoError(t, NewWaitlistService(repo, mailer, waitlistBrandingStub("Café Shop"), nil, nil).Join(ctx, "a@example.com"))
 	require.True(t, repo.sent)
 }
 
 func TestWaitlistConfirmationDoesNotHidePersistenceFailure(t *testing.T) {
 	repo := &waitlistRepoStub{finishErr: errors.New("database unavailable")}
 	mailer := &waitlistMailerStub{}
-	err := NewWaitlistService(repo, mailer, waitlistBrandingStub("Café Shop"), nil).Join(context.Background(), "a@example.com")
+	err := NewWaitlistService(repo, mailer, waitlistBrandingStub("Café Shop"), nil, nil).Join(context.Background(), "a@example.com")
 	require.ErrorIs(t, err, ErrWaitlistConfirmationFailed)
 	require.ErrorIs(t, err, repo.finishErr)
 	require.False(t, repo.sent)

@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -15,6 +16,7 @@ type waitlistApprovalRepoStub struct {
 	entry             WaitlistEntry
 	approveErr        error
 	approvals         int
+	giftBalance       float64
 	approvalSent      bool
 	approvalInFlight  bool
 	approvalFinishErr error
@@ -22,7 +24,7 @@ type waitlistApprovalRepoStub struct {
 	lookupErr         error
 }
 
-func (r *waitlistApprovalRepoStub) Approve(_ context.Context, id, adminID int64) (*WaitlistEntry, error) {
+func (r *waitlistApprovalRepoStub) Approve(_ context.Context, id, adminID int64, giftBalance float64) (*WaitlistEntry, error) {
 	if r.approveErr != nil {
 		return nil, r.approveErr
 	}
@@ -30,6 +32,7 @@ func (r *waitlistApprovalRepoStub) Approve(_ context.Context, id, adminID int64)
 		now := time.Now()
 		r.entry.ID, r.entry.ApprovedAt, r.entry.ApprovedBy = id, &now, &adminID
 		r.approvals++
+		r.giftBalance = giftBalance
 	}
 	return &r.entry, nil
 }
@@ -76,6 +79,27 @@ type waitlistCacheSpy struct {
 	users []int64
 }
 
+type waitlistGiftSettings struct {
+	waitlistBrandingStub
+	balance float64
+}
+
+func (s *waitlistGiftSettings) GetDefaultBalance(context.Context) float64 { return s.balance }
+
+type waitlistBalanceCacheSpy struct {
+	BillingCache
+	users []int64
+	err   error
+}
+
+func (s *waitlistBalanceCacheSpy) InvalidateUserBalance(ctx context.Context, id int64) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	s.users = append(s.users, id)
+	return s.err
+}
+
 func (s *waitlistCacheSpy) InvalidateAuthCacheByUserID(_ context.Context, id int64) {
 	s.users = append(s.users, id)
 }
@@ -85,14 +109,19 @@ func TestWaitlistApprovalNotificationRetry(t *testing.T) {
 	repo := &waitlistApprovalRepoStub{entry: WaitlistEntry{Email: "approved@example.com", GrantedUserID: &id}}
 	mailer := &waitlistMailerStub{err: ErrEmailNotConfigured}
 	cache := &waitlistCacheSpy{}
-	svc := NewWaitlistService(repo, mailer, waitlistBrandingStub("Test & Site"), cache)
+	settings := &waitlistGiftSettings{waitlistBrandingStub("Test & Site"), 5.25}
+	balanceCache := &waitlistBalanceCacheSpy{}
+	svc := NewWaitlistService(repo, mailer, settings, cache, &BillingCacheService{cache: balanceCache})
 	require.ErrorIs(t, svc.Approve(context.Background(), 1, 7), ErrWaitlistApprovalNoticeFailed)
 	require.NotNil(t, repo.entry.ApprovedAt)
 	require.Equal(t, int64(7), *repo.entry.ApprovedBy)
 	require.False(t, repo.approvalSent)
 	require.False(t, repo.approvalInFlight)
 	require.Equal(t, []int64{9}, cache.users)
+	require.Equal(t, []int64{9}, balanceCache.users)
+	require.Equal(t, 5.25, repo.giftBalance)
 	mailer.err = nil
+	settings.balance = 20 // Retrying notification must not credit the changed default.
 	require.NoError(t, svc.Approve(context.Background(), 1, 8))
 	require.True(t, repo.approvalSent)
 	require.Equal(t, "approved@example.com", mailer.to)
@@ -105,12 +134,36 @@ func TestWaitlistApprovalNotificationRetry(t *testing.T) {
 	require.Equal(t, 1, repo.approvals)
 	require.Equal(t, int64(7), *repo.entry.ApprovedBy)
 	require.Equal(t, 2, mailer.calls)
+	require.Equal(t, 5.25, repo.giftBalance)
+	require.Equal(t, []int64{9, 9, 9}, balanceCache.users)
+}
+
+func TestWaitlistApprovalGiftCacheFailureDoesNotBlockNotice(t *testing.T) {
+	for _, registered := range []bool{false, true} {
+		t.Run(fmt.Sprint(registered), func(t *testing.T) {
+			entry := WaitlistEntry{Email: "approved@example.com"}
+			if registered {
+				id := int64(9)
+				entry.GrantedUserID = &id
+			}
+			repo := &waitlistApprovalRepoStub{entry: entry}
+			cache := &waitlistBalanceCacheSpy{err: errors.New("cache unavailable")}
+			svc := NewWaitlistService(repo, &waitlistMailerStub{}, waitlistBrandingStub("Site"), nil, &BillingCacheService{cache: cache})
+			require.NoError(t, svc.Approve(context.Background(), 1, 7))
+			require.True(t, repo.approvalSent)
+			if registered {
+				require.Equal(t, []int64{9}, cache.users)
+			} else {
+				require.Empty(t, cache.users)
+			}
+		})
+	}
 }
 
 func TestWaitlistApprovalDoesNotEmailOnApprovalFailure(t *testing.T) {
 	repo := &waitlistApprovalRepoStub{approveErr: ErrWaitlistNotFound}
 	mailer := &waitlistMailerStub{}
-	svc := NewWaitlistService(repo, mailer, waitlistBrandingStub("Site"), nil)
+	svc := NewWaitlistService(repo, mailer, waitlistBrandingStub("Site"), nil, nil)
 	require.ErrorIs(t, svc.Approve(context.Background(), 1, 7), ErrWaitlistNotFound)
 	require.Error(t, svc.Approve(context.Background(), 0, 7))
 	require.Error(t, svc.Approve(context.Background(), 1, 0))
@@ -121,7 +174,7 @@ func TestWaitlistApprovalNoticeClaimAndPersistenceErrors(t *testing.T) {
 	for _, inFlight := range []bool{false, true} {
 		repo := &waitlistApprovalRepoStub{entry: WaitlistEntry{Email: "a@example.com"}, approvalInFlight: inFlight, approvalFinishErr: errors.New("db failed")}
 		mailer := &waitlistMailerStub{}
-		svc := NewWaitlistService(repo, mailer, waitlistBrandingStub("Site"), nil)
+		svc := NewWaitlistService(repo, mailer, waitlistBrandingStub("Site"), nil, nil)
 		require.ErrorIs(t, svc.Approve(context.Background(), 1, 7), ErrWaitlistApprovalNoticeFailed)
 		require.False(t, repo.approvalSent)
 		if inFlight {
@@ -143,7 +196,7 @@ func TestWaitlistApprovalNoticeSurvivesBrowserDisconnect(t *testing.T) {
 		require.True(t, bounded)
 		return nil
 	}}
-	require.NoError(t, NewWaitlistService(repo, mailer, waitlistBrandingStub("Site"), nil).Approve(ctx, 1, 7))
+	require.NoError(t, NewWaitlistService(repo, mailer, waitlistBrandingStub("Site"), nil, nil).Approve(ctx, 1, 7))
 	require.True(t, repo.approvalSent)
 }
 

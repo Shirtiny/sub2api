@@ -46,32 +46,34 @@ type WaitlistRepository interface {
 	ClaimConfirmation(ctx context.Context, email string, attempt time.Time) (bool, error)
 	FinishConfirmation(ctx context.Context, email string, attempt time.Time, sent bool) error
 	List(ctx context.Context, params pagination.PaginationParams) ([]WaitlistEntry, int64, error)
-	Approve(ctx context.Context, id, adminID int64) (*WaitlistEntry, error)
+	Approve(ctx context.Context, id, adminID int64, giftBalance float64) (*WaitlistEntry, error)
 	ClaimApprovalNotice(ctx context.Context, id int64, attempt time.Time) (bool, error)
 	FinishApprovalNotice(ctx context.Context, id int64, attempt time.Time, sent bool) error
 	HasRegistrationApproval(ctx context.Context, email string) (bool, error)
 	GetApprovedEntryByEmail(ctx context.Context, email string) (*WaitlistEntry, error)
-	ConsumeRegistrationApproval(ctx context.Context, email string, userID int64) error
+	ConsumeRegistrationApproval(ctx context.Context, email string, userID int64, signupBalance float64) error
 }
 
 type WaitlistEmailSender interface {
 	SendEmail(ctx context.Context, to, subject, body string) error
 }
 
-type WaitlistBranding interface {
+type WaitlistSettings interface {
 	GetSiteName(ctx context.Context) string
 	GetFrontendURL(ctx context.Context) string
+	GetDefaultBalance(ctx context.Context) float64
 }
 
 type WaitlistService struct {
-	repo      WaitlistRepository
-	mailer    WaitlistEmailSender
-	branding  WaitlistBranding
-	authCache APIKeyAuthCacheInvalidator
+	repo         WaitlistRepository
+	mailer       WaitlistEmailSender
+	settings     WaitlistSettings
+	authCache    APIKeyAuthCacheInvalidator
+	billingCache *BillingCacheService
 }
 
-func NewWaitlistService(repo WaitlistRepository, mailer WaitlistEmailSender, branding WaitlistBranding, authCache APIKeyAuthCacheInvalidator) *WaitlistService {
-	return &WaitlistService{repo: repo, mailer: mailer, branding: branding, authCache: authCache}
+func NewWaitlistService(repo WaitlistRepository, mailer WaitlistEmailSender, settings WaitlistSettings, authCache APIKeyAuthCacheInvalidator, billingCache *BillingCacheService) *WaitlistService {
+	return &WaitlistService{repo: repo, mailer: mailer, settings: settings, authCache: authCache, billingCache: billingCache}
 }
 
 // NormalizeWaitlistEmail validates a common ASCII mailbox without a DNS lookup.
@@ -124,7 +126,7 @@ func (s *WaitlistService) Join(ctx context.Context, email string) error {
 	// Finish a persisted opt-in even if the browser disconnects. SMTP itself uses
 	// the shared dial/I/O deadlines; do not keep a DB transaction open during SMTP.
 	mailCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 35*time.Second)
-	body := waitlistConfirmationHTML(s.branding.GetSiteName(mailCtx))
+	body := waitlistConfirmationHTML(s.settings.GetSiteName(mailCtx))
 	sendErr := s.mailer.SendEmail(mailCtx, normalized, waitlistConfirmationSubject, body)
 	cancel()
 	finishCtx, finishCancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
@@ -143,13 +145,13 @@ func (s *WaitlistService) List(ctx context.Context, params pagination.Pagination
 	return s.repo.List(ctx, params)
 }
 
-// Approve durably grants access before SMTP. Retrying only retries notification;
-// it must never undo a later account suspension.
+// Approve durably grants access and the default balance gift before SMTP.
+// Retrying must never repeat the gift or undo a later account suspension.
 func (s *WaitlistService) Approve(ctx context.Context, id, adminID int64) error {
 	if id <= 0 || adminID <= 0 {
 		return infraerrors.BadRequest("WAITLIST_APPROVAL_INVALID", "Invalid approval request")
 	}
-	entry, err := s.repo.Approve(ctx, id, adminID)
+	entry, err := s.repo.Approve(ctx, id, adminID, s.settings.GetDefaultBalance(ctx))
 	if err != nil {
 		return err
 	}
@@ -157,6 +159,13 @@ func (s *WaitlistService) Approve(ctx context.Context, id, adminID int64) error 
 	defer cancel()
 	if entry.GrantedUserID != nil && s.authCache != nil {
 		s.authCache.InvalidateAuthCacheByUserID(workCtx, *entry.GrantedUserID)
+	}
+	if entry.GrantedUserID != nil && s.billingCache != nil {
+		// The gift is already committed. Cache failures must not turn retries into
+		// another credit; BillingCacheService logs failures and cached data expires.
+		cacheCtx, cacheCancel := context.WithTimeout(workCtx, 5*time.Second)
+		_ = s.billingCache.InvalidateUserBalance(cacheCtx, *entry.GrantedUserID)
+		cacheCancel()
 	}
 	attempt := time.Now().UTC().Truncate(time.Microsecond)
 	claimed, err := s.repo.ClaimApprovalNotice(workCtx, id, attempt)
@@ -166,7 +175,7 @@ func (s *WaitlistService) Approve(ctx context.Context, id, adminID int64) error 
 	if !claimed {
 		return nil
 	}
-	body := waitlistApprovalHTML(s.branding.GetSiteName(workCtx), s.branding.GetFrontendURL(workCtx), entry.GrantedUserID != nil)
+	body := waitlistApprovalHTML(s.settings.GetSiteName(workCtx), s.settings.GetFrontendURL(workCtx), entry.GrantedUserID != nil)
 	sendErr := s.mailer.SendEmail(workCtx, entry.Email, waitlistApprovalSubject, body)
 	finishCtx, finishCancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
 	defer finishCancel()

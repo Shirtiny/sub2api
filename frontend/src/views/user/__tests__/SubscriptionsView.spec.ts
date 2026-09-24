@@ -2,6 +2,7 @@ import { flushPromises, shallowMount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import SubscriptionsView from '../SubscriptionsView.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
+import MyPresales from '@/components/presale/MyPresales.vue'
 import { formatDateOnly } from '@/utils/format'
 
 const routerPush = vi.hoisted(() => vi.fn())
@@ -292,7 +293,7 @@ describe('SubscriptionsView renewal routing', () => {
         user_id: 7,
         group_id: 3,
         status: 'active',
-        starts_at: '2098-12-01T00:00:00Z',
+        starts_at: '2020-12-01T00:00:00Z',
         expires_at: '2099-01-20T00:00:00Z',
         early_reset_enabled: true,
         early_reset_duration_days: 31,
@@ -452,5 +453,75 @@ describe('SubscriptionsView renewal routing', () => {
     })
     await flushPromises()
     expect(wrapper.findAll('[data-testid="subscription-quota-reset"]')).toHaveLength(0)
+  })
+})
+
+describe('subscription lifecycle sections', () => {
+  const render = () => shallowMount(SubscriptionsView, {
+    global: { stubs: { AppLayout: { template: '<div><slot /></div>' }, Icon: true } },
+  })
+  const active = {
+    id: 1, group_id: 3, status: 'active', starts_at: '2020-01-01T00:00:00Z',
+    expires_at: '2099-01-01T00:00:00Z', reset_count: 2,
+    daily_usage_usd: 0, weekly_usage_usd: 10, monthly_usage_usd: 0,
+    group: { id: 3, name: 'Current plan', platform: 'openai', weekly_limit_usd: 80 },
+  }
+  beforeEach(() => { vi.clearAllMocks(); getMySubscriptions.mockReset() })
+
+  it('puts current subscriptions first, presales second, and other subscriptions last', async () => {
+    getMySubscriptions.mockResolvedValue([
+      active,
+      { ...active, id: 2, status: 'expired' },
+      { ...active, id: 3, starts_at: '2098-01-01T00:00:00Z' },
+      { ...active, id: 4, expires_at: '2020-02-01T00:00:00Z' },
+      { ...active, id: 5, status: 'revoked' },
+    ])
+    const w = render(); await flushPromises()
+    const regions = w.findAll('[data-subscription-section], my-presales-stub')
+    expect(regions.map(region => region.attributes('data-subscription-section') || 'presales')).toEqual(['active', 'presales', 'other'])
+    expect(w.get('[data-subscription-section="active"] > header').text().replace(/\s/g, '')).toBe('userSubscriptions.activeSectionuserSubscriptions.activeSectionHint')
+    expect(w.get('[data-subscription-section="active"]').findAll('[data-subscription-id]').map(card => card.attributes('data-subscription-id'))).toEqual(['1'])
+    const other = w.get('[data-subscription-section="other"]')
+    expect(other.get('button').text()).toBe('userSubscriptions.otherSection')
+    expect(other.find('[data-subscription-id]').exists()).toBe(false)
+    await other.get('button').trigger('click')
+    expect(other.findAll('[data-subscription-id]')).toHaveLength(4)
+    expect(other.text()).toContain('userSubscriptions.status.pending')
+    expect(other.text()).toContain('userSubscriptions.status.expired')
+    expect(other.find('[data-testid="subscription-renew"]').exists()).toBe(false)
+    expect(other.find('[data-testid="subscription-quota-reset"]').exists()).toBe(false)
+    w.unmount()
+  })
+
+  it('keeps a compact active empty state above pending reservations', async () => {
+    getMySubscriptions.mockResolvedValue([])
+    const w = render(); await flushPromises()
+    expect(w.get('[data-subscription-section="active"]').text()).toContain('userSubscriptions.noActiveSubscriptions')
+    expect(w.text()).not.toContain('userSubscriptions.noActiveSubscriptionsDesc')
+    expect(w.findAll('[data-subscription-section], my-presales-stub').map(region => region.attributes('data-subscription-section') || 'presales')).toEqual(['active', 'presales'])
+    w.unmount()
+  })
+
+  it('refreshes the current subscriptions after a presale refund cancels an active term', async () => {
+    getMySubscriptions.mockResolvedValueOnce([active]).mockResolvedValueOnce([{ ...active, status: 'expired' }])
+    const w = render(); await flushPromises()
+    expect(w.get('[data-subscription-section="active"]').findAll('[data-subscription-id]')).toHaveLength(1)
+    w.findComponent(MyPresales).vm.$emit('refunded'); await flushPromises()
+    expect(getMySubscriptions).toHaveBeenCalledTimes(2)
+    expect(w.get('[data-subscription-section="active"]').find('[data-subscription-id]').exists()).toBe(false)
+    expect(w.find('[data-subscription-section="other"]').exists()).toBe(true)
+    w.unmount()
+  })
+
+  it('does not misrepresent a failed request as having no active subscriptions', async () => {
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {})
+    getMySubscriptions.mockRejectedValueOnce(new Error('unavailable')).mockResolvedValueOnce([active])
+    const w = render(); await flushPromises()
+    expect(w.get('[role="alert"]').text()).toContain('userSubscriptions.failedToLoad')
+    expect(w.text()).not.toContain('userSubscriptions.noActiveSubscriptions')
+    await w.get('[role="alert"] button').trigger('click'); await flushPromises()
+    expect(w.find('[role="alert"]').exists()).toBe(false)
+    expect(w.find('[data-subscription-id="1"]').exists()).toBe(true)
+    w.unmount(); log.mockRestore()
   })
 })

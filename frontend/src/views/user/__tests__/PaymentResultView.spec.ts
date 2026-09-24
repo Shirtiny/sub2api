@@ -98,6 +98,37 @@ describe('PaymentResultView', () => {
     vi.useRealTimers()
   })
 
+  it.each([
+    { orderType: 'subscription', presale: false, path: '/subscriptions', label: 'payment.result.viewSubscriptions' },
+    { orderType: 'subscription', presale: true, path: '/subscriptions', label: 'payment.result.viewSubscriptions' },
+    { orderType: 'balance', presale: false, path: '/profile', label: 'payment.result.viewBalance' },
+  ])('links $orderType results (presale=$presale) to $path using the server order type', async ({ orderType, presale, path, label }) => {
+    routeState.query = { order_id: '42', order_type: orderType === 'balance' ? 'subscription' : 'balance' }
+    pollOrderStatus.mockResolvedValue({
+      ...orderFactory('COMPLETED'), order_type: orderType,
+      ...(presale ? { presale_starts_at: '2026-10-01T00:00:00+08:00' } : {}),
+    })
+    const wrapper = mount(PaymentResultView, { global: { stubs: { OrderStatusBadge: true, PresaleOrderTerm: true } } })
+    await flushPromises()
+    const button = wrapper.get('button.btn-primary')
+    expect(button.text()).toBe(label)
+    await button.trigger('click')
+    expect(routerPush).toHaveBeenCalledWith(path)
+    expect(routerPush).not.toHaveBeenCalledWith('/orders')
+    wrapper.unmount()
+  })
+
+  it('does not guess an order destination when the order cannot be loaded', async () => {
+    routeState.query = { order_id: '42', order_type: 'subscription' }
+    pollOrderStatus.mockRejectedValue(new Error('Order unavailable'))
+    const wrapper = mount(PaymentResultView, { global: { stubs: { OrderStatusBadge: true, PresaleOrderTerm: true } } })
+    await flushPromises()
+    expect(wrapper.find('button.btn-primary').exists()).toBe(false)
+    await wrapper.get('button.btn-secondary').trigger('click')
+    expect(routerPush).toHaveBeenCalledWith('/purchase')
+    wrapper.unmount()
+  })
+
   it('renders a pending state instead of a failure state when the restored order is still pending', async () => {
     routeState.query = {
       resume_token: 'resume-42',

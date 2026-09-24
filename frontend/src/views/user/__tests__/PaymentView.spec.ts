@@ -219,7 +219,6 @@ function saveRecovery(orderType: 'balance' | 'subscription' = 'subscription') {
 }
 
 interface PresaleCheckoutVM {
-  presaleConsent: boolean
   presalePaid: boolean
   canSubmitSubscription: boolean
   paymentPhase: string
@@ -891,19 +890,68 @@ describe('PaymentView WeChat JSAPI flow', () => {
     wrapper.unmount()
   })
 
-  it('requires presale consent and includes the reviewed month in the order', async () => {
+  it('uses the card-selected multiplier in the confirmed price, quota and order without an editable input', async () => {
+    routeState.query = { multiplier: '4' }
+    const checkout = checkoutInfoWithPlansFixture()
+    getCheckoutInfo.mockResolvedValue({ data: { ...checkout.data, plans: [{ ...checkout.data.plans[0], daily_limit_usd: 10 }] } })
+    createOrder.mockResolvedValue({ ...jsapiOrderFixture('presale-resume'), result_type: 'order_created', qr_code: 'weixin://wxpay/presale', payment_mode: 'qrcode', status: 'PENDING' })
+    const wrapper = shallowMount(PaymentView, { props: { presalePlanId: 7, presaleMonth: '2026-10', presaleMultiplier: 3 }, global: { stubs: { Teleport: true, Transition: false } } })
+    await flushPromises()
+    const vm = wrapper.vm as unknown as { effectiveSelectedMultiplier: number; effectiveSelectedPlanPrice: number; effectiveSelectedDailyLimit: number; confirmSubscribe: () => Promise<void> }
+    expect(vm.effectiveSelectedMultiplier).toBe(3)
+    expect(vm.effectiveSelectedPlanPrice).toBe(384)
+    expect(vm.effectiveSelectedDailyLimit).toBe(30)
+    expect(wrapper.find('input[type="number"]').exists()).toBe(false)
+    expect(wrapper.text()).not.toContain('payment.admin.customMultiplierEnabled')
+    await vm.confirmSubscribe(); await flushPromises()
+    expect(createOrder).toHaveBeenCalledWith(expect.objectContaining({ order_type: 'subscription', plan_id: 7, presale_month: '2026-10', multiplier: 3, amount: 384 }), 'payment-order-test-key')
+    wrapper.unmount()
+  })
+
+  it('keeps a renewal multiplier even when new-purchase bounds have changed', async () => {
+    const checkout = checkoutInfoWithPlansFixture()
+    checkout.data.plans[0].custom_multiplier_max = 3
+    getCheckoutInfo.mockResolvedValue(checkout)
+    activeSubscriptionsState.push({ status: 'active', expires_at: '2099-01-01T00:00:00Z', custom_source_plan_id: 7, custom_multiplier: 4 })
+    const wrapper = shallowMount(PaymentView, { props: { presalePlanId: 7, presaleMonth: '2026-10', presaleMultiplier: 4 }, global: { stubs: { Teleport: true, Transition: false } } })
+    await flushPromises()
+    const vm = wrapper.vm as unknown as { effectiveSelectedMultiplier: number; effectiveSelectedPlanPrice: number; selectedMultiplierConflictsActiveCustom: boolean }
+    expect(vm.effectiveSelectedMultiplier).toBe(4)
+    expect(vm.effectiveSelectedPlanPrice).toBe(512)
+    expect(vm.selectedMultiplierConflictsActiveCustom).toBe(false)
+    wrapper.unmount()
+  })
+
+  it('checks eligibility before purchase without rendering the removed explanation or consent card', async () => {
     routeState.query = {}
+    const quote = deferred<{ data: { month: string } }>()
+    getPresaleQuote.mockReturnValue(quote.promise)
     getCheckoutInfo.mockResolvedValue(checkoutInfoWithPlansFixture())
     createOrder.mockResolvedValue({ ...jsapiOrderFixture('presale-resume'), result_type: 'order_created', qr_code: 'weixin://wxpay/presale', payment_mode: 'qrcode', status: 'PENDING' })
     const wrapper = shallowMount(PaymentView, { props: { presalePlanId: 7, presaleMonth: '2026-10' }, global: { stubs: { Teleport: true, Transition: false } } })
     await flushPromises()
-    const vm = wrapper.vm as unknown as { canSubmitSubscription: boolean; presaleConsent: boolean; confirmSubscribe: () => Promise<void> }
+    const vm = wrapper.vm as unknown as { canSubmitSubscription: boolean; confirmSubscribe: () => Promise<void> }
     expect(vm.canSubmitSubscription).toBe(false)
     await vm.confirmSubscribe(); expect(createOrder).not.toHaveBeenCalled()
-    vm.presaleConsent = true; await flushPromises()
+    quote.resolve({ data: { month: '2026-10' } }); await flushPromises()
     expect(vm.canSubmitSubscription).toBe(true)
+    expect(wrapper.find('input[type="checkbox"]').exists()).toBe(false)
+    for (const key of ['newSubscription', 'renewalCopy', 'termCopy', 'timezone', 'refundFullCopy', 'refundFeeCopy', 'refundDailyCopy', 'consent']) {
+      expect(wrapper.text()).not.toContain(`presale.${key}`)
+    }
     await vm.confirmSubscribe(); await flushPromises()
     expect(createOrder).toHaveBeenCalledWith(expect.objectContaining({ order_type: 'subscription', plan_id: 7, presale_month: '2026-10' }), 'payment-order-test-key')
+    wrapper.unmount()
+  })
+
+  it.each(['closed', 'month-changed'])('still blocks checkout when presale eligibility is %s', async (reason) => {
+    if (reason === 'closed') getPresaleQuote.mockRejectedValue(new Error('closed'))
+    else getPresaleQuote.mockResolvedValue({ data: { month: '2026-11' } })
+    const { wrapper, vm } = await mountPresaleCheckout()
+    expect(vm.canSubmitSubscription).toBe(false)
+    await vm.confirmSubscribe()
+    expect(createOrder).not.toHaveBeenCalled()
+    expect(showError).toHaveBeenCalled()
     wrapper.unmount()
   })
 
@@ -978,7 +1026,6 @@ describe('PaymentView WeChat JSAPI flow', () => {
     })
     bridgeInvoke.mockImplementation((_action, _payload, callback) => callback({ err_msg: 'get_brand_wcpay_request:fail' }))
     const { wrapper, vm } = await mountPresaleCheckout()
-    vm.presaleConsent = true
     const submitting = vm.confirmSubscribe()
     await flushPromises()
     expect(cancelOrder).toHaveBeenCalledWith(123)
@@ -1001,7 +1048,6 @@ describe('PaymentView WeChat JSAPI flow', () => {
     createOrder.mockResolvedValue(jsapiOrderFixture('original-resume'))
     bridgeInvoke.mockImplementation((_action, _payload, callback) => callback({ err_msg: 'get_brand_wcpay_request:fail' }))
     const { wrapper, vm } = await mountPresaleCheckout()
-    vm.presaleConsent = true
     await vm.confirmSubscribe()
     expect(createOrder).toHaveBeenCalledTimes(1)
     expect(vm.paymentState.orderId).toBe(123)
@@ -1016,7 +1062,6 @@ describe('PaymentView WeChat JSAPI flow', () => {
     cancelOrder.mockRejectedValue(new Error('response lost'))
     bridgeInvoke.mockImplementation((_action, _payload, callback) => callback({ err_msg: 'get_brand_wcpay_request:cancel' }))
     const { wrapper, vm } = await mountPresaleCheckout()
-    vm.presaleConsent = true
     await vm.confirmSubscribe()
     expect(vm.paymentState.orderId).toBe(123)
     expect(vm.paymentPhase).toBe('paying')

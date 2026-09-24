@@ -37,6 +37,8 @@ func (r *waitlistTestRepo) FinishConfirmation(_ context.Context, _ string, _ tim
 
 type waitlistTestBranding struct{}
 
+func (waitlistTestBranding) GetDefaultBalance(context.Context) float64 { return 0 }
+
 func (waitlistTestBranding) GetSiteName(context.Context) string { return "Test site" }
 
 type waitlistTestMailer struct{ err error }
@@ -71,7 +73,7 @@ func waitlistRequest(h *WaitlistHandler, body string) *httptest.ResponseRecorder
 func TestWaitlistHandlerJoin(t *testing.T) {
 	repo := &waitlistTestRepo{}
 	challenge := &waitlistTestChallenge{}
-	h := &WaitlistHandler{waitlist: service.NewWaitlistService(repo, &waitlistTestMailer{}, waitlistTestBranding{}, nil), challenge: challenge}
+	h := &WaitlistHandler{waitlist: service.NewWaitlistService(repo, &waitlistTestMailer{}, waitlistTestBranding{}, nil, nil), challenge: challenge}
 	for _, body := range []string{`{}`, `{"email":"bad"}`, `{"email":3}`, `{`, `{"email":"` + strings.Repeat("a", 5000) + `"}`} {
 		require.Equal(t, http.StatusBadRequest, waitlistRequest(h, body).Code)
 	}
@@ -96,7 +98,7 @@ func TestWaitlistHandlerJoin(t *testing.T) {
 func TestWaitlistHandlerList(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	repo := &waitlistTestRepo{}
-	h := &WaitlistHandler{waitlist: service.NewWaitlistService(repo, &waitlistTestMailer{}, waitlistTestBranding{}, nil)}
+	h := &WaitlistHandler{waitlist: service.NewWaitlistService(repo, &waitlistTestMailer{}, waitlistTestBranding{}, nil, nil)}
 	r := gin.New()
 	r.GET("/waitlist", h.List)
 	w := httptest.NewRecorder()
@@ -110,7 +112,7 @@ func TestWaitlistHandlerList(t *testing.T) {
 func TestWaitlistHandlerMailFailureIsRetryable(t *testing.T) {
 	repo := &waitlistTestRepo{}
 	mailer := &waitlistTestMailer{err: errors.New("private SMTP failure")}
-	h := &WaitlistHandler{waitlist: service.NewWaitlistService(repo, mailer, waitlistTestBranding{}, nil), challenge: &waitlistTestChallenge{}}
+	h := &WaitlistHandler{waitlist: service.NewWaitlistService(repo, mailer, waitlistTestBranding{}, nil, nil), challenge: &waitlistTestChallenge{}}
 	failed := waitlistRequest(h, `{"email":"a@example.com"}`)
 	require.Equal(t, http.StatusServiceUnavailable, failed.Code)
 	require.Contains(t, failed.Body.String(), "WAITLIST_CONFIRMATION_FAILED")
@@ -128,7 +130,7 @@ type waitlistApproveRepo struct {
 	id, adminID int64
 }
 
-func (r *waitlistApproveRepo) Approve(_ context.Context, id, adminID int64) (*service.WaitlistEntry, error) {
+func (r *waitlistApproveRepo) Approve(_ context.Context, id, adminID int64, _ float64) (*service.WaitlistEntry, error) {
 	r.id, r.adminID = id, adminID
 	if r.err != nil {
 		return nil, r.err
@@ -146,7 +148,7 @@ func TestWaitlistHandlerApprove(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	repo := &waitlistApproveRepo{}
 	mailer := &waitlistTestMailer{}
-	h := NewWaitlistHandler(service.NewWaitlistService(repo, mailer, waitlistTestBranding{}, nil), nil)
+	h := NewWaitlistHandler(service.NewWaitlistService(repo, mailer, waitlistTestBranding{}, nil, nil), nil)
 	r := gin.New()
 	r.POST("/waitlist/:id/approve", func(c *gin.Context) {
 		c.Set(string(middleware.ContextKeyUser), middleware.AuthSubject{UserID: 42})

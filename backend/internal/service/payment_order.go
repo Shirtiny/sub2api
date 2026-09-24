@@ -15,6 +15,7 @@ import (
 	dbent "github.com/Wei-Shaw/sub2api/ent"
 	"github.com/Wei-Shaw/sub2api/ent/cafecoupon"
 	"github.com/Wei-Shaw/sub2api/ent/group"
+	"github.com/Wei-Shaw/sub2api/ent/paymentauditlog"
 	"github.com/Wei-Shaw/sub2api/ent/paymentorder"
 	"github.com/Wei-Shaw/sub2api/ent/predicate"
 	"github.com/Wei-Shaw/sub2api/ent/subscriptionplan"
@@ -182,6 +183,23 @@ func paymentEnvironmentLooksProduction() bool {
 		}
 	}
 	return false
+}
+
+// Only locally simulated, audited payments may skip the refund gateway. A real
+// provider-bound order must never become refundable for free by enabling dev mode.
+func (s *PaymentService) isDevAutoSuccessOrder(ctx context.Context, order *dbent.PaymentOrder) bool {
+	if s == nil || s.entClient == nil || !s.paymentDevAutoSuccessEnabled() || order == nil ||
+		order.OutTradeNo == "" || order.PaidAt == nil ||
+		order.PaymentTradeNo != "dev-auto-success-"+order.OutTradeNo ||
+		strings.TrimSpace(psStringValue(order.ProviderInstanceID)) != "" ||
+		strings.TrimSpace(psStringValue(order.ProviderKey)) != "" || psOrderProviderSnapshot(order) != nil {
+		return false
+	}
+	exists, err := s.entClient.PaymentAuditLog.Query().Where(
+		paymentauditlog.OrderIDEQ(strconv.FormatInt(order.ID, 10)),
+		paymentauditlog.ActionEQ("DEV_PAYMENT_AUTO_SUCCESS"),
+	).Exist(ctx)
+	return err == nil && exists
 }
 
 func (s *PaymentService) completeDevAutoSuccessOrder(ctx context.Context, order *dbent.PaymentOrder, req CreateOrderRequest, payAmount float64) (*CreateOrderResponse, error) {

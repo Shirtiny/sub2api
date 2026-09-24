@@ -57,8 +57,8 @@ func presaleRefundQuoteForTerm(o *dbent.PaymentOrder, now, effectiveEnd time.Tim
 	q := &PresaleRefundQuote{Policy: "full", Currency: PaymentOrderCurrency(o), UnusedDays: days}
 	ratio := 1.0
 	switch {
-	// A paid order never activated because of a service failure must remain
-	// fully refundable, including after the advertised term has ended.
+	// A paid order never activated because of a service failure remains
+	// refundable without a cancellation fee, even after the advertised term.
 	case o.PresaleActivatedAt == nil && (!now.Before(start) || o.FailedAt != nil || o.Status == OrderStatusFailed):
 		q.Policy = "unfulfilled"
 	case now.Before(start.Add(-72 * time.Hour)):
@@ -68,10 +68,20 @@ func presaleRefundQuoteForTerm(o *dbent.PaymentOrder, now, effectiveEnd time.Tim
 		return nil, infraerrors.BadRequest("PRESALE_REFUND_LAST_WEEK", "daily refunds are unavailable during the final seven days")
 	default:
 		q.UnusedDays = int(math.Floor(end.Sub(now).Hours() / 24))
-		ratio, q.Policy = float64(q.UnusedDays)/float64(days), "unused_days"
+		ratio, q.FeePercent, q.Policy = float64(q.UnusedDays)/float64(days)*.8, 20, "unused_days"
 	}
 	q.RefundAmount = math.Round(o.Amount*ratio*100) / 100
-	q.GatewayAmount = decimal.NewFromFloat(o.PayAmount).Mul(decimal.NewFromFloat(ratio)).Round(int32(payment.CurrencyMaxFractionDigits(q.Currency))).InexactFloat64()
+	fractionDigits := int32(payment.CurrencyMaxFractionDigits(q.Currency))
+	refundablePaid := decimal.NewFromFloat(o.PayAmount)
+	if o.FeeRate > 0 {
+		// Match checkout: the payment fee is rounded UP on the discounted
+		// subscription price. Use immutable order snapshots, not today's fees
+		// or plan price, and exclude it before applying the refund policy.
+		principal := decimal.Max(decimal.Zero, decimal.NewFromFloat(o.Amount).Sub(decimal.NewFromFloat(o.CafeCouponDiscount)))
+		paymentFee := principal.Mul(decimal.NewFromFloat(o.FeeRate)).Div(decimal.NewFromInt(100)).RoundUp(fractionDigits)
+		refundablePaid = decimal.Max(decimal.Zero, refundablePaid.Sub(paymentFee))
+	}
+	q.GatewayAmount = refundablePaid.Mul(decimal.NewFromFloat(ratio)).Round(fractionDigits).InexactFloat64()
 	return q, nil
 }
 
@@ -94,7 +104,9 @@ func (s *PaymentService) GetPresaleRefundQuote(ctx context.Context, o *dbent.Pay
 			return nil, fmt.Errorf("load accepted presale refund quote: %w", err)
 		}
 		var accepted struct {
-			Quote *PresaleRefundQuote `json:"quote"`
+			Quote         *PresaleRefundQuote `json:"quote"`
+			Amount        *float64            `json:"amount"`
+			GatewayAmount *float64            `json:"gateway_amount"`
 		}
 		if err := json.Unmarshal([]byte(audit.Detail), &accepted); err != nil {
 			return nil, fmt.Errorf("decode accepted presale refund quote: %w", err)
@@ -102,8 +114,15 @@ func (s *PaymentService) GetPresaleRefundQuote(ctx context.Context, o *dbent.Pay
 		if accepted.Quote != nil {
 			return accepted.Quote, nil
 		}
-		// Older requests could only be accepted for an unchanged term. Preserve
-		// their original snapshot/time calculation; never inspect the cancelled row.
+		// Legacy requests predate the daily refund fee and full quote snapshots.
+		// Keep their audited amounts, never reprice an already accepted refund.
+		if accepted.Amount == nil || accepted.GatewayAmount == nil {
+			return nil, fmt.Errorf("missing accepted presale refund amounts")
+		}
+		base.RefundAmount, base.GatewayAmount = *accepted.Amount, *accepted.GatewayAmount
+		if base.Policy == "unused_days" {
+			base.FeePercent = 0
+		}
 		return base, nil
 	}
 	if o.PresaleActivatedAt == nil {

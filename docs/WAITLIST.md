@@ -89,9 +89,10 @@ admin page offers **通过申请 / Approve**, a confirmation of its effects, the
 time, notification state, and **重试通知 / Retry notification** after mail failure.
 
 - First approval locks the application row. For one matching non-deleted account,
-  update only its status to `active` and invalidate its API-key auth cache. Match
-  the same trimmed, case-insensitive mailbox as signup. Ambiguous legacy account
-  matches require manual resolution. Never change passwords, roles, balances,
+  set its status to `active`, add the configured default balance gift, and
+  invalidate its API-key auth and billing balance caches. Match the same trimmed,
+  case-insensitive mailbox as signup. Ambiguous legacy account matches require
+  manual resolution. Never change passwords, roles,
   subscription entitlements, or moderation history, and never restore deleted users.
 - If no account exists, persist a single-email signup allowance. This does **not**
   change `registration_enabled`, create an account, or verify mailbox ownership.
@@ -100,8 +101,34 @@ time, notification state, and **重试通知 / Retry notification** after mail f
   any admission failure rolls both back. Consumed allowances stay consumed after
   account deletion. Concurrent approvals of the same entry are idempotent.
 - Already-approved entries do not change account status again. Retrying mail must
-  not undo a suspension imposed after the initial approval. “Approved” describes
-  this application decision, not a live guarantee that an account is still active.
+  not repeat the gift or undo a suspension imposed after the initial approval.
+  “Approved” describes this application decision, not a live guarantee that an
+  account is still active.
+
+### Default balance gift and recharge history
+
+- Existing accounts receive `SettingService.GetDefaultBalance` at first approval,
+  added to their current balance (never replacing it). A zero default grants
+  access without a monetary history entry; invalid non-finite/negative amounts
+  are rejected without changing the application or account.
+- Approval, the balance increment and its history entry commit together. A history
+  write failure rolls everything back. The application row lock prevents duplicate
+  credits from concurrent clicks; later notification retries ignore changed defaults
+  and do not top up a gift the user has already spent.
+- For applicants without an account, no account or balance is created at approval.
+  Email signup grants its existing resolved signup balance (including a configured
+  email-source override) exactly once. The signup transaction now records that
+  amount together with consuming the approval; it does not add a second gift.
+- History reuses a **used** `admin_balance` entry in `redeem_codes`, with the note
+  **候补名单通过赠送**, the amount, recipient and time. `WL-GIFT-<application-id>`
+  is a unique audit identifier, not a redeemable coupon. The entry is visible in
+  existing user recharge history and administrator balance history. It is not a
+  paid payment order and does not increase paid recharge totals or affiliate rewards.
+- This change needs no schema migration and does not retroactively credit already
+  approved existing accounts. Mail failure leaves both the approval and gift intact;
+  retrying the notification never repeats the gift.
+
+### Approval notification
 
 After committing access, send a separate branded HTML letter through the existing
 SMTP settings/sender (no new email-provider configuration):

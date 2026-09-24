@@ -684,10 +684,14 @@ const routes: RouteRecordRaw[] = [
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes,
-  scrollBehavior(_to, _from, savedPosition) {
+  scrollBehavior(to, from, savedPosition) {
     // Scroll to saved position when using browser back/forward
     if (savedPosition) {
       return savedPosition
+    }
+    // Presale plan/multiplier query changes only open or close checkout in place.
+    if (to.path === '/presale' && from.path === to.path && to.hash === from.hash) {
+      return false
     }
     // Scroll to top for new routes
     return { top: 0 }

@@ -40,6 +40,19 @@ func querySingleInt(t *testing.T, ctx context.Context, client *dbent.Client, que
 	return value
 }
 
+func TestAffiliateRepository_ClawbackQuotaForOrder_NoAccrual(t *testing.T) {
+	ctx := context.Background()
+	tx := testEntTx(t)
+	txCtx := dbent.NewTxContext(ctx, tx)
+	repo := NewAffiliateRepository(tx.Client(), integrationDB)
+
+	// A refund without a referring user must still execute the PostgreSQL
+	// clawback query successfully, even when there are no ledger rows.
+	amount, err := repo.ClawbackQuotaForOrder(txCtx, time.Now().UnixNano(), 1)
+	require.NoError(t, err)
+	require.Zero(t, amount)
+}
+
 func TestAffiliateRepository_TransferQuotaToBalance_UsesClaimedQuotaBeforeClear(t *testing.T) {
 	ctx := context.Background()
 	tx := testEntTx(t)

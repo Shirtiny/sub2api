@@ -537,7 +537,7 @@ var ProviderSet = wire.NewSet(
 	NewAnnouncementService,
 	NewWaitlistService,
 	wire.Bind(new(WaitlistEmailSender), new(*EmailService)),
-	wire.Bind(new(WaitlistBranding), new(*SettingService)),
+	wire.Bind(new(WaitlistSettings), new(*SettingService)),
 	NewAdminService,
 	NewGatewayService,
 	NewOpenAIGatewayService,

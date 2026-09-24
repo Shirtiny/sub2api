@@ -106,7 +106,6 @@ export default {
         eyebrow: 'Plans & Balance',
         title: 'Subscriptions & balance',
         description: 'Plan a month ahead, or top up when you need to.',
-        note: 'Check your dashboard for specific plans, available groups and prices.',
         subscription: {
           title: 'Subscription presale', badge: 'Presale only', highlight: 'Monthly', unit: 'plan', caption: 'One month per purchase',
           accessLabel: 'Availability', access: 'Subscriptions are available only through presales. Watch for opening announcements.',
@@ -1703,7 +1702,7 @@ export default {
       processing: "Processing…",
       completed: "Completed",
       confirmTitle: "Approve waiting-list application",
-      confirmMessage: "Grant access to {email}? An existing account will be reactivated; a new email will receive one signup allowance even when public registration is disabled. Passwords, roles, balances and subscriptions stay unchanged. An approval email will be sent.",
+      confirmMessage: "Grant access to {email}? An existing account will be reactivated and credited with the balance gift configured in user defaults, with a recharge history entry. A new email receives one signup allowance even when public registration is disabled; its gift is credited and recorded at signup. Passwords, roles and subscriptions stay unchanged. An approval email will be sent; notification retries never repeat the gift.",
       success: "Access granted and notification email sent.",
       approveFailed: "The operation could not be confirmed. Refresh to check approval and email status before retrying.",
       errors: {
@@ -7579,12 +7578,16 @@ export default {
   userSubscriptions: {
     title: 'My Subscriptions',
     description: 'View your subscription plans and usage',
+    activeSection: 'Active subscriptions',
+    activeSectionHint: 'Available now · Quota and usage',
+    otherSection: 'Other subscriptions',
     noActiveSubscriptions: 'No Active Subscriptions',
     noActiveSubscriptionsDesc:
       "You don't have any active subscriptions. Contact administrator to get one.",
     failedToLoad: 'Failed to load subscriptions',
     status: {
       active: 'Active',
+      pending: 'Scheduled',
       expired: 'Expired',
       revoked: 'Revoked'
     },
@@ -7865,6 +7868,8 @@ export default {
       failed: 'Payment Failed',
       backToRecharge: 'Back to Recharge',
       viewOrders: 'View Orders',
+      viewSubscriptions: 'View Subscriptions',
+      viewBalance: 'View Balance',
     },
     currentBalance: 'Current Balance',
     groupFallback: 'Group #{id}',

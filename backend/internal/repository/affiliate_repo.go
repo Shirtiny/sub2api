@@ -261,7 +261,7 @@ WHERE source_order_id = $1
 
 		rows, err := txClient.QueryContext(txCtx, `
 WITH locked AS (
-    SELECT user_id, amount, frozen_until
+    SELECT user_id, source_user_id, amount, frozen_until
     FROM user_affiliate_ledger
     WHERE source_order_id = $1
       AND action = 'accrue'

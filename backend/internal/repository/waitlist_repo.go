@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"math"
 	"strings"
 	"time"
 
@@ -54,7 +55,7 @@ func waitlistEntryDTO(entry *dbent.WaitlistEntry) service.WaitlistEntry {
 	}
 }
 
-func (r *waitlistRepository) Approve(ctx context.Context, id, adminID int64) (*service.WaitlistEntry, error) {
+func (r *waitlistRepository) Approve(ctx context.Context, id, adminID int64, giftBalance float64) (*service.WaitlistEntry, error) {
 	tx, err := r.client.Tx(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("begin waitlist approval: %w", err)
@@ -65,8 +66,11 @@ func (r *waitlistRepository) Approve(ctx context.Context, id, adminID int64) (*s
 		return nil, translatePersistenceError(err, service.ErrWaitlistNotFound, nil)
 	}
 	if entry.ApprovedAt == nil {
+		if err := validateWaitlistGift(giftBalance); err != nil {
+			return nil, err
+		}
 		// Use the same normalized mailbox as signup. Never alter credentials,
-		// balances, roles or subscriptions, or restore a soft-deleted account.
+		// roles or subscriptions, or restore a soft-deleted account.
 		users, err := tx.User.Query().Where(userEmailLookupPredicate(entry.Email), dbuser.DeletedAtIsNil()).Limit(2).ForUpdate().All(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("find waitlist account: %w", err)
@@ -76,12 +80,17 @@ func (r *waitlistRepository) Approve(ctx context.Context, id, adminID int64) (*s
 		}
 		update := tx.WaitlistEntry.UpdateOneID(id).SetApprovedAt(time.Now().UTC()).SetApprovedBy(adminID)
 		if len(users) == 1 {
-			affected, err := tx.User.Update().Where(dbuser.IDEQ(users[0].ID), dbuser.DeletedAtIsNil()).SetStatus(service.StatusActive).Save(ctx)
+			affected, err := tx.User.Update().Where(dbuser.IDEQ(users[0].ID), dbuser.DeletedAtIsNil()).SetStatus(service.StatusActive).AddBalance(giftBalance).Save(ctx)
 			if err != nil {
 				return nil, fmt.Errorf("enable waitlist account: %w", err)
 			}
 			if affected != 1 {
 				return nil, service.ErrWaitlistAccountConflict
+			}
+			// Approval, credit and the visible recharge history are one transaction.
+			// A notification retry skips this entire block under the entry row lock.
+			if err := recordWaitlistGift(ctx, tx, id, users[0].ID, giftBalance); err != nil {
+				return nil, err
 			}
 			update.SetGrantedUserID(users[0].ID)
 		}
@@ -122,20 +131,55 @@ func (r *waitlistRepository) GetApprovedEntryByEmail(ctx context.Context, email 
 }
 
 // A grant can only be consumed inside the same transaction that creates the user.
-func (r *waitlistRepository) ConsumeRegistrationApproval(ctx context.Context, email string, userID int64) error {
+func (r *waitlistRepository) ConsumeRegistrationApproval(ctx context.Context, email string, userID int64, signupBalance float64) error {
 	tx := dbent.TxFromContext(ctx)
 	if tx == nil || userID <= 0 {
 		return fmt.Errorf("consume waitlist approval requires a registration transaction")
 	}
-	affected, err := tx.WaitlistEntry.Update().Where(
+	if err := validateWaitlistGift(signupBalance); err != nil {
+		return err
+	}
+	entry, err := tx.WaitlistEntry.Query().Where(
 		waitlistentry.EmailEQ(strings.ToLower(strings.TrimSpace(email))),
 		waitlistentry.ApprovedAtNotNil(), waitlistentry.GrantedUserIDIsNil(),
-	).SetGrantedUserID(userID).Save(ctx)
+	).ForUpdate().Only(ctx)
+	if dbent.IsNotFound(err) {
+		return service.ErrRegDisabled
+	}
 	if err != nil {
+		return fmt.Errorf("lock waitlist approval: %w", err)
+	}
+	if err := tx.WaitlistEntry.UpdateOneID(entry.ID).SetGrantedUserID(userID).Exec(ctx); err != nil {
 		return fmt.Errorf("consume waitlist approval: %w", err)
 	}
-	if affected != 1 {
-		return service.ErrRegDisabled
+	// AuthService has already assigned the signup balance; only add its history.
+	return recordWaitlistGift(ctx, tx, entry.ID, userID, signupBalance)
+}
+
+func validateWaitlistGift(amount float64) error {
+	if amount < 0 || math.IsNaN(amount) || math.IsInf(amount, 0) {
+		return fmt.Errorf("invalid waitlist gift balance")
+	}
+	return nil
+}
+
+func recordWaitlistGift(ctx context.Context, tx *dbent.Tx, entryID, userID int64, amount float64) error {
+	if amount == 0 {
+		return nil
+	}
+	// Reuse the existing administrator balance-history type, not a paid order:
+	// gifts must not increase paid recharge totals or trigger affiliate rewards.
+	err := tx.RedeemCode.Create().
+		SetCode(fmt.Sprintf("WL-GIFT-%d", entryID)).
+		SetType(service.AdjustmentTypeAdminBalance).
+		SetValue(amount).
+		SetStatus(service.StatusUsed).
+		SetUsedBy(userID).
+		SetUsedAt(time.Now().UTC()).
+		SetNotes("候补名单通过赠送").
+		Exec(ctx)
+	if err != nil {
+		return fmt.Errorf("record waitlist gift: %w", err)
 	}
 	return nil
 }

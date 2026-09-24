@@ -286,7 +286,9 @@ func (s *AuthService) RegisterWithVerification(ctx context.Context, email, passw
 		}
 	}
 	if approved {
-		if err := s.waitlistRepo.ConsumeRegistrationApproval(registrationCtx, email, user.ID); err != nil {
+		// The user already received grantPlan.Balance on creation. Record that gift
+		// with admission in this transaction, without crediting the balance twice.
+		if err := s.waitlistRepo.ConsumeRegistrationApproval(registrationCtx, email, user.ID, grantPlan.Balance); err != nil {
 			return rollbackCreatedUser(err)
 		}
 	}

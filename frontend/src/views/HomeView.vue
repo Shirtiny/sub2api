@@ -99,7 +99,7 @@
 
     <div class="home-slide slide-billing" data-home-slide="billing">
       <div class="slide-content">
-        <HomeBillingSection :entry-path="entryPath" />
+        <HomeBillingSection />
       </div>
     </div>
 

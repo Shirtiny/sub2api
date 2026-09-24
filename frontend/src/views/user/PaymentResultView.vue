@@ -98,7 +98,7 @@
         <!-- Actions -->
         <div class="flex gap-3">
           <button class="btn btn-secondary flex-1" @click="router.push('/purchase')">{{ t('payment.result.backToRecharge') }}</button>
-          <button class="btn btn-primary flex-1" @click="router.push('/orders')">{{ t('payment.result.viewOrders') }}</button>
+          <button v-if="resultAction" class="btn btn-primary flex-1" @click="router.push(resultAction.path)">{{ t(resultAction.label) }}</button>
         </div>
       </template>
     </div>
@@ -169,6 +169,15 @@ const feeAmount = computed(() => {
 })
 
 const isSubscriptionOrder = computed(() => order.value?.order_type === 'subscription')
+const resultAction = computed(() => {
+  if (order.value?.order_type === 'subscription') {
+    return { path: '/subscriptions', label: 'payment.result.viewSubscriptions' }
+  }
+  if (order.value?.order_type === 'balance') {
+    return { path: '/profile', label: 'payment.result.viewBalance' }
+  }
+  return null
+})
 const cafeCouponDiscountAmount = computed(() => Math.round(Math.max(0, Number(order.value?.cafe_coupon_discount || 0)) * 100) / 100)
 const hasCafeCouponDiscount = computed(() => cafeCouponDiscountAmount.value > 0)
 const originalGatewayAmount = computed(() => {
