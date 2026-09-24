@@ -19,13 +19,26 @@
           <div class="hero-actions"><a href="#presale-plans" class="btn btn-primary">{{ t('presale.browse') }} <Icon name="arrowRight" size="sm" /></a><RouterLink :to="balancePath" class="quiet-link">{{ t('presale.balance') }} <span aria-hidden="true">↗</span></RouterLink></div>
         </div>
         <div class="month-art" aria-hidden="true">
-          <svg class="month-orbits" viewBox="0 0 520 440" fill="none">
-            <defs><radialGradient id="presale-halo"><stop stop-color="currentColor" stop-opacity=".14"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/></radialGradient><linearGradient id="presale-line"><stop stop-color="currentColor" stop-opacity="0"/><stop offset=".55" stop-color="currentColor"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/></linearGradient></defs>
-            <circle cx="260" cy="220" r="215" fill="url(#presale-halo)"/>
-            <g class="orbit-turn"><ellipse cx="260" cy="220" rx="233" ry="125" stroke="currentColor" opacity=".16" transform="rotate(-28 260 220)"/><ellipse cx="260" cy="220" rx="213" ry="155" stroke="url(#presale-line)" opacity=".5" transform="rotate(34 260 220)"/><circle cx="63" cy="208" r="3" fill="currentColor"/></g>
-            <path d="M70 362H450M260 43V80M260 360V395" stroke="currentColor" opacity=".18"/>
+          <svg class="month-setting" viewBox="0 0 520 440" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round">
+            <g class="coffee-outline">
+              <path d="M371 280H449L443 310C440 326 430 334 410 334S380 326 377 310Z"/>
+              <path d="M449 286H455C477 286 474 315 445 315M363 343C382 352 441 352 459 343M382 339H440"/>
+            </g>
+            <g class="coffee-steam">
+              <path d="M398 264C386 250 415 240 402 223"/>
+              <path d="M418 263C406 247 435 232 421 214"/>
+            </g>
           </svg>
-          <div class="month-ticket"><span class="ticket-kicker">NEXT / {{ catalog?.period.month.split('-')[0] || '—' }}</span><strong>{{ catalog?.period.month.split('-')[1] || '—' }}</strong><span class="ticket-month">{{ date(catalog?.period.starts_at, true) }}</span><div class="ticket-perforation"/><div class="ticket-footer"><span>{{ t('presale.calendar') }}</span><span>01 — {{ daysInPeriod }}</span></div></div>
+          <div class="month-ticket">
+            <span class="ticket-kicker">NEXT / {{ catalog?.period.month.split('-')[0] || '—' }}</span>
+            <div class="ticket-date">
+              <strong>{{ catalog?.period.month.split('-')[1] || '—' }}</strong>
+              <span class="ticket-month-abbr" lang="en">{{ monthAbbreviation }}</span>
+            </div>
+            <span class="ticket-month">{{ date(catalog?.period.starts_at, true) }}</span>
+            <div class="ticket-perforation"/>
+            <div class="ticket-footer"><span>{{ t('presale.calendar') }}</span><span>01 — {{ daysInPeriod }}</span></div>
+          </div>
           <span class="art-note">RESERVED FOR YOUR NEXT CHAPTER</span>
         </div>
       </section>
@@ -96,6 +109,10 @@ function toggleTheme() {
 const catalog = ref<PresaleCatalog | null>(null), loading = ref(true), error = ref(''), selectedPlanId = ref<number | null>(null)
 const balancePath = computed(() => auth.isAuthenticated ? '/purchase' : { path: '/login', query: { redirect: '/purchase' } })
 const date = (value?: string, monthOnly = false) => formatPresaleDate(value, locale.value, monthOnly)
+const monthAbbreviation = computed(() => {
+  const month = Number(catalog.value?.period.month.split('-')[1])
+  return ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'][month - 1] || '—'
+})
 const daysInPeriod = computed(() => catalog.value ? Math.round((Date.parse(catalog.value.period.expires_at) - Date.parse(catalog.value.period.starts_at)) / 86400000) : '—')
 const timeline = computed(() => [
   { label: t('presale.reserve'), date: t('presale.reserveCopy'), copy: t('presale.notImmediate') },
@@ -144,16 +161,64 @@ h1 { font: 400 clamp(32px, 3.5vw, 48px)/1.55 Georgia, 'Noto Serif CJK SC', 'Song
 h1 em { display: block; font-style: normal; color: var(--cafe-accent); }
 .intro { max-width: 400px; color: var(--cafe-muted); font-size: 14px; line-height: 1.9; margin-top: 24px; }
 .hero-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 24px; margin-top: 32px; }.btn { gap: 12px; padding: 13px 20px; border-radius: 8px; font-size: 13px; }.quiet-link { color: var(--cafe-muted); font-size: 12px; }.quiet-link:hover { color: var(--cafe-accent); }
-.month-art { position: relative; height: 420px; display: grid; place-items: center; color: var(--cafe-accent); }.month-orbits { position: absolute; width: 115%; max-width: 560px; height: 100%; }.orbit-turn { transform-origin: 260px 220px; animation: slow-orbit 70s linear infinite; }
-.month-ticket { position: relative; width: 225px; background: var(--cafe-surface); border: 1px solid var(--cafe-line); border-radius: 10px; text-align: center; box-shadow: 0 25px 70px #00000016; transform: rotate(-6deg); padding: 25px 0 0; animation: ticket-arrive 900ms ease both; }
-.ticket-kicker { font-size: 9px; letter-spacing: .28em; }.month-ticket strong { display: block; font: 400 126px/.98 Georgia, serif; letter-spacing: -.065em; margin: 15px 0 12px; padding-right: 8px; }.ticket-month { font-size: 11px; letter-spacing: .08em; color: var(--cafe-muted); }.ticket-perforation { border-top: 1px dashed var(--cafe-line); margin: 22px 0 0; }.ticket-footer { display: flex; justify-content: space-between; padding: 17px 20px; font-size: 9px; color: var(--cafe-muted); }.art-note { position: absolute; bottom: 2px; font-size: 8px; letter-spacing: .25em; opacity: .6; }
+.month-art {
+  --ticket-paper: #fbf5ea;
+  --ticket-edge: #d9c9b1;
+  --ticket-ink: #785b38;
+  --ticket-muted: #7e694f;
+  position: relative;
+  isolation: isolate;
+  height: 420px;
+  display: grid;
+  place-items: center;
+  color: var(--cafe-accent);
+  background: radial-gradient(ellipse at 48% 55%, #b18d5820, transparent 66%);
+}
+.dark .month-art { --ticket-paper: #2b251e; --ticket-edge: #554535; --ticket-ink: #e2c69b; --ticket-muted: #b8a58a; }
+.month-art::before {
+  content: '';
+  position: absolute;
+  width: 244px;
+  height: 278px;
+  border: 1px solid var(--ticket-edge);
+  border-radius: 6px;
+  background: var(--ticket-paper);
+  opacity: .55;
+  transform: translate(10px, 6px) rotate(5deg);
+}
+.month-setting { position: absolute; width: 100%; height: 100%; pointer-events: none; }
+.coffee-outline { opacity: .3; }
+.coffee-steam { opacity: .3; animation: coffee-warmth 6s ease-in-out infinite; }
+.month-ticket {
+  position: relative;
+  width: 244px;
+  color: var(--ticket-ink);
+  background: linear-gradient(135deg, #ffffff06, transparent 60%), var(--ticket-paper);
+  border: 1px solid var(--ticket-edge);
+  border-radius: 6px;
+  text-align: center;
+  box-shadow: 0 4px 8px #24180f0a, 0 22px 40px -14px #24180f35;
+  transform: rotate(-4deg);
+  padding-top: 28px;
+  animation: ticket-arrive 900ms ease both;
+}
+.dark .month-ticket { box-shadow: 0 4px 10px #00000024, 0 24px 42px -12px #00000070; }
+.ticket-kicker { font-size: 9px; letter-spacing: .28em; }
+.ticket-date { display: flex; justify-content: center; align-items: baseline; gap: 12px; margin: 22px 0 18px; white-space: nowrap; }
+.ticket-date strong { font: 400 100px/1 Georgia, serif; letter-spacing: -.05em; }
+.ticket-month-abbr { font: italic 400 26px/1.15 Georgia, serif; letter-spacing: -.015em; }
+.ticket-month { font-size: 11px; letter-spacing: .08em; color: var(--ticket-muted); }
+.ticket-perforation { border-top: 1px dashed var(--ticket-edge); margin-top: 27px; }
+.ticket-footer { display: flex; justify-content: space-between; padding: 17px 20px; font-size: 9px; color: var(--ticket-muted); }
+.art-note { position: absolute; bottom: 2px; font-size: 8px; letter-spacing: .25em; opacity: .6; }
 .timeline { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 24px; border-block: 1px solid var(--cafe-line); padding: 30px 0 20px; }.timeline-step { display: flex; gap: 16px; }.step-index { font: italic 20px Georgia, serif; color: var(--cafe-accent); }.step-label { font-size: 12px; color: var(--cafe-muted); }.step-date { font-size: 16px; margin: 10px 0 8px; }.step-copy { font-size: 11px; color: var(--cafe-muted); }.timezone { color: var(--cafe-muted); font-size: 10px; line-height: 1.7; }.timeline .timezone { grid-column: 1/-1; margin-top: 25px; }
 .plans-section, .value-section { padding: 78px 0; }.section-heading { display: flex; align-items: end; justify-content: space-between; gap: 24px; margin-bottom: 32px; }h2 { font: 400 28px/1.5 Georgia, 'Noto Serif CJK SC', 'Songti SC', serif; margin-top: 12px; letter-spacing: -.02em; }.section-heading>p { max-width: 330px; color: var(--cafe-muted); font-size: 12px; line-height: 1.8; }
 .plan-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(245px, 1fr)); gap: 18px; }.presale-plan { padding: 27px; border: 1px solid var(--cafe-line); border-radius: 12px; background: var(--cafe-surface); display: flex; flex-direction: column; min-width: 0; transition: border-color .3s, transform .3s; }.presale-plan:hover { border-color: var(--cafe-accent); transform: translateY(-4px); }.plan-top { display: flex; align-items: center; justify-content: space-between; min-height: 24px; gap: 8px; }.plan-index { color: var(--cafe-muted); font-size: 9px; letter-spacing: .08em; }.plan-badge { color: var(--cafe-accent); font-size: 10px; padding: 3px 8px; border: 1px solid var(--cafe-line); border-radius: 20px; }.presale-plan h3 { font: 400 26px Georgia, serif; margin-top: 22px; }.plan-description { font-size: 12px; color: var(--cafe-muted); line-height: 1.8; margin-top: 12px; min-height: 44px; }.plan-price { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px; padding: 25px 0; }.plan-price strong { font: 400 40px Georgia, serif; }.plan-price>span { font-size: 10px; color: var(--cafe-muted); }.old-price { text-decoration: line-through; }.plan-quotas { border-block: 1px solid var(--cafe-line); padding: 10px 0; }.plan-quotas div { display: flex; justify-content: space-between; gap: 12px; font-size: 12px; padding: 7px 0; }.plan-quotas dt { color: var(--cafe-muted); }.plan-features { flex: 1; margin-block: 22px 30px; }.plan-features li { display: flex; align-items: start; gap: 9px; font-size: 12px; line-height: 1.8; margin-bottom: 9px; }.plan-features svg { flex-shrink: 0; margin-top: 3px; color: var(--cafe-accent); }.plan-buy { width: 100%; }.price-note { margin-top: 20px; color: var(--cafe-muted); font-size: 10px; }.empty-state { border: 1px dashed var(--cafe-line); border-radius: 12px; padding: 55px 28px; text-align: center; }.empty-state h3 { font: 400 23px Georgia, serif; margin-top: 12px; }.empty-state>p:not(.eyebrow) { color: var(--cafe-muted); font-size: 13px; margin-top: 14px; }.empty-state .quiet-link { display: inline-block; margin-top: 22px; }
 .value-section { border-top: 1px solid var(--cafe-line); }.policy-section { display: grid; grid-template-columns: 1fr 1.4fr; gap: 60px; padding: 60px 0 80px; border-top: 1px solid var(--cafe-line); }.policy-section .timezone { margin-top: 18px; }.policy-details>div:not(.period-note) { display: flex; align-items: start; gap: 25px; padding-block: 20px; border-bottom: 1px solid var(--cafe-line); }.policy-details>div:first-child { padding-top: 0; }.policy-figure { width: 85px; flex-shrink: 0; font: 400 30px Georgia, serif; color: var(--cafe-accent); }.policy-figure>span { font-size: 15px; }.policy-details h3 { font-size: 13px; margin-bottom: 8px; }.policy-details p,.period-note { color: var(--cafe-muted); font-size: 12px; line-height: 1.8; }.period-note { padding-top: 20px; }
 .balance-callout { display: flex; justify-content: space-between; align-items: center; gap: 25px; padding: 35px; border-radius: 12px; border: 1px solid var(--cafe-line); background: var(--cafe-surface); margin-bottom: 60px; }.balance-callout h2 { font-size: 23px; }.balance-callout p:last-child { font-size: 12px; line-height: 1.8; max-width: 530px; color: var(--cafe-muted); margin-top: 12px; }.balance-callout .btn { flex-shrink: 0; }footer { padding: 30px 0; border-top: 1px solid var(--cafe-line); display: flex; justify-content: space-between; gap: 20px; color: var(--cafe-muted); font-size: 11px; }
-@keyframes slow-orbit { to { transform: rotate(360deg); } }@keyframes ticket-arrive { from { opacity: 0; transform: translateY(15px) rotate(-3deg); } }
-@media(max-width: 900px) { main, footer { width: calc(100% - 48px); }.presale-hero { gap: 0; min-height: 480px; }.month-art { height: 340px; }.month-ticket { width: 185px; }.month-ticket strong { font-size: 104px; }.step-date { font-size: 13px; }.policy-section { gap: 30px; }.balance-callout { flex-direction: column; align-items: start; } }
-@media(max-width: 640px) { main, footer { width: calc(100% - 36px); }.presale-hero { grid-template-columns: 1fr; padding: 45px 0 28px; }.month-art { height: 310px; margin-top: 24px; overflow: hidden; }.month-ticket { width: 175px; }.month-ticket strong { font-size: 88px; }.timeline { grid-template-columns: 1fr; gap: 24px; }.timeline .timezone { margin-top: 0; }.step-date { font-size: 15px; }.section-heading { flex-direction: column; align-items: start; gap: 14px; }h2 { font-size: 24px; }.plans-section,.value-section { padding: 45px 0; }.policy-section { grid-template-columns: 1fr; padding-block: 40px; }.balance-callout { padding: 24px; }.hero-actions { gap: 18px; }footer { flex-wrap: wrap; } }
-@media(prefers-reduced-motion: reduce) { .orbit-turn,.month-ticket { animation: none; }.presale-plan { transition: none; } }
+@keyframes coffee-warmth { 0%, 100% { opacity: .2; transform: translateY(2px); } 50% { opacity: .4; transform: translateY(-5px); } }
+@keyframes ticket-arrive { from { opacity: 0; transform: translateY(15px) rotate(-1deg); } }
+@media(max-width: 900px) { main, footer { width: calc(100% - 48px); }.presale-hero { gap: 0; min-height: 480px; }.month-art { height: 340px; }.month-ticket, .month-art::before { width: 210px; }.month-art::before { height: 257px; }.ticket-date strong { font-size: 84px; }.ticket-month-abbr { font-size: 24px; }.step-date { font-size: 13px; }.policy-section { gap: 30px; }.balance-callout { flex-direction: column; align-items: start; } }
+@media(max-width: 640px) { main, footer { width: calc(100% - 36px); }.presale-hero { grid-template-columns: 1fr; padding: 45px 0 28px; }.month-art { height: 340px; margin-top: 24px; overflow: hidden; }.timeline { grid-template-columns: 1fr; gap: 24px; }.timeline .timezone { margin-top: 0; }.step-date { font-size: 15px; }.section-heading { flex-direction: column; align-items: start; gap: 14px; }h2 { font-size: 24px; }.plans-section,.value-section { padding: 45px 0; }.policy-section { grid-template-columns: 1fr; padding-block: 40px; }.balance-callout { padding: 24px; }.hero-actions { gap: 18px; }footer { flex-wrap: wrap; } }
+@media(prefers-reduced-motion: reduce) { .coffee-steam,.month-ticket { animation: none; }.presale-plan { transition: none; } }
 </style>

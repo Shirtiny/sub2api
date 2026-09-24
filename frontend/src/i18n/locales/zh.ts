@@ -54,7 +54,7 @@ export default {
         static: '静态展示'
       },
       possibilitiesEyebrow: 'Made for your everyday',
-      possibilitiesTitle: '无论你何时需要，它都在这里。',
+      possibilitiesTitle: '无论何时需要，它都在这里。',
       possibilitiesDescription: '从第一个想法到每一天的工作，让 AI 成为顺手的工具，而不是另一件需要折腾的事。',
       features: {
         connect: {

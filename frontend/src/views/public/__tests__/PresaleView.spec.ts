@@ -22,6 +22,36 @@ function render(locale = 'zh') {
 }
 beforeEach(() => { vi.clearAllMocks(); mocks.auth.isAuthenticated = false; mocks.route.query = {}; mocks.catalog.mockResolvedValue({ data: fixture() }) })
 describe('presale landing', () => {
+  it.each([
+    ['01', 'jan'], ['02', 'feb'], ['03', 'mar'], ['04', 'apr'],
+    ['05', 'may'], ['06', 'jun'], ['07', 'jul'], ['08', 'aug'],
+    ['09', 'sep'], ['10', 'oct'], ['11', 'nov'], ['12', 'dec'],
+  ])('labels month %s with its lowercase English abbreviation %s', async (month, abbreviation) => {
+    const data = fixture()
+    data.period.month = `2027-${month}`
+    data.period.starts_at = `2027-${month}-01T00:00:00+08:00`
+    data.period.expires_at = new Date(Date.UTC(2027, Number(month), 1, -8)).toISOString()
+    mocks.catalog.mockResolvedValue({ data })
+    const w = render(); await flushPromises()
+    expect(w.get('.ticket-date strong').text()).toBe(month)
+    expect(w.get('.ticket-month-abbr').text()).toBe(abbreviation)
+    expect(w.get('.ticket-kicker').text()).toBe('NEXT / 2027')
+    w.unmount()
+  })
+  it('keeps the English month mark in either locale across a UTC year boundary', async () => {
+    const data = fixture()
+    data.period.month = '2027-01'
+    data.period.starts_at = '2026-12-31T16:00:00Z'
+    data.period.expires_at = '2027-01-31T16:00:00Z'
+    mocks.catalog.mockResolvedValue({ data })
+    for (const locale of ['zh', 'en']) {
+      const w = render(locale); await flushPromises()
+      expect(w.get('.ticket-date strong').text()).toBe('01')
+      expect(w.get('.ticket-month-abbr').text()).toBe('jan')
+      expect(w.get('.ticket-month').text()).toBe(locale === 'zh' ? '2027年1月' : 'January 2027')
+      w.unmount()
+    }
+  })
   it('reuses the homepage header, branding, documentation and theme controls', async () => {
     localStorage.setItem('theme', 'dark')
     const w = render(); await flushPromises()
@@ -62,6 +92,7 @@ describe('presale landing', () => {
   it('shows a recoverable error rather than a fake open sale', async () => {
     mocks.catalog.mockRejectedValue(new Error('offline'))
     const w = render(); await flushPromises(); expect(w.find('[role="alert"]').exists()).toBe(true); expect(w.find('.plan-buy').exists()).toBe(false)
+    expect(w.get('.ticket-month-abbr').text()).toBe('—')
     mocks.catalog.mockResolvedValue({ data: fixture() }); await w.get('[role="alert"] button').trigger('click'); await flushPromises(); expect(w.find('.plan-buy').exists()).toBe(true); w.unmount()
   })
 })
