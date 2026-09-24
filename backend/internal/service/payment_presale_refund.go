@@ -30,10 +30,10 @@ type PresaleRefundQuote struct {
 }
 
 func PresaleRefundQuoteForOrder(o *dbent.PaymentOrder, now time.Time) (*PresaleRefundQuote, error) {
-	return presaleRefundQuoteForTerm(o, now, time.Time{})
+	return presaleRefundQuoteForTerm(o, now, time.Time{}, false)
 }
 
-func presaleRefundQuoteForTerm(o *dbent.PaymentOrder, now, effectiveEnd time.Time) (*PresaleRefundQuote, error) {
+func presaleRefundQuoteForTerm(o *dbent.PaymentOrder, now, effectiveEnd time.Time, activationFailed bool) (*PresaleRefundQuote, error) {
 	if o == nil || o.PresaleStartsAt == nil || o.PresaleExpiresAt == nil {
 		return nil, infraerrors.BadRequest("NOT_PRESALE", "not a presale order")
 	}
@@ -59,10 +59,12 @@ func presaleRefundQuoteForTerm(o *dbent.PaymentOrder, now, effectiveEnd time.Tim
 	switch {
 	// A paid order never activated because of a service failure remains
 	// refundable without a cancellation fee, even after the advertised term.
-	case o.PresaleActivatedAt == nil && (!now.Before(start) || o.FailedAt != nil || o.Status == OrderStatusFailed):
+	case o.PresaleActivatedAt == nil && (activationFailed || !now.Before(end) || o.FailedAt != nil || o.Status == OrderStatusFailed):
 		q.Policy = "unfulfilled"
 	case now.Before(start.Add(-72 * time.Hour)):
-	case now.Before(start):
+	case now.Before(start) || o.PresaleActivatedAt == nil:
+		// Normal worker delay does not waive the cancellation fee. With no
+		// activated service yet, do not additionally charge used days either.
 		ratio, q.FeePercent, q.Policy = .8, 20, "preparation"
 	case !now.Before(end.Add(-7 * 24 * time.Hour)):
 		return nil, infraerrors.BadRequest("PRESALE_REFUND_LAST_WEEK", "daily refunds are unavailable during the final seven days")
@@ -112,12 +114,18 @@ func (s *PaymentService) GetPresaleRefundQuote(ctx context.Context, o *dbent.Pay
 			return nil, fmt.Errorf("decode accepted presale refund quote: %w", err)
 		}
 		if accepted.Quote != nil {
+			// Never reprice an accepted cancellation using the new delay policy.
 			return accepted.Quote, nil
 		}
 		// Legacy requests predate the daily refund fee and full quote snapshots.
 		// Keep their audited amounts, never reprice an already accepted refund.
 		if accepted.Amount == nil || accepted.GatewayAmount == nil {
 			return nil, fmt.Errorf("missing accepted presale refund amounts")
+		}
+		legacyUnfulfilled := o.PresaleActivatedAt == nil && o.PresaleStartsAt != nil && !o.RefundRequestedAt.Before(*o.PresaleStartsAt)
+		base, err = presaleRefundQuoteForTerm(o, *o.RefundRequestedAt, time.Time{}, legacyUnfulfilled)
+		if err != nil {
+			return nil, err
 		}
 		base.RefundAmount, base.GatewayAmount = *accepted.Amount, *accepted.GatewayAmount
 		if base.Policy == "unused_days" {
@@ -126,13 +134,22 @@ func (s *PaymentService) GetPresaleRefundQuote(ctx context.Context, o *dbent.Pay
 		return base, nil
 	}
 	if o.PresaleActivatedAt == nil {
+		if !now.Before(*o.PresaleStartsAt) && base.Policy != "unfulfilled" {
+			activationFailed, err := client.PaymentAuditLog.Query().Where(paymentauditlog.OrderIDEQ(strconv.FormatInt(o.ID, 10)), paymentauditlog.ActionEQ("PRESALE_ACTIVATION_FAILED")).Exist(ctx)
+			if err != nil {
+				return nil, fmt.Errorf("load presale activation outcome: %w", err)
+			}
+			if activationFailed {
+				return presaleRefundQuoteForTerm(o, now, time.Time{}, true)
+			}
+		}
 		return base, nil
 	}
 	sub, err := presaleRefundSubscription(ctx, client, o)
 	if err != nil {
 		return nil, err
 	}
-	return presaleRefundQuoteForTerm(o, now, sub.ExpiresAt)
+	return presaleRefundQuoteForTerm(o, now, sub.ExpiresAt, false)
 }
 
 // Lock the subscription when called inside the refund transaction. Early-reset

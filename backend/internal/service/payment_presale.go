@@ -121,19 +121,32 @@ func (s *PaymentService) presaleQuoteForPlan(ctx context.Context, userID int64, 
 }
 
 func (s *PaymentService) checkPresaleSlot(ctx context.Context, userID, groupID int64, start time.Time, excludeOrderID int64) error {
+	// Creation is serialized by the payment user lock. A later attempt can only
+	// be created after the previous one released its slot. Keep that succession
+	// even if an old payment subsequently arrives: its PAID/FAILED/refund state
+	// must neither block the replacement nor let it reclaim a retired attempt.
 	order, err := s.entClient.PaymentOrder.Query().Where(
-		paymentorder.UserIDEQ(userID), paymentorder.SubscriptionSourceGroupIDEQ(groupID), paymentorder.PresaleStartsAtEQ(start), paymentorder.IDNEQ(excludeOrderID),
-		paymentorder.Or(
-			paymentorder.StatusIn(OrderStatusPaid, OrderStatusRecharging, OrderStatusCompleted, OrderStatusRefundRequested, OrderStatusRefunding, OrderStatusRefundFailed),
-			paymentorder.And(paymentorder.StatusEQ(OrderStatusPending), paymentorder.ExpiresAtGT(time.Now())),
-			paymentorder.And(paymentorder.StatusEQ(OrderStatusFailed), paymentorder.PaidAtNotNil()),
-		),
-	).Select(paymentorder.FieldID, paymentorder.FieldPlanID, paymentorder.FieldStatus).Order(dbent.Desc(paymentorder.FieldID)).First(ctx)
+		paymentorder.UserIDEQ(userID), paymentorder.SubscriptionSourceGroupIDEQ(groupID), paymentorder.PresaleStartsAtEQ(start),
+	).Select(paymentorder.FieldID, paymentorder.FieldPlanID, paymentorder.FieldStatus, paymentorder.FieldPaidAt, paymentorder.FieldExpiresAt).Order(dbent.Desc(paymentorder.FieldID)).First(ctx)
 	if dbent.IsNotFound(err) {
 		return nil
 	}
 	if err != nil {
 		return fmt.Errorf("check presale slot: %w", err)
+	}
+	if excludeOrderID > 0 {
+		if order.ID == excludeOrderID {
+			return nil
+		}
+		// Fulfillment of an older attempt stays rejected even if its replacement
+		// has since been cancelled or refunded. The old payment needs a refund.
+	} else {
+		occupies := psSliceContains([]string{OrderStatusPaid, OrderStatusRecharging, OrderStatusCompleted, OrderStatusRefundRequested, OrderStatusRefunding, OrderStatusRefundFailed}, order.Status) ||
+			(order.Status == OrderStatusPending && order.ExpiresAt.After(time.Now())) ||
+			(order.Status == OrderStatusFailed && order.PaidAt != nil)
+		if !occupies {
+			return nil
+		}
 	}
 	// Only expose identifiers/status of this user's matching order. This lets
 	// the landing distinguish a new purchase from resuming that exact payment.

@@ -507,7 +507,8 @@ func (s *PaymentService) finalizeSuccessfulRefund(ctx context.Context, p *Refund
 	defer func() { _ = tx.Rollback() }()
 	txCtx := dbent.NewTxContext(ctx, tx)
 	hasBonusSnapshot := p.Order.OrderType == payment.OrderTypeSubscription && p.Order.SubscriptionBonusActivityID != nil
-	if hasBonusSnapshot {
+	isPresale := p.Order.PresaleStartsAt != nil
+	if hasBonusSnapshot || isPresale {
 		if err := lockPaymentUserForUpdate(txCtx, tx, p.Order.UserID); err != nil {
 			return false, err
 		}
@@ -525,6 +526,11 @@ func (s *PaymentService) finalizeSuccessfulRefund(ctx context.Context, p *Refund
 	}
 	if updated == 0 {
 		return false, infraerrors.Conflict("CONFLICT", "order status changed while marking refund")
+	}
+	if isPresale {
+		if err := s.refundPresaleMembershipTx(txCtx, tx, p); err != nil {
+			return false, err
+		}
 	}
 	releasedBonus := false
 	if hasBonusSnapshot {
@@ -546,6 +552,9 @@ func (s *PaymentService) finalizeSuccessfulRefund(ctx context.Context, p *Refund
 	}
 	if err := tx.Commit(); err != nil {
 		return false, fmt.Errorf("commit successful refund: %w", err)
+	}
+	if isPresale && s.authCacheInvalidator != nil {
+		s.authCacheInvalidator.InvalidateAuthCacheByUserID(ctx, p.Order.UserID)
 	}
 	return releasedBonus, nil
 }

@@ -90,9 +90,15 @@ grants remain snapshotted; new presales carry no fixed reset-card bonus.
 
 There is at most one live reservation per user/source group/calendar month. The
 payment user row lock protects creation and fulfillment; pending orders also occupy
-the slot. A cancelled/expired order paid after another purchase is recorded as a
-paid fulfillment failure, not a second subscription. Reconcile/refund it through
-admin orders. Do not erase its payment facts.
+the slot. The newest order is the reservation attempt for that slot: creation can
+only replace an attempt after it releases its reservation. Older attempts remain
+retired even if their payment callbacks subsequently change their payment status.
+A cancelled/expired order paid after a replacement is recorded as a paid
+fulfillment failure, not a second subscription; it must not block the replacement
+or reclaim the slot after that replacement is cancelled/refunded. Reconcile/refund
+it through admin orders. Do not erase its payment facts. Existing mutually failed
+paid attempts can be recovered by retrying the newest order and refunding the old
+one; no historical data rewrite is needed.
 
 Existing subscriptions are explicitly displayed as renewal reservations. If an
 existing term already extends past the new month's start, purchase is rejected
@@ -147,7 +153,11 @@ Disabled/deleted accounts, unavailable groups, later manual extensions causing a
 overlap, and entirely missed terms are **not** silently activated. They remain
 visible as unactivated paid records with error logs; reconcile or refund through
 admin orders. Failed items do not prevent later records in the same sweep from
-being examined. No reverse migration, account enabling or database cleanup runs.
+being examined. An actual worker failure is recorded as
+`PRESALE_ACTIVATION_FAILED` in the existing audit log, once per order rather than
+on every retry. A successful later activation makes that old failure irrelevant
+to new refund quotes. No reverse migration, account enabling or database cleanup
+runs.
 
 ## Refund policy and safety
 
@@ -166,7 +176,11 @@ original order amount; only `gateway_amount` determines the actual money returne
   days, including the exact seven-day boundary. Supported early resets shorten the
   remaining term and its final-week cutoff, not the original purchased-day divisor.
 - A paid term that was never activated because fulfillment failed returns the
-  refundable payment base without a cancellation fee.
+  refundable payment base without a cancellation fee. This requires a paid
+  fulfillment failure, a recorded activation failure, or an entirely missed term.
+  Merely reaching the start while the normal activation worker is pending does
+  not prove failure: the 20% cancellation fee still applies, without deducting
+  used days for service not yet activated.
 
 A user request atomically freezes its timestamp and full quote in the existing
 `PRESALE_REFUND_REQUESTED` audit event, changes the order to
@@ -193,6 +207,18 @@ cancelled row's dates.
 Provider settlement timing and existing pending-response behavior remain unchanged.
 A 20% fee refund can be `PARTIALLY_REFUNDED` financially while the subscription is
 fully cancelled. It cannot activate again or receive another automatic refund.
+
+Successful presale refunds also reverse earned membership points in the same
+user-locked transaction as the terminal refund status, with a
+`PRESALE_MEMBERSHIP_REFUNDED` audit record and post-commit auth-cache invalidation.
+The deduction is the actual gateway refund, capped at the order's credited points
+and the user's remaining nonnegative points. Retained fees/used service retain
+their points; nominal plan or coupon values do not inflate the deduction.
+`PRESALE_RESERVED` snapshots the grant; older records fall back to the paid amount
+that was credited atomically with that audit. Paid-but-unreserved failures deduct
+nothing. A request or failed gateway attempt does not remove points, and retries
+cannot deduct twice. No historical completed refunds or already-spent benefits
+are automatically rewritten. Affiliate subscription redemption is unchanged.
 
 ## Migration, testing and release
 

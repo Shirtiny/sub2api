@@ -1,0 +1,1 @@
+{"name":"presale-safety-fixes","type":"backend","status":"completed","created_at":"2026-09-24","production":"unchanged","scope":[1,2,4],"excluded":[3],"integration_runtime":"blocked_by_unavailable_docker"}

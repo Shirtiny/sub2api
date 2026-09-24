@@ -23,6 +23,7 @@ export default {
     ORDER_CREATED: 'Order created', PAYMENT_SUCCESS: 'Payment succeeded', PAYMENT_RECEIVED: 'Payment notification received',
     RECHARGE_SUCCESS: 'Balance credited', SUBSCRIPTION_SUCCESS: 'Subscription activated', PRESALE_RESERVED: 'Presale reserved',
     PRESALE_ACTIVATED: 'Presale activated', PRESALE_REFUND_REQUESTED: 'Presale refund requested',
+    PRESALE_ACTIVATION_FAILED: 'Presale activation failed', PRESALE_MEMBERSHIP_REFUNDED: 'Membership points reversed for refund',
     REFUND_REQUESTED: 'Refund requested', REFUND_SUCCESS: 'Refund completed', REFUND_FAILED: 'Refund failed',
     ORDER_CANCELLED: 'Order cancelled', ORDER_EXPIRED: 'Order expired', ORDER_PAID: 'Payment confirmed', ORDER_RECOVERED: 'Order recovered',
     DEV_PAYMENT_AUTO_SUCCESS: 'Simulated test payment', DEV_PAYMENT_REFUND_SUCCESS: 'Simulated test refund',

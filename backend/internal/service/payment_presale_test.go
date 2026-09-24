@@ -290,7 +290,8 @@ func TestPresaleRefundPolicyBoundaries(t *testing.T) {
 		{"partial used day", start.Add(time.Hour), true, 77.42, "unused_days", ""},
 		{"just before last week", end.Add(-7*24*time.Hour - time.Second), true, 18.06, "unused_days", ""},
 		{"last week", end.Add(-7 * 24 * time.Hour), true, 0, "", "PRESALE_REFUND_LAST_WEEK"},
-		{"failed activation", start, false, 100, "unfulfilled", ""},
+		{"normal activation delay", start, false, 80, "preparation", ""},
+		{"normal delayed sweep", start.Add(time.Minute), false, 80, "preparation", ""},
 		{"missed whole period", end.Add(time.Hour), false, 100, "unfulfilled", ""},
 	} {
 		t.Run(tc.name, func(t *testing.T) {

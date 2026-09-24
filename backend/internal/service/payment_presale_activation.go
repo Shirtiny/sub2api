@@ -48,7 +48,7 @@ func (s *PaymentService) completePresale(ctx context.Context, o *dbent.PaymentOr
 		if _, err := tx.User.UpdateOneID(o.UserID).AddTotalRecharged(o.PayAmount).Save(txCtx); err != nil {
 			return err
 		}
-		if err := s.writeAuditLogStrict(txCtx, o.ID, "PRESALE_RESERVED", "system", map[string]any{"starts_at": o.PresaleStartsAt, "expires_at": o.PresaleExpiresAt, "renewal": o.PresaleRenewal}); err != nil {
+		if err := s.writeAuditLogStrict(txCtx, o.ID, "PRESALE_RESERVED", "system", map[string]any{"starts_at": o.PresaleStartsAt, "expires_at": o.PresaleExpiresAt, "renewal": o.PresaleRenewal, "membership_points": o.PayAmount}); err != nil {
 			return err
 		}
 	}
@@ -79,6 +79,11 @@ func (s *PaymentService) ActivateDuePresales(ctx context.Context, now time.Time)
 			activated, err := s.activatePresale(ctx, o.ID, now)
 			if err != nil {
 				slog.Error("presale activation failed", "order_id", o.ID, "error", err)
+				// A null activation marker alone also describes normal scheduler
+				// delay. Record actual worker failure as evidence for refund review.
+				if !s.hasAuditLog(ctx, o.ID, "PRESALE_ACTIVATION_FAILED") {
+					s.writeAuditLog(ctx, o.ID, "PRESALE_ACTIVATION_FAILED", "system", map[string]any{"at": now, "reason": err.Error()})
+				}
 				continue
 			}
 			if activated {

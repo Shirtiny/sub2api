@@ -98,6 +98,15 @@ Key conventions observed in the codebase:
 - Serialize user/group/month reservation checks under the payment user lock. Lock
   user, then order, then subscription when activation/refund can race; use the
   activation marker and transactional audit record for retry safety.
+- A later presale order retires the earlier attempt for the same user/source
+  group/month. Determine the newest attempt before interpreting payment status;
+  late callbacks must not make retired paid failures block or reclaim that slot.
+- Finalize presale membership refund deductions and their audit with the terminal
+  refund state under the user lock. Only reverse points actually credited by that
+  order, bounded by the actual money returned and the remaining points balance.
+- Null activation timestamps are not proof of service failure. Use recorded
+  worker failure (or an entirely missed term) before waiving cancellation fees;
+  preserve amounts already accepted in the refund audit.
 - Freeze the reviewed refund amount and request timestamp before cancelling only
   that order's exact term. Never subtract pending presale days from an unrelated
   currently active subscription; never restore a cancelled presale to COMPLETED
