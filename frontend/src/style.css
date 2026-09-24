@@ -81,6 +81,20 @@
     --color-primary-900: 74 58 44; /* #4A3A2C */
     --color-primary-950: 250 247 244; /* #FAF7F4 - readable text on dark primary surfaces */
 
+    /* Foregrounds only: text-primary/text-accent (including currentColor icons).
+       Keep fills, borders, rings and button gradients on the original palette. */
+    --color-primary-text-50: 250 247 244; /* #FAF7F4 */
+    --color-primary-text-100: 245 232 216; /* #F5E8D8 */
+    --color-primary-text-200: 240 215 190; /* #F0D7BE */
+    --color-primary-text-300: 232 197 161; /* #E8C5A1 */
+    --color-primary-text-400: 225 184 143; /* #E1B88F */
+    --color-primary-text-500: 216 173 131; /* #D8AD83 */
+    --color-primary-text-600: 208 164 121; /* #D0A479 */
+    --color-primary-text-700: 205 161 118; /* #CDA176 */
+    --color-primary-text-800: 203 159 116; /* #CB9F74 */
+    --color-primary-text-900: 201 157 115; /* #C99D73 */
+    --color-primary-text-950: 250 247 244; /* #FAF7F4 */
+
     /* Existing dark-* utilities keep their old semantic direction: 950 is darkest, 300/400 are text. */
     --color-dark-50: 229 229 229; /* #E5E5E5 */
     --color-dark-100: 204 204 204; /* #CCCCCC */

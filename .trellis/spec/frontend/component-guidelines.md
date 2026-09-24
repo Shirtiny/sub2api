@@ -41,6 +41,10 @@ Observed component style:
 - Tailwind utility classes are the dominant styling approach in components and views.
 - Shared primitives expose variants through props or computed class maps instead of duplicating markup. Example: width presets in `frontend/src/components/common/BaseDialog.vue`.
 - Dark-mode classes are applied inline alongside light styles rather than in a separate styling system.
+- Brand text utilities (`text-primary-*` / `text-accent-*`) use a separate warm,
+  readable foreground palette in dark mode. Keep this Tailwind `textColor` mapping
+  separate from fill/border/gradient tokens; changing shared brand fills to fix
+  text contrast can break button and badge backgrounds.
 - Reuse base components like dialogs instead of re-implementing modal shells.
 
 ---
@@ -59,6 +63,9 @@ Observed component style:
 - Do not duplicate generic modal markup when `BaseDialog` or `ConfirmDialog` already fits.
 - Do not bury API calls inside low-level reusable UI primitives.
 - Do not skip accessibility wiring on overlays, dialogs, and interactive controls.
+- Home and presale landing pages use `components/home/HomeHeader.vue` for their
+  public header. Keep branding, right-aligned navigation, controls and glass-state
+  styles there; pages supply their scroll/auth/settings state instead of cloning it.
 
 ---
 

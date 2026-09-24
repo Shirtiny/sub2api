@@ -9,6 +9,15 @@ const componentSource = readFileSync(componentPath, 'utf8')
 const stylePath = resolve(dirname(fileURLToPath(import.meta.url)), '../../../style.css')
 const styleSource = readFileSync(stylePath, 'utf8')
 
+describe('AppSidebar navigation', () => {
+  it('keeps account billing links without a dedicated presale entry', () => {
+    expect(componentSource).not.toMatch(/path:\s*['"]\/presale['"]/)
+    for (const path of ['/subscriptions', '/purchase', '/orders']) {
+      expect(componentSource).toContain(`path: '${path}'`)
+    }
+  })
+})
+
 describe('AppSidebar custom SVG styles', () => {
   it('does not override uploaded SVG fill or stroke colors', () => {
     expect(componentSource).toContain('.sidebar-svg-icon {')

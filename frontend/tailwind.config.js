@@ -1,11 +1,23 @@
 /** @type {import('tailwindcss').Config} */
 const withOpacity = (variable) => `rgb(var(${variable}) / <alpha-value>)`
+// Text needs a brighter dark-mode palette than brand fills. Fall back to the
+// existing palette in light mode; opacity modifiers and all variants still work.
+const brandTextColors = Object.fromEntries(
+  [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950].map((shade) => [
+    shade,
+    withOpacity(`--color-primary-text-${shade}, var(--color-primary-${shade})`)
+  ])
+)
 
 export default {
   content: ['./index.html', './src/**/*.{vue,js,ts,jsx,tsx}'],
   darkMode: 'class',
   theme: {
     extend: {
+      textColor: {
+        primary: brandTextColors,
+        accent: brandTextColors
+      },
       colors: {
         // Semantic tokens backed by CSS variables in src/style.css.
         surface: {

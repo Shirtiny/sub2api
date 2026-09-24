@@ -1,9 +1,15 @@
 <template>
   <div class="presale-page">
-    <header class="presale-header">
-      <RouterLink to="/" class="wordmark">{{ app.siteName }}</RouterLink>
-      <nav :aria-label="t('home.landing.navigation')"><LocaleSwitcher /><RouterLink :to="auth.isAuthenticated ? '/subscriptions' : '/login'">{{ t(auth.isAuthenticated ? 'presale.viewSubscriptions' : 'home.login') }} <span aria-hidden="true">↗</span></RouterLink></nav>
-    </header>
+    <HomeHeader
+      :compact="compactHeader"
+      :site-name="siteName"
+      :doc-url="docUrl"
+      :entry-path="entryPath"
+      :is-authenticated="auth.isAuthenticated"
+      :is-dark="isDark"
+      :presale-open="catalog?.enabled ?? false"
+      @toggle-theme="toggleTheme"
+    />
     <main>
       <section class="presale-hero">
         <div class="hero-copy">
@@ -58,19 +64,35 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
+import { useWindowScroll } from '@vueuse/core'
 import { useAppStore } from '@/stores/app'
 import { useAuthStore } from '@/stores/auth'
 import { presaleAPI, type PresaleCatalog } from '@/api/presale'
 import type { SubscriptionPlan } from '@/types/payment'
 import { formatPresaleDate } from '@/utils/presale'
 import Icon from '@/components/icons/Icon.vue'
-import LocaleSwitcher from '@/components/common/LocaleSwitcher.vue'
+import HomeHeader from '@/components/home/HomeHeader.vue'
+import { initializeTheme } from '@/utils/theme'
+import { sanitizeUrl } from '@/utils/url'
 import BaseDialog from '@/components/common/BaseDialog.vue'
 import PresaleBenefits from '@/components/presale/PresaleBenefits.vue'
 import PaymentView from '@/views/user/PaymentView.vue'
 
 const { t, locale } = useI18n()
 const app = useAppStore(), auth = useAuthStore(), route = useRoute(), router = useRouter()
+const siteName = computed(() => app.cachedPublicSettings?.site_name || app.siteName || 'Sub2API')
+const docUrl = computed(() => sanitizeUrl(app.cachedPublicSettings?.doc_url || app.docUrl || '', { allowRelative: true }))
+const entryPath = computed(() => !auth.isAuthenticated ? '/login' : auth.isAdmin ? '/admin/dashboard' : '/dashboard')
+const isDark = ref(initializeTheme())
+const compactHeader = ref(false)
+const { y: scrollY } = useWindowScroll()
+// Match the homepage's hysteresis without changing header geometry on scroll.
+watch(scrollY, y => { compactHeader.value = y > (compactHeader.value ? 8 : 64) }, { immediate: true })
+function toggleTheme() {
+  isDark.value = !isDark.value
+  document.documentElement.classList.toggle('dark', isDark.value)
+  localStorage.setItem('theme', isDark.value ? 'dark' : 'light')
+}
 const catalog = ref<PresaleCatalog | null>(null), loading = ref(true), error = ref(''), selectedPlanId = ref<number | null>(null)
 const balancePath = computed(() => auth.isAuthenticated ? '/purchase' : { path: '/login', query: { redirect: '/purchase' } })
 const date = (value?: string, monthOnly = false) => formatPresaleDate(value, locale.value, monthOnly)
@@ -106,15 +128,16 @@ async function load() {
   finally { loading.value = false }
 }
 watch(() => route.query.plan, restoreSelection)
-onMounted(load)
+onMounted(() => {
+  void load()
+  if (!app.publicSettingsLoaded) void app.fetchPublicSettings()
+})
 </script>
 <style scoped>
 .presale-page { --cafe-page: #f6f3ed; --cafe-surface: #fffdf8; --cafe-ink: #302b26; --cafe-muted: #797268; --cafe-accent: #987647; --cafe-line: #ded8cf; min-height: 100vh; color: var(--cafe-ink); background: var(--cafe-page); }
 .dark .presale-page { --cafe-page: #141513; --cafe-surface: #1b1c19; --cafe-ink: #eae5dc; --cafe-muted: #a29c90; --cafe-accent: #c6ac7c; --cafe-line: #33342f; }
-.presale-header, main, footer { width: min(1200px, calc(100% - 80px)); margin-inline: auto; }
-.presale-header { height: 100px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--cafe-line); }
-.wordmark { font: italic 30px Georgia, 'Noto Serif CJK SC', serif; letter-spacing: -.04em; }
-nav { display: flex; align-items: center; gap: 28px; font-size: 12px; color: var(--cafe-muted); } nav a span { margin-left: 8px; }
+main, footer { width: min(1200px, calc(100% - 80px)); margin-inline: auto; }
+main section[id] { scroll-margin-top: 120px; }
 .presale-hero { display: grid; grid-template-columns: 1.2fr 1fr; align-items: center; gap: 28px; min-height: 580px; padding: 65px 0 55px; }
 .eyebrow { color: var(--cafe-accent); font: italic 14px Georgia, serif; letter-spacing: .035em; }
 h1 { font: 400 clamp(32px, 3.5vw, 48px)/1.55 Georgia, 'Noto Serif CJK SC', 'Songti SC', serif; margin-top: 24px; letter-spacing: -.035em; }
@@ -130,7 +153,7 @@ h1 em { display: block; font-style: normal; color: var(--cafe-accent); }
 .value-section { border-top: 1px solid var(--cafe-line); }.policy-section { display: grid; grid-template-columns: 1fr 1.4fr; gap: 60px; padding: 60px 0 80px; border-top: 1px solid var(--cafe-line); }.policy-section .timezone { margin-top: 18px; }.policy-details>div:not(.period-note) { display: flex; align-items: start; gap: 25px; padding-block: 20px; border-bottom: 1px solid var(--cafe-line); }.policy-details>div:first-child { padding-top: 0; }.policy-figure { width: 85px; flex-shrink: 0; font: 400 30px Georgia, serif; color: var(--cafe-accent); }.policy-figure>span { font-size: 15px; }.policy-details h3 { font-size: 13px; margin-bottom: 8px; }.policy-details p,.period-note { color: var(--cafe-muted); font-size: 12px; line-height: 1.8; }.period-note { padding-top: 20px; }
 .balance-callout { display: flex; justify-content: space-between; align-items: center; gap: 25px; padding: 35px; border-radius: 12px; border: 1px solid var(--cafe-line); background: var(--cafe-surface); margin-bottom: 60px; }.balance-callout h2 { font-size: 23px; }.balance-callout p:last-child { font-size: 12px; line-height: 1.8; max-width: 530px; color: var(--cafe-muted); margin-top: 12px; }.balance-callout .btn { flex-shrink: 0; }footer { padding: 30px 0; border-top: 1px solid var(--cafe-line); display: flex; justify-content: space-between; gap: 20px; color: var(--cafe-muted); font-size: 11px; }
 @keyframes slow-orbit { to { transform: rotate(360deg); } }@keyframes ticket-arrive { from { opacity: 0; transform: translateY(15px) rotate(-3deg); } }
-@media(max-width: 900px) { .presale-header, main, footer { width: calc(100% - 48px); }.presale-hero { gap: 0; min-height: 480px; }.month-art { height: 340px; }.month-ticket { width: 185px; }.month-ticket strong { font-size: 104px; }.step-date { font-size: 13px; }.policy-section { gap: 30px; }.balance-callout { flex-direction: column; align-items: start; } }
-@media(max-width: 640px) { .presale-header, main, footer { width: calc(100% - 36px); }.presale-header { height: 78px; }.wordmark { font-size: 24px; }nav { gap: 12px; font-size: 11px; }.presale-hero { grid-template-columns: 1fr; padding: 45px 0 28px; }.month-art { height: 310px; margin-top: 24px; overflow: hidden; }.month-ticket { width: 175px; }.month-ticket strong { font-size: 88px; }.timeline { grid-template-columns: 1fr; gap: 24px; }.timeline .timezone { margin-top: 0; }.step-date { font-size: 15px; }.section-heading { flex-direction: column; align-items: start; gap: 14px; }h2 { font-size: 24px; }.plans-section,.value-section { padding: 45px 0; }.policy-section { grid-template-columns: 1fr; padding-block: 40px; }.balance-callout { padding: 24px; }.hero-actions { gap: 18px; }footer { flex-wrap: wrap; } }
+@media(max-width: 900px) { main, footer { width: calc(100% - 48px); }.presale-hero { gap: 0; min-height: 480px; }.month-art { height: 340px; }.month-ticket { width: 185px; }.month-ticket strong { font-size: 104px; }.step-date { font-size: 13px; }.policy-section { gap: 30px; }.balance-callout { flex-direction: column; align-items: start; } }
+@media(max-width: 640px) { main, footer { width: calc(100% - 36px); }.presale-hero { grid-template-columns: 1fr; padding: 45px 0 28px; }.month-art { height: 310px; margin-top: 24px; overflow: hidden; }.month-ticket { width: 175px; }.month-ticket strong { font-size: 88px; }.timeline { grid-template-columns: 1fr; gap: 24px; }.timeline .timezone { margin-top: 0; }.step-date { font-size: 15px; }.section-heading { flex-direction: column; align-items: start; gap: 14px; }h2 { font-size: 24px; }.plans-section,.value-section { padding: 45px 0; }.policy-section { grid-template-columns: 1fr; padding-block: 40px; }.balance-callout { padding: 24px; }.hero-actions { gap: 18px; }footer { flex-wrap: wrap; } }
 @media(prefers-reduced-motion: reduce) { .orbit-turn,.month-ticket { animation: none; }.presale-plan { transition: none; } }
 </style>

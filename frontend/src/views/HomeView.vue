@@ -16,42 +16,16 @@
     <template #header="{ compact }">
       <a href="#home-main" class="skip-link">{{ t('home.landing.skipToContent') }}</a>
 
-      <header class="home-header" :class="{ 'header-compact': compact }">
-        <div class="header-surface">
-          <div class="home-container header-row">
-            <HomeBrand :site-name="siteName" />
-
-            <div class="header-navigation hidden lg:grid">
-              <nav :class="{ 'navigation-hidden': compact }" :inert="compact" class="header-menu" :aria-label="t('home.landing.navigation')">
-                <RouterLink to="/presale">{{ t('presale.nav') }}</RouterLink>
-                <a v-if="docUrl" :href="docUrl" target="_blank" rel="noopener noreferrer">{{ t('home.docs') }} <Icon name="externalLink" size="xs" aria-hidden="true" /></a>
-              </nav>
-              <RouterLink v-if="presaleOpen" to="/presale" class="presale-header-banner" :class="{ 'navigation-hidden': !compact }" :inert="!compact"><span class="presale-live-dot" aria-hidden="true" />{{ t('presale.banner') }} <Icon name="arrowRight" size="sm" /></RouterLink>
-            </div>
-
-            <div class="header-actions flex shrink-0 items-center gap-1 sm:gap-3">
-              <LocaleSwitcher />
-              <button
-                type="button"
-                class="theme-toggle"
-                :aria-label="t(isDark ? 'home.switchToLight' : 'home.switchToDark')"
-                :title="t(isDark ? 'home.switchToLight' : 'home.switchToDark')"
-                @click="toggleTheme"
-              >
-                <Icon :name="isDark ? 'sun' : 'moon'" size="md" aria-hidden="true" />
-              </button>
-              <RouterLink :to="entryPath" class="header-entry">
-                {{ t(isAuthenticated ? 'home.dashboard' : 'home.login') }}
-                <Icon name="arrowRight" size="sm" class="hidden sm:block" aria-hidden="true" />
-              </RouterLink>
-            </div>
-          </div>
-          <nav class="mobile-nav home-container lg:hidden" :aria-label="t('home.landing.navigation')">
-            <template v-if="!compact"><RouterLink to="/presale">{{ t('presale.nav') }}</RouterLink><a v-if="docUrl" :href="docUrl" target="_blank" rel="noopener noreferrer">{{ t('home.docs') }}</a></template>
-            <RouterLink v-else-if="presaleOpen" to="/presale" class="presale-mobile-banner"><span class="presale-live-dot" aria-hidden="true" />{{ t('presale.banner') }} →</RouterLink>
-          </nav>
-        </div>
-      </header>
+      <HomeHeader
+        :compact="compact"
+        :site-name="siteName"
+        :doc-url="docUrl"
+        :entry-path="entryPath"
+        :is-authenticated="isAuthenticated"
+        :is-dark="isDark"
+        :presale-open="presaleOpen"
+        @toggle-theme="toggleTheme"
+      />
     </template>
     <div class="home-slide slide-welcome" data-home-slide="welcome">
       <div class="slide-content">
@@ -229,8 +203,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore, useAppStore } from '@/stores'
 import { sanitizeUrl } from '@/utils/url'
-import LocaleSwitcher from '@/components/common/LocaleSwitcher.vue'
-import HomeBrand from '@/components/home/HomeBrand.vue'
+import HomeHeader from '@/components/home/HomeHeader.vue'
 import HomeWaitlistDialog from '@/components/home/HomeWaitlistDialog.vue'
 import { initializeTheme } from '@/utils/theme'
 import HomeBillingSection from '@/components/home/HomeBillingSection.vue'
@@ -346,113 +319,7 @@ onMounted(() => {
 .cafe-home a {
   transition: color 160ms, background-color 160ms;
 }
-/* Two fixed backdrop planes dissolve; never resize/re-rasterize a moving blur edge. */
-.home-header {
-  position: sticky;
-  display: flow-root;
-  top: 0;
-  z-index: 40;
-  height: var(--slider-header-height);
-  pointer-events: none;
-}
-.header-surface {
-  position: relative;
-  isolation: isolate;
-  width: 100%;
-  pointer-events: auto;
-}
-.header-surface::before,
-.header-surface::after {
-  content: '';
-  position: absolute;
-  z-index: -1;
-  pointer-events: none;
-  transition: opacity .5s cubic-bezier(.4, 0, .2, 1);
-  will-change: opacity;
-}
-.header-surface::before {
-  inset: 0;
-  border-bottom: 1px solid var(--cafe-line);
-  background: rgba(var(--cafe-page-rgb), .96);
-}
-.header-surface::after {
-  inset: 8px max(24px, calc((100% - 1320px) / 2));
-  border: 1px solid transparent;
-  border-color: rgba(var(--cafe-page-rgb), .55);
-  border-radius: 16px;
-  background: rgba(var(--cafe-page-rgb), .64);
-  -webkit-backdrop-filter: blur(24px) saturate(1.35);
-  backdrop-filter: blur(24px) saturate(1.35);
-  box-shadow: 0 3px 10px #23180b17, 0 18px 42px -8px #23180b38, inset 0 1px 0 rgba(var(--cafe-page-rgb), .55);
-  opacity: 0;
-}
-.dark .header-surface::after {
-  box-shadow: 0 3px 12px #00000040, 0 18px 44px -8px #00000099, inset 0 1px 0 rgba(var(--cafe-page-rgb), .55);
-}
-.header-compact .header-surface::before { opacity: 0; }
-.header-compact .header-surface::after { opacity: 1; }
-
-.header-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-  align-items: center;
-  gap: 24px;
-  min-height: 88px;
-}
-.header-navigation { min-width: 240px; align-items: center; }
-.header-menu, .presale-header-banner { grid-area: 1 / 1; transition: opacity .32s ease, transform .32s ease; }
-.header-menu { display: flex; justify-content: center; align-items: center; gap: 28px; }
-.navigation-hidden { opacity: 0; pointer-events: none; transform: translateY(4px); }
-.presale-header-banner { display: inline-flex; align-items: center; justify-content: center; gap: 10px; border: 1px solid var(--cafe-line); background: color-mix(in srgb, var(--cafe-accent) 7%, transparent); border-radius: 999px; padding: 9px 15px; color: var(--cafe-accent); font-size: 12px; }
-.presale-live-dot { display: inline-block; width: 5px; height: 5px; background: currentColor; border-radius: 50%; box-shadow: 0 0 0 4px color-mix(in srgb, currentColor 10%, transparent); }
-.presale-mobile-banner { display: flex; align-items: center; gap: 10px; }
-.header-actions {
-  grid-column: -2;
-  justify-self: end;
-}
-.home-header nav {
-  font-size: 14px;
-  color: var(--cafe-muted);
-}
-.home-header nav a {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-}
-.home-header nav a:hover, .home-footer a:hover {
-  color: var(--cafe-accent);
-}
-.header-entry {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  min-height: 40px;
-  padding: 8px 16px;
-  border: 1px solid var(--cafe-line);
-  border-radius: 12px;
-  font-size: 13px;
-  white-space: nowrap;
-}
-.header-entry:hover, .theme-toggle:hover {
-  background: var(--cafe-surface);
-}
-.theme-toggle {
-  display: grid;
-  width: 40px;
-  height: 40px;
-  place-items: center;
-  border-radius: 50%;
-  color: var(--cafe-muted);
-}
-.mobile-nav {
-  gap: 26px;
-  padding-block: 0 16px;
-  flex-wrap: wrap;
-
-}
-/* Let Tailwind's lg:hidden control this row at desktop widths. */
-@media (max-width: 1023px) { .mobile-nav { display: flex; } }
+.home-footer a:hover { color: var(--cafe-accent); }
 
 .hero {
   position: relative;
@@ -754,12 +621,6 @@ onMounted(() => {
   transform: translateY(0);
 }
 
-/* Let the brand breathe on the narrowest phones instead of compressing its name. */
-@media (max-width: 359px) {
-  .home-header .header-row { display: flex; flex-wrap: wrap; padding-block: 10px; gap: 6px; }
-  .header-actions { margin-left: auto; }
-}
-
 @media (min-width: 1600px) {
   .hero-inner {
     min-height: 690px;
@@ -770,9 +631,6 @@ onMounted(() => {
 }
 
 @media (max-width: 1023px) {
-  .header-row {
-    grid-template-columns: minmax(0, 1fr) auto;
-  }
   .home-container {
     width: calc(100% - 64px);
   }
@@ -797,22 +655,6 @@ onMounted(() => {
   .cafe-home { --chapter-space: 64px; --chapter-gap: 36px; }
   .home-container {
     width: calc(100% - 40px);
-  }
-  .header-row {
-    min-height: 76px;
-    gap: 12px;
-  }
-  .header-entry {
-    padding-inline: 10px;
-  }
-  .theme-toggle {
-    width: 34px;
-  }
-  .mobile-nav {
-    gap: 24px;
-  }
-  .home-header .mobile-nav {
-    font-size: 12px;
   }
   .hero-inner {
     display: block;
@@ -916,12 +758,8 @@ onMounted(() => {
   .closing-inner > div > p:last-child { margin-top: 6px; font-size: 13px; }
   .home-footer { padding-block: 12px; }
 }
-@media (max-width: 1023px) {
-  .header-surface::after { inset: 6px 12px; border-radius: 14px; }
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .cafe-home *, .cafe-home :deep(*), .header-surface::before, .header-surface::after {
+  .cafe-home *, .cafe-home :deep(*) {
     transition: none !important;
   }
 }

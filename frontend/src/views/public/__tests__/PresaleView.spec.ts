@@ -3,6 +3,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import zh from '@/i18n/locales/zh'
 import en from '@/i18n/locales/en'
 import PresaleView from '../PresaleView.vue'
+import HomeHeader from '@/components/home/HomeHeader.vue'
 const mocks = vi.hoisted(() => ({ catalog: vi.fn(), push: vi.fn(), replace: vi.fn(), auth: { isAuthenticated: false }, route: { query: {} as Record<string,string> }, locale: 'zh' }))
 vi.mock('vue-i18n', async () => ({ ...await vi.importActual<typeof import('vue-i18n')>('vue-i18n'), useI18n: () => ({ locale: { value: mocks.locale }, t: (key: string, args: Record<string,unknown> = {}) => {
   let value: unknown = mocks.locale === 'zh' ? zh : en
@@ -10,7 +11,7 @@ vi.mock('vue-i18n', async () => ({ ...await vi.importActual<typeof import('vue-i
   return typeof value === 'string' ? value.replace(/\{(\w+)\}/g, (_, name) => String(args[name] ?? `{${name}}`)) : key
 } }) }))
 vi.mock('@/api/presale' , () => ({ presaleAPI: { catalog: mocks.catalog } }))
-vi.mock('@/stores/app', () => ({ useAppStore: () => ({ siteName: 'Café Shop' }) }))
+vi.mock('@/stores/app', () => ({ useAppStore: () => ({ siteName: 'Café Shop', docUrl: 'https://docs.example.com/guide', publicSettingsLoaded: true }) }))
 vi.mock('@/stores/auth', () => ({ useAuthStore: () => mocks.auth }))
 vi.mock('vue-router', () => ({ useRoute: () => mocks.route, useRouter: () => ({ push: mocks.push, replace: mocks.replace }) }))
 vi.mock('@/views/user/PaymentView.vue', () => ({ default: { props: ['presalePlanId','presaleMonth'], template: '<div class="checkout-fixture">{{ presalePlanId }} / {{ presaleMonth }}</div>' } }))
@@ -21,6 +22,20 @@ function render(locale = 'zh') {
 }
 beforeEach(() => { vi.clearAllMocks(); mocks.auth.isAuthenticated = false; mocks.route.query = {}; mocks.catalog.mockResolvedValue({ data: fixture() }) })
 describe('presale landing', () => {
+  it('reuses the homepage header, branding, documentation and theme controls', async () => {
+    localStorage.setItem('theme', 'dark')
+    const w = render(); await flushPromises()
+    expect(w.findComponent(HomeHeader).exists()).toBe(true)
+    expect(w.find('.presale-header, .wordmark').exists()).toBe(false)
+    expect(w.get('.home-header .brand').attributes('aria-label')).toBe('Café Shop')
+    expect(w.get('.header-menu a[href="/presale"]').text()).toBe('订阅预售')
+    expect(w.get('.header-menu a[href="https://docs.example.com/guide"]').exists()).toBe(true)
+    expect(w.get('.header-entry').attributes('href')).toBe('/login')
+    await w.get('.theme-toggle').trigger('click')
+    expect(localStorage.getItem('theme')).toBe('light')
+    expect(document.documentElement.classList.contains('dark')).toBe(false)
+    w.unmount(); localStorage.removeItem('theme')
+  })
   it('renders published plans and explicit dates/refund rules without login', async () => {
     const w = render(); await flushPromises()
     expect(w.text()).toContain('Astra Monthly'); expect(w.text()).toContain('20%')
@@ -35,6 +50,7 @@ describe('presale landing', () => {
     mocks.auth.isAuthenticated = true; mocks.route.query = { plan: '12' }
     const w = render('en'); await flushPromises()
     expect(w.get('.checkout-fixture').text()).toBe('12 / 2026-10')
+    expect(w.get('.header-entry').attributes('href')).toBe('/dashboard')
     expect(w.text()).toContain('unconditional full refund')
     expect(w.text()).toContain('seven days or fewer')
     w.unmount()
