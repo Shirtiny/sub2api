@@ -29,7 +29,7 @@ func TestPresalePostgresConcurrentPurchaseAndActivation(t *testing.T) {
 	client := integrationEntClient
 	u := client.User.Create().SetEmail(fmt.Sprintf("presale-%d@example.com", time.Now().UnixNano())).SetPasswordHash("test-only").SetUsername("presale-test").SaveX(ctx)
 	group := client.Group.Create().SetName("Presale test").SetPlatform(service.PlatformOpenAI).SetSubscriptionType(service.SubscriptionTypeSubscription).SetStatus(service.StatusActive).SaveX(ctx)
-	plan := client.SubscriptionPlan.Create().SetGroupID(group.ID).SetName("Presale PG").SetPrice(100).SetPresaleEnabled(true).SetPresaleVisible(true).SetForSale(true).SetConcurrency(4).SetPresaleResetCards(3).SaveX(ctx)
+	plan := client.SubscriptionPlan.Create().SetGroupID(group.ID).SetName("Presale PG").SetPrice(100).SetPresaleEnabled(true).SetPresaleVisible(false).SetForSale(true).SetConcurrency(4).SetPresaleResetCards(3).SaveX(ctx)
 	settings := NewSettingRepository(client)
 	require.NoError(t, settings.Set(ctx, service.SettingPaymentEnabled, "true"))
 	cfg := service.NewPaymentConfigService(client, settings, nil)
@@ -58,11 +58,12 @@ func TestPresalePostgresConcurrentPurchaseAndActivation(t *testing.T) {
 	require.Len(t, orders, 1)
 	order := orders[0]
 	require.Equal(t, service.OrderStatusCompleted, order.Status)
+	require.Zero(t, order.PresaleResetCards, "legacy plan reset bonuses are not copied to new orders")
 	require.True(t, order.PresaleStartsAt.Equal(period.StartsAt))
 	require.True(t, order.PresaleExpiresAt.Equal(period.ExpiresAt))
 	require.Zero(t, client.UserSubscription.Query().Where(usersubscription.UserIDEQ(u.ID)).CountX(ctx))
 	require.Equal(t, 100.0, client.User.GetX(ctx, u.ID).TotalRecharged)
-	// Change plan after payment; the reserved term and grant must use snapshots.
+	// Change plan after payment; neither the term nor the zero reset grant changes.
 	client.SubscriptionPlan.UpdateOneID(plan.ID).SetPresaleResetCards(99).SetPrice(300).ExecX(ctx)
 	results = make(chan error, 4)
 	for range 4 {
@@ -77,7 +78,7 @@ func TestPresalePostgresConcurrentPurchaseAndActivation(t *testing.T) {
 	sub := client.UserSubscription.Query().Where(usersubscription.UserIDEQ(u.ID)).OnlyX(ctx)
 	require.True(t, sub.StartsAt.Equal(period.StartsAt))
 	require.True(t, sub.ExpiresAt.Equal(period.ExpiresAt))
-	require.Equal(t, 3, sub.ResetCount)
+	require.Zero(t, sub.ResetCount)
 	require.NotNil(t, client.PaymentOrder.GetX(ctx, order.ID).PresaleActivatedAt)
 }
 

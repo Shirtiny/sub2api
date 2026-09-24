@@ -3,7 +3,6 @@
     <div class="flex flex-wrap items-center justify-between gap-2"><h3 class="text-sm font-medium text-content-primary">{{ order.presale_plan_name || t('presale.nav') }}</h3><span class="text-xs text-primary-600 dark:text-primary-300">{{ t(`presale.${presaleStatus(order)}`) }}</span></div>
     <p v-if="order.presale_renewal" class="mt-2 text-xs text-content-secondary">{{ t('presale.renewal') }}</p>
     <p class="mt-3 text-xs leading-6 text-content-secondary">{{ t('presale.termCopy', { start: date(order.presale_starts_at), end: date(order.presale_expires_at) }) }}</p>
-    <p class="mt-1 text-[10px] text-content-tertiary">{{ t('presale.timezone') }}</p>
   </div>
 </template>
 <script setup lang="ts">

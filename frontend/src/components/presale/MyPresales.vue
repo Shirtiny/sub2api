@@ -20,53 +20,50 @@
           {{ t('presale.reservation.browse') }}<Icon name="arrowRight" size="sm" aria-hidden="true" />
         </RouterLink>
       </header>
-      <div v-if="section.key === 'pending' || showRecords" :id="`presale-${section.key}-content`" class="space-y-3">
-        <p class="reservation-timezone text-[11px] text-content-tertiary">{{ t('presale.reservation.timezone') }}</p>
-        <div class="grid gap-4 xl:grid-cols-2">
-          <article v-for="card in section.cards" :key="card.order.id" class="reservation-card min-w-0 overflow-hidden rounded-2xl border border-stroke-default bg-surface-card" :class="{ 'reservation-arriving': card.status === 'pending' }">
-            <header class="flex items-start justify-between gap-4 px-5 pb-4 pt-5">
-              <div class="min-w-0">
-                <div class="flex items-center gap-2.5">
-                  <h3 class="truncate text-xl font-semibold tracking-tight text-content-primary" :title="card.order.presale_plan_name">{{ card.order.presale_plan_name || t('presale.nav') }}</h3>
-                  <span v-if="(card.order.subscription_multiplier || 1) > 1" class="reservation-multiplier shrink-0 rounded-md bg-surface-hover px-1.5 py-0.5 text-xs font-medium text-content-secondary">{{ card.order.subscription_multiplier }}×</span>
-                </div>
-                <p v-if="card.order.presale_renewal" class="mt-1 text-xs text-content-tertiary">{{ t('presale.reservation.renewal') }}</p>
+      <div v-if="section.key === 'pending' || showRecords" :id="`presale-${section.key}-content`" class="grid gap-4 xl:grid-cols-2">
+        <article v-for="card in section.cards" :key="card.order.id" class="reservation-card min-w-0 overflow-hidden rounded-2xl border border-stroke-default bg-surface-card" :class="{ 'reservation-arriving': card.status === 'pending' }">
+          <header class="flex items-start justify-between gap-4 px-5 pb-4 pt-5">
+            <div class="min-w-0">
+              <div class="flex items-center gap-2.5">
+                <h3 class="truncate text-xl font-semibold tracking-tight text-content-primary" :title="card.order.presale_plan_name">{{ card.order.presale_plan_name || t('presale.nav') }}</h3>
+                <span v-if="(card.order.subscription_multiplier || 1) > 1" class="reservation-multiplier shrink-0 rounded-md bg-surface-hover px-1.5 py-0.5 text-xs font-medium text-content-secondary">{{ card.order.subscription_multiplier }}×</span>
               </div>
-              <span class="reservation-status inline-flex max-w-[60%] shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium" :class="statusClass(card.status)" :data-status="card.status">
-                <span class="reservation-status-dot h-1.5 w-1.5 shrink-0 rounded-full bg-current" aria-hidden="true" />{{ t(`presale.${card.status}`) }}
-              </span>
-            </header>
-            <div class="reservation-dates mx-5 flex items-center gap-3 border-y border-stroke-default py-4 sm:gap-5">
-              <div class="min-w-0 flex-1">
-                <p class="text-[11px] font-medium text-content-tertiary">{{ t('presale.reservation.starts') }}</p>
-                <time class="reservation-start mt-2 block" :datetime="card.order.presale_starts_at">
-                  <span class="block whitespace-nowrap text-lg font-medium tabular-nums tracking-tight text-content-primary sm:text-xl">{{ card.start.date }}</span>
-                  <span class="mt-1 block text-xs tabular-nums text-content-secondary">{{ card.start.time }}</span>
-                </time>
-              </div>
-              <div class="reservation-connector flex shrink-0 items-center text-content-tertiary" aria-hidden="true">
-                <span class="hidden h-px w-6 bg-stroke-default sm:block" /><Icon name="arrowRight" size="sm" />
-              </div>
-              <div class="min-w-0 flex-1 text-right">
-                <p class="text-[11px] font-medium text-content-tertiary">{{ t('presale.reservation.ends') }}</p>
-                <time class="reservation-end mt-2 block" :datetime="card.order.presale_expires_at">
-                  <span class="block whitespace-nowrap text-lg font-medium tabular-nums tracking-tight text-content-primary sm:text-xl">{{ card.end.date }}</span>
-                  <span class="mt-1 block text-xs tabular-nums text-content-secondary">{{ card.end.time }}</span>
-                </time>
-              </div>
+              <p v-if="card.order.presale_renewal" class="mt-1 text-xs text-content-tertiary">{{ t('presale.reservation.renewal') }}</p>
             </div>
-            <footer class="flex flex-wrap items-center justify-between gap-x-5 gap-y-3 px-5 py-4 text-xs">
-              <div class="flex flex-wrap items-center gap-2 text-content-tertiary">
-                <span>{{ t('payment.orders.payAmount') }} <strong class="font-medium text-content-secondary">{{ formatPaymentAmount(card.order.pay_amount, card.order.currency, locale) }}</strong></span>
-                <span aria-hidden="true">·</span><span class="tabular-nums">#{{ card.order.id }}</span>
-              </div>
-              <div class="flex items-center gap-4">
-                <RouterLink to="/orders" class="text-content-secondary transition-colors hover:text-content-primary">{{ t('presale.viewOrders') }}</RouterLink>
-                <button v-if="card.order.status === 'COMPLETED' || (card.order.status === 'FAILED' && card.order.paid_at)" class="text-content-tertiary transition-colors hover:text-content-primary disabled:opacity-50" :disabled="busy" @click="openRefund(card.order)">{{ t('presale.requestRefund') }}</button>
-              </div>
-            </footer>
-          </article>
-        </div>
+            <span class="reservation-status inline-flex max-w-[60%] shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium" :class="statusClass(card.status)" :data-status="card.status">
+              <span class="reservation-status-dot h-1.5 w-1.5 shrink-0 rounded-full bg-current" aria-hidden="true" />{{ t(`presale.${card.status}`) }}
+            </span>
+          </header>
+          <div class="reservation-dates mx-5 flex items-center gap-3 border-y border-stroke-default py-4 sm:gap-5">
+            <div class="min-w-0 flex-1">
+              <p class="text-[11px] font-medium text-content-tertiary">{{ t('presale.reservation.starts') }}</p>
+              <time class="reservation-start mt-2 block" :datetime="card.order.presale_starts_at">
+                <span class="block whitespace-nowrap text-lg font-medium tabular-nums tracking-tight text-content-primary sm:text-xl">{{ card.start.date }}</span>
+                <span class="mt-1 block text-xs tabular-nums text-content-secondary">{{ card.start.time }}</span>
+              </time>
+            </div>
+            <div class="reservation-connector flex shrink-0 items-center text-content-tertiary" aria-hidden="true">
+              <span class="hidden h-px w-6 bg-stroke-default sm:block" /><Icon name="arrowRight" size="sm" />
+            </div>
+            <div class="min-w-0 flex-1 text-right">
+              <p class="text-[11px] font-medium text-content-tertiary">{{ t('presale.reservation.ends') }}</p>
+              <time class="reservation-end mt-2 block" :datetime="card.order.presale_expires_at">
+                <span class="block whitespace-nowrap text-lg font-medium tabular-nums tracking-tight text-content-primary sm:text-xl">{{ card.end.date }}</span>
+                <span class="mt-1 block text-xs tabular-nums text-content-secondary">{{ card.end.time }}</span>
+              </time>
+            </div>
+          </div>
+          <footer class="flex flex-wrap items-center justify-between gap-x-5 gap-y-3 px-5 py-4 text-xs">
+            <div class="flex flex-wrap items-center gap-2 text-content-tertiary">
+              <span>{{ t('payment.orders.payAmount') }} <strong class="font-medium text-content-secondary">{{ formatPaymentAmount(card.order.pay_amount, card.order.currency, locale) }}</strong></span>
+              <span aria-hidden="true">·</span><span class="tabular-nums">#{{ card.order.id }}</span>
+            </div>
+            <div class="flex items-center gap-4">
+              <RouterLink to="/orders" class="text-content-secondary transition-colors hover:text-content-primary">{{ t('presale.viewOrders') }}</RouterLink>
+              <button v-if="card.order.status === 'COMPLETED' || (card.order.status === 'FAILED' && card.order.paid_at)" class="text-content-tertiary transition-colors hover:text-content-primary disabled:opacity-50" :disabled="busy" @click="openRefund(card.order)">{{ t('presale.requestRefund') }}</button>
+            </div>
+          </footer>
+        </article>
       </div>
     </section>
     <BaseDialog :show="!!refundOrder" :title="t('presale.refundTitle')" @close="!busy && (refundOrder = null)">

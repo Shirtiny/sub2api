@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -36,9 +37,9 @@ func NextPresalePeriod(now time.Time) PresalePeriod {
 	return PresalePeriod{Month: start.Format("2006-01"), Timezone: PresaleTimezone, StartsAt: start, ExpiresAt: start.AddDate(0, 1, 0), FullRefundBefore: start.Add(-72 * time.Hour)}
 }
 
-func validatePresalePlanFields(badge string, cards int) error {
-	if utf8.RuneCountInString(strings.TrimSpace(badge)) > 40 || cards < 0 || cards > 1000 {
-		return infraerrors.BadRequest("PRESALE_CONFIG_INVALID", "presale badge must be at most 40 characters and reset cards between 0 and 1000")
+func validatePresalePlanFields(badge string) error {
+	if utf8.RuneCountInString(strings.TrimSpace(badge)) > 40 {
+		return infraerrors.BadRequest("PRESALE_CONFIG_INVALID", "presale badge must be at most 40 characters")
 	}
 	return nil
 }
@@ -50,7 +51,7 @@ func validatePresaleOrderPlan(plan *dbent.SubscriptionPlan, req CreateOrderReque
 		}
 		return nil
 	}
-	if !plan.ForSale || !plan.PresaleEnabled || !plan.PresaleVisible {
+	if !plan.ForSale || !plan.PresaleEnabled {
 		return infraerrors.NotFound("PRESALE_NOT_AVAILABLE", "this plan is not available for presale")
 	}
 	if req.PresaleMonth != NextPresalePeriod(now).Month {
@@ -62,14 +63,15 @@ func validatePresaleOrderPlan(plan *dbent.SubscriptionPlan, req CreateOrderReque
 	return nil
 }
 
-// ListPresalePlans returns only intentionally published, usable plans. The
+// ListPresalePlans returns for-sale, presale-enabled, usable plans. Legacy
+// PresaleVisible values no longer gate publication or purchase. The
 // public handler maps these entities to a whitelist of product display fields.
 func (s *PaymentConfigService) ListPresalePlans(ctx context.Context) ([]*dbent.SubscriptionPlan, error) {
 	ids, err := s.entClient.Group.Query().Where(group.StatusEQ(payment.EntityStatusActive), group.SubscriptionTypeEQ(SubscriptionTypeSubscription), group.IsCustomSubscriptionGroupEQ(false), group.DeletedAtIsNil()).IDs(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("list presale groups: %w", err)
 	}
-	return s.entClient.SubscriptionPlan.Query().Where(subscriptionplan.ForSaleEQ(true), subscriptionplan.PresaleEnabledEQ(true), subscriptionplan.PresaleVisibleEQ(true), subscriptionplan.GroupIDIn(ids...)).Order(subscriptionplan.BySortOrder(), subscriptionplan.ByID()).All(ctx)
+	return s.entClient.SubscriptionPlan.Query().Where(subscriptionplan.ForSaleEQ(true), subscriptionplan.PresaleEnabledEQ(true), subscriptionplan.GroupIDIn(ids...)).Order(subscriptionplan.BySortOrder(), subscriptionplan.ByID()).All(ctx)
 }
 
 type PresaleQuote struct {
@@ -119,21 +121,28 @@ func (s *PaymentService) presaleQuoteForPlan(ctx context.Context, userID int64, 
 }
 
 func (s *PaymentService) checkPresaleSlot(ctx context.Context, userID, groupID int64, start time.Time, excludeOrderID int64) error {
-	exists, err := s.entClient.PaymentOrder.Query().Where(
+	order, err := s.entClient.PaymentOrder.Query().Where(
 		paymentorder.UserIDEQ(userID), paymentorder.SubscriptionSourceGroupIDEQ(groupID), paymentorder.PresaleStartsAtEQ(start), paymentorder.IDNEQ(excludeOrderID),
 		paymentorder.Or(
 			paymentorder.StatusIn(OrderStatusPaid, OrderStatusRecharging, OrderStatusCompleted, OrderStatusRefundRequested, OrderStatusRefunding, OrderStatusRefundFailed),
 			paymentorder.And(paymentorder.StatusEQ(OrderStatusPending), paymentorder.ExpiresAtGT(time.Now())),
 			paymentorder.And(paymentorder.StatusEQ(OrderStatusFailed), paymentorder.PaidAtNotNil()),
 		),
-	).Exist(ctx)
+	).Select(paymentorder.FieldID, paymentorder.FieldPlanID, paymentorder.FieldStatus).Order(dbent.Desc(paymentorder.FieldID)).First(ctx)
+	if dbent.IsNotFound(err) {
+		return nil
+	}
 	if err != nil {
 		return fmt.Errorf("check presale slot: %w", err)
 	}
-	if exists {
-		return infraerrors.Conflict("PRESALE_ALREADY_RESERVED", "you already have an order for this group and month; check your orders")
+	// Only expose identifiers/status of this user's matching order. This lets
+	// the landing distinguish a new purchase from resuming that exact payment.
+	metadata := map[string]string{"order_status": order.Status, "order_id": strconv.FormatInt(order.ID, 10)}
+	if order.PlanID != nil {
+		metadata["order_plan_id"] = strconv.FormatInt(*order.PlanID, 10)
 	}
-	return nil
+	return infraerrors.Conflict("PRESALE_ALREADY_RESERVED", "you already have an order for this group and month; check your orders").
+		WithMetadata(metadata)
 }
 
 func (s *PaymentService) GetMyPresales(ctx context.Context, userID int64) ([]*dbent.PaymentOrder, error) {

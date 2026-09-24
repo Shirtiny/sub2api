@@ -44,11 +44,13 @@ describe('presale reservation cards', () => {
     expect(w.get('.reservation-end').text()).toBe('2027.02.0100:00')
     w.unmount()
   })
-  it('shows the timezone once and preserves multiplier and renewal information', async () => {
+  it('omits timezone captions and preserves multiplier and renewal information', async () => {
     mocks.mine.mockResolvedValue({ data: [order, { ...order, id: 8, subscription_multiplier: 2, presale_renewal: true }] })
     const w = render(); await flushPromises()
     expect(w.findAll('.reservation-card')).toHaveLength(2)
-    expect(w.findAll('.reservation-timezone')).toHaveLength(1)
+    expect(w.find('.reservation-timezone').exists()).toBe(false)
+    expect(w.text()).not.toContain('presale.reservation.timezone')
+    expect(w.get('#presale-pending-content').classes()).toContain('grid')
     expect(w.get('.reservation-multiplier').text()).toBe('2×')
     expect(w.findAll('.reservation-card')[1].text()).toContain('presale.reservation.renewal')
     w.unmount()

@@ -8,18 +8,24 @@ ordinary menu links fade out and the open-presale message fades in without chang
 the navigation slot's dimensions. The message is only shown if the catalog is open.
 
 `/admin/orders/plans` remains the source of products. A plan must be for sale,
-presale-enabled, publicly visible, and belong to an active, non-deleted, ordinary
+presale-enabled, and belong to an active, non-deleted, ordinary
 subscription source group. Existing plans **default to presale disabled**. Configure:
 
 - `presale_enabled`: sell through the calendar-month presale flow (immediate purchase
   of that plan is rejected, including legacy clients).
-- `presale_visible`: explicitly publish it on the landing page; hidden plans are
-  also not purchasable by posting their ID.
 - `presale_badge`: plain-text merchandising label, max 40 characters.
-- `presale_reset_cards`: quota reset count granted upon activation, 0–1000. The
-  subscription's accumulated reset count remains capped at 1000.
 - Existing name, description, features, sort order, price, concurrency and group
   quota configuration supply the rest of the product card.
+
+Publication and purchase use the same `for_sale && presale_enabled` rule; no extra
+visibility switch is required. Legacy `presale_visible` values are ignored.
+Reset cards follow official issuance, not a fixed plan-configured gift. The admin
+API no longer accepts either retired setting and new orders do not copy the old
+plan reset count. The catalog no longer advertises a fixed bonus. This does not add
+an official-grant synchronization mechanism. Legacy columns and paid-order reset
+snapshots remain for compatibility; activation and refunds honor those historical
+snapshots without retroactively removing entitlements. No schema migration or
+backfill is needed.
 
 Presale payment provider instances must enable **administrator refunds** before
 accepting an order. This does not require enabling user refunds for balance orders.
@@ -45,8 +51,29 @@ original payment already succeeded. The status panel also verifies this state.
 
 ## Calendar and purchase contract
 
+### Eligibility on landing cards
+
+Signed-in visitors' cards query the existing read-only quote endpoint before
+enabling Reserve. The server checks the source group and month (not merely a
+matching plan ID), including unpaid orders that have not expired. Conflict errors
+return only the matching user's `order_id`, `order_plan_id` and `order_status`.
+Cards show reserved, payment-pending and refund states with subscription/order
+links; coverage/legacy restrictions are explained inline. Network failures and
+month changes require a retry rather than being treated as eligibility.
+
+Login-return plan selections wait for these checks. The exact server-confirmed
+pending order can still offer Continue payment when this browser has matching
+recovery; checkout revalidates ownership, plan and month as before. Signed provider
+return flows remain supported. Closing checkout or returning to the tab refreshes
+card state. Creation-time validation and the payment user lock remain authoritative
+against concurrent purchases after the page's read-only check.
+
+### Service period
+
 The business timezone is **Asia/Shanghai / UTC+8**, independent of host and browser
-timezone. An order created in September 2026 reserves:
+timezone. Repeated timezone captions are omitted from the UI, but date formatting
+and service/refund boundaries still use this timezone. An order created in
+September 2026 reserves:
 
 - Start (inclusive): 2026-10-01 00:00 +08:00.
 - End (exclusive): 2026-11-01 00:00 +08:00.
@@ -55,10 +82,11 @@ timezone. An order created in September 2026 reserves:
 Each purchase covers the **next calendar month**, not 30 days from payment. A
 multiplier changes quota/price under the existing custom-plan rules, not the number
 of months. Legacy bonus-day activities are not combined with fixed monthly terms.
-The date window, price/payment amount, name, reset grant, concurrency, multiplier,
+The date window, price/payment amount, name, concurrency, multiplier,
 early-reset configuration and renewal relationship are snapshotted in the order.
 Group quota/rate configuration continues to follow the existing live group model.
-Later plan edits do not rewrite these order snapshots.
+Later plan edits do not rewrite these order snapshots. Historical fixed reset
+grants remain snapshotted; new presales carry no fixed reset-card bonus.
 
 There is at most one live reservation per user/source group/calendar month. The
 payment user row lock protects creation and fulfillment; pending orders also occupy

@@ -48,7 +48,7 @@
           </span>
           <span v-else class="text-xs text-gray-400">—</span>
         </template>
-        <template #cell-presale_enabled="{ row }"><span :class="row.presale_enabled && row.presale_visible ? 'text-primary-600 dark:text-primary-400' : 'text-content-tertiary'">{{ t(row.presale_enabled && row.presale_visible ? 'presale.nav' : 'presale.admin.unpublished') }}</span></template>
+        <template #cell-presale_enabled="{ row }"><span :class="row.presale_enabled && row.for_sale ? 'text-primary-600 dark:text-primary-400' : 'text-content-tertiary'">{{ t(row.presale_enabled && row.for_sale ? 'presale.nav' : 'presale.admin.unpublished') }}</span></template>
         <template #cell-for_sale="{ value, row }">
           <button
             type="button"

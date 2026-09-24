@@ -24,13 +24,7 @@
       <fieldset class="space-y-3 rounded-lg border border-primary-200 bg-primary-50/30 p-4 dark:border-primary-800 dark:bg-primary-900/10">
         <legend class="px-2 text-sm font-medium text-content-primary">{{ t('presale.admin.title') }}</legend>
         <label class="flex items-center gap-3 text-sm text-content-secondary"><input v-model="planForm.presale_enabled" type="checkbox" class="rounded" />{{ t('presale.admin.enabled') }}</label>
-        <template v-if="planForm.presale_enabled">
-          <label class="flex items-center gap-3 text-sm text-content-secondary"><input v-model="planForm.presale_visible" type="checkbox" class="rounded" />{{ t('presale.admin.visible') }}</label>
-          <div class="grid grid-cols-2 gap-4"><label class="input-label">{{ t('presale.admin.badge') }}<input v-model="planForm.presale_badge" class="input mt-1" maxlength="40" /></label><label class="input-label">{{ t('presale.admin.resetCards') }}<input v-model.number="planForm.presale_reset_cards" type="number" min="0" max="1000" step="1" class="input mt-1" /></label></div>
-          <p class="text-xs leading-relaxed text-content-tertiary">{{ t('presale.admin.resetHint') }}</p>
-        </template>
-        <p class="text-xs leading-relaxed text-content-tertiary">{{ t('presale.admin.hint') }}</p>
-        <RouterLink to="/presale" target="_blank" class="text-xs text-primary-600 dark:text-primary-400">{{ t('presale.admin.preview') }} ↗</RouterLink>
+        <label v-if="planForm.presale_enabled" class="input-label block">{{ t('presale.admin.badge') }}<input v-model="planForm.presale_badge" class="input mt-1" maxlength="40" /></label>
       </fieldset>
       <!-- Group Info Preview -->
       <div v-if="selectedGroupInfo" class="rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-dark-600 dark:bg-dark-800">
@@ -179,7 +173,7 @@ const { t } = useI18n()
 const appStore = useAppStore()
 
 const saving = ref(false)
-const planForm = reactive({ presale_enabled: false, presale_visible: true, presale_badge: '', presale_reset_cards: 0, name: '', group_id: null as number | null, description: '', price: 0, original_price: 0, validity_days: 30, concurrency: 1, validity_unit: 'days', early_reset_enabled: false, early_reset_duration_days: 1, sort_order: 0, for_sale: true, custom_multiplier_enabled: false, custom_multiplier_min: 1, custom_multiplier_max: 1 })
+const planForm = reactive({ presale_enabled: false, presale_badge: '', name: '', group_id: null as number | null, description: '', price: 0, original_price: 0, validity_days: 30, concurrency: 1, validity_unit: 'days', early_reset_enabled: false, early_reset_duration_days: 1, sort_order: 0, for_sale: true, custom_multiplier_enabled: false, custom_multiplier_min: 1, custom_multiplier_max: 1 })
 const planFeaturesText = ref('')
 
 const validityUnitOptions = computed(() => [
@@ -207,10 +201,10 @@ const selectedGroupInfo = computed(() => {
 watch(() => props.show, (visible) => {
   if (!visible) return
   if (props.plan) {
-    Object.assign(planForm, { presale_enabled: props.plan.presale_enabled ?? false, presale_visible: props.plan.presale_visible ?? true, presale_badge: props.plan.presale_badge ?? '', presale_reset_cards: props.plan.presale_reset_cards ?? 0, name: props.plan.name, group_id: props.plan.group_id, description: props.plan.description, price: props.plan.price, original_price: props.plan.original_price || 0, validity_days: props.plan.validity_days, concurrency: props.plan.concurrency || 1, validity_unit: props.plan.validity_unit || 'days', early_reset_enabled: props.plan.early_reset_enabled === true, early_reset_duration_days: props.plan.early_reset_duration_days || 1, sort_order: props.plan.sort_order || 0, for_sale: props.plan.for_sale, custom_multiplier_enabled: props.plan.custom_multiplier_enabled === true, custom_multiplier_min: props.plan.custom_multiplier_min || 1, custom_multiplier_max: props.plan.custom_multiplier_max || props.plan.custom_multiplier_min || 1 })
+    Object.assign(planForm, { presale_enabled: props.plan.presale_enabled ?? false, presale_badge: props.plan.presale_badge ?? '', name: props.plan.name, group_id: props.plan.group_id, description: props.plan.description, price: props.plan.price, original_price: props.plan.original_price || 0, validity_days: props.plan.validity_days, concurrency: props.plan.concurrency || 1, validity_unit: props.plan.validity_unit || 'days', early_reset_enabled: props.plan.early_reset_enabled === true, early_reset_duration_days: props.plan.early_reset_duration_days || 1, sort_order: props.plan.sort_order || 0, for_sale: props.plan.for_sale, custom_multiplier_enabled: props.plan.custom_multiplier_enabled === true, custom_multiplier_min: props.plan.custom_multiplier_min || 1, custom_multiplier_max: props.plan.custom_multiplier_max || props.plan.custom_multiplier_min || 1 })
     planFeaturesText.value = (props.plan.features || []).join('\n')
   } else {
-    Object.assign(planForm, { presale_enabled: false, presale_visible: true, presale_badge: '', presale_reset_cards: 0, name: '', group_id: null, description: '', price: 0, original_price: 0, validity_days: 30, concurrency: 1, validity_unit: 'days', early_reset_enabled: false, early_reset_duration_days: 1, sort_order: 0, for_sale: true, custom_multiplier_enabled: false, custom_multiplier_min: 1, custom_multiplier_max: 1 })
+    Object.assign(planForm, { presale_enabled: false, presale_badge: '', name: '', group_id: null, description: '', price: 0, original_price: 0, validity_days: 30, concurrency: 1, validity_unit: 'days', early_reset_enabled: false, early_reset_duration_days: 1, sort_order: 0, for_sale: true, custom_multiplier_enabled: false, custom_multiplier_min: 1, custom_multiplier_max: 1 })
     planFeaturesText.value = ''
   }
 })
@@ -220,9 +214,7 @@ function buildPlanPayload() {
   const features = planFeaturesText.value.split('\n').map(f => f.trim()).filter(Boolean).join('\n')
   return {
     presale_enabled: planForm.presale_enabled,
-    presale_visible: planForm.presale_visible,
     presale_badge: planForm.presale_badge,
-    presale_reset_cards: planForm.presale_reset_cards,
     name: planForm.name,
     group_id: planForm.group_id,
     description: planForm.description,

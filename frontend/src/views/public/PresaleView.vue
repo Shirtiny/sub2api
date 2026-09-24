@@ -44,7 +44,6 @@
       </section>
       <section v-if="catalog" class="timeline" :aria-label="t('presale.calendar')">
         <div v-for="(step, index) in timeline" :key="step.label" class="timeline-step"><span class="step-index">0{{ index + 1 }}</span><div><p class="step-label">{{ step.label }}</p><p class="step-date">{{ step.date }}</p><p class="step-copy">{{ step.copy }}</p></div></div>
-        <p class="timezone">{{ t('presale.timezone') }}</p>
       </section>
       <section id="presale-plans" class="plans-section">
         <div class="section-heading"><div><p class="eyebrow">{{ t('presale.collection') }}</p><h2>{{ t('presale.plansTitle') }}</h2></div><p>{{ t('presale.plansIntro') }}</p></div>
@@ -57,7 +56,7 @@
             <h3>{{ plan.name }}</h3><p class="plan-description">{{ plan.description }}</p>
             <div class="plan-price"><span v-if="plan.original_price && plan.original_price > plan.price" class="old-price">￥{{ scaledPlanValue(plan, plan.original_price).toLocaleString(locale) }}</span><strong><span class="price-currency">￥</span>{{ scaledPlanValue(plan, plan.price).toLocaleString(locale) }}</strong><span>{{ t('presale.perMonth') }}</span></div>
             <dl class="plan-quotas"><template v-for="quota in quotas(plan)" :key="quota.label"><div><dt>{{ quota.label }}</dt><dd>{{ quota.value }}</dd></div></template></dl>
-            <ul class="plan-features"><li><Icon name="check" size="sm"/>{{ t('presale.concurrency', { count: plan.concurrency }) }}</li><li v-if="plan.presale_reset_cards"><Icon name="check" size="sm"/>{{ t('presale.resetCards', { count: plan.presale_reset_cards }) }}</li><li v-for="feature in plan.features" :key="feature"><Icon name="check" size="sm"/>{{ feature }}</li></ul>
+            <ul class="plan-features"><li><Icon name="check" size="sm"/>{{ t('presale.concurrency', { count: plan.concurrency }) }}</li><li v-for="feature in plan.features" :key="feature"><Icon name="check" size="sm"/>{{ feature }}</li></ul>
             <div v-if="plan.custom_multiplier_enabled || renewalMultiplier(plan) != null" class="plan-multiplier">
               <span>{{ t('payment.planCard.multiplier') }}</span>
               <Select
@@ -67,29 +66,62 @@
                 :placeholder="t('payment.planCard.multiplier')"
                 :searchable="false"
                 :clearable="false"
-                :disabled="renewalMultiplier(plan) != null"
+                :disabled="renewalMultiplier(plan) != null || !canReserve(plan)"
                 @update:model-value="updateMultiplier(plan, $event)"
               />
             </div>
-            <button class="btn btn-primary plan-buy" @click="selectPlan(plan)">{{ t(auth.isAuthenticated ? 'presale.buy' : 'presale.loginBuy') }} <Icon name="arrowRight" size="sm" /></button>
+            <div v-if="availability(plan).kind !== 'available' && availability(plan).kind !== 'checking'" class="plan-availability" role="status" :data-state="availability(plan).kind">
+              <strong>{{ t(`presale.availability.${availability(plan).kind}`) }}</strong>
+              <p>{{ availabilityMessage(plan) }}</p>
+            </div>
+            <div v-if="canResume(plan)" class="plan-resume">
+              <button class="btn btn-secondary plan-buy" @click="selectPlan(plan)">{{ t('presale.availability.resume') }} <Icon name="arrowRight" size="sm" /></button>
+              <RouterLink to="/orders" class="quiet-link">{{ t('presale.viewOrders') }}</RouterLink>
+            </div>
+            <RouterLink v-else-if="['reserved', 'refund', 'pending', 'existing'].includes(availability(plan).kind)" :to="['pending', 'existing'].includes(availability(plan).kind) ? '/orders' : '/subscriptions'" class="btn btn-secondary plan-buy">
+              {{ t(['pending', 'existing'].includes(availability(plan).kind) ? 'presale.viewOrders' : 'presale.viewSubscriptions') }} <Icon name="arrowRight" size="sm" />
+            </RouterLink>
+            <button v-else-if="availability(plan).kind === 'error'" class="btn btn-secondary plan-buy" @click="load">{{ t('presale.availability.retry') }}</button>
+            <button
+              v-else class="btn btn-primary plan-buy"
+              :class="{ 'is-checking': availability(plan).kind === 'checking' }"
+              :disabled="!canReserve(plan)"
+              :aria-busy="availability(plan).kind === 'checking' ? true : undefined"
+              :aria-label="availability(plan).kind === 'checking' ? t('common.loading') : undefined"
+              @click="selectPlan(plan)"
+            >
+              <span class="plan-buy-label" :aria-hidden="availability(plan).kind === 'checking' ? true : undefined">
+                {{ t(availability(plan).kind === 'blocked' ? 'presale.availability.blocked' : auth.isAuthenticated ? 'presale.buy' : 'presale.loginBuy') }} <Icon v-if="availability(plan).kind !== 'blocked'" name="arrowRight" size="sm" />
+              </span>
+              <Transition name="reserve-loading">
+                <LoadingSpinner
+                  v-if="availability(plan).kind === 'checking'"
+                  class="plan-buy-loader"
+                  variant="steam"
+                  color="current"
+                  overlay
+                  decorative
+                />
+              </Transition>
+            </button>
           </article>
         </div>
       </section>
       <section class="value-section"><div class="section-heading"><div><p class="eyebrow">{{ t('presale.philosophy') }}</p><h2>{{ t('presale.valueTitle') }}</h2></div></div><PresaleBenefits /></section>
-      <section v-if="catalog" class="policy-section"><div><p class="eyebrow">{{ t('presale.policy') }}</p><h2>{{ t('presale.policyTitle') }}</h2><p class="timezone">{{ t('presale.timezone') }}</p></div><div class="policy-details"><div><span class="policy-figure">100<span>%</span></span><div><h3>{{ t('presale.refundFull') }}</h3><p>{{ t('presale.refundFullCopy', { date: date(catalog.period.full_refund_before) }) }}</p></div></div><div><span class="policy-figure">80<span>%</span></span><div><h3>{{ t('presale.refundFee') }}</h3><p>{{ t('presale.refundFeeCopy', { date: date(catalog.period.full_refund_before) }) }}</p></div></div><div><span class="policy-figure">DAY</span><div><h3>{{ t('presale.refundDaily') }}</h3><p>{{ t('presale.refundDailyCopy') }}</p></div></div><div class="period-note">{{ t('presale.termCopy', { start: date(catalog.period.starts_at), end: date(catalog.period.expires_at) }) }}</div></div></section>
+      <section v-if="catalog" class="policy-section"><div><p class="eyebrow">{{ t('presale.policy') }}</p><h2>{{ t('presale.policyTitle') }}</h2></div><div class="policy-details"><div><span class="policy-figure">100<span>%</span></span><div><h3>{{ t('presale.refundFull') }}</h3><p>{{ t('presale.refundFullCopy', { date: date(catalog.period.full_refund_before) }) }}</p></div></div><div><span class="policy-figure">80<span>%</span></span><div><h3>{{ t('presale.refundFee') }}</h3><p>{{ t('presale.refundFeeCopy', { date: date(catalog.period.full_refund_before) }) }}</p></div></div><div><span class="policy-figure">DAY</span><div><h3>{{ t('presale.refundDaily') }}</h3><p>{{ t('presale.refundDailyCopy') }}</p></div></div><div class="period-note">{{ t('presale.termCopy', { start: date(catalog.period.starts_at), end: date(catalog.period.expires_at) }) }}</div></div></section>
       <section class="balance-callout"><div><p class="eyebrow">NO NEED TO WAIT</p><h2>{{ t('presale.balanceTitle') }}</h2><p>{{ t('presale.balanceCopy') }}</p></div><RouterLink :to="balancePath" class="btn btn-primary">{{ t('presale.balance') }} <Icon name="arrowRight" size="sm" /></RouterLink></section>
     </main>
-    <footer><RouterLink to="/">{{ app.siteName }}</RouterLink><span>{{ t('presale.timezone') }}</span></footer>
+    <footer><RouterLink to="/">{{ app.siteName }}</RouterLink></footer>
     <BaseDialog :show="!!selectedPlanId" :title="t('presale.checkout')" width="wide" @close="closeCheckout">
       <PaymentView v-if="selectedPlanId && catalog && auth.isAuthenticated" :key="`${selectedPlanId}:${selectedPlanMultiplier}`" :presale-plan-id="selectedPlanId" :presale-month="catalog.period.month" :presale-multiplier="selectedPlanMultiplier" @close="closeCheckout" />
     </BaseDialog>
   </div>
 </template>
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-import { useWindowScroll } from '@vueuse/core'
+import { useEventListener, useWindowScroll } from '@vueuse/core'
 import { useAppStore } from '@/stores/app'
 import { useAuthStore } from '@/stores/auth'
 import { useSubscriptionStore } from '@/stores/subscriptions'
@@ -101,10 +133,14 @@ import Icon from '@/components/icons/Icon.vue'
 import HomeHeader from '@/components/home/HomeHeader.vue'
 import { initializeTheme } from '@/utils/theme'
 import { sanitizeUrl } from '@/utils/url'
+import { extractApiErrorCode, extractApiErrorMetadata } from '@/utils/apiError'
 import BaseDialog from '@/components/common/BaseDialog.vue'
+import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import Select, { type SelectOption } from '@/components/common/Select.vue'
 import PresaleBenefits from '@/components/presale/PresaleBenefits.vue'
 import PaymentView from '@/views/user/PaymentView.vue'
+import { hasWechatResumeQuery } from '@/views/user/paymentWechatResume'
+import { PAYMENT_RECOVERY_STORAGE_KEY, readPaymentRecoverySnapshot, type PaymentRecoverySnapshot } from '@/components/payment/paymentFlow'
 
 const { t, locale } = useI18n()
 const app = useAppStore(), auth = useAuthStore(), route = useRoute(), router = useRouter()
@@ -124,6 +160,56 @@ function toggleTheme() {
 }
 const catalog = ref<PresaleCatalog | null>(null), loading = ref(true), error = ref(''), selectedPlanId = ref<number | null>(null)
 const planMultipliers = ref<Record<number, number>>({})
+type AvailabilityKind = 'checking' | 'available' | 'reserved' | 'pending' | 'refund' | 'existing' | 'blocked' | 'error'
+interface PlanAvailability { kind: AvailabilityKind; reason?: string; orderId?: number; orderPlanId?: number }
+const planAvailability = ref<Record<number, PlanAvailability>>({})
+const recovery = ref<PaymentRecoverySnapshot | null>(null)
+let loadRequest = 0, availabilityRequest = 0
+function availability(plan: SubscriptionPlan): PlanAvailability {
+  if (!auth.isAuthenticated) return { kind: 'available' }
+  return planAvailability.value[plan.id] ?? { kind: 'checking' }
+}
+function canReserve(plan: SubscriptionPlan) { return availability(plan).kind === 'available' }
+function canResume(plan: SubscriptionPlan) {
+  const state = availability(plan)
+  return state.kind === 'pending' && state.orderPlanId === plan.id && recovery.value?.orderType === 'subscription'
+    && recovery.value.orderId === state.orderId
+}
+function availabilityMessage(plan: SubscriptionPlan): string {
+  const state = availability(plan)
+  if (state.reason) return t(`presale.errors.${state.reason}`)
+  return t(`presale.availability.${state.kind}Copy`, { month: date(catalog.value?.period.starts_at, true) })
+}
+async function refreshAvailability() {
+  const request = ++availabilityRequest
+  planAvailability.value = {}
+  try { recovery.value = readPaymentRecoverySnapshot(localStorage.getItem(PAYMENT_RECOVERY_STORAGE_KEY)) }
+  catch { recovery.value = null }
+  if (!auth.isAuthenticated || !catalog.value?.enabled) return
+  const month = catalog.value.period.month
+  await Promise.all(catalog.value.plans.map(async plan => {
+    let state: PlanAvailability
+    try {
+      const { data } = await presaleAPI.quote(plan.id)
+      state = data.month === month ? { kind: 'available' } : { kind: 'error', reason: 'PRESALE_MONTH_CHANGED' }
+    } catch (err: unknown) {
+      const reason = extractApiErrorCode(err)
+      if (reason === 'PRESALE_ALREADY_RESERVED') {
+        const metadata = extractApiErrorMetadata(err)
+        const status = metadata?.order_status
+        const kind = status === 'PENDING' ? 'pending'
+          : ['REFUND_REQUESTED', 'REFUNDING', 'REFUND_FAILED'].includes(String(status)) ? 'refund'
+          : ['PAID', 'RECHARGING', 'COMPLETED', 'FAILED'].includes(String(status)) ? 'reserved' : 'existing'
+        state = { kind, orderId: Number(metadata?.order_id), orderPlanId: Number(metadata?.order_plan_id) }
+      } else if (['PRESALE_COVERAGE_OVERLAP', 'PRESALE_LEGACY_SUBSCRIPTION', 'PRESALE_NOT_AVAILABLE'].includes(reason ?? '')) {
+        state = { kind: 'blocked', reason }
+      } else {
+        state = { kind: 'error' }
+      }
+    }
+    if (request === availabilityRequest) planAvailability.value[plan.id] = state
+  }))
+}
 const selectedPlanMultiplier = computed(() => {
   const plan = catalog.value?.plans.find(p => p.id === selectedPlanId.value)
   return plan ? planMultiplier(plan) : undefined
@@ -178,6 +264,7 @@ function quotas(plan: SubscriptionPlan) {
     .map(([key, value]) => ({ label: t(`presale.${key}`), value: `$${scaledPlanValue(plan, value!).toLocaleString(locale.value)}` }))
 }
 function selectPlan(plan: SubscriptionPlan) {
+  if (!canReserve(plan) && !canResume(plan)) return
   const query: Record<string, string> = { plan: String(plan.id) }
   if (plan.custom_multiplier_enabled || renewalMultiplier(plan) != null) query.multiplier = String(planMultiplier(plan))
   const redirect = `/presale?${new URLSearchParams(query)}`
@@ -189,26 +276,43 @@ function restoreSelection() {
   const plan = catalog.value?.enabled && catalog.value.plans.find(p => p.id === Number(route.query.plan))
   if (!plan) return
   if (route.query.multiplier != null) planMultipliers.value[plan.id] = Number(route.query.multiplier)
-  if (auth.isAuthenticated) selectedPlanId.value = plan.id
+  // Login-return links wait for the same eligibility check as the cards.
+  // Provider returns still resume inside PaymentView's server-side guards.
+  if (auth.isAuthenticated && (canReserve(plan) || canResume(plan) || hasWechatResumeQuery(route.query))) selectedPlanId.value = plan.id
 }
 function closeCheckout() {
   selectedPlanId.value = null
   void router.replace({ path: '/presale', hash: route.hash })
+  void refreshAvailability()
 }
 async function load() {
+  const request = ++loadRequest
+  ++availabilityRequest
+  planAvailability.value = {}
   loading.value = true; error.value = ''
   try {
     const [result] = await Promise.all([
       presaleAPI.catalog(),
-      auth.isAuthenticated ? subscriptions.fetchActiveSubscriptions() : Promise.resolve(),
+      auth.isAuthenticated ? subscriptions.fetchActiveSubscriptions(true) : Promise.resolve(),
     ])
+    if (request !== loadRequest) return
     catalog.value = result.data
+    loading.value = false
+    await refreshAvailability()
+    if (request !== loadRequest) return
     restoreSelection()
   }
-  catch { error.value = t('presale.failed') }
-  finally { loading.value = false }
+  catch { if (request === loadRequest) error.value = t('presale.failed') }
+  finally { if (request === loadRequest) loading.value = false }
 }
 watch(() => [route.query.plan, route.query.multiplier], restoreSelection)
+watch(() => [auth.isAuthenticated, auth.user?.id], () => { selectedPlanId.value = null; void load() })
+function refreshOnReturn() {
+  if (!document.hidden && !loading.value && selectedPlanId.value == null) void refreshAvailability()
+}
+useEventListener(window, 'focus', refreshOnReturn)
+useEventListener(document, 'visibilitychange', refreshOnReturn)
+onBeforeUnmount(() => { ++loadRequest; ++availabilityRequest })
 onMounted(() => {
   void load()
   if (!app.publicSettingsLoaded) void app.fetchPublicSettings()
@@ -275,14 +379,29 @@ h1 em { display: block; font-style: normal; color: var(--cafe-accent); }
 .ticket-perforation { border-top: 1px dashed var(--ticket-edge); margin-top: 27px; }
 .ticket-footer { display: flex; justify-content: space-between; padding: 17px 20px; font-size: 9px; color: var(--ticket-muted); }
 .art-note { position: absolute; bottom: 2px; font-size: 8px; letter-spacing: .25em; opacity: .6; }
-.timeline { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 24px; border-block: 1px solid var(--cafe-line); padding: 30px 0 20px; }.timeline-step { display: flex; gap: 16px; }.step-index { font: italic 20px Georgia, serif; color: var(--cafe-accent); }.step-label { font-size: 12px; color: var(--cafe-muted); }.step-date { font-size: 16px; margin: 10px 0 8px; }.step-copy { font-size: 11px; color: var(--cafe-muted); }.timezone { color: var(--cafe-muted); font-size: 10px; line-height: 1.7; }.timeline .timezone { grid-column: 1/-1; margin-top: 25px; }
+.timeline { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 24px; border-block: 1px solid var(--cafe-line); padding: 30px 0; }.timeline-step { display: flex; gap: 16px; }.step-index { font: italic 20px Georgia, serif; color: var(--cafe-accent); }.step-label { font-size: 12px; color: var(--cafe-muted); }.step-date { font-size: 16px; margin: 10px 0 8px; }.step-copy { font-size: 11px; color: var(--cafe-muted); }
 .plans-section, .value-section { padding: 78px 0; }.section-heading { display: flex; align-items: end; justify-content: space-between; gap: 24px; margin-bottom: 32px; }h2 { font: 400 28px/1.5 Georgia, 'Noto Serif CJK SC', 'Songti SC', serif; margin-top: 12px; letter-spacing: -.02em; }.section-heading>p { max-width: 330px; color: var(--cafe-muted); font-size: 12px; line-height: 1.8; }
 .plan-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(245px, 1fr)); gap: 18px; }.presale-plan { padding: 27px; border: 1px solid var(--cafe-line); border-radius: 12px; background: var(--cafe-surface); display: flex; flex-direction: column; min-width: 0; transition: border-color .3s, transform .3s; }.presale-plan:hover { border-color: var(--cafe-accent); transform: translateY(-4px); }.plan-top { display: flex; align-items: center; justify-content: space-between; min-height: 24px; gap: 8px; }.plan-index { color: var(--cafe-muted); font-size: 9px; letter-spacing: .08em; }.plan-badge { color: var(--cafe-accent); font-size: 10px; padding: 3px 8px; border: 1px solid var(--cafe-line); border-radius: 20px; }.presale-plan h3 { font: 400 26px Georgia, serif; margin-top: 22px; }.plan-description { font-size: 12px; color: var(--cafe-muted); line-height: 1.8; margin-top: 12px; min-height: 44px; }.plan-price { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px; padding: 25px 0; }.plan-price strong { font: 400 40px Georgia, serif; } .price-currency { font-size: .55em; margin-right: 2px; }.plan-price>span { font-size: 10px; color: var(--cafe-muted); }.old-price { text-decoration: line-through; }.plan-quotas { border-block: 1px solid var(--cafe-line); padding: 10px 0; }.plan-quotas div { display: flex; justify-content: space-between; gap: 12px; font-size: 12px; padding: 7px 0; }.plan-quotas dt { color: var(--cafe-muted); }.plan-features { flex: 1; margin-block: 22px 30px; }.plan-features li { display: flex; align-items: start; gap: 9px; font-size: 12px; line-height: 1.8; margin-bottom: 9px; }.plan-features svg { flex-shrink: 0; margin-top: 3px; color: var(--cafe-accent); }.plan-multiplier { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 16px; font-size: 12px; color: var(--cafe-muted); }.multiplier-select { width: 112px; flex-shrink: 0; }.plan-buy { width: 100%; }.empty-state { border: 1px dashed var(--cafe-line); border-radius: 12px; padding: 55px 28px; text-align: center; }.empty-state h3 { font: 400 23px Georgia, serif; margin-top: 12px; }.empty-state>p:not(.eyebrow) { color: var(--cafe-muted); font-size: 13px; margin-top: 14px; }.empty-state .quiet-link { display: inline-block; margin-top: 22px; }
-.value-section { border-top: 1px solid var(--cafe-line); }.policy-section { display: grid; grid-template-columns: 1fr 1.4fr; gap: 60px; padding: 60px 0 80px; border-top: 1px solid var(--cafe-line); }.policy-section .timezone { margin-top: 18px; }.policy-details>div:not(.period-note) { display: flex; align-items: start; gap: 25px; padding-block: 20px; border-bottom: 1px solid var(--cafe-line); }.policy-details>div:first-child { padding-top: 0; }.policy-figure { width: 85px; flex-shrink: 0; font: 400 30px Georgia, serif; color: var(--cafe-accent); }.policy-figure>span { font-size: 15px; }.policy-details h3 { font-size: 13px; margin-bottom: 8px; }.policy-details p,.period-note { color: var(--cafe-muted); font-size: 12px; line-height: 1.8; }.period-note { padding-top: 20px; }
-.balance-callout { display: flex; justify-content: space-between; align-items: center; gap: 25px; padding: 35px; border-radius: 12px; border: 1px solid var(--cafe-line); background: var(--cafe-surface); margin-bottom: 60px; }.balance-callout h2 { font-size: 23px; }.balance-callout p:last-child { font-size: 12px; line-height: 1.8; max-width: 530px; color: var(--cafe-muted); margin-top: 12px; }.balance-callout .btn { flex-shrink: 0; }footer { padding: 30px 0; border-top: 1px solid var(--cafe-line); display: flex; justify-content: space-between; gap: 20px; color: var(--cafe-muted); font-size: 11px; }
+.value-section { border-top: 1px solid var(--cafe-line); }.policy-section { display: grid; grid-template-columns: 1fr 1.4fr; gap: 60px; padding: 60px 0 80px; border-top: 1px solid var(--cafe-line); }.policy-details>div:not(.period-note) { display: flex; align-items: start; gap: 25px; padding-block: 20px; border-bottom: 1px solid var(--cafe-line); }.policy-details>div:first-child { padding-top: 0; }.policy-figure { width: 85px; flex-shrink: 0; font: 400 30px Georgia, serif; color: var(--cafe-accent); }.policy-figure>span { font-size: 15px; }.policy-details h3 { font-size: 13px; margin-bottom: 8px; }.policy-details p,.period-note { color: var(--cafe-muted); font-size: 12px; line-height: 1.8; }.period-note { padding-top: 20px; }
+.balance-callout { display: flex; justify-content: space-between; align-items: center; gap: 25px; padding: 35px; border-radius: 12px; border: 1px solid var(--cafe-line); background: var(--cafe-surface); margin-bottom: 60px; }.balance-callout h2 { font-size: 23px; }.balance-callout p:last-child { font-size: 12px; line-height: 1.8; max-width: 530px; color: var(--cafe-muted); margin-top: 12px; }.balance-callout .btn { flex-shrink: 0; }footer { padding: 30px 0; border-top: 1px solid var(--cafe-line); display: flex; justify-content: center; color: var(--cafe-muted); font-size: 11px; }
+.plan-availability { margin-bottom: 14px; padding: 12px 14px; border: 1px solid var(--cafe-line); border-radius: 8px; background: var(--cafe-page); }
+.plan-availability strong { display: block; color: var(--cafe-accent); font-size: 12px; font-weight: 500; }
+.plan-availability p { margin-top: 5px; font-size: 11px; line-height: 1.7; color: var(--cafe-muted); }
+.plan-buy:disabled { opacity: .55; cursor: not-allowed; }
+.plan-buy-label { display: inline-flex; align-items: center; justify-content: center; gap: 12px; transition: opacity .2s ease, transform .2s ease; }
+/* Keep the original label in flow so loading never resizes the button. */
+.plan-buy.is-checking:disabled { opacity: 1; cursor: wait; box-shadow: none; }
+.plan-buy.is-checking .plan-buy-label { opacity: 0; transform: translateY(3px); }
+.plan-buy.is-checking::before { opacity: 0; }
+.reserve-loading-enter-active, .reserve-loading-leave-active { transition: opacity .16s ease; }
+.reserve-loading-enter-from, .reserve-loading-leave-to { opacity: 0; }
+.plan-resume .quiet-link { display: block; text-align: center; margin-top: 12px; }
 @keyframes coffee-warmth { 0%, 100% { opacity: .2; transform: translateY(2px); } 50% { opacity: .4; transform: translateY(-5px); } }
 @keyframes ticket-arrive { from { opacity: 0; transform: translateY(15px) rotate(-1deg); } }
 @media(max-width: 900px) { main, footer { width: calc(100% - 48px); }.presale-hero { gap: 0; min-height: 480px; }.month-art { height: 340px; }.month-ticket, .month-art::before { width: 210px; }.month-art::before { height: 257px; }.ticket-date strong { font-size: 84px; }.ticket-month-abbr { font-size: 24px; }.step-date { font-size: 13px; }.policy-section { gap: 30px; }.balance-callout { flex-direction: column; align-items: start; } }
-@media(max-width: 640px) { main, footer { width: calc(100% - 36px); }.presale-hero { grid-template-columns: 1fr; padding: 45px 0 28px; }.month-art { height: 340px; margin-top: 24px; overflow: hidden; }.timeline { grid-template-columns: 1fr; gap: 24px; }.timeline .timezone { margin-top: 0; }.step-date { font-size: 15px; }.section-heading { flex-direction: column; align-items: start; gap: 14px; }h2 { font-size: 24px; }.plans-section,.value-section { padding: 45px 0; }.policy-section { grid-template-columns: 1fr; padding-block: 40px; }.balance-callout { padding: 24px; }.hero-actions { gap: 18px; }footer { flex-wrap: wrap; } }
+@media(max-width: 640px) { main, footer { width: calc(100% - 36px); }.presale-hero { grid-template-columns: 1fr; padding: 45px 0 28px; }.month-art { height: 340px; margin-top: 24px; overflow: hidden; }.timeline { grid-template-columns: 1fr; gap: 24px; }.step-date { font-size: 15px; }.section-heading { flex-direction: column; align-items: start; gap: 14px; }h2 { font-size: 24px; }.plans-section,.value-section { padding: 45px 0; }.policy-section { grid-template-columns: 1fr; padding-block: 40px; }.balance-callout { padding: 24px; }.hero-actions { gap: 18px; }footer { flex-wrap: wrap; } }
 @media(prefers-reduced-motion: reduce) { .coffee-steam,.month-ticket { animation: none; }.presale-plan { transition: none; } }
+@media(prefers-reduced-motion: reduce) {
+  .plan-buy-label, .reserve-loading-enter-active, .reserve-loading-leave-active { transition: none; }
+}
 </style>

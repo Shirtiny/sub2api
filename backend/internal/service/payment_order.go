@@ -586,8 +586,10 @@ func (s *PaymentService) createOrderInTx(ctx context.Context, req CreateOrderReq
 		}
 	}
 	if presale != nil {
+		// Reset cards follow official grants, not a fixed per-plan bonus. New
+		// orders keep the default zero; historical order snapshots remain intact.
 		b.SetPresaleStartsAt(presale.StartsAt).SetPresaleExpiresAt(presale.ExpiresAt).
-			SetPresaleRenewal(presale.Renewal).SetPresalePlanName(plan.Name).SetPresaleResetCards(plan.PresaleResetCards)
+			SetPresaleRenewal(presale.Renewal).SetPresalePlanName(plan.Name)
 	}
 	order, err := b.Save(txCtx)
 	if err != nil {

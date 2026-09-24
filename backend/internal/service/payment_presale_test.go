@@ -4,7 +4,9 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -50,7 +52,7 @@ func TestPresalePlanValidation(t *testing.T) {
 		{"legacy immediate", "", false, true, true, ""},
 		{"cannot bypass", "", true, true, true, "PRESALE_REQUIRED"},
 		{"disabled", month, false, true, true, "PRESALE_NOT_AVAILABLE"},
-		{"hidden", month, true, false, true, "PRESALE_NOT_AVAILABLE"},
+		{"legacy hidden flag ignored", month, true, false, true, ""},
 		{"not for sale", month, true, true, false, "PRESALE_NOT_AVAILABLE"},
 		{"stale", "2000-01", true, true, true, "PRESALE_MONTH_CHANGED"},
 	} {
@@ -80,12 +82,63 @@ func newPresaleFixture(t *testing.T) (*PaymentService, *dbent.User, *dbent.Subsc
 
 func newPresaleOrder(t *testing.T, s *PaymentService, u *dbent.User, p *dbent.SubscriptionPlan, period PresalePeriod) *dbent.PaymentOrder {
 	t.Helper()
+	// Legacy paid snapshots retain any reset cards already promised at purchase.
 	ctx := context.Background()
 	return s.entClient.PaymentOrder.Create().SetUserID(u.ID).SetUserEmail(u.Email).SetUserName(u.Username).
 		SetAmount(p.Price).SetPayAmount(p.Price).SetRechargeCode("presale").SetOutTradeNo(generateOutTradeNo()).SetPaymentType(payment.TypeAlipay).SetPaymentTradeNo("").
 		SetOrderType(payment.OrderTypeSubscription).SetPlanID(p.ID).SetSubscriptionGroupID(p.GroupID).SetSubscriptionSourceGroupID(p.GroupID).SetSubscriptionDays(int(period.ExpiresAt.Sub(period.StartsAt).Hours() / 24)).SetSubscriptionConcurrency(p.Concurrency).SetSubscriptionMultiplier(1).
 		SetStatus(OrderStatusPaid).SetPaidAt(time.Now()).SetExpiresAt(time.Now().Add(time.Hour)).SetClientIP("127.0.0.1").SetSrcHost("localhost").
 		SetPresaleStartsAt(period.StartsAt).SetPresaleExpiresAt(period.ExpiresAt).SetPresalePlanName(p.Name).SetPresaleResetCards(p.PresaleResetCards).SaveX(ctx)
+}
+
+func TestPresaleNewOrderIgnoresLegacyVisibilityAndResetBonus(t *testing.T) {
+	s, u, p := newPresaleFixture(t)
+	ctx := context.Background()
+	p = s.entClient.SubscriptionPlan.UpdateOneID(p.ID).SetPresaleVisible(false).SetPresaleResetCards(9).SaveX(ctx)
+	period := NextPresalePeriod(time.Now())
+	order, err := s.createOrderInTx(ctx, CreateOrderRequest{
+		UserID: u.ID, PlanID: p.ID, Multiplier: 1, OrderType: payment.OrderTypeSubscription,
+		PaymentType: payment.TypeAlipay, PresaleMonth: period.Month, ClientIP: "127.0.0.1", SrcHost: "localhost",
+	}, &User{ID: u.ID, Email: u.Email, Username: u.Username}, p, &PaymentConfig{}, p.Price, p.Price, 0, p.Price, nil)
+	require.NoError(t, err)
+	require.Zero(t, order.PresaleResetCards)
+	require.True(t, order.PresaleStartsAt.Equal(period.StartsAt))
+	s.entClient.PaymentOrder.UpdateOneID(order.ID).SetStatus(OrderStatusPaid).SetPaidAt(time.Now()).ExecX(ctx)
+	require.NoError(t, s.ExecuteSubscriptionFulfillment(ctx, order.ID))
+	activated, err := s.activatePresale(ctx, order.ID, period.StartsAt)
+	require.NoError(t, err)
+	require.True(t, activated)
+	require.Zero(t, s.entClient.UserSubscription.Query().OnlyX(ctx).ResetCount)
+}
+
+func TestPresaleAdminConfigOnlyNeedsEnabledAndForSale(t *testing.T) {
+	s, _, p := newPresaleFixture(t)
+	ctx := context.Background()
+	var req CreatePlanRequest
+	require.NoError(t, json.Unmarshal([]byte(fmt.Sprintf(`{
+		"group_id": %d, "name": "Simple presale", "price": 100, "validity_days": 30,
+		"validity_unit": "days", "for_sale": true, "presale_enabled": true,
+		"presale_badge": "  Next month  ", "presale_visible": false, "presale_reset_cards": 99
+	}`, p.GroupID)), &req))
+	plan, err := s.configService.CreatePlan(ctx, req)
+	require.NoError(t, err)
+	require.True(t, plan.PresaleEnabled)
+	require.Zero(t, plan.PresaleResetCards)
+	require.Equal(t, "Next month", plan.PresaleBadge)
+	plans, err := s.configService.ListPresalePlans(ctx)
+	require.NoError(t, err)
+	require.Len(t, plans, 2)
+
+	// Old fields are ignored, not a hidden second switch or a configurable grant.
+	var patch UpdatePlanRequest
+	require.NoError(t, json.Unmarshal([]byte(`{"presale_badge":" Updated ","presale_visible":false,"presale_reset_cards":99}`), &patch))
+	plan, err = s.configService.UpdatePlan(ctx, plan.ID, patch)
+	require.NoError(t, err)
+	require.Zero(t, plan.PresaleResetCards)
+	require.Equal(t, "Updated", plan.PresaleBadge)
+	require.NoError(t, validatePresaleOrderPlan(plan, CreateOrderRequest{PresaleMonth: NextPresalePeriod(time.Now()).Month}, time.Now()))
+	require.NoError(t, validatePresalePlanFields(strings.Repeat("月", 40)))
+	require.Equal(t, "PRESALE_CONFIG_INVALID", infraerrors.Reason(validatePresalePlanFields(strings.Repeat("月", 41))))
 }
 
 func TestPresalePaymentDefersActivationAndIsIdempotent(t *testing.T) {
@@ -151,12 +204,72 @@ func TestPresaleSlotAndOverlap(t *testing.T) {
 	o := newPresaleOrder(t, s, u, p, period)
 	_, err = s.GetPresaleQuote(ctx, u.ID, p.ID)
 	require.Equal(t, "PRESALE_ALREADY_RESERVED", infraerrors.Reason(err))
+	require.Equal(t, OrderStatusPaid, infraerrors.FromError(err).Metadata["order_status"])
 	s.entClient.PaymentOrder.UpdateOneID(o.ID).SetStatus(OrderStatusPartiallyRefunded).ExecX(ctx)
 	_, err = s.GetPresaleQuote(ctx, u.ID, p.ID)
 	require.NoError(t, err)
 	s.entClient.UserSubscription.Create().SetUserID(u.ID).SetGroupID(p.GroupID).SetStartsAt(time.Now()).SetExpiresAt(period.StartsAt.Add(time.Hour)).SaveX(ctx)
 	_, err = s.GetPresaleQuote(ctx, u.ID, p.ID)
 	require.Equal(t, "PRESALE_COVERAGE_OVERLAP", infraerrors.Reason(err))
+}
+
+func TestPresaleEligibilityReservationStatus(t *testing.T) {
+	for _, tc := range []struct {
+		status                 string
+		paid, expired, blocked bool
+	}{
+		{OrderStatusPending, false, false, true},
+		{OrderStatusPending, false, true, false},
+		{OrderStatusPaid, true, true, true},
+		{OrderStatusRecharging, true, true, true},
+		{OrderStatusCompleted, true, true, true},
+		{OrderStatusFailed, true, true, true},
+		{OrderStatusFailed, false, false, false},
+		{OrderStatusRefundRequested, true, true, true},
+		{OrderStatusRefunding, true, true, true},
+		{OrderStatusRefundFailed, true, true, true},
+		{OrderStatusRefunded, true, true, false},
+		{OrderStatusPartiallyRefunded, true, true, false},
+		{OrderStatusCancelled, false, false, false},
+		{OrderStatusExpired, false, true, false},
+	} {
+		t.Run(fmt.Sprintf("%s/paid=%t/expired=%t", tc.status, tc.paid, tc.expired), func(t *testing.T) {
+			s, u, p := newPresaleFixture(t)
+			ctx := context.Background()
+			o := newPresaleOrder(t, s, u, p, NextPresalePeriod(time.Now()))
+			update := s.entClient.PaymentOrder.UpdateOneID(o.ID).SetStatus(tc.status)
+			if !tc.paid {
+				update.ClearPaidAt()
+			}
+			if tc.expired {
+				update.SetExpiresAt(time.Now().Add(-time.Hour))
+			}
+			update.ExecX(ctx)
+			_, err := s.GetPresaleQuote(ctx, u.ID, p.ID)
+			if tc.blocked {
+				require.Equal(t, "PRESALE_ALREADY_RESERVED", infraerrors.Reason(err))
+				require.Equal(t, map[string]string{"order_status": tc.status, "order_id": fmt.Sprint(o.ID), "order_plan_id": fmt.Sprint(p.ID)}, infraerrors.FromError(err).Metadata)
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestPresaleEligibilityChecksOwnedGroupAndMonth(t *testing.T) {
+	s, u, p := newPresaleFixture(t)
+	ctx := context.Background()
+	period := NextPresalePeriod(time.Now())
+	otherUser := s.entClient.User.Create().SetEmail("other@example.com").SetPasswordHash("hash").SaveX(ctx)
+	newPresaleOrder(t, s, otherUser, p, period)
+	newPresaleOrder(t, s, u, p, NextPresalePeriod(time.Now().AddDate(0, 1, 0)))
+	_, err := s.GetPresaleQuote(ctx, u.ID, p.ID)
+	require.NoError(t, err, "another user or month must not occupy this user's slot")
+	newPresaleOrder(t, s, u, p, period)
+	sibling := s.entClient.SubscriptionPlan.Create().SetGroupID(p.GroupID).SetName("Sibling plan").SetPrice(200).SetForSale(true).SetPresaleEnabled(true).SetPresaleVisible(true).SaveX(ctx)
+	_, err = s.GetPresaleQuote(ctx, u.ID, sibling.ID)
+	require.Equal(t, "PRESALE_ALREADY_RESERVED", infraerrors.Reason(err))
+	require.Equal(t, OrderStatusPaid, infraerrors.FromError(err).Metadata["order_status"])
 }
 
 func TestPresaleRefundPolicyBoundaries(t *testing.T) {
@@ -256,13 +369,13 @@ func TestPresaleCatalogFiltering(t *testing.T) {
 	for _, tc := range []struct {
 		sale, enabled, visible bool
 		count                  int
-	}{{true, true, true, 1}, {false, true, true, 0}, {true, false, true, 0}, {true, true, false, 0}} {
+	}{{true, true, true, 1}, {false, true, true, 0}, {true, false, true, 0}, {true, true, false, 1}, {false, true, false, 0}, {true, false, false, 0}} {
 		s.entClient.SubscriptionPlan.UpdateOneID(p.ID).SetForSale(tc.sale).SetPresaleEnabled(tc.enabled).SetPresaleVisible(tc.visible).ExecX(ctx)
 		plans, err := s.configService.ListPresalePlans(ctx)
 		require.NoError(t, err)
 		require.Len(t, plans, tc.count)
 	}
-	s.entClient.SubscriptionPlan.UpdateOneID(p.ID).SetPresaleVisible(true).ExecX(ctx)
+	s.entClient.SubscriptionPlan.UpdateOneID(p.ID).SetForSale(true).SetPresaleEnabled(true).ExecX(ctx)
 	s.entClient.Group.UpdateOneID(p.GroupID).SetStatus(StatusDisabled).ExecX(ctx)
 	plans, err := s.configService.ListPresalePlans(ctx)
 	require.NoError(t, err)

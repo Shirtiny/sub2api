@@ -117,9 +117,7 @@ export interface PaymentOrder {
 
 export interface SubscriptionPlan {
   presale_enabled?: boolean
-  presale_visible?: boolean
   presale_badge?: string
-  presale_reset_cards?: number
   id: number
   group_id: number
   group_platform?: string

@@ -201,17 +201,32 @@ appStore.addToast({
 
 ### LoadingSpinner.vue
 
-Simple animated loading spinner.
+Shared loading indicator with a classic spinner and Café steam animation. The steam
+variant includes a subtle sweeping sheen when used as an overlay. Both respect
+reduced-motion preferences and have a localized accessible loading label by default.
 
 **Props:**
 
 - `size?: 'sm' | 'md' | 'lg' | 'xl'` - Spinner size (default: 'md')
-- `color?: 'primary' | 'secondary' | 'white' | 'gray'` - Spinner color (default: 'primary')
+- `color?: 'primary' | 'secondary' | 'white' | 'gray' | 'current'` - Color; `current` inherits the parent text color (default: 'primary')
+- `variant?: 'spinner' | 'steam'` - Animation style (default: 'spinner', preserving existing callers)
+- `overlay?: boolean` - Fill and center within a positioned parent without affecting its size (default: false)
+- `decorative?: boolean` - Hide from assistive technology when the parent already announces loading (default: false)
+
+Steam SVG sizes are 48×18, 64×24, 96×36 and 128×48 for `sm` through `xl`.
 
 **Usage:**
 
 ```vue
 <LoadingSpinner size="lg" color="primary" />
+<LoadingSpinner variant="steam" color="current" />
+
+<!-- Keep the label in flow to preserve button dimensions. The button owns busy/disabled state. -->
+<button class="relative overflow-hidden" :disabled="loading" :aria-busy="loading"
+        :aria-label="loading ? t('common.loading') : undefined">
+  <span :class="{ invisible: loading }" :aria-hidden="loading || undefined">{{ t('presale.buy') }}</span>
+  <LoadingSpinner v-if="loading" variant="steam" color="current" overlay decorative />
+</button>
 ```
 
 ---

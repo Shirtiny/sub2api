@@ -264,7 +264,7 @@ func (s *PaymentConfigService) ListPlansForSale(ctx context.Context) ([]*dbent.S
 }
 
 func (s *PaymentConfigService) CreatePlan(ctx context.Context, req CreatePlanRequest) (*dbent.SubscriptionPlan, error) {
-	if err := validatePresalePlanFields(req.PresaleBadge, req.PresaleResetCards); err != nil {
+	if err := validatePresalePlanFields(req.PresaleBadge); err != nil {
 		return nil, err
 	}
 	if req.Concurrency == 0 {
@@ -291,8 +291,7 @@ func (s *PaymentConfigService) CreatePlan(ctx context.Context, req CreatePlanReq
 		SetEarlyResetDurationDays(earlyResetDurationDays).
 		SetFeatures(req.Features).SetProductName(req.ProductName).
 		SetForSale(req.ForSale).SetSortOrder(req.SortOrder).
-		SetPresaleEnabled(req.PresaleEnabled).SetPresaleVisible(req.PresaleVisible).
-		SetPresaleBadge(strings.TrimSpace(req.PresaleBadge)).SetPresaleResetCards(req.PresaleResetCards).
+		SetPresaleEnabled(req.PresaleEnabled).SetPresaleBadge(strings.TrimSpace(req.PresaleBadge)).
 		SetCustomMultiplierEnabled(req.CustomMultiplierEnabled).
 		SetCustomMultiplierMin(minValue).
 		SetCustomMultiplierMax(maxValue)
@@ -374,28 +373,19 @@ func (s *PaymentConfigService) UpdatePlan(ctx context.Context, id int64, req Upd
 	if err := validatePlanPromotionBonusValidity(txCtx, tx.Client(), id, baseDays); err != nil {
 		return nil, err
 	}
-	badge, cards := current.PresaleBadge, current.PresaleResetCards
+	badge := current.PresaleBadge
 	if req.PresaleBadge != nil {
 		badge = strings.TrimSpace(*req.PresaleBadge)
 	}
-	if req.PresaleResetCards != nil {
-		cards = *req.PresaleResetCards
-	}
-	if err := validatePresalePlanFields(badge, cards); err != nil {
+	if err := validatePresalePlanFields(badge); err != nil {
 		return nil, err
 	}
 	u := tx.SubscriptionPlan.UpdateOneID(id)
 	if req.PresaleEnabled != nil {
 		u.SetPresaleEnabled(*req.PresaleEnabled)
 	}
-	if req.PresaleVisible != nil {
-		u.SetPresaleVisible(*req.PresaleVisible)
-	}
 	if req.PresaleBadge != nil {
 		u.SetPresaleBadge(badge)
-	}
-	if req.PresaleResetCards != nil {
-		u.SetPresaleResetCards(cards)
 	}
 
 	if req.GroupID != nil {

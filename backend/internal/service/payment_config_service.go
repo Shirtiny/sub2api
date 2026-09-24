@@ -159,9 +159,7 @@ type UpdateProviderInstanceRequest struct {
 }
 type CreatePlanRequest struct {
 	PresaleEnabled          bool     `json:"presale_enabled"`
-	PresaleVisible          bool     `json:"presale_visible"`
 	PresaleBadge            string   `json:"presale_badge"`
-	PresaleResetCards       int      `json:"presale_reset_cards"`
 	GroupID                 int64    `json:"group_id"`
 	Name                    string   `json:"name"`
 	Description             string   `json:"description"`
@@ -183,9 +181,7 @@ type CreatePlanRequest struct {
 
 type UpdatePlanRequest struct {
 	PresaleEnabled          *bool    `json:"presale_enabled"`
-	PresaleVisible          *bool    `json:"presale_visible"`
 	PresaleBadge            *string  `json:"presale_badge"`
-	PresaleResetCards       *int     `json:"presale_reset_cards"`
 	GroupID                 *int64   `json:"group_id"`
 	Name                    *string  `json:"name"`
 	Description             *string  `json:"description"`

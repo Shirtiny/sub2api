@@ -24,8 +24,7 @@ func presaleOrderInfo(o *dbent.PaymentOrder) PresaleOrderInfo {
 
 type presaleCatalogPlan struct {
 	checkoutPlan
-	Badge      string `json:"presale_badge"`
-	ResetCards int    `json:"presale_reset_cards"`
+	Badge string `json:"presale_badge"`
 }
 
 func (h *PaymentHandler) GetPresaleCatalog(c *gin.Context) {
@@ -52,7 +51,7 @@ func (h *PaymentHandler) GetPresaleCatalog(c *gin.Context) {
 			DailyLimitUSD: gi.DailyLimitUSD, WeeklyLimitUSD: gi.WeeklyLimitUSD, MonthlyLimitUSD: gi.MonthlyLimitUSD, ModelScopes: gi.ModelScopes,
 			Name: p.Name, Description: p.Description, Price: p.Price, OriginalPrice: p.OriginalPrice, ValidityDays: 1, ValidityUnit: "months", Concurrency: p.Concurrency,
 			Features: parseFeatures(p.Features), CustomMultiplierEnabled: p.CustomMultiplierEnabled, CustomMultiplierMin: p.CustomMultiplierMin, CustomMultiplierMax: p.CustomMultiplierMax, PresaleEnabled: true,
-		}, Badge: p.PresaleBadge, ResetCards: p.PresaleResetCards})
+		}, Badge: p.PresaleBadge})
 	}
 	response.Success(c, gin.H{"period": service.NextPresalePeriod(time.Now()), "plans": result, "enabled": cfg.Enabled && len(result) > 0, "server_time": time.Now()})
 }
