@@ -55,94 +55,36 @@
       <Pagination v-if="orderPagination.total > 0" :page="orderPagination.page" :total="orderPagination.total" :page-size="orderPagination.page_size" @update:page="handleOrderPageChange" @update:pageSize="handleOrderPageSizeChange" />
     </div>
 
-    <!-- Order Detail Dialog -->
-    <BaseDialog :show="showDetailDialog" :title="t('payment.admin.orderDetail')" width="wide" @close="showDetailDialog = false">
-      <div v-if="selectedOrder" class="space-y-4">
-        <PresaleOrderTerm :order="selectedOrder" />
-        <div class="grid grid-cols-2 gap-4">
-          <div><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('payment.orders.orderId') }}</p><p class="font-mono text-sm font-medium text-content-primary">#{{ selectedOrder.id }}</p></div>
-          <div><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('payment.orders.orderNo') }}</p><p class="text-sm font-medium text-content-primary">{{ selectedOrder.out_trade_no }}</p></div>
-          <div><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('payment.orders.status') }}</p><OrderStatusBadge :status="selectedOrder.status" /></div>
-          <div><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('payment.orders.amount') }}</p><p class="text-sm font-medium text-content-primary">{{ selectedOrder.order_type === 'balance' ? '$' : '¥' }}{{ selectedOrder.amount.toFixed(2) }}</p></div>
-          <div><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('payment.orders.payAmount') }}</p><p class="text-sm font-medium text-content-primary">¥{{ selectedOrder.pay_amount.toFixed(2) }}</p></div>
-          <div><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('payment.orders.paymentMethod') }}</p><p class="text-sm text-content-secondary">{{ t('payment.methods.' + selectedOrder.payment_type, selectedOrder.payment_type) }}</p></div>
-          <div><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('payment.admin.feeRate') }}</p><p class="text-sm text-content-secondary">{{ selectedOrder.fee_rate }}%</p></div>
-          <div><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('payment.orders.createdAt') }}</p><p class="text-sm text-content-secondary">{{ formatDateTime(selectedOrder.created_at) }}</p></div>
-          <div><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('payment.admin.expiresAt') }}</p><p class="text-sm text-content-secondary">{{ formatDateTime(selectedOrder.expires_at) }}</p></div>
-          <div v-if="selectedOrder.paid_at"><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('payment.admin.paidAt') }}</p><p class="text-sm text-content-secondary">{{ formatDateTime(selectedOrder.paid_at) }}</p></div>
-          <div v-if="selectedOrder.refund_amount"><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('payment.admin.refundAmount') }}</p><p class="text-sm font-medium text-red-600 dark:text-red-400">{{ selectedOrder.order_type === 'balance' ? '$' : '¥' }}{{ selectedOrder.refund_amount.toFixed(2) }}</p></div>
-          <div v-if="selectedOrder.refund_reason" class="col-span-2"><p class="text-xs text-gray-500 dark:text-gray-400">{{ t('payment.admin.refundReason') }}</p><p class="text-sm text-content-secondary">{{ selectedOrder.refund_reason }}</p></div>
-          <!-- Refund request info -->
-          <div v-if="selectedOrder.refund_requested_at" class="col-span-2 border-t border-gray-200 pt-3 dark:border-dark-600">
-            <p class="mb-2 text-xs font-medium text-purple-600 dark:text-purple-400">{{ t('payment.admin.refundRequestInfo') }}</p>
-            <div class="grid grid-cols-2 gap-4">
-              <div>
-                <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('payment.admin.refundRequestedAt') }}</p>
-                <p class="text-sm text-content-secondary">{{ formatDateTime(selectedOrder.refund_requested_at) }}</p>
-              </div>
-              <div>
-                <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('payment.admin.refundRequestedBy') }}</p>
-                <p class="text-sm text-content-secondary">#{{ selectedOrder.refund_requested_by }}</p>
-              </div>
-              <div class="col-span-2">
-                <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('payment.admin.refundRequestReason') }}</p>
-                <p class="text-sm text-content-secondary">{{ selectedOrder.refund_request_reason }}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-        <!-- Audit Logs -->
-        <div v-if="orderAuditLogs.length > 0" class="border-t border-gray-200 pt-4 dark:border-dark-600">
-          <p class="mb-2 text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('payment.admin.auditLogs') }}</p>
-          <div class="max-h-48 space-y-2 overflow-y-auto">
-            <div v-for="log in orderAuditLogs" :key="log.id" class="rounded-lg border border-gray-100 bg-gray-50 p-2.5 dark:border-dark-600 dark:bg-dark-800">
-              <div class="flex items-center justify-between">
-                <span class="text-xs font-medium text-content-secondary">{{ log.action }}</span>
-                <span class="text-xs text-gray-400">{{ formatDateTime(log.created_at) }}</span>
-              </div>
-              <div v-if="log.detail" class="mt-1 break-all text-xs text-gray-500 dark:text-gray-400">{{ log.detail }}</div>
-              <div v-if="log.operator" class="mt-1 text-xs text-gray-400">{{ t('payment.admin.operator') }}: {{ log.operator }}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </BaseDialog>
+    <AdminOrderDetail
+      :show="showDetailDialog" :order="selectedOrder" :summary="orderSummary"
+      :audit-logs="orderAuditLogs" :loading="detailLoading" :error="detailError"
+      @close="closeOrderDetail" @reload="loadOrderDetail"
+    />
 
-    <AdminRefundDialog :show="showRefundDialog" :order="selectedOrder" :submitting="refundSubmitting" @confirm="handleRefund" @cancel="showRefundDialog = false" />
+    <AdminRefundDialog :show="showRefundDialog" :order="refundOrder" :submitting="refundSubmitting" @confirm="handleRefund" @cancel="showRefundDialog = false" />
   </AppLayout>
 </template>
 
 <script setup lang="ts">
-import PresaleOrderTerm from '@/components/presale/PresaleOrderTerm.vue'
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
-import { adminPaymentAPI } from '@/api/admin/payment'
+import { adminPaymentAPI, type AdminPaymentOrder, type AdminOrderSummary, type PaymentAuditLog } from '@/api/admin/payment'
 import { extractI18nErrorMessage } from '@/utils/apiError'
-import { formatOrderDateTime } from '@/components/payment/orderUtils'
 import type { PaymentOrder } from '@/types/payment'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import Pagination from '@/components/common/Pagination.vue'
-import BaseDialog from '@/components/common/BaseDialog.vue'
 import Select from '@/components/common/Select.vue'
 import Icon from '@/components/icons/Icon.vue'
 import AdminRefundDialog from '@/components/admin/payment/AdminRefundDialog.vue'
-import OrderStatusBadge from '@/components/payment/OrderStatusBadge.vue'
+import AdminOrderDetail from '@/components/admin/payment/AdminOrderDetail.vue'
 import OrderTable from '@/components/payment/OrderTable.vue'
-
-interface AuditLog {
-  id: number
-  action: string
-  detail: string | null
-  operator: string | null
-  created_at: string
-}
 
 const { t } = useI18n()
 const appStore = useAppStore()
 
 const ordersLoading = ref(false)
-const orders = ref<PaymentOrder[]>([])
+const orders = ref<AdminPaymentOrder[]>([])
 const orderSearch = ref('')
 const orderFilters = reactive({ status: '', payment_type: '', order_type: '' })
 const orderPagination = reactive({ page: 1, page_size: 20, total: 0 })
@@ -154,11 +96,16 @@ function canRetryOrder(order: PaymentOrder): boolean {
     && !!order.paid_at
     && order.failed_reason !== paymentAfterExpiryFailureReason
 }
-const selectedOrder = ref<PaymentOrder | null>(null)
+const selectedOrder = ref<AdminPaymentOrder | null>(null)
+const refundOrder = ref<PaymentOrder | null>(null)
+const orderSummary = ref<AdminOrderSummary | null>(null)
+const detailLoading = ref(false)
+const detailError = ref(false)
+let detailRequestId = 0
 const showDetailDialog = ref(false)
 const showRefundDialog = ref(false)
 const refundSubmitting = ref(false)
-const orderAuditLogs = ref<AuditLog[]>([])
+const orderAuditLogs = ref<PaymentAuditLog[]>([])
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
 function debounceLoadOrders() {
@@ -211,16 +158,38 @@ const orderTypeFilterOptions = computed(() => [
   { value: 'subscription', label: t('payment.admin.subscriptionOrder') },
 ])
 
-async function showOrderDetail(order: PaymentOrder) {
+function showOrderDetail(order: AdminPaymentOrder) {
   selectedOrder.value = order
+  orderSummary.value = null
   orderAuditLogs.value = []
   showDetailDialog.value = true
+  void loadOrderDetail()
+}
+
+function closeOrderDetail() {
+  showDetailDialog.value = false
+  detailRequestId++
+  detailLoading.value = false
+}
+
+async function loadOrderDetail() {
+  const orderId = selectedOrder.value?.id
+  if (!orderId || !showDetailDialog.value) return
+  const requestId = ++detailRequestId
+  detailLoading.value = true
+  detailError.value = false
   try {
-    const res = await adminPaymentAPI.getOrder(order.id)
-    const data = res.data as unknown as Record<string, unknown>
-    if (data.order) selectedOrder.value = data.order as PaymentOrder
-    orderAuditLogs.value = ((data.auditLogs || data.audit_logs || []) as unknown) as AuditLog[]
-  } catch (_err: unknown) { /* keep cached order data */ }
+    const { data } = await adminPaymentAPI.getOrder(orderId)
+    if (requestId !== detailRequestId) return
+    if (!data.order || data.order.id !== orderId) throw new Error('Unexpected order detail response')
+    selectedOrder.value = data.order
+    orderSummary.value = data.summary
+    orderAuditLogs.value = data.auditLogs || []
+  } catch {
+    if (requestId === detailRequestId) detailError.value = true
+  } finally {
+    if (requestId === detailRequestId) detailLoading.value = false
+  }
 }
 
 async function handleCancelOrder(order: PaymentOrder) {
@@ -233,19 +202,21 @@ async function handleRetryOrder(order: PaymentOrder) {
   catch (err: unknown) { appStore.showError(extractI18nErrorMessage(err, t, 'payment.errors', t('common.error'))) }
 }
 
-function openRefundDialog(order: PaymentOrder) { selectedOrder.value = order; showRefundDialog.value = true }
+function openRefundDialog(order: PaymentOrder) { refundOrder.value = order; showRefundDialog.value = true }
 
 async function handleRefund(data: { amount: number; reason: string; deduct_balance: boolean; force: boolean }) {
-  if (!selectedOrder.value) return
+  if (!refundOrder.value) return
   refundSubmitting.value = true
   try {
-    await adminPaymentAPI.refundOrder(selectedOrder.value.id, { amount: data.amount, reason: data.reason, deduct_balance: data.deduct_balance, force: data.force })
+    await adminPaymentAPI.refundOrder(refundOrder.value.id, { amount: data.amount, reason: data.reason, deduct_balance: data.deduct_balance, force: data.force })
     appStore.showSuccess(t('payment.admin.refundSuccess')); showRefundDialog.value = false; loadOrders()
   } catch (err: unknown) { appStore.showError(extractI18nErrorMessage(err, t, 'payment.errors', t('common.error'))) }
   finally { refundSubmitting.value = false }
 }
 
-function formatDateTime(dateStr: string): string { return formatOrderDateTime(dateStr) }
-
 onMounted(() => loadOrders())
+onBeforeUnmount(() => {
+  detailRequestId++
+  if (debounceTimer) clearTimeout(debounceTimer)
+})
 </script>

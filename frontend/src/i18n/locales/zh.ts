@@ -1,6 +1,8 @@
+import adminOrderDetail from './adminOrderDetail.zh'
 import presale from './presale.zh'
 
 export default {
+  adminOrderDetail,
   presale,
   // Home Page
   home: {

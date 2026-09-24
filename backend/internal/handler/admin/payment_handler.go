@@ -83,8 +83,17 @@ func (h *PaymentHandler) GetOrderDetail(c *gin.Context) {
 		response.ErrorFrom(c, err)
 		return
 	}
-	auditLogs, _ := h.paymentService.GetOrderAuditLogs(c.Request.Context(), orderID)
-	response.Success(c, gin.H{"order": sanitizeAdminPaymentOrderForResponse(order), "auditLogs": auditLogs})
+	summary, err := h.paymentService.GetAdminOrderSummary(c.Request.Context(), order)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	auditLogs, err := h.paymentService.GetOrderAuditLogs(c.Request.Context(), orderID)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, gin.H{"order": sanitizeAdminPaymentOrderForResponse(order), "auditLogs": auditLogs, "summary": summary})
 }
 
 // CancelOrder cancels a pending order (admin).
@@ -116,24 +125,26 @@ func (h *PaymentHandler) RetryFulfillment(c *gin.Context) {
 	response.Success(c, gin.H{"message": "fulfillment retried"})
 }
 
-func sanitizeAdminPaymentOrdersForResponse(orders []*dbent.PaymentOrder) []*dbent.PaymentOrder {
-	if len(orders) == 0 {
-		return orders
-	}
-	out := make([]*dbent.PaymentOrder, 0, len(orders))
+type adminPaymentOrderResponse struct {
+	*dbent.PaymentOrder
+	Currency string `json:"currency"`
+}
+
+func sanitizeAdminPaymentOrdersForResponse(orders []*dbent.PaymentOrder) []*adminPaymentOrderResponse {
+	out := make([]*adminPaymentOrderResponse, 0, len(orders))
 	for _, order := range orders {
 		out = append(out, sanitizeAdminPaymentOrderForResponse(order))
 	}
 	return out
 }
 
-func sanitizeAdminPaymentOrderForResponse(order *dbent.PaymentOrder) *dbent.PaymentOrder {
+func sanitizeAdminPaymentOrderForResponse(order *dbent.PaymentOrder) *adminPaymentOrderResponse {
 	if order == nil {
 		return nil
 	}
 	cloned := *order
 	cloned.ProviderSnapshot = nil
-	return &cloned
+	return &adminPaymentOrderResponse{PaymentOrder: &cloned, Currency: service.PaymentOrderCurrency(order)}
 }
 
 // AdminProcessRefundRequest is the request body for admin refund processing.

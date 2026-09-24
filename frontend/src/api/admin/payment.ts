@@ -19,6 +19,48 @@ import type {
 } from '@/types/payment'
 import type { BasePaginationResponse } from '@/types'
 
+export interface AdminPaymentOrder extends PaymentOrder {
+  user_email?: string
+  user_name?: string
+  user_notes?: string
+  payment_trade_no?: string
+  provider_key?: string
+  client_ip?: string
+  src_host?: string
+  src_url?: string
+  subscription_days?: number
+  subscription_bonus_days?: number
+  subscription_concurrency?: number
+  subscription_early_reset_enabled?: boolean
+  subscription_early_reset_duration_days?: number
+  presale_subscription_id?: number
+  cafe_coupon_code?: string
+  refund_at?: string
+}
+
+export interface AdminOrderSummary {
+  currency: string
+  payment_mode?: string
+  plan_name?: string
+  plan_name_source?: 'snapshot' | 'current'
+  group_name?: string
+  provider_name?: string
+}
+
+export interface PaymentAuditLog {
+  id: number
+  action: string
+  detail?: string | null
+  operator?: string | null
+  created_at: string
+}
+
+export interface AdminOrderDetailResponse {
+  order: AdminPaymentOrder
+  auditLogs: PaymentAuditLog[]
+  summary: AdminOrderSummary
+}
+
 /** Admin-facing payment config returned by GET /admin/payment/config */
 export interface AdminPaymentConfig {
   enabled: boolean
@@ -96,12 +138,12 @@ export const adminPaymentAPI = {
     end_date?: string
     order_type?: string
   }) {
-    return apiClient.get<BasePaginationResponse<PaymentOrder>>('/admin/payment/orders', { params })
+    return apiClient.get<BasePaginationResponse<AdminPaymentOrder>>('/admin/payment/orders', { params })
   },
 
   /** Get a specific order by ID */
   getOrder(id: number) {
-    return apiClient.get<PaymentOrder>(`/admin/payment/orders/${id}`)
+    return apiClient.get<AdminOrderDetailResponse>(`/admin/payment/orders/${id}`)
   },
 
   /** Cancel an order (admin) */

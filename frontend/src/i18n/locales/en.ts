@@ -1,6 +1,8 @@
+import adminOrderDetail from './adminOrderDetail.en'
 import presale from './presale.en'
 
 export default {
+  adminOrderDetail,
   presale,
   // Home Page
   home: {
