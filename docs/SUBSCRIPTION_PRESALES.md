@@ -349,3 +349,38 @@ Before enabling that type, define its interaction with next-month overlap and
 refund proration and implement fulfillment tests. Never advertise legacy
 `subscription_bonus_days` as a presale benefit; its existing immediate-subscription
 fulfillment is unchanged.
+
+## Admin presale opening emails
+
+The subscription-plan page has a **Presale notice** action. It previews the next
+Shanghai calendar month, current published plans, base CNY prices and active
+balance gifts. Before plans are published it can preview presale-enabled draft
+plans and send a clearly labelled individual test; formal sending requires
+payment enabled and at least one eligible published plan. Neither path changes
+sale status, user access, balances or subscriptions.
+
+Default recipients are active, non-deleted accounts and approved waitlist
+mailboxes without an account. An explicit checkbox also includes restricted
+accounts and pending waitlist mailboxes. Existing account status wins over old
+waitlist approval; deleted accounts are not resurrected through waitlist data.
+Addresses are normalized, validated and deduplicated, and the optional
+`subscription.presale_opening` unsubscribe preference is respected. Notices state
+that receiving the message does not grant access. Links use the configured
+frontend URL, never request Host or an unrelated API proxy URL.
+
+An admin must confirm the content/month/audience review version. The browser
+submits one recipient per request, shows progress and can stop after the current
+message; closing it does not leave an uncontrolled background broadcast. Reopen
+and review to continue remaining recipients. A changed month, audience, content,
+price or activity requires a new review. Recipients never see each other's email.
+
+Migration `205_presale_email_deliveries.sql` adds a small delivery-receipt table,
+without enabling or sending anything. Atomic `(campaign_key, recipient_hash)`
+claims prevent concurrent/repeated monthly sends. Records retain administrator,
+source user, content version, status and timestamps, not raw email addresses.
+SMTP-accepted sends are recorded as sent; failed/ambiguous sends stop the current
+run and are not automatically retried. A crash may leave a `sending` receipt;
+reconcile it against provider delivery records rather than blindly clearing it.
+Explicit tests use a separate namespace and a 60-second mailbox cooldown; they
+do not consume the formal monthly notice. Production broadcast and publication
+always require separate explicit authorization.

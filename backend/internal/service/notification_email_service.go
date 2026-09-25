@@ -347,7 +347,19 @@ func (s *NotificationEmailService) PreviewTemplate(ctx context.Context, input No
 	for key, value := range input.Variables {
 		variables[key] = value
 	}
-	return renderNotificationEmail(normalizedEvent, subject, htmlBody, variables, nil)
+	var rawHTML map[string]string
+	if normalizedEvent == NotificationEmailEventPresaleOpening {
+		// The presale body is trusted server-built markup, never raw HTML supplied
+		// by the preview caller. Use the same sample calendar as sample variables.
+		base, _ := presaleNoticeBaseURL("https://example.com")
+		now := time.Date(2026, 9, 15, 12, 0, 0, 0, presaleLocation)
+		unsubscribeURL := variables["unsubscribe_url"]
+		if !isSafeNotificationEmailURL(unsubscribeURL) {
+			unsubscribeURL = ""
+		}
+		rawHTML = map[string]string{"presale_content": presaleNoticeContent(normalizedLocale, NextPresalePeriod(now), nil, nil, base, now, unsubscribeURL)}
+	}
+	return renderNotificationEmail(normalizedEvent, subject, htmlBody, variables, rawHTML)
 }
 
 func (s *NotificationEmailService) Send(ctx context.Context, input NotificationEmailSendInput) error {
@@ -717,7 +729,7 @@ func renderNotificationEmailString(event, raw string, variables map[string]strin
 }
 
 func notificationEmailRawHTMLAllowed(event, placeholder string) bool {
-	return event == NotificationEmailEventOpsScheduledReport && placeholder == "report_html"
+	return (event == NotificationEmailEventOpsScheduledReport && placeholder == "report_html") || (event == NotificationEmailEventPresaleOpening && placeholder == "presale_content")
 }
 
 func notificationEmailAllowedPlaceholderSet(event string) map[string]struct{} {
@@ -851,6 +863,8 @@ func isSafeNotificationEmailURL(raw string) bool {
 func notificationEmailSampleVariables(locale string) map[string]string {
 	if normalizeNotificationLocale(locale) == notificationEmailLocaleChinese {
 		return map[string]string{
+			"month_label":         "2026 年 10 月",
+			"presale_content":     "订阅月份、上架套餐和活动会在发送时自动填充。请在订阅套餐管理的预售通知中查看实际预览。",
 			"site_name":           defaultSiteName,
 			"recipient_name":      "张三",
 			"recipient_email":     "user@example.com",
@@ -901,6 +915,8 @@ func notificationEmailSampleVariables(locale string) map[string]string {
 		}
 	}
 	return map[string]string{
+		"month_label":         "October 2026",
+		"presale_content":     "The month, published plans and activities are populated at send time. Open Presale notice in subscription plan management for the live preview.",
 		"site_name":           defaultSiteName,
 		"recipient_name":      "Alex",
 		"recipient_email":     "user@example.com",
@@ -957,6 +973,7 @@ var notificationEmailEventOrder = []string{
 	NotificationEmailEventNotificationEmailVerifyCode,
 	NotificationEmailEventSubscriptionPurchaseSuccess,
 	NotificationEmailEventSubscriptionExpiryReminder,
+	NotificationEmailEventPresaleOpening,
 	NotificationEmailEventBalanceLow,
 	NotificationEmailEventBalanceRechargeSuccess,
 	NotificationEmailEventAccountQuotaAlert,
@@ -968,6 +985,7 @@ var notificationEmailEventOrder = []string{
 }
 
 var notificationEmailEventDefinitions = map[string]NotificationEmailEventInfo{
+	NotificationEmailEventPresaleOpening: {Event: NotificationEmailEventPresaleOpening, Label: "Subscription presale opening", Description: "Optional notice manually sent from subscription plan management.", Category: "subscription", Optional: true, Placeholders: append(append([]string{}, notificationEmailCommonPlaceholders...), "month_label", "presale_content")},
 	NotificationEmailEventAuthVerifyCode: {
 		Event:        NotificationEmailEventAuthVerifyCode,
 		Label:        "Email verification code",
@@ -1081,6 +1099,7 @@ var notificationEmailEventDefinitions = map[string]NotificationEmailEventInfo{
 }
 
 var notificationEmailOfficialTemplates = map[string]map[string]notificationEmailOfficialTemplate{
+	NotificationEmailEventPresaleOpening: presaleNoticeOfficialTemplates(),
 	NotificationEmailEventAuthVerifyCode: {
 		notificationEmailDefaultLocale: {
 			Subject: "[{{site_name}}] Email verification code",

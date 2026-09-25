@@ -1,8 +1,10 @@
+import presaleNotice from './presaleNotice.en'
 import cafeCampaign from './cafeCampaign.en'
 import adminOrderDetail from './adminOrderDetail.en'
 import presale from './presale.en'
 
 export default {
+  presaleNotice,
   cafeCampaign,
   adminOrderDetail,
   presale,

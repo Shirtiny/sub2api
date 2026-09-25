@@ -1,0 +1,26 @@
+export default {
+  errors: {
+    "PRESALE_NOTICE_URL_INVALID": "请先配置正确的前端地址。",
+    "PRESALE_NOTICE_CONFIRM_REQUIRED": "请先确认通知内容与收件范围。",
+    "PRESALE_NOTICE_CHANGED": "通知内容、收件范围或预售月份已变化，请刷新预览后重新确认。",
+    "PRESALE_NOTICE_NOT_OPEN": "预售尚未开放，请先上架套餐；现在可以发送测试邮件。",
+    "PRESALE_NOTICE_EMAIL_INVALID": "请填写一个有效的收件邮箱。",
+    "PRESALE_NOTICE_TEST_COOLDOWN": "请等待 60 秒后再发送测试邮件。",
+    "PRESALE_NOTICE_RECEIPT_FAILED": "发送记录暂未确认，请检查邮件服务记录，勿重复发送。",
+    "PRESALE_NOTICE_SEND_UNCONFIRMED": "邮件发送结果未确认，已停止发送。请检查邮件服务记录，系统不会自动重发。"
+},
+  entry: '预售通知', title: '发送预售开始通知', intro: '为下个月的订阅发一封邀请。先预览，再确认发送。',
+  audience: '收件范围', access: '有访问权限的用户', includeRestricted: '包含暂无访问权限的用户', audienceHint: '包含相应的候补名单邮箱。不会开通访问权限，也不会改变套餐上架状态。',
+  language: '邮件语言', month: '预售月份', preview: '邮件预览', refresh: '刷新预览',
+  eligible: '收件邮箱', sent: '已提交', pending: '待发送', skipped: '已退订', uncertain: '结果未确认', sendingCount: '处理中',
+  draft: '预售尚未开放。可预览并发送测试邮件，正式通知需先启用支付并上架预售套餐。',
+  testEmail: '测试收件邮箱', test: '发送测试邮件', testSuccess: '测试邮件已提交，请检查收件箱。', invalidEmail: '请输入格式正确的邮箱地址',
+  send: '发送正式通知', confirmTitle: '确认发送预售通知',
+  confirm: '即将通知 {count} 个待发送邮箱，预售月份为 {month}。{audience} 每个邮箱每月仅通知一次。',
+  includeSummary: '包含暂无访问权限的用户。', accessSummary: '仅通知有访问权限的用户。',
+  safety: '逐封独立发送，不会暴露其他收件人的邮箱。已退订者会跳过，发送结果未确认的邮件不会自动重发。',
+  keepOpen: '请保持窗口打开。暂停或关闭后，可继续剩余收件人；当前一封会完成处理。',
+  stop: '暂停发送', stopping: '正在暂停…', complete: '本轮发送已完成', paused: '已暂停，可继续发送剩余通知。',
+  failed: '操作未完成，请刷新预览后重试。', loadFailed: '暂时无法加载邮件预览。', noPending: '当前范围没有待发送邮箱。',
+  receiptWarning: '存在处理中或结果未确认的记录，请先检查邮件服务记录；为避免重复通知，系统不会自动重发。'
+}

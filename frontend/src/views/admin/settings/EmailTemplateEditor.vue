@@ -321,6 +321,11 @@ function localText(zh: string, en: string): string {
 }
 
 const eventDisplayMeta: Record<string, EventDisplayMeta> = {
+  "subscription.presale_opening": {
+    label: "订阅预售开始通知",
+    timing: "由管理员在订阅套餐管理中预览并确认发送，可选择是否包含暂无访问权限的用户。",
+    categoryLabel: "订阅",
+  },
   "auth.verify_code": {
     label: "邮箱验证码",
     timing: "注册、绑定邮箱、OAuth 补全邮箱或 TOTP 邮箱校验时发送。",
@@ -389,6 +394,11 @@ const eventDisplayMeta: Record<string, EventDisplayMeta> = {
 };
 
 const eventDisplayMetaEn: Record<string, EventDisplayMeta> = {
+  "subscription.presale_opening": {
+    label: "Subscription Presale Opening",
+    timing: "Previewed and explicitly sent from subscription plan management, optionally including users without access.",
+    categoryLabel: "Subscription",
+  },
   "auth.verify_code": {
     label: "Email Verification Code",
     timing: "Sent for registration, email binding, OAuth pending email completion, or TOTP email verification.",

@@ -18,6 +18,7 @@ import type {
   UpsertPromotionActivityRequest
 } from '@/types/payment'
 import type { BasePaginationResponse } from '@/types'
+import type { PresaleNoticePreview, PresaleNoticeRequest, PresaleNoticeSendResult } from '@/types/payment'
 
 export interface AdminPaymentOrder extends PaymentOrder {
   updated_at?: string
@@ -112,6 +113,16 @@ export interface UpdatePaymentConfigRequest {
 }
 
 export const adminPaymentAPI = {
+  getPresaleNotice(params: { include_restricted: boolean; locale: string }) {
+    return apiClient.get<PresaleNoticePreview>('/admin/payment/presale-notice', { params })
+  },
+  testPresaleNotice(data: PresaleNoticeRequest) {
+    return apiClient.post<PresaleNoticeSendResult>('/admin/payment/presale-notice/test', data, { timeout: 90000 })
+  },
+  sendNextPresaleNotice(data: PresaleNoticeRequest) {
+    return apiClient.post<PresaleNoticeSendResult>('/admin/payment/presale-notice/send-next', data, { timeout: 90000 })
+  },
+
   getPresaleRefundQuote(id: number) { return apiClient.get<PresaleRefundQuote>(`/admin/payment/orders/${id}/presale-refund-quote`) },
   processPresaleOffline(id: number, data: PresaleOfflineRequest) {
     return apiClient.post<{ status: PaymentOrder['status']; affiliate_pending: boolean }>(`/admin/payment/orders/${id}/presale-offline`, data)

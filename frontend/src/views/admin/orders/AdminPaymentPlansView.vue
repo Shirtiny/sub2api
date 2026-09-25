@@ -2,10 +2,11 @@
   <AppLayout>
     <div class="space-y-4">
       <!-- Actions -->
-      <div class="flex items-center justify-end gap-2">
+      <div class="flex flex-wrap items-center justify-end gap-2">
         <button @click="loadPlans" :disabled="plansLoading" class="btn btn-secondary" :title="t('common.refresh')">
           <Icon name="refresh" size="md" :class="plansLoading ? 'animate-spin' : ''" />
         </button>
+        <button class="btn btn-secondary" @click="showPresaleNoticeDialog = true">{{ t('presaleNotice.entry') }}</button>
         <button @click="showActivityDialog = true" class="btn btn-secondary">
           {{ t('payment.admin.activityConfig') }}
         </button>
@@ -89,6 +90,8 @@
       @changed="loadPlans"
     />
 
+    <PresaleNotificationDialog :show="showPresaleNoticeDialog" @close="showPresaleNoticeDialog = false" />
+
     <ActivityRecordsDialog :show="showActivityRecordsDialog" @close="showActivityRecordsDialog = false" />
 
     <ConfirmDialog :show="showDeletePlanDialog" :title="t('payment.admin.deletePlan')" :message="t('payment.admin.deletePlanConfirm')" :confirm-text="t('common.delete')" danger @confirm="handleDeletePlan" @cancel="showDeletePlanDialog = false" />
@@ -96,6 +99,7 @@
 </template>
 
 <script setup lang="ts">
+import PresaleNotificationDialog from './PresaleNotificationDialog.vue'
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
@@ -147,6 +151,7 @@ function getPlanNameClass(groupId: number): string {
 const plansLoading = ref(false)
 const plans = ref<SubscriptionPlan[]>([])
 const showPlanDialog = ref(false)
+const showPresaleNoticeDialog = ref(false)
 const showActivityDialog = ref(false)
 const showActivityRecordsDialog = ref(false)
 const showDeletePlanDialog = ref(false)

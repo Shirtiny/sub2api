@@ -536,6 +536,7 @@ var ProviderSet = wire.NewSet(
 	ProvideBillingCacheService,
 	NewAnnouncementService,
 	NewWaitlistService,
+	NewPresaleNotificationService,
 	wire.Bind(new(WaitlistEmailSender), new(*EmailService)),
 	wire.Bind(new(WaitlistSettings), new(*SettingService)),
 	NewAdminService,

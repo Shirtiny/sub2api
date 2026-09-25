@@ -433,3 +433,31 @@ export interface DashboardStats {
   payment_methods: { type: string; amount: number; count: number }[]
   top_users: { user_id: number; email: string; amount: number }[]
 }
+
+export interface PresaleNoticeCounts {
+  eligible: number
+  sent: number
+  skipped: number
+  uncertain: number
+  sending: number
+  pending: number
+}
+export interface PresaleNoticePreview {
+  month: string
+  subject: string
+  html: string
+  version: string
+  ready: boolean
+  draft: boolean
+  published_plans: number
+  counts: PresaleNoticeCounts
+}
+export interface PresaleNoticeRequest {
+  include_restricted: boolean
+  locale: string
+  month: string
+  version: string
+  confirmed: boolean
+  email?: string
+}
+export interface PresaleNoticeSendResult { status: 'sent' | 'skipped' | 'complete'; done: boolean }

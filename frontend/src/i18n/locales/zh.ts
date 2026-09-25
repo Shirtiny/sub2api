@@ -1,8 +1,10 @@
+import presaleNotice from './presaleNotice.zh'
 import cafeCampaign from './cafeCampaign.zh'
 import adminOrderDetail from './adminOrderDetail.zh'
 import presale from './presale.zh'
 
 export default {
+  presaleNotice,
   cafeCampaign,
   adminOrderDetail,
   presale,

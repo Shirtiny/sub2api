@@ -13,15 +13,17 @@ import (
 
 // PaymentHandler handles admin payment management.
 type PaymentHandler struct {
-	paymentService *service.PaymentService
-	configService  *service.PaymentConfigService
+	paymentService       *service.PaymentService
+	configService        *service.PaymentConfigService
+	presaleNotifications *service.PresaleNotificationService
 }
 
 // NewPaymentHandler creates a new admin PaymentHandler.
-func NewPaymentHandler(paymentService *service.PaymentService, configService *service.PaymentConfigService) *PaymentHandler {
+func NewPaymentHandler(paymentService *service.PaymentService, configService *service.PaymentConfigService, presaleNotifications *service.PresaleNotificationService) *PaymentHandler {
 	return &PaymentHandler{
-		paymentService: paymentService,
-		configService:  configService,
+		paymentService:       paymentService,
+		configService:        configService,
+		presaleNotifications: presaleNotifications,
 	}
 }
 
