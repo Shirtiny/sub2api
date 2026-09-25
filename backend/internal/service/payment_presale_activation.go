@@ -155,12 +155,10 @@ func (s *PaymentService) activatePresale(ctx context.Context, orderID int64, now
 			return false, err
 		}
 	}
-	// A new monthly term resets the old term's meters once, at activation only.
+	// Renew entitlement dates without changing usage or rolling-window anchors.
 	resetCards := min(1000, sub.ResetCount+o.PresaleResetCards)
 	update := tx.UserSubscription.UpdateOneID(sub.ID).
 		SetStartsAt(*o.PresaleStartsAt).SetExpiresAt(*o.PresaleExpiresAt).SetStatus(SubscriptionStatusActive).
-		SetDailyUsageUsd(0).SetWeeklyUsageUsd(0).SetMonthlyUsageUsd(0).
-		ClearDailyWindowStart().ClearWeeklyWindowStart().ClearMonthlyWindowStart().
 		SetResetCount(resetCards).SetNotes(appendSubscriptionNotes(psStringValue(sub.Notes), paymentSubscriptionOrderNote(o.ID))).
 		SetEarlyResetEnabled(o.SubscriptionEarlyResetEnabled).SetEarlyResetDurationDays(o.SubscriptionEarlyResetDurationDays)
 	multiplier := 1

@@ -21,6 +21,8 @@ describe('presale dates', () => {
     expect(presaleStatus(o, Date.parse(o.presale_starts_at!) - 1000)).toBe('pending')
     expect(presaleStatus(o,now)).toBe('activationIssue')
     expect(presaleStatus({ ...o, presale_activated_at: o.presale_starts_at },now)).toBe('active')
+    expect(presaleStatus({ ...o, status: 'PRESALE_CANCELLED' },now)).toBe('cancelled')
+    expect(presaleStatus({ ...o, status: 'PRESALE_CANCELLED', presale_activated_at: o.presale_starts_at },now)).toBe('cancelled')
     expect(presaleStatus({ ...o, status: 'PARTIALLY_REFUNDED' },now)).toBe('refunded')
     expect(presaleStatus({ ...o, status: 'REFUND_REQUESTED' },now)).toBe('refundPending')
   })

@@ -45,9 +45,12 @@
               <Icon name="refresh" size="sm" />
               {{ t('payment.admin.retryRefund') }}
             </button>
-            <button v-else-if="row.status === 'COMPLETED' || row.status === 'PARTIALLY_REFUNDED' || (row.status === 'FAILED' && !!row.paid_at)" @click="openRefundDialog(row)" class="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20">
+            <button v-else-if="row.status === 'COMPLETED' || (row.status === 'PARTIALLY_REFUNDED' && !row.presale_starts_at) || (row.status === 'FAILED' && !!row.paid_at)" @click="openRefundDialog(row)" class="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20">
               <Icon name="dollar" size="sm" />
               {{ t('payment.admin.refund') }}
+            </button>
+            <button v-if="canHandleOffline(row)" :disabled="offlineLoading || offlineSubmitting" class="rounded-md px-2 py-1 text-xs font-medium text-content-secondary hover:bg-surface-hover disabled:opacity-50" data-testid="offline-open" @click="openOfflineDialog(row)">
+              {{ t('presale.offline.title') }}
             </button>
           </div>
         </template>
@@ -62,6 +65,7 @@
     />
 
     <AdminRefundDialog :show="showRefundDialog" :order="refundOrder" :submitting="refundSubmitting" @confirm="handleRefund" @cancel="showRefundDialog = false" />
+    <AdminPresaleOfflineDialog :show="showOfflineDialog" :order="offlineOrder" :summary="offlineSummary" :submitting="offlineSubmitting" :retry-only="!!offlineRetry" @confirm="handleOffline" @cancel="closeOfflineDialog" />
   </AppLayout>
 </template>
 
@@ -69,7 +73,7 @@
 import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
-import { adminPaymentAPI, type AdminPaymentOrder, type AdminOrderSummary, type PaymentAuditLog } from '@/api/admin/payment'
+import { adminPaymentAPI, type AdminPaymentOrder, type AdminOrderSummary, type PaymentAuditLog, type PresaleOfflineRequest } from '@/api/admin/payment'
 import { extractI18nErrorMessage } from '@/utils/apiError'
 import type { PaymentOrder } from '@/types/payment'
 import AppLayout from '@/components/layout/AppLayout.vue'
@@ -78,6 +82,7 @@ import Select from '@/components/common/Select.vue'
 import Icon from '@/components/icons/Icon.vue'
 import AdminRefundDialog from '@/components/admin/payment/AdminRefundDialog.vue'
 import AdminOrderDetail from '@/components/admin/payment/AdminOrderDetail.vue'
+import AdminPresaleOfflineDialog from '@/components/admin/payment/AdminPresaleOfflineDialog.vue'
 import OrderTable from '@/components/payment/OrderTable.vue'
 
 const { t } = useI18n()
@@ -106,6 +111,64 @@ const showDetailDialog = ref(false)
 const showRefundDialog = ref(false)
 const refundSubmitting = ref(false)
 const orderAuditLogs = ref<PaymentAuditLog[]>([])
+const offlineOrder = ref<AdminPaymentOrder | null>(null)
+const offlineSummary = ref<AdminOrderSummary | null>(null)
+const showOfflineDialog = ref(false)
+const offlineLoading = ref(false)
+const offlineSubmitting = ref(false)
+const offlineRetry = ref<PresaleOfflineRequest | null>(null)
+let offlineRequestId = 0
+
+function canHandleOffline(order: PaymentOrder): boolean {
+  return order.order_type === 'subscription' && !!order.presale_starts_at && !!order.paid_at &&
+    ['COMPLETED', 'FAILED', 'REFUND_REQUESTED', 'PRESALE_CANCELLED'].includes(order.status)
+}
+function closeOfflineDialog() {
+  if (offlineSubmitting.value) return
+  offlineRequestId++
+  showOfflineDialog.value = false
+  offlineRetry.value = null
+}
+async function openOfflineDialog(order: PaymentOrder) {
+  if (offlineLoading.value || offlineSubmitting.value) return
+  const requestId = ++offlineRequestId
+  offlineLoading.value = true
+  try {
+    const { data } = await adminPaymentAPI.getOrder(order.id)
+    if (requestId !== offlineRequestId) return
+    if (data.order?.id !== order.id || !data.order.updated_at || !canHandleOffline(data.order)) throw new Error(t('presale.errors.PRESALE_OFFLINE_STALE'))
+    offlineOrder.value = data.order
+    offlineSummary.value = data.summary
+    offlineRetry.value = null
+    showOfflineDialog.value = true
+  } catch (err: unknown) {
+    if (requestId === offlineRequestId) appStore.showError(extractI18nErrorMessage(err, t, 'presale.errors', t('common.error')))
+  } finally {
+    if (requestId === offlineRequestId) offlineLoading.value = false
+  }
+}
+async function handleOffline(payload: PresaleOfflineRequest) {
+  if (!showOfflineDialog.value || !offlineOrder.value || offlineSubmitting.value) return
+  offlineSubmitting.value = true
+  const request = offlineRetry.value || payload
+  try {
+    const { data } = await adminPaymentAPI.processPresaleOffline(offlineOrder.value.id, request)
+    if (data.affiliate_pending) {
+      // Lock the exact original request; retries only finish idempotent bookkeeping.
+      offlineRetry.value = { ...request }
+    } else {
+      appStore.showSuccess(t('presale.offline.success'))
+      showOfflineDialog.value = false
+      offlineRetry.value = null
+    }
+    void loadOrders()
+  } catch (err: unknown) {
+    appStore.showError(extractI18nErrorMessage(err, t, 'presale.errors', t('common.error')))
+    // Reopen from fresh server details before a new attempt.
+    if (!offlineRetry.value) showOfflineDialog.value = false
+    void loadOrders()
+  } finally { offlineSubmitting.value = false }
+}
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
 function debounceLoadOrders() {
@@ -138,6 +201,7 @@ const statusFilterOptions = computed(() => [
   { value: 'COMPLETED', label: t('payment.status.completed') },
   { value: 'EXPIRED', label: t('payment.status.expired') },
   { value: 'CANCELLED', label: t('payment.status.cancelled') },
+  { value: 'PRESALE_CANCELLED', label: t('presale.cancelled') },
   { value: 'FAILED', label: t('payment.status.failed') },
   { value: 'REFUNDED', label: t('payment.status.refunded') },
   { value: 'REFUND_REQUESTED', label: t('payment.status.refund_requested') },
@@ -217,6 +281,7 @@ async function handleRefund(data: { amount: number; reason: string; deduct_balan
 onMounted(() => loadOrders())
 onBeforeUnmount(() => {
   detailRequestId++
+  offlineRequestId++
   if (debounceTimer) clearTimeout(debounceTimer)
 })
 </script>

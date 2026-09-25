@@ -160,6 +160,12 @@ func TestPresalePaymentDefersActivationAndIsIdempotent(t *testing.T) {
 	sub := s.entClient.UserSubscription.Query().OnlyX(ctx)
 	require.True(t, sub.StartsAt.Equal(period.StartsAt))
 	require.True(t, sub.ExpiresAt.Equal(period.ExpiresAt))
+	require.Zero(t, sub.DailyUsageUsd)
+	require.Zero(t, sub.WeeklyUsageUsd)
+	require.Zero(t, sub.MonthlyUsageUsd)
+	require.Nil(t, sub.DailyWindowStart)
+	require.Nil(t, sub.WeeklyWindowStart)
+	require.Nil(t, sub.MonthlyWindowStart)
 	require.Equal(t, 2, sub.ResetCount)
 	ent := s.entClient.SubscriptionConcurrencyEntitlement.Query().OnlyX(ctx)
 	require.True(t, ent.StartsAt.Equal(period.StartsAt))
@@ -176,7 +182,26 @@ func TestPresaleRenewalDoesNotChangeCurrentTerm(t *testing.T) {
 	s, u, p := newPresaleFixture(t)
 	ctx := context.Background()
 	period := NextPresalePeriod(time.Now())
-	current := s.entClient.UserSubscription.Create().SetUserID(u.ID).SetGroupID(p.GroupID).SetStartsAt(time.Now().AddDate(0, 0, -10)).SetExpiresAt(period.StartsAt).SetDailyUsageUsd(10).SetResetCount(1).SaveX(ctx)
+	dailyStart := period.StartsAt.Add(-4 * time.Hour)
+	weeklyStart := period.StartsAt.Add(-3 * 24 * time.Hour)
+	monthlyStart := period.StartsAt.Add(-20 * 24 * time.Hour)
+	current := s.entClient.UserSubscription.Create().SetUserID(u.ID).SetGroupID(p.GroupID).
+		SetStartsAt(time.Now().AddDate(0, 0, -15)).SetExpiresAt(period.StartsAt).
+		SetDailyUsageUsd(10).SetWeeklyUsageUsd(70).SetMonthlyUsageUsd(210).
+		SetDailyWindowStart(dailyStart).SetWeeklyWindowStart(weeklyStart).SetMonthlyWindowStart(monthlyStart).
+		SetResetCount(1).SaveX(ctx)
+	assertUsage := func(sub *dbent.UserSubscription) {
+		t.Helper()
+		require.Equal(t, 10.0, sub.DailyUsageUsd)
+		require.Equal(t, 70.0, sub.WeeklyUsageUsd)
+		require.Equal(t, 210.0, sub.MonthlyUsageUsd)
+		require.NotNil(t, sub.DailyWindowStart)
+		require.NotNil(t, sub.WeeklyWindowStart)
+		require.NotNil(t, sub.MonthlyWindowStart)
+		require.True(t, dailyStart.Equal(*sub.DailyWindowStart))
+		require.True(t, weeklyStart.Equal(*sub.WeeklyWindowStart))
+		require.True(t, monthlyStart.Equal(*sub.MonthlyWindowStart))
+	}
 	q, err := s.GetPresaleQuote(ctx, u.ID, p.ID)
 	require.NoError(t, err)
 	require.True(t, q.Renewal)
@@ -185,14 +210,24 @@ func TestPresaleRenewalDoesNotChangeCurrentTerm(t *testing.T) {
 	require.NoError(t, s.ExecuteSubscriptionFulfillment(ctx, o.ID))
 	unchanged := s.entClient.UserSubscription.GetX(ctx, current.ID)
 	require.True(t, unchanged.ExpiresAt.Equal(current.ExpiresAt))
-	require.Equal(t, 10.0, unchanged.DailyUsageUsd)
+	assertUsage(unchanged)
 	yes, err := s.activatePresale(ctx, o.ID, period.StartsAt)
 	require.NoError(t, err)
 	require.True(t, yes)
 	renewed := s.entClient.UserSubscription.GetX(ctx, current.ID)
+	require.True(t, renewed.StartsAt.Equal(period.StartsAt))
 	require.True(t, renewed.ExpiresAt.Equal(period.ExpiresAt))
-	require.Zero(t, renewed.DailyUsageUsd)
+	assertUsage(renewed)
 	require.Equal(t, 3, renewed.ResetCount)
+	// The old weekly allowance remains consumed across the month boundary.
+	limit := 70.0
+	usage := &UserSubscription{WeeklyWindowStart: renewed.WeeklyWindowStart, WeeklyUsageUSD: renewed.WeeklyUsageUsd}
+	require.ErrorIs(t, s.subscriptionSvc.CheckUsageLimits(ctx, usage, &Group{WeeklyLimitUSD: &limit}, 1), ErrWeeklyLimitExceeded)
+	require.True(t, weeklyStart.Add(7*24*time.Hour).Equal(*usage.WeeklyResetTime()))
+	yes, err = s.activatePresale(ctx, o.ID, period.StartsAt.Add(time.Minute))
+	require.NoError(t, err)
+	require.False(t, yes)
+	assertUsage(s.entClient.UserSubscription.GetX(ctx, current.ID))
 }
 
 func TestPresaleSlotAndOverlap(t *testing.T) {

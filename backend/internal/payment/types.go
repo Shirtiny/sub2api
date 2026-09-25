@@ -28,6 +28,7 @@ const (
 	OrderStatusCompleted         = "COMPLETED"
 	OrderStatusExpired           = "EXPIRED"
 	OrderStatusCancelled         = "CANCELLED"
+	OrderStatusPresaleCancelled  = "PRESALE_CANCELLED"
 	OrderStatusFailed            = "FAILED"
 	OrderStatusRefundRequested   = "REFUND_REQUESTED"
 	OrderStatusRefunding         = "REFUNDING"

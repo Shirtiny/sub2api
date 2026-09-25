@@ -57,7 +57,7 @@
             <div class="plan-price"><span v-if="plan.original_price && plan.original_price > plan.price" class="old-price">￥{{ scaledPlanValue(plan, plan.original_price).toLocaleString(locale) }}</span><strong><span class="price-currency">￥</span>{{ scaledPlanValue(plan, plan.price).toLocaleString(locale) }}</strong><span>{{ t('presale.perMonth') }}</span></div>
             <dl class="plan-quotas"><template v-for="quota in quotas(plan)" :key="quota.label"><div><dt>{{ quota.label }}</dt><dd>{{ quota.value }}</dd></div></template></dl>
             <ul class="plan-features"><li><Icon name="check" size="sm"/>{{ t('presale.concurrency', { count: plan.concurrency }) }}</li><li v-for="feature in plan.features" :key="feature"><Icon name="check" size="sm"/>{{ feature }}</li></ul>
-            <div v-if="plan.custom_multiplier_enabled || renewalMultiplier(plan) != null" class="plan-multiplier">
+            <div v-if="plan.custom_multiplier_enabled" class="plan-multiplier">
               <span>{{ t('payment.planCard.multiplier') }}</span>
               <Select
                 class="multiplier-select"
@@ -66,7 +66,7 @@
                 :placeholder="t('payment.planCard.multiplier')"
                 :searchable="false"
                 :clearable="false"
-                :disabled="renewalMultiplier(plan) != null || !canReserve(plan)"
+                :disabled="!canReserve(plan)"
                 @update:model-value="updateMultiplier(plan, $event)"
               />
             </div>
@@ -161,7 +161,7 @@ function toggleTheme() {
 const catalog = ref<PresaleCatalog | null>(null), loading = ref(true), error = ref(''), selectedPlanId = ref<number | null>(null)
 const planMultipliers = ref<Record<number, number>>({})
 type AvailabilityKind = 'checking' | 'available' | 'reserved' | 'pending' | 'refund' | 'existing' | 'blocked' | 'error'
-interface PlanAvailability { kind: AvailabilityKind; reason?: string; orderId?: number; orderPlanId?: number }
+interface PlanAvailability { kind: AvailabilityKind; reason?: string; orderId?: number; orderPlanId?: number; renewalOpensAt?: string }
 const planAvailability = ref<Record<number, PlanAvailability>>({})
 const recovery = ref<PaymentRecoverySnapshot | null>(null)
 let loadRequest = 0, availabilityRequest = 0
@@ -177,6 +177,9 @@ function canResume(plan: SubscriptionPlan) {
 }
 function availabilityMessage(plan: SubscriptionPlan): string {
   const state = availability(plan)
+  if (state.reason === 'PRESALE_RENEWAL_TOO_EARLY' && state.renewalOpensAt) {
+    return t('presale.renewalOpensCopy', { date: date(state.renewalOpensAt) })
+  }
   if (state.reason) return t(`presale.errors.${state.reason}`)
   return t(`presale.availability.${state.kind}Copy`, { month: date(catalog.value?.period.starts_at, true) })
 }
@@ -201,8 +204,9 @@ async function refreshAvailability() {
           : ['REFUND_REQUESTED', 'REFUNDING', 'REFUND_FAILED'].includes(String(status)) ? 'refund'
           : ['PAID', 'RECHARGING', 'COMPLETED', 'FAILED'].includes(String(status)) ? 'reserved' : 'existing'
         state = { kind, orderId: Number(metadata?.order_id), orderPlanId: Number(metadata?.order_plan_id) }
-      } else if (['PRESALE_COVERAGE_OVERLAP', 'PRESALE_LEGACY_SUBSCRIPTION', 'PRESALE_NOT_AVAILABLE'].includes(reason ?? '')) {
-        state = { kind: 'blocked', reason }
+      } else if (['PRESALE_COVERAGE_OVERLAP', 'PRESALE_LEGACY_SUBSCRIPTION', 'PRESALE_NOT_AVAILABLE', 'PRESALE_RENEWAL_TOO_EARLY'].includes(reason ?? '')) {
+        const opensAt = extractApiErrorMetadata(err)?.renewal_opens_at
+        state = { kind: 'blocked', reason, renewalOpensAt: typeof opensAt === 'string' ? opensAt : undefined }
       } else {
         state = { kind: 'error' }
       }
@@ -238,16 +242,12 @@ function multiplierRange(plan: SubscriptionPlan) {
   return { min, max: Math.max(min, plan.custom_multiplier_max || min) }
 }
 function planMultiplier(plan: SubscriptionPlan): number {
-  const renewal = renewalMultiplier(plan)
-  if (renewal != null) return renewal
   if (!plan.custom_multiplier_enabled) return 1
   const { min, max } = multiplierRange(plan)
-  const value = planMultipliers.value[plan.id] ?? min
+  const value = planMultipliers.value[plan.id] ?? renewalMultiplier(plan) ?? min
   return Number.isFinite(value) ? Math.min(max, Math.max(min, Math.trunc(value))) : min
 }
 function multiplierOptions(plan: SubscriptionPlan): SelectOption[] {
-  const renewal = renewalMultiplier(plan)
-  if (renewal != null) return [{ value: renewal, label: `${renewal}x` }]
   const { min, max } = multiplierRange(plan)
   return Array.from({ length: max - min + 1 }, (_, index) => ({ value: min + index, label: `${min + index}x` }))
 }
@@ -266,7 +266,7 @@ function quotas(plan: SubscriptionPlan) {
 function selectPlan(plan: SubscriptionPlan) {
   if (!canReserve(plan) && !canResume(plan)) return
   const query: Record<string, string> = { plan: String(plan.id) }
-  if (plan.custom_multiplier_enabled || renewalMultiplier(plan) != null) query.multiplier = String(planMultiplier(plan))
+  if (plan.custom_multiplier_enabled) query.multiplier = String(planMultiplier(plan))
   const redirect = `/presale?${new URLSearchParams(query)}`
   if (!auth.isAuthenticated) { void router.push({ path: '/login', query: { redirect } }); return }
   selectedPlanId.value = plan.id

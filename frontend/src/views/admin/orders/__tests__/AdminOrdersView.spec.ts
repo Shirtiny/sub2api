@@ -2,12 +2,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
 import AdminOrdersView from '../AdminOrdersView.vue'
 import AdminOrderDetail from '@/components/admin/payment/AdminOrderDetail.vue'
+import AdminPresaleOfflineDialog from '@/components/admin/payment/AdminPresaleOfflineDialog.vue'
 import AdminRefundDialog from '@/components/admin/payment/AdminRefundDialog.vue'
 import type { AdminPaymentOrder } from '@/api/admin/payment'
-const mocks = vi.hoisted(() => ({ list: vi.fn(), detail: vi.fn(), refund: vi.fn(), error: vi.fn() }))
+const mocks = vi.hoisted(() => ({ list: vi.fn(), detail: vi.fn(), refund: vi.fn(), offline: vi.fn(), error: vi.fn() }))
 vi.mock('vue-i18n', async () => ({ ...await vi.importActual<typeof import('vue-i18n')>('vue-i18n'), useI18n: () => ({ t: (key: string) => key }) }))
 vi.mock('@/api/admin/payment', () => {
-  const api = { getOrders: mocks.list, getOrder: mocks.detail, refundOrder: mocks.refund }
+  const api = { getOrders: mocks.list, getOrder: mocks.detail, refundOrder: mocks.refund, processPresaleOffline: mocks.offline }
   return { adminPaymentAPI: api, default: api }
 })
 vi.mock('@/stores/app', () => ({ useAppStore: () => ({ showError: mocks.error, showSuccess: vi.fn() }) }))
@@ -19,7 +20,7 @@ function render() {
  return mount(AdminOrdersView, { global: { stubs: {
    AppLayout: { template: '<main><slot /></main>' },
    OrderTable: { props: ['orders'], template: '<div><div v-for="row in orders" :key="row.id" :data-order="row.id"><slot name="actions" :row="row" /></div></div>' },
-   AdminOrderDetail: true, AdminRefundDialog: true, Select: true, Pagination: true, Icon: true
+   AdminOrderDetail: true, AdminRefundDialog: true, AdminPresaleOfflineDialog: true, Select: true, Pagination: true, Icon: true
  } } })
 }
 beforeEach(() => { vi.clearAllMocks(); mocks.list.mockResolvedValue({ data: { items: [order(1), order(2)], total: 2 } }); mocks.detail.mockImplementation((id: number) => Promise.resolve(response(id))); mocks.refund.mockResolvedValue({}) })
@@ -91,5 +92,55 @@ describe('administrator order detail loading', () => {
     expect(w.getComponent(AdminRefundDialog).props('order')?.id).toBe(2)
     w.getComponent(AdminRefundDialog).vm.$emit('confirm', { amount: 80, reason: 'test', deduct_balance: false, force: false }); await flushPromises()
     expect(mocks.refund).toHaveBeenCalledWith(2, expect.objectContaining({ amount: 80 }))
+  })
+})
+
+
+describe('administrator offline presale actions', () => {
+  const presale = { ...order(1), paid_at: '2026-09-25T10:00:00Z', updated_at: '2026-09-25T10:00:00.123456Z', presale_starts_at: '2026-10-01T00:00:00+08:00' }
+  const request = { mode: 'cancel' as const, amount: 0, reference: '', reason: 'support', confirmed: true, expected_updated_at: presale.updated_at }
+  beforeEach(() => {
+    mocks.list.mockResolvedValue({ data: { items: [presale, order(2)], total: 2 } })
+    mocks.detail.mockResolvedValue({ ...response(1), data: { ...response(1).data, order: presale } })
+    mocks.offline.mockResolvedValue({ data: { status: 'PRESALE_CANCELLED', affiliate_pending: false } })
+  })
+  it('only offers offline handling for paid presales and loads fresh details', async () => {
+    const w = render(); await flushPromises()
+    expect(w.findAll('[data-testid="offline-open"]')).toHaveLength(1)
+    await w.get('[data-testid="offline-open"]').trigger('click'); await flushPromises()
+    expect(mocks.detail).toHaveBeenCalledWith(1)
+    expect(w.getComponent(AdminPresaleOfflineDialog).props()).toMatchObject({ show: true, order: { id: 1, updated_at: presale.updated_at } })
+    w.getComponent(AdminPresaleOfflineDialog).vm.$emit('confirm', request); await flushPromises()
+    expect(mocks.offline).toHaveBeenCalledWith(1, request)
+    expect(mocks.refund).not.toHaveBeenCalled()
+    expect(w.getComponent(AdminPresaleOfflineDialog).props('show')).toBe(false)
+  })
+  it('rejects wrong or unversioned orders without opening a dangerous dialog', async () => {
+    mocks.detail.mockResolvedValue(response(2))
+    const w = render(); await flushPromises()
+    await w.get('[data-testid="offline-open"]').trigger('click'); await flushPromises()
+    expect(w.getComponent(AdminPresaleOfflineDialog).props('show')).toBe(false)
+    expect(mocks.error).toHaveBeenCalled()
+  })
+  it('blocks duplicate submissions and retains the exact request for bookkeeping retries', async () => {
+    const pending = deferred<{ data: { status: string; affiliate_pending: boolean } }>()
+    mocks.offline.mockReturnValueOnce(pending.promise)
+    const w = render(); await flushPromises()
+    await w.get('[data-testid="offline-open"]').trigger('click'); await flushPromises()
+    const dialog = w.getComponent(AdminPresaleOfflineDialog)
+    dialog.vm.$emit('confirm', request); dialog.vm.$emit('confirm', request)
+    await flushPromises(); expect(mocks.offline).toHaveBeenCalledTimes(1)
+    pending.resolve({ data: { status: 'REFUNDED', affiliate_pending: true } }); await flushPromises()
+    expect(dialog.props('retryOnly')).toBe(true)
+    dialog.vm.$emit('confirm', { ...request, amount: 999 }); await flushPromises()
+    expect(mocks.offline).toHaveBeenLastCalledWith(1, request)
+  })
+  it('closes a stale form on server rejection and requires fresh review', async () => {
+    mocks.offline.mockRejectedValue(new Error('stale'))
+    const w = render(); await flushPromises()
+    await w.get('[data-testid="offline-open"]').trigger('click'); await flushPromises()
+    w.getComponent(AdminPresaleOfflineDialog).vm.$emit('confirm', request); await flushPromises()
+    expect(w.getComponent(AdminPresaleOfflineDialog).props('show')).toBe(false)
+    expect(mocks.error).toHaveBeenCalled()
   })
 })

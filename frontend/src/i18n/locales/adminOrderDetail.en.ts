@@ -19,7 +19,10 @@ export default {
   failureReason: 'Failure reason', audit: 'Activity & audit trail', auditEmpty: 'No audit records', rawDetail: 'View record details',
   notRecorded: 'Not recorded', missingName: 'Name not recorded or related item deleted', failedToLoad: 'Unable to load full details. Please retry.', retry: 'Reload',
   modes: { redirect: 'Redirect', popup: 'Scan to pay', qrcode: 'QR code', jsapi: 'In-app WeChat', embedded: 'Embedded checkout' },
+  offlineAmount: 'Amount returned offline', offlineReference: 'Offline refund reference',
   actions: {
+    PRESALE_CANCELLED: 'Reservation cancelled by administrator (no refund)', PRESALE_OFFLINE_REFUND: 'Offline refund recorded', PRESALE_ONLINE_REFUND_STARTED: 'Online refund initiated',
+
     ORDER_CREATED: 'Order created', PAYMENT_SUCCESS: 'Payment succeeded', PAYMENT_RECEIVED: 'Payment notification received',
     RECHARGE_SUCCESS: 'Balance credited', SUBSCRIPTION_SUCCESS: 'Subscription activated', PRESALE_RESERVED: 'Presale reserved',
     PRESALE_ACTIVATED: 'Presale activated', PRESALE_REFUND_REQUESTED: 'Presale refund requested',

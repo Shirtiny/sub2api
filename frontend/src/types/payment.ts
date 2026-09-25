@@ -11,6 +11,7 @@ export type OrderStatus =
   | 'COMPLETED'
   | 'EXPIRED'
   | 'CANCELLED'
+  | 'PRESALE_CANCELLED'
   | 'FAILED'
   | 'REFUND_REQUESTED'
   | 'REFUNDING'

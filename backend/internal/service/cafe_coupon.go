@@ -1245,7 +1245,7 @@ func (s *PaymentService) PreviewCafeCouponForOrder(ctx context.Context, req Crea
 		return nil, err
 	}
 	if plan != nil {
-		multiplier, err := s.resolveSubscriptionOrderMultiplier(ctx, req.UserID, plan, req.Multiplier)
+		multiplier, err := s.resolveSubscriptionPurchaseMultiplier(ctx, req, plan)
 		if err != nil {
 			return nil, err
 		}

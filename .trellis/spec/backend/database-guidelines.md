@@ -95,6 +95,9 @@ Key conventions observed in the codebase:
 - A completed presale payment is a pending entitlement, not an immediately usable
   subscription. Keep the immutable order window and activate it atomically at the
   business-calendar start. See `docs/SUBSCRIPTION_PRESALES.md`.
+- Presale activation/renewal must not clear usage counters or rolling-window
+  anchors. Changing entitlement dates does not refresh the weekly allowance;
+  leave quota refreshes to the normal window-maintenance path.
 - Serialize user/group/month reservation checks under the payment user lock. Lock
   user, then order, then subscription when activation/refund can race; use the
   activation marker and transactional audit record for retry safety.
@@ -116,3 +119,12 @@ Key conventions observed in the codebase:
   refunding, keep the original month as the daily-price divisor, and save the full
   accepted quote in the existing refund audit event. Retries must not recalculate
   from the cancelled or subsequently renewed subscription row.
+
+- Paid presale cancellation uses `PRESALE_CANCELLED`, never unpaid `CANCELLED`
+  (which verified late-payment callbacks may recover). Preserve paid facts/totals.
+  Offline cancellation/refund requires a versioned administrator review and strict
+  atomic audits under the user/order/subscription locks. Replays must not cancel
+  a later term or deduct points again. Persist the first online refund-attempt
+  marker before calling a provider; uncertain online attempts block offline records.
+  Payment audits are unique by order/action in PostgreSQL: reuse existing markers
+  on retries instead of blindly inserting them again.

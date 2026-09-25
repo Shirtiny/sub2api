@@ -855,8 +855,8 @@ describe('PaymentView WeChat JSAPI flow', () => {
     expect(vm.selectedSubscriptionMultiplier).toBe(2)
     expect(vm.effectiveSelectedMultiplier).toBe(2)
     expect(vm.effectiveSelectedPlanPrice).toBe(256)
-    expect(vm.selectedMultiplierConflictsActiveCustom).toBe(true)
-    expect(vm.canSubmitSubscription).toBe(false)
+    expect(vm.selectedMultiplierConflictsActiveCustom).toBe(false)
+    expect(vm.canSubmitSubscription).toBe(true)
   })
 
   it('does not restore the removed subscription catalog for a coupon deep link', async () => {
@@ -908,7 +908,7 @@ describe('PaymentView WeChat JSAPI flow', () => {
     wrapper.unmount()
   })
 
-  it('keeps a renewal multiplier even when new-purchase bounds have changed', async () => {
+  it('limits next-month renewal choices to the current plan bounds', async () => {
     const checkout = checkoutInfoWithPlansFixture()
     checkout.data.plans[0].custom_multiplier_max = 3
     getCheckoutInfo.mockResolvedValue(checkout)
@@ -916,9 +916,29 @@ describe('PaymentView WeChat JSAPI flow', () => {
     const wrapper = shallowMount(PaymentView, { props: { presalePlanId: 7, presaleMonth: '2026-10', presaleMultiplier: 4 }, global: { stubs: { Teleport: true, Transition: false } } })
     await flushPromises()
     const vm = wrapper.vm as unknown as { effectiveSelectedMultiplier: number; effectiveSelectedPlanPrice: number; selectedMultiplierConflictsActiveCustom: boolean }
-    expect(vm.effectiveSelectedMultiplier).toBe(4)
-    expect(vm.effectiveSelectedPlanPrice).toBe(512)
+    expect(vm.effectiveSelectedMultiplier).toBe(3)
+    expect(vm.effectiveSelectedPlanPrice).toBe(384)
     expect(vm.selectedMultiplierConflictsActiveCustom).toBe(false)
+    wrapper.unmount()
+  })
+
+  it.each([[2, 4], [4, 2], [3, 1]])('submits a future %sx to %sx renewal without a current-term conflict', async (current, selected) => {
+    routeState.query = {}
+    const checkout = checkoutInfoWithPlansFixture()
+    checkout.data.plans[0].custom_multiplier_min = 1
+    getCheckoutInfo.mockResolvedValue(checkout)
+    activeSubscriptionsState.push({ status: 'active', expires_at: '2099-01-01T00:00:00Z', custom_source_plan_id: 7, custom_multiplier: current })
+    createOrder.mockResolvedValue({ ...jsapiOrderFixture('presale-renewal'), result_type: 'order_created', qr_code: 'weixin://wxpay/presale', payment_mode: 'qrcode', status: 'PENDING' })
+    const wrapper = shallowMount(PaymentView, { props: { presalePlanId: 7, presaleMonth: '2026-10', presaleMultiplier: selected }, global: { stubs: { Teleport: true, Transition: false } } })
+    await flushPromises()
+    const vm = wrapper.vm as unknown as { effectiveSelectedMultiplier: number; effectiveSelectedPlanPrice: number; selectedMultiplierConflictsActiveCustom: boolean; confirmSubscribe: () => Promise<void> }
+    expect(vm.effectiveSelectedMultiplier).toBe(selected)
+    expect(vm.effectiveSelectedPlanPrice).toBe(128 * selected)
+    expect(vm.selectedMultiplierConflictsActiveCustom).toBe(false)
+    expect(wrapper.text()).not.toContain('payment.customMultiplierConflict')
+    await vm.confirmSubscribe(); await flushPromises()
+    expect(createOrder).toHaveBeenCalledWith(expect.objectContaining({ order_type: 'subscription', plan_id: 7, multiplier: selected, amount: 128 * selected, presale_month: '2026-10' }), 'payment-order-test-key')
+    expect(activeSubscriptionsState[0].custom_multiplier).toBe(current)
     wrapper.unmount()
   })
 

@@ -82,6 +82,15 @@ September 2026 reserves:
 Each purchase covers the **next calendar month**, not 30 days from payment. A
 multiplier changes quota/price under the existing custom-plan rules, not the number
 of months. Legacy bonus-day activities are not combined with fixed monthly terms.
+Presale renewals may choose any integer multiplier currently offered by the plan,
+including a higher or lower multiplier than the running term. The current
+multiplier is only a default selection when in range, not a locked renewal rule.
+Disabled customization offers 1x only. Removed/out-of-range options are not
+grandfathered into new presale orders; legacy immediate renewals are unchanged.
+Catalog selection, checkout, coupon previews and transactional creation use the
+same new-term pricing rule. Payment leaves the running term untouched; activation
+applies the snapshotted multiplier, clearing custom fields when returning to 1x.
+Changing multiplier never clears usage or resets window anchors.
 The date window, price/payment amount, name, concurrency, multiplier,
 early-reset configuration and renewal relationship are snapshotted in the order.
 Group quota/rate configuration continues to follow the existing live group model.
@@ -105,6 +114,21 @@ existing term already extends past the new month's start, purchase is rejected
 rather than silently overlapping or discarding paid time. Legacy physical custom
 groups require support reconciliation before presale renewal. Virtual custom
 subscriptions continue through the normal source group.
+
+Next-month renewals open only after the current term's first **14 full days**.
+For an October 1 00:00 +08:00 start, November reservations are blocked until
+October 15 00:00 +08:00 (inclusive opening boundary). This is measured from the
+current term's start, not the payment date or activation worker execution time.
+The same user's source group is the boundary, so switching to a sibling plan
+cannot bypass it. First purchases, other groups and expired/cancelled terms do
+not impose this renewal wait. A paid current term still awaiting fulfillment or
+activation also enforces the wait, avoiding a month-boundary scheduler gap.
+
+Both the landing quote and transactional order creation enforce the rule. Cards
+disable Reserve with a localized explanation and the server's opening timestamp;
+returning to the page rechecks eligibility. Accepted existing orders retain their
+payment recovery/fulfillment path; this rule does not cancel or reprice them.
+It adds no automatic debit, multi-month stacking, schema or runtime setting.
 
 ## API boundary
 
@@ -145,9 +169,11 @@ The existing payment maintenance worker scans due completed presales every minut
 start. The underlying term is always the snapshotted interval, not worker execution
 time. User + order + subscription locks and the activation marker make concurrent
 workers/retries safe. Activation creates or renews the source-group subscription,
-starts fresh quota meters, applies the reset grant, records dated concurrency and
+preserves existing usage counters and rolling-window anchors, applies historical
+reset-card grants, records dated concurrency and
 early-reset entitlements, records an audit event, then invalidates auth/billing
-caches after commit.
+caches after commit. Normal usage-window expiry remains responsible for quota
+refreshes; renewal does not grant an extra weekly allowance.
 
 Disabled/deleted accounts, unavailable groups, later manual extensions causing an
 overlap, and entirely missed terms are **not** silently activated. They remain
@@ -219,6 +245,55 @@ that was credited atomically with that audit. Paid-but-unreserved failures deduc
 nothing. A request or failed gateway attempt does not remove points, and retries
 cannot deduct twice. No historical completed refunds or already-spent benefits
 are automatically rewritten. Affiliate subscription redemption is unchanged.
+
+## Administrator offline handling
+
+Order management offers **Offline handling** for paid presale orders. It loads
+fresh order details and requires an administrator to review the customer, plan,
+multiplier and service term, enter a reason, and explicitly confirm the action.
+
+- **Cancel reservation only**: supported for completed or paid-but-failed orders.
+  Cancels only this order's entitlement and marks it `PRESALE_CANCELLED`.
+  It does not refund money, reduce earned membership points, or rewrite original
+  payment/completion facts. Paid totals and daily payment limits still count it.
+- **Record offline refund**: records money the administrator has **already returned
+  outside this system**, with actual amount, currency, reason and receipt reference.
+  It cancels the entitlement unless an audited cancellation already did so, sets
+  `REFUNDED` or `PARTIALLY_REFUNDED`, and reverses corresponding earned points in
+  the same transaction. The amount is positive, within the original payment and
+  currency precision. This is recording an external settlement, not changing the
+  automated refund policy or sending money. The accounting refund is proportional
+  to the original nominal order amount; the audit and order detail show the actual
+  money returned separately. Referral clawback reuses existing idempotent logic;
+  a pending bookkeeping response allows retrying the identical request only.
+
+Both paths release the user/source-group/month reservation. The user can book
+again if that period is still offered and the ordinary renewal/overlap rules allow
+it; dates cannot be backdated. A pending user refund still occupies its slot until
+settled. Cancelled-but-not-refunded orders can subsequently receive an offline
+refund record without cancelling a replacement subscription. Refund-requested
+orders similarly reuse the earlier entitlement cancellation audit.
+
+`POST /api/v1/admin/payment/orders/:id/presale-offline` is admin-only, with
+`mode` (`cancel` / `refund`), `amount`, `reason`, `reference`, `confirmed` and the
+reviewed `expected_updated_at`. The server uses the authenticated administrator ID,
+not a body field. User → order → subscription locks serialize competing actions.
+A stale review fails rather than silently cancelling a newly activated term.
+Identical completed requests are idempotent; changed amounts or references cannot
+create a second refund. Strict audit failure rolls back all entitlement, points
+and status changes. Existing usage and daily/weekly/monthly anchors are preserved.
+
+The paid cancellation state is deliberately distinct from unpaid `CANCELLED`:
+late provider callbacks must not revive it. Neither cancellation nor offline
+refund calls a payment provider. Refund-in-progress/failed states are not eligible.
+Before an online presale refund calls the provider it persists a unique
+`PRESALE_ONLINE_REFUND_STARTED` audit, reusing the first marker on retries.
+This and historical online-refund audits block offline settlement even if a
+provider timeout restored the review state. Such orders need provider reconciliation,
+not an administrator force/bypass button. Original payment facts and actor-tagged
+`PRESALE_CANCELLED` / `PRESALE_OFFLINE_REFUND` records remain available in order detail.
+
+No new table, schema migration or production data repair is needed for these actions.
 
 ## Migration, testing and release
 

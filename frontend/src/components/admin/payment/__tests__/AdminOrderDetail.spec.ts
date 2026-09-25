@@ -122,3 +122,13 @@ describe('AdminOrderDetail', () => {
     expect(w.text()).not.toMatch(/adminOrderDetail\./)
   })
 })
+
+
+it('shows real offline money separately from the accounting amount and localizes cancellation', () => {
+  const w = render({ status: 'PARTIALLY_REFUNDED', refund_amount: 80 }, summary, [{ id: 1, action: 'PRESALE_OFFLINE_REFUND', operator: 'admin:9', created_at: '', detail: JSON.stringify({ amount: 80.8, reference: 'receipt-xyz' }) }])
+  const refunds = w.get('[data-section="refund"]').text()
+  expect(refunds).toContain('线下实退金额')
+  expect(refunds).toContain('80.80')
+  expect(refunds).toContain('receipt-xyz')
+  expect(render({ status: 'PRESALE_CANCELLED' }).text()).toContain('预订已取消')
+})

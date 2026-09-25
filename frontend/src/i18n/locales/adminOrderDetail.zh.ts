@@ -19,7 +19,10 @@ export default {
   failureReason: '失败原因', audit: '操作与审计记录', auditEmpty: '暂无审计记录', rawDetail: '查看记录详情',
   notRecorded: '未记录', missingName: '名称未记录或关联项已删除', failedToLoad: '详细信息加载失败，请重试。', retry: '重新加载',
   modes: { redirect: '跳转支付', popup: '扫码支付', qrcode: '二维码支付', jsapi: '微信内支付', embedded: '内嵌支付' },
+  offlineAmount: '线下实退金额', offlineReference: '线下退款凭据',
   actions: {
+    PRESALE_CANCELLED: '管理员取消预订（未退款）', PRESALE_OFFLINE_REFUND: '已登记线下退款', PRESALE_ONLINE_REFUND_STARTED: '已提交线上退款',
+
     ORDER_CREATED: '创建订单', PAYMENT_SUCCESS: '支付成功', PAYMENT_RECEIVED: '收到支付通知',
     RECHARGE_SUCCESS: '充值完成', SUBSCRIPTION_SUCCESS: '订阅开通', PRESALE_RESERVED: '预售预订成功',
     PRESALE_ACTIVATED: '预售订阅生效', PRESALE_REFUND_REQUESTED: '申请预售退款',

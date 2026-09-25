@@ -100,13 +100,33 @@ describe('presale landing', () => {
     expect(w.get('.plan-buy').text()).toBe(en.presale.viewSubscriptions)
     w.unmount()
   })
-  it.each(['PRESALE_COVERAGE_OVERLAP', 'PRESALE_LEGACY_SUBSCRIPTION', 'PRESALE_NOT_AVAILABLE'])('explains %s inline without offering checkout', async reason => {
+  it.each(['PRESALE_COVERAGE_OVERLAP', 'PRESALE_LEGACY_SUBSCRIPTION', 'PRESALE_NOT_AVAILABLE', 'PRESALE_RENEWAL_TOO_EARLY'])('explains %s inline without offering checkout', async reason => {
     mocks.auth.isAuthenticated = true
     mocks.quote.mockRejectedValue({ reason })
     const w = render(); await flushPromises()
     expect(w.get('.plan-availability').attributes('data-state')).toBe('blocked')
     expect(w.get('.plan-buy').attributes('disabled')).toBeDefined()
     expect(w.get('.plan-availability p').text()).toBe(zh.presale.errors[reason as keyof typeof zh.presale.errors])
+    w.unmount()
+  })
+  it.each(['zh', 'en'])('shows the renewal opening date before checkout in %s and refreshes eligibility on return', async locale => {
+    mocks.auth.isAuthenticated = true
+    mocks.route.query = { plan: '12' }
+    mocks.quote.mockRejectedValue({ reason: 'PRESALE_RENEWAL_TOO_EARLY', metadata: { renewal_opens_at: '2026-09-15T00:00:00+08:00' } })
+    const w = render(locale); await flushPromises()
+    expect(w.get('.plan-availability').attributes('data-state')).toBe('blocked')
+    expect(w.get('.plan-availability p').text()).toContain('14')
+    expect(w.get('.plan-availability p').text()).toContain(locale === 'zh' ? '2026/09/15 00:00' : '15/09/2026, 00:00')
+    expect(w.get('.plan-buy').attributes('disabled')).toBeDefined()
+    await w.get('.plan-buy').trigger('click')
+    expect(w.find('.checkout-fixture').exists()).toBe(false)
+    expect(mocks.replace).not.toHaveBeenCalled()
+    mocks.quote.mockResolvedValue({ data: { ...fixture().period, plan_id: 12, renewal: true } })
+    window.dispatchEvent(new Event('focus')); await flushPromises()
+    expect(w.find('.plan-availability').exists()).toBe(false)
+    expect(w.get('.plan-buy').attributes('disabled')).toBeUndefined()
+    await w.get('.plan-buy').trigger('click'); await flushPromises()
+    expect(w.find('.checkout-fixture').exists()).toBe(true)
     w.unmount()
   })
   it('does not treat a failed eligibility request as permission to reserve and allows retry', async () => {
@@ -329,16 +349,44 @@ describe('presale landing', () => {
     expect(w.get('.plan-price strong').text()).toBe('￥300')
     w.unmount()
   })
-  it('retains the existing custom subscription multiplier for a renewal', async () => {
+  it.each([[2, 4], [4, 2]])('lets an active %sx subscriber reserve %sx for next month', async (current, selected) => {
+    mocks.auth.isAuthenticated = true
+    mocks.activeSubscriptions.push({ status: 'active', expires_at: '2099-01-01T00:00:00Z', custom_source_plan_id: 12, custom_multiplier: current } as UserSubscription)
+    mocks.catalog.mockResolvedValue({ data: customFixture() })
+    const w = render(); await flushPromises()
+    const select = w.getComponent(Select)
+    expect(select.props('disabled')).toBe(false)
+    expect(select.props('modelValue')).toBe(current)
+    expect(select.props('options')).toEqual([2, 3, 4].map(value => ({ value, label: `${value}x` })))
+    select.vm.$emit('update:modelValue', selected); await flushPromises()
+    expect(w.get('.plan-price strong').text()).toBe(`￥${selected}`)
+    expect(w.get('.plan-quotas').text()).toContain(`$${selected * 10}`)
+    await w.get('.plan-buy').trigger('click')
+    expect(w.get('.checkout-fixture').attributes('data-multiplier')).toBe(String(selected))
+    expect(mocks.replace).toHaveBeenCalledWith({ path: '/presale', query: { plan: '12', multiplier: String(selected) }, hash: '' })
+    expect(mocks.activeSubscriptions[0].custom_multiplier).toBe(current)
+    w.unmount()
+  })
+  it('uses the current plan choices when a previous multiplier is no longer sold', async () => {
     mocks.auth.isAuthenticated = true
     mocks.activeSubscriptions.push({ status: 'active', expires_at: '2099-01-01T00:00:00Z', custom_source_plan_id: 12, custom_multiplier: 5 } as UserSubscription)
     mocks.route.query = { plan: '12' }
     mocks.catalog.mockResolvedValue({ data: customFixture() })
     const w = render(); await flushPromises()
-    expect(w.getComponent(Select).props('disabled')).toBe(true)
-    expect(w.getComponent(Select).props('options')).toEqual([{ value: 5, label: '5x' }])
-    expect(w.get('.checkout-fixture').attributes('data-multiplier')).toBe('5')
-    expect(w.get('.plan-price strong').text()).toBe('￥5')
+    expect(w.getComponent(Select).props('disabled')).toBe(false)
+    expect(w.getComponent(Select).props('options')).toEqual([2, 3, 4].map(value => ({ value, label: `${value}x` })))
+    expect(w.get('.checkout-fixture').attributes('data-multiplier')).toBe('4')
+    expect(w.get('.plan-price strong').text()).toBe('￥4')
+    w.unmount()
+  })
+  it('uses 1x for the next term when customization has been disabled', async () => {
+    mocks.auth.isAuthenticated = true
+    mocks.activeSubscriptions.push({ status: 'active', expires_at: '2099-01-01T00:00:00Z', custom_source_plan_id: 12, custom_multiplier: 3 } as UserSubscription)
+    mocks.route.query = { plan: '12', multiplier: '3' }
+    const w = render(); await flushPromises()
+    expect(w.findComponent(Select).exists()).toBe(false)
+    expect(w.get('.checkout-fixture').attributes('data-multiplier')).toBe('1')
+    expect(w.get('.plan-price strong').text()).toBe('￥300')
     w.unmount()
   })
   it.each(['zh', 'en'])('marks both plan prices in renminbi without a checkout footnote in %s', async (locale) => {

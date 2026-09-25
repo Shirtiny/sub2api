@@ -138,7 +138,7 @@ async function pollStatus() {
   if (order.status === 'COMPLETED' || order.status === 'PAID') {
     cleanup()
     router.push({ path: '/payment/result', query: { order_id: String(orderId.value), status: 'success' } })
-  } else if (order.status === 'EXPIRED' || order.status === 'CANCELLED' || order.status === 'FAILED') {
+  } else if (order.status === 'EXPIRED' || order.status === 'CANCELLED' || order.status === 'PRESALE_CANCELLED' || order.status === 'FAILED') {
     cleanup()
     expired.value = true
   }

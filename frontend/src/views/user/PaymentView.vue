@@ -664,10 +664,11 @@ function maxCustomMultiplierForPlan(plan: SubscriptionPlan | null | undefined): 
 function clampCustomMultiplierForPlan(plan: SubscriptionPlan | null | undefined, multiplier: number): number {
   const fallback = activeSubscriptionMultiplierForPlan(plan) ?? defaultCustomMultiplierForPlan(plan)
   const parsed = Math.trunc(Number(multiplier || fallback || 1))
-  // Existing custom subscriptions retain their multiplier even if new-purchase
-  // limits changed, matching the server's renewal rules.
-  if (parsed === activeSubscriptionMultiplierForPlan(plan)) return parsed
+  // Only legacy immediate renewals retain out-of-range current multipliers.
+  // A presale's new term uses the current plan's available choices.
+  if (!props.presalePlanId && parsed === activeSubscriptionMultiplierForPlan(plan)) return parsed
   if (!plan?.custom_multiplier_enabled) {
+    if (props.presalePlanId) return 1
     return Math.max(1, Number.isFinite(parsed) ? parsed : fallback)
   }
   const min = defaultCustomMultiplierForPlan(plan)
@@ -708,7 +709,7 @@ const effectiveSelectedMonthlyLimit = computed(() => multiplyPlanLimit(selectedP
 const selectedActiveCustomMultiplier = computed(() => activeSubscriptionMultiplierForPlan(selectedPlan.value))
 const selectedMultiplierConflictsActiveCustom = computed(() => {
   const activeMultiplier = selectedActiveCustomMultiplier.value
-  return activeMultiplier != null && effectiveSelectedMultiplier.value !== activeMultiplier
+  return !props.presalePlanId && activeMultiplier != null && effectiveSelectedMultiplier.value !== activeMultiplier
 })
 
 const selectedPlanRateDisplay = computed(() => {
@@ -1255,6 +1256,7 @@ function routeSubscriptionPlanForGroup(groupId: number): SubscriptionPlan | null
 
 function initialMultiplierForPlan(plan: SubscriptionPlan | null | undefined, multiplier = 1, preferActive = true): number {
   const renewalMultiplier = activeSubscriptionMultiplierForPlan(plan)
+  if (props.presalePlanId) return clampCustomMultiplierForPlan(plan, preferActive ? renewalMultiplier ?? multiplier : multiplier)
   if (preferActive && renewalMultiplier != null) return renewalMultiplier
   if (plan?.custom_multiplier_enabled || renewalMultiplier != null) {
     return clampCustomMultiplierForPlan(plan, multiplier || renewalMultiplier || 1)

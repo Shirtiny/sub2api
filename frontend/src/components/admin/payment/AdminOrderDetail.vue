@@ -184,6 +184,15 @@ const refundRows = computed(() => {
   const o = props.order
   if (!o) return []
   const rows: DetailRow[] = []
+  for (const log of props.auditLogs) {
+    if (log.action !== 'PRESALE_OFFLINE_REFUND' || !log.detail) continue
+    try {
+      const detail: unknown = JSON.parse(log.detail)
+      if (!detail || typeof detail !== 'object') continue
+      if ('amount' in detail && typeof detail.amount === 'number' && Number.isFinite(detail.amount)) rows.push(row('offlineAmount', money(detail.amount, currency.value)))
+      if ('reference' in detail && typeof detail.reference === 'string') rows.push(row('offlineReference', detail.reference))
+    } catch { /* Ignore malformed legacy audit data. */ }
+  }
   if (o.refund_amount) rows.push(row('refundLedger', money(o.refund_amount, o.order_type === 'balance' ? 'USD' : currency.value)))
   if (o.refund_requested_at) rows.push({ label: t('payment.admin.refundRequestedAt'), value: date(o.refund_requested_at) })
   if (o.refund_requested_by) rows.push({ label: t('payment.admin.refundRequestedBy'), value: o.refund_requested_by })

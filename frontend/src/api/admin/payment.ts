@@ -20,6 +20,7 @@ import type {
 import type { BasePaginationResponse } from '@/types'
 
 export interface AdminPaymentOrder extends PaymentOrder {
+  updated_at?: string
   user_email?: string
   user_name?: string
   user_notes?: string
@@ -36,6 +37,15 @@ export interface AdminPaymentOrder extends PaymentOrder {
   presale_subscription_id?: number
   cafe_coupon_code?: string
   refund_at?: string
+}
+
+export interface PresaleOfflineRequest {
+  mode: 'cancel' | 'refund'
+  amount: number
+  reason: string
+  reference: string
+  confirmed: boolean
+  expected_updated_at: string
 }
 
 export interface AdminOrderSummary {
@@ -103,6 +113,9 @@ export interface UpdatePaymentConfigRequest {
 
 export const adminPaymentAPI = {
   getPresaleRefundQuote(id: number) { return apiClient.get<PresaleRefundQuote>(`/admin/payment/orders/${id}/presale-refund-quote`) },
+  processPresaleOffline(id: number, data: PresaleOfflineRequest) {
+    return apiClient.post<{ status: PaymentOrder['status']; affiliate_pending: boolean }>(`/admin/payment/orders/${id}/presale-offline`, data)
+  },
   // ==================== Config ====================
 
   /** Get payment configuration (admin view) */

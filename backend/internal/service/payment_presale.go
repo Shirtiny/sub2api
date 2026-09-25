@@ -19,6 +19,8 @@ import (
 
 const PresaleTimezone = "Asia/Shanghai"
 
+const presaleRenewalWait = 14 * 24 * time.Hour
+
 // The business calendar is deliberately independent of host/browser timezone.
 // Contemporary Shanghai has UTC+8 year-round; no system tzdata dependency.
 var presaleLocation = time.FixedZone("CST", 8*60*60)
@@ -117,7 +119,38 @@ func (s *PaymentService) presaleQuoteForPlan(ctx context.Context, userID int64, 
 	if legacy != nil {
 		return nil, infraerrors.Conflict("PRESALE_LEGACY_SUBSCRIPTION", "contact support to migrate your existing custom subscription before presale renewal")
 	}
+	if err := s.checkPresaleRenewalWindow(ctx, userID, plan.GroupID, existing, now); err != nil {
+		return nil, err
+	}
 	return quote, nil
+}
+
+// Restrict new reservations only, not fulfillment of already accepted payments.
+// Called by both the landing quote and order creation under the payment user lock.
+func (s *PaymentService) checkPresaleRenewalWindow(ctx context.Context, userID, groupID int64, current *dbent.UserSubscription, now time.Time) error {
+	tooEarly := func(start time.Time) error {
+		return infraerrors.Conflict("PRESALE_RENEWAL_TOO_EARLY", "next-month renewal opens after the current term's first 14 days").
+			WithMetadata(map[string]string{"renewal_opens_at": start.Add(presaleRenewalWait).In(presaleLocation).Format(time.RFC3339)})
+	}
+	if current != nil && !now.Before(current.StartsAt) && now.Before(current.ExpiresAt) && now.Before(current.StartsAt.Add(presaleRenewalWait)) {
+		return tooEarly(current.StartsAt)
+	}
+	// At the month boundary the paid current term may still be awaiting the
+	// activation worker (or payment fulfillment). Its reserved start, rather
+	// than worker execution time, also starts the 14-day renewal window.
+	due, err := s.entClient.PaymentOrder.Query().Where(
+		paymentorder.UserIDEQ(userID), paymentorder.SubscriptionSourceGroupIDEQ(groupID),
+		paymentorder.StatusIn(OrderStatusPaid, OrderStatusRecharging, OrderStatusCompleted), paymentorder.PaidAtNotNil(),
+		paymentorder.PresaleActivatedAtIsNil(), paymentorder.PresaleExpiresAtGT(now),
+		paymentorder.PresaleStartsAtGT(now.Add(-presaleRenewalWait)), paymentorder.PresaleStartsAtLTE(now),
+	).Select(paymentorder.FieldPresaleStartsAt).Order(dbent.Desc(paymentorder.FieldPresaleStartsAt)).First(ctx)
+	if err != nil && !dbent.IsNotFound(err) {
+		return fmt.Errorf("check pending presale renewal window: %w", err)
+	}
+	if due != nil {
+		return tooEarly(*due.PresaleStartsAt)
+	}
+	return nil
 }
 
 func (s *PaymentService) checkPresaleSlot(ctx context.Context, userID, groupID int64, start time.Time, excludeOrderID int64) error {

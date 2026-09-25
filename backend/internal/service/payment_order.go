@@ -54,7 +54,7 @@ func (s *PaymentService) CreateOrder(ctx context.Context, req CreateOrderRequest
 		return nil, err
 	}
 	if plan != nil {
-		resolvedMultiplier, err := s.resolveSubscriptionOrderMultiplier(ctx, req.UserID, plan, req.Multiplier)
+		resolvedMultiplier, err := s.resolveSubscriptionPurchaseMultiplier(ctx, req, plan)
 		if err != nil {
 			return nil, err
 		}
@@ -274,7 +274,7 @@ func (s *PaymentService) validateSubOrder(ctx context.Context, req CreateOrderRe
 	if !group.IsSubscriptionType() {
 		return nil, infraerrors.BadRequest("GROUP_TYPE_MISMATCH", "group is not a subscription type")
 	}
-	resolvedMultiplier, err := s.resolveSubscriptionOrderMultiplier(ctx, req.UserID, plan, req.Multiplier)
+	resolvedMultiplier, err := s.resolveSubscriptionPurchaseMultiplier(ctx, req, plan)
 	if err != nil {
 		return nil, err
 	}
@@ -289,6 +289,15 @@ func validateResolvedSubscriptionMultiplier(requested, resolved int) error {
 		return infraerrors.Conflict("SUBSCRIPTION_STATE_CHANGED", "subscription multiplier changed, please retry")
 	}
 	return nil
+}
+
+func (s *PaymentService) resolveSubscriptionPurchaseMultiplier(ctx context.Context, req CreateOrderRequest, plan *dbent.SubscriptionPlan) (int, error) {
+	if req.PresaleMonth != "" {
+		// Presales buy a separate future term. Its multiplier follows today's
+		// plan choices, not the still-active current term's multiplier.
+		return resolveSubscriptionPlanMultiplier(plan, req.Multiplier)
+	}
+	return s.resolveSubscriptionOrderMultiplier(ctx, req.UserID, plan, req.Multiplier)
 }
 
 func (s *PaymentService) resolveSubscriptionOrderMultiplier(ctx context.Context, userID int64, plan *dbent.SubscriptionPlan, requested int) (int, error) {
@@ -314,7 +323,11 @@ func (s *PaymentService) resolveSubscriptionOrderMultiplier(ctx context.Context,
 	} else if err != nil && !dbent.IsNotFound(err) {
 		return 0, fmt.Errorf("find active virtual custom subscription: %w", err)
 	}
-	if !plan.CustomMultiplierEnabled {
+	return resolveSubscriptionPlanMultiplier(plan, requested)
+}
+
+func resolveSubscriptionPlanMultiplier(plan *dbent.SubscriptionPlan, requested int) (int, error) {
+	if plan == nil || !plan.CustomMultiplierEnabled {
 		return 1, nil
 	}
 	minMultiplier := plan.CustomMultiplierMin
@@ -463,7 +476,7 @@ func (s *PaymentService) createOrderInTx(ctx context.Context, req CreateOrderReq
 	subscriptionDays := 0
 	if plan != nil {
 		txSvc := s.withEntClient(tx.Client())
-		resolvedMultiplier, err := txSvc.resolveSubscriptionOrderMultiplier(txCtx, req.UserID, plan, req.Multiplier)
+		resolvedMultiplier, err := txSvc.resolveSubscriptionPurchaseMultiplier(txCtx, req, plan)
 		if err != nil {
 			return nil, err
 		}
@@ -815,7 +828,7 @@ func (s *PaymentService) checkDailyLimit(ctx context.Context, tx *dbent.Tx, user
 		return nil
 	}
 	ts := psStartOfDayUTC(time.Now())
-	orders, err := tx.PaymentOrder.Query().Where(paymentorder.UserIDEQ(userID), paymentorder.StatusIn(OrderStatusPaid, OrderStatusRecharging, OrderStatusCompleted), paymentorder.PaidAtGTE(ts)).All(ctx)
+	orders, err := tx.PaymentOrder.Query().Where(paymentorder.UserIDEQ(userID), paymentorder.StatusIn(OrderStatusPaid, OrderStatusRecharging, OrderStatusCompleted, OrderStatusPresaleCancelled), paymentorder.PaidAtGTE(ts)).All(ctx)
 	if err != nil {
 		return fmt.Errorf("query daily usage: %w", err)
 	}

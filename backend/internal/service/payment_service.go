@@ -27,6 +27,7 @@ const (
 	OrderStatusCompleted         = payment.OrderStatusCompleted
 	OrderStatusExpired           = payment.OrderStatusExpired
 	OrderStatusCancelled         = payment.OrderStatusCancelled
+	OrderStatusPresaleCancelled  = payment.OrderStatusPresaleCancelled
 	OrderStatusFailed            = payment.OrderStatusFailed
 	OrderStatusRefundRequested   = payment.OrderStatusRefundRequested
 	OrderStatusRefunding         = payment.OrderStatusRefunding

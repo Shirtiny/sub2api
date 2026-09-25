@@ -199,7 +199,7 @@ async function pollStatus() {
     paidOrder.value = order
     success.value = true
     emit('success')
-  } else if (order.status === 'EXPIRED' || order.status === 'CANCELLED' || order.status === 'FAILED') {
+  } else if (order.status === 'EXPIRED' || order.status === 'CANCELLED' || order.status === 'PRESALE_CANCELLED' || order.status === 'FAILED') {
     cleanup()
     expired.value = true
   }

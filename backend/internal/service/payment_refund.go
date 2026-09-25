@@ -11,6 +11,7 @@ import (
 	"time"
 
 	dbent "github.com/Wei-Shaw/sub2api/ent"
+	"github.com/Wei-Shaw/sub2api/ent/paymentauditlog"
 	"github.com/Wei-Shaw/sub2api/ent/paymentorder"
 	"github.com/Wei-Shaw/sub2api/ent/paymentproviderinstance"
 	"github.com/Wei-Shaw/sub2api/internal/payment"
@@ -411,6 +412,21 @@ func (s *PaymentService) gwRefund(ctx context.Context, p *RefundPlan) error {
 			"detail": err.Error(),
 		})
 		return err
+	}
+	if p.Order.PresaleStartsAt != nil {
+		// Persist before sending money: a timeout must never make an uncertain
+		// online refund eligible for an offline settlement as well.
+		// The database permits one audit per order/action. Retain the first
+		// marker on legitimate provider retries instead of inserting it again.
+		started, err := s.entClient.PaymentAuditLog.Query().Where(paymentauditlog.OrderIDEQ(strconv.FormatInt(p.OrderID, 10)), paymentauditlog.ActionEQ("PRESALE_ONLINE_REFUND_STARTED")).Exist(ctx)
+		if err != nil {
+			return err
+		}
+		if !started {
+			if err := s.writeAuditLogStrict(ctx, p.OrderID, "PRESALE_ONLINE_REFUND_STARTED", "admin", map[string]any{"gateway_amount": p.GatewayAmount}); err != nil {
+				return err
+			}
+		}
 	}
 	resp, err := prov.Refund(ctx, payment.RefundRequest{
 		TradeNo: p.Order.PaymentTradeNo,

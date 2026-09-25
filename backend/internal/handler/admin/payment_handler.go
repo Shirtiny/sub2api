@@ -187,6 +187,26 @@ func (h *PaymentHandler) ProcessRefund(c *gin.Context) {
 	response.Success(c, result)
 }
 
+// ProcessPresaleOffline records an admin cancellation or a completed external
+// refund. It never issues a payment-provider refund.
+func (h *PaymentHandler) ProcessPresaleOffline(c *gin.Context) {
+	orderID, ok := parseIDParam(c, "id")
+	if !ok {
+		return
+	}
+	var req service.PresaleOfflineRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request")
+		return
+	}
+	result, err := h.paymentService.ProcessPresaleOffline(c.Request.Context(), orderID, getAdminIDFromContext(c), req)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, result)
+}
+
 // --- Subscription Plans ---
 
 // ListPlans returns all subscription plans.

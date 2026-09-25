@@ -17,6 +17,7 @@ export function formatPresaleDate(value: string | undefined, locale: string, mon
   }).format(date)
 }
 export function presaleStatus(order: PaymentOrder, now = Date.now()): string {
+  if (order.status === 'PRESALE_CANCELLED') return 'cancelled'
   if (['REFUNDED', 'PARTIALLY_REFUNDED'].includes(order.status)) return 'refunded'
   if (['REFUND_REQUESTED', 'REFUNDING', 'REFUND_FAILED'].includes(order.status)) return 'refundPending'
   if (!order.presale_activated_at && (order.status === 'FAILED' || (order.presale_starts_at && Date.parse(order.presale_starts_at) + 120000 <= now))) return 'activationIssue'

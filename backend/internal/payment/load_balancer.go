@@ -356,7 +356,7 @@ func (lb *DefaultLoadBalancer) GetInstanceDailyAmount(ctx context.Context, insta
 	err := lb.db.PaymentOrder.Query().
 		Where(
 			paymentorder.ProviderInstanceID(instanceID),
-			paymentorder.StatusIn(OrderStatusCompleted, OrderStatusPaid, OrderStatusRecharging),
+			paymentorder.StatusIn(OrderStatusCompleted, OrderStatusPaid, OrderStatusRecharging, OrderStatusPresaleCancelled),
 			paymentorder.PaidAtGTE(todayStart),
 		).
 		Aggregate(dbent.Sum(paymentorder.FieldPayAmount)).

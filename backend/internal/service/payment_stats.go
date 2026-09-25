@@ -24,7 +24,8 @@ func (s *PaymentService) GetDashboardStats(ctx context.Context, days int) (*Dash
 	since := now.AddDate(0, 0, -days)
 	todayStart := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 
-	paidStatuses := []string{OrderStatusCompleted, OrderStatusPaid, OrderStatusRecharging}
+	// Cancelling a paid reservation without refunding does not erase revenue.
+	paidStatuses := []string{OrderStatusCompleted, OrderStatusPaid, OrderStatusRecharging, OrderStatusPresaleCancelled}
 
 	orders, err := s.entClient.PaymentOrder.Query().
 		Where(
