@@ -81,9 +81,14 @@ func TestPresaleRenewalMultiplierChangesOnlyAtActivation(t *testing.T) {
 			require.Equal(t, current.DailyUsageUsd, after.DailyUsageUsd)
 			require.Equal(t, current.WeeklyUsageUsd, after.WeeklyUsageUsd)
 			require.Equal(t, current.MonthlyUsageUsd, after.MonthlyUsageUsd)
-			require.Equal(t, current.DailyWindowStart, after.DailyWindowStart)
-			require.Equal(t, current.WeeklyWindowStart, after.WeeklyWindowStart)
-			require.Equal(t, current.MonthlyWindowStart, after.MonthlyWindowStart)
+			// Database round trips may normalize Local to UTC; compare instants,
+			// not time.Time's internal location, without allowing a window reset.
+			require.NotNil(t, after.DailyWindowStart)
+			require.True(t, current.DailyWindowStart.Equal(*after.DailyWindowStart), "daily usage window must not change")
+			require.NotNil(t, after.WeeklyWindowStart)
+			require.True(t, current.WeeklyWindowStart.Equal(*after.WeeklyWindowStart), "weekly usage window must not change")
+			require.NotNil(t, after.MonthlyWindowStart)
+			require.True(t, current.MonthlyWindowStart.Equal(*after.MonthlyWindowStart), "monthly usage window must not change")
 			if pair[1] == 1 {
 				require.Nil(t, after.CustomMultiplier)
 				require.Nil(t, after.CustomSourcePlanID)

@@ -28,12 +28,19 @@ func (s *UserRepoSuite) SetupTest() {
 	s.client = testEntClient(s.T())
 	s.repo = newUserRepositoryWithSQL(s.client, integrationDB)
 
-	// 清理测试数据，确保每个测试从干净状态开始
-	_, _ = integrationDB.ExecContext(s.ctx, "DELETE FROM auth_identity_channels")
-	_, _ = integrationDB.ExecContext(s.ctx, "DELETE FROM auth_identities")
-	_, _ = integrationDB.ExecContext(s.ctx, "DELETE FROM user_subscriptions")
-	_, _ = integrationDB.ExecContext(s.ctx, "DELETE FROM user_allowed_groups")
-	_, _ = integrationDB.ExecContext(s.ctx, "DELETE FROM users")
+	// Disposable integration database only. Campaign uses restrict user deletion;
+	// remove those fixtures first and fail here instead of leaking stale users.
+	for _, query := range []string{
+		"DELETE FROM cafe_campaign_uses",
+		"DELETE FROM auth_identity_channels",
+		"DELETE FROM auth_identities",
+		"DELETE FROM user_subscriptions",
+		"DELETE FROM user_allowed_groups",
+		"DELETE FROM users",
+	} {
+		_, err := integrationDB.ExecContext(s.ctx, query)
+		s.Require().NoError(err, "clean integration fixture: %s", query)
+	}
 }
 
 func TestUserRepoSuite(t *testing.T) {

@@ -84,7 +84,7 @@ func TestCafeCampaignPostgresConcurrentCheckout(t *testing.T) {
 		if err == nil {
 			successes++
 		} else {
-			require.Contains(t, []string{"CAFE_CAMPAIGN_RESERVED", "CAFE_COUPON_USED"}, infraerrors.Reason(err), err)
+			require.Contains(t, []string{"CAFE_CAMPAIGN_RESERVED", "CAFE_CAMPAIGN_USAGE_LIMIT"}, infraerrors.Reason(err), err)
 		}
 	}
 	require.Equal(t, 1, successes)
@@ -110,7 +110,7 @@ func TestCafeCampaignPostgresConcurrentCheckout(t *testing.T) {
 	_, err := s.ProcessPresaleOffline(ctx, o.ID, 99, service.PresaleOfflineRequest{Mode: "refund", Amount: 60, Reference: "test", Reason: "test", Confirmed: true, ExpectedUpdatedAt: o.UpdatedAt})
 	require.NoError(t, err)
 	_, err = s.PreviewCafeCouponForOrder(ctx, service.CreateOrderRequest{UserID: u.ID, PlanID: p.ID, Multiplier: 1, OrderType: payment.OrderTypeSubscription, PresaleMonth: service.NextPresalePeriod(time.Now()).Month, CafeCouponCode: c.Code})
-	require.Equal(t, "CAFE_COUPON_USED", infraerrors.Reason(err))
+	require.Equal(t, "CAFE_CAMPAIGN_USAGE_LIMIT", infraerrors.Reason(err))
 }
 
 func TestCafeCampaignPostgresDelayedConcurrentCallbacksKeepFirstReceipt(t *testing.T) {

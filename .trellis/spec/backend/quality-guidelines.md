@@ -43,6 +43,7 @@ Core quality signals in this repo:
 - Use `make test-unit`, `make test-integration`, and `make test-e2e` when the change is scoped to a specific test tier.
 - Repository code is expected to have real integration coverage with Postgres/Redis containers when behavior depends on DB semantics. Example: `backend/internal/repository/integration_harness_test.go` and `backend/internal/repository/account_repo_integration_test.go`.
 - Handler and route behavior is also tested directly. Examples: `backend/internal/handler/openai_gateway_handler_test.go`, `backend/internal/server/routes/gateway_test.go`.
+- Compare persisted timestamps with `time.Time.Equal` (and explicit non-nil assertions for nullable fields), not deep struct equality: database round trips may normalize `Local` to `UTC` without changing the instant. Reproduce timezone-sensitive failures with `TZ=UTC` as well as the local timezone.
 
 ---
 
