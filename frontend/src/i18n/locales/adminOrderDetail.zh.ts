@@ -21,6 +21,7 @@ export default {
   modes: { redirect: '跳转支付', popup: '扫码支付', qrcode: '二维码支付', jsapi: '微信内支付', embedded: '内嵌支付' },
   offlineAmount: '线下实退金额', offlineReference: '线下退款凭据',
   actions: {
+    CAFE_CAMPAIGN_RESERVED: '通用咖啡券已预留', CAFE_CAMPAIGN_USED: '通用咖啡券已使用',
     PRESALE_CANCELLED: '管理员取消预订（未退款）', PRESALE_OFFLINE_REFUND: '已登记线下退款', PRESALE_ONLINE_REFUND_STARTED: '已提交线上退款',
 
     ORDER_CREATED: '创建订单', PAYMENT_SUCCESS: '支付成功', PAYMENT_RECEIVED: '收到支付通知',

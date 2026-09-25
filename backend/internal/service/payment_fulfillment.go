@@ -159,8 +159,13 @@ func (s *PaymentService) toPaid(ctx context.Context, o *dbent.PaymentOrder, trad
 	previousStatus := o.Status
 	now := time.Now()
 	grace := now.Add(-paymentGraceMinutes * time.Minute)
+	// Persist the first verified receipt only. A paid FAILED order needs another
+	// fulfillment attempt, not a new payment timestamp/amount/trade number.
+	// Check the stored row atomically: the caller's snapshot may be stale during
+	// concurrent callbacks. alreadyProcessed handles paid retries below.
 	c, err := s.entClient.PaymentOrder.Update().Where(
 		paymentorder.IDEQ(o.ID),
+		paymentorder.PaidAtIsNil(),
 		paymentorder.Or(
 			paymentorder.StatusEQ(OrderStatusPending),
 			paymentorder.StatusEQ(OrderStatusCancelled),
@@ -249,7 +254,7 @@ func (s *PaymentService) recordPaymentAfterExpiry(ctx context.Context, orderID i
 		return false, nil
 	}
 	updated, err := s.entClient.PaymentOrder.Update().
-		Where(paymentorder.IDEQ(orderID), paymentorder.StatusEQ(OrderStatusExpired)).
+		Where(paymentorder.IDEQ(orderID), paymentorder.StatusEQ(OrderStatusExpired), paymentorder.PaidAtIsNil()).
 		SetStatus(OrderStatusFailed).
 		SetPayAmount(paid).
 		SetPaymentTradeNo(tradeNo).

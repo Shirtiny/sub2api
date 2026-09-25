@@ -1,0 +1,23 @@
+export default {
+  applied: '通用券已应用 · 减免 {percent}% · 每个账号限一次',
+  title: '通用咖啡券', intro: '同一个优惠码供多个账号使用，仅限订阅预售，每个账号最多成功使用一次。',
+  create: '创建通用券', name: '活动名称', code: '优惠码', discount: '减免比例', discountValue: '减免 {percent}%', payable: '实际支付原价的 {percent}%，支付渠道费用按原规则计算。',
+  starts: '开始日期', ends: '结束日期', dateHint: '按北京时间生效，结束日期包含当天。', window: '有效期', exclusive: '截止时刻不含',
+  immutable: '创建后不能修改优惠码、折扣和日期，避免已下单用户的金额发生变化；可随时暂停新用券。',
+  created: '已创建，默认暂停。核对信息后可启用并分享优惠码。', policy: '待付款订单取消或过期后可重新用券；成功用券后退款或取消订阅，不恢复次数。不与其他咖啡券叠加。',
+  disabled: '已暂停', upcoming: '未开始', active: '进行中', expired: '已结束', enable: '启用', disable: '暂停',
+  enableConfirm: '启用后，符合有效期的账号可用此码享受 {percent}% 减免，每个账号限一次。',
+  disableConfirm: '暂停后不能新用券；此前已创建的有效支付订单仍按原优惠金额结算。', changed: '状态已更新', uses: '使用记录', usageHint: '展示每个账号当前绑定的订单；未付款重订会替换绑定，旧订单仍保留在订单管理中。',
+  user: '用户', order: '订单', useStatus: '用券状态', used: '已使用', reserved: '待付款占用', released: '可重新使用', noUses: '暂无用券记录',
+  copied: '优惠码已复制', failed: '操作失败，请刷新后重试。',
+  errors: {
+    CAFE_CAMPAIGN_PAYMENT_EXPIRED: '优惠订单超过支付期限，款项需要核对，请联系支持。',
+    CAFE_CAMPAIGN_INVALID: '请填写有效的优惠码、活动名称、1–99 的减免百分比及起止日期。',
+    CAFE_CAMPAIGN_EXISTS: '该优惠码已存在，请使用不同的优惠码。',
+    CAFE_CAMPAIGN_STALE: '活动状态已变化，请刷新后重新确认。',
+    CAFE_CAMPAIGN_DISABLED: '该通用咖啡券已暂停使用。',
+    CAFE_CAMPAIGN_NOT_STARTED: '该通用咖啡券尚未到使用时间。',
+    CAFE_CAMPAIGN_PRESALE_ONLY: '这张咖啡券仅可用于订阅预售，不能用于余额充值或即时订阅。',
+    CAFE_CAMPAIGN_RESERVED: '已有待付款订单占用此咖啡券，请继续付款或取消该订单后再使用。',
+  },
+}

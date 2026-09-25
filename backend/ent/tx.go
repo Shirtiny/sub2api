@@ -28,6 +28,10 @@ type Tx struct {
 	AuthIdentity *AuthIdentityClient
 	// AuthIdentityChannel is the client for interacting with the AuthIdentityChannel builders.
 	AuthIdentityChannel *AuthIdentityChannelClient
+	// CafeCampaign is the client for interacting with the CafeCampaign builders.
+	CafeCampaign *CafeCampaignClient
+	// CafeCampaignUse is the client for interacting with the CafeCampaignUse builders.
+	CafeCampaignUse *CafeCampaignUseClient
 	// CafeCoupon is the client for interacting with the CafeCoupon builders.
 	CafeCoupon *CafeCouponClient
 	// ChannelMonitor is the client for interacting with the ChannelMonitor builders.
@@ -236,6 +240,8 @@ func (tx *Tx) init() {
 	tx.AnnouncementRead = NewAnnouncementReadClient(tx.config)
 	tx.AuthIdentity = NewAuthIdentityClient(tx.config)
 	tx.AuthIdentityChannel = NewAuthIdentityChannelClient(tx.config)
+	tx.CafeCampaign = NewCafeCampaignClient(tx.config)
+	tx.CafeCampaignUse = NewCafeCampaignUseClient(tx.config)
 	tx.CafeCoupon = NewCafeCouponClient(tx.config)
 	tx.ChannelMonitor = NewChannelMonitorClient(tx.config)
 	tx.ChannelMonitorDailyRollup = NewChannelMonitorDailyRollupClient(tx.config)

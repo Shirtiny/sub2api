@@ -1,3 +1,5 @@
+import cafeCampaign from './cafeCampaign.zh'
+
 export default {
   nav: '订阅预售', banner: '下月订阅 · 预售进行中', eyebrow: 'A little ahead. A lot more ready.',
   title: '为下个月的专注，', titleAccent: '提前准备。',
@@ -64,6 +66,7 @@ export default {
     affiliatePending: '退款与预订取消已登记，关联返佣冲回尚未完成。请重试完成记账，不会再次退款。', retry: '重试关联记账',
   },
   errors: {
+    ...cafeCampaign.errors,
     PRESALE_OFFLINE_INVALID: '请确认操作，并填写有效的原因、金额与线下凭据。',
     PRESALE_OFFLINE_NOT_PAID: '仅已支付的预售订阅支持线下处理。',
     PRESALE_OFFLINE_AMOUNT: '实退金额不能超过原实付金额，且须符合支付币种精度。',

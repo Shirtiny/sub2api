@@ -22,6 +22,8 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/apikey"
 	"github.com/Wei-Shaw/sub2api/ent/authidentity"
 	"github.com/Wei-Shaw/sub2api/ent/authidentitychannel"
+	"github.com/Wei-Shaw/sub2api/ent/cafecampaign"
+	"github.com/Wei-Shaw/sub2api/ent/cafecampaignuse"
 	"github.com/Wei-Shaw/sub2api/ent/cafecoupon"
 	"github.com/Wei-Shaw/sub2api/ent/channelmonitor"
 	"github.com/Wei-Shaw/sub2api/ent/channelmonitordailyrollup"
@@ -80,6 +82,10 @@ type Client struct {
 	AuthIdentity *AuthIdentityClient
 	// AuthIdentityChannel is the client for interacting with the AuthIdentityChannel builders.
 	AuthIdentityChannel *AuthIdentityChannelClient
+	// CafeCampaign is the client for interacting with the CafeCampaign builders.
+	CafeCampaign *CafeCampaignClient
+	// CafeCampaignUse is the client for interacting with the CafeCampaignUse builders.
+	CafeCampaignUse *CafeCampaignUseClient
 	// CafeCoupon is the client for interacting with the CafeCoupon builders.
 	CafeCoupon *CafeCouponClient
 	// ChannelMonitor is the client for interacting with the ChannelMonitor builders.
@@ -168,6 +174,8 @@ func (c *Client) init() {
 	c.AnnouncementRead = NewAnnouncementReadClient(c.config)
 	c.AuthIdentity = NewAuthIdentityClient(c.config)
 	c.AuthIdentityChannel = NewAuthIdentityChannelClient(c.config)
+	c.CafeCampaign = NewCafeCampaignClient(c.config)
+	c.CafeCampaignUse = NewCafeCampaignUseClient(c.config)
 	c.CafeCoupon = NewCafeCouponClient(c.config)
 	c.ChannelMonitor = NewChannelMonitorClient(c.config)
 	c.ChannelMonitorDailyRollup = NewChannelMonitorDailyRollupClient(c.config)
@@ -302,6 +310,8 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		AnnouncementRead:                   NewAnnouncementReadClient(cfg),
 		AuthIdentity:                       NewAuthIdentityClient(cfg),
 		AuthIdentityChannel:                NewAuthIdentityChannelClient(cfg),
+		CafeCampaign:                       NewCafeCampaignClient(cfg),
+		CafeCampaignUse:                    NewCafeCampaignUseClient(cfg),
 		CafeCoupon:                         NewCafeCouponClient(cfg),
 		ChannelMonitor:                     NewChannelMonitorClient(cfg),
 		ChannelMonitorDailyRollup:          NewChannelMonitorDailyRollupClient(cfg),
@@ -363,6 +373,8 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		AnnouncementRead:                   NewAnnouncementReadClient(cfg),
 		AuthIdentity:                       NewAuthIdentityClient(cfg),
 		AuthIdentityChannel:                NewAuthIdentityChannelClient(cfg),
+		CafeCampaign:                       NewCafeCampaignClient(cfg),
+		CafeCampaignUse:                    NewCafeCampaignUseClient(cfg),
 		CafeCoupon:                         NewCafeCouponClient(cfg),
 		ChannelMonitor:                     NewChannelMonitorClient(cfg),
 		ChannelMonitorDailyRollup:          NewChannelMonitorDailyRollupClient(cfg),
@@ -428,13 +440,14 @@ func (c *Client) Close() error {
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.APIKey, c.Account, c.AccountGroup, c.Announcement, c.AnnouncementRead,
-		c.AuthIdentity, c.AuthIdentityChannel, c.CafeCoupon, c.ChannelMonitor,
-		c.ChannelMonitorDailyRollup, c.ChannelMonitorHistory,
-		c.ChannelMonitorRequestTemplate, c.ErrorPassthroughRule, c.Group,
-		c.IdempotencyRecord, c.IdentityAdoptionDecision, c.PaymentAuditLog,
-		c.PaymentOrder, c.PaymentProviderInstance, c.PendingAuthSession, c.PromoCode,
-		c.PromoCodeUsage, c.PromotionActivity, c.PromotionActivityParticipation,
-		c.PromotionActivityPlan, c.Proxy, c.RedeemCode, c.SecuritySecret, c.Setting,
+		c.AuthIdentity, c.AuthIdentityChannel, c.CafeCampaign, c.CafeCampaignUse,
+		c.CafeCoupon, c.ChannelMonitor, c.ChannelMonitorDailyRollup,
+		c.ChannelMonitorHistory, c.ChannelMonitorRequestTemplate,
+		c.ErrorPassthroughRule, c.Group, c.IdempotencyRecord,
+		c.IdentityAdoptionDecision, c.PaymentAuditLog, c.PaymentOrder,
+		c.PaymentProviderInstance, c.PendingAuthSession, c.PromoCode, c.PromoCodeUsage,
+		c.PromotionActivity, c.PromotionActivityParticipation, c.PromotionActivityPlan,
+		c.Proxy, c.RedeemCode, c.SecuritySecret, c.Setting,
 		c.SubscriptionConcurrencyEntitlement, c.SubscriptionEarlyResetEntitlement,
 		c.SubscriptionPlan, c.TLSFingerprintProfile, c.UsageCleanupTask, c.UsageLog,
 		c.User, c.UserAllowedGroup, c.UserAttributeDefinition, c.UserAttributeValue,
@@ -449,13 +462,14 @@ func (c *Client) Use(hooks ...Hook) {
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.APIKey, c.Account, c.AccountGroup, c.Announcement, c.AnnouncementRead,
-		c.AuthIdentity, c.AuthIdentityChannel, c.CafeCoupon, c.ChannelMonitor,
-		c.ChannelMonitorDailyRollup, c.ChannelMonitorHistory,
-		c.ChannelMonitorRequestTemplate, c.ErrorPassthroughRule, c.Group,
-		c.IdempotencyRecord, c.IdentityAdoptionDecision, c.PaymentAuditLog,
-		c.PaymentOrder, c.PaymentProviderInstance, c.PendingAuthSession, c.PromoCode,
-		c.PromoCodeUsage, c.PromotionActivity, c.PromotionActivityParticipation,
-		c.PromotionActivityPlan, c.Proxy, c.RedeemCode, c.SecuritySecret, c.Setting,
+		c.AuthIdentity, c.AuthIdentityChannel, c.CafeCampaign, c.CafeCampaignUse,
+		c.CafeCoupon, c.ChannelMonitor, c.ChannelMonitorDailyRollup,
+		c.ChannelMonitorHistory, c.ChannelMonitorRequestTemplate,
+		c.ErrorPassthroughRule, c.Group, c.IdempotencyRecord,
+		c.IdentityAdoptionDecision, c.PaymentAuditLog, c.PaymentOrder,
+		c.PaymentProviderInstance, c.PendingAuthSession, c.PromoCode, c.PromoCodeUsage,
+		c.PromotionActivity, c.PromotionActivityParticipation, c.PromotionActivityPlan,
+		c.Proxy, c.RedeemCode, c.SecuritySecret, c.Setting,
 		c.SubscriptionConcurrencyEntitlement, c.SubscriptionEarlyResetEntitlement,
 		c.SubscriptionPlan, c.TLSFingerprintProfile, c.UsageCleanupTask, c.UsageLog,
 		c.User, c.UserAllowedGroup, c.UserAttributeDefinition, c.UserAttributeValue,
@@ -482,6 +496,10 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.AuthIdentity.mutate(ctx, m)
 	case *AuthIdentityChannelMutation:
 		return c.AuthIdentityChannel.mutate(ctx, m)
+	case *CafeCampaignMutation:
+		return c.CafeCampaign.mutate(ctx, m)
+	case *CafeCampaignUseMutation:
+		return c.CafeCampaignUse.mutate(ctx, m)
 	case *CafeCouponMutation:
 		return c.CafeCoupon.mutate(ctx, m)
 	case *ChannelMonitorMutation:
@@ -1696,6 +1714,272 @@ func (c *AuthIdentityChannelClient) mutate(ctx context.Context, m *AuthIdentityC
 		return (&AuthIdentityChannelDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown AuthIdentityChannel mutation op: %q", m.Op())
+	}
+}
+
+// CafeCampaignClient is a client for the CafeCampaign schema.
+type CafeCampaignClient struct {
+	config
+}
+
+// NewCafeCampaignClient returns a client for the CafeCampaign from the given config.
+func NewCafeCampaignClient(c config) *CafeCampaignClient {
+	return &CafeCampaignClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `cafecampaign.Hooks(f(g(h())))`.
+func (c *CafeCampaignClient) Use(hooks ...Hook) {
+	c.hooks.CafeCampaign = append(c.hooks.CafeCampaign, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `cafecampaign.Intercept(f(g(h())))`.
+func (c *CafeCampaignClient) Intercept(interceptors ...Interceptor) {
+	c.inters.CafeCampaign = append(c.inters.CafeCampaign, interceptors...)
+}
+
+// Create returns a builder for creating a CafeCampaign entity.
+func (c *CafeCampaignClient) Create() *CafeCampaignCreate {
+	mutation := newCafeCampaignMutation(c.config, OpCreate)
+	return &CafeCampaignCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of CafeCampaign entities.
+func (c *CafeCampaignClient) CreateBulk(builders ...*CafeCampaignCreate) *CafeCampaignCreateBulk {
+	return &CafeCampaignCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *CafeCampaignClient) MapCreateBulk(slice any, setFunc func(*CafeCampaignCreate, int)) *CafeCampaignCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &CafeCampaignCreateBulk{err: fmt.Errorf("calling to CafeCampaignClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*CafeCampaignCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &CafeCampaignCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for CafeCampaign.
+func (c *CafeCampaignClient) Update() *CafeCampaignUpdate {
+	mutation := newCafeCampaignMutation(c.config, OpUpdate)
+	return &CafeCampaignUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *CafeCampaignClient) UpdateOne(_m *CafeCampaign) *CafeCampaignUpdateOne {
+	mutation := newCafeCampaignMutation(c.config, OpUpdateOne, withCafeCampaign(_m))
+	return &CafeCampaignUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *CafeCampaignClient) UpdateOneID(id int64) *CafeCampaignUpdateOne {
+	mutation := newCafeCampaignMutation(c.config, OpUpdateOne, withCafeCampaignID(id))
+	return &CafeCampaignUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for CafeCampaign.
+func (c *CafeCampaignClient) Delete() *CafeCampaignDelete {
+	mutation := newCafeCampaignMutation(c.config, OpDelete)
+	return &CafeCampaignDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *CafeCampaignClient) DeleteOne(_m *CafeCampaign) *CafeCampaignDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *CafeCampaignClient) DeleteOneID(id int64) *CafeCampaignDeleteOne {
+	builder := c.Delete().Where(cafecampaign.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &CafeCampaignDeleteOne{builder}
+}
+
+// Query returns a query builder for CafeCampaign.
+func (c *CafeCampaignClient) Query() *CafeCampaignQuery {
+	return &CafeCampaignQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeCafeCampaign},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a CafeCampaign entity by its id.
+func (c *CafeCampaignClient) Get(ctx context.Context, id int64) (*CafeCampaign, error) {
+	return c.Query().Where(cafecampaign.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *CafeCampaignClient) GetX(ctx context.Context, id int64) *CafeCampaign {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *CafeCampaignClient) Hooks() []Hook {
+	return c.hooks.CafeCampaign
+}
+
+// Interceptors returns the client interceptors.
+func (c *CafeCampaignClient) Interceptors() []Interceptor {
+	return c.inters.CafeCampaign
+}
+
+func (c *CafeCampaignClient) mutate(ctx context.Context, m *CafeCampaignMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&CafeCampaignCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&CafeCampaignUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&CafeCampaignUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&CafeCampaignDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown CafeCampaign mutation op: %q", m.Op())
+	}
+}
+
+// CafeCampaignUseClient is a client for the CafeCampaignUse schema.
+type CafeCampaignUseClient struct {
+	config
+}
+
+// NewCafeCampaignUseClient returns a client for the CafeCampaignUse from the given config.
+func NewCafeCampaignUseClient(c config) *CafeCampaignUseClient {
+	return &CafeCampaignUseClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `cafecampaignuse.Hooks(f(g(h())))`.
+func (c *CafeCampaignUseClient) Use(hooks ...Hook) {
+	c.hooks.CafeCampaignUse = append(c.hooks.CafeCampaignUse, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `cafecampaignuse.Intercept(f(g(h())))`.
+func (c *CafeCampaignUseClient) Intercept(interceptors ...Interceptor) {
+	c.inters.CafeCampaignUse = append(c.inters.CafeCampaignUse, interceptors...)
+}
+
+// Create returns a builder for creating a CafeCampaignUse entity.
+func (c *CafeCampaignUseClient) Create() *CafeCampaignUseCreate {
+	mutation := newCafeCampaignUseMutation(c.config, OpCreate)
+	return &CafeCampaignUseCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of CafeCampaignUse entities.
+func (c *CafeCampaignUseClient) CreateBulk(builders ...*CafeCampaignUseCreate) *CafeCampaignUseCreateBulk {
+	return &CafeCampaignUseCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *CafeCampaignUseClient) MapCreateBulk(slice any, setFunc func(*CafeCampaignUseCreate, int)) *CafeCampaignUseCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &CafeCampaignUseCreateBulk{err: fmt.Errorf("calling to CafeCampaignUseClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*CafeCampaignUseCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &CafeCampaignUseCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for CafeCampaignUse.
+func (c *CafeCampaignUseClient) Update() *CafeCampaignUseUpdate {
+	mutation := newCafeCampaignUseMutation(c.config, OpUpdate)
+	return &CafeCampaignUseUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *CafeCampaignUseClient) UpdateOne(_m *CafeCampaignUse) *CafeCampaignUseUpdateOne {
+	mutation := newCafeCampaignUseMutation(c.config, OpUpdateOne, withCafeCampaignUse(_m))
+	return &CafeCampaignUseUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *CafeCampaignUseClient) UpdateOneID(id int64) *CafeCampaignUseUpdateOne {
+	mutation := newCafeCampaignUseMutation(c.config, OpUpdateOne, withCafeCampaignUseID(id))
+	return &CafeCampaignUseUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for CafeCampaignUse.
+func (c *CafeCampaignUseClient) Delete() *CafeCampaignUseDelete {
+	mutation := newCafeCampaignUseMutation(c.config, OpDelete)
+	return &CafeCampaignUseDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *CafeCampaignUseClient) DeleteOne(_m *CafeCampaignUse) *CafeCampaignUseDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *CafeCampaignUseClient) DeleteOneID(id int64) *CafeCampaignUseDeleteOne {
+	builder := c.Delete().Where(cafecampaignuse.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &CafeCampaignUseDeleteOne{builder}
+}
+
+// Query returns a query builder for CafeCampaignUse.
+func (c *CafeCampaignUseClient) Query() *CafeCampaignUseQuery {
+	return &CafeCampaignUseQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeCafeCampaignUse},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a CafeCampaignUse entity by its id.
+func (c *CafeCampaignUseClient) Get(ctx context.Context, id int64) (*CafeCampaignUse, error) {
+	return c.Query().Where(cafecampaignuse.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *CafeCampaignUseClient) GetX(ctx context.Context, id int64) *CafeCampaignUse {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *CafeCampaignUseClient) Hooks() []Hook {
+	return c.hooks.CafeCampaignUse
+}
+
+// Interceptors returns the client interceptors.
+func (c *CafeCampaignUseClient) Interceptors() []Interceptor {
+	return c.inters.CafeCampaignUse
+}
+
+func (c *CafeCampaignUseClient) mutate(ctx context.Context, m *CafeCampaignUseMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&CafeCampaignUseCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&CafeCampaignUseUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&CafeCampaignUseUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&CafeCampaignUseDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown CafeCampaignUse mutation op: %q", m.Op())
 	}
 }
 
@@ -7345,29 +7629,31 @@ func (c *WaitlistEntryClient) mutate(ctx context.Context, m *WaitlistEntryMutati
 type (
 	hooks struct {
 		APIKey, Account, AccountGroup, Announcement, AnnouncementRead, AuthIdentity,
-		AuthIdentityChannel, CafeCoupon, ChannelMonitor, ChannelMonitorDailyRollup,
-		ChannelMonitorHistory, ChannelMonitorRequestTemplate, ErrorPassthroughRule,
-		Group, IdempotencyRecord, IdentityAdoptionDecision, PaymentAuditLog,
-		PaymentOrder, PaymentProviderInstance, PendingAuthSession, PromoCode,
-		PromoCodeUsage, PromotionActivity, PromotionActivityParticipation,
-		PromotionActivityPlan, Proxy, RedeemCode, SecuritySecret, Setting,
-		SubscriptionConcurrencyEntitlement, SubscriptionEarlyResetEntitlement,
-		SubscriptionPlan, TLSFingerprintProfile, UsageCleanupTask, UsageLog, User,
-		UserAllowedGroup, UserAttributeDefinition, UserAttributeValue,
-		UserPlatformQuota, UserSubscription, WaitlistEntry []ent.Hook
+		AuthIdentityChannel, CafeCampaign, CafeCampaignUse, CafeCoupon, ChannelMonitor,
+		ChannelMonitorDailyRollup, ChannelMonitorHistory,
+		ChannelMonitorRequestTemplate, ErrorPassthroughRule, Group, IdempotencyRecord,
+		IdentityAdoptionDecision, PaymentAuditLog, PaymentOrder,
+		PaymentProviderInstance, PendingAuthSession, PromoCode, PromoCodeUsage,
+		PromotionActivity, PromotionActivityParticipation, PromotionActivityPlan,
+		Proxy, RedeemCode, SecuritySecret, Setting, SubscriptionConcurrencyEntitlement,
+		SubscriptionEarlyResetEntitlement, SubscriptionPlan, TLSFingerprintProfile,
+		UsageCleanupTask, UsageLog, User, UserAllowedGroup, UserAttributeDefinition,
+		UserAttributeValue, UserPlatformQuota, UserSubscription,
+		WaitlistEntry []ent.Hook
 	}
 	inters struct {
 		APIKey, Account, AccountGroup, Announcement, AnnouncementRead, AuthIdentity,
-		AuthIdentityChannel, CafeCoupon, ChannelMonitor, ChannelMonitorDailyRollup,
-		ChannelMonitorHistory, ChannelMonitorRequestTemplate, ErrorPassthroughRule,
-		Group, IdempotencyRecord, IdentityAdoptionDecision, PaymentAuditLog,
-		PaymentOrder, PaymentProviderInstance, PendingAuthSession, PromoCode,
-		PromoCodeUsage, PromotionActivity, PromotionActivityParticipation,
-		PromotionActivityPlan, Proxy, RedeemCode, SecuritySecret, Setting,
-		SubscriptionConcurrencyEntitlement, SubscriptionEarlyResetEntitlement,
-		SubscriptionPlan, TLSFingerprintProfile, UsageCleanupTask, UsageLog, User,
-		UserAllowedGroup, UserAttributeDefinition, UserAttributeValue,
-		UserPlatformQuota, UserSubscription, WaitlistEntry []ent.Interceptor
+		AuthIdentityChannel, CafeCampaign, CafeCampaignUse, CafeCoupon, ChannelMonitor,
+		ChannelMonitorDailyRollup, ChannelMonitorHistory,
+		ChannelMonitorRequestTemplate, ErrorPassthroughRule, Group, IdempotencyRecord,
+		IdentityAdoptionDecision, PaymentAuditLog, PaymentOrder,
+		PaymentProviderInstance, PendingAuthSession, PromoCode, PromoCodeUsage,
+		PromotionActivity, PromotionActivityParticipation, PromotionActivityPlan,
+		Proxy, RedeemCode, SecuritySecret, Setting, SubscriptionConcurrencyEntitlement,
+		SubscriptionEarlyResetEntitlement, SubscriptionPlan, TLSFingerprintProfile,
+		UsageCleanupTask, UsageLog, User, UserAllowedGroup, UserAttributeDefinition,
+		UserAttributeValue, UserPlatformQuota, UserSubscription,
+		WaitlistEntry []ent.Interceptor
 	}
 )
 

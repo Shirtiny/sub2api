@@ -15,6 +15,8 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/apikey"
 	"github.com/Wei-Shaw/sub2api/ent/authidentity"
 	"github.com/Wei-Shaw/sub2api/ent/authidentitychannel"
+	"github.com/Wei-Shaw/sub2api/ent/cafecampaign"
+	"github.com/Wei-Shaw/sub2api/ent/cafecampaignuse"
 	"github.com/Wei-Shaw/sub2api/ent/cafecoupon"
 	"github.com/Wei-Shaw/sub2api/ent/channelmonitor"
 	"github.com/Wei-Shaw/sub2api/ent/channelmonitordailyrollup"
@@ -296,6 +298,60 @@ func (f TraverseAuthIdentityChannel) Traverse(ctx context.Context, q ent.Query) 
 		return f(ctx, q)
 	}
 	return fmt.Errorf("unexpected query type %T. expect *ent.AuthIdentityChannelQuery", q)
+}
+
+// The CafeCampaignFunc type is an adapter to allow the use of ordinary function as a Querier.
+type CafeCampaignFunc func(context.Context, *ent.CafeCampaignQuery) (ent.Value, error)
+
+// Query calls f(ctx, q).
+func (f CafeCampaignFunc) Query(ctx context.Context, q ent.Query) (ent.Value, error) {
+	if q, ok := q.(*ent.CafeCampaignQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *ent.CafeCampaignQuery", q)
+}
+
+// The TraverseCafeCampaign type is an adapter to allow the use of ordinary function as Traverser.
+type TraverseCafeCampaign func(context.Context, *ent.CafeCampaignQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraverseCafeCampaign) Intercept(next ent.Querier) ent.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraverseCafeCampaign) Traverse(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.CafeCampaignQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *ent.CafeCampaignQuery", q)
+}
+
+// The CafeCampaignUseFunc type is an adapter to allow the use of ordinary function as a Querier.
+type CafeCampaignUseFunc func(context.Context, *ent.CafeCampaignUseQuery) (ent.Value, error)
+
+// Query calls f(ctx, q).
+func (f CafeCampaignUseFunc) Query(ctx context.Context, q ent.Query) (ent.Value, error) {
+	if q, ok := q.(*ent.CafeCampaignUseQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *ent.CafeCampaignUseQuery", q)
+}
+
+// The TraverseCafeCampaignUse type is an adapter to allow the use of ordinary function as Traverser.
+type TraverseCafeCampaignUse func(context.Context, *ent.CafeCampaignUseQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraverseCafeCampaignUse) Intercept(next ent.Querier) ent.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraverseCafeCampaignUse) Traverse(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.CafeCampaignUseQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *ent.CafeCampaignUseQuery", q)
 }
 
 // The CafeCouponFunc type is an adapter to allow the use of ordinary function as a Querier.
@@ -1260,6 +1316,10 @@ func NewQuery(q ent.Query) (Query, error) {
 		return &query[*ent.AuthIdentityQuery, predicate.AuthIdentity, authidentity.OrderOption]{typ: ent.TypeAuthIdentity, tq: q}, nil
 	case *ent.AuthIdentityChannelQuery:
 		return &query[*ent.AuthIdentityChannelQuery, predicate.AuthIdentityChannel, authidentitychannel.OrderOption]{typ: ent.TypeAuthIdentityChannel, tq: q}, nil
+	case *ent.CafeCampaignQuery:
+		return &query[*ent.CafeCampaignQuery, predicate.CafeCampaign, cafecampaign.OrderOption]{typ: ent.TypeCafeCampaign, tq: q}, nil
+	case *ent.CafeCampaignUseQuery:
+		return &query[*ent.CafeCampaignUseQuery, predicate.CafeCampaignUse, cafecampaignuse.OrderOption]{typ: ent.TypeCafeCampaignUse, tq: q}, nil
 	case *ent.CafeCouponQuery:
 		return &query[*ent.CafeCouponQuery, predicate.CafeCoupon, cafecoupon.OrderOption]{typ: ent.TypeCafeCoupon, tq: q}, nil
 	case *ent.ChannelMonitorQuery:

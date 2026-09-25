@@ -440,6 +440,60 @@ var (
 			},
 		},
 	}
+	// CafeCampaignsColumns holds the columns for the "cafe_campaigns" table.
+	CafeCampaignsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "code", Type: field.TypeString, Unique: true, Size: 48},
+		{Name: "name", Type: field.TypeString, Size: 100},
+		{Name: "discount_percent", Type: field.TypeInt},
+		{Name: "enabled", Type: field.TypeBool, Default: false},
+		{Name: "starts_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "expires_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "created_by", Type: field.TypeInt64},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+	}
+	// CafeCampaignsTable holds the schema information for the "cafe_campaigns" table.
+	CafeCampaignsTable = &schema.Table{
+		Name:       "cafe_campaigns",
+		Columns:    CafeCampaignsColumns,
+		PrimaryKey: []*schema.Column{CafeCampaignsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "cafecampaign_code",
+				Unique:  true,
+				Columns: []*schema.Column{CafeCampaignsColumns[1]},
+			},
+		},
+	}
+	// CafeCampaignUsesColumns holds the columns for the "cafe_campaign_uses" table.
+	CafeCampaignUsesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "campaign_id", Type: field.TypeInt64},
+		{Name: "user_id", Type: field.TypeInt64},
+		{Name: "order_id", Type: field.TypeInt64},
+		{Name: "used_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+	}
+	// CafeCampaignUsesTable holds the schema information for the "cafe_campaign_uses" table.
+	CafeCampaignUsesTable = &schema.Table{
+		Name:       "cafe_campaign_uses",
+		Columns:    CafeCampaignUsesColumns,
+		PrimaryKey: []*schema.Column{CafeCampaignUsesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "cafecampaignuse_campaign_id_user_id",
+				Unique:  true,
+				Columns: []*schema.Column{CafeCampaignUsesColumns[1], CafeCampaignUsesColumns[2]},
+			},
+			{
+				Name:    "cafecampaignuse_order_id",
+				Unique:  true,
+				Columns: []*schema.Column{CafeCampaignUsesColumns[3]},
+			},
+		},
+	}
 	// CafeCouponsColumns holds the columns for the "cafe_coupons" table.
 	CafeCouponsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -2140,6 +2194,8 @@ var (
 		AnnouncementReadsTable,
 		AuthIdentitiesTable,
 		AuthIdentityChannelsTable,
+		CafeCampaignsTable,
+		CafeCampaignUsesTable,
 		CafeCouponsTable,
 		ChannelMonitorsTable,
 		ChannelMonitorDailyRollupsTable,
@@ -2208,6 +2264,12 @@ func init() {
 	AuthIdentityChannelsTable.ForeignKeys[0].RefTable = AuthIdentitiesTable
 	AuthIdentityChannelsTable.Annotation = &entsql.Annotation{
 		Table: "auth_identity_channels",
+	}
+	CafeCampaignsTable.Annotation = &entsql.Annotation{
+		Table: "cafe_campaigns",
+	}
+	CafeCampaignUsesTable.Annotation = &entsql.Annotation{
+		Table: "cafe_campaign_uses",
 	}
 	CafeCouponsTable.ForeignKeys[0].RefTable = UsersTable
 	CafeCouponsTable.Annotation = &entsql.Annotation{

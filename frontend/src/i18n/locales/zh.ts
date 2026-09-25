@@ -1,7 +1,9 @@
+import cafeCampaign from './cafeCampaign.zh'
 import adminOrderDetail from './adminOrderDetail.zh'
 import presale from './presale.zh'
 
 export default {
+  cafeCampaign,
   adminOrderDetail,
   presale,
   // Home Page
@@ -1185,6 +1187,7 @@ export default {
     userAgent: 'User-Agent',
     tabs: { usage: '用量明细', errors: '错误请求' },
     errors: {
+      ...cafeCampaign.errors,
       time: '时间', model: '模型', endpoint: '端点', status: '状态码',
       category: '分类', platform: '平台', message: '错误信息',
       keyName: 'Key 名称', keyDeleted: '已删除', allKeys: '全部 Key',
@@ -7932,6 +7935,7 @@ export default {
       payable: '应付',
       errors: {
         CAFE_COUPON_INVALID: '券码无效',
+        ...cafeCampaign.errors,
         CAFE_COUPON_NOT_FOUND: '券码无效',
         CAFE_COUPON_EXPIRED: '该 Café券已过期。',
         CAFE_COUPON_USED: '该 Café券已被使用。',

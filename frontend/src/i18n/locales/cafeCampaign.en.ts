@@ -1,0 +1,23 @@
+export default {
+  applied: 'Shared code applied · {percent}% off · once per account',
+  title: 'Shared café codes', intro: 'One shared code for multiple accounts. Presale subscriptions only, with one successful use per account.',
+  create: 'Create shared code', name: 'Campaign name', code: 'Code', discount: 'Percentage off', discountValue: '{percent}% off', payable: 'Pay {percent}% of the original price. Payment channel fees follow the existing rules.',
+  starts: 'Start date', ends: 'End date', dateHint: 'Dates use Beijing time (UTC+8). The end date includes the entire day.', window: 'Validity', exclusive: 'End instant excluded',
+  immutable: 'Code, discount and dates cannot be edited after creation, preserving accepted prices. You can pause new uses at any time.',
+  created: 'Created and paused. Review the terms before enabling and sharing the code.', policy: 'Cancelled or expired unpaid orders release the reservation. Refunds and subscription cancellations do not restore a successful use. Cannot be combined with another café coupon.',
+  disabled: 'Paused', upcoming: 'Scheduled', active: 'Active', expired: 'Ended', enable: 'Enable', disable: 'Pause',
+  enableConfirm: 'Enable {percent}% off during the validity period, once per account?',
+  disableConfirm: 'New uses will be blocked. Previously accepted valid payment orders retain their original discount.', changed: 'Status updated', uses: 'Usage records', usageHint: 'Shows the current order per account. Replacing an unpaid order updates the binding; earlier orders remain in order management.',
+  user: 'Customer', order: 'Order', useStatus: 'Coupon status', used: 'Used', reserved: 'Awaiting payment', released: 'Available again', noUses: 'No usage records yet',
+  copied: 'Code copied', failed: 'Operation failed. Refresh and try again.',
+  errors: {
+    CAFE_CAMPAIGN_PAYMENT_EXPIRED: 'Payment arrived after the discounted order deadline. Contact support to reconcile the payment.',
+    CAFE_CAMPAIGN_INVALID: 'Enter a valid code, name, discount from 1 to 99 percent and date range.',
+    CAFE_CAMPAIGN_EXISTS: 'This code already exists. Choose a different code.',
+    CAFE_CAMPAIGN_STALE: 'Campaign changed. Refresh and review before proceeding.',
+    CAFE_CAMPAIGN_DISABLED: 'This shared café code is paused.',
+    CAFE_CAMPAIGN_NOT_STARTED: 'This shared café code is not valid yet.',
+    CAFE_CAMPAIGN_PRESALE_ONLY: 'This code is only for subscription presales, not balance top-ups or immediate subscriptions.',
+    CAFE_CAMPAIGN_RESERVED: 'An unpaid order already reserves this code. Complete or cancel that order first.',
+  },
+}

@@ -19,6 +19,8 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/apikey"
 	"github.com/Wei-Shaw/sub2api/ent/authidentity"
 	"github.com/Wei-Shaw/sub2api/ent/authidentitychannel"
+	"github.com/Wei-Shaw/sub2api/ent/cafecampaign"
+	"github.com/Wei-Shaw/sub2api/ent/cafecampaignuse"
 	"github.com/Wei-Shaw/sub2api/ent/cafecoupon"
 	"github.com/Wei-Shaw/sub2api/ent/channelmonitor"
 	"github.com/Wei-Shaw/sub2api/ent/channelmonitordailyrollup"
@@ -74,6 +76,8 @@ const (
 	TypeAnnouncementRead                   = "AnnouncementRead"
 	TypeAuthIdentity                       = "AuthIdentity"
 	TypeAuthIdentityChannel                = "AuthIdentityChannel"
+	TypeCafeCampaign                       = "CafeCampaign"
+	TypeCafeCampaignUse                    = "CafeCampaignUse"
 	TypeCafeCoupon                         = "CafeCoupon"
 	TypeChannelMonitor                     = "ChannelMonitor"
 	TypeChannelMonitorDailyRollup          = "ChannelMonitorDailyRollup"
@@ -9010,6 +9014,1553 @@ func (m *AuthIdentityChannelMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown AuthIdentityChannel edge %s", name)
+}
+
+// CafeCampaignMutation represents an operation that mutates the CafeCampaign nodes in the graph.
+type CafeCampaignMutation struct {
+	config
+	op                  Op
+	typ                 string
+	id                  *int64
+	code                *string
+	name                *string
+	discount_percent    *int
+	adddiscount_percent *int
+	enabled             *bool
+	starts_at           *time.Time
+	expires_at          *time.Time
+	created_by          *int64
+	addcreated_by       *int64
+	created_at          *time.Time
+	updated_at          *time.Time
+	clearedFields       map[string]struct{}
+	done                bool
+	oldValue            func(context.Context) (*CafeCampaign, error)
+	predicates          []predicate.CafeCampaign
+}
+
+var _ ent.Mutation = (*CafeCampaignMutation)(nil)
+
+// cafecampaignOption allows management of the mutation configuration using functional options.
+type cafecampaignOption func(*CafeCampaignMutation)
+
+// newCafeCampaignMutation creates new mutation for the CafeCampaign entity.
+func newCafeCampaignMutation(c config, op Op, opts ...cafecampaignOption) *CafeCampaignMutation {
+	m := &CafeCampaignMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeCafeCampaign,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withCafeCampaignID sets the ID field of the mutation.
+func withCafeCampaignID(id int64) cafecampaignOption {
+	return func(m *CafeCampaignMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *CafeCampaign
+		)
+		m.oldValue = func(ctx context.Context) (*CafeCampaign, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().CafeCampaign.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withCafeCampaign sets the old CafeCampaign of the mutation.
+func withCafeCampaign(node *CafeCampaign) cafecampaignOption {
+	return func(m *CafeCampaignMutation) {
+		m.oldValue = func(context.Context) (*CafeCampaign, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m CafeCampaignMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m CafeCampaignMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *CafeCampaignMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *CafeCampaignMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().CafeCampaign.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCode sets the "code" field.
+func (m *CafeCampaignMutation) SetCode(s string) {
+	m.code = &s
+}
+
+// Code returns the value of the "code" field in the mutation.
+func (m *CafeCampaignMutation) Code() (r string, exists bool) {
+	v := m.code
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCode returns the old "code" field's value of the CafeCampaign entity.
+// If the CafeCampaign object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CafeCampaignMutation) OldCode(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCode is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCode requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCode: %w", err)
+	}
+	return oldValue.Code, nil
+}
+
+// ResetCode resets all changes to the "code" field.
+func (m *CafeCampaignMutation) ResetCode() {
+	m.code = nil
+}
+
+// SetName sets the "name" field.
+func (m *CafeCampaignMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *CafeCampaignMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the CafeCampaign entity.
+// If the CafeCampaign object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CafeCampaignMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *CafeCampaignMutation) ResetName() {
+	m.name = nil
+}
+
+// SetDiscountPercent sets the "discount_percent" field.
+func (m *CafeCampaignMutation) SetDiscountPercent(i int) {
+	m.discount_percent = &i
+	m.adddiscount_percent = nil
+}
+
+// DiscountPercent returns the value of the "discount_percent" field in the mutation.
+func (m *CafeCampaignMutation) DiscountPercent() (r int, exists bool) {
+	v := m.discount_percent
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDiscountPercent returns the old "discount_percent" field's value of the CafeCampaign entity.
+// If the CafeCampaign object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CafeCampaignMutation) OldDiscountPercent(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDiscountPercent is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDiscountPercent requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDiscountPercent: %w", err)
+	}
+	return oldValue.DiscountPercent, nil
+}
+
+// AddDiscountPercent adds i to the "discount_percent" field.
+func (m *CafeCampaignMutation) AddDiscountPercent(i int) {
+	if m.adddiscount_percent != nil {
+		*m.adddiscount_percent += i
+	} else {
+		m.adddiscount_percent = &i
+	}
+}
+
+// AddedDiscountPercent returns the value that was added to the "discount_percent" field in this mutation.
+func (m *CafeCampaignMutation) AddedDiscountPercent() (r int, exists bool) {
+	v := m.adddiscount_percent
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetDiscountPercent resets all changes to the "discount_percent" field.
+func (m *CafeCampaignMutation) ResetDiscountPercent() {
+	m.discount_percent = nil
+	m.adddiscount_percent = nil
+}
+
+// SetEnabled sets the "enabled" field.
+func (m *CafeCampaignMutation) SetEnabled(b bool) {
+	m.enabled = &b
+}
+
+// Enabled returns the value of the "enabled" field in the mutation.
+func (m *CafeCampaignMutation) Enabled() (r bool, exists bool) {
+	v := m.enabled
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEnabled returns the old "enabled" field's value of the CafeCampaign entity.
+// If the CafeCampaign object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CafeCampaignMutation) OldEnabled(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEnabled is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEnabled requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEnabled: %w", err)
+	}
+	return oldValue.Enabled, nil
+}
+
+// ResetEnabled resets all changes to the "enabled" field.
+func (m *CafeCampaignMutation) ResetEnabled() {
+	m.enabled = nil
+}
+
+// SetStartsAt sets the "starts_at" field.
+func (m *CafeCampaignMutation) SetStartsAt(t time.Time) {
+	m.starts_at = &t
+}
+
+// StartsAt returns the value of the "starts_at" field in the mutation.
+func (m *CafeCampaignMutation) StartsAt() (r time.Time, exists bool) {
+	v := m.starts_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStartsAt returns the old "starts_at" field's value of the CafeCampaign entity.
+// If the CafeCampaign object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CafeCampaignMutation) OldStartsAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStartsAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStartsAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStartsAt: %w", err)
+	}
+	return oldValue.StartsAt, nil
+}
+
+// ResetStartsAt resets all changes to the "starts_at" field.
+func (m *CafeCampaignMutation) ResetStartsAt() {
+	m.starts_at = nil
+}
+
+// SetExpiresAt sets the "expires_at" field.
+func (m *CafeCampaignMutation) SetExpiresAt(t time.Time) {
+	m.expires_at = &t
+}
+
+// ExpiresAt returns the value of the "expires_at" field in the mutation.
+func (m *CafeCampaignMutation) ExpiresAt() (r time.Time, exists bool) {
+	v := m.expires_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExpiresAt returns the old "expires_at" field's value of the CafeCampaign entity.
+// If the CafeCampaign object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CafeCampaignMutation) OldExpiresAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldExpiresAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldExpiresAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExpiresAt: %w", err)
+	}
+	return oldValue.ExpiresAt, nil
+}
+
+// ResetExpiresAt resets all changes to the "expires_at" field.
+func (m *CafeCampaignMutation) ResetExpiresAt() {
+	m.expires_at = nil
+}
+
+// SetCreatedBy sets the "created_by" field.
+func (m *CafeCampaignMutation) SetCreatedBy(i int64) {
+	m.created_by = &i
+	m.addcreated_by = nil
+}
+
+// CreatedBy returns the value of the "created_by" field in the mutation.
+func (m *CafeCampaignMutation) CreatedBy() (r int64, exists bool) {
+	v := m.created_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedBy returns the old "created_by" field's value of the CafeCampaign entity.
+// If the CafeCampaign object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CafeCampaignMutation) OldCreatedBy(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedBy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedBy: %w", err)
+	}
+	return oldValue.CreatedBy, nil
+}
+
+// AddCreatedBy adds i to the "created_by" field.
+func (m *CafeCampaignMutation) AddCreatedBy(i int64) {
+	if m.addcreated_by != nil {
+		*m.addcreated_by += i
+	} else {
+		m.addcreated_by = &i
+	}
+}
+
+// AddedCreatedBy returns the value that was added to the "created_by" field in this mutation.
+func (m *CafeCampaignMutation) AddedCreatedBy() (r int64, exists bool) {
+	v := m.addcreated_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetCreatedBy resets all changes to the "created_by" field.
+func (m *CafeCampaignMutation) ResetCreatedBy() {
+	m.created_by = nil
+	m.addcreated_by = nil
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *CafeCampaignMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *CafeCampaignMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the CafeCampaign entity.
+// If the CafeCampaign object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CafeCampaignMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *CafeCampaignMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *CafeCampaignMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *CafeCampaignMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the CafeCampaign entity.
+// If the CafeCampaign object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CafeCampaignMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *CafeCampaignMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// Where appends a list predicates to the CafeCampaignMutation builder.
+func (m *CafeCampaignMutation) Where(ps ...predicate.CafeCampaign) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the CafeCampaignMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *CafeCampaignMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.CafeCampaign, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *CafeCampaignMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *CafeCampaignMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (CafeCampaign).
+func (m *CafeCampaignMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *CafeCampaignMutation) Fields() []string {
+	fields := make([]string, 0, 9)
+	if m.code != nil {
+		fields = append(fields, cafecampaign.FieldCode)
+	}
+	if m.name != nil {
+		fields = append(fields, cafecampaign.FieldName)
+	}
+	if m.discount_percent != nil {
+		fields = append(fields, cafecampaign.FieldDiscountPercent)
+	}
+	if m.enabled != nil {
+		fields = append(fields, cafecampaign.FieldEnabled)
+	}
+	if m.starts_at != nil {
+		fields = append(fields, cafecampaign.FieldStartsAt)
+	}
+	if m.expires_at != nil {
+		fields = append(fields, cafecampaign.FieldExpiresAt)
+	}
+	if m.created_by != nil {
+		fields = append(fields, cafecampaign.FieldCreatedBy)
+	}
+	if m.created_at != nil {
+		fields = append(fields, cafecampaign.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, cafecampaign.FieldUpdatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *CafeCampaignMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case cafecampaign.FieldCode:
+		return m.Code()
+	case cafecampaign.FieldName:
+		return m.Name()
+	case cafecampaign.FieldDiscountPercent:
+		return m.DiscountPercent()
+	case cafecampaign.FieldEnabled:
+		return m.Enabled()
+	case cafecampaign.FieldStartsAt:
+		return m.StartsAt()
+	case cafecampaign.FieldExpiresAt:
+		return m.ExpiresAt()
+	case cafecampaign.FieldCreatedBy:
+		return m.CreatedBy()
+	case cafecampaign.FieldCreatedAt:
+		return m.CreatedAt()
+	case cafecampaign.FieldUpdatedAt:
+		return m.UpdatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *CafeCampaignMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case cafecampaign.FieldCode:
+		return m.OldCode(ctx)
+	case cafecampaign.FieldName:
+		return m.OldName(ctx)
+	case cafecampaign.FieldDiscountPercent:
+		return m.OldDiscountPercent(ctx)
+	case cafecampaign.FieldEnabled:
+		return m.OldEnabled(ctx)
+	case cafecampaign.FieldStartsAt:
+		return m.OldStartsAt(ctx)
+	case cafecampaign.FieldExpiresAt:
+		return m.OldExpiresAt(ctx)
+	case cafecampaign.FieldCreatedBy:
+		return m.OldCreatedBy(ctx)
+	case cafecampaign.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case cafecampaign.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown CafeCampaign field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *CafeCampaignMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case cafecampaign.FieldCode:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCode(v)
+		return nil
+	case cafecampaign.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
+	case cafecampaign.FieldDiscountPercent:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDiscountPercent(v)
+		return nil
+	case cafecampaign.FieldEnabled:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEnabled(v)
+		return nil
+	case cafecampaign.FieldStartsAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStartsAt(v)
+		return nil
+	case cafecampaign.FieldExpiresAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExpiresAt(v)
+		return nil
+	case cafecampaign.FieldCreatedBy:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedBy(v)
+		return nil
+	case cafecampaign.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case cafecampaign.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown CafeCampaign field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *CafeCampaignMutation) AddedFields() []string {
+	var fields []string
+	if m.adddiscount_percent != nil {
+		fields = append(fields, cafecampaign.FieldDiscountPercent)
+	}
+	if m.addcreated_by != nil {
+		fields = append(fields, cafecampaign.FieldCreatedBy)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *CafeCampaignMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case cafecampaign.FieldDiscountPercent:
+		return m.AddedDiscountPercent()
+	case cafecampaign.FieldCreatedBy:
+		return m.AddedCreatedBy()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *CafeCampaignMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case cafecampaign.FieldDiscountPercent:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddDiscountPercent(v)
+		return nil
+	case cafecampaign.FieldCreatedBy:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCreatedBy(v)
+		return nil
+	}
+	return fmt.Errorf("unknown CafeCampaign numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *CafeCampaignMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *CafeCampaignMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *CafeCampaignMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown CafeCampaign nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *CafeCampaignMutation) ResetField(name string) error {
+	switch name {
+	case cafecampaign.FieldCode:
+		m.ResetCode()
+		return nil
+	case cafecampaign.FieldName:
+		m.ResetName()
+		return nil
+	case cafecampaign.FieldDiscountPercent:
+		m.ResetDiscountPercent()
+		return nil
+	case cafecampaign.FieldEnabled:
+		m.ResetEnabled()
+		return nil
+	case cafecampaign.FieldStartsAt:
+		m.ResetStartsAt()
+		return nil
+	case cafecampaign.FieldExpiresAt:
+		m.ResetExpiresAt()
+		return nil
+	case cafecampaign.FieldCreatedBy:
+		m.ResetCreatedBy()
+		return nil
+	case cafecampaign.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case cafecampaign.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown CafeCampaign field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *CafeCampaignMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *CafeCampaignMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *CafeCampaignMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *CafeCampaignMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *CafeCampaignMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *CafeCampaignMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *CafeCampaignMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown CafeCampaign unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *CafeCampaignMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown CafeCampaign edge %s", name)
+}
+
+// CafeCampaignUseMutation represents an operation that mutates the CafeCampaignUse nodes in the graph.
+type CafeCampaignUseMutation struct {
+	config
+	op             Op
+	typ            string
+	id             *int64
+	campaign_id    *int64
+	addcampaign_id *int64
+	user_id        *int64
+	adduser_id     *int64
+	order_id       *int64
+	addorder_id    *int64
+	used_at        *time.Time
+	created_at     *time.Time
+	updated_at     *time.Time
+	clearedFields  map[string]struct{}
+	done           bool
+	oldValue       func(context.Context) (*CafeCampaignUse, error)
+	predicates     []predicate.CafeCampaignUse
+}
+
+var _ ent.Mutation = (*CafeCampaignUseMutation)(nil)
+
+// cafecampaignuseOption allows management of the mutation configuration using functional options.
+type cafecampaignuseOption func(*CafeCampaignUseMutation)
+
+// newCafeCampaignUseMutation creates new mutation for the CafeCampaignUse entity.
+func newCafeCampaignUseMutation(c config, op Op, opts ...cafecampaignuseOption) *CafeCampaignUseMutation {
+	m := &CafeCampaignUseMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeCafeCampaignUse,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withCafeCampaignUseID sets the ID field of the mutation.
+func withCafeCampaignUseID(id int64) cafecampaignuseOption {
+	return func(m *CafeCampaignUseMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *CafeCampaignUse
+		)
+		m.oldValue = func(ctx context.Context) (*CafeCampaignUse, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().CafeCampaignUse.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withCafeCampaignUse sets the old CafeCampaignUse of the mutation.
+func withCafeCampaignUse(node *CafeCampaignUse) cafecampaignuseOption {
+	return func(m *CafeCampaignUseMutation) {
+		m.oldValue = func(context.Context) (*CafeCampaignUse, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m CafeCampaignUseMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m CafeCampaignUseMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *CafeCampaignUseMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *CafeCampaignUseMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().CafeCampaignUse.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCampaignID sets the "campaign_id" field.
+func (m *CafeCampaignUseMutation) SetCampaignID(i int64) {
+	m.campaign_id = &i
+	m.addcampaign_id = nil
+}
+
+// CampaignID returns the value of the "campaign_id" field in the mutation.
+func (m *CafeCampaignUseMutation) CampaignID() (r int64, exists bool) {
+	v := m.campaign_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCampaignID returns the old "campaign_id" field's value of the CafeCampaignUse entity.
+// If the CafeCampaignUse object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CafeCampaignUseMutation) OldCampaignID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCampaignID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCampaignID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCampaignID: %w", err)
+	}
+	return oldValue.CampaignID, nil
+}
+
+// AddCampaignID adds i to the "campaign_id" field.
+func (m *CafeCampaignUseMutation) AddCampaignID(i int64) {
+	if m.addcampaign_id != nil {
+		*m.addcampaign_id += i
+	} else {
+		m.addcampaign_id = &i
+	}
+}
+
+// AddedCampaignID returns the value that was added to the "campaign_id" field in this mutation.
+func (m *CafeCampaignUseMutation) AddedCampaignID() (r int64, exists bool) {
+	v := m.addcampaign_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetCampaignID resets all changes to the "campaign_id" field.
+func (m *CafeCampaignUseMutation) ResetCampaignID() {
+	m.campaign_id = nil
+	m.addcampaign_id = nil
+}
+
+// SetUserID sets the "user_id" field.
+func (m *CafeCampaignUseMutation) SetUserID(i int64) {
+	m.user_id = &i
+	m.adduser_id = nil
+}
+
+// UserID returns the value of the "user_id" field in the mutation.
+func (m *CafeCampaignUseMutation) UserID() (r int64, exists bool) {
+	v := m.user_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUserID returns the old "user_id" field's value of the CafeCampaignUse entity.
+// If the CafeCampaignUse object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CafeCampaignUseMutation) OldUserID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUserID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUserID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUserID: %w", err)
+	}
+	return oldValue.UserID, nil
+}
+
+// AddUserID adds i to the "user_id" field.
+func (m *CafeCampaignUseMutation) AddUserID(i int64) {
+	if m.adduser_id != nil {
+		*m.adduser_id += i
+	} else {
+		m.adduser_id = &i
+	}
+}
+
+// AddedUserID returns the value that was added to the "user_id" field in this mutation.
+func (m *CafeCampaignUseMutation) AddedUserID() (r int64, exists bool) {
+	v := m.adduser_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetUserID resets all changes to the "user_id" field.
+func (m *CafeCampaignUseMutation) ResetUserID() {
+	m.user_id = nil
+	m.adduser_id = nil
+}
+
+// SetOrderID sets the "order_id" field.
+func (m *CafeCampaignUseMutation) SetOrderID(i int64) {
+	m.order_id = &i
+	m.addorder_id = nil
+}
+
+// OrderID returns the value of the "order_id" field in the mutation.
+func (m *CafeCampaignUseMutation) OrderID() (r int64, exists bool) {
+	v := m.order_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOrderID returns the old "order_id" field's value of the CafeCampaignUse entity.
+// If the CafeCampaignUse object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CafeCampaignUseMutation) OldOrderID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOrderID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOrderID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOrderID: %w", err)
+	}
+	return oldValue.OrderID, nil
+}
+
+// AddOrderID adds i to the "order_id" field.
+func (m *CafeCampaignUseMutation) AddOrderID(i int64) {
+	if m.addorder_id != nil {
+		*m.addorder_id += i
+	} else {
+		m.addorder_id = &i
+	}
+}
+
+// AddedOrderID returns the value that was added to the "order_id" field in this mutation.
+func (m *CafeCampaignUseMutation) AddedOrderID() (r int64, exists bool) {
+	v := m.addorder_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetOrderID resets all changes to the "order_id" field.
+func (m *CafeCampaignUseMutation) ResetOrderID() {
+	m.order_id = nil
+	m.addorder_id = nil
+}
+
+// SetUsedAt sets the "used_at" field.
+func (m *CafeCampaignUseMutation) SetUsedAt(t time.Time) {
+	m.used_at = &t
+}
+
+// UsedAt returns the value of the "used_at" field in the mutation.
+func (m *CafeCampaignUseMutation) UsedAt() (r time.Time, exists bool) {
+	v := m.used_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUsedAt returns the old "used_at" field's value of the CafeCampaignUse entity.
+// If the CafeCampaignUse object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CafeCampaignUseMutation) OldUsedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUsedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUsedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUsedAt: %w", err)
+	}
+	return oldValue.UsedAt, nil
+}
+
+// ClearUsedAt clears the value of the "used_at" field.
+func (m *CafeCampaignUseMutation) ClearUsedAt() {
+	m.used_at = nil
+	m.clearedFields[cafecampaignuse.FieldUsedAt] = struct{}{}
+}
+
+// UsedAtCleared returns if the "used_at" field was cleared in this mutation.
+func (m *CafeCampaignUseMutation) UsedAtCleared() bool {
+	_, ok := m.clearedFields[cafecampaignuse.FieldUsedAt]
+	return ok
+}
+
+// ResetUsedAt resets all changes to the "used_at" field.
+func (m *CafeCampaignUseMutation) ResetUsedAt() {
+	m.used_at = nil
+	delete(m.clearedFields, cafecampaignuse.FieldUsedAt)
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *CafeCampaignUseMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *CafeCampaignUseMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the CafeCampaignUse entity.
+// If the CafeCampaignUse object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CafeCampaignUseMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *CafeCampaignUseMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *CafeCampaignUseMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *CafeCampaignUseMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the CafeCampaignUse entity.
+// If the CafeCampaignUse object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CafeCampaignUseMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *CafeCampaignUseMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// Where appends a list predicates to the CafeCampaignUseMutation builder.
+func (m *CafeCampaignUseMutation) Where(ps ...predicate.CafeCampaignUse) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the CafeCampaignUseMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *CafeCampaignUseMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.CafeCampaignUse, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *CafeCampaignUseMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *CafeCampaignUseMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (CafeCampaignUse).
+func (m *CafeCampaignUseMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *CafeCampaignUseMutation) Fields() []string {
+	fields := make([]string, 0, 6)
+	if m.campaign_id != nil {
+		fields = append(fields, cafecampaignuse.FieldCampaignID)
+	}
+	if m.user_id != nil {
+		fields = append(fields, cafecampaignuse.FieldUserID)
+	}
+	if m.order_id != nil {
+		fields = append(fields, cafecampaignuse.FieldOrderID)
+	}
+	if m.used_at != nil {
+		fields = append(fields, cafecampaignuse.FieldUsedAt)
+	}
+	if m.created_at != nil {
+		fields = append(fields, cafecampaignuse.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, cafecampaignuse.FieldUpdatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *CafeCampaignUseMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case cafecampaignuse.FieldCampaignID:
+		return m.CampaignID()
+	case cafecampaignuse.FieldUserID:
+		return m.UserID()
+	case cafecampaignuse.FieldOrderID:
+		return m.OrderID()
+	case cafecampaignuse.FieldUsedAt:
+		return m.UsedAt()
+	case cafecampaignuse.FieldCreatedAt:
+		return m.CreatedAt()
+	case cafecampaignuse.FieldUpdatedAt:
+		return m.UpdatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *CafeCampaignUseMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case cafecampaignuse.FieldCampaignID:
+		return m.OldCampaignID(ctx)
+	case cafecampaignuse.FieldUserID:
+		return m.OldUserID(ctx)
+	case cafecampaignuse.FieldOrderID:
+		return m.OldOrderID(ctx)
+	case cafecampaignuse.FieldUsedAt:
+		return m.OldUsedAt(ctx)
+	case cafecampaignuse.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case cafecampaignuse.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown CafeCampaignUse field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *CafeCampaignUseMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case cafecampaignuse.FieldCampaignID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCampaignID(v)
+		return nil
+	case cafecampaignuse.FieldUserID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUserID(v)
+		return nil
+	case cafecampaignuse.FieldOrderID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOrderID(v)
+		return nil
+	case cafecampaignuse.FieldUsedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUsedAt(v)
+		return nil
+	case cafecampaignuse.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case cafecampaignuse.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown CafeCampaignUse field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *CafeCampaignUseMutation) AddedFields() []string {
+	var fields []string
+	if m.addcampaign_id != nil {
+		fields = append(fields, cafecampaignuse.FieldCampaignID)
+	}
+	if m.adduser_id != nil {
+		fields = append(fields, cafecampaignuse.FieldUserID)
+	}
+	if m.addorder_id != nil {
+		fields = append(fields, cafecampaignuse.FieldOrderID)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *CafeCampaignUseMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case cafecampaignuse.FieldCampaignID:
+		return m.AddedCampaignID()
+	case cafecampaignuse.FieldUserID:
+		return m.AddedUserID()
+	case cafecampaignuse.FieldOrderID:
+		return m.AddedOrderID()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *CafeCampaignUseMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case cafecampaignuse.FieldCampaignID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCampaignID(v)
+		return nil
+	case cafecampaignuse.FieldUserID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddUserID(v)
+		return nil
+	case cafecampaignuse.FieldOrderID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddOrderID(v)
+		return nil
+	}
+	return fmt.Errorf("unknown CafeCampaignUse numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *CafeCampaignUseMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(cafecampaignuse.FieldUsedAt) {
+		fields = append(fields, cafecampaignuse.FieldUsedAt)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *CafeCampaignUseMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *CafeCampaignUseMutation) ClearField(name string) error {
+	switch name {
+	case cafecampaignuse.FieldUsedAt:
+		m.ClearUsedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown CafeCampaignUse nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *CafeCampaignUseMutation) ResetField(name string) error {
+	switch name {
+	case cafecampaignuse.FieldCampaignID:
+		m.ResetCampaignID()
+		return nil
+	case cafecampaignuse.FieldUserID:
+		m.ResetUserID()
+		return nil
+	case cafecampaignuse.FieldOrderID:
+		m.ResetOrderID()
+		return nil
+	case cafecampaignuse.FieldUsedAt:
+		m.ResetUsedAt()
+		return nil
+	case cafecampaignuse.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case cafecampaignuse.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown CafeCampaignUse field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *CafeCampaignUseMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *CafeCampaignUseMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *CafeCampaignUseMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *CafeCampaignUseMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *CafeCampaignUseMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *CafeCampaignUseMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *CafeCampaignUseMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown CafeCampaignUse unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *CafeCampaignUseMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown CafeCampaignUse edge %s", name)
 }
 
 // CafeCouponMutation represents an operation that mutates the CafeCoupon nodes in the graph.

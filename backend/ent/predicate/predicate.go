@@ -27,6 +27,12 @@ type AuthIdentity func(*sql.Selector)
 // AuthIdentityChannel is the predicate function for authidentitychannel builders.
 type AuthIdentityChannel func(*sql.Selector)
 
+// CafeCampaign is the predicate function for cafecampaign builders.
+type CafeCampaign func(*sql.Selector)
+
+// CafeCampaignUse is the predicate function for cafecampaignuse builders.
+type CafeCampaignUse func(*sql.Selector)
+
 // CafeCoupon is the predicate function for cafecoupon builders.
 type CafeCoupon func(*sql.Selector)
 

@@ -1,8 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { flushPromises, shallowMount } from '@vue/test-utils'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { enableAutoUnmount, flushPromises, shallowMount } from '@vue/test-utils'
 import PaymentView from '../PaymentView.vue'
 import { PAYMENT_RECOVERY_STORAGE_KEY } from '@/components/payment/paymentFlow'
 import type { PaymentOrder } from '@/types/payment'
+
+enableAutoUnmount(afterEach)
+afterEach(() => vi.useRealTimers())
 
 const routeState = vi.hoisted(() => ({
   path: '/purchase',
@@ -1099,6 +1102,9 @@ describe('PaymentView WeChat JSAPI flow', () => {
   })
 
   it('ignores stale Cafe coupon responses after switching order context', async () => {
+    // Drive the two explicit requests below, not a wall-clock debounce firing
+    // unpredictably while other suites/builds are running.
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
     getCheckoutInfo.mockResolvedValue({
       data: {
         ...checkoutInfoWithPlansFixture().data,

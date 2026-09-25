@@ -1,3 +1,5 @@
+import cafeCampaign from './cafeCampaign.en'
+
 export default {
   nav: 'Subscription presale', banner: 'Next month · Presale open', eyebrow: 'A little ahead. A lot more ready.',
   title: 'Make room for focus.', titleAccent: 'One month ahead.',
@@ -63,6 +65,7 @@ export default {
     affiliatePending: 'The refund and cancellation are recorded, but referral bookkeeping is incomplete. Retry to finish bookkeeping; no additional refund will be issued.', retry: 'Retry bookkeeping',
   },
   errors: {
+    ...cafeCampaign.errors,
     PRESALE_OFFLINE_INVALID: 'Confirm the action and enter a valid reason, amount and offline reference.',
     PRESALE_OFFLINE_NOT_PAID: 'Only paid presale subscriptions support offline handling.',
     PRESALE_OFFLINE_AMOUNT: 'The returned amount must not exceed the original payment and must match the currency precision.',

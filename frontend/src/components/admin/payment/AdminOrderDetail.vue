@@ -1,82 +1,84 @@
 <template>
   <BaseDialog :show="show" :title="t('payment.admin.orderDetail')" width="extra-wide" @close="emit('close')">
-    <div v-if="order" class="admin-order-detail space-y-5" :aria-busy="loading">
+    <div class="admin-order-detail space-y-5" :aria-busy="loading">
       <div v-if="loading" class="flex items-center gap-2 text-xs text-content-tertiary" role="status">
         <LoadingSpinner variant="steam" size="sm" color="current" decorative />{{ t('common.loading') }}
       </div>
       <div v-if="error" class="flex items-center justify-between gap-3 rounded-xl border border-status-warning/30 bg-status-warning/5 p-3 text-sm text-content-secondary" role="alert">
-        {{ t('adminOrderDetail.failedToLoad') }}<button class="shrink-0 underline" @click="emit('reload')">{{ t('adminOrderDetail.retry') }}</button>
+        {{ t('adminOrderDetail.failedToLoad') }}<button class="shrink-0 underline" :disabled="loading" @click="emit('reload')">{{ t('adminOrderDetail.retry') }}</button>
       </div>
 
-      <section class="order-summary">
-        <div class="min-w-0 flex-1">
-          <div class="mb-3 flex flex-wrap items-center gap-2 text-xs text-content-secondary">
-            <span class="rounded-md bg-primary-500/10 px-2 py-1 text-primary-700 dark:text-primary-300">{{ purchaseKind }}</span>
-            <span v-if="order.presale_starts_at">{{ t(order.presale_renewal ? 'adminOrderDetail.renewal' : 'adminOrderDetail.newReservation') }}</span>
-            <span class="font-mono">#{{ order.id }}</span>
-          </div>
-          <h2 class="break-words text-xl font-semibold tracking-tight text-content-primary sm:text-2xl" data-testid="product-title">
-            {{ productName }}<span v-if="order.order_type === 'subscription' && (order.subscription_multiplier || 0) > 1" class="ml-2 text-lg text-content-secondary">× {{ order.subscription_multiplier }}</span>
-          </h2>
-          <p v-if="order.order_type === 'subscription'" class="mt-1.5 text-xs text-content-tertiary">{{ nameSourceLabel }}</p>
-          <p class="mt-3 break-all text-sm text-content-secondary">{{ order.user_email || order.user_name || t('adminOrderDetail.notRecorded') }} · #{{ order.user_id }}</p>
-        </div>
-        <div class="summary-payment">
-          <OrderStatusBadge :status="order.status" />
-          <p class="mb-1 mt-4 text-xs text-content-tertiary">{{ t(order.paid_at ? 'adminOrderDetail.paid' : 'adminOrderDetail.payable') }}</p>
-          <p class="text-2xl font-semibold tabular-nums text-content-primary">{{ money(order.pay_amount) }} <span class="text-xs font-normal text-content-tertiary">{{ currency }}</span></p>
-          <p class="mt-2 text-xs text-content-secondary">{{ t(`payment.methods.${order.payment_type}`, order.payment_type) }}<span v-if="summary?.provider_name"> · {{ summary.provider_name }}</span></p>
-        </div>
-      </section>
-
-      <div v-if="order.presale_starts_at" class="term-strip">
-        <div class="flex flex-wrap items-center gap-2 text-sm font-medium text-primary-700 dark:text-primary-300">
-          <Icon name="clock" size="sm" />{{ t(`presale.${presaleStatus(order)}`) }}
-        </div>
-        <div><p>{{ t('adminOrderDetail.starts') }}</p><strong>{{ presaleDate(order.presale_starts_at) }}</strong></div>
-        <div><p>{{ t('adminOrderDetail.ends') }}</p><strong>{{ presaleDate(order.presale_expires_at) }}</strong></div>
-      </div>
-
-      <div class="detail-grid">
-        <section v-for="section in sections" :key="section.key" class="detail-section" :data-section="section.key">
-          <h3>{{ t(`adminOrderDetail.${section.key}`) }}</h3>
-          <dl class="detail-fields">
-            <div v-for="row in section.rows" :key="row.label" :class="{ 'field-wide': row.wide }">
-              <dt>{{ row.label }}</dt><dd :class="{ 'font-mono text-xs': row.mono }">{{ row.value }}</dd>
+      <template v-if="order">
+        <section class="order-summary">
+          <div class="min-w-0 flex-1">
+            <div class="mb-3 flex flex-wrap items-center gap-2 text-xs text-content-secondary">
+              <span class="rounded-md bg-primary-500/10 px-2 py-1 text-primary-700 dark:text-primary-300">{{ purchaseKind }}</span>
+              <span v-if="order.presale_starts_at">{{ t(order.presale_renewal ? 'adminOrderDetail.renewal' : 'adminOrderDetail.newReservation') }}</span>
+              <span class="font-mono">#{{ order.id }}</span>
             </div>
-          </dl>
-          <p v-if="section.key === 'source'" class="mt-4 text-xs leading-relaxed text-content-tertiary">{{ t('adminOrderDetail.sourceHint') }}</p>
+            <h2 class="break-words text-xl font-semibold tracking-tight text-content-primary sm:text-2xl" data-testid="product-title">
+              {{ productName }}<span v-if="order.order_type === 'subscription' && (order.subscription_multiplier || 0) > 1" class="ml-2 text-lg text-content-secondary">× {{ order.subscription_multiplier }}</span>
+            </h2>
+            <p v-if="order.order_type === 'subscription'" class="mt-1.5 text-xs text-content-tertiary">{{ nameSourceLabel }}</p>
+            <p class="mt-3 break-all text-sm text-content-secondary">{{ order.user_email || order.user_name || t('adminOrderDetail.notRecorded') }} · #{{ order.user_id }}</p>
+          </div>
+          <div class="summary-payment">
+            <OrderStatusBadge :status="order.status" />
+            <p class="mb-1 mt-4 text-xs text-content-tertiary">{{ t(order.paid_at ? 'adminOrderDetail.paid' : 'adminOrderDetail.payable') }}</p>
+            <p class="text-2xl font-semibold tabular-nums text-content-primary">{{ money(order.pay_amount) }} <span class="text-xs font-normal text-content-tertiary">{{ currency }}</span></p>
+            <p class="mt-2 text-xs text-content-secondary">{{ t(`payment.methods.${order.payment_type}`, order.payment_type) }}<span v-if="summary?.provider_name"> · {{ summary.provider_name }}</span></p>
+          </div>
         </section>
-      </div>
 
-      <section v-if="order.failed_reason" class="rounded-xl border border-status-error/25 bg-status-error/5 p-4">
-        <h3 class="text-sm font-medium text-status-error">{{ t('adminOrderDetail.failureReason') }}</h3>
-        <p class="mt-2 whitespace-pre-wrap break-all text-sm text-content-secondary">{{ order.failed_reason }}</p>
-      </section>
+        <div v-if="order.presale_starts_at" class="term-strip">
+          <div class="flex flex-wrap items-center gap-2 text-sm font-medium text-primary-700 dark:text-primary-300">
+            <Icon name="clock" size="sm" />{{ t(`presale.${presaleStatus(order)}`) }}
+          </div>
+          <div><p>{{ t('adminOrderDetail.starts') }}</p><strong>{{ presaleDate(order.presale_starts_at) }}</strong></div>
+          <div><p>{{ t('adminOrderDetail.ends') }}</p><strong>{{ presaleDate(order.presale_expires_at) }}</strong></div>
+        </div>
 
-      <section v-if="refundRows.length" class="detail-section" data-section="refund">
-        <h3>{{ t('payment.admin.refundInfo') }}</h3>
-        <dl class="detail-fields"><div v-for="row in refundRows" :key="row.label" :class="{ 'field-wide': row.wide }"><dt>{{ row.label }}</dt><dd>{{ row.value }}</dd></div></dl>
-      </section>
+        <div class="detail-grid">
+          <section v-for="section in sections" :key="section.key" class="detail-section" :data-section="section.key">
+            <h3>{{ t(`adminOrderDetail.${section.key}`) }}</h3>
+            <dl class="detail-fields">
+              <div v-for="row in section.rows" :key="row.label" :class="{ 'field-wide': row.wide }">
+                <dt>{{ row.label }}</dt><dd :class="{ 'font-mono text-xs': row.mono }">{{ row.value }}</dd>
+              </div>
+            </dl>
+            <p v-if="section.key === 'source'" class="mt-4 text-xs leading-relaxed text-content-tertiary">{{ t('adminOrderDetail.sourceHint') }}</p>
+          </section>
+        </div>
 
-      <section class="detail-section" data-section="lifecycle">
-        <h3>{{ t('adminOrderDetail.lifecycle') }}</h3>
-        <ol class="timeline-grid">
-          <li v-for="event in timeline" :key="event.label"><span class="timeline-dot" /><p class="text-xs text-content-tertiary">{{ event.label }}</p><time class="mt-1.5 block text-sm tabular-nums text-content-secondary" :datetime="event.at">{{ date(event.at) }}</time></li>
-        </ol>
-      </section>
+        <section v-if="order.failed_reason" class="rounded-xl border border-status-error/25 bg-status-error/5 p-4">
+          <h3 class="text-sm font-medium text-status-error">{{ t('adminOrderDetail.failureReason') }}</h3>
+          <p class="mt-2 whitespace-pre-wrap break-all text-sm text-content-secondary">{{ order.failed_reason }}</p>
+        </section>
 
-      <details class="detail-section" data-section="audit">
-        <summary class="cursor-pointer text-sm font-medium text-content-primary">{{ t('adminOrderDetail.audit') }} <span class="ml-1 font-normal text-content-tertiary">{{ auditLogs.length }}</span></summary>
-        <p v-if="!auditLogs.length" class="mt-4 text-sm text-content-tertiary">{{ t('adminOrderDetail.auditEmpty') }}</p>
-        <ol v-else class="mt-4 max-h-80 space-y-3 overflow-y-auto">
-          <li v-for="log in auditLogs" :key="log.id" class="rounded-lg bg-surface-secondary p-3">
-            <div class="flex flex-wrap items-center justify-between gap-2 text-xs"><strong class="font-medium text-content-secondary">{{ t(`adminOrderDetail.actions.${log.action}`, log.action) }}</strong><time class="text-content-tertiary">{{ date(log.created_at) }}</time></div>
-            <p v-if="log.operator" class="mt-1 text-xs text-content-tertiary">{{ t('payment.admin.operator') }} · {{ log.operator }}</p>
-            <details v-if="log.detail" class="mt-2 text-xs text-content-tertiary"><summary class="cursor-pointer">{{ t('adminOrderDetail.rawDetail') }}</summary><pre class="mt-2 whitespace-pre-wrap break-all leading-relaxed">{{ auditDetail(log.detail) }}</pre></details>
-          </li>
-        </ol>
-      </details>
+        <section v-if="refundRows.length" class="detail-section" data-section="refund">
+          <h3>{{ t('payment.admin.refundInfo') }}</h3>
+          <dl class="detail-fields"><div v-for="row in refundRows" :key="row.label" :class="{ 'field-wide': row.wide }"><dt>{{ row.label }}</dt><dd>{{ row.value }}</dd></div></dl>
+        </section>
+
+        <section class="detail-section" data-section="lifecycle">
+          <h3>{{ t('adminOrderDetail.lifecycle') }}</h3>
+          <ol class="timeline-grid">
+            <li v-for="event in timeline" :key="event.label"><span class="timeline-dot" /><p class="text-xs text-content-tertiary">{{ event.label }}</p><time class="mt-1.5 block text-sm tabular-nums text-content-secondary" :datetime="event.at">{{ date(event.at) }}</time></li>
+          </ol>
+        </section>
+
+        <details class="detail-section" data-section="audit">
+          <summary class="cursor-pointer text-sm font-medium text-content-primary">{{ t('adminOrderDetail.audit') }} <span class="ml-1 font-normal text-content-tertiary">{{ auditLogs.length }}</span></summary>
+          <p v-if="!auditLogs.length" class="mt-4 text-sm text-content-tertiary">{{ t('adminOrderDetail.auditEmpty') }}</p>
+          <ol v-else class="mt-4 max-h-80 space-y-3 overflow-y-auto">
+            <li v-for="log in auditLogs" :key="log.id" class="rounded-lg bg-surface-secondary p-3">
+              <div class="flex flex-wrap items-center justify-between gap-2 text-xs"><strong class="font-medium text-content-secondary">{{ t(`adminOrderDetail.actions.${log.action}`, log.action) }}</strong><time class="text-content-tertiary">{{ date(log.created_at) }}</time></div>
+              <p v-if="log.operator" class="mt-1 text-xs text-content-tertiary">{{ t('payment.admin.operator') }} · {{ log.operator }}</p>
+              <details v-if="log.detail" class="mt-2 text-xs text-content-tertiary"><summary class="cursor-pointer">{{ t('adminOrderDetail.rawDetail') }}</summary><pre class="mt-2 whitespace-pre-wrap break-all leading-relaxed">{{ auditDetail(log.detail) }}</pre></details>
+            </li>
+          </ol>
+        </details>
+      </template>
     </div>
   </BaseDialog>
 </template>

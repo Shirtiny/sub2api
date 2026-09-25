@@ -128,3 +128,15 @@ Key conventions observed in the codebase:
   marker before calling a provider; uncertain online attempts block offline records.
   Payment audits are unique by order/action in PostgreSQL: reuse existing markers
   on retries instead of blindly inserting them again.
+
+- Shared café campaigns use a separate immutable definition and one durable
+  `(campaign_id, user_id)` slot, not a shared personal membership coupon row.
+  Serialize reservation/consumption with the payment user lock; a newer unpaid
+  replacement retires the older attempt. Paid facts already prevent reuse even
+  before the consumed audit is written. Never release a paid slot on refund.
+  Campaign status/version tokens explicitly use PostgreSQL microsecond precision.
+- The first verified payment timestamp, amount and trade reference are receipt
+  facts, not fulfillment-attempt metadata. Callback transitions must atomically
+  require `paid_at IS NULL` before writing them; an already-paid FAILED order
+  retries fulfillment without replacing those facts. Check deadline eligibility
+  against the original receipt, including after transient consumption/audit errors.

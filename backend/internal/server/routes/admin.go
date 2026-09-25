@@ -435,6 +435,10 @@ func registerPromoCodeRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
 	promoCodes := admin.Group("/promo-codes")
 	{
 		promoCodes.GET("", h.Admin.Promo.List)
+		promoCodes.GET("/cafe-campaigns", h.Admin.Promo.ListCafeCampaigns)
+		promoCodes.POST("/cafe-campaigns", h.Admin.Promo.CreateCafeCampaign)
+		promoCodes.PATCH("/cafe-campaigns/:id/status", h.Admin.Promo.SetCafeCampaignEnabled)
+		promoCodes.GET("/cafe-campaigns/:id/usages", h.Admin.Promo.ListCafeCampaignUses)
 		promoCodes.GET("/cafe-coupons", h.Admin.Promo.ListCafeCoupons)
 		promoCodes.GET("/cafe-coupons/:id", h.Admin.Promo.GetCafeCoupon)
 		promoCodes.PATCH("/cafe-coupons/:id/status", h.Admin.Promo.UpdateCafeCouponStatus)

@@ -620,7 +620,12 @@ func (s *PaymentService) createOrderInTx(ctx context.Context, req CreateOrderReq
 		if err != nil {
 			return nil, err
 		}
-		if coupon, couponErr := tx.Client().CafeCoupon.Query().Where(cafecoupon.CodeEQ(couponCode)).Only(ctx); couponErr != nil {
+		if isCafeCampaignCode(couponCode) {
+			couponDiscount, err = s.reserveCafeCampaignTx(txCtx, tx, order, couponCode, limitAmount)
+			if err != nil {
+				return nil, err
+			}
+		} else if coupon, couponErr := tx.Client().CafeCoupon.Query().Where(cafecoupon.CodeEQ(couponCode)).Only(ctx); couponErr != nil {
 			if dbent.IsNotFound(couponErr) {
 				return nil, infraerrors.NotFound("CAFE_COUPON_NOT_FOUND", "cafe coupon not found")
 			}
@@ -644,7 +649,7 @@ func (s *PaymentService) createOrderInTx(ctx context.Context, req CreateOrderReq
 	if err != nil {
 		return nil, fmt.Errorf("set recharge code: %w", err)
 	}
-	if couponCode != "" {
+	if couponCode != "" && !isCafeCampaignCode(couponCode) {
 		if err := s.applyCafeCouponToOrderTx(ctx, tx, order.ID, req.UserID, couponCode, cafeCouponOrderOriginalAmount(req, plan, cfg), couponDiscount); err != nil {
 			return nil, err
 		}

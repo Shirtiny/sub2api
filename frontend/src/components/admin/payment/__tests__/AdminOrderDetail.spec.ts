@@ -112,6 +112,22 @@ describe('AdminOrderDetail', () => {
     expect(w.emitted('close')).toHaveLength(1)
     expect(w.findAll('button')).toHaveLength(1)
   })
+  it('shows initial loading and retryable errors before any order is available', async () => {
+    const w = render()
+    await w.setProps({ order: null, loading: true })
+    expect(w.get('[role="status"]').text()).toContain(zh.common.loading)
+    expect(w.get('.admin-order-detail').attributes('aria-busy')).toBe('true')
+    expect(w.find('.order-summary').exists()).toBe(false)
+    await w.setProps({ loading: false, error: true })
+    expect(w.get('[role="alert"]').text()).toContain(zh.adminOrderDetail.failedToLoad)
+    await w.get('[role="alert"] button').trigger('click')
+    expect(w.emitted('reload')).toHaveLength(1)
+    await w.setProps({ loading: true })
+    expect(w.get('[role="alert"] button').attributes('disabled')).toBeDefined()
+    await w.setProps({ loading: false, error: false, order })
+    expect(w.find('[role="alert"]').exists()).toBe(false)
+    expect(w.get('.order-summary').text()).toContain(order.user_email)
+  })
   it('matches English section semantics', () => {
     state.locale = 'en'
     const w = render()

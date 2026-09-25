@@ -342,6 +342,7 @@ func (h *PaymentHandler) GetLimits(c *gin.Context) {
 }
 
 type CafeCouponSummary struct {
+	PresaleOnly        bool      `json:"presale_only,omitempty"`
 	Code               string    `json:"code"`
 	CouponType         string    `json:"type"`
 	Value              float64   `json:"value"`
@@ -522,6 +523,7 @@ func cafeCouponSummaryFromInfo(info *service.CafeCouponInfo) *CafeCouponSummary 
 		return nil
 	}
 	return &CafeCouponSummary{
+		PresaleOnly:        info.PresaleOnly,
 		Code:               info.Code,
 		CouponType:         info.CouponType,
 		Value:              info.Value,
@@ -541,6 +543,7 @@ func cafeCouponSummaryFromPreview(preview *service.CafeCouponPreview) *CafeCoupo
 		return nil
 	}
 	return &CafeCouponSummary{
+		PresaleOnly:        preview.PresaleOnly,
 		Code:               preview.Code,
 		CouponType:         preview.CouponType,
 		Value:              preview.Value,

@@ -93,6 +93,30 @@ func (f AuthIdentityChannelFunc) Mutate(ctx context.Context, m ent.Mutation) (en
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AuthIdentityChannelMutation", m)
 }
 
+// The CafeCampaignFunc type is an adapter to allow the use of ordinary
+// function as CafeCampaign mutator.
+type CafeCampaignFunc func(context.Context, *ent.CafeCampaignMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f CafeCampaignFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.CafeCampaignMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.CafeCampaignMutation", m)
+}
+
+// The CafeCampaignUseFunc type is an adapter to allow the use of ordinary
+// function as CafeCampaignUse mutator.
+type CafeCampaignUseFunc func(context.Context, *ent.CafeCampaignUseMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f CafeCampaignUseFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.CafeCampaignUseMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.CafeCampaignUseMutation", m)
+}
+
 // The CafeCouponFunc type is an adapter to allow the use of ordinary
 // function as CafeCoupon mutator.
 type CafeCouponFunc func(context.Context, *ent.CafeCouponMutation) (ent.Value, error)

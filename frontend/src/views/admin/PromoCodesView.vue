@@ -4,7 +4,7 @@
       <template #filters>
         <div class="space-y-4">
           <div class="border-b border-stroke-default">
-            <nav class="-mb-px flex gap-4" aria-label="Promo tabs" role="tablist">
+            <nav class="-mb-px flex gap-4 overflow-x-auto" aria-label="Promo tabs" role="tablist">
               <button
                 v-for="tab in tabs"
                 :key="tab.value"
@@ -14,7 +14,7 @@
                 :data-test="`promo-tab-${tab.value}`"
                 @click="switchTab(tab.value)"
                 :class="[
-                  'border-b-2 px-1 py-2 text-sm font-medium transition-colors',
+                  'whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium transition-colors',
                   activeTab === tab.value
                     ? 'border-primary-500 text-primary-600 dark:text-primary-400'
                     : 'border-transparent text-content-tertiary hover:border-stroke-default hover:text-content-primary'
@@ -58,7 +58,7 @@
             </div>
           </div>
 
-          <div v-else class="flex flex-wrap items-center gap-3">
+          <div v-else-if="activeTab === 'cafe'" class="flex flex-wrap items-center gap-3">
             <div class="flex-1 sm:max-w-64">
               <input
                 v-model="cafeSearchQuery"
@@ -202,8 +202,9 @@
           </template>
         </DataTable>
 
+        <AdminCafeCampaigns v-if="activeTab === 'campaigns'" />
         <DataTable
-          v-else
+          v-else-if="activeTab === 'cafe'"
           :columns="cafeCouponColumns"
           :data="cafeCoupons"
           :loading="cafeLoading"
@@ -628,6 +629,7 @@ import type {
   PromoCodeUsage
 } from '@/types'
 import type { Column } from '@/components/common/types'
+import AdminCafeCampaigns from '@/components/admin/payment/AdminCafeCampaigns.vue'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import TablePageLayout from '@/components/layout/TablePageLayout.vue'
 import DataTable from '@/components/common/DataTable.vue'
@@ -637,7 +639,7 @@ import BaseDialog from '@/components/common/BaseDialog.vue'
 import Select from '@/components/common/Select.vue'
 import Icon from '@/components/icons/Icon.vue'
 
-type PromoTab = 'registration' | 'cafe'
+type PromoTab = 'registration' | 'cafe' | 'campaigns'
 
 const { t } = useI18n()
 const appStore = useAppStore()
@@ -647,7 +649,8 @@ const activeTab = ref<PromoTab>('registration')
 
 const tabs = computed(() => [
   { value: 'registration' as PromoTab, label: t('admin.promo.tabs.registration') },
-  { value: 'cafe' as PromoTab, label: t('admin.promo.tabs.cafeCoupons') }
+  { value: 'cafe' as PromoTab, label: t('admin.promo.tabs.cafeCoupons') },
+  { value: 'campaigns' as PromoTab, label: t('cafeCampaign.title') }
 ])
 
 const codes = ref<PromoCode[]>([])

@@ -12,6 +12,8 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/apikey"
 	"github.com/Wei-Shaw/sub2api/ent/authidentity"
 	"github.com/Wei-Shaw/sub2api/ent/authidentitychannel"
+	"github.com/Wei-Shaw/sub2api/ent/cafecampaign"
+	"github.com/Wei-Shaw/sub2api/ent/cafecampaignuse"
 	"github.com/Wei-Shaw/sub2api/ent/cafecoupon"
 	"github.com/Wei-Shaw/sub2api/ent/channelmonitor"
 	"github.com/Wei-Shaw/sub2api/ent/channelmonitordailyrollup"
@@ -459,6 +461,88 @@ func init() {
 	authidentitychannelDescMetadata := authidentitychannelFields[6].Descriptor()
 	// authidentitychannel.DefaultMetadata holds the default value on creation for the metadata field.
 	authidentitychannel.DefaultMetadata = authidentitychannelDescMetadata.Default.(func() map[string]interface{})
+	cafecampaignFields := schema.CafeCampaign{}.Fields()
+	_ = cafecampaignFields
+	// cafecampaignDescCode is the schema descriptor for code field.
+	cafecampaignDescCode := cafecampaignFields[0].Descriptor()
+	// cafecampaign.CodeValidator is a validator for the "code" field. It is called by the builders before save.
+	cafecampaign.CodeValidator = func() func(string) error {
+		validators := cafecampaignDescCode.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(code string) error {
+			for _, fn := range fns {
+				if err := fn(code); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// cafecampaignDescName is the schema descriptor for name field.
+	cafecampaignDescName := cafecampaignFields[1].Descriptor()
+	// cafecampaign.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	cafecampaign.NameValidator = func() func(string) error {
+		validators := cafecampaignDescName.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(name string) error {
+			for _, fn := range fns {
+				if err := fn(name); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// cafecampaignDescDiscountPercent is the schema descriptor for discount_percent field.
+	cafecampaignDescDiscountPercent := cafecampaignFields[2].Descriptor()
+	// cafecampaign.DiscountPercentValidator is a validator for the "discount_percent" field. It is called by the builders before save.
+	cafecampaign.DiscountPercentValidator = func() func(int) error {
+		validators := cafecampaignDescDiscountPercent.Validators
+		fns := [...]func(int) error{
+			validators[0].(func(int) error),
+			validators[1].(func(int) error),
+		}
+		return func(discount_percent int) error {
+			for _, fn := range fns {
+				if err := fn(discount_percent); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// cafecampaignDescEnabled is the schema descriptor for enabled field.
+	cafecampaignDescEnabled := cafecampaignFields[3].Descriptor()
+	// cafecampaign.DefaultEnabled holds the default value on creation for the enabled field.
+	cafecampaign.DefaultEnabled = cafecampaignDescEnabled.Default.(bool)
+	// cafecampaignDescCreatedAt is the schema descriptor for created_at field.
+	cafecampaignDescCreatedAt := cafecampaignFields[7].Descriptor()
+	// cafecampaign.DefaultCreatedAt holds the default value on creation for the created_at field.
+	cafecampaign.DefaultCreatedAt = cafecampaignDescCreatedAt.Default.(func() time.Time)
+	// cafecampaignDescUpdatedAt is the schema descriptor for updated_at field.
+	cafecampaignDescUpdatedAt := cafecampaignFields[8].Descriptor()
+	// cafecampaign.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	cafecampaign.DefaultUpdatedAt = cafecampaignDescUpdatedAt.Default.(func() time.Time)
+	// cafecampaign.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	cafecampaign.UpdateDefaultUpdatedAt = cafecampaignDescUpdatedAt.UpdateDefault.(func() time.Time)
+	cafecampaignuseFields := schema.CafeCampaignUse{}.Fields()
+	_ = cafecampaignuseFields
+	// cafecampaignuseDescCreatedAt is the schema descriptor for created_at field.
+	cafecampaignuseDescCreatedAt := cafecampaignuseFields[4].Descriptor()
+	// cafecampaignuse.DefaultCreatedAt holds the default value on creation for the created_at field.
+	cafecampaignuse.DefaultCreatedAt = cafecampaignuseDescCreatedAt.Default.(func() time.Time)
+	// cafecampaignuseDescUpdatedAt is the schema descriptor for updated_at field.
+	cafecampaignuseDescUpdatedAt := cafecampaignuseFields[5].Descriptor()
+	// cafecampaignuse.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	cafecampaignuse.DefaultUpdatedAt = cafecampaignuseDescUpdatedAt.Default.(func() time.Time)
+	// cafecampaignuse.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	cafecampaignuse.UpdateDefaultUpdatedAt = cafecampaignuseDescUpdatedAt.UpdateDefault.(func() time.Time)
 	cafecouponFields := schema.CafeCoupon{}.Fields()
 	_ = cafecouponFields
 	// cafecouponDescCode is the schema descriptor for code field.

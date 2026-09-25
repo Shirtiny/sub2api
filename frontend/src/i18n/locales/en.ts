@@ -1,7 +1,9 @@
+import cafeCampaign from './cafeCampaign.en'
 import adminOrderDetail from './adminOrderDetail.en'
 import presale from './presale.en'
 
 export default {
+  cafeCampaign,
   adminOrderDetail,
   presale,
   // Home Page
@@ -1181,6 +1183,7 @@ export default {
     userAgent: 'User-Agent',
     tabs: { usage: 'Usage', errors: 'Error Requests' },
     errors: {
+      ...cafeCampaign.errors,
       time: 'Time', model: 'Model', endpoint: 'Endpoint', status: 'Status',
       category: 'Category', platform: 'Platform', message: 'Message',
       keyName: 'Key Name', keyDeleted: 'Deleted', allKeys: 'All keys',
@@ -7904,6 +7907,7 @@ export default {
       payable: 'Payable',
       errors: {
         CAFE_COUPON_INVALID: 'Invalid Café coupon code.',
+        ...cafeCampaign.errors,
         CAFE_COUPON_NOT_FOUND: 'Invalid Café coupon code.',
         CAFE_COUPON_EXPIRED: 'This Café coupon has expired.',
         CAFE_COUPON_USED: 'This Café coupon has already been used.',

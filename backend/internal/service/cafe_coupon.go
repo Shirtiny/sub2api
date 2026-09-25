@@ -126,6 +126,7 @@ type CafeCouponStatusResult struct {
 }
 
 type CafeCouponPreview struct {
+	PresaleOnly        bool      `json:"presale_only,omitempty"`
 	Code               string    `json:"code"`
 	CouponType         string    `json:"type"`
 	Value              float64   `json:"value"`
@@ -142,6 +143,7 @@ type CafeCouponPreview struct {
 }
 
 type CafeCouponInfo struct {
+	PresaleOnly        bool      `json:"presale_only,omitempty"`
 	Code               string    `json:"code"`
 	CouponType         string    `json:"type"`
 	Value              float64   `json:"value"`
@@ -937,6 +939,9 @@ func (s *PaymentService) CafeCouponStatus(ctx context.Context, userID int64) (*C
 }
 
 func (s *PaymentService) CafeCouponInfo(ctx context.Context, userID int64, code string) (*CafeCouponInfo, error) {
+	if isCafeCampaignCode(code) {
+		return s.cafeCampaignInfo(ctx, userID, code)
+	}
 	coupon, levelCfg, err := s.validateCafeCoupon(ctx, userID, code)
 	if err != nil {
 		return nil, err
@@ -1146,6 +1151,9 @@ func (s *PaymentService) ensureCafeCouponAppliedForPaidOrder(ctx context.Context
 	if s == nil || s.entClient == nil || order == nil || strings.TrimSpace(psStringValue(order.CafeCouponCode)) == "" {
 		return nil
 	}
+	if isCafeCampaignCode(psStringValue(order.CafeCouponCode)) {
+		return s.consumeCafeCampaignForPaidOrder(ctx, order)
+	}
 	code, err := normalizeCafeCouponCode(psStringValue(order.CafeCouponCode))
 	if err != nil {
 		return err
@@ -1214,7 +1222,7 @@ func (s *PaymentService) prepareCafeCouponForOrder(ctx context.Context, req Crea
 		_, payAmount, err := calculateCreateOrderPayAmount(limitAmount, feeRate, currency)
 		return 0, limitAmount, payAmount, err
 	}
-	preview, err := s.PreviewCafeCoupon(ctx, req.UserID, req.CafeCouponCode, cafeCouponOrderOriginalAmount(req, plan, cfg))
+	preview, err := s.previewCafeCouponForPurchase(ctx, req, cafeCouponOrderOriginalAmount(req, plan, cfg))
 	if err != nil {
 		return 0, 0, 0, err
 	}
@@ -1254,7 +1262,7 @@ func (s *PaymentService) PreviewCafeCouponForOrder(ctx context.Context, req Crea
 		}
 		req.Multiplier = multiplier
 	}
-	return s.PreviewCafeCoupon(ctx, req.UserID, req.CafeCouponCode, cafeCouponOrderOriginalAmount(req, plan, cfg))
+	return s.previewCafeCouponForPurchase(ctx, req, cafeCouponOrderOriginalAmount(req, plan, cfg))
 }
 
 func (s *PaymentService) CafeCouponForOrder(ctx context.Context, orderID int64) (*dbent.CafeCoupon, error) {

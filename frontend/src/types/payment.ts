@@ -288,6 +288,7 @@ export interface CreateOrderRequest {
 }
 
 export interface CafeCouponSummary {
+  presale_only?: boolean
   code: string
   type: 'cash' | 'discount'
   value: number

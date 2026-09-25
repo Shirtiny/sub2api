@@ -918,6 +918,7 @@ const cafeCouponDisplayPayableAmount = computed(() => {
 })
 const cafeCouponAppliedText = computed(() => {
   const coupon = cafeCouponAppliedCoupon.value
+  if (coupon?.presale_only) return t('cafeCampaign.applied', { percent: coupon.value })
   if (coupon?.type === 'discount') {
     return t('payment.cafeCoupon.appliedDiscount', {
       value: Number(coupon.value || 0).toLocaleString(undefined, { maximumFractionDigits: 2 }),

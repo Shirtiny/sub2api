@@ -21,6 +21,7 @@ export default {
   modes: { redirect: 'Redirect', popup: 'Scan to pay', qrcode: 'QR code', jsapi: 'In-app WeChat', embedded: 'Embedded checkout' },
   offlineAmount: 'Amount returned offline', offlineReference: 'Offline refund reference',
   actions: {
+    CAFE_CAMPAIGN_RESERVED: 'Shared café code reserved', CAFE_CAMPAIGN_USED: 'Shared café code used',
     PRESALE_CANCELLED: 'Reservation cancelled by administrator (no refund)', PRESALE_OFFLINE_REFUND: 'Offline refund recorded', PRESALE_ONLINE_REFUND_STARTED: 'Online refund initiated',
 
     ORDER_CREATED: 'Order created', PAYMENT_SUCCESS: 'Payment succeeded', PAYMENT_RECEIVED: 'Payment notification received',
