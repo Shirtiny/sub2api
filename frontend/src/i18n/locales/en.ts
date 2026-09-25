@@ -7952,7 +7952,7 @@ export default {
       GROUP_TYPE_MISMATCH: 'Group is not a subscription type.',
       TOO_MANY_PENDING: 'Too many pending orders (max {max}). Please complete or cancel existing orders first.',
       DUPLICATE_PAYMENT_ORDER_RECENT: 'A matching order was just created. Continue with the existing order or retry later.',
-      DAILY_LIMIT_EXCEEDED: 'Daily recharge limit reached. Remaining: {remaining}.',
+      DAILY_LIMIT_EXCEEDED: 'This payment would exceed your daily purchase limit. Remaining today: {remaining}.',
       PAYMENT_GATEWAY_ERROR: 'Payment method is unavailable.',
       NO_AVAILABLE_INSTANCE: 'No payment channel available right now.',
       PAYMENT_PROVIDER_MISCONFIGURED: 'Payment provider misconfigured. Please contact an administrator.',

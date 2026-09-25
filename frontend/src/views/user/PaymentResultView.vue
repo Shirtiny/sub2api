@@ -1,10 +1,18 @@
 <template>
-  <div class="flex min-h-screen items-center justify-center bg-gray-50 px-4 dark:bg-dark-900">
-    <div class="w-full max-w-md space-y-6">
+  <div class="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-8 dark:bg-dark-900">
+    <div class="w-full space-y-6" :class="isPresaleSuccess ? 'max-w-[760px]' : 'max-w-md'">
       <!-- Loading -->
       <div v-if="loading" class="flex items-center justify-center py-20">
         <div class="h-8 w-8 animate-spin rounded-full border-4 border-primary-500 border-t-transparent"></div>
       </div>
+      <PresalePurchaseSuccess
+        v-else-if="isPresaleSuccess && order"
+        :order="order"
+        :currency="currency"
+        :secondary-label="t('presale.reservation.browse')"
+        @done="router.push('/presale')"
+        @view-subscriptions="router.push('/subscriptions')"
+      />
       <template v-else>
         <!-- Status Icon -->
         <div class="text-center">
@@ -107,6 +115,7 @@
 
 <script setup lang="ts">
 import PresaleOrderTerm from '@/components/presale/PresaleOrderTerm.vue'
+import PresalePurchaseSuccess from '@/components/presale/PresalePurchaseSuccess.vue'
 import { ref, computed, onBeforeUnmount, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
@@ -205,6 +214,7 @@ const localeCode = computed(() => {
 const isSuccess = computed(() => {
   return isSuccessStatus(order.value?.status)
 })
+const isPresaleSuccess = computed(() => isSuccess.value && isSubscriptionOrder.value && !!order.value?.presale_starts_at)
 
 const isPending = computed(() => {
   return isPendingStatus(order.value?.status)

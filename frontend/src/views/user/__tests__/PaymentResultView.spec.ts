@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
+import { ref } from 'vue'
 
 const routeState = vi.hoisted(() => ({
   query: {} as Record<string, unknown>,
@@ -26,6 +27,7 @@ vi.mock('vue-i18n', async () => {
     ...actual,
     useI18n: () => ({
       t: (key: string) => key,
+      locale: ref('zh-CN'),
     }),
   }
 })
@@ -126,6 +128,39 @@ describe('PaymentResultView', () => {
     expect(wrapper.find('button.btn-primary').exists()).toBe(false)
     await wrapper.get('button.btn-secondary').trigger('click')
     expect(routerPush).toHaveBeenCalledWith('/purchase')
+    wrapper.unmount()
+  })
+
+  it('uses the shared confirmation only after a server-confirmed presale payment', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-09-25T12:00:00Z'))
+    routeState.query = { order_id: '42', status: 'success' }
+    const presale = { ...orderFactory('PENDING'), order_type: 'subscription', presale_plan_name: '小杯', presale_starts_at: '2026-09-30T16:00:00Z', presale_expires_at: '2026-10-31T16:00:00Z' }
+    pollOrderStatus.mockResolvedValueOnce(presale).mockResolvedValue({ ...presale, status: 'COMPLETED' })
+    const wrapper = mount(PaymentResultView, { global: { stubs: { OrderStatusBadge: true, PresaleOrderTerm: true } } })
+    await flushPromises()
+    expect(wrapper.find('[data-test="presale-success"]').exists()).toBe(false)
+    expect(wrapper.text()).toContain('payment.result.processing')
+    await vi.advanceTimersByTimeAsync(2000)
+    await flushPromises()
+    expect(wrapper.findAll('[data-test="presale-success"]')).toHaveLength(1)
+    expect(wrapper.findAll('h2').map(heading => heading.text())).toEqual(['presale.purchased'])
+    expect(wrapper.text()).toContain('小杯')
+    expect(wrapper.text()).toContain('2026/10/01 00:00')
+    expect(wrapper.get('details').attributes('open')).toBeUndefined()
+    expect(wrapper.find('presale-order-term-stub').exists()).toBe(false)
+    await wrapper.get('.confirmation-secondary').trigger('click')
+    expect(routerPush).toHaveBeenCalledWith('/presale')
+    wrapper.unmount()
+  })
+
+  it('does not show a presale success card for a failed payment', async () => {
+    routeState.query = { order_id: '42', status: 'success' }
+    pollOrderStatus.mockResolvedValue({ ...orderFactory('FAILED'), order_type: 'subscription', presale_starts_at: '2026-10-01T00:00:00+08:00' })
+    const wrapper = mount(PaymentResultView, { global: { stubs: { OrderStatusBadge: true, PresaleOrderTerm: true } } })
+    await flushPromises()
+    expect(wrapper.find('[data-test="presale-success"]').exists()).toBe(false)
+    expect(wrapper.text()).toContain('payment.result.failed')
     wrapper.unmount()
   })
 

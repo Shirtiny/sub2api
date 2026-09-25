@@ -50,6 +50,12 @@ export default {
     pendingTitle: '待生效的预售订阅', pendingHint: '尚不可用 · 按生效日期开通', records: '预售订单与退款',
   },
   purchased: '预售购买成功', purchasedCopy: '你的订阅已预订，将在标注时间自动生效。可在「我的订阅」查看。',
+  confirmation: {
+    scheduled: '已为你预留，将按下方日期自动生效。',
+    active: '订阅已生效，前往「我的订阅」查看。',
+    expired: '本期订阅已结束，可查看订阅记录。',
+    details: '订单明细',
+  },
   requestRefund: '申请退款', refundTitle: '确认取消这次订阅', refundConfirm: '确认申请退款',
   refundNotice: '提交后，该预售对应的订阅将停止使用或不再生效。退款由管理员按原支付渠道处理；到账时间以支付渠道为准。',
   refundAmount: '预计退回', refundSubmitted: '退款申请已提交，该预售订阅已取消生效。',

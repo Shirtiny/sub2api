@@ -49,6 +49,12 @@ export default {
     pendingTitle: 'Upcoming presale subscriptions', pendingHint: 'Not yet available · Scheduled activation', records: 'Presale orders & refunds',
   },
   purchased: 'Your month is reserved', purchasedCopy: 'Your subscription will activate at the time shown. Find it under My subscriptions.',
+  confirmation: {
+    scheduled: 'Reserved for you. Your subscription starts on the date below.',
+    active: 'Your subscription is active. View it in My subscriptions.',
+    expired: 'This subscription period has ended. You can view your subscription records.',
+    details: 'Order details',
+  },
   requestRefund: 'Request refund', refundTitle: 'Cancel this subscription', refundConfirm: 'Confirm refund request',
   refundNotice: 'Submitting stops this presale term or prevents its activation. An administrator processes the refund through the original payment channel; arrival time depends on that channel.',
   refundAmount: 'Estimated refund', refundSubmitted: 'Refund requested. This presale term has been cancelled.',

@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
+import { ref } from 'vue'
 
 const pollOrderStatus = vi.hoisted(() => vi.fn())
 const cancelOrder = vi.hoisted(() => vi.fn())
@@ -7,6 +8,9 @@ const verifyOrder = vi.hoisted(() => vi.fn())
 const showError = vi.hoisted(() => vi.fn())
 const showWarning = vi.hoisted(() => vi.fn())
 const toCanvas = vi.hoisted(() => vi.fn())
+const routerPush = vi.hoisted(() => vi.fn())
+
+vi.mock('vue-router', () => ({ useRouter: () => ({ push: routerPush }) }))
 
 vi.mock('vue-i18n', async () => {
   const actual = await vi.importActual<typeof import('vue-i18n')>('vue-i18n')
@@ -14,6 +18,7 @@ vi.mock('vue-i18n', async () => {
     ...actual,
     useI18n: () => ({
       t: (key: string) => key,
+      locale: ref('zh-CN'),
     }),
   }
 })
@@ -70,10 +75,34 @@ describe('PaymentStatusPanel', () => {
     showError.mockReset()
     showWarning.mockReset()
     toCanvas.mockReset().mockResolvedValue(undefined)
+    routerPush.mockReset()
   })
 
   afterEach(() => {
     vi.useRealTimers()
+  })
+
+  it('shows one shared presale confirmation with subscription and close actions', async () => {
+    vi.setSystemTime(new Date('2026-09-25T12:00:00Z'))
+    const order = { ...orderFactory('COMPLETED'), order_type: 'subscription', presale_starts_at: '2026-10-01T00:00:00+08:00', presale_expires_at: '2026-11-01T00:00:00+08:00', presale_plan_name: '中杯' }
+    pollOrderStatus.mockResolvedValue(order)
+    const wrapper = mount(PaymentStatusPanel, {
+      props: { orderId: 42, qrCode: '', expiresAt: '2099-01-01T12:30:00Z', paymentType: 'alipay', orderType: 'subscription' },
+    })
+    await vi.advanceTimersByTimeAsync(3000)
+    await flushPromises()
+    expect(wrapper.findAll('[data-test="presale-success"]')).toHaveLength(1)
+    expect(wrapper.text().split('presale.purchased')).toHaveLength(2)
+    expect(wrapper.text()).toContain('中杯')
+    expect(wrapper.get('details').attributes('open')).toBeUndefined()
+    expect(wrapper.emitted('success')).toEqual([[order]])
+    await wrapper.get('.btn-primary').trigger('click')
+    expect(routerPush).toHaveBeenCalledWith('/subscriptions')
+    await wrapper.get('.confirmation-secondary').trigger('click')
+    expect(wrapper.emitted('done')).toHaveLength(1)
+    await vi.advanceTimersByTimeAsync(9000)
+    expect(pollOrderStatus).toHaveBeenCalledTimes(1)
+    wrapper.unmount()
   })
 
   it.each([

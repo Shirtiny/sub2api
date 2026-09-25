@@ -65,11 +65,14 @@ vi.mock('vue-i18n', async () => {
     'payment.cafeCoupon.applied': 'Café券已应用',
     'payment.cafeCoupon.appliedDiscount': '券成功应用，折扣 {value}%',
     'payment.cafeCoupon.appliedCash': '券成功应用，抵扣 {amount}',
+    'payment.errors.DAILY_LIMIT_EXCEEDED': '本次付款将超出每日购买限额，今日剩余额度 {remaining}。',
+    'presale.errors.PRESALE_ALREADY_RESERVED': '本期已有预订，请先查看已有订单。',
   }
   return {
     ...actual,
     useI18n: () => ({
-      t: (key: string, args?: Record<string, unknown>) => key === 'presale.gift.creditHint' ? `实际到账 $${args?.amount} USD 站内余额` : messages[key] ?? key,
+      t: (key: string, args?: Record<string, unknown>) => key === 'presale.gift.creditHint' ? `实际到账 $${args?.amount} USD 站内余额` : (messages[key] ?? key).replace(/\{(\w+)\}/g, (match, name) => String(args?.[name] ?? match)),
+      te: (key: string) => Object.prototype.hasOwnProperty.call(messages, key),
       locale: { value: 'zh' },
     }),
   }
@@ -979,6 +982,20 @@ describe('PaymentView WeChat JSAPI flow', () => {
   })
 
   it.each([
+    ['DAILY_LIMIT_EXCEEDED', 'daily_limit_exceeded', '本次付款将超出每日购买限额，今日剩余额度 81.80。'],
+    ['PRESALE_ALREADY_RESERVED', 'already_reserved', '本期已有预订，请先查看已有订单。'],
+  ])('localizes presale checkout errors from the correct namespace: %s', async (reason, message, expected) => {
+    getPresaleQuote.mockResolvedValue({ data: { month: '2026-10' } })
+    createOrder.mockRejectedValue({ status: 429, reason, message, metadata: { remaining: '81.80' } })
+    const { wrapper, vm } = await mountPresaleCheckout()
+    await vm.confirmSubscribe()
+    expect(showError).toHaveBeenCalledWith(expected)
+    expect(showError).not.toHaveBeenCalledWith(message)
+    expect(vm.paymentPhase).toBe('select')
+    wrapper.unmount()
+  })
+
+  it.each([
     { order_type: 'balance' as const, presale_starts_at: undefined },
     { plan_id: 8 },
     { presale_starts_at: '2026-11-01T00:00:00+08:00' },
@@ -1008,7 +1025,10 @@ describe('PaymentView WeChat JSAPI flow', () => {
     vm.onPaymentSuccess(serverPresaleOrder({ status: 'COMPLETED' }))
     await flushPromises()
     expect(vm.presalePaid).toBe(true)
-    expect(wrapper.text()).toContain('presale.purchased')
+    // The child panel owns the confirmation; no second banner or policy warning.
+    expect(wrapper.findAll('payment-status-panel-stub')).toHaveLength(1)
+    expect(wrapper.text()).not.toContain('presale.purchased')
+    expect(wrapper.text()).not.toContain('payment.usagePolicyWarning')
     vm.onPaymentDone()
     expect(wrapper.emitted('close')).toHaveLength(1)
     wrapper.unmount()

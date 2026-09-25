@@ -5,14 +5,13 @@
         <div class="h-8 w-8 animate-spin rounded-full border-4 border-primary-500 border-t-transparent"></div>
       </div>
       <template v-else>
-        <!-- Usage warning is always visible after checkout data loads. -->
-        <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium leading-6 text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
+        <!-- Keep policy visible before payment, not above the settled confirmation. -->
+        <div v-if="!presalePaid" class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium leading-6 text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
           {{ t('payment.usagePolicyWarning') }}
         </div>
         <RouterLink v-if="!presalePlanId && paymentPhase === 'select'" to="/presale" class="card flex items-center justify-between gap-4 p-5">
           <div><p class="text-sm font-medium text-content-primary">{{ t('presale.nav') }}</p><p class="mt-1 text-xs text-content-tertiary">{{ t('presale.intro') }}</p></div><Icon name="arrowRight" size="md" />
         </RouterLink>
-        <div v-if="presalePlanId && presalePaid" class="card p-5" role="status"><h3 class="text-lg text-content-primary">{{ t('presale.purchased') }}</h3><p class="mt-2 text-sm text-content-secondary">{{ t('presale.purchasedCopy') }}</p><RouterLink to="/subscriptions" class="btn btn-primary mt-4">{{ t('presale.viewSubscriptions') }}</RouterLink></div>
         <!-- Tab Switcher (hide during payment and subscription confirm) -->
         <!-- Payment in progress (shared by recharge and subscription) -->
         <template v-if="paymentPhase === 'paying'">
@@ -418,6 +417,14 @@ const appStore = useAppStore()
 
 const user = computed(() => authStore.user)
 const activeSubscriptions = computed(() => subscriptionStore.activeSubscriptions)
+
+function checkoutErrorMessage(err: unknown, fallback: string): string {
+  const code = extractApiErrorCode(err)
+  // Presale checkout also returns shared payment errors (limits, gateway, etc.).
+  const namespace = props.presalePlanId && code && i18n.te(`presale.errors.${code}`)
+    ? 'presale.errors' : 'payment.errors'
+  return extractI18nErrorMessage(err, t, namespace, fallback)
+}
 
 function getDaysRemaining(expiresAt: string): number {
   const diff = new Date(expiresAt).getTime() - Date.now()
@@ -1494,7 +1501,7 @@ async function createOrder(orderAmount: number, orderType: OrderType, planId?: n
         normalizeVisibleMethod(options.paymentType || selectedMethod.value) || selectedMethod.value,
       )
       if (!handled) {
-        errorMessage.value = extractI18nErrorMessage(err, t, props.presalePlanId ? 'presale.errors' : 'payment.errors', extractApiErrorMessage(err, t('payment.result.failed')))
+        errorMessage.value = checkoutErrorMessage(err, t('payment.result.failed'))
         errorHintMessage.value = ''
       }
       if (handled) {
@@ -1824,7 +1831,7 @@ onMounted(async () => {
     if (!activeSubscriptionsFetchedForRoute) {
       subscriptionStore.fetchActiveSubscriptions().catch(() => {})
     }
-  } catch (err: unknown) { appStore.showError(extractI18nErrorMessage(err, t, props.presalePlanId ? 'presale.errors' : 'payment.errors', t('common.error'))) }
+  } catch (err: unknown) { appStore.showError(checkoutErrorMessage(err, t('common.error'))) }
   finally { loading.value = false }
 })
 </script>
