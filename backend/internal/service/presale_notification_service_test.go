@@ -8,6 +8,7 @@ import (
 	"time"
 
 	dbent "github.com/Wei-Shaw/sub2api/ent"
+	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 	"github.com/stretchr/testify/require"
 )
 
@@ -61,6 +62,8 @@ type noticeCatalogStub struct {
 	published  bool
 	enabled    bool
 	activities []PublicPresaleActivity
+	couponCode string
+	coupon     *PresaleNoticeCoupon
 }
 
 func (c *noticeCatalogStub) ListPresalePlans(context.Context) ([]*dbent.SubscriptionPlan, error) {
@@ -77,6 +80,13 @@ func (c *noticeCatalogStub) GetPaymentConfig(context.Context) (*PaymentConfig, e
 }
 func (c *noticeCatalogStub) PublicPresaleActivities(context.Context, []int64, time.Time) ([]PublicPresaleActivity, error) {
 	return c.activities, nil
+}
+func (c *noticeCatalogStub) GetPresaleNoticeCoupon(context.Context, time.Time) (string, *PresaleNoticeCoupon, error) {
+	return c.couponCode, c.coupon, nil
+}
+func (c *noticeCatalogStub) SavePresaleNoticeCoupon(_ context.Context, code string, _ time.Time) (string, error) {
+	c.couponCode = code
+	return code, nil
 }
 
 type noticeSettingsStub struct{ name, url string }
@@ -246,4 +256,94 @@ func TestPresaleNoticeReceiptFailureDoesNotRetry(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, result.Done)
 	require.Equal(t, 1, mailer.calls)
+}
+
+func TestPresaleNoticeCouponPreviewAndMail(t *testing.T) {
+	ctx := context.Background()
+	s, _, catalog, mailer := newNoticeTestService()
+	p, err := s.Preview(ctx, false, "zh")
+	require.NoError(t, err)
+	require.False(t, p.CouponIncluded)
+	require.NotContains(t, p.HTML, "一张咖啡券")
+	start, end, err := cafeCampaignDates("2026-09-25", "2026-09-30")
+	require.NoError(t, err)
+	catalog.couponCode = "CAFE-PUBLIC-AUTUMN40"
+	catalog.coupon = &PresaleNoticeCoupon{Code: catalog.couponCode, DiscountPercent: 40, StartsAt: start, ExpiresAt: end}
+	for _, locale := range []string{"zh", "en"} {
+		p, err = s.Preview(ctx, false, locale)
+		require.NoError(t, err)
+		require.True(t, p.CouponIncluded)
+		require.Equal(t, catalog.couponCode, p.CouponCode)
+		require.Contains(t, p.HTML, catalog.couponCode)
+		require.Contains(t, p.HTML, "40%")
+		require.Contains(t, p.HTML, "2026.09.25 — 2026.09.30")
+		require.NotContains(t, p.HTML, "2026.10.01")
+		requireEmailLetter(t, p.HTML)
+	}
+	p, err = s.Preview(ctx, false, "zh")
+	require.NoError(t, err)
+	req := noticeRequest(t, s, false)
+	req.Email = "owner@example.com"
+	_, err = s.SendTest(ctx, req, 1)
+	require.NoError(t, err)
+	require.Equal(t, p.HTML, mailer.body)
+	_, err = s.SendNext(ctx, req, 1)
+	require.NoError(t, err)
+	require.Contains(t, mailer.body, catalog.couponCode)
+	require.Contains(t, mailer.body, "不再接收预售通知")
+	require.Contains(t, mailer.body, "预售减免 40%")
+	unsafe := *catalog.coupon
+	unsafe.Code = `<img src=x onerror=alert(1)>`
+	rendered := presaleNoticeCouponContent("en", &unsafe)
+	require.NotContains(t, rendered, "<img")
+	require.Contains(t, rendered, "&lt;img")
+}
+
+func TestPresaleNoticeCouponChangesRequireReview(t *testing.T) {
+	for _, test := range []bool{false, true} {
+		s, repo, catalog, mailer := newNoticeTestService()
+		// Even a custom template that omits the content block must be review-bound.
+		_, err := s.notifications.UpdateTemplate(context.Background(), NotificationEmailEventPresaleOpening, "zh", "Notice", "<p>Custom notice</p>")
+		require.NoError(t, err)
+		req := noticeRequest(t, s, false)
+		req.Email = "owner@example.com"
+		catalog.couponCode = "CAFE-PUBLIC-AUTUMN40"
+		if test {
+			_, err = s.SendTest(context.Background(), req, 1)
+		} else {
+			_, err = s.SendNext(context.Background(), req, 1)
+		}
+		require.Equal(t, "PRESALE_NOTICE_CHANGED", infraerrors.Reason(err))
+		require.Zero(t, mailer.calls)
+		require.Empty(t, repo.states)
+	}
+	s, _, catalog, _ := newNoticeTestService()
+	catalog.couponCode = "CAFE-PUBLIC-AUTUMN40"
+	catalog.coupon = &PresaleNoticeCoupon{Code: catalog.couponCode, DiscountPercent: 40}
+	before, err := s.Preview(context.Background(), false, "zh")
+	require.NoError(t, err)
+	catalog.coupon = nil // Disabled/expired between review and send.
+	after, err := s.Preview(context.Background(), false, "zh")
+	require.NoError(t, err)
+	require.NotEqual(t, before.Version, after.Version)
+	require.False(t, after.CouponIncluded)
+	require.NotContains(t, after.HTML, catalog.couponCode)
+}
+
+func TestPresaleNoticeConfigRequiresAdminAndCurrentMonth(t *testing.T) {
+	s, repo, catalog, mailer := newNoticeTestService()
+	req := PresaleNoticeConfig{Month: "2026-10", CouponCode: "CAFE-PUBLIC-AUTUMN40"}
+	_, err := s.UpdateConfig(context.Background(), req, 0)
+	require.Equal(t, "FORBIDDEN", infraerrors.Reason(err))
+	req.Month = "2026-11"
+	_, err = s.UpdateConfig(context.Background(), req, 1)
+	require.Equal(t, "PRESALE_NOTICE_CHANGED", infraerrors.Reason(err))
+	require.Empty(t, catalog.couponCode)
+	req.Month = "2026-10"
+	config, err := s.UpdateConfig(context.Background(), req, 1)
+	require.NoError(t, err)
+	require.Equal(t, req, *config)
+	require.Equal(t, req.CouponCode, catalog.couponCode)
+	require.Zero(t, mailer.calls)
+	require.Empty(t, repo.states)
 }

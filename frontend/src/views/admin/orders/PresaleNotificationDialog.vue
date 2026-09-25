@@ -16,6 +16,14 @@
           {{ t('presaleNotice.language') }}
           <select v-model="mailLocale" :disabled="busy" class="input mt-2"><option value="zh">中文</option><option value="en">English</option></select>
         </label>
+        <div class="space-y-3 rounded-xl border border-gray-200 p-4 dark:border-dark-600">
+          <label for="presale-notice-coupon" class="block text-sm font-medium text-content-primary">{{ t('presaleNotice.couponLabel') }}</label>
+          <input id="presale-notice-coupon" v-model="couponCode" type="text" maxlength="48" autocomplete="off" :spellcheck="false" class="input font-mono text-xs" placeholder="CAFE-PUBLIC-…" :disabled="busy || loading" aria-describedby="presale-notice-coupon-hint" @keydown.enter.prevent="saveCoupon" />
+          <p id="presale-notice-coupon-hint" class="text-xs leading-relaxed text-content-tertiary">{{ t('presaleNotice.couponHint') }}</p>
+          <p v-if="couponDirty" class="text-xs leading-relaxed text-amber-700 dark:text-amber-200">{{ t('presaleNotice.couponUnsaved') }}</p>
+          <p v-else-if="preview?.coupon_code && !preview.coupon_included" class="text-xs leading-relaxed text-amber-700 dark:text-amber-200">{{ t('presaleNotice.couponUnavailable') }}</p>
+          <button type="button" class="btn btn-secondary w-full" data-test="save-coupon" :disabled="busy || loading || !preview || !couponDirty" @click="saveCoupon"><Icon v-if="savingCoupon" name="refresh" size="sm" class="animate-spin" />{{ t('presaleNotice.couponSave') }}</button>
+        </div>
         <div v-if="preview" class="rounded-xl bg-gray-50 p-4 dark:bg-dark-800">
           <div class="mb-4 flex justify-between gap-3 text-sm"><span class="text-content-tertiary">{{ t('presaleNotice.month') }}</span><strong class="text-content-primary">{{ preview.month }}</strong></div>
           <dl class="grid grid-cols-2 gap-4">
@@ -25,12 +33,12 @@
         <form class="space-y-3 border-t border-gray-200 pt-5 dark:border-dark-600" @submit.prevent="sendTest">
           <label class="block text-sm text-content-secondary" for="presale-notice-test-email">{{ t('presaleNotice.testEmail') }}</label>
           <input id="presale-notice-test-email" v-model="email" type="email" required maxlength="254" class="input" placeholder="name@example.com" :disabled="busy" />
-          <button type="submit" class="btn btn-secondary w-full" :disabled="busy || !preview || loading"><Icon v-if="testing" name="refresh" size="sm" class="animate-spin" />{{ t('presaleNotice.test') }}</button>
+          <button type="submit" class="btn btn-secondary w-full" :disabled="busy || !preview || loading || couponDirty"><Icon v-if="testing" name="refresh" size="sm" class="animate-spin" />{{ t('presaleNotice.test') }}</button>
         </form>
         <p class="text-xs leading-relaxed text-content-tertiary">{{ t('presaleNotice.safety') }}</p>
       </section>
       <section class="min-w-0 space-y-3">
-        <div class="flex items-center justify-between gap-3"><h4 class="text-sm font-medium text-content-primary">{{ t('presaleNotice.preview') }}</h4><button class="btn btn-secondary" :disabled="busy || loading" :title="t('presaleNotice.refresh')" @click="load"><Icon name="refresh" size="sm" :class="{ 'animate-spin': loading }" /></button></div>
+        <div class="flex items-center justify-between gap-3"><h4 class="text-sm font-medium text-content-primary">{{ t('presaleNotice.preview') }}</h4><button class="btn btn-secondary" :disabled="busy || loading" :title="t('presaleNotice.refresh')" @click="load()"><Icon name="refresh" size="sm" :class="{ 'animate-spin': loading }" /></button></div>
         <p v-if="preview && !preview.ready" class="rounded-xl bg-amber-50 p-3 text-xs leading-relaxed text-amber-800 dark:bg-amber-950/30 dark:text-amber-200">{{ t('presaleNotice.draft') }}</p>
         <p v-if="error" role="alert" class="rounded-xl bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950/30 dark:text-red-300">{{ error }}</p>
         <p v-if="message" role="status" class="text-sm text-content-secondary">{{ message }}</p>
@@ -65,31 +73,53 @@ const { t, locale } = useI18n()
 const mailLocale = ref(locale?.value?.startsWith('zh') ? 'zh' : 'en')
 const includeRestricted = ref(false)
 const email = ref('')
+const couponCode = ref('')
+const savingCoupon = ref(false)
 const preview = ref<PresaleNoticePreview | null>(null)
 const loading = ref(false), testing = ref(false), sending = ref(false), stopping = ref(false), confirming = ref(false)
 const error = ref(''), message = ref('')
-const busy = computed(() => testing.value || sending.value)
-const canSend = computed(() => !busy.value && !loading.value && !!preview.value?.ready && preview.value.counts.pending > 0)
+const busy = computed(() => testing.value || sending.value || savingCoupon.value)
+const couponDirty = computed(() => couponCode.value.trim().toUpperCase() !== (preview.value?.coupon_code ?? ''))
+const canSend = computed(() => !busy.value && !loading.value && !couponDirty.value && !!preview.value?.ready && preview.value.counts.pending > 0)
 const countKeys = ['eligible', 'pending', 'sent', 'skipped', 'uncertain', 'sending'] as const
 const confirmation = computed(() => t('presaleNotice.confirm', { count: preview.value?.counts.pending ?? 0, month: preview.value?.month ?? '', audience: t(includeRestricted.value ? 'presaleNotice.includeSummary' : 'presaleNotice.accessSummary') }))
 let generation = 0
 function close() { stopping.value = true; confirming.value = false; emit('close') }
-async function load() {
+async function load(resetCoupon = false) {
   if (!props.show) return
+  const preserveCoupon = !resetCoupon && couponDirty.value
   const id = ++generation
   loading.value = true; confirming.value = false; preview.value = null; error.value = ''
   try {
     const { data } = await adminPaymentAPI.getPresaleNotice({ include_restricted: includeRestricted.value, locale: mailLocale.value })
-    if (generation === id && props.show) preview.value = data
+    if (generation === id && props.show) {
+      preview.value = data
+      if (!preserveCoupon) couponCode.value = data.coupon_code
+    }
   } catch (err) { if (generation === id) error.value = extractI18nErrorMessage(err, t, 'presaleNotice.errors', t('presaleNotice.loadFailed')) }
   finally { if (generation === id) loading.value = false }
+}
+async function saveCoupon() {
+  if (busy.value || loading.value || !preview.value || !couponDirty.value) return
+  const id = generation
+  const request = { month: preview.value.month, coupon_code: couponCode.value.trim() }
+  savingCoupon.value = true; confirming.value = false; error.value = ''; message.value = ''
+  try {
+    await adminPaymentAPI.updatePresaleNoticeConfig(request)
+    if (generation === id && props.show) {
+      await load(true)
+      if (!error.value && props.show) message.value = t('presaleNotice.couponSaved')
+    }
+  } catch (err) {
+    if (generation === id && props.show) error.value = extractI18nErrorMessage(err, t, 'presaleNotice.errors', t('presaleNotice.failed'))
+  } finally { savingCoupon.value = false }
 }
 function payload(): PresaleNoticeRequest {
   if (!preview.value) throw new Error('No reviewed preview')
   return { include_restricted: includeRestricted.value, locale: mailLocale.value, month: preview.value.month, version: preview.value.version, confirmed: true }
 }
 async function sendTest() {
-  if (busy.value || loading.value || !preview.value) return
+  if (busy.value || loading.value || !preview.value || couponDirty.value) return
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim())) { error.value = t('presaleNotice.invalidEmail'); return }
   const request = { ...payload(), email: email.value.trim() }
   testing.value = true; error.value = ''; message.value = ''
@@ -121,7 +151,8 @@ async function sendAll() {
     else if (props.show) await load()
   }
 }
-watch(() => props.show, show => { if (show) void load(); else { generation++; stopping.value = true; confirming.value = false } }, { immediate: true })
+watch(() => props.show, show => { if (show) void load(true); else { generation++; stopping.value = true; confirming.value = false } }, { immediate: true })
+watch(couponCode, () => { confirming.value = false; message.value = '' })
 watch([includeRestricted, mailLocale], () => { message.value = ''; if (!busy.value) void load() })
 onBeforeUnmount(() => { generation++; stopping.value = true })
 </script>

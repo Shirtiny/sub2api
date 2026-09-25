@@ -37,7 +37,7 @@ func presaleNoticeBaseURL(raw string) (*url.URL, error) {
 	return base, nil
 }
 
-func presaleNoticeContent(locale string, period PresalePeriod, plans []*dbent.SubscriptionPlan, activities []PublicPresaleActivity, base *url.URL, now time.Time, unsubscribe string) string {
+func presaleNoticeContent(locale string, period PresalePeriod, plans []*dbent.SubscriptionPlan, activities []PublicPresaleActivity, base *url.URL, now time.Time, unsubscribe string, coupon *PresaleNoticeCoupon) string {
 	zh := locale == "zh"
 	pick := func(cn, en string) string {
 		if zh {
@@ -87,6 +87,9 @@ func presaleNoticeContent(locale string, period PresalePeriod, plans []*dbent.Su
 		end := a.EndsAt.In(presaleLocation)
 		content += `<p class="receipt muted" style="margin:20px 0 0;padding:15px 18px;border-left:2px solid #ad8158;background:#f2e8da;font-size:12px;color:#796653;">` + esc(a.Name) + ` · ` + a.StartsAt.In(presaleLocation).Format("01.02") + ` — ` + end.Add(-time.Second).Format("01.02") + `<br>` + esc(pick(fmt.Sprintf("每人限 %d 次，赠额不随订阅倍数增加，可叠加咖啡券。", a.MaxUsesPerUser), fmt.Sprintf("Up to %d per person. Fixed gift regardless of subscription multiplier; café coupons may be combined.", a.MaxUsesPerUser))) + `</p>`
 	}
+	if coupon != nil {
+		content += presaleNoticeCouponContent(locale, coupon)
+	}
 	link := base.ResolveReference(&url.URL{Path: "presale"}).String()
 	content += `<p style="margin:30px 0 24px;"><a class="button" href="` + esc(link) + `" style="display:inline-block;background:#865630;color:#ffffff;text-decoration:none;padding:13px 25px;border-radius:6px;font-size:14px;">` + pick("查看预售套餐", "Explore the presale") + ` &nbsp; →</a></p>`
 	content += `<p class="muted" style="margin:0;color:#8b7662;font-size:12px;line-height:1.9;">` + pick("预售不会立即开通，生效日期与退款规则请在预售页查看。急需使用，可选择即时余额充值。", "Presales do not activate immediately. See the presale page for activation dates and refund rules. Need access sooner? Balance top-ups are available immediately.") + `</p>`
@@ -95,4 +98,18 @@ func presaleNoticeContent(locale string, period PresalePeriod, plans []*dbent.Su
 		content += `<p style="margin:24px 0 0;font-size:11px;"><a href="` + esc(unsubscribe) + `" style="color:#8b7662;">` + pick("不再接收预售通知", "Unsubscribe from presale notices") + `</a></p>`
 	}
 	return content
+}
+
+func presaleNoticeCouponContent(locale string, coupon *PresaleNoticeCoupon) string {
+	label, offer, instructions, datesLabel := "A CAFÉ TREAT", fmt.Sprintf("%d%% off your presale", coupon.DiscountPercent), "Enter this code at checkout. Presales only · Once per account.", "Valid"
+	if locale == "zh" {
+		label, offer, instructions, datesLabel = "一张咖啡券", fmt.Sprintf("预售减免 %d%%", coupon.DiscountPercent), "结算时填写券码 · 仅限预售 · 每人限用一次", "有效期"
+	}
+	// No script, copy button or external asset: the selectable code works in mail clients.
+	return `<table role="presentation" class="receipt rule" width="100%" cellpadding="0" cellspacing="0" style="width:100%;margin:26px 0 0;background:#f0e9df;border:1px solid #d7b897;border-radius:8px;"><tr><td style="padding:22px 24px;">` +
+		`<p class="accent" style="margin:0 0 8px;color:#865630;font-size:11px;letter-spacing:1.5px;">` + label + `</p>` +
+		`<p class="ink" style="margin:0 0 14px;color:#382a20;font-size:18px;">` + offer + `</p>` +
+		`<p class="ink" style="margin:0 0 12px;color:#382a20;font-family:Consolas,Menlo,monospace;font-size:18px;line-height:1.7;letter-spacing:0.4px;word-break:normal;overflow-wrap:anywhere;">` + html.EscapeString(coupon.Code) + `</p>` +
+		`<p class="muted" style="margin:0 0 5px;color:#796653;font-size:12px;">` + datesLabel + ` ` + coupon.StartsAt.In(presaleLocation).Format("2006.01.02") + ` — ` + coupon.ExpiresAt.In(presaleLocation).Add(-time.Second).Format("2006.01.02") + `</p>` +
+		`<p class="muted" style="margin:0;color:#796653;font-size:11px;line-height:1.9;">` + instructions + `</p></td></tr></table>`
 }

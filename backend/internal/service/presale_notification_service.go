@@ -29,6 +29,8 @@ type presaleNoticeCatalog interface {
 	ListPlans(context.Context) ([]*dbent.SubscriptionPlan, error)
 	GetPaymentConfig(context.Context) (*PaymentConfig, error)
 	PublicPresaleActivities(context.Context, []int64, time.Time) ([]PublicPresaleActivity, error)
+	GetPresaleNoticeCoupon(context.Context, time.Time) (string, *PresaleNoticeCoupon, error)
+	SavePresaleNoticeCoupon(context.Context, string, time.Time) (string, error)
 }
 type presaleNoticeSettings interface {
 	GetSiteName(context.Context) string
@@ -48,6 +50,8 @@ type PresaleNoticeCounts struct {
 	Pending   int `json:"pending"`
 }
 type PresaleNoticePreview struct {
+	CouponCode     string              `json:"coupon_code"`
+	CouponIncluded bool                `json:"coupon_included"`
 	Month          string              `json:"month"`
 	Subject        string              `json:"subject"`
 	HTML           string              `json:"html"`
@@ -89,6 +93,7 @@ type presaleNoticeDraft struct {
 	period     PresalePeriod
 	plans      []*dbent.SubscriptionPlan
 	activities []PublicPresaleActivity
+	coupon     *PresaleNoticeCoupon
 	base       *url.URL
 	template   NotificationEmailTemplate
 	variables  map[string]string
@@ -142,15 +147,27 @@ func (s *PresaleNotificationService) draft(ctx context.Context, locale string) (
 		monthLabel = fmt.Sprintf("%d 年 %d 月", period.StartsAt.Year(), period.StartsAt.Month())
 	}
 	variables := map[string]string{"site_name": s.settings.GetSiteName(ctx), "month_label": monthLabel}
-	content := presaleNoticeContent(locale, period, plans, activities, base, now, "")
+	couponCode, coupon, err := s.catalog.GetPresaleNoticeCoupon(ctx, now)
+	if err != nil {
+		return nil, err
+	}
+	content := presaleNoticeContent(locale, period, plans, activities, base, now, "", coupon)
 	rendered, err := renderNotificationEmail(NotificationEmailEventPresaleOpening, tmpl.Subject, tmpl.HTML, variables, map[string]string{"presale_content": content})
 	if err != nil {
 		return nil, err
 	}
 	ready := cfg.Enabled && published > 0
-	digest := sha256.Sum256([]byte(fmt.Sprintf("%s\x00%t\x00%s\x00%s", period.Month, ready, rendered.Subject, rendered.HTML)))
-	preview := &PresaleNoticePreview{Month: period.Month, Subject: rendered.Subject, HTML: rendered.HTML, Version: hex.EncodeToString(digest[:]), Ready: ready, Draft: published == 0, PublishedPlans: published}
-	return &presaleNoticeDraft{preview: preview, period: period, plans: plans, activities: activities, base: base, template: tmpl, variables: variables, locale: locale, now: now}, nil
+	// Bind the coupon even when a custom template omits presale_content.
+	couponReview, err := json.Marshal(struct {
+		Code   string
+		Coupon *PresaleNoticeCoupon
+	}{couponCode, coupon})
+	if err != nil {
+		return nil, err
+	}
+	digest := sha256.Sum256([]byte(fmt.Sprintf("%s\x00%t\x00%s\x00%s\x00%s", period.Month, ready, rendered.Subject, rendered.HTML, couponReview)))
+	preview := &PresaleNoticePreview{CouponCode: couponCode, CouponIncluded: coupon != nil, Month: period.Month, Subject: rendered.Subject, HTML: rendered.HTML, Version: hex.EncodeToString(digest[:]), Ready: ready, Draft: published == 0, PublishedPlans: published}
+	return &presaleNoticeDraft{preview: preview, period: period, plans: plans, activities: activities, coupon: coupon, base: base, template: tmpl, variables: variables, locale: locale, now: now}, nil
 }
 
 func (s *PresaleNotificationService) recipients(ctx context.Context, includeRestricted bool) ([]PresaleNoticeRecipient, error) {
@@ -285,7 +302,7 @@ func (s *PresaleNotificationService) SendNext(ctx context.Context, req PresaleNo
 				return nil, err
 			}
 			link := draft.base.ResolveReference(&url.URL{Path: "api/v1/settings/email-unsubscribe", RawQuery: "token=" + url.QueryEscape(token)}).String()
-			content := presaleNoticeContent(draft.locale, draft.period, draft.plans, draft.activities, draft.base, draft.now, link)
+			content := presaleNoticeContent(draft.locale, draft.period, draft.plans, draft.activities, draft.base, draft.now, link, draft.coupon)
 			rendered, err := renderNotificationEmail(NotificationEmailEventPresaleOpening, draft.template.Subject, draft.template.HTML, draft.variables, map[string]string{"presale_content": content})
 			if err != nil {
 				return nil, err

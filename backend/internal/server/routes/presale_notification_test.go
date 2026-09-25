@@ -24,7 +24,7 @@ func TestPresaleNoticeRequiresAdministrator(t *testing.T) {
 	require.NoError(t, err)
 	r := gin.New()
 	RegisterPaymentRoutes(r.Group("/api/v1"), &handler.PaymentHandler{}, &handler.PaymentWebhookHandler{}, &admin.PaymentHandler{}, middleware.NewJWTAuthMiddleware(auth, users), middleware.NewAdminAuthMiddleware(auth, users, nil), nil)
-	for _, endpoint := range []struct{ method, path string }{{"GET", "/presale-notice"}, {"POST", "/presale-notice/test"}, {"POST", "/presale-notice/send-next"}} {
+	for _, endpoint := range []struct{ method, path string }{{"GET", "/presale-notice"}, {"PUT", "/presale-notice/config"}, {"POST", "/presale-notice/test"}, {"POST", "/presale-notice/send-next"}} {
 		for _, bearer := range []string{"", token} {
 			w := httptest.NewRecorder()
 			req := httptest.NewRequest(endpoint.method, "/api/v1/admin/payment"+endpoint.path, nil)

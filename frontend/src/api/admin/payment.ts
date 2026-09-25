@@ -18,7 +18,7 @@ import type {
   UpsertPromotionActivityRequest
 } from '@/types/payment'
 import type { BasePaginationResponse } from '@/types'
-import type { PresaleNoticePreview, PresaleNoticeRequest, PresaleNoticeSendResult } from '@/types/payment'
+import type { PresaleNoticeConfig, PresaleNoticePreview, PresaleNoticeRequest, PresaleNoticeSendResult } from '@/types/payment'
 
 export interface AdminPaymentOrder extends PaymentOrder {
   updated_at?: string
@@ -115,6 +115,9 @@ export interface UpdatePaymentConfigRequest {
 export const adminPaymentAPI = {
   getPresaleNotice(params: { include_restricted: boolean; locale: string }) {
     return apiClient.get<PresaleNoticePreview>('/admin/payment/presale-notice', { params })
+  },
+  updatePresaleNoticeConfig(data: PresaleNoticeConfig) {
+    return apiClient.put<PresaleNoticeConfig>('/admin/payment/presale-notice/config', data)
   },
   testPresaleNotice(data: PresaleNoticeRequest) {
     return apiClient.post<PresaleNoticeSendResult>('/admin/payment/presale-notice/test', data, { timeout: 90000 })

@@ -443,6 +443,8 @@ export interface PresaleNoticeCounts {
   pending: number
 }
 export interface PresaleNoticePreview {
+  coupon_code: string
+  coupon_included: boolean
   month: string
   subject: string
   html: string
@@ -452,6 +454,7 @@ export interface PresaleNoticePreview {
   published_plans: number
   counts: PresaleNoticeCounts
 }
+export interface PresaleNoticeConfig { month: string; coupon_code: string }
 export interface PresaleNoticeRequest {
   include_restricted: boolean
   locale: string

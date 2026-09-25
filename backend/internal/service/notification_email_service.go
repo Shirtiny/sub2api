@@ -357,7 +357,7 @@ func (s *NotificationEmailService) PreviewTemplate(ctx context.Context, input No
 		if !isSafeNotificationEmailURL(unsubscribeURL) {
 			unsubscribeURL = ""
 		}
-		rawHTML = map[string]string{"presale_content": presaleNoticeContent(normalizedLocale, NextPresalePeriod(now), nil, nil, base, now, unsubscribeURL)}
+		rawHTML = map[string]string{"presale_content": presaleNoticeContent(normalizedLocale, NextPresalePeriod(now), nil, nil, base, now, unsubscribeURL, nil)}
 	}
 	return renderNotificationEmail(normalizedEvent, subject, htmlBody, variables, rawHTML)
 }

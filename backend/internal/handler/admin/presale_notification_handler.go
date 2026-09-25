@@ -16,6 +16,19 @@ func (h *PaymentHandler) PreviewPresaleNotice(c *gin.Context) {
 }
 func (h *PaymentHandler) TestPresaleNotice(c *gin.Context)     { h.sendPresaleNotice(c, true) }
 func (h *PaymentHandler) SendNextPresaleNotice(c *gin.Context) { h.sendPresaleNotice(c, false) }
+func (h *PaymentHandler) UpdatePresaleNoticeConfig(c *gin.Context) {
+	var req service.PresaleNoticeConfig
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request")
+		return
+	}
+	config, err := h.presaleNotifications.UpdateConfig(c.Request.Context(), req, getAdminIDFromContext(c))
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, config)
+}
 func (h *PaymentHandler) sendPresaleNotice(c *gin.Context, test bool) {
 	var req service.PresaleNoticeRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

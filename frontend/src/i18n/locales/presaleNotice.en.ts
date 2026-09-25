@@ -1,5 +1,6 @@
 export default {
   errors: {
+    "PRESALE_NOTICE_COUPON_INVALID": "Enter the full code of an enabled, unexpired public café coupon valid for this presale period.",
     "PRESALE_NOTICE_URL_INVALID": "Configure a valid frontend URL first.",
     "PRESALE_NOTICE_CONFIRM_REQUIRED": "Confirm the content and recipients first.",
     "PRESALE_NOTICE_CHANGED": "The notice, audience or month changed. Refresh and review again.",
@@ -12,6 +13,9 @@ export default {
   entry: 'Presale notice', title: 'Announce the next presale', intro: 'An invitation for the month ahead. Preview first, then confirm delivery.',
   audience: 'Recipients', access: 'Users with site access', includeRestricted: 'Include users without site access', audienceHint: 'Includes matching waitlist addresses. Does not grant access or publish any plans.',
   language: 'Email language', month: 'Presale month', preview: 'Email preview', refresh: 'Refresh preview',
+  couponLabel: 'Include a café coupon (optional)', couponHint: 'Enter an existing public code, or leave blank to hide it. Saved for this presale month only; discount and validity dates are filled automatically.',
+  couponSave: 'Save and preview', couponSaved: 'Coupon settings saved and preview updated.', couponUnsaved: 'Save the code and review the updated preview before sending.',
+  couponUnavailable: 'This coupon is disabled, expired or outside this presale period. It will not appear in the email.',
   eligible: 'Mailboxes', sent: 'Submitted', pending: 'Pending', skipped: 'Unsubscribed', uncertain: 'Unconfirmed', sendingCount: 'Processing',
   draft: 'The presale is not open. Preview and test emails are available; formal notices require payments enabled and published presale plans.',
   testEmail: 'Test recipient', test: 'Send test email', testSuccess: 'Test email submitted. Please check your inbox.', invalidEmail: 'Enter a valid email address',

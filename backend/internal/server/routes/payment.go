@@ -91,6 +91,7 @@ func RegisterPaymentRoutes(
 
 		// Presale email notifications are admin-only and require explicit confirmation.
 		adminGroup.GET("/presale-notice", adminPaymentHandler.PreviewPresaleNotice)
+		adminGroup.PUT("/presale-notice/config", adminPaymentHandler.UpdatePresaleNoticeConfig)
 		adminGroup.POST("/presale-notice/test", adminPaymentHandler.TestPresaleNotice)
 		adminGroup.POST("/presale-notice/send-next", adminPaymentHandler.SendNextPresaleNotice)
 

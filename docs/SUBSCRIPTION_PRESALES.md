@@ -384,3 +384,22 @@ reconcile it against provider delivery records rather than blindly clearing it.
 Explicit tests use a separate namespace and a 60-second mailbox cooldown; they
 do not consume the formal monthly notice. Production broadcast and publication
 always require separate explicit authorization.
+
+### Optional café code in opening notices
+
+In **Presale notice → Include a café coupon**, enter the full existing public
+`CAFE-PUBLIC-…` code and save/preview, or save an empty field to hide the entire
+coupon block. The selection is stored in existing settings per presale month
+(`presale_notice_coupon.YYYY-MM`), not carried into next month's notice. The
+admin-only `PUT /api/v1/admin/payment/presale-notice/config` accepts
+`{ month, coupon_code }`; it neither creates/enables a campaign nor sends mail.
+
+Only an enabled, unexpired public presale campaign overlapping the remaining
+presale window may be selected. Future-starting offers show their explicit dates;
+disabled/expired offers are omitted from the message and flagged in the dialog.
+The card uses the campaign's actual discount, inclusive calendar dates and the
+existing once-per-account rule. Personal codes and unknown codes are rejected.
+Preview, test and formal sends share the same rendering. Changes to the saved
+code or its availability invalidate the reviewed send version; unsaved edits
+disable sending until saved and re-previewed. Existing monthly delivery dedup
+remains unchanged: configuring a code does not resend previously sent notices.

@@ -1,5 +1,6 @@
 export default {
   errors: {
+    "PRESALE_NOTICE_COUPON_INVALID": "请填写已启用、未过期且适用于本期预售的通用咖啡券完整券码。",
     "PRESALE_NOTICE_URL_INVALID": "请先配置正确的前端地址。",
     "PRESALE_NOTICE_CONFIRM_REQUIRED": "请先确认通知内容与收件范围。",
     "PRESALE_NOTICE_CHANGED": "通知内容、收件范围或预售月份已变化，请刷新预览后重新确认。",
@@ -12,6 +13,9 @@ export default {
   entry: '预售通知', title: '发送预售开始通知', intro: '为下个月的订阅发一封邀请。先预览，再确认发送。',
   audience: '收件范围', access: '有访问权限的用户', includeRestricted: '包含暂无访问权限的用户', audienceHint: '包含相应的候补名单邮箱。不会开通访问权限，也不会改变套餐上架状态。',
   language: '邮件语言', month: '预售月份', preview: '邮件预览', refresh: '刷新预览',
+  couponLabel: '附带咖啡券（选填）', couponHint: '填写已创建的通用券码，留空不显示。仅保存于本期预售，折扣和有效期自动读取。',
+  couponSave: '保存并预览', couponSaved: '券码配置已保存，预览已更新。', couponUnsaved: '请先保存券码并更新预览，再发送邮件。',
+  couponUnavailable: '该券已停用、过期或不适用于本期预售，不会显示在邮件中。',
   eligible: '收件邮箱', sent: '已提交', pending: '待发送', skipped: '已退订', uncertain: '结果未确认', sendingCount: '处理中',
   draft: '预售尚未开放。可预览并发送测试邮件，正式通知需先启用支付并上架预售套餐。',
   testEmail: '测试收件邮箱', test: '发送测试邮件', testSuccess: '测试邮件已提交，请检查收件箱。', invalidEmail: '请输入格式正确的邮箱地址',
