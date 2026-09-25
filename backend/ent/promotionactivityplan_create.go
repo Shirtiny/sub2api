@@ -41,6 +41,28 @@ func (_c *PromotionActivityPlanCreate) SetBonusDays(v int) *PromotionActivityPla
 	return _c
 }
 
+// SetNillableBonusDays sets the "bonus_days" field if the given value is not nil.
+func (_c *PromotionActivityPlanCreate) SetNillableBonusDays(v *int) *PromotionActivityPlanCreate {
+	if v != nil {
+		_c.SetBonusDays(*v)
+	}
+	return _c
+}
+
+// SetBonusBalance sets the "bonus_balance" field.
+func (_c *PromotionActivityPlanCreate) SetBonusBalance(v float64) *PromotionActivityPlanCreate {
+	_c.mutation.SetBonusBalance(v)
+	return _c
+}
+
+// SetNillableBonusBalance sets the "bonus_balance" field if the given value is not nil.
+func (_c *PromotionActivityPlanCreate) SetNillableBonusBalance(v *float64) *PromotionActivityPlanCreate {
+	if v != nil {
+		_c.SetBonusBalance(*v)
+	}
+	return _c
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (_c *PromotionActivityPlanCreate) SetCreatedAt(v time.Time) *PromotionActivityPlanCreate {
 	_c.mutation.SetCreatedAt(v)
@@ -109,6 +131,14 @@ func (_c *PromotionActivityPlanCreate) ExecX(ctx context.Context) {
 
 // defaults sets the default values of the builder before save.
 func (_c *PromotionActivityPlanCreate) defaults() {
+	if _, ok := _c.mutation.BonusDays(); !ok {
+		v := promotionactivityplan.DefaultBonusDays
+		_c.mutation.SetBonusDays(v)
+	}
+	if _, ok := _c.mutation.BonusBalance(); !ok {
+		v := promotionactivityplan.DefaultBonusBalance
+		_c.mutation.SetBonusBalance(v)
+	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		v := promotionactivityplan.DefaultCreatedAt()
 		_c.mutation.SetCreatedAt(v)
@@ -143,6 +173,14 @@ func (_c *PromotionActivityPlanCreate) check() error {
 	if v, ok := _c.mutation.BonusDays(); ok {
 		if err := promotionactivityplan.BonusDaysValidator(v); err != nil {
 			return &ValidationError{Name: "bonus_days", err: fmt.Errorf(`ent: validator failed for field "PromotionActivityPlan.bonus_days": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.BonusBalance(); !ok {
+		return &ValidationError{Name: "bonus_balance", err: errors.New(`ent: missing required field "PromotionActivityPlan.bonus_balance"`)}
+	}
+	if v, ok := _c.mutation.BonusBalance(); ok {
+		if err := promotionactivityplan.BonusBalanceValidator(v); err != nil {
+			return &ValidationError{Name: "bonus_balance", err: fmt.Errorf(`ent: validator failed for field "PromotionActivityPlan.bonus_balance": %w`, err)}
 		}
 	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
@@ -188,6 +226,10 @@ func (_c *PromotionActivityPlanCreate) createSpec() (*PromotionActivityPlan, *sq
 	if value, ok := _c.mutation.BonusDays(); ok {
 		_spec.SetField(promotionactivityplan.FieldBonusDays, field.TypeInt, value)
 		_node.BonusDays = value
+	}
+	if value, ok := _c.mutation.BonusBalance(); ok {
+		_spec.SetField(promotionactivityplan.FieldBonusBalance, field.TypeFloat64, value)
+		_node.BonusBalance = value
 	}
 	if value, ok := _c.mutation.CreatedAt(); ok {
 		_spec.SetField(promotionactivityplan.FieldCreatedAt, field.TypeTime, value)
@@ -314,6 +356,24 @@ func (u *PromotionActivityPlanUpsert) AddBonusDays(v int) *PromotionActivityPlan
 	return u
 }
 
+// SetBonusBalance sets the "bonus_balance" field.
+func (u *PromotionActivityPlanUpsert) SetBonusBalance(v float64) *PromotionActivityPlanUpsert {
+	u.Set(promotionactivityplan.FieldBonusBalance, v)
+	return u
+}
+
+// UpdateBonusBalance sets the "bonus_balance" field to the value that was provided on create.
+func (u *PromotionActivityPlanUpsert) UpdateBonusBalance() *PromotionActivityPlanUpsert {
+	u.SetExcluded(promotionactivityplan.FieldBonusBalance)
+	return u
+}
+
+// AddBonusBalance adds v to the "bonus_balance" field.
+func (u *PromotionActivityPlanUpsert) AddBonusBalance(v float64) *PromotionActivityPlanUpsert {
+	u.Add(promotionactivityplan.FieldBonusBalance, v)
+	return u
+}
+
 // SetUpdatedAt sets the "updated_at" field.
 func (u *PromotionActivityPlanUpsert) SetUpdatedAt(v time.Time) *PromotionActivityPlanUpsert {
 	u.Set(promotionactivityplan.FieldUpdatedAt, v)
@@ -424,6 +484,27 @@ func (u *PromotionActivityPlanUpsertOne) AddBonusDays(v int) *PromotionActivityP
 func (u *PromotionActivityPlanUpsertOne) UpdateBonusDays() *PromotionActivityPlanUpsertOne {
 	return u.Update(func(s *PromotionActivityPlanUpsert) {
 		s.UpdateBonusDays()
+	})
+}
+
+// SetBonusBalance sets the "bonus_balance" field.
+func (u *PromotionActivityPlanUpsertOne) SetBonusBalance(v float64) *PromotionActivityPlanUpsertOne {
+	return u.Update(func(s *PromotionActivityPlanUpsert) {
+		s.SetBonusBalance(v)
+	})
+}
+
+// AddBonusBalance adds v to the "bonus_balance" field.
+func (u *PromotionActivityPlanUpsertOne) AddBonusBalance(v float64) *PromotionActivityPlanUpsertOne {
+	return u.Update(func(s *PromotionActivityPlanUpsert) {
+		s.AddBonusBalance(v)
+	})
+}
+
+// UpdateBonusBalance sets the "bonus_balance" field to the value that was provided on create.
+func (u *PromotionActivityPlanUpsertOne) UpdateBonusBalance() *PromotionActivityPlanUpsertOne {
+	return u.Update(func(s *PromotionActivityPlanUpsert) {
+		s.UpdateBonusBalance()
 	})
 }
 
@@ -705,6 +786,27 @@ func (u *PromotionActivityPlanUpsertBulk) AddBonusDays(v int) *PromotionActivity
 func (u *PromotionActivityPlanUpsertBulk) UpdateBonusDays() *PromotionActivityPlanUpsertBulk {
 	return u.Update(func(s *PromotionActivityPlanUpsert) {
 		s.UpdateBonusDays()
+	})
+}
+
+// SetBonusBalance sets the "bonus_balance" field.
+func (u *PromotionActivityPlanUpsertBulk) SetBonusBalance(v float64) *PromotionActivityPlanUpsertBulk {
+	return u.Update(func(s *PromotionActivityPlanUpsert) {
+		s.SetBonusBalance(v)
+	})
+}
+
+// AddBonusBalance adds v to the "bonus_balance" field.
+func (u *PromotionActivityPlanUpsertBulk) AddBonusBalance(v float64) *PromotionActivityPlanUpsertBulk {
+	return u.Update(func(s *PromotionActivityPlanUpsert) {
+		s.AddBonusBalance(v)
+	})
+}
+
+// UpdateBonusBalance sets the "bonus_balance" field to the value that was provided on create.
+func (u *PromotionActivityPlanUpsertBulk) UpdateBonusBalance() *PromotionActivityPlanUpsertBulk {
+	return u.Update(func(s *PromotionActivityPlanUpsert) {
+		s.UpdateBonusBalance()
 	})
 }
 

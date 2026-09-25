@@ -95,6 +95,7 @@ type wechatPaymentOAuthContext struct {
 	Multiplier                          int    `json:"multiplier,omitempty"`
 	CafeCouponCode                      string `json:"cafe_coupon_code,omitempty"`
 	ExpectedSubscriptionBonusActivityID int64  `json:"expected_subscription_bonus_activity_id,omitempty"`
+	ExpectedPresaleBonusVersion         string `json:"expected_presale_bonus_version,omitempty"`
 	RedirectTo                          string `json:"redirect_to,omitempty"`
 	Scope                               string `json:"scope,omitempty"`
 }
@@ -380,6 +381,7 @@ func (h *AuthHandler) WeChatPaymentOAuthStart(c *gin.Context) {
 		Multiplier:                          contextClaims.Multiplier,
 		CafeCouponCode:                      strings.TrimSpace(contextClaims.CafeCouponCode),
 		ExpectedSubscriptionBonusActivityID: contextClaims.ExpectedSubscriptionBonusActivityID,
+		ExpectedPresaleBonusVersion:         contextClaims.ExpectedPresaleBonusVersion,
 		PresaleMonth:                        contextClaims.PresaleMonth,
 		RedirectTo:                          redirectTo,
 		Scope:                               paymentScope,
@@ -456,6 +458,7 @@ func (h *AuthHandler) WeChatPaymentOAuthCallback(c *gin.Context) {
 		Multiplier:                          contextClaims.Multiplier,
 		CafeCouponCode:                      strings.TrimSpace(contextClaims.CafeCouponCode),
 		ExpectedSubscriptionBonusActivityID: contextClaims.ExpectedSubscriptionBonusActivityID,
+		ExpectedPresaleBonusVersion:         contextClaims.ExpectedPresaleBonusVersion,
 		PresaleMonth:                        contextClaims.PresaleMonth,
 		RedirectTo:                          redirectTo,
 		Scope:                               scope,
@@ -498,6 +501,7 @@ func (h *AuthHandler) WeChatPaymentOAuthCallback(c *gin.Context) {
 		Multiplier:                          paymentContext.Multiplier,
 		CafeCouponCode:                      paymentContext.CafeCouponCode,
 		ExpectedSubscriptionBonusActivityID: paymentContext.ExpectedSubscriptionBonusActivityID,
+		ExpectedPresaleBonusVersion:         paymentContext.ExpectedPresaleBonusVersion,
 		PresaleMonth:                        paymentContext.PresaleMonth,
 		RedirectTo:                          redirectTo,
 		Scope:                               scope,

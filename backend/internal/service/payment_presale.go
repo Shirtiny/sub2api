@@ -59,9 +59,6 @@ func validatePresaleOrderPlan(plan *dbent.SubscriptionPlan, req CreateOrderReque
 	if req.PresaleMonth != NextPresalePeriod(now).Month {
 		return infraerrors.Conflict("PRESALE_MONTH_CHANGED", "the presale month changed; refresh before paying")
 	}
-	if req.ExpectedSubscriptionBonusActivityID != 0 {
-		return infraerrors.BadRequest("PRESALE_BONUS_UNSUPPORTED", "calendar-month presales do not include legacy bonus-day promotions")
-	}
 	return nil
 }
 
@@ -77,6 +74,7 @@ func (s *PaymentConfigService) ListPresalePlans(ctx context.Context) ([]*dbent.S
 }
 
 type PresaleQuote struct {
+	BalanceBonus *PresaleBalanceBenefit `json:"balance_bonus"`
 	PresalePeriod
 	PlanID                int64      `json:"plan_id"`
 	Renewal               bool       `json:"renewal"`
@@ -89,7 +87,24 @@ func (s *PaymentService) GetPresaleQuote(ctx context.Context, userID, planID int
 	if err != nil {
 		return nil, err
 	}
-	return s.presaleQuoteForPlan(ctx, userID, plan, time.Now(), 0)
+	quote, err := s.presaleQuoteForPlan(ctx, userID, plan, time.Now(), 0)
+	if err != nil {
+		return nil, err
+	}
+	quote.BalanceBonus, err = resolvePresaleBalanceBonus(ctx, s.entClient, userID, plan.ID, 0, time.Now())
+	if err != nil {
+		return nil, err
+	}
+	if quote.BalanceBonus != nil && quote.BalanceBonus.Currency == "CNY" {
+		cfg, err := s.configService.GetPaymentConfig(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if err := convertPresaleBalanceBenefit(quote.BalanceBonus, cfg.BalanceRechargeMultiplier); err != nil {
+			return nil, err
+		}
+	}
+	return quote, nil
 }
 
 // Called again under the payment user lock when an order is created. Pending

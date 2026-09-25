@@ -70,6 +70,11 @@ func BonusDays(v int) predicate.PromotionActivityPlan {
 	return predicate.PromotionActivityPlan(sql.FieldEQ(FieldBonusDays, v))
 }
 
+// BonusBalance applies equality check predicate on the "bonus_balance" field. It's identical to BonusBalanceEQ.
+func BonusBalance(v float64) predicate.PromotionActivityPlan {
+	return predicate.PromotionActivityPlan(sql.FieldEQ(FieldBonusBalance, v))
+}
+
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.PromotionActivityPlan {
 	return predicate.PromotionActivityPlan(sql.FieldEQ(FieldCreatedAt, v))
@@ -178,6 +183,46 @@ func BonusDaysLT(v int) predicate.PromotionActivityPlan {
 // BonusDaysLTE applies the LTE predicate on the "bonus_days" field.
 func BonusDaysLTE(v int) predicate.PromotionActivityPlan {
 	return predicate.PromotionActivityPlan(sql.FieldLTE(FieldBonusDays, v))
+}
+
+// BonusBalanceEQ applies the EQ predicate on the "bonus_balance" field.
+func BonusBalanceEQ(v float64) predicate.PromotionActivityPlan {
+	return predicate.PromotionActivityPlan(sql.FieldEQ(FieldBonusBalance, v))
+}
+
+// BonusBalanceNEQ applies the NEQ predicate on the "bonus_balance" field.
+func BonusBalanceNEQ(v float64) predicate.PromotionActivityPlan {
+	return predicate.PromotionActivityPlan(sql.FieldNEQ(FieldBonusBalance, v))
+}
+
+// BonusBalanceIn applies the In predicate on the "bonus_balance" field.
+func BonusBalanceIn(vs ...float64) predicate.PromotionActivityPlan {
+	return predicate.PromotionActivityPlan(sql.FieldIn(FieldBonusBalance, vs...))
+}
+
+// BonusBalanceNotIn applies the NotIn predicate on the "bonus_balance" field.
+func BonusBalanceNotIn(vs ...float64) predicate.PromotionActivityPlan {
+	return predicate.PromotionActivityPlan(sql.FieldNotIn(FieldBonusBalance, vs...))
+}
+
+// BonusBalanceGT applies the GT predicate on the "bonus_balance" field.
+func BonusBalanceGT(v float64) predicate.PromotionActivityPlan {
+	return predicate.PromotionActivityPlan(sql.FieldGT(FieldBonusBalance, v))
+}
+
+// BonusBalanceGTE applies the GTE predicate on the "bonus_balance" field.
+func BonusBalanceGTE(v float64) predicate.PromotionActivityPlan {
+	return predicate.PromotionActivityPlan(sql.FieldGTE(FieldBonusBalance, v))
+}
+
+// BonusBalanceLT applies the LT predicate on the "bonus_balance" field.
+func BonusBalanceLT(v float64) predicate.PromotionActivityPlan {
+	return predicate.PromotionActivityPlan(sql.FieldLT(FieldBonusBalance, v))
+}
+
+// BonusBalanceLTE applies the LTE predicate on the "bonus_balance" field.
+func BonusBalanceLTE(v float64) predicate.PromotionActivityPlan {
+	return predicate.PromotionActivityPlan(sql.FieldLTE(FieldBonusBalance, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.

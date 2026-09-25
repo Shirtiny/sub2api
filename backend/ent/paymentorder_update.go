@@ -488,6 +488,110 @@ func (_u *PaymentOrderUpdate) AddPresaleResetCards(v int) *PaymentOrderUpdate {
 	return _u
 }
 
+// SetPresaleBalanceBonusActivityID sets the "presale_balance_bonus_activity_id" field.
+func (_u *PaymentOrderUpdate) SetPresaleBalanceBonusActivityID(v int64) *PaymentOrderUpdate {
+	_u.mutation.ResetPresaleBalanceBonusActivityID()
+	_u.mutation.SetPresaleBalanceBonusActivityID(v)
+	return _u
+}
+
+// SetNillablePresaleBalanceBonusActivityID sets the "presale_balance_bonus_activity_id" field if the given value is not nil.
+func (_u *PaymentOrderUpdate) SetNillablePresaleBalanceBonusActivityID(v *int64) *PaymentOrderUpdate {
+	if v != nil {
+		_u.SetPresaleBalanceBonusActivityID(*v)
+	}
+	return _u
+}
+
+// AddPresaleBalanceBonusActivityID adds value to the "presale_balance_bonus_activity_id" field.
+func (_u *PaymentOrderUpdate) AddPresaleBalanceBonusActivityID(v int64) *PaymentOrderUpdate {
+	_u.mutation.AddPresaleBalanceBonusActivityID(v)
+	return _u
+}
+
+// ClearPresaleBalanceBonusActivityID clears the value of the "presale_balance_bonus_activity_id" field.
+func (_u *PaymentOrderUpdate) ClearPresaleBalanceBonusActivityID() *PaymentOrderUpdate {
+	_u.mutation.ClearPresaleBalanceBonusActivityID()
+	return _u
+}
+
+// SetPresaleBalanceBonusAmount sets the "presale_balance_bonus_amount" field.
+func (_u *PaymentOrderUpdate) SetPresaleBalanceBonusAmount(v float64) *PaymentOrderUpdate {
+	_u.mutation.ResetPresaleBalanceBonusAmount()
+	_u.mutation.SetPresaleBalanceBonusAmount(v)
+	return _u
+}
+
+// SetNillablePresaleBalanceBonusAmount sets the "presale_balance_bonus_amount" field if the given value is not nil.
+func (_u *PaymentOrderUpdate) SetNillablePresaleBalanceBonusAmount(v *float64) *PaymentOrderUpdate {
+	if v != nil {
+		_u.SetPresaleBalanceBonusAmount(*v)
+	}
+	return _u
+}
+
+// AddPresaleBalanceBonusAmount adds value to the "presale_balance_bonus_amount" field.
+func (_u *PaymentOrderUpdate) AddPresaleBalanceBonusAmount(v float64) *PaymentOrderUpdate {
+	_u.mutation.AddPresaleBalanceBonusAmount(v)
+	return _u
+}
+
+// SetPresaleBalanceBonusCurrency sets the "presale_balance_bonus_currency" field.
+func (_u *PaymentOrderUpdate) SetPresaleBalanceBonusCurrency(v string) *PaymentOrderUpdate {
+	_u.mutation.SetPresaleBalanceBonusCurrency(v)
+	return _u
+}
+
+// SetNillablePresaleBalanceBonusCurrency sets the "presale_balance_bonus_currency" field if the given value is not nil.
+func (_u *PaymentOrderUpdate) SetNillablePresaleBalanceBonusCurrency(v *string) *PaymentOrderUpdate {
+	if v != nil {
+		_u.SetPresaleBalanceBonusCurrency(*v)
+	}
+	return _u
+}
+
+// SetPresaleBalanceBonusFaceAmount sets the "presale_balance_bonus_face_amount" field.
+func (_u *PaymentOrderUpdate) SetPresaleBalanceBonusFaceAmount(v float64) *PaymentOrderUpdate {
+	_u.mutation.ResetPresaleBalanceBonusFaceAmount()
+	_u.mutation.SetPresaleBalanceBonusFaceAmount(v)
+	return _u
+}
+
+// SetNillablePresaleBalanceBonusFaceAmount sets the "presale_balance_bonus_face_amount" field if the given value is not nil.
+func (_u *PaymentOrderUpdate) SetNillablePresaleBalanceBonusFaceAmount(v *float64) *PaymentOrderUpdate {
+	if v != nil {
+		_u.SetPresaleBalanceBonusFaceAmount(*v)
+	}
+	return _u
+}
+
+// AddPresaleBalanceBonusFaceAmount adds value to the "presale_balance_bonus_face_amount" field.
+func (_u *PaymentOrderUpdate) AddPresaleBalanceBonusFaceAmount(v float64) *PaymentOrderUpdate {
+	_u.mutation.AddPresaleBalanceBonusFaceAmount(v)
+	return _u
+}
+
+// SetPresaleBalanceBonusRate sets the "presale_balance_bonus_rate" field.
+func (_u *PaymentOrderUpdate) SetPresaleBalanceBonusRate(v float64) *PaymentOrderUpdate {
+	_u.mutation.ResetPresaleBalanceBonusRate()
+	_u.mutation.SetPresaleBalanceBonusRate(v)
+	return _u
+}
+
+// SetNillablePresaleBalanceBonusRate sets the "presale_balance_bonus_rate" field if the given value is not nil.
+func (_u *PaymentOrderUpdate) SetNillablePresaleBalanceBonusRate(v *float64) *PaymentOrderUpdate {
+	if v != nil {
+		_u.SetPresaleBalanceBonusRate(*v)
+	}
+	return _u
+}
+
+// AddPresaleBalanceBonusRate adds value to the "presale_balance_bonus_rate" field.
+func (_u *PaymentOrderUpdate) AddPresaleBalanceBonusRate(v float64) *PaymentOrderUpdate {
+	_u.mutation.AddPresaleBalanceBonusRate(v)
+	return _u
+}
+
 // SetSubscriptionGroupID sets the "subscription_group_id" field.
 func (_u *PaymentOrderUpdate) SetSubscriptionGroupID(v int64) *PaymentOrderUpdate {
 	_u.mutation.ResetSubscriptionGroupID()
@@ -1213,6 +1317,26 @@ func (_u *PaymentOrderUpdate) check() error {
 			return &ValidationError{Name: "presale_reset_cards", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.presale_reset_cards": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.PresaleBalanceBonusAmount(); ok {
+		if err := paymentorder.PresaleBalanceBonusAmountValidator(v); err != nil {
+			return &ValidationError{Name: "presale_balance_bonus_amount", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.presale_balance_bonus_amount": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.PresaleBalanceBonusCurrency(); ok {
+		if err := paymentorder.PresaleBalanceBonusCurrencyValidator(v); err != nil {
+			return &ValidationError{Name: "presale_balance_bonus_currency", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.presale_balance_bonus_currency": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.PresaleBalanceBonusFaceAmount(); ok {
+		if err := paymentorder.PresaleBalanceBonusFaceAmountValidator(v); err != nil {
+			return &ValidationError{Name: "presale_balance_bonus_face_amount", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.presale_balance_bonus_face_amount": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.PresaleBalanceBonusRate(); ok {
+		if err := paymentorder.PresaleBalanceBonusRateValidator(v); err != nil {
+			return &ValidationError{Name: "presale_balance_bonus_rate", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.presale_balance_bonus_rate": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.SubscriptionBonusDays(); ok {
 		if err := paymentorder.SubscriptionBonusDaysValidator(v); err != nil {
 			return &ValidationError{Name: "subscription_bonus_days", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.subscription_bonus_days": %w`, err)}
@@ -1398,6 +1522,36 @@ func (_u *PaymentOrderUpdate) sqlSave(ctx context.Context) (_node int, err error
 	}
 	if value, ok := _u.mutation.AddedPresaleResetCards(); ok {
 		_spec.AddField(paymentorder.FieldPresaleResetCards, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.PresaleBalanceBonusActivityID(); ok {
+		_spec.SetField(paymentorder.FieldPresaleBalanceBonusActivityID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedPresaleBalanceBonusActivityID(); ok {
+		_spec.AddField(paymentorder.FieldPresaleBalanceBonusActivityID, field.TypeInt64, value)
+	}
+	if _u.mutation.PresaleBalanceBonusActivityIDCleared() {
+		_spec.ClearField(paymentorder.FieldPresaleBalanceBonusActivityID, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.PresaleBalanceBonusAmount(); ok {
+		_spec.SetField(paymentorder.FieldPresaleBalanceBonusAmount, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedPresaleBalanceBonusAmount(); ok {
+		_spec.AddField(paymentorder.FieldPresaleBalanceBonusAmount, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.PresaleBalanceBonusCurrency(); ok {
+		_spec.SetField(paymentorder.FieldPresaleBalanceBonusCurrency, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.PresaleBalanceBonusFaceAmount(); ok {
+		_spec.SetField(paymentorder.FieldPresaleBalanceBonusFaceAmount, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedPresaleBalanceBonusFaceAmount(); ok {
+		_spec.AddField(paymentorder.FieldPresaleBalanceBonusFaceAmount, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.PresaleBalanceBonusRate(); ok {
+		_spec.SetField(paymentorder.FieldPresaleBalanceBonusRate, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedPresaleBalanceBonusRate(); ok {
+		_spec.AddField(paymentorder.FieldPresaleBalanceBonusRate, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.SubscriptionGroupID(); ok {
 		_spec.SetField(paymentorder.FieldSubscriptionGroupID, field.TypeInt64, value)
@@ -2093,6 +2247,110 @@ func (_u *PaymentOrderUpdateOne) SetNillablePresaleResetCards(v *int) *PaymentOr
 // AddPresaleResetCards adds value to the "presale_reset_cards" field.
 func (_u *PaymentOrderUpdateOne) AddPresaleResetCards(v int) *PaymentOrderUpdateOne {
 	_u.mutation.AddPresaleResetCards(v)
+	return _u
+}
+
+// SetPresaleBalanceBonusActivityID sets the "presale_balance_bonus_activity_id" field.
+func (_u *PaymentOrderUpdateOne) SetPresaleBalanceBonusActivityID(v int64) *PaymentOrderUpdateOne {
+	_u.mutation.ResetPresaleBalanceBonusActivityID()
+	_u.mutation.SetPresaleBalanceBonusActivityID(v)
+	return _u
+}
+
+// SetNillablePresaleBalanceBonusActivityID sets the "presale_balance_bonus_activity_id" field if the given value is not nil.
+func (_u *PaymentOrderUpdateOne) SetNillablePresaleBalanceBonusActivityID(v *int64) *PaymentOrderUpdateOne {
+	if v != nil {
+		_u.SetPresaleBalanceBonusActivityID(*v)
+	}
+	return _u
+}
+
+// AddPresaleBalanceBonusActivityID adds value to the "presale_balance_bonus_activity_id" field.
+func (_u *PaymentOrderUpdateOne) AddPresaleBalanceBonusActivityID(v int64) *PaymentOrderUpdateOne {
+	_u.mutation.AddPresaleBalanceBonusActivityID(v)
+	return _u
+}
+
+// ClearPresaleBalanceBonusActivityID clears the value of the "presale_balance_bonus_activity_id" field.
+func (_u *PaymentOrderUpdateOne) ClearPresaleBalanceBonusActivityID() *PaymentOrderUpdateOne {
+	_u.mutation.ClearPresaleBalanceBonusActivityID()
+	return _u
+}
+
+// SetPresaleBalanceBonusAmount sets the "presale_balance_bonus_amount" field.
+func (_u *PaymentOrderUpdateOne) SetPresaleBalanceBonusAmount(v float64) *PaymentOrderUpdateOne {
+	_u.mutation.ResetPresaleBalanceBonusAmount()
+	_u.mutation.SetPresaleBalanceBonusAmount(v)
+	return _u
+}
+
+// SetNillablePresaleBalanceBonusAmount sets the "presale_balance_bonus_amount" field if the given value is not nil.
+func (_u *PaymentOrderUpdateOne) SetNillablePresaleBalanceBonusAmount(v *float64) *PaymentOrderUpdateOne {
+	if v != nil {
+		_u.SetPresaleBalanceBonusAmount(*v)
+	}
+	return _u
+}
+
+// AddPresaleBalanceBonusAmount adds value to the "presale_balance_bonus_amount" field.
+func (_u *PaymentOrderUpdateOne) AddPresaleBalanceBonusAmount(v float64) *PaymentOrderUpdateOne {
+	_u.mutation.AddPresaleBalanceBonusAmount(v)
+	return _u
+}
+
+// SetPresaleBalanceBonusCurrency sets the "presale_balance_bonus_currency" field.
+func (_u *PaymentOrderUpdateOne) SetPresaleBalanceBonusCurrency(v string) *PaymentOrderUpdateOne {
+	_u.mutation.SetPresaleBalanceBonusCurrency(v)
+	return _u
+}
+
+// SetNillablePresaleBalanceBonusCurrency sets the "presale_balance_bonus_currency" field if the given value is not nil.
+func (_u *PaymentOrderUpdateOne) SetNillablePresaleBalanceBonusCurrency(v *string) *PaymentOrderUpdateOne {
+	if v != nil {
+		_u.SetPresaleBalanceBonusCurrency(*v)
+	}
+	return _u
+}
+
+// SetPresaleBalanceBonusFaceAmount sets the "presale_balance_bonus_face_amount" field.
+func (_u *PaymentOrderUpdateOne) SetPresaleBalanceBonusFaceAmount(v float64) *PaymentOrderUpdateOne {
+	_u.mutation.ResetPresaleBalanceBonusFaceAmount()
+	_u.mutation.SetPresaleBalanceBonusFaceAmount(v)
+	return _u
+}
+
+// SetNillablePresaleBalanceBonusFaceAmount sets the "presale_balance_bonus_face_amount" field if the given value is not nil.
+func (_u *PaymentOrderUpdateOne) SetNillablePresaleBalanceBonusFaceAmount(v *float64) *PaymentOrderUpdateOne {
+	if v != nil {
+		_u.SetPresaleBalanceBonusFaceAmount(*v)
+	}
+	return _u
+}
+
+// AddPresaleBalanceBonusFaceAmount adds value to the "presale_balance_bonus_face_amount" field.
+func (_u *PaymentOrderUpdateOne) AddPresaleBalanceBonusFaceAmount(v float64) *PaymentOrderUpdateOne {
+	_u.mutation.AddPresaleBalanceBonusFaceAmount(v)
+	return _u
+}
+
+// SetPresaleBalanceBonusRate sets the "presale_balance_bonus_rate" field.
+func (_u *PaymentOrderUpdateOne) SetPresaleBalanceBonusRate(v float64) *PaymentOrderUpdateOne {
+	_u.mutation.ResetPresaleBalanceBonusRate()
+	_u.mutation.SetPresaleBalanceBonusRate(v)
+	return _u
+}
+
+// SetNillablePresaleBalanceBonusRate sets the "presale_balance_bonus_rate" field if the given value is not nil.
+func (_u *PaymentOrderUpdateOne) SetNillablePresaleBalanceBonusRate(v *float64) *PaymentOrderUpdateOne {
+	if v != nil {
+		_u.SetPresaleBalanceBonusRate(*v)
+	}
+	return _u
+}
+
+// AddPresaleBalanceBonusRate adds value to the "presale_balance_bonus_rate" field.
+func (_u *PaymentOrderUpdateOne) AddPresaleBalanceBonusRate(v float64) *PaymentOrderUpdateOne {
+	_u.mutation.AddPresaleBalanceBonusRate(v)
 	return _u
 }
 
@@ -2834,6 +3092,26 @@ func (_u *PaymentOrderUpdateOne) check() error {
 			return &ValidationError{Name: "presale_reset_cards", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.presale_reset_cards": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.PresaleBalanceBonusAmount(); ok {
+		if err := paymentorder.PresaleBalanceBonusAmountValidator(v); err != nil {
+			return &ValidationError{Name: "presale_balance_bonus_amount", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.presale_balance_bonus_amount": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.PresaleBalanceBonusCurrency(); ok {
+		if err := paymentorder.PresaleBalanceBonusCurrencyValidator(v); err != nil {
+			return &ValidationError{Name: "presale_balance_bonus_currency", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.presale_balance_bonus_currency": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.PresaleBalanceBonusFaceAmount(); ok {
+		if err := paymentorder.PresaleBalanceBonusFaceAmountValidator(v); err != nil {
+			return &ValidationError{Name: "presale_balance_bonus_face_amount", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.presale_balance_bonus_face_amount": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.PresaleBalanceBonusRate(); ok {
+		if err := paymentorder.PresaleBalanceBonusRateValidator(v); err != nil {
+			return &ValidationError{Name: "presale_balance_bonus_rate", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.presale_balance_bonus_rate": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.SubscriptionBonusDays(); ok {
 		if err := paymentorder.SubscriptionBonusDaysValidator(v); err != nil {
 			return &ValidationError{Name: "subscription_bonus_days", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.subscription_bonus_days": %w`, err)}
@@ -3036,6 +3314,36 @@ func (_u *PaymentOrderUpdateOne) sqlSave(ctx context.Context) (_node *PaymentOrd
 	}
 	if value, ok := _u.mutation.AddedPresaleResetCards(); ok {
 		_spec.AddField(paymentorder.FieldPresaleResetCards, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.PresaleBalanceBonusActivityID(); ok {
+		_spec.SetField(paymentorder.FieldPresaleBalanceBonusActivityID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedPresaleBalanceBonusActivityID(); ok {
+		_spec.AddField(paymentorder.FieldPresaleBalanceBonusActivityID, field.TypeInt64, value)
+	}
+	if _u.mutation.PresaleBalanceBonusActivityIDCleared() {
+		_spec.ClearField(paymentorder.FieldPresaleBalanceBonusActivityID, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.PresaleBalanceBonusAmount(); ok {
+		_spec.SetField(paymentorder.FieldPresaleBalanceBonusAmount, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedPresaleBalanceBonusAmount(); ok {
+		_spec.AddField(paymentorder.FieldPresaleBalanceBonusAmount, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.PresaleBalanceBonusCurrency(); ok {
+		_spec.SetField(paymentorder.FieldPresaleBalanceBonusCurrency, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.PresaleBalanceBonusFaceAmount(); ok {
+		_spec.SetField(paymentorder.FieldPresaleBalanceBonusFaceAmount, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedPresaleBalanceBonusFaceAmount(); ok {
+		_spec.AddField(paymentorder.FieldPresaleBalanceBonusFaceAmount, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.PresaleBalanceBonusRate(); ok {
+		_spec.SetField(paymentorder.FieldPresaleBalanceBonusRate, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedPresaleBalanceBonusRate(); ok {
+		_spec.AddField(paymentorder.FieldPresaleBalanceBonusRate, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.SubscriptionGroupID(); ok {
 		_spec.SetField(paymentorder.FieldSubscriptionGroupID, field.TypeInt64, value)

@@ -29,6 +29,37 @@ function render(locale = 'zh') {
 }
 beforeEach(() => { vi.clearAllMocks(); localStorage.removeItem(PAYMENT_RECOVERY_STORAGE_KEY); mocks.activeSubscriptions.length = 0; mocks.fetchSubscriptions.mockResolvedValue([]); mocks.auth.isAuthenticated = false; mocks.auth.user = null; mocks.route.query = {}; mocks.route.hash = ''; mocks.catalog.mockResolvedValue({ data: fixture() }); mocks.quote.mockReset().mockResolvedValue({ data: { ...fixture().period, plan_id: 12, renewal: false } }) })
 describe('presale landing', () => {
+  it('shows the activity and a fixed per-order gift when the multiplier changes', async () => {
+    const data = fixture()
+    const gift = { activity_id: 91, name: '秋日赠礼', amount: 10, starts_at: '2026-09-22T00:00:00+08:00', ends_at: '2026-09-29T00:00:00+08:00', max_uses_per_user: 1 }
+    mocks.catalog.mockResolvedValue({ data: { ...data, plans: [{ ...data.plans[0], custom_multiplier_enabled: true, custom_multiplier_min: 1, custom_multiplier_max: 5, presale_balance_bonus: gift }] } })
+    const w = render(); await flushPromises()
+    expect(w.get('.gift-activity').text()).toContain('秋日赠礼')
+    expect(w.get('[data-test="plan-balance-gift"]').text()).toContain('+$10.00')
+    w.getComponent(Select).vm.$emit('update:modelValue', 3); await flushPromises()
+    expect(w.get('.plan-price').text()).toContain('900')
+    expect(w.get('[data-test="plan-balance-gift"]').text()).toContain('+$10.00')
+    expect(w.get('.gift-terms').text()).toContain('可与咖啡券叠加')
+  })
+  it('uses personal gift eligibility rather than the public marketing amount', async () => {
+    mocks.auth.isAuthenticated = true
+    const data = fixture()
+    const gift = { activity_id: 91, name: '秋日赠礼', amount: 10, starts_at: '2026-09-22T00:00:00+08:00', ends_at: '2026-09-29T00:00:00+08:00', max_uses_per_user: 1 }
+    mocks.catalog.mockResolvedValue({ data: { ...data, plans: [{ ...data.plans[0], presale_balance_bonus: gift }] } })
+    mocks.quote.mockResolvedValue({ data: { ...data.period, balance_bonus: null } })
+    const w = render(); await flushPromises()
+    expect(w.find('[data-test="plan-balance-gift"]').exists()).toBe(false)
+    expect(w.get('.plan-gift-unavailable').text()).toContain('本次不再享受')
+  })
+  it('does not advertise an expired balance activity', async () => {
+    const data = fixture()
+    const gift = { activity_id: 91, name: 'Ended', amount: 10, starts_at: '2026-09-21T00:00:00Z', ends_at: data.server_time, max_uses_per_user: 1 }
+    mocks.catalog.mockResolvedValue({ data: { ...data, plans: [{ ...data.plans[0], presale_balance_bonus: gift }] } })
+    const w = render(); await flushPromises()
+    expect(w.find('.gift-activity').exists()).toBe(false)
+    expect(w.find('[data-test="plan-balance-gift"]').exists()).toBe(false)
+  })
+
   it('does not reload or remount checkout when the same account profile is refreshed', async () => {
     mocks.auth.isAuthenticated = true; mocks.auth.user = { id: 1 }
     mocks.route.query = { plan: '12' }
@@ -555,5 +586,68 @@ describe('presale landing', () => {
     const w = render(); await flushPromises(); expect(w.find('[role="alert"]').exists()).toBe(true); expect(w.find('.plan-buy').exists()).toBe(false)
     expect(w.get('.ticket-month-abbr').text()).toBe('—')
     mocks.catalog.mockResolvedValue({ data: fixture() }); await w.get('[role="alert"] button').trigger('click'); await flushPromises(); expect(w.find('.plan-buy').exists()).toBe(true); w.unmount()
+  })
+})
+
+describe('presale activity collection', () => {
+  const activity = (id = 1) => ({ id, name: `Gift ${id}`, type: 'presale_balance', bonus_currency: 'CNY', starts_at: '2026-09-22T00:00:00+08:00', ends_at: '2026-09-29T00:00:00+08:00', max_uses_per_user: 1, plan_bonuses: [{ plan_id: 12, bonus_balance: 20 }] })
+  it('shows a discoverable CNY activity with exact per-plan gifts before the timeline', async () => {
+    mocks.catalog.mockResolvedValue({ data: { ...fixture(), activities: [activity()] } })
+    const w = render(); await flushPromises()
+    expect(w.get('.hero-activity-link').attributes('href')).toBe('#presale-activities')
+    expect(w.get('#activities-title').text()).toBe('活动进行中')
+    expect(w.get('.gift-activity h3').text()).toBe('Gift 1')
+    expect(w.get('.reward-row').text()).toContain('￥20')
+    expect(w.get('.reward-value').text()).toBe('+￥20')
+    expect(w.get('.reward-value').find('small').exists()).toBe(false)
+    expect(w.get('.reward-row').attributes('href')).toBe('#presale-plan-12')
+    expect(w.get('.activity-status').text()).toBe('进行中')
+    expect(w.get('.activity-dates').text()).toContain('09/29 00:00')
+    expect(w.get('.activities-section').element.compareDocumentPosition(w.get('.timeline').element) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(w.get('.activity-rules').text()).toContain('充值比例')
+  })
+  it('separates upcoming offers without claiming they are available now', async () => {
+    mocks.catalog.mockResolvedValue({ data: { ...fixture(), activities: [{ ...activity(), starts_at: '2026-09-25T00:00:00+08:00' }] } })
+    const w = render(); await flushPromises()
+    expect(w.get('.activity-status').text()).toBe('即将开始')
+    expect(w.get('#activities-title').text()).toBe('活动预告')
+    expect(w.get('.reward-note').text()).toContain('活动开始后')
+    expect(w.find('[data-test="plan-balance-gift"]').exists()).toBe(false)
+  })
+  it('lists multiple activities and keeps ended or detached activities out', async () => {
+    mocks.catalog.mockResolvedValue({ data: { ...fixture(), activities: [activity(), activity(2), { ...activity(3), ends_at: fixture().server_time }, { ...activity(4), plan_bonuses: [{ plan_id: 999, bonus_balance: 10 }] }] } })
+    const w = render(); await flushPromises()
+    expect(w.findAll('.gift-activity')).toHaveLength(2)
+    expect(w.get('.activities-grid').classes()).toContain('has-many')
+  })
+  it('discovers a newly configured activity on return without opening checkout', async () => {
+    const w = render(); await flushPromises()
+    expect(w.find('.gift-activity').exists()).toBe(false)
+    mocks.catalog.mockResolvedValue({ data: { ...fixture(), activities: [activity()] } })
+    window.dispatchEvent(new Event('focus')); await flushPromises()
+    expect(w.find('.gift-activity').exists()).toBe(true)
+    expect(w.find('.checkout-fixture').exists()).toBe(false)
+    mocks.catalog.mockResolvedValue({ data: { ...fixture(), activities: [{ ...activity(), name: '后台配置的新名称' }] } })
+    window.dispatchEvent(new Event('focus')); await flushPromises()
+    expect(w.get('.gift-activity h3').text()).toBe('后台配置的新名称')
+  })
+  it('ignores a delayed catalog response once checkout opens', async () => {
+    mocks.auth.isAuthenticated = true
+    const w = render(); await flushPromises()
+    let finish!: (value: unknown) => void
+    mocks.catalog.mockImplementationOnce(() => new Promise(resolve => { finish = resolve }))
+    window.dispatchEvent(new Event('focus')); await flushPromises()
+    await w.get('.plan-buy').trigger('click'); await flushPromises()
+    const checkout = w.get('.checkout-fixture').element
+    finish({ data: { ...fixture(), enabled: false, plans: [] } }); await flushPromises()
+    expect(w.get('.checkout-fixture').element).toBe(checkout)
+    expect(w.findAll('.presale-plan')).toHaveLength(1)
+  })
+  it('supports the day-reward card shape without inventing a presale balance gift', async () => {
+    mocks.catalog.mockResolvedValue({ data: { ...fixture(), activities: [{ ...activity(), type: 'subscription_bonus_days', plan_bonuses: [{ plan_id: 12, bonus_days: 3 }] }] } })
+    const w = render('en'); await flushPromises()
+    expect(w.get('.reward-value').text()).toContain('3days')
+    expect(w.get('.activity-type').text()).toContain('TIME')
+    expect(w.find('[data-test="plan-balance-gift"]').exists()).toBe(false)
   })
 })

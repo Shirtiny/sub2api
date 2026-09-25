@@ -64,6 +64,16 @@ const (
 	FieldPresalePlanName = "presale_plan_name"
 	// FieldPresaleResetCards holds the string denoting the presale_reset_cards field in the database.
 	FieldPresaleResetCards = "presale_reset_cards"
+	// FieldPresaleBalanceBonusActivityID holds the string denoting the presale_balance_bonus_activity_id field in the database.
+	FieldPresaleBalanceBonusActivityID = "presale_balance_bonus_activity_id"
+	// FieldPresaleBalanceBonusAmount holds the string denoting the presale_balance_bonus_amount field in the database.
+	FieldPresaleBalanceBonusAmount = "presale_balance_bonus_amount"
+	// FieldPresaleBalanceBonusCurrency holds the string denoting the presale_balance_bonus_currency field in the database.
+	FieldPresaleBalanceBonusCurrency = "presale_balance_bonus_currency"
+	// FieldPresaleBalanceBonusFaceAmount holds the string denoting the presale_balance_bonus_face_amount field in the database.
+	FieldPresaleBalanceBonusFaceAmount = "presale_balance_bonus_face_amount"
+	// FieldPresaleBalanceBonusRate holds the string denoting the presale_balance_bonus_rate field in the database.
+	FieldPresaleBalanceBonusRate = "presale_balance_bonus_rate"
 	// FieldSubscriptionGroupID holds the string denoting the subscription_group_id field in the database.
 	FieldSubscriptionGroupID = "subscription_group_id"
 	// FieldSubscriptionDays holds the string denoting the subscription_days field in the database.
@@ -169,6 +179,11 @@ var Columns = []string{
 	FieldPresaleRenewal,
 	FieldPresalePlanName,
 	FieldPresaleResetCards,
+	FieldPresaleBalanceBonusActivityID,
+	FieldPresaleBalanceBonusAmount,
+	FieldPresaleBalanceBonusCurrency,
+	FieldPresaleBalanceBonusFaceAmount,
+	FieldPresaleBalanceBonusRate,
 	FieldSubscriptionGroupID,
 	FieldSubscriptionDays,
 	FieldSubscriptionBonusActivityID,
@@ -248,6 +263,22 @@ var (
 	DefaultPresaleResetCards int
 	// PresaleResetCardsValidator is a validator for the "presale_reset_cards" field. It is called by the builders before save.
 	PresaleResetCardsValidator func(int) error
+	// DefaultPresaleBalanceBonusAmount holds the default value on creation for the "presale_balance_bonus_amount" field.
+	DefaultPresaleBalanceBonusAmount float64
+	// PresaleBalanceBonusAmountValidator is a validator for the "presale_balance_bonus_amount" field. It is called by the builders before save.
+	PresaleBalanceBonusAmountValidator func(float64) error
+	// DefaultPresaleBalanceBonusCurrency holds the default value on creation for the "presale_balance_bonus_currency" field.
+	DefaultPresaleBalanceBonusCurrency string
+	// PresaleBalanceBonusCurrencyValidator is a validator for the "presale_balance_bonus_currency" field. It is called by the builders before save.
+	PresaleBalanceBonusCurrencyValidator func(string) error
+	// DefaultPresaleBalanceBonusFaceAmount holds the default value on creation for the "presale_balance_bonus_face_amount" field.
+	DefaultPresaleBalanceBonusFaceAmount float64
+	// PresaleBalanceBonusFaceAmountValidator is a validator for the "presale_balance_bonus_face_amount" field. It is called by the builders before save.
+	PresaleBalanceBonusFaceAmountValidator func(float64) error
+	// DefaultPresaleBalanceBonusRate holds the default value on creation for the "presale_balance_bonus_rate" field.
+	DefaultPresaleBalanceBonusRate float64
+	// PresaleBalanceBonusRateValidator is a validator for the "presale_balance_bonus_rate" field. It is called by the builders before save.
+	PresaleBalanceBonusRateValidator func(float64) error
 	// DefaultSubscriptionBonusDays holds the default value on creation for the "subscription_bonus_days" field.
 	DefaultSubscriptionBonusDays int
 	// SubscriptionBonusDaysValidator is a validator for the "subscription_bonus_days" field. It is called by the builders before save.
@@ -417,6 +448,31 @@ func ByPresalePlanName(opts ...sql.OrderTermOption) OrderOption {
 // ByPresaleResetCards orders the results by the presale_reset_cards field.
 func ByPresaleResetCards(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPresaleResetCards, opts...).ToFunc()
+}
+
+// ByPresaleBalanceBonusActivityID orders the results by the presale_balance_bonus_activity_id field.
+func ByPresaleBalanceBonusActivityID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPresaleBalanceBonusActivityID, opts...).ToFunc()
+}
+
+// ByPresaleBalanceBonusAmount orders the results by the presale_balance_bonus_amount field.
+func ByPresaleBalanceBonusAmount(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPresaleBalanceBonusAmount, opts...).ToFunc()
+}
+
+// ByPresaleBalanceBonusCurrency orders the results by the presale_balance_bonus_currency field.
+func ByPresaleBalanceBonusCurrency(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPresaleBalanceBonusCurrency, opts...).ToFunc()
+}
+
+// ByPresaleBalanceBonusFaceAmount orders the results by the presale_balance_bonus_face_amount field.
+func ByPresaleBalanceBonusFaceAmount(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPresaleBalanceBonusFaceAmount, opts...).ToFunc()
+}
+
+// ByPresaleBalanceBonusRate orders the results by the presale_balance_bonus_rate field.
+func ByPresaleBalanceBonusRate(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPresaleBalanceBonusRate, opts...).ToFunc()
 }
 
 // BySubscriptionGroupID orders the results by the subscription_group_id field.

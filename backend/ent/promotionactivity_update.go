@@ -58,6 +58,20 @@ func (_u *PromotionActivityUpdate) SetNillableActivityType(v *string) *Promotion
 	return _u
 }
 
+// SetBonusCurrency sets the "bonus_currency" field.
+func (_u *PromotionActivityUpdate) SetBonusCurrency(v string) *PromotionActivityUpdate {
+	_u.mutation.SetBonusCurrency(v)
+	return _u
+}
+
+// SetNillableBonusCurrency sets the "bonus_currency" field if the given value is not nil.
+func (_u *PromotionActivityUpdate) SetNillableBonusCurrency(v *string) *PromotionActivityUpdate {
+	if v != nil {
+		_u.SetBonusCurrency(*v)
+	}
+	return _u
+}
+
 // SetEnabled sets the "enabled" field.
 func (_u *PromotionActivityUpdate) SetEnabled(v bool) *PromotionActivityUpdate {
 	_u.mutation.SetEnabled(v)
@@ -252,6 +266,11 @@ func (_u *PromotionActivityUpdate) check() error {
 			return &ValidationError{Name: "activity_type", err: fmt.Errorf(`ent: validator failed for field "PromotionActivity.activity_type": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.BonusCurrency(); ok {
+		if err := promotionactivity.BonusCurrencyValidator(v); err != nil {
+			return &ValidationError{Name: "bonus_currency", err: fmt.Errorf(`ent: validator failed for field "PromotionActivity.bonus_currency": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.MaxUsesPerUser(); ok {
 		if err := promotionactivity.MaxUsesPerUserValidator(v); err != nil {
 			return &ValidationError{Name: "max_uses_per_user", err: fmt.Errorf(`ent: validator failed for field "PromotionActivity.max_uses_per_user": %w`, err)}
@@ -277,6 +296,9 @@ func (_u *PromotionActivityUpdate) sqlSave(ctx context.Context) (_node int, err 
 	}
 	if value, ok := _u.mutation.ActivityType(); ok {
 		_spec.SetField(promotionactivity.FieldActivityType, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.BonusCurrency(); ok {
+		_spec.SetField(promotionactivity.FieldBonusCurrency, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.Enabled(); ok {
 		_spec.SetField(promotionactivity.FieldEnabled, field.TypeBool, value)
@@ -430,6 +452,20 @@ func (_u *PromotionActivityUpdateOne) SetActivityType(v string) *PromotionActivi
 func (_u *PromotionActivityUpdateOne) SetNillableActivityType(v *string) *PromotionActivityUpdateOne {
 	if v != nil {
 		_u.SetActivityType(*v)
+	}
+	return _u
+}
+
+// SetBonusCurrency sets the "bonus_currency" field.
+func (_u *PromotionActivityUpdateOne) SetBonusCurrency(v string) *PromotionActivityUpdateOne {
+	_u.mutation.SetBonusCurrency(v)
+	return _u
+}
+
+// SetNillableBonusCurrency sets the "bonus_currency" field if the given value is not nil.
+func (_u *PromotionActivityUpdateOne) SetNillableBonusCurrency(v *string) *PromotionActivityUpdateOne {
+	if v != nil {
+		_u.SetBonusCurrency(*v)
 	}
 	return _u
 }
@@ -641,6 +677,11 @@ func (_u *PromotionActivityUpdateOne) check() error {
 			return &ValidationError{Name: "activity_type", err: fmt.Errorf(`ent: validator failed for field "PromotionActivity.activity_type": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.BonusCurrency(); ok {
+		if err := promotionactivity.BonusCurrencyValidator(v); err != nil {
+			return &ValidationError{Name: "bonus_currency", err: fmt.Errorf(`ent: validator failed for field "PromotionActivity.bonus_currency": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.MaxUsesPerUser(); ok {
 		if err := promotionactivity.MaxUsesPerUserValidator(v); err != nil {
 			return &ValidationError{Name: "max_uses_per_user", err: fmt.Errorf(`ent: validator failed for field "PromotionActivity.max_uses_per_user": %w`, err)}
@@ -683,6 +724,9 @@ func (_u *PromotionActivityUpdateOne) sqlSave(ctx context.Context) (_node *Promo
 	}
 	if value, ok := _u.mutation.ActivityType(); ok {
 		_spec.SetField(promotionactivity.FieldActivityType, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.BonusCurrency(); ok {
+		_spec.SetField(promotionactivity.FieldBonusCurrency, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.Enabled(); ok {
 		_spec.SetField(promotionactivity.FieldEnabled, field.TypeBool, value)

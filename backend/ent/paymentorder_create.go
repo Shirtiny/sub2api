@@ -309,6 +309,76 @@ func (_c *PaymentOrderCreate) SetNillablePresaleResetCards(v *int) *PaymentOrder
 	return _c
 }
 
+// SetPresaleBalanceBonusActivityID sets the "presale_balance_bonus_activity_id" field.
+func (_c *PaymentOrderCreate) SetPresaleBalanceBonusActivityID(v int64) *PaymentOrderCreate {
+	_c.mutation.SetPresaleBalanceBonusActivityID(v)
+	return _c
+}
+
+// SetNillablePresaleBalanceBonusActivityID sets the "presale_balance_bonus_activity_id" field if the given value is not nil.
+func (_c *PaymentOrderCreate) SetNillablePresaleBalanceBonusActivityID(v *int64) *PaymentOrderCreate {
+	if v != nil {
+		_c.SetPresaleBalanceBonusActivityID(*v)
+	}
+	return _c
+}
+
+// SetPresaleBalanceBonusAmount sets the "presale_balance_bonus_amount" field.
+func (_c *PaymentOrderCreate) SetPresaleBalanceBonusAmount(v float64) *PaymentOrderCreate {
+	_c.mutation.SetPresaleBalanceBonusAmount(v)
+	return _c
+}
+
+// SetNillablePresaleBalanceBonusAmount sets the "presale_balance_bonus_amount" field if the given value is not nil.
+func (_c *PaymentOrderCreate) SetNillablePresaleBalanceBonusAmount(v *float64) *PaymentOrderCreate {
+	if v != nil {
+		_c.SetPresaleBalanceBonusAmount(*v)
+	}
+	return _c
+}
+
+// SetPresaleBalanceBonusCurrency sets the "presale_balance_bonus_currency" field.
+func (_c *PaymentOrderCreate) SetPresaleBalanceBonusCurrency(v string) *PaymentOrderCreate {
+	_c.mutation.SetPresaleBalanceBonusCurrency(v)
+	return _c
+}
+
+// SetNillablePresaleBalanceBonusCurrency sets the "presale_balance_bonus_currency" field if the given value is not nil.
+func (_c *PaymentOrderCreate) SetNillablePresaleBalanceBonusCurrency(v *string) *PaymentOrderCreate {
+	if v != nil {
+		_c.SetPresaleBalanceBonusCurrency(*v)
+	}
+	return _c
+}
+
+// SetPresaleBalanceBonusFaceAmount sets the "presale_balance_bonus_face_amount" field.
+func (_c *PaymentOrderCreate) SetPresaleBalanceBonusFaceAmount(v float64) *PaymentOrderCreate {
+	_c.mutation.SetPresaleBalanceBonusFaceAmount(v)
+	return _c
+}
+
+// SetNillablePresaleBalanceBonusFaceAmount sets the "presale_balance_bonus_face_amount" field if the given value is not nil.
+func (_c *PaymentOrderCreate) SetNillablePresaleBalanceBonusFaceAmount(v *float64) *PaymentOrderCreate {
+	if v != nil {
+		_c.SetPresaleBalanceBonusFaceAmount(*v)
+	}
+	return _c
+}
+
+// SetPresaleBalanceBonusRate sets the "presale_balance_bonus_rate" field.
+func (_c *PaymentOrderCreate) SetPresaleBalanceBonusRate(v float64) *PaymentOrderCreate {
+	_c.mutation.SetPresaleBalanceBonusRate(v)
+	return _c
+}
+
+// SetNillablePresaleBalanceBonusRate sets the "presale_balance_bonus_rate" field if the given value is not nil.
+func (_c *PaymentOrderCreate) SetNillablePresaleBalanceBonusRate(v *float64) *PaymentOrderCreate {
+	if v != nil {
+		_c.SetPresaleBalanceBonusRate(*v)
+	}
+	return _c
+}
+
 // SetSubscriptionGroupID sets the "subscription_group_id" field.
 func (_c *PaymentOrderCreate) SetSubscriptionGroupID(v int64) *PaymentOrderCreate {
 	_c.mutation.SetSubscriptionGroupID(v)
@@ -793,6 +863,22 @@ func (_c *PaymentOrderCreate) defaults() {
 		v := paymentorder.DefaultPresaleResetCards
 		_c.mutation.SetPresaleResetCards(v)
 	}
+	if _, ok := _c.mutation.PresaleBalanceBonusAmount(); !ok {
+		v := paymentorder.DefaultPresaleBalanceBonusAmount
+		_c.mutation.SetPresaleBalanceBonusAmount(v)
+	}
+	if _, ok := _c.mutation.PresaleBalanceBonusCurrency(); !ok {
+		v := paymentorder.DefaultPresaleBalanceBonusCurrency
+		_c.mutation.SetPresaleBalanceBonusCurrency(v)
+	}
+	if _, ok := _c.mutation.PresaleBalanceBonusFaceAmount(); !ok {
+		v := paymentorder.DefaultPresaleBalanceBonusFaceAmount
+		_c.mutation.SetPresaleBalanceBonusFaceAmount(v)
+	}
+	if _, ok := _c.mutation.PresaleBalanceBonusRate(); !ok {
+		v := paymentorder.DefaultPresaleBalanceBonusRate
+		_c.mutation.SetPresaleBalanceBonusRate(v)
+	}
 	if _, ok := _c.mutation.SubscriptionBonusDays(); !ok {
 		v := paymentorder.DefaultSubscriptionBonusDays
 		_c.mutation.SetSubscriptionBonusDays(v)
@@ -922,6 +1008,38 @@ func (_c *PaymentOrderCreate) check() error {
 	if v, ok := _c.mutation.PresaleResetCards(); ok {
 		if err := paymentorder.PresaleResetCardsValidator(v); err != nil {
 			return &ValidationError{Name: "presale_reset_cards", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.presale_reset_cards": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.PresaleBalanceBonusAmount(); !ok {
+		return &ValidationError{Name: "presale_balance_bonus_amount", err: errors.New(`ent: missing required field "PaymentOrder.presale_balance_bonus_amount"`)}
+	}
+	if v, ok := _c.mutation.PresaleBalanceBonusAmount(); ok {
+		if err := paymentorder.PresaleBalanceBonusAmountValidator(v); err != nil {
+			return &ValidationError{Name: "presale_balance_bonus_amount", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.presale_balance_bonus_amount": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.PresaleBalanceBonusCurrency(); !ok {
+		return &ValidationError{Name: "presale_balance_bonus_currency", err: errors.New(`ent: missing required field "PaymentOrder.presale_balance_bonus_currency"`)}
+	}
+	if v, ok := _c.mutation.PresaleBalanceBonusCurrency(); ok {
+		if err := paymentorder.PresaleBalanceBonusCurrencyValidator(v); err != nil {
+			return &ValidationError{Name: "presale_balance_bonus_currency", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.presale_balance_bonus_currency": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.PresaleBalanceBonusFaceAmount(); !ok {
+		return &ValidationError{Name: "presale_balance_bonus_face_amount", err: errors.New(`ent: missing required field "PaymentOrder.presale_balance_bonus_face_amount"`)}
+	}
+	if v, ok := _c.mutation.PresaleBalanceBonusFaceAmount(); ok {
+		if err := paymentorder.PresaleBalanceBonusFaceAmountValidator(v); err != nil {
+			return &ValidationError{Name: "presale_balance_bonus_face_amount", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.presale_balance_bonus_face_amount": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.PresaleBalanceBonusRate(); !ok {
+		return &ValidationError{Name: "presale_balance_bonus_rate", err: errors.New(`ent: missing required field "PaymentOrder.presale_balance_bonus_rate"`)}
+	}
+	if v, ok := _c.mutation.PresaleBalanceBonusRate(); ok {
+		if err := paymentorder.PresaleBalanceBonusRateValidator(v); err != nil {
+			return &ValidationError{Name: "presale_balance_bonus_rate", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.presale_balance_bonus_rate": %w`, err)}
 		}
 	}
 	if _, ok := _c.mutation.SubscriptionBonusDays(); !ok {
@@ -1127,6 +1245,26 @@ func (_c *PaymentOrderCreate) createSpec() (*PaymentOrder, *sqlgraph.CreateSpec)
 	if value, ok := _c.mutation.PresaleResetCards(); ok {
 		_spec.SetField(paymentorder.FieldPresaleResetCards, field.TypeInt, value)
 		_node.PresaleResetCards = value
+	}
+	if value, ok := _c.mutation.PresaleBalanceBonusActivityID(); ok {
+		_spec.SetField(paymentorder.FieldPresaleBalanceBonusActivityID, field.TypeInt64, value)
+		_node.PresaleBalanceBonusActivityID = &value
+	}
+	if value, ok := _c.mutation.PresaleBalanceBonusAmount(); ok {
+		_spec.SetField(paymentorder.FieldPresaleBalanceBonusAmount, field.TypeFloat64, value)
+		_node.PresaleBalanceBonusAmount = value
+	}
+	if value, ok := _c.mutation.PresaleBalanceBonusCurrency(); ok {
+		_spec.SetField(paymentorder.FieldPresaleBalanceBonusCurrency, field.TypeString, value)
+		_node.PresaleBalanceBonusCurrency = value
+	}
+	if value, ok := _c.mutation.PresaleBalanceBonusFaceAmount(); ok {
+		_spec.SetField(paymentorder.FieldPresaleBalanceBonusFaceAmount, field.TypeFloat64, value)
+		_node.PresaleBalanceBonusFaceAmount = value
+	}
+	if value, ok := _c.mutation.PresaleBalanceBonusRate(); ok {
+		_spec.SetField(paymentorder.FieldPresaleBalanceBonusRate, field.TypeFloat64, value)
+		_node.PresaleBalanceBonusRate = value
 	}
 	if value, ok := _c.mutation.SubscriptionGroupID(); ok {
 		_spec.SetField(paymentorder.FieldSubscriptionGroupID, field.TypeInt64, value)
@@ -1724,6 +1862,96 @@ func (u *PaymentOrderUpsert) UpdatePresaleResetCards() *PaymentOrderUpsert {
 // AddPresaleResetCards adds v to the "presale_reset_cards" field.
 func (u *PaymentOrderUpsert) AddPresaleResetCards(v int) *PaymentOrderUpsert {
 	u.Add(paymentorder.FieldPresaleResetCards, v)
+	return u
+}
+
+// SetPresaleBalanceBonusActivityID sets the "presale_balance_bonus_activity_id" field.
+func (u *PaymentOrderUpsert) SetPresaleBalanceBonusActivityID(v int64) *PaymentOrderUpsert {
+	u.Set(paymentorder.FieldPresaleBalanceBonusActivityID, v)
+	return u
+}
+
+// UpdatePresaleBalanceBonusActivityID sets the "presale_balance_bonus_activity_id" field to the value that was provided on create.
+func (u *PaymentOrderUpsert) UpdatePresaleBalanceBonusActivityID() *PaymentOrderUpsert {
+	u.SetExcluded(paymentorder.FieldPresaleBalanceBonusActivityID)
+	return u
+}
+
+// AddPresaleBalanceBonusActivityID adds v to the "presale_balance_bonus_activity_id" field.
+func (u *PaymentOrderUpsert) AddPresaleBalanceBonusActivityID(v int64) *PaymentOrderUpsert {
+	u.Add(paymentorder.FieldPresaleBalanceBonusActivityID, v)
+	return u
+}
+
+// ClearPresaleBalanceBonusActivityID clears the value of the "presale_balance_bonus_activity_id" field.
+func (u *PaymentOrderUpsert) ClearPresaleBalanceBonusActivityID() *PaymentOrderUpsert {
+	u.SetNull(paymentorder.FieldPresaleBalanceBonusActivityID)
+	return u
+}
+
+// SetPresaleBalanceBonusAmount sets the "presale_balance_bonus_amount" field.
+func (u *PaymentOrderUpsert) SetPresaleBalanceBonusAmount(v float64) *PaymentOrderUpsert {
+	u.Set(paymentorder.FieldPresaleBalanceBonusAmount, v)
+	return u
+}
+
+// UpdatePresaleBalanceBonusAmount sets the "presale_balance_bonus_amount" field to the value that was provided on create.
+func (u *PaymentOrderUpsert) UpdatePresaleBalanceBonusAmount() *PaymentOrderUpsert {
+	u.SetExcluded(paymentorder.FieldPresaleBalanceBonusAmount)
+	return u
+}
+
+// AddPresaleBalanceBonusAmount adds v to the "presale_balance_bonus_amount" field.
+func (u *PaymentOrderUpsert) AddPresaleBalanceBonusAmount(v float64) *PaymentOrderUpsert {
+	u.Add(paymentorder.FieldPresaleBalanceBonusAmount, v)
+	return u
+}
+
+// SetPresaleBalanceBonusCurrency sets the "presale_balance_bonus_currency" field.
+func (u *PaymentOrderUpsert) SetPresaleBalanceBonusCurrency(v string) *PaymentOrderUpsert {
+	u.Set(paymentorder.FieldPresaleBalanceBonusCurrency, v)
+	return u
+}
+
+// UpdatePresaleBalanceBonusCurrency sets the "presale_balance_bonus_currency" field to the value that was provided on create.
+func (u *PaymentOrderUpsert) UpdatePresaleBalanceBonusCurrency() *PaymentOrderUpsert {
+	u.SetExcluded(paymentorder.FieldPresaleBalanceBonusCurrency)
+	return u
+}
+
+// SetPresaleBalanceBonusFaceAmount sets the "presale_balance_bonus_face_amount" field.
+func (u *PaymentOrderUpsert) SetPresaleBalanceBonusFaceAmount(v float64) *PaymentOrderUpsert {
+	u.Set(paymentorder.FieldPresaleBalanceBonusFaceAmount, v)
+	return u
+}
+
+// UpdatePresaleBalanceBonusFaceAmount sets the "presale_balance_bonus_face_amount" field to the value that was provided on create.
+func (u *PaymentOrderUpsert) UpdatePresaleBalanceBonusFaceAmount() *PaymentOrderUpsert {
+	u.SetExcluded(paymentorder.FieldPresaleBalanceBonusFaceAmount)
+	return u
+}
+
+// AddPresaleBalanceBonusFaceAmount adds v to the "presale_balance_bonus_face_amount" field.
+func (u *PaymentOrderUpsert) AddPresaleBalanceBonusFaceAmount(v float64) *PaymentOrderUpsert {
+	u.Add(paymentorder.FieldPresaleBalanceBonusFaceAmount, v)
+	return u
+}
+
+// SetPresaleBalanceBonusRate sets the "presale_balance_bonus_rate" field.
+func (u *PaymentOrderUpsert) SetPresaleBalanceBonusRate(v float64) *PaymentOrderUpsert {
+	u.Set(paymentorder.FieldPresaleBalanceBonusRate, v)
+	return u
+}
+
+// UpdatePresaleBalanceBonusRate sets the "presale_balance_bonus_rate" field to the value that was provided on create.
+func (u *PaymentOrderUpsert) UpdatePresaleBalanceBonusRate() *PaymentOrderUpsert {
+	u.SetExcluded(paymentorder.FieldPresaleBalanceBonusRate)
+	return u
+}
+
+// AddPresaleBalanceBonusRate adds v to the "presale_balance_bonus_rate" field.
+func (u *PaymentOrderUpsert) AddPresaleBalanceBonusRate(v float64) *PaymentOrderUpsert {
+	u.Add(paymentorder.FieldPresaleBalanceBonusRate, v)
 	return u
 }
 
@@ -2802,6 +3030,111 @@ func (u *PaymentOrderUpsertOne) AddPresaleResetCards(v int) *PaymentOrderUpsertO
 func (u *PaymentOrderUpsertOne) UpdatePresaleResetCards() *PaymentOrderUpsertOne {
 	return u.Update(func(s *PaymentOrderUpsert) {
 		s.UpdatePresaleResetCards()
+	})
+}
+
+// SetPresaleBalanceBonusActivityID sets the "presale_balance_bonus_activity_id" field.
+func (u *PaymentOrderUpsertOne) SetPresaleBalanceBonusActivityID(v int64) *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.SetPresaleBalanceBonusActivityID(v)
+	})
+}
+
+// AddPresaleBalanceBonusActivityID adds v to the "presale_balance_bonus_activity_id" field.
+func (u *PaymentOrderUpsertOne) AddPresaleBalanceBonusActivityID(v int64) *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.AddPresaleBalanceBonusActivityID(v)
+	})
+}
+
+// UpdatePresaleBalanceBonusActivityID sets the "presale_balance_bonus_activity_id" field to the value that was provided on create.
+func (u *PaymentOrderUpsertOne) UpdatePresaleBalanceBonusActivityID() *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.UpdatePresaleBalanceBonusActivityID()
+	})
+}
+
+// ClearPresaleBalanceBonusActivityID clears the value of the "presale_balance_bonus_activity_id" field.
+func (u *PaymentOrderUpsertOne) ClearPresaleBalanceBonusActivityID() *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.ClearPresaleBalanceBonusActivityID()
+	})
+}
+
+// SetPresaleBalanceBonusAmount sets the "presale_balance_bonus_amount" field.
+func (u *PaymentOrderUpsertOne) SetPresaleBalanceBonusAmount(v float64) *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.SetPresaleBalanceBonusAmount(v)
+	})
+}
+
+// AddPresaleBalanceBonusAmount adds v to the "presale_balance_bonus_amount" field.
+func (u *PaymentOrderUpsertOne) AddPresaleBalanceBonusAmount(v float64) *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.AddPresaleBalanceBonusAmount(v)
+	})
+}
+
+// UpdatePresaleBalanceBonusAmount sets the "presale_balance_bonus_amount" field to the value that was provided on create.
+func (u *PaymentOrderUpsertOne) UpdatePresaleBalanceBonusAmount() *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.UpdatePresaleBalanceBonusAmount()
+	})
+}
+
+// SetPresaleBalanceBonusCurrency sets the "presale_balance_bonus_currency" field.
+func (u *PaymentOrderUpsertOne) SetPresaleBalanceBonusCurrency(v string) *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.SetPresaleBalanceBonusCurrency(v)
+	})
+}
+
+// UpdatePresaleBalanceBonusCurrency sets the "presale_balance_bonus_currency" field to the value that was provided on create.
+func (u *PaymentOrderUpsertOne) UpdatePresaleBalanceBonusCurrency() *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.UpdatePresaleBalanceBonusCurrency()
+	})
+}
+
+// SetPresaleBalanceBonusFaceAmount sets the "presale_balance_bonus_face_amount" field.
+func (u *PaymentOrderUpsertOne) SetPresaleBalanceBonusFaceAmount(v float64) *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.SetPresaleBalanceBonusFaceAmount(v)
+	})
+}
+
+// AddPresaleBalanceBonusFaceAmount adds v to the "presale_balance_bonus_face_amount" field.
+func (u *PaymentOrderUpsertOne) AddPresaleBalanceBonusFaceAmount(v float64) *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.AddPresaleBalanceBonusFaceAmount(v)
+	})
+}
+
+// UpdatePresaleBalanceBonusFaceAmount sets the "presale_balance_bonus_face_amount" field to the value that was provided on create.
+func (u *PaymentOrderUpsertOne) UpdatePresaleBalanceBonusFaceAmount() *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.UpdatePresaleBalanceBonusFaceAmount()
+	})
+}
+
+// SetPresaleBalanceBonusRate sets the "presale_balance_bonus_rate" field.
+func (u *PaymentOrderUpsertOne) SetPresaleBalanceBonusRate(v float64) *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.SetPresaleBalanceBonusRate(v)
+	})
+}
+
+// AddPresaleBalanceBonusRate adds v to the "presale_balance_bonus_rate" field.
+func (u *PaymentOrderUpsertOne) AddPresaleBalanceBonusRate(v float64) *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.AddPresaleBalanceBonusRate(v)
+	})
+}
+
+// UpdatePresaleBalanceBonusRate sets the "presale_balance_bonus_rate" field to the value that was provided on create.
+func (u *PaymentOrderUpsertOne) UpdatePresaleBalanceBonusRate() *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.UpdatePresaleBalanceBonusRate()
 	})
 }
 
@@ -4140,6 +4473,111 @@ func (u *PaymentOrderUpsertBulk) AddPresaleResetCards(v int) *PaymentOrderUpsert
 func (u *PaymentOrderUpsertBulk) UpdatePresaleResetCards() *PaymentOrderUpsertBulk {
 	return u.Update(func(s *PaymentOrderUpsert) {
 		s.UpdatePresaleResetCards()
+	})
+}
+
+// SetPresaleBalanceBonusActivityID sets the "presale_balance_bonus_activity_id" field.
+func (u *PaymentOrderUpsertBulk) SetPresaleBalanceBonusActivityID(v int64) *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.SetPresaleBalanceBonusActivityID(v)
+	})
+}
+
+// AddPresaleBalanceBonusActivityID adds v to the "presale_balance_bonus_activity_id" field.
+func (u *PaymentOrderUpsertBulk) AddPresaleBalanceBonusActivityID(v int64) *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.AddPresaleBalanceBonusActivityID(v)
+	})
+}
+
+// UpdatePresaleBalanceBonusActivityID sets the "presale_balance_bonus_activity_id" field to the value that was provided on create.
+func (u *PaymentOrderUpsertBulk) UpdatePresaleBalanceBonusActivityID() *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.UpdatePresaleBalanceBonusActivityID()
+	})
+}
+
+// ClearPresaleBalanceBonusActivityID clears the value of the "presale_balance_bonus_activity_id" field.
+func (u *PaymentOrderUpsertBulk) ClearPresaleBalanceBonusActivityID() *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.ClearPresaleBalanceBonusActivityID()
+	})
+}
+
+// SetPresaleBalanceBonusAmount sets the "presale_balance_bonus_amount" field.
+func (u *PaymentOrderUpsertBulk) SetPresaleBalanceBonusAmount(v float64) *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.SetPresaleBalanceBonusAmount(v)
+	})
+}
+
+// AddPresaleBalanceBonusAmount adds v to the "presale_balance_bonus_amount" field.
+func (u *PaymentOrderUpsertBulk) AddPresaleBalanceBonusAmount(v float64) *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.AddPresaleBalanceBonusAmount(v)
+	})
+}
+
+// UpdatePresaleBalanceBonusAmount sets the "presale_balance_bonus_amount" field to the value that was provided on create.
+func (u *PaymentOrderUpsertBulk) UpdatePresaleBalanceBonusAmount() *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.UpdatePresaleBalanceBonusAmount()
+	})
+}
+
+// SetPresaleBalanceBonusCurrency sets the "presale_balance_bonus_currency" field.
+func (u *PaymentOrderUpsertBulk) SetPresaleBalanceBonusCurrency(v string) *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.SetPresaleBalanceBonusCurrency(v)
+	})
+}
+
+// UpdatePresaleBalanceBonusCurrency sets the "presale_balance_bonus_currency" field to the value that was provided on create.
+func (u *PaymentOrderUpsertBulk) UpdatePresaleBalanceBonusCurrency() *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.UpdatePresaleBalanceBonusCurrency()
+	})
+}
+
+// SetPresaleBalanceBonusFaceAmount sets the "presale_balance_bonus_face_amount" field.
+func (u *PaymentOrderUpsertBulk) SetPresaleBalanceBonusFaceAmount(v float64) *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.SetPresaleBalanceBonusFaceAmount(v)
+	})
+}
+
+// AddPresaleBalanceBonusFaceAmount adds v to the "presale_balance_bonus_face_amount" field.
+func (u *PaymentOrderUpsertBulk) AddPresaleBalanceBonusFaceAmount(v float64) *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.AddPresaleBalanceBonusFaceAmount(v)
+	})
+}
+
+// UpdatePresaleBalanceBonusFaceAmount sets the "presale_balance_bonus_face_amount" field to the value that was provided on create.
+func (u *PaymentOrderUpsertBulk) UpdatePresaleBalanceBonusFaceAmount() *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.UpdatePresaleBalanceBonusFaceAmount()
+	})
+}
+
+// SetPresaleBalanceBonusRate sets the "presale_balance_bonus_rate" field.
+func (u *PaymentOrderUpsertBulk) SetPresaleBalanceBonusRate(v float64) *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.SetPresaleBalanceBonusRate(v)
+	})
+}
+
+// AddPresaleBalanceBonusRate adds v to the "presale_balance_bonus_rate" field.
+func (u *PaymentOrderUpsertBulk) AddPresaleBalanceBonusRate(v float64) *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.AddPresaleBalanceBonusRate(v)
+	})
+}
+
+// UpdatePresaleBalanceBonusRate sets the "presale_balance_bonus_rate" field to the value that was provided on create.
+func (u *PaymentOrderUpsertBulk) UpdatePresaleBalanceBonusRate() *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.UpdatePresaleBalanceBonusRate()
 	})
 }
 

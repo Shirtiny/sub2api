@@ -310,3 +310,42 @@ and browser fixtures (no real payment requests).
 
 This implementation does not automatically deploy, run production migrations,
 publish plans, enable provider refunds, or send real payment/email traffic.
+
+## Presale balance activities
+
+Existing activity management also supports `presale_balance`. New administrator
+forms configure a fixed **CNY face value per order and plan**, independent of the
+subscription multiplier, and allow a café coupon to be used on the same order.
+Legacy USD definitions and paid orders retain their original currency; do not
+reinterpret their amounts. Migration 203 adds balance-gift accounting; migration
+204 adds currency and face-value snapshots and backfills old snapshots as USD.
+Neither migration enables an activity or grants money.
+
+The active offer is personally quoted, then revalidated under the activity lock
+when ordering. Its version covers the plan, amount, currency, dates, account limit
+and (for CNY gifts) the recharge conversion rate. A stale or missing expected
+version is rejected before reservation/payment, including signed WeChat resumes
+and QR fallback. Cosmetic name edits do not invalidate an economic quote.
+
+Payment grants the converted USD ledger credit once, with a recharge-history
+adjustment but without membership/recharge points. Preserve the CNY face amount,
+USD credit, activity and recharge rate on the order. Refunds recover available
+credit first; consumed credit reduces the cash refund using that locked rate.
+Both user and offline-admin paths freeze the accepted recovery quote and preserve
+consumed activity uses after refund. Unpaid cancellations release reservations.
+An administrator can still disable/rename an activity after a plan is removed
+from presale; re-enabling it requires eligible plans.
+
+The public catalog has a separate `activities` collection, limited to visible
+presale plans and enabled, unexpired offers starting within the current sale
+cycle. Marketing visibility is not evidence of personal eligibility. The landing
+page presents active/upcoming offers and refreshes on return/periodically without
+reopening or altering an active checkout.
+
+The reusable card layout has balance and day-reward presentation. **Calendar-month
+presale bonus days are not yet enabled for purchase.** The agreed future policy
+is to extend the purchased subscription's expiry, not issue a separate benefit.
+Before enabling that type, define its interaction with next-month overlap and
+refund proration and implement fulfillment tests. Never advertise legacy
+`subscription_bonus_days` as a presale benefit; its existing immediate-subscription
+fulfillment is unchanged.

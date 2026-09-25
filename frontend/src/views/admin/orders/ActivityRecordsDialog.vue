@@ -47,7 +47,7 @@
                 <th class="table-head text-right">{{ t('payment.admin.participantCount') }}</th>
                 <th class="table-head text-right">{{ t('payment.admin.participationCount') }}</th>
                 <th class="table-head">{{ t('payment.admin.participationBreakdown') }}</th>
-                <th class="table-head text-right">{{ t('payment.admin.grantedBonusDays') }}</th>
+                <th class="table-head text-right">{{ t('presale.gift.granted') }}</th>
                 <th class="table-head text-right">{{ t('common.actions') }}</th>
               </tr>
             </thead>
@@ -59,7 +59,7 @@
                 <td class="table-cell text-right font-medium">{{ activity.participant_count }}</td>
                 <td class="table-cell text-right font-medium">{{ activity.participation_count }}</td>
                 <td class="table-cell"><div class="flex flex-wrap gap-1"><span class="status-pill status-reserved">{{ activity.reserved_count }}</span><span class="status-pill status-granted">{{ activity.granted_count }}</span><span class="status-pill status-released">{{ activity.released_count }}</span></div></td>
-                <td class="table-cell text-right font-medium text-emerald-600 dark:text-emerald-400">+{{ activity.granted_bonus_days }}</td>
+                <td class="table-cell text-right font-medium text-emerald-600 dark:text-emerald-400">{{ activity.type === 'presale_balance' ? '$' + (activity.granted_bonus_balance || 0) : '+' + activity.granted_bonus_days + ' ' + t('payment.days') }}</td>
                 <td class="table-cell text-right"><button type="button" class="btn btn-secondary btn-sm" @click="openParticipants(activity)">{{ t('payment.admin.viewParticipants') }}</button></td>
               </tr>
             </tbody>
@@ -72,14 +72,14 @@
         <div v-else class="overflow-x-auto rounded-xl border border-gray-200 dark:border-dark-600">
           <table class="min-w-full divide-y divide-gray-200 text-sm dark:divide-dark-600">
             <thead class="bg-gray-50 text-left text-xs text-content-tertiary dark:bg-dark-700/60">
-              <tr><th class="table-head">{{ t('payment.admin.participant') }}</th><th class="table-head text-right">{{ t('payment.admin.participationCount') }}</th><th class="table-head">{{ t('payment.admin.participationBreakdown') }}</th><th class="table-head text-right">{{ t('payment.admin.grantedBonusDays') }}</th><th class="table-head">{{ t('payment.admin.firstParticipatedAt') }}</th><th class="table-head">{{ t('payment.admin.lastParticipatedAt') }}</th><th class="table-head text-right">{{ t('common.actions') }}</th></tr>
+              <tr><th class="table-head">{{ t('payment.admin.participant') }}</th><th class="table-head text-right">{{ t('payment.admin.participationCount') }}</th><th class="table-head">{{ t('payment.admin.participationBreakdown') }}</th><th class="table-head text-right">{{ t('presale.gift.granted') }}</th><th class="table-head">{{ t('payment.admin.firstParticipatedAt') }}</th><th class="table-head">{{ t('payment.admin.lastParticipatedAt') }}</th><th class="table-head text-right">{{ t('common.actions') }}</th></tr>
             </thead>
             <tbody class="divide-y divide-gray-100 dark:divide-dark-700">
               <tr v-for="participant in participants" :key="participant.user_id" class="hover:bg-gray-50/70 dark:hover:bg-dark-700/30">
                 <td class="table-cell"><div class="font-medium text-content-primary">{{ participant.user_name || '-' }}</div><div class="text-xs text-content-tertiary">{{ participant.user_email || `#${participant.user_id}` }}</div></td>
                 <td class="table-cell text-right font-medium">{{ participant.participation_count }}</td>
                 <td class="table-cell"><div class="flex flex-wrap gap-1"><span class="status-pill status-reserved">{{ participant.reserved_count }}</span><span class="status-pill status-granted">{{ participant.granted_count }}</span><span class="status-pill status-released">{{ participant.released_count }}</span></div></td>
-                <td class="table-cell text-right font-medium text-emerald-600 dark:text-emerald-400">+{{ participant.granted_bonus_days }}</td>
+                <td class="table-cell text-right font-medium text-emerald-600 dark:text-emerald-400">{{ selectedActivity?.type === 'presale_balance' ? '$' + (participant.granted_bonus_balance || 0) : '+' + participant.granted_bonus_days + ' ' + t('payment.days') }}</td>
                 <td class="table-cell whitespace-nowrap text-xs">{{ formatDate(participant.first_participated_at) }}</td>
                 <td class="table-cell whitespace-nowrap text-xs">{{ formatDate(participant.last_participated_at) }}</td>
                 <td class="table-cell text-right"><button type="button" class="btn btn-secondary btn-sm" @click="openParticipations(participant)">{{ t('common.view') }}</button></td>
@@ -100,7 +100,7 @@
             <dl class="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
               <div><dt class="detail-label">{{ t('payment.admin.planName') }}</dt><dd>{{ record.plan_name || `#${record.plan_id}` }}</dd></div>
               <div><dt class="detail-label">{{ t('payment.admin.participationStatusLabel') }}</dt><dd><span :class="['status-pill', `status-${record.status}`]">{{ t(`payment.admin.participationStatus.${record.status}`) }}</span></dd></div>
-              <div><dt class="detail-label">{{ t('payment.admin.bonusDays') }}</dt><dd class="font-semibold text-emerald-600 dark:text-emerald-400">+{{ record.bonus_days }} {{ t('payment.days') }}</dd></div>
+              <div><dt class="detail-label">{{ t(selectedActivity?.type === 'presale_balance' ? 'presale.gift.amount' : 'payment.admin.bonusDays') }}</dt><dd class="font-semibold text-emerald-600 dark:text-emerald-400">{{ record.bonus_balance ? '$' + record.bonus_balance : '+' + record.bonus_days + ' ' + t('payment.days') }}<span v-if="record.balance_reclaimed_at" class="ml-2 text-xs text-content-tertiary">{{ t('presale.gift.reclaimed') }}</span></dd></div>
               <div><dt class="detail-label">{{ t('payment.admin.payAmount') }}</dt><dd>¥{{ record.pay_amount.toFixed(2) }}</dd></div>
               <div><dt class="detail-label">{{ t('payment.admin.reservedAt') }}</dt><dd>{{ formatDate(record.reserved_at) }}</dd></div>
               <div v-if="record.granted_at"><dt class="detail-label">{{ t('payment.admin.grantedAt') }}</dt><dd>{{ formatDate(record.granted_at) }}</dd></div>

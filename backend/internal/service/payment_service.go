@@ -98,6 +98,7 @@ type CreateOrderRequest struct {
 	Multiplier                          int
 	CafeCouponCode                      string
 	ExpectedSubscriptionBonusActivityID int64
+	ExpectedPresaleBonusVersion         string
 	Locale                              string
 }
 

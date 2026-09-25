@@ -56,9 +56,14 @@
         </div>
         <div>
           <label class="input-label">{{ t('payment.admin.activityType') }}</label>
-          <input class="input" :value="t('payment.admin.subscriptionBonusDays')" disabled />
+          <select v-model="form.type" class="input" @change="selectedPlanIds = []">
+            <option value="subscription_bonus_days">{{ t('payment.admin.subscriptionBonusDays') }}</option>
+            <option value="presale_balance">{{ t('presale.gift.adminType') }}</option>
+          </select>
+          <p v-if="isBalance" class="mt-2 text-xs leading-relaxed text-content-tertiary">{{ t(form.bonus_currency === 'CNY' ? 'presale.gift.adminHint' : 'presale.gift.legacyAdminHint') }}</p>
         </div>
-        <div class="grid grid-cols-2 gap-3">
+        <p class="text-xs text-content-tertiary">{{ t('presale.gift.windowHint') }}</p>
+        <div class="grid gap-3 sm:grid-cols-2">
           <div>
             <label class="input-label">{{ t('payment.admin.activityStartsAt') }} <span class="text-red-500">*</span></label>
             <input v-model="form.starts_at" type="datetime-local" class="input" required />
@@ -74,14 +79,15 @@
           <p class="mt-1 text-xs text-content-tertiary">{{ t('payment.admin.maxUsesPerUserHint') }}</p>
         </div>
         <div>
-          <label class="input-label">{{ t('payment.admin.activityPlans') }} <span class="text-red-500">*</span></label>
+          <label class="input-label">{{ t(isBalance ? 'presale.gift.plans' : 'payment.admin.activityPlans') }} <span class="text-red-500">*</span></label>
           <div class="mt-2 max-h-64 space-y-2 overflow-y-auto rounded-lg border border-gray-200 p-2 dark:border-dark-600">
-            <label v-for="plan in plans" :key="plan.id" class="flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-gray-50 dark:hover:bg-dark-700/50">
+            <label v-for="plan in eligiblePlans" :key="plan.id" class="flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-gray-50 dark:hover:bg-dark-700/50">
               <input v-model="selectedPlanIds" type="checkbox" :value="plan.id" class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500" />
               <span class="min-w-0 flex-1 truncate text-sm text-content-secondary">{{ plan.name }}</span>
               <div v-if="selectedPlanIds.includes(plan.id)" class="flex items-center gap-1" @click.stop>
-                <input v-model.number="bonusDays[plan.id]" type="number" min="1" max="36500" step="1" class="input w-24" required />
-                <span class="text-xs text-content-tertiary">{{ t('payment.days') }}</span>
+                <input v-if="isBalance" v-model.number="bonusBalance[plan.id]" :aria-label="t('presale.gift.amount')" type="number" min="0.01" max="1000000" step="0.01" class="input w-24" required />
+                <input v-else v-model.number="bonusDays[plan.id]" type="number" min="1" max="36500" step="1" class="input w-24" required />
+                <span class="text-xs text-content-tertiary">{{ isBalance ? (form.bonus_currency === 'CNY' ? '￥' : 'USD') : t('payment.days') }}</span>
               </div>
             </label>
           </div>
@@ -112,7 +118,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { adminPaymentAPI } from '@/api/admin/payment'
 import { useAppStore } from '@/stores/app'
@@ -132,16 +138,19 @@ const loading = ref(false)
 const saving = ref(false)
 const editingId = ref<number | null>(null)
 const selectedPlanIds = ref<number[]>([])
+const bonusBalance = reactive<Record<number, number>>({})
 const bonusDays = reactive<Record<number, number>>({})
 const showDeleteConfirm = ref(false)
 const deletingActivity = ref<PromotionActivity | null>(null)
-const form = reactive({ name: '', starts_at: '', ends_at: '', max_uses_per_user: 1, enabled: true })
+const form = reactive({ bonus_currency: 'CNY' as 'CNY' | 'USD', type: 'subscription_bonus_days' as UpsertPromotionActivityRequest['type'], name: '', starts_at: '', ends_at: '', max_uses_per_user: 1, enabled: true })
+
+const isBalance = computed(() => form.type === 'presale_balance')
+const eligiblePlans = computed(() => props.plans.filter(p => !isBalance.value || p.presale_enabled || selectedPlanIds.value.includes(p.id)))
 
 function toLocalInput(value: string): string {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return ''
-  const offset = date.getTimezoneOffset() * 60_000
-  return new Date(date.getTime() - offset).toISOString().slice(0, 16)
+  return new Date(date.getTime() + 8 * 3600_000).toISOString().slice(0, 16)
 }
 
 function defaultWindow(): { starts_at: string; ends_at: string } {
@@ -156,7 +165,8 @@ function resetForm(): void {
   editingId.value = null
   selectedPlanIds.value = []
   Object.keys(bonusDays).forEach(key => delete bonusDays[Number(key)])
-  Object.assign(form, { name: '', ...defaultWindow(), max_uses_per_user: 1, enabled: true })
+  Object.keys(bonusBalance).forEach(key => delete bonusBalance[Number(key)])
+  Object.assign(form, { bonus_currency: 'CNY', type: 'subscription_bonus_days', name: '', ...defaultWindow(), max_uses_per_user: 1, enabled: true })
 }
 
 function startCreate(): void {
@@ -166,6 +176,8 @@ function startCreate(): void {
 function startEdit(activity: PromotionActivity): void {
   editingId.value = activity.id
   Object.assign(form, {
+    type: activity.type,
+    bonus_currency: activity.bonus_currency || 'USD',
     name: activity.name,
     starts_at: toLocalInput(activity.starts_at),
     ends_at: toLocalInput(activity.ends_at),
@@ -174,7 +186,7 @@ function startEdit(activity: PromotionActivity): void {
   })
   selectedPlanIds.value = activity.plan_bonuses.map(item => item.plan_id)
   Object.keys(bonusDays).forEach(key => delete bonusDays[Number(key)])
-  activity.plan_bonuses.forEach(item => { bonusDays[item.plan_id] = item.bonus_days })
+  activity.plan_bonuses.forEach(item => { bonusDays[item.plan_id] = item.bonus_days; bonusBalance[item.plan_id] = item.bonus_balance ?? 0 })
 }
 
 async function loadActivities(): Promise<void> {
@@ -196,17 +208,20 @@ async function saveActivity(): Promise<void> {
     appStore.showError(t('payment.admin.activityPlansRequired'))
     return
   }
+  const original = activities.value.find(a => a.id === editingId.value)
+  const timestamp = (value: string, previous?: string) => previous && toLocalInput(previous) === value ? previous : new Date(value + '+08:00').toISOString()
   const payload: UpsertPromotionActivityRequest = {
     name: form.name,
-    type: 'subscription_bonus_days',
+    type: form.type,
+    bonus_currency: isBalance.value ? form.bonus_currency : 'USD',
     enabled: form.enabled,
-    starts_at: new Date(form.starts_at).toISOString(),
-    ends_at: new Date(form.ends_at).toISOString(),
+    starts_at: timestamp(form.starts_at, original?.starts_at),
+    ends_at: timestamp(form.ends_at, original?.ends_at),
     max_uses_per_user: form.max_uses_per_user,
-    plan_bonuses: selectedPlanIds.value.map(planId => ({ plan_id: planId, bonus_days: Number(bonusDays[planId] || 0) })),
+    plan_bonuses: selectedPlanIds.value.map(planId => ({ plan_id: planId, bonus_days: isBalance.value ? 0 : Number(bonusDays[planId] || 0), bonus_balance: isBalance.value ? Number(bonusBalance[planId] || 0) : 0 })),
   }
-  if (payload.plan_bonuses.some(item => item.bonus_days < 1)) {
-    appStore.showError(t('payment.admin.activityBonusDaysRequired'))
+  if (payload.plan_bonuses.some(item => isBalance.value ? !item.bonus_balance || item.bonus_balance <= 0 : item.bonus_days < 1)) {
+    appStore.showError(t(isBalance.value ? 'presale.gift.amountRequired' : 'payment.admin.activityBonusDaysRequired'))
     return
   }
   saving.value = true
@@ -244,7 +259,7 @@ async function deleteActivity(): Promise<void> {
 }
 
 function formatDate(value: string): string {
-  return new Intl.DateTimeFormat(locale.value, { dateStyle: 'short', timeStyle: 'short' }).format(new Date(value))
+  return new Intl.DateTimeFormat(locale.value, { dateStyle: 'short', timeStyle: 'short', timeZone: 'Asia/Shanghai' }).format(new Date(value))
 }
 
 function statusText(status: PromotionActivityStatus): string {

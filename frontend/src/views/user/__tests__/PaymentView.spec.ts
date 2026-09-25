@@ -69,7 +69,7 @@ vi.mock('vue-i18n', async () => {
   return {
     ...actual,
     useI18n: () => ({
-      t: (key: string) => messages[key] ?? key,
+      t: (key: string, args?: Record<string, unknown>) => key === 'presale.gift.creditHint' ? `实际到账 $${args?.amount} USD 站内余额` : messages[key] ?? key,
       locale: { value: 'zh' },
     }),
   }
@@ -1041,7 +1041,30 @@ describe('PaymentView WeChat JSAPI flow', () => {
     wrapper.unmount()
   })
 
+  it('shows a CNY gift and its actual ledger credit separately', async () => {
+    getPresaleQuote.mockResolvedValue({ data: { month: '2026-10', balance_bonus: { activity_id: 91, version: 'cny-v1', currency: 'CNY', amount: 20, credited_amount: 4 } } })
+    const { wrapper } = await mountPresaleCheckout()
+    const gift = wrapper.get('[data-test="checkout-balance-gift"]')
+    expect(gift.text()).toMatch(/[¥￥]20.00/)
+    expect(gift.text()).toContain('4')
+    wrapper.unmount()
+  })
+
+  it('refreshes changed gift terms without automatically charging again', async () => {
+    getPresaleQuote.mockResolvedValueOnce({ data: { month: '2026-10', balance_bonus: { activity_id: 91, version: 'old', currency: 'CNY', amount: 20, credited_amount: 4 } } })
+      .mockResolvedValue({ data: { month: '2026-10', balance_bonus: { activity_id: 91, version: 'new', currency: 'CNY', amount: 10, credited_amount: 2 } } })
+    createOrder.mockRejectedValue({ reason: 'ACTIVITY_BENEFIT_CHANGED' })
+    const { wrapper, vm } = await mountPresaleCheckout()
+    await vm.confirmSubscribe(); await flushPromises()
+    expect(createOrder).toHaveBeenCalledTimes(1)
+    expect(createOrder.mock.calls[0][0]).toMatchObject({ expected_presale_bonus_version: 'old' })
+    expect(wrapper.get('[data-test="checkout-balance-gift"]').text()).toMatch(/[¥￥]10.00/)
+    expect(vm.canSubmitSubscription).toBe(true)
+    wrapper.unmount()
+  })
+
   it('waits for confirmed cancellation before creating a presale QR fallback', async () => {
+    getPresaleQuote.mockResolvedValue({ data: { month: '2026-10', balance_bonus: { activity_id: 91, version: 'gift-v1', currency: 'USD', amount: 10, name: 'Gift' } } })
     const cancelled = deferred<{ data: { message: string } }>()
     cancelOrder.mockReturnValue(cancelled.promise)
     createOrder.mockResolvedValueOnce(jsapiOrderFixture('original-resume')).mockResolvedValueOnce({
@@ -1049,6 +1072,7 @@ describe('PaymentView WeChat JSAPI flow', () => {
     })
     bridgeInvoke.mockImplementation((_action, _payload, callback) => callback({ err_msg: 'get_brand_wcpay_request:fail' }))
     const { wrapper, vm } = await mountPresaleCheckout()
+    expect(wrapper.get('[data-test="checkout-balance-gift"]').text()).toContain('$10.00')
     const submitting = vm.confirmSubscribe()
     await flushPromises()
     expect(cancelOrder).toHaveBeenCalledWith(123)
@@ -1059,7 +1083,8 @@ describe('PaymentView WeChat JSAPI flow', () => {
     await submitting
     expect(getOrder).toHaveBeenCalledWith(123)
     expect(getOrder.mock.invocationCallOrder[0]).toBeLessThan(createOrder.mock.invocationCallOrder[1])
-    expect(createOrder.mock.calls[1][0]).toMatchObject({ order_type: 'subscription', plan_id: 7, presale_month: '2026-10', is_mobile: false })
+    expect(createOrder.mock.calls[0][0]).toMatchObject({ expected_subscription_bonus_activity_id: 91, expected_presale_bonus_version: 'gift-v1' })
+    expect(createOrder.mock.calls[1][0]).toMatchObject({ order_type: 'subscription', plan_id: 7, presale_month: '2026-10', is_mobile: false, expected_subscription_bonus_activity_id: 91, expected_presale_bonus_version: 'gift-v1' })
     expect(vm.paymentState.orderId).toBe(124)
     expect(vm.paymentPhase).toBe('paying')
     expect(window.localStorage.getItem(PAYMENT_RECOVERY_STORAGE_KEY)).toContain('qr-resume')

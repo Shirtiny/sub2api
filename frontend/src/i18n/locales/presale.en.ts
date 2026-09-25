@@ -1,6 +1,8 @@
+import gift from './presaleGift.en'
 import cafeCampaign from './cafeCampaign.en'
 
 export default {
+  gift,
   nav: 'Subscription presale', banner: 'Next month · Presale open', eyebrow: 'A little ahead. A lot more ready.',
   title: 'Make room for focus.', titleAccent: 'One month ahead.',
   intro: 'Reserve a full month of native intelligence at a better price. Pay now; your subscription starts on the first of next month.',
@@ -66,6 +68,13 @@ export default {
     affiliatePending: 'The refund and cancellation are recorded, but referral bookkeeping is incomplete. Retry to finish bookkeeping; no additional refund will be issued.', retry: 'Retry bookkeeping',
   },
   errors: {
+    ACTIVITY_BENEFIT_CHANGED: 'Gift details have changed. Review the updated offer before confirming.',
+    PRESALE_BALANCE_BONUS_REFUND_MANUAL: 'The remaining refund cannot cover the used gift. Replenish your balance or contact support.',
+    PRESALE_OFFLINE_BONUS_AMOUNT: 'The refund cannot exceed the payment remaining after the consumed gift deduction.',
+    PRESALE_BALANCE_BONUS_EXPIRED: 'Payment arrived after the promotional order deadline. Contact support.',
+    PRESALE_BALANCE_BONUS_LIMIT: 'Another order has used the available activity participation. Contact support.',
+    PRESALE_BALANCE_BONUS_RATE_INVALID: 'The gift conversion rate is invalid. Contact support.',
+
     ...cafeCampaign.errors,
     PRESALE_REFUND_REASON_REQUIRED: 'Please enter a reason for your refund.',
     PRESALE_REFUND_REASON_TOO_LONG: 'The refund reason must not exceed {max} characters.',

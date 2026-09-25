@@ -127,6 +127,14 @@ describe('presale refund review', () => {
     expect(w.get('[role=dialog]').text()).not.toContain('presale.refundFeeApplied')
     w.unmount()
   })
+
+  it('shows the frozen gift recovery and net cash refund separately', async () => {
+    mocks.quote.mockResolvedValue({ data: { gateway_amount: 60, refund_amount: 60, currency: 'CNY', fee_percent: 0, balance_bonus_amount: 10, balance_bonus_reclaim: 6, balance_bonus_deduction: 20 } })
+    const w = render(); await flushPromises(); await w.get('article button').trigger('click'); await flushPromises()
+    const gift = w.get('[data-test="refund-balance-gift"]').text()
+    expect(gift).toContain('$10.00 USD'); expect(gift).toContain('$6.00 USD'); expect(gift).toContain('20.00')
+    expect(w.get('[role=dialog]').text()).toContain('60.00'); w.unmount()
+  })
   it('submits only after reviewing a quote and carries the confirmed amount', async () => {
     const w = render(); await flushPromises()
     await w.get('article button').trigger('click'); await flushPromises()

@@ -69,6 +69,15 @@
     <BaseDialog :show="!!refundOrder" :title="t('presale.refundTitle')" @close="!busy && (refundOrder = null)">
       <form v-if="quote" id="presale-refund-form" class="space-y-5" @submit.prevent="requestRefund">
         <p class="text-sm leading-relaxed text-content-secondary">{{ t('presale.refundNotice') }}</p>
+        <div v-if="quote.balance_bonus_amount" class="space-y-3 rounded-xl border border-amber-500/20 p-4 text-sm" data-test="refund-balance-gift">
+          <h4 class="font-medium text-content-primary">{{ t('presale.gift.refundTitle') }}</h4>
+          <dl class="space-y-2 text-content-secondary">
+            <div class="flex justify-between gap-4"><dt>{{ t('presale.gift.received') }}</dt><dd>${{ quote.balance_bonus_amount.toFixed(2) }} USD</dd></div>
+            <div class="flex justify-between gap-4"><dt>{{ t('presale.gift.recover') }}</dt><dd>${{ (quote.balance_bonus_reclaim || 0).toFixed(2) }} USD</dd></div>
+            <div class="flex justify-between gap-4"><dt>{{ t('presale.gift.deduction') }}</dt><dd>{{ formatPaymentAmount(quote.balance_bonus_deduction || 0, quote.currency) }}</dd></div>
+          </dl>
+          <p class="text-xs leading-relaxed text-content-tertiary">{{ t('presale.gift.refundRule') }}</p>
+        </div>
         <div class="rounded-xl bg-surface-hover p-4">
           <p class="text-xs text-content-tertiary">{{ t('presale.refundAmount') }}</p>
           <strong class="mt-2 block text-xl text-content-primary">{{ formatPaymentAmount(quote.gateway_amount, quote.currency) }}</strong>

@@ -21,13 +21,16 @@ import (
 )
 
 type PresaleRefundQuote struct {
-	RefundAmount  float64 `json:"refund_amount"`  // order accounting amount
-	GatewayAmount float64 `json:"gateway_amount"` // actual money returned
-	FeePercent    int     `json:"fee_percent"`
-	UnusedDays    int     `json:"unused_days"`
-	Policy        string  `json:"policy"`
-	Currency      string  `json:"currency"`
-	CouponApplied bool    `json:"coupon_applied"`
+	BalanceBonusAmount    float64 `json:"balance_bonus_amount"`
+	BalanceBonusReclaim   float64 `json:"balance_bonus_reclaim"`
+	BalanceBonusDeduction float64 `json:"balance_bonus_deduction"`
+	RefundAmount          float64 `json:"refund_amount"`  // order accounting amount
+	GatewayAmount         float64 `json:"gateway_amount"` // actual money returned
+	FeePercent            int     `json:"fee_percent"`
+	UnusedDays            int     `json:"unused_days"`
+	Policy                string  `json:"policy"`
+	Currency              string  `json:"currency"`
+	CouponApplied         bool    `json:"coupon_applied"`
 }
 
 func PresaleRefundQuoteForOrder(o *dbent.PaymentOrder, now time.Time) (*PresaleRefundQuote, error) {
@@ -94,6 +97,19 @@ func presaleRefundQuoteForTerm(o *dbent.PaymentOrder, now, effectiveEnd time.Tim
 // early-reset deductions. Once accepted, use the audited quote even after the
 // subscription is cancelled or renewed, rather than reading its new window.
 func (s *PaymentService) GetPresaleRefundQuote(ctx context.Context, o *dbent.PaymentOrder, now time.Time) (*PresaleRefundQuote, error) {
+	q, err := s.getPresaleRefundQuoteBase(ctx, o, now)
+	if err != nil {
+		return nil, err
+	}
+	if o.RefundRequestedAt == nil {
+		if err := s.applyPresaleBalanceRefund(ctx, o, q); err != nil {
+			return nil, err
+		}
+	}
+	return q, nil
+}
+
+func (s *PaymentService) getPresaleRefundQuoteBase(ctx context.Context, o *dbent.PaymentOrder, now time.Time) (*PresaleRefundQuote, error) {
 	base, err := PresaleRefundQuoteForOrder(o, now)
 	if err != nil {
 		return nil, err
@@ -231,6 +247,9 @@ func (s *PaymentService) requestPresaleRefund(ctx context.Context, o *dbent.Paym
 	if math.Abs(quote.GatewayAmount-expectedGatewayAmount) > .0001 {
 		return infraerrors.Conflict("PRESALE_REFUND_AMOUNT_CHANGED", "refund amount changed; review the latest quote before cancelling")
 	}
+	if err := s.reclaimPresaleBalanceBonusTx(txCtx, tx, current, quote); err != nil {
+		return err
+	}
 	if err := cancelPresaleEntitlementTx(txCtx, tx, current, now); err != nil {
 		return err
 	}
@@ -242,6 +261,9 @@ func (s *PaymentService) requestPresaleRefund(ctx context.Context, o *dbent.Paym
 	}
 	if err := tx.Commit(); err != nil {
 		return err
+	}
+	if current.PresaleBalanceBonusActivityID != nil {
+		s.invalidatePresaleBalanceCaches(ctx, uid)
 	}
 	if s.subscriptionSvc != nil && current.SubscriptionGroupID != nil {
 		s.subscriptionSvc.invalidateSubscriptionCaches(ctx, uid, *current.SubscriptionGroupID)

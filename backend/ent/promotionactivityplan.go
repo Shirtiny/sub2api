@@ -24,6 +24,8 @@ type PromotionActivityPlan struct {
 	PlanID int64 `json:"plan_id,omitempty"`
 	// BonusDays holds the value of the "bonus_days" field.
 	BonusDays int `json:"bonus_days,omitempty"`
+	// BonusBalance holds the value of the "bonus_balance" field.
+	BonusBalance float64 `json:"bonus_balance,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
@@ -59,6 +61,8 @@ func (*PromotionActivityPlan) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case promotionactivityplan.FieldBonusBalance:
+			values[i] = new(sql.NullFloat64)
 		case promotionactivityplan.FieldID, promotionactivityplan.FieldActivityID, promotionactivityplan.FieldPlanID, promotionactivityplan.FieldBonusDays:
 			values[i] = new(sql.NullInt64)
 		case promotionactivityplan.FieldCreatedAt, promotionactivityplan.FieldUpdatedAt:
@@ -101,6 +105,12 @@ func (_m *PromotionActivityPlan) assignValues(columns []string, values []any) er
 				return fmt.Errorf("unexpected type %T for field bonus_days", values[i])
 			} else if value.Valid {
 				_m.BonusDays = int(value.Int64)
+			}
+		case promotionactivityplan.FieldBonusBalance:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field bonus_balance", values[i])
+			} else if value.Valid {
+				_m.BonusBalance = value.Float64
 			}
 		case promotionactivityplan.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -163,6 +173,9 @@ func (_m *PromotionActivityPlan) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("bonus_days=")
 	builder.WriteString(fmt.Sprintf("%v", _m.BonusDays))
+	builder.WriteString(", ")
+	builder.WriteString("bonus_balance=")
+	builder.WriteString(fmt.Sprintf("%v", _m.BonusBalance))
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")
 	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))

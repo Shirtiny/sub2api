@@ -11,6 +11,7 @@
         </div>
         <p class="mt-4 flex justify-between"><span>{{ t('adminOrderDetail.paid') }}</span><strong>{{ formatPaymentAmount(order.pay_amount, currency) }}</strong></p>
       </div>
+      <p v-if="order?.presale_balance_bonus_amount" class="rounded-xl border border-amber-500/20 p-4 text-sm leading-relaxed text-content-secondary">{{ t('presale.gift.amount') }}: ${{ order.presale_balance_bonus_amount.toFixed(2) }}<br>{{ t('presale.gift.refundRule') }}</p>
       <fieldset :disabled="submitting || retryOnly" class="space-y-4">
         <legend class="sr-only">{{ t('presale.offline.title') }}</legend>
         <label class="block text-sm text-content-secondary">{{ t('presale.offline.action') }}

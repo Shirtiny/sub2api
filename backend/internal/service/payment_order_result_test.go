@@ -255,6 +255,7 @@ func TestMaybeBuildWeChatOAuthRequiredResponseSubscriptionContextOmitsZeroAmount
 		PlanID:                              7,
 		Multiplier:                          3,
 		ExpectedSubscriptionBonusActivityID: 91,
+		ExpectedPresaleBonusVersion:         "quoted-gift-version",
 	}, 300, 300, 0)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -271,7 +272,7 @@ func TestMaybeBuildWeChatOAuthRequiredResponseSubscriptionContextOmitsZeroAmount
 	if err != nil {
 		t.Fatalf("parse context token: %v", err)
 	}
-	if claims.UserID != 99 || claims.Amount != "" || claims.OrderType != payment.OrderTypeSubscription || claims.PlanID != 7 || claims.Multiplier != 3 || claims.ExpectedSubscriptionBonusActivityID != 91 {
+	if claims.UserID != 99 || claims.Amount != "" || claims.OrderType != payment.OrderTypeSubscription || claims.PlanID != 7 || claims.Multiplier != 3 || claims.ExpectedSubscriptionBonusActivityID != 91 || claims.ExpectedPresaleBonusVersion != "quoted-gift-version" {
 		t.Fatalf("unexpected context claims: %+v", claims)
 	}
 }

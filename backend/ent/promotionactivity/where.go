@@ -65,6 +65,11 @@ func ActivityType(v string) predicate.PromotionActivity {
 	return predicate.PromotionActivity(sql.FieldEQ(FieldActivityType, v))
 }
 
+// BonusCurrency applies equality check predicate on the "bonus_currency" field. It's identical to BonusCurrencyEQ.
+func BonusCurrency(v string) predicate.PromotionActivity {
+	return predicate.PromotionActivity(sql.FieldEQ(FieldBonusCurrency, v))
+}
+
 // Enabled applies equality check predicate on the "enabled" field. It's identical to EnabledEQ.
 func Enabled(v bool) predicate.PromotionActivity {
 	return predicate.PromotionActivity(sql.FieldEQ(FieldEnabled, v))
@@ -223,6 +228,71 @@ func ActivityTypeEqualFold(v string) predicate.PromotionActivity {
 // ActivityTypeContainsFold applies the ContainsFold predicate on the "activity_type" field.
 func ActivityTypeContainsFold(v string) predicate.PromotionActivity {
 	return predicate.PromotionActivity(sql.FieldContainsFold(FieldActivityType, v))
+}
+
+// BonusCurrencyEQ applies the EQ predicate on the "bonus_currency" field.
+func BonusCurrencyEQ(v string) predicate.PromotionActivity {
+	return predicate.PromotionActivity(sql.FieldEQ(FieldBonusCurrency, v))
+}
+
+// BonusCurrencyNEQ applies the NEQ predicate on the "bonus_currency" field.
+func BonusCurrencyNEQ(v string) predicate.PromotionActivity {
+	return predicate.PromotionActivity(sql.FieldNEQ(FieldBonusCurrency, v))
+}
+
+// BonusCurrencyIn applies the In predicate on the "bonus_currency" field.
+func BonusCurrencyIn(vs ...string) predicate.PromotionActivity {
+	return predicate.PromotionActivity(sql.FieldIn(FieldBonusCurrency, vs...))
+}
+
+// BonusCurrencyNotIn applies the NotIn predicate on the "bonus_currency" field.
+func BonusCurrencyNotIn(vs ...string) predicate.PromotionActivity {
+	return predicate.PromotionActivity(sql.FieldNotIn(FieldBonusCurrency, vs...))
+}
+
+// BonusCurrencyGT applies the GT predicate on the "bonus_currency" field.
+func BonusCurrencyGT(v string) predicate.PromotionActivity {
+	return predicate.PromotionActivity(sql.FieldGT(FieldBonusCurrency, v))
+}
+
+// BonusCurrencyGTE applies the GTE predicate on the "bonus_currency" field.
+func BonusCurrencyGTE(v string) predicate.PromotionActivity {
+	return predicate.PromotionActivity(sql.FieldGTE(FieldBonusCurrency, v))
+}
+
+// BonusCurrencyLT applies the LT predicate on the "bonus_currency" field.
+func BonusCurrencyLT(v string) predicate.PromotionActivity {
+	return predicate.PromotionActivity(sql.FieldLT(FieldBonusCurrency, v))
+}
+
+// BonusCurrencyLTE applies the LTE predicate on the "bonus_currency" field.
+func BonusCurrencyLTE(v string) predicate.PromotionActivity {
+	return predicate.PromotionActivity(sql.FieldLTE(FieldBonusCurrency, v))
+}
+
+// BonusCurrencyContains applies the Contains predicate on the "bonus_currency" field.
+func BonusCurrencyContains(v string) predicate.PromotionActivity {
+	return predicate.PromotionActivity(sql.FieldContains(FieldBonusCurrency, v))
+}
+
+// BonusCurrencyHasPrefix applies the HasPrefix predicate on the "bonus_currency" field.
+func BonusCurrencyHasPrefix(v string) predicate.PromotionActivity {
+	return predicate.PromotionActivity(sql.FieldHasPrefix(FieldBonusCurrency, v))
+}
+
+// BonusCurrencyHasSuffix applies the HasSuffix predicate on the "bonus_currency" field.
+func BonusCurrencyHasSuffix(v string) predicate.PromotionActivity {
+	return predicate.PromotionActivity(sql.FieldHasSuffix(FieldBonusCurrency, v))
+}
+
+// BonusCurrencyEqualFold applies the EqualFold predicate on the "bonus_currency" field.
+func BonusCurrencyEqualFold(v string) predicate.PromotionActivity {
+	return predicate.PromotionActivity(sql.FieldEqualFold(FieldBonusCurrency, v))
+}
+
+// BonusCurrencyContainsFold applies the ContainsFold predicate on the "bonus_currency" field.
+func BonusCurrencyContainsFold(v string) predicate.PromotionActivity {
+	return predicate.PromotionActivity(sql.FieldContainsFold(FieldBonusCurrency, v))
 }
 
 // EnabledEQ applies the EQ predicate on the "enabled" field.

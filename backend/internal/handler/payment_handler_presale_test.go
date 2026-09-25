@@ -23,6 +23,7 @@ func TestPresaleOrderResponseAndResumeContracts(t *testing.T) {
 	err := applyWeChatPaymentResumeClaims(&req, &service.WeChatPaymentResumeClaims{OpenID: "fixture", UserID: 91, OrderType: "subscription", PlanID: 7, PresaleMonth: period.Month}, 91)
 	require.NoError(t, err)
 	require.Equal(t, period.Month, req.PresaleMonth, "signed month overrides untrusted posted month")
-	key := paymentCreateOrderIdempotencyPayload(service.CreateOrderRequest{PresaleMonth: period.Month})
+	key := paymentCreateOrderIdempotencyPayload(service.CreateOrderRequest{PresaleMonth: period.Month, ExpectedPresaleBonusVersion: "gift-version"})
 	require.Equal(t, period.Month, key.PresaleMonth, "month must be part of idempotency identity")
+	require.Equal(t, "gift-version", key.ExpectedPresaleBonusVersion, "gift version must be part of idempotency identity")
 }

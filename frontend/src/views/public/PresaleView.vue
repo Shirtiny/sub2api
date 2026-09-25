@@ -14,6 +14,7 @@
       <section class="presale-hero">
         <div class="hero-copy">
           <p class="eyebrow">{{ t('presale.eyebrow') }}</p>
+          <a v-if="visibleActivities.length" href="#presale-activities" class="hero-activity-link"><span class="activity-dot" aria-hidden="true"/>{{ t(hasActiveActivity ? 'presale.gift.heroActive' : 'presale.gift.heroUpcoming') }}<span aria-hidden="true">↗</span></a>
           <h1>{{ t('presale.title') }}<em>{{ t('presale.titleAccent') }}</em></h1>
           <p class="intro">{{ t('presale.intro') }}</p>
           <div class="hero-actions"><a href="#presale-plans" class="btn btn-primary">{{ t('presale.browse') }} <Icon name="arrowRight" size="sm" /></a><RouterLink :to="balancePath" class="quiet-link">{{ t('presale.balance') }} <span aria-hidden="true">↗</span></RouterLink></div>
@@ -42,6 +43,7 @@
           <span class="art-note">RESERVED FOR YOUR NEXT CHAPTER</span>
         </div>
       </section>
+      <PresaleActivities v-if="visibleActivities.length && catalog" :activities="visibleActivities" :plans="catalog.plans" :now="giftClock" />
       <section v-if="catalog" class="timeline" :aria-label="t('presale.calendar')">
         <div v-for="(step, index) in timeline" :key="step.label" class="timeline-step"><span class="step-index">0{{ index + 1 }}</span><div><p class="step-label">{{ step.label }}</p><p class="step-date">{{ step.date }}</p><p class="step-copy">{{ step.copy }}</p></div></div>
       </section>
@@ -51,12 +53,17 @@
         <div v-else-if="error" class="empty-state" role="alert"><p>{{ error }}</p><button class="btn btn-secondary mt-5" @click="load">{{ t('presale.retry') }}</button></div>
         <div v-else-if="!catalog?.enabled" class="empty-state"><p class="eyebrow">COMING NEXT</p><h3>{{ t('presale.empty') }}</h3><p>{{ t('presale.emptyCopy') }}</p><RouterLink :to="balancePath" class="quiet-link">{{ t('presale.balance') }} →</RouterLink></div>
         <div v-else class="plan-grid">
-          <article v-for="(plan, index) in catalog.plans" :key="plan.id" class="presale-plan" :style="{ '--plan-index': index }">
+          <article v-for="(plan, index) in catalog.plans" :key="plan.id" :id="`presale-plan-${plan.id}`" class="presale-plan" :style="{ '--plan-index': index }">
             <div class="plan-top"><span class="plan-index">{{ String(index + 1).padStart(2, '0') }} / {{ plan.group_platform?.toUpperCase() }}</span><span v-if="plan.presale_badge" class="plan-badge">{{ plan.presale_badge }}</span></div>
             <h3>{{ plan.name }}</h3><p class="plan-description">{{ plan.description }}</p>
             <div class="plan-price"><span v-if="plan.original_price && plan.original_price > plan.price" class="old-price">￥{{ scaledPlanValue(plan, plan.original_price).toLocaleString(locale) }}</span><strong><span class="price-currency">￥</span>{{ scaledPlanValue(plan, plan.price).toLocaleString(locale) }}</strong><span>{{ t('presale.perMonth') }}</span></div>
             <dl class="plan-quotas"><template v-for="quota in quotas(plan)" :key="quota.label"><div><dt>{{ quota.label }}</dt><dd>{{ quota.value }}</dd></div></template></dl>
             <ul class="plan-features"><li><Icon name="check" size="sm"/>{{ t('presale.concurrency', { count: plan.concurrency }) }}</li><li v-for="feature in plan.features" :key="feature"><Icon name="check" size="sm"/>{{ feature }}</li></ul>
+            <div v-if="planGift(plan)" class="plan-gift" data-test="plan-balance-gift">
+              <div><span>{{ t('presale.gift.plan') }}</span><strong>+{{ planGift(plan)!.currency === 'CNY' ? '￥' : '$' }}{{ planGift(plan)!.amount.toFixed(2) }} <small v-if="planGift(plan)!.currency !== 'CNY'">USD</small></strong></div>
+              <p>{{ t('presale.gift.fixed') }}</p>
+            </div>
+            <p v-else-if="activeGift(plan.presale_balance_bonus) && availability(plan).kind === 'available'" class="plan-gift-unavailable">{{ t('presale.gift.exhausted') }}</p>
             <div v-if="plan.custom_multiplier_enabled" class="plan-multiplier">
               <span>{{ t('payment.planCard.multiplier') }}</span>
               <Select
@@ -121,12 +128,12 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-import { useEventListener, useWindowScroll } from '@vueuse/core'
+import { useEventListener, useWindowScroll, useIntervalFn } from '@vueuse/core'
 import { useAppStore } from '@/stores/app'
 import { useAuthStore } from '@/stores/auth'
 import { useSubscriptionStore } from '@/stores/subscriptions'
-import { presaleAPI, type PresaleCatalog } from '@/api/presale'
-import type { SubscriptionPlan } from '@/types/payment'
+import { presaleAPI, type PresaleCatalog, type PresaleActivity } from '@/api/presale'
+import type { SubscriptionPlan, PresaleBalanceBenefit } from '@/types/payment'
 import { formatPresaleDate } from '@/utils/presale'
 import { isCustomSubscriptionForPlan, subscriptionCustomMultiplier } from '@/utils/subscriptionCustom'
 import Icon from '@/components/icons/Icon.vue'
@@ -137,6 +144,7 @@ import { extractApiErrorCode, extractApiErrorMetadata } from '@/utils/apiError'
 import BaseDialog from '@/components/common/BaseDialog.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import Select, { type SelectOption } from '@/components/common/Select.vue'
+import PresaleActivities from '@/components/presale/PresaleActivities.vue'
 import PresaleBenefits from '@/components/presale/PresaleBenefits.vue'
 import PaymentView from '@/views/user/PaymentView.vue'
 import { hasWechatResumeQuery } from '@/views/user/paymentWechatResume'
@@ -160,8 +168,49 @@ function toggleTheme() {
 }
 const catalog = ref<PresaleCatalog | null>(null), loading = ref(true), error = ref(''), selectedPlanId = ref<number | null>(null)
 const planMultipliers = ref<Record<number, number>>({})
+const giftClock = ref(Date.now())
+let serverClockOffset = 0
+watch(() => catalog.value?.server_time, value => {
+  if (value && Number.isFinite(Date.parse(value))) serverClockOffset = Date.parse(value) - Date.now()
+  giftClock.value = Date.now() + serverClockOffset
+})
+useIntervalFn(() => { giftClock.value = Date.now() + serverClockOffset }, 1000)
+function activeGift(gift?: PresaleBalanceBenefit | null): gift is PresaleBalanceBenefit {
+  return !!gift && gift.amount > 0 && giftClock.value >= Date.parse(gift.starts_at) && giftClock.value < Date.parse(gift.ends_at)
+}
+const visibleActivities = computed(() => {
+  if (!catalog.value?.enabled) return []
+  // During a frontend/backend upgrade, retain current balance offers from the
+  // previous catalog shape. An explicit empty list from the server is authoritative.
+  let activities = catalog.value.activities
+  if (!activities) {
+    const groups = new Map<number, PresaleActivity>()
+    for (const plan of catalog.value.plans) {
+      const gift = plan.presale_balance_bonus
+      if (!gift) continue
+      let activity = groups.get(gift.activity_id)
+      if (!activity) {
+        activity = { id: gift.activity_id, name: gift.name, type: 'presale_balance', bonus_currency: gift.currency, starts_at: gift.starts_at, ends_at: gift.ends_at, max_uses_per_user: gift.max_uses_per_user, plan_bonuses: [] }
+        groups.set(gift.activity_id, activity)
+      }
+      activity.plan_bonuses.push({ plan_id: plan.id, bonus_balance: gift.amount })
+    }
+    activities = [...groups.values()]
+  }
+  return activities.filter(a => Date.parse(a.ends_at) > giftClock.value &&
+    a.plan_bonuses.some(b => catalog.value!.plans.some(p => p.id === b.plan_id)))
+    .sort((a, b) => Number(Date.parse(a.starts_at) > giftClock.value) - Number(Date.parse(b.starts_at) > giftClock.value) || Date.parse(a.starts_at) - Date.parse(b.starts_at))
+})
+const hasActiveActivity = computed(() => visibleActivities.value.some(a => Date.parse(a.starts_at) <= giftClock.value))
+
+function planGift(plan: SubscriptionPlan): PresaleBalanceBenefit | null {
+  const state = availability(plan)
+  const gift = auth.isAuthenticated && state.kind !== 'checking' ? state.balanceBonus : plan.presale_balance_bonus
+  return activeGift(gift) ? gift : null
+}
+
 type AvailabilityKind = 'checking' | 'available' | 'reserved' | 'pending' | 'refund' | 'existing' | 'blocked' | 'error'
-interface PlanAvailability { kind: AvailabilityKind; reason?: string; orderId?: number; orderPlanId?: number; renewalOpensAt?: string }
+interface PlanAvailability { balanceBonus?: PresaleBalanceBenefit | null; kind: AvailabilityKind; reason?: string; orderId?: number; orderPlanId?: number; renewalOpensAt?: string }
 const planAvailability = ref<Record<number, PlanAvailability>>({})
 const recovery = ref<PaymentRecoverySnapshot | null>(null)
 let loadRequest = 0, availabilityRequest = 0
@@ -197,7 +246,7 @@ async function refreshAvailability() {
     let state: PlanAvailability
     try {
       const { data } = await presaleAPI.quote(plan.id)
-      state = data.month === month ? { kind: 'available' } : { kind: 'error', reason: 'PRESALE_MONTH_CHANGED' }
+      state = data.month === month ? { kind: 'available', balanceBonus: data.balance_bonus ?? null } : { kind: 'error', reason: 'PRESALE_MONTH_CHANGED' }
     } catch (err: unknown) {
       const reason = extractApiErrorCode(err)
       if (reason === 'PRESALE_ALREADY_RESERVED') {
@@ -319,9 +368,22 @@ async function load() {
 watch([() => route.query.plan, () => route.query.multiplier], restoreSelection)
 // Compare scalar identities, not a fresh array on every user-profile replacement.
 watch([() => auth.isAuthenticated, () => auth.user?.id], () => { selectedPlanId.value = null; void load() })
-function refreshOnReturn() {
-  if (!document.hidden && !loading.value && !availabilityLoading && selectedPlanId.value == null) void refreshAvailability()
+let refreshingCatalog = false
+async function refreshOnReturn() {
+  if (document.hidden || loading.value || refreshingCatalog || availabilityLoading || selectedPlanId.value != null) return
+  refreshingCatalog = true
+  const request = loadRequest
+  try {
+    const { data } = await presaleAPI.catalog()
+    // A slow background response must not remount or alter a checkout opened
+    // in the meantime. Never replay route checkout intents on activity refresh.
+    if (request !== loadRequest || selectedPlanId.value != null) return
+    catalog.value = data
+    await refreshAvailability()
+  } catch { /* Preserve the last successful catalog on transient network errors. */ }
+  finally { refreshingCatalog = false }
 }
+useIntervalFn(() => { void refreshOnReturn() }, 60_000)
 useEventListener(window, 'focus', refreshOnReturn)
 useEventListener(document, 'visibilitychange', refreshOnReturn)
 onBeforeUnmount(() => { ++loadRequest; ++availabilityRequest })
@@ -331,6 +393,18 @@ onMounted(() => {
 })
 </script>
 <style scoped>
+.hero-activity-link{display:inline-flex;align-items:center;gap:10px;margin-top:16px;padding:8px 12px;border:1px solid var(--cafe-line);border-radius:99px;font-size:11px;color:var(--cafe-accent);background:var(--cafe-surface);transition:border-color .25s,background .25s}
+.hero-activity-link:hover{border-color:var(--cafe-accent);background:#b9996910}.activity-dot{width:5px;height:5px;border-radius:50%;background:currentColor;box-shadow:0 0 0 4px #b9996914}
+.presale-plan[id]{scroll-margin-top:120px}.presale-plan:target{border-color:var(--cafe-accent)}
+
+.plan-gift{margin:0 0 20px;padding:14px 16px;border:1px solid #b99a7130;border-radius:10px;background:#b792600a}
+.plan-gift>div{display:flex;align-items:baseline;justify-content:space-between;gap:12px;font-size:12px}
+.plan-gift strong{font-size:21px;font-weight:500;letter-spacing:-.03em;color:#826039}
+.plan-gift small{font-size:10px;letter-spacing:.05em;font-weight:400}
+.plan-gift p,.plan-gift-unavailable{font-size:11px;opacity:.65;margin-top:6px}
+.plan-gift-unavailable{margin-bottom:20px}
+.dark .plan-gift strong{color:#e0c194}
+
 .presale-page { --cafe-page: #f6f3ed; --cafe-surface: #fffdf8; --cafe-ink: #302b26; --cafe-muted: #797268; --cafe-accent: #987647; --cafe-line: #ded8cf; min-height: 100vh; color: var(--cafe-ink); background: var(--cafe-page); }
 .dark .presale-page { --cafe-page: #141513; --cafe-surface: #1b1c19; --cafe-ink: #eae5dc; --cafe-muted: #a29c90; --cafe-accent: #c6ac7c; --cafe-line: #33342f; }
 main, footer { width: min(1200px, calc(100% - 80px)); margin-inline: auto; }

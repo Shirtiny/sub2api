@@ -21,6 +21,11 @@ export default {
   modes: { redirect: '跳转支付', popup: '扫码支付', qrcode: '二维码支付', jsapi: '微信内支付', embedded: '内嵌支付' },
   offlineAmount: '线下实退金额', offlineReference: '线下退款凭据',
   actions: {
+    PRESALE_BALANCE_BONUS_RESERVED: '活动赠送余额已预留',
+    PRESALE_BALANCE_BONUS_GRANTED: '活动赠送余额已到账',
+    PRESALE_BALANCE_BONUS_RECLAIMED: '活动赠送余额已结算回收',
+    PRESALE_BALANCE_BONUS_RELEASED: '未发放活动名额已释放',
+
     CAFE_CAMPAIGN_RESERVED: '通用咖啡券已预留', CAFE_CAMPAIGN_USED: '通用咖啡券已使用',
     PRESALE_CANCELLED: '管理员取消预订（未退款）', PRESALE_OFFLINE_REFUND: '已登记线下退款', PRESALE_ONLINE_REFUND_STARTED: '已提交线上退款',
 

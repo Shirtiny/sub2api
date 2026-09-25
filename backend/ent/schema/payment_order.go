@@ -96,6 +96,11 @@ func (PaymentOrder) Fields() []ent.Field {
 		field.Bool("presale_renewal").Default(false),
 		field.String("presale_plan_name").MaxLen(100).Default(""),
 		field.Int("presale_reset_cards").Default(0).Min(0).Max(1000),
+		field.Int64("presale_balance_bonus_activity_id").Optional().Nillable(),
+		field.Float("presale_balance_bonus_amount").Default(0).Min(0).SchemaType(map[string]string{dialect.Postgres: "decimal(20,8)"}),
+		field.String("presale_balance_bonus_currency").Default("USD").MaxLen(3),
+		field.Float("presale_balance_bonus_face_amount").Default(0).Min(0).SchemaType(map[string]string{dialect.Postgres: "decimal(20,8)"}),
+		field.Float("presale_balance_bonus_rate").Default(0).Min(0).SchemaType(map[string]string{dialect.Postgres: "decimal(20,8)"}),
 		field.Int64("subscription_group_id").
 			Optional().
 			Nillable(),

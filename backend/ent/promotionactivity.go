@@ -21,6 +21,8 @@ type PromotionActivity struct {
 	Name string `json:"name,omitempty"`
 	// ActivityType holds the value of the "activity_type" field.
 	ActivityType string `json:"activity_type,omitempty"`
+	// BonusCurrency holds the value of the "bonus_currency" field.
+	BonusCurrency string `json:"bonus_currency,omitempty"`
 	// Enabled holds the value of the "enabled" field.
 	Enabled bool `json:"enabled,omitempty"`
 	// StartsAt holds the value of the "starts_at" field.
@@ -77,7 +79,7 @@ func (*PromotionActivity) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case promotionactivity.FieldID, promotionactivity.FieldMaxUsesPerUser:
 			values[i] = new(sql.NullInt64)
-		case promotionactivity.FieldName, promotionactivity.FieldActivityType:
+		case promotionactivity.FieldName, promotionactivity.FieldActivityType, promotionactivity.FieldBonusCurrency:
 			values[i] = new(sql.NullString)
 		case promotionactivity.FieldStartsAt, promotionactivity.FieldEndsAt, promotionactivity.FieldCreatedAt, promotionactivity.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -113,6 +115,12 @@ func (_m *PromotionActivity) assignValues(columns []string, values []any) error 
 				return fmt.Errorf("unexpected type %T for field activity_type", values[i])
 			} else if value.Valid {
 				_m.ActivityType = value.String
+			}
+		case promotionactivity.FieldBonusCurrency:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field bonus_currency", values[i])
+			} else if value.Valid {
+				_m.BonusCurrency = value.String
 			}
 		case promotionactivity.FieldEnabled:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -201,6 +209,9 @@ func (_m *PromotionActivity) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("activity_type=")
 	builder.WriteString(_m.ActivityType)
+	builder.WriteString(", ")
+	builder.WriteString("bonus_currency=")
+	builder.WriteString(_m.BonusCurrency)
 	builder.WriteString(", ")
 	builder.WriteString("enabled=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Enabled))

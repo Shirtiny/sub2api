@@ -108,6 +108,18 @@ func (s *PaymentService) ProcessPresaleOffline(ctx context.Context, orderID, adm
 	if onlineAttempt {
 		return nil, infraerrors.Conflict("PRESALE_OFFLINE_ONLINE_REFUND", "an online refund was attempted; reconcile the provider before any offline settlement")
 	}
+	// Offline handling must not bypass the gift clawback. Freeze the same
+	// settlement even for cancel-only; a later cash refund uses that snapshot.
+	giftQuote := &PresaleRefundQuote{RefundAmount: o.Amount, GatewayAmount: o.PayAmount, Currency: PaymentOrderCurrency(o)}
+	if err := s.applyPresaleBalanceRefund(txCtx, o, giftQuote); err != nil {
+		return nil, err
+	}
+	if req.Mode == "refund" && amount.GreaterThan(decimal.NewFromFloat(giftQuote.GatewayAmount)) {
+		return nil, infraerrors.Conflict("PRESALE_OFFLINE_BONUS_AMOUNT", "refund exceeds the payment remaining after consumed balance gift")
+	}
+	if err := s.reclaimPresaleBalanceBonusTx(txCtx, tx, o, giftQuote); err != nil {
+		return nil, err
+	}
 	now := time.Now()
 	if o.Status == OrderStatusPresaleCancelled || o.RefundRequestedAt != nil {
 		// These paths already cancelled this exact term. Never deduct it again,
@@ -159,6 +171,9 @@ func (s *PaymentService) finishPresaleOffline(ctx context.Context, o *dbent.Paym
 	}
 	if s.authCacheInvalidator != nil {
 		s.authCacheInvalidator.InvalidateAuthCacheByUserID(ctx, o.UserID)
+	}
+	if o.PresaleBalanceBonusActivityID != nil {
+		s.invalidatePresaleBalanceCaches(ctx, o.UserID)
 	}
 	out := &PresaleOfflineResult{Status: o.Status}
 	if mode == "refund" && s.affiliateService != nil {

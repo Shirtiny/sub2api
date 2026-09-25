@@ -68,6 +68,7 @@ type WeChatPaymentResumeClaims struct {
 	Multiplier                          int    `json:"mul,omitempty"`
 	CafeCouponCode                      string `json:"cc,omitempty"`
 	ExpectedSubscriptionBonusActivityID int64  `json:"ba,omitempty"`
+	ExpectedPresaleBonusVersion         string `json:"bv,omitempty"`
 	RedirectTo                          string `json:"rd,omitempty"`
 	Scope                               string `json:"scp,omitempty"`
 	IssuedAt                            int64  `json:"iat"`
@@ -85,6 +86,7 @@ type WeChatPaymentOAuthContextClaims struct {
 	Multiplier                          int    `json:"mul,omitempty"`
 	CafeCouponCode                      string `json:"cc,omitempty"`
 	ExpectedSubscriptionBonusActivityID int64  `json:"ba,omitempty"`
+	ExpectedPresaleBonusVersion         string `json:"bv,omitempty"`
 	RedirectTo                          string `json:"rd,omitempty"`
 	Scope                               string `json:"scp,omitempty"`
 	IssuedAt                            int64  `json:"iat"`

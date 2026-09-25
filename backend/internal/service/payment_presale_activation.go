@@ -44,6 +44,9 @@ func (s *PaymentService) completePresale(ctx context.Context, o *dbent.PaymentOr
 	if err != nil {
 		return err
 	}
+	if err := s.grantPresaleBalanceBonusTx(txCtx, tx.Client(), o); err != nil {
+		return err
+	}
 	if !reserved {
 		if _, err := tx.User.UpdateOneID(o.UserID).AddTotalRecharged(o.PayAmount).Save(txCtx); err != nil {
 			return err
@@ -54,6 +57,9 @@ func (s *PaymentService) completePresale(ctx context.Context, o *dbent.PaymentOr
 	}
 	if err := tx.Commit(); err != nil {
 		return err
+	}
+	if o.PresaleBalanceBonusActivityID != nil {
+		s.invalidatePresaleBalanceCaches(ctx, o.UserID)
 	}
 	if err := s.applyAffiliateRebateForOrder(ctx, o); err != nil {
 		return err

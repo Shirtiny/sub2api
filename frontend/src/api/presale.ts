@@ -1,5 +1,5 @@
 import { apiClient } from './client'
-import type { PaymentOrder, SubscriptionPlan } from '@/types/payment'
+import type { PaymentOrder, SubscriptionPlan, PresaleBalanceBenefit, PromotionActivity } from '@/types/payment'
 
 export interface PresalePeriod {
   month: string
@@ -8,19 +8,29 @@ export interface PresalePeriod {
   expires_at: string
   full_refund_before: string
 }
+// Presentation contract shared by balance/day cards. The server only includes
+// activity types actually supported by presale fulfillment.
+export type PresaleActivity = Pick<PromotionActivity, 'id' | 'name' | 'type' | 'bonus_currency' | 'starts_at' | 'ends_at' | 'max_uses_per_user'> & {
+  plan_bonuses: Array<{ plan_id: number; bonus_balance?: number; bonus_days?: number }>
+}
 export interface PresaleCatalog {
+  activities?: PresaleActivity[]
   period: PresalePeriod
   plans: SubscriptionPlan[]
   enabled: boolean
   server_time: string
 }
 export interface PresaleQuote extends PresalePeriod {
+  balance_bonus?: PresaleBalanceBenefit | null
   plan_id: number
   renewal: boolean
   current_subscription_id?: number
   current_expires_at?: string
 }
 export interface PresaleRefundQuote {
+  balance_bonus_amount?: number
+  balance_bonus_reclaim?: number
+  balance_bonus_deduction?: number
   refund_amount: number
   gateway_amount: number
   fee_percent: number

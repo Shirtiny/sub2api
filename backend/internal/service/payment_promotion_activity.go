@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"math"
 	"sort"
 	"strings"
 	"time"
@@ -19,6 +20,7 @@ import (
 
 const (
 	PromotionActivityTypeSubscriptionBonusDays = "subscription_bonus_days"
+	PromotionActivityTypePresaleBalance        = "presale_balance"
 
 	PromotionActivityStatusDisabled  = "disabled"
 	PromotionActivityStatusScheduled = "scheduled"
@@ -31,11 +33,13 @@ const (
 )
 
 type PromotionActivityPlanInput struct {
-	PlanID    int64 `json:"plan_id"`
-	BonusDays int   `json:"bonus_days"`
+	PlanID       int64   `json:"plan_id"`
+	BonusDays    int     `json:"bonus_days"`
+	BonusBalance float64 `json:"bonus_balance"`
 }
 
 type UpsertPromotionActivityRequest struct {
+	BonusCurrency  string                       `json:"bonus_currency"`
 	Name           string                       `json:"name"`
 	Type           string                       `json:"type"`
 	Enabled        bool                         `json:"enabled"`
@@ -46,12 +50,14 @@ type UpsertPromotionActivityRequest struct {
 }
 
 type PromotionActivityPlanView struct {
-	ID        int64 `json:"id"`
-	PlanID    int64 `json:"plan_id"`
-	BonusDays int   `json:"bonus_days"`
+	ID           int64   `json:"id"`
+	PlanID       int64   `json:"plan_id"`
+	BonusDays    int     `json:"bonus_days"`
+	BonusBalance float64 `json:"bonus_balance"`
 }
 
 type PromotionActivityView struct {
+	BonusCurrency  string                      `json:"bonus_currency"`
 	ID             int64                       `json:"id"`
 	Name           string                      `json:"name"`
 	Type           string                      `json:"type"`
@@ -107,6 +113,9 @@ func (s *PaymentConfigService) GetPromotionActivity(ctx context.Context, id int6
 }
 
 func (s *PaymentConfigService) CreatePromotionActivity(ctx context.Context, req UpsertPromotionActivityRequest) (*PromotionActivityView, error) {
+	if req.BonusCurrency == "" {
+		req.BonusCurrency = "USD"
+	}
 	tx, err := s.entClient.Tx(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("begin promotion activity transaction: %w", err)
@@ -116,13 +125,14 @@ func (s *PaymentConfigService) CreatePromotionActivity(ctx context.Context, req 
 	if err := lockPromotionActivityPlansForUpdate(txCtx, tx.Client(), req.PlanBonuses); err != nil {
 		return nil, err
 	}
-	bonuses, err := s.validatePromotionActivityRequest(txCtx, tx.Client(), req, 0, false)
+	bonuses, err := s.validatePromotionActivityRequest(txCtx, tx.Client(), req, 0, false, true)
 	if err != nil {
 		return nil, err
 	}
 	activity, err := tx.PromotionActivity.Create().
 		SetName(strings.TrimSpace(req.Name)).
 		SetActivityType(req.Type).
+		SetBonusCurrency(req.BonusCurrency).
 		SetEnabled(req.Enabled).
 		SetStartsAt(req.StartsAt).
 		SetEndsAt(req.EndsAt).
@@ -160,6 +170,9 @@ func (s *PaymentConfigService) UpdatePromotionActivity(ctx context.Context, id i
 		}
 		return nil, fmt.Errorf("get promotion activity: %w", err)
 	}
+	if req.BonusCurrency == "" {
+		req.BonusCurrency = current.BonusCurrency
+	}
 	hasAnyParticipation, err := tx.PromotionActivityParticipation.Query().
 		Where(promotionactivityparticipation.ActivityIDEQ(id)).
 		Exist(txCtx)
@@ -175,6 +188,9 @@ func (s *PaymentConfigService) UpdatePromotionActivity(ctx context.Context, id i
 	if err != nil {
 		return nil, fmt.Errorf("check blocking promotion activity participation: %w", err)
 	}
+	if current.ActivityType == PromotionActivityTypePresaleBalance && hasAnyParticipation {
+		hasBlockingParticipation = true
+	}
 	allowDetachedActivity := hasAnyParticipation && len(current.Edges.PlanBonuses) == 0 && len(req.PlanBonuses) == 0
 	planInputs := append([]PromotionActivityPlanInput(nil), req.PlanBonuses...)
 	for _, existing := range current.Edges.PlanBonuses {
@@ -183,7 +199,7 @@ func (s *PaymentConfigService) UpdatePromotionActivity(ctx context.Context, id i
 	if err := lockPromotionActivityPlansForUpdate(txCtx, tx.Client(), planInputs); err != nil {
 		return nil, err
 	}
-	bonuses, err := s.validatePromotionActivityRequest(txCtx, tx.Client(), req, id, allowDetachedActivity)
+	bonuses, err := s.validatePromotionActivityRequest(txCtx, tx.Client(), req, id, allowDetachedActivity, req.Enabled && (!current.Enabled || !promotionActivityImmutableFieldsMatch(current, req, req.PlanBonuses)))
 	if err != nil {
 		return nil, err
 	}
@@ -193,6 +209,7 @@ func (s *PaymentConfigService) UpdatePromotionActivity(ctx context.Context, id i
 	if _, err := tx.PromotionActivity.UpdateOneID(id).
 		SetName(strings.TrimSpace(req.Name)).
 		SetActivityType(req.Type).
+		SetBonusCurrency(req.BonusCurrency).
 		SetEnabled(req.Enabled).
 		SetStartsAt(req.StartsAt).
 		SetEndsAt(req.EndsAt).
@@ -345,7 +362,10 @@ func (s *PaymentConfigService) GetEligibleSubscriptionBonuses(ctx context.Contex
 	return result, nil
 }
 
-func (s *PaymentConfigService) validatePromotionActivityRequest(ctx context.Context, client *dbent.Client, req UpsertPromotionActivityRequest, excludeID int64, allowEmptyPlans bool) ([]PromotionActivityPlanInput, error) {
+func (s *PaymentConfigService) validatePromotionActivityRequest(ctx context.Context, client *dbent.Client, req UpsertPromotionActivityRequest, excludeID int64, allowEmptyPlans, requirePresalePlans bool) ([]PromotionActivityPlanInput, error) {
+	if req.BonusCurrency != "USD" && req.BonusCurrency != "CNY" {
+		return nil, infraerrors.BadRequest("PROMOTION_ACTIVITY_CURRENCY_INVALID", "gift currency must be USD or CNY")
+	}
 	req.Name = strings.TrimSpace(req.Name)
 	if req.Name == "" {
 		return nil, infraerrors.BadRequest("PROMOTION_ACTIVITY_NAME_REQUIRED", "activity name is required")
@@ -353,7 +373,7 @@ func (s *PaymentConfigService) validatePromotionActivityRequest(ctx context.Cont
 	if len([]rune(req.Name)) > 100 {
 		return nil, infraerrors.BadRequest("PROMOTION_ACTIVITY_NAME_TOO_LONG", "activity name must be at most 100 characters")
 	}
-	if req.Type != PromotionActivityTypeSubscriptionBonusDays {
+	if req.Type != PromotionActivityTypeSubscriptionBonusDays && req.Type != PromotionActivityTypePresaleBalance {
 		return nil, infraerrors.BadRequest("PROMOTION_ACTIVITY_TYPE_INVALID", "unsupported promotion activity type")
 	}
 	if req.StartsAt.IsZero() || req.EndsAt.IsZero() || !req.EndsAt.After(req.StartsAt) {
@@ -373,7 +393,9 @@ func (s *PaymentConfigService) validatePromotionActivityRequest(ctx context.Cont
 	planIDs := make([]int64, 0, len(bonuses))
 	seen := make(map[int64]struct{}, len(bonuses))
 	for _, bonus := range bonuses {
-		if bonus.PlanID <= 0 || bonus.BonusDays <= 0 || bonus.BonusDays > MaxValidityDays {
+		validDays := req.Type == PromotionActivityTypeSubscriptionBonusDays && bonus.BonusDays > 0 && bonus.BonusDays <= MaxValidityDays && bonus.BonusBalance == 0
+		validBalance := req.Type == PromotionActivityTypePresaleBalance && bonus.BonusDays == 0 && validPresaleBalanceBonusAmount(bonus.BonusBalance)
+		if bonus.PlanID <= 0 || (!validDays && !validBalance) {
 			return nil, infraerrors.BadRequest("PROMOTION_ACTIVITY_PLAN_INVALID", "plan and bonus days must be valid")
 		}
 		if _, exists := seen[bonus.PlanID]; exists {
@@ -394,6 +416,14 @@ func (s *PaymentConfigService) validatePromotionActivityRequest(ctx context.Cont
 		bonusByPlan[bonus.PlanID] = bonus.BonusDays
 	}
 	for _, plan := range plans {
+		if req.Type == PromotionActivityTypePresaleBalance {
+			// Stopping an activity or editing its name must remain possible after
+			// a participating plan is taken out of presale. Activation still validates.
+			if requirePresalePlans && !plan.PresaleEnabled {
+				return nil, infraerrors.BadRequest("PROMOTION_ACTIVITY_PRESALE_REQUIRED", "balance gifts require presale-enabled plans")
+			}
+			continue
+		}
 		baseDays, validityErr := validateSubscriptionPlanValidity(plan.ValidityDays, plan.ValidityUnit)
 		if validityErr != nil || bonusByPlan[plan.ID] > MaxValidityDays-baseDays {
 			return nil, infraerrors.BadRequest("PROMOTION_ACTIVITY_VALIDITY_TOO_LONG", "plan validity plus bonus days exceeds the maximum subscription validity")
@@ -429,7 +459,7 @@ func createPromotionActivityPlans(ctx context.Context, client *dbent.Client, act
 		builders = append(builders, client.PromotionActivityPlan.Create().
 			SetActivityID(activityID).
 			SetPlanID(bonus.PlanID).
-			SetBonusDays(bonus.BonusDays))
+			SetBonusDays(bonus.BonusDays).SetBonusBalance(bonus.BonusBalance))
 	}
 	if _, err := client.PromotionActivityPlan.CreateBulk(builders...).Save(ctx); err != nil {
 		return fmt.Errorf("create promotion activity plans: %w", err)
@@ -440,10 +470,10 @@ func createPromotionActivityPlans(ctx context.Context, client *dbent.Client, act
 func promotionActivityView(activity *dbent.PromotionActivity, now time.Time) PromotionActivityView {
 	planBonuses := make([]PromotionActivityPlanView, 0, len(activity.Edges.PlanBonuses))
 	for _, bonus := range activity.Edges.PlanBonuses {
-		planBonuses = append(planBonuses, PromotionActivityPlanView{ID: bonus.ID, PlanID: bonus.PlanID, BonusDays: bonus.BonusDays})
+		planBonuses = append(planBonuses, PromotionActivityPlanView{ID: bonus.ID, PlanID: bonus.PlanID, BonusDays: bonus.BonusDays, BonusBalance: bonus.BonusBalance})
 	}
 	return PromotionActivityView{
-		ID: activity.ID, Name: activity.Name, Type: activity.ActivityType, Enabled: activity.Enabled,
+		BonusCurrency: activity.BonusCurrency, ID: activity.ID, Name: activity.Name, Type: activity.ActivityType, Enabled: activity.Enabled,
 		Status: promotionActivityStatus(activity, now), StartsAt: activity.StartsAt, EndsAt: activity.EndsAt,
 		MaxUsesPerUser: activity.MaxUsesPerUser, PlanBonuses: planBonuses,
 		CreatedAt: activity.CreatedAt, UpdatedAt: activity.UpdatedAt,
@@ -464,20 +494,24 @@ func promotionActivityStatus(activity *dbent.PromotionActivity, now time.Time) s
 }
 
 func promotionActivityImmutableFieldsMatch(activity *dbent.PromotionActivity, req UpsertPromotionActivityRequest, bonuses []PromotionActivityPlanInput) bool {
-	if activity.ActivityType != req.Type || !activity.StartsAt.Equal(req.StartsAt) || !activity.EndsAt.Equal(req.EndsAt) || activity.MaxUsesPerUser != req.MaxUsesPerUser {
+	if activity.BonusCurrency != req.BonusCurrency || activity.ActivityType != req.Type || !activity.StartsAt.Equal(req.StartsAt) || !activity.EndsAt.Equal(req.EndsAt) || activity.MaxUsesPerUser != req.MaxUsesPerUser {
 		return false
 	}
 	if len(activity.Edges.PlanBonuses) != len(bonuses) {
 		return false
 	}
-	existing := make(map[int64]int, len(activity.Edges.PlanBonuses))
+	existing := make(map[int64]PromotionActivityPlanInput, len(activity.Edges.PlanBonuses))
 	for _, bonus := range activity.Edges.PlanBonuses {
-		existing[bonus.PlanID] = bonus.BonusDays
+		existing[bonus.PlanID] = PromotionActivityPlanInput{PlanID: bonus.PlanID, BonusDays: bonus.BonusDays, BonusBalance: bonus.BonusBalance}
 	}
 	for _, bonus := range bonuses {
-		if existing[bonus.PlanID] != bonus.BonusDays {
+		if existing[bonus.PlanID] != bonus {
 			return false
 		}
 	}
 	return true
+}
+
+func validPresaleBalanceBonusAmount(v float64) bool {
+	return !math.IsNaN(v) && !math.IsInf(v, 0) && v > 0 && v <= 1000000 && math.Abs(v*100-math.Round(v*100)) < 0.000001
 }

@@ -127,6 +127,47 @@ func (_u *PromotionActivityParticipationUpdate) AddBonusDays(v int) *PromotionAc
 	return _u
 }
 
+// SetBonusBalance sets the "bonus_balance" field.
+func (_u *PromotionActivityParticipationUpdate) SetBonusBalance(v float64) *PromotionActivityParticipationUpdate {
+	_u.mutation.ResetBonusBalance()
+	_u.mutation.SetBonusBalance(v)
+	return _u
+}
+
+// SetNillableBonusBalance sets the "bonus_balance" field if the given value is not nil.
+func (_u *PromotionActivityParticipationUpdate) SetNillableBonusBalance(v *float64) *PromotionActivityParticipationUpdate {
+	if v != nil {
+		_u.SetBonusBalance(*v)
+	}
+	return _u
+}
+
+// AddBonusBalance adds value to the "bonus_balance" field.
+func (_u *PromotionActivityParticipationUpdate) AddBonusBalance(v float64) *PromotionActivityParticipationUpdate {
+	_u.mutation.AddBonusBalance(v)
+	return _u
+}
+
+// SetBalanceReclaimedAt sets the "balance_reclaimed_at" field.
+func (_u *PromotionActivityParticipationUpdate) SetBalanceReclaimedAt(v time.Time) *PromotionActivityParticipationUpdate {
+	_u.mutation.SetBalanceReclaimedAt(v)
+	return _u
+}
+
+// SetNillableBalanceReclaimedAt sets the "balance_reclaimed_at" field if the given value is not nil.
+func (_u *PromotionActivityParticipationUpdate) SetNillableBalanceReclaimedAt(v *time.Time) *PromotionActivityParticipationUpdate {
+	if v != nil {
+		_u.SetBalanceReclaimedAt(*v)
+	}
+	return _u
+}
+
+// ClearBalanceReclaimedAt clears the value of the "balance_reclaimed_at" field.
+func (_u *PromotionActivityParticipationUpdate) ClearBalanceReclaimedAt() *PromotionActivityParticipationUpdate {
+	_u.mutation.ClearBalanceReclaimedAt()
+	return _u
+}
+
 // SetStatus sets the "status" field.
 func (_u *PromotionActivityParticipationUpdate) SetStatus(v string) *PromotionActivityParticipationUpdate {
 	_u.mutation.SetStatus(v)
@@ -300,6 +341,11 @@ func (_u *PromotionActivityParticipationUpdate) check() error {
 			return &ValidationError{Name: "bonus_days", err: fmt.Errorf(`ent: validator failed for field "PromotionActivityParticipation.bonus_days": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.BonusBalance(); ok {
+		if err := promotionactivityparticipation.BonusBalanceValidator(v); err != nil {
+			return &ValidationError{Name: "bonus_balance", err: fmt.Errorf(`ent: validator failed for field "PromotionActivityParticipation.bonus_balance": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Status(); ok {
 		if err := promotionactivityparticipation.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "PromotionActivityParticipation.status": %w`, err)}
@@ -351,6 +397,18 @@ func (_u *PromotionActivityParticipationUpdate) sqlSave(ctx context.Context) (_n
 	}
 	if value, ok := _u.mutation.AddedBonusDays(); ok {
 		_spec.AddField(promotionactivityparticipation.FieldBonusDays, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.BonusBalance(); ok {
+		_spec.SetField(promotionactivityparticipation.FieldBonusBalance, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedBonusBalance(); ok {
+		_spec.AddField(promotionactivityparticipation.FieldBonusBalance, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.BalanceReclaimedAt(); ok {
+		_spec.SetField(promotionactivityparticipation.FieldBalanceReclaimedAt, field.TypeTime, value)
+	}
+	if _u.mutation.BalanceReclaimedAtCleared() {
+		_spec.ClearField(promotionactivityparticipation.FieldBalanceReclaimedAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(promotionactivityparticipation.FieldStatus, field.TypeString, value)
@@ -523,6 +581,47 @@ func (_u *PromotionActivityParticipationUpdateOne) SetNillableBonusDays(v *int) 
 // AddBonusDays adds value to the "bonus_days" field.
 func (_u *PromotionActivityParticipationUpdateOne) AddBonusDays(v int) *PromotionActivityParticipationUpdateOne {
 	_u.mutation.AddBonusDays(v)
+	return _u
+}
+
+// SetBonusBalance sets the "bonus_balance" field.
+func (_u *PromotionActivityParticipationUpdateOne) SetBonusBalance(v float64) *PromotionActivityParticipationUpdateOne {
+	_u.mutation.ResetBonusBalance()
+	_u.mutation.SetBonusBalance(v)
+	return _u
+}
+
+// SetNillableBonusBalance sets the "bonus_balance" field if the given value is not nil.
+func (_u *PromotionActivityParticipationUpdateOne) SetNillableBonusBalance(v *float64) *PromotionActivityParticipationUpdateOne {
+	if v != nil {
+		_u.SetBonusBalance(*v)
+	}
+	return _u
+}
+
+// AddBonusBalance adds value to the "bonus_balance" field.
+func (_u *PromotionActivityParticipationUpdateOne) AddBonusBalance(v float64) *PromotionActivityParticipationUpdateOne {
+	_u.mutation.AddBonusBalance(v)
+	return _u
+}
+
+// SetBalanceReclaimedAt sets the "balance_reclaimed_at" field.
+func (_u *PromotionActivityParticipationUpdateOne) SetBalanceReclaimedAt(v time.Time) *PromotionActivityParticipationUpdateOne {
+	_u.mutation.SetBalanceReclaimedAt(v)
+	return _u
+}
+
+// SetNillableBalanceReclaimedAt sets the "balance_reclaimed_at" field if the given value is not nil.
+func (_u *PromotionActivityParticipationUpdateOne) SetNillableBalanceReclaimedAt(v *time.Time) *PromotionActivityParticipationUpdateOne {
+	if v != nil {
+		_u.SetBalanceReclaimedAt(*v)
+	}
+	return _u
+}
+
+// ClearBalanceReclaimedAt clears the value of the "balance_reclaimed_at" field.
+func (_u *PromotionActivityParticipationUpdateOne) ClearBalanceReclaimedAt() *PromotionActivityParticipationUpdateOne {
+	_u.mutation.ClearBalanceReclaimedAt()
 	return _u
 }
 
@@ -712,6 +811,11 @@ func (_u *PromotionActivityParticipationUpdateOne) check() error {
 			return &ValidationError{Name: "bonus_days", err: fmt.Errorf(`ent: validator failed for field "PromotionActivityParticipation.bonus_days": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.BonusBalance(); ok {
+		if err := promotionactivityparticipation.BonusBalanceValidator(v); err != nil {
+			return &ValidationError{Name: "bonus_balance", err: fmt.Errorf(`ent: validator failed for field "PromotionActivityParticipation.bonus_balance": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Status(); ok {
 		if err := promotionactivityparticipation.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "PromotionActivityParticipation.status": %w`, err)}
@@ -780,6 +884,18 @@ func (_u *PromotionActivityParticipationUpdateOne) sqlSave(ctx context.Context) 
 	}
 	if value, ok := _u.mutation.AddedBonusDays(); ok {
 		_spec.AddField(promotionactivityparticipation.FieldBonusDays, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.BonusBalance(); ok {
+		_spec.SetField(promotionactivityparticipation.FieldBonusBalance, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedBonusBalance(); ok {
+		_spec.AddField(promotionactivityparticipation.FieldBonusBalance, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.BalanceReclaimedAt(); ok {
+		_spec.SetField(promotionactivityparticipation.FieldBalanceReclaimedAt, field.TypeTime, value)
+	}
+	if _u.mutation.BalanceReclaimedAtCleared() {
+		_spec.ClearField(promotionactivityparticipation.FieldBalanceReclaimedAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(promotionactivityparticipation.FieldStatus, field.TypeString, value)

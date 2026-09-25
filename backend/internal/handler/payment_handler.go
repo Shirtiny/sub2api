@@ -579,6 +579,7 @@ type CreateOrderRequest struct {
 	Multiplier                          int     `json:"multiplier"`
 	CafeCouponCode                      string  `json:"cafe_coupon_code"`
 	ExpectedSubscriptionBonusActivityID int64   `json:"expected_subscription_bonus_activity_id"`
+	ExpectedPresaleBonusVersion         string  `json:"expected_presale_bonus_version"`
 	// IsMobile lets the frontend declare its mobile status directly. When
 	// nil we fall back to User-Agent heuristics (which miss iPadOS / some
 	// embedded browsers that strip the "Mobile" keyword).
@@ -650,6 +651,7 @@ func (h *PaymentHandler) CreateOrder(c *gin.Context) {
 		Multiplier:                          req.Multiplier,
 		CafeCouponCode:                      req.CafeCouponCode,
 		ExpectedSubscriptionBonusActivityID: req.ExpectedSubscriptionBonusActivityID,
+		ExpectedPresaleBonusVersion:         req.ExpectedPresaleBonusVersion,
 		Locale:                              c.GetHeader("Accept-Language"),
 	}
 
@@ -678,6 +680,7 @@ type paymentCreateOrderIdempotencyRequest struct {
 	Multiplier                          int     `json:"multiplier,omitempty"`
 	CafeCouponCode                      string  `json:"cafe_coupon_code,omitempty"`
 	ExpectedSubscriptionBonusActivityID int64   `json:"expected_subscription_bonus_activity_id,omitempty"`
+	ExpectedPresaleBonusVersion         string  `json:"expected_presale_bonus_version,omitempty"`
 }
 
 func paymentCreateOrderIdempotencyPayload(req service.CreateOrderRequest) paymentCreateOrderIdempotencyRequest {
@@ -695,6 +698,7 @@ func paymentCreateOrderIdempotencyPayload(req service.CreateOrderRequest) paymen
 		Multiplier:                          req.Multiplier,
 		CafeCouponCode:                      req.CafeCouponCode,
 		ExpectedSubscriptionBonusActivityID: req.ExpectedSubscriptionBonusActivityID,
+		ExpectedPresaleBonusVersion:         req.ExpectedPresaleBonusVersion,
 	}
 }
 
@@ -745,6 +749,7 @@ func applyWeChatPaymentResumeClaims(req *CreateOrderRequest, claims *service.WeC
 	}
 	req.CafeCouponCode = strings.TrimSpace(claims.CafeCouponCode)
 	req.ExpectedSubscriptionBonusActivityID = claims.ExpectedSubscriptionBonusActivityID
+	req.ExpectedPresaleBonusVersion = claims.ExpectedPresaleBonusVersion
 	req.PresaleMonth = claims.PresaleMonth
 	return nil
 }

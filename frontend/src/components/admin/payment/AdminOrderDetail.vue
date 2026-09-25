@@ -146,6 +146,7 @@ const sections = computed(() => {
     ...(o.presale_starts_at ? [row('activated', o.presale_activated_at ? formatPresaleDate(o.presale_activated_at, locale.value) : t('adminOrderDetail.pendingActivation'))] : []),
     ...(o.presale_subscription_id ? [row('subscription', `#${o.presale_subscription_id}`)] : []),
     ...(o.subscription_early_reset_enabled ? [row('earlyReset', t('adminOrderDetail.resetDeduction', { count: o.subscription_early_reset_duration_days }))] : []),
+    ...(o.presale_balance_bonus_amount ? [{ label: t('presale.gift.amount'), value: `${money(o.presale_balance_bonus_face_amount || o.presale_balance_bonus_amount, o.presale_balance_bonus_currency || 'USD')} → ${money(o.presale_balance_bonus_amount, 'USD')}` }] : []),
     ...(o.presale_reset_cards ? [row('legacyResetCards', o.presale_reset_cards)] : []),
   ] : [row('creditedAmount', money(o.amount, 'USD'))]
   const referrer = referringPage(o.src_url)

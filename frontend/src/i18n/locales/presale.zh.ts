@@ -1,6 +1,8 @@
+import gift from './presaleGift.zh'
 import cafeCampaign from './cafeCampaign.zh'
 
 export default {
+  gift,
   nav: '订阅预售', banner: '下月订阅 · 预售进行中', eyebrow: 'A little ahead. A lot more ready.',
   title: '为下个月的专注，', titleAccent: '提前准备。',
   intro: '用更从容的价格，预订一整个月的原生智能。现在下单，下月月初正式开始。',
@@ -67,6 +69,13 @@ export default {
     affiliatePending: '退款与预订取消已登记，关联返佣冲回尚未完成。请重试完成记账，不会再次退款。', retry: '重试关联记账',
   },
   errors: {
+    ACTIVITY_BENEFIT_CHANGED: '活动赠送信息已变化，请重新核对后确认。',
+    PRESALE_BALANCE_BONUS_REFUND_MANUAL: '可退款金额不足以抵扣已使用的赠送余额，请先补足余额或联系支持核对。',
+    PRESALE_OFFLINE_BONUS_AMOUNT: '实退金额不能超过扣除已使用赠送余额后的金额。',
+    PRESALE_BALANCE_BONUS_EXPIRED: '支付超过活动订单有效期，请联系支持处理。',
+    PRESALE_BALANCE_BONUS_LIMIT: '该活动的参与次数已被其他订单占用，请联系支持。',
+    PRESALE_BALANCE_BONUS_RATE_INVALID: '赠送余额换算配置无效，请联系支持。',
+
     ...cafeCampaign.errors,
     PRESALE_REFUND_REASON_REQUIRED: '请填写退款原因。',
     PRESALE_REFUND_REASON_TOO_LONG: '退款原因不能超过 {max} 个字。',

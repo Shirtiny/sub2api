@@ -53,6 +53,42 @@ func (_c *PromotionActivityParticipationCreate) SetBonusDays(v int) *PromotionAc
 	return _c
 }
 
+// SetNillableBonusDays sets the "bonus_days" field if the given value is not nil.
+func (_c *PromotionActivityParticipationCreate) SetNillableBonusDays(v *int) *PromotionActivityParticipationCreate {
+	if v != nil {
+		_c.SetBonusDays(*v)
+	}
+	return _c
+}
+
+// SetBonusBalance sets the "bonus_balance" field.
+func (_c *PromotionActivityParticipationCreate) SetBonusBalance(v float64) *PromotionActivityParticipationCreate {
+	_c.mutation.SetBonusBalance(v)
+	return _c
+}
+
+// SetNillableBonusBalance sets the "bonus_balance" field if the given value is not nil.
+func (_c *PromotionActivityParticipationCreate) SetNillableBonusBalance(v *float64) *PromotionActivityParticipationCreate {
+	if v != nil {
+		_c.SetBonusBalance(*v)
+	}
+	return _c
+}
+
+// SetBalanceReclaimedAt sets the "balance_reclaimed_at" field.
+func (_c *PromotionActivityParticipationCreate) SetBalanceReclaimedAt(v time.Time) *PromotionActivityParticipationCreate {
+	_c.mutation.SetBalanceReclaimedAt(v)
+	return _c
+}
+
+// SetNillableBalanceReclaimedAt sets the "balance_reclaimed_at" field if the given value is not nil.
+func (_c *PromotionActivityParticipationCreate) SetNillableBalanceReclaimedAt(v *time.Time) *PromotionActivityParticipationCreate {
+	if v != nil {
+		_c.SetBalanceReclaimedAt(*v)
+	}
+	return _c
+}
+
 // SetStatus sets the "status" field.
 func (_c *PromotionActivityParticipationCreate) SetStatus(v string) *PromotionActivityParticipationCreate {
 	_c.mutation.SetStatus(v)
@@ -175,6 +211,14 @@ func (_c *PromotionActivityParticipationCreate) ExecX(ctx context.Context) {
 
 // defaults sets the default values of the builder before save.
 func (_c *PromotionActivityParticipationCreate) defaults() {
+	if _, ok := _c.mutation.BonusDays(); !ok {
+		v := promotionactivityparticipation.DefaultBonusDays
+		_c.mutation.SetBonusDays(v)
+	}
+	if _, ok := _c.mutation.BonusBalance(); !ok {
+		v := promotionactivityparticipation.DefaultBonusBalance
+		_c.mutation.SetBonusBalance(v)
+	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		v := promotionactivityparticipation.DefaultCreatedAt()
 		_c.mutation.SetCreatedAt(v)
@@ -225,6 +269,14 @@ func (_c *PromotionActivityParticipationCreate) check() error {
 	if v, ok := _c.mutation.BonusDays(); ok {
 		if err := promotionactivityparticipation.BonusDaysValidator(v); err != nil {
 			return &ValidationError{Name: "bonus_days", err: fmt.Errorf(`ent: validator failed for field "PromotionActivityParticipation.bonus_days": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.BonusBalance(); !ok {
+		return &ValidationError{Name: "bonus_balance", err: errors.New(`ent: missing required field "PromotionActivityParticipation.bonus_balance"`)}
+	}
+	if v, ok := _c.mutation.BonusBalance(); ok {
+		if err := promotionactivityparticipation.BonusBalanceValidator(v); err != nil {
+			return &ValidationError{Name: "bonus_balance", err: fmt.Errorf(`ent: validator failed for field "PromotionActivityParticipation.bonus_balance": %w`, err)}
 		}
 	}
 	if _, ok := _c.mutation.Status(); !ok {
@@ -294,6 +346,14 @@ func (_c *PromotionActivityParticipationCreate) createSpec() (*PromotionActivity
 	if value, ok := _c.mutation.BonusDays(); ok {
 		_spec.SetField(promotionactivityparticipation.FieldBonusDays, field.TypeInt, value)
 		_node.BonusDays = value
+	}
+	if value, ok := _c.mutation.BonusBalance(); ok {
+		_spec.SetField(promotionactivityparticipation.FieldBonusBalance, field.TypeFloat64, value)
+		_node.BonusBalance = value
+	}
+	if value, ok := _c.mutation.BalanceReclaimedAt(); ok {
+		_spec.SetField(promotionactivityparticipation.FieldBalanceReclaimedAt, field.TypeTime, value)
+		_node.BalanceReclaimedAt = &value
 	}
 	if value, ok := _c.mutation.Status(); ok {
 		_spec.SetField(promotionactivityparticipation.FieldStatus, field.TypeString, value)
@@ -473,6 +533,42 @@ func (u *PromotionActivityParticipationUpsert) UpdateBonusDays() *PromotionActiv
 // AddBonusDays adds v to the "bonus_days" field.
 func (u *PromotionActivityParticipationUpsert) AddBonusDays(v int) *PromotionActivityParticipationUpsert {
 	u.Add(promotionactivityparticipation.FieldBonusDays, v)
+	return u
+}
+
+// SetBonusBalance sets the "bonus_balance" field.
+func (u *PromotionActivityParticipationUpsert) SetBonusBalance(v float64) *PromotionActivityParticipationUpsert {
+	u.Set(promotionactivityparticipation.FieldBonusBalance, v)
+	return u
+}
+
+// UpdateBonusBalance sets the "bonus_balance" field to the value that was provided on create.
+func (u *PromotionActivityParticipationUpsert) UpdateBonusBalance() *PromotionActivityParticipationUpsert {
+	u.SetExcluded(promotionactivityparticipation.FieldBonusBalance)
+	return u
+}
+
+// AddBonusBalance adds v to the "bonus_balance" field.
+func (u *PromotionActivityParticipationUpsert) AddBonusBalance(v float64) *PromotionActivityParticipationUpsert {
+	u.Add(promotionactivityparticipation.FieldBonusBalance, v)
+	return u
+}
+
+// SetBalanceReclaimedAt sets the "balance_reclaimed_at" field.
+func (u *PromotionActivityParticipationUpsert) SetBalanceReclaimedAt(v time.Time) *PromotionActivityParticipationUpsert {
+	u.Set(promotionactivityparticipation.FieldBalanceReclaimedAt, v)
+	return u
+}
+
+// UpdateBalanceReclaimedAt sets the "balance_reclaimed_at" field to the value that was provided on create.
+func (u *PromotionActivityParticipationUpsert) UpdateBalanceReclaimedAt() *PromotionActivityParticipationUpsert {
+	u.SetExcluded(promotionactivityparticipation.FieldBalanceReclaimedAt)
+	return u
+}
+
+// ClearBalanceReclaimedAt clears the value of the "balance_reclaimed_at" field.
+func (u *PromotionActivityParticipationUpsert) ClearBalanceReclaimedAt() *PromotionActivityParticipationUpsert {
+	u.SetNull(promotionactivityparticipation.FieldBalanceReclaimedAt)
 	return u
 }
 
@@ -706,6 +802,48 @@ func (u *PromotionActivityParticipationUpsertOne) AddBonusDays(v int) *Promotion
 func (u *PromotionActivityParticipationUpsertOne) UpdateBonusDays() *PromotionActivityParticipationUpsertOne {
 	return u.Update(func(s *PromotionActivityParticipationUpsert) {
 		s.UpdateBonusDays()
+	})
+}
+
+// SetBonusBalance sets the "bonus_balance" field.
+func (u *PromotionActivityParticipationUpsertOne) SetBonusBalance(v float64) *PromotionActivityParticipationUpsertOne {
+	return u.Update(func(s *PromotionActivityParticipationUpsert) {
+		s.SetBonusBalance(v)
+	})
+}
+
+// AddBonusBalance adds v to the "bonus_balance" field.
+func (u *PromotionActivityParticipationUpsertOne) AddBonusBalance(v float64) *PromotionActivityParticipationUpsertOne {
+	return u.Update(func(s *PromotionActivityParticipationUpsert) {
+		s.AddBonusBalance(v)
+	})
+}
+
+// UpdateBonusBalance sets the "bonus_balance" field to the value that was provided on create.
+func (u *PromotionActivityParticipationUpsertOne) UpdateBonusBalance() *PromotionActivityParticipationUpsertOne {
+	return u.Update(func(s *PromotionActivityParticipationUpsert) {
+		s.UpdateBonusBalance()
+	})
+}
+
+// SetBalanceReclaimedAt sets the "balance_reclaimed_at" field.
+func (u *PromotionActivityParticipationUpsertOne) SetBalanceReclaimedAt(v time.Time) *PromotionActivityParticipationUpsertOne {
+	return u.Update(func(s *PromotionActivityParticipationUpsert) {
+		s.SetBalanceReclaimedAt(v)
+	})
+}
+
+// UpdateBalanceReclaimedAt sets the "balance_reclaimed_at" field to the value that was provided on create.
+func (u *PromotionActivityParticipationUpsertOne) UpdateBalanceReclaimedAt() *PromotionActivityParticipationUpsertOne {
+	return u.Update(func(s *PromotionActivityParticipationUpsert) {
+		s.UpdateBalanceReclaimedAt()
+	})
+}
+
+// ClearBalanceReclaimedAt clears the value of the "balance_reclaimed_at" field.
+func (u *PromotionActivityParticipationUpsertOne) ClearBalanceReclaimedAt() *PromotionActivityParticipationUpsertOne {
+	return u.Update(func(s *PromotionActivityParticipationUpsert) {
+		s.ClearBalanceReclaimedAt()
 	})
 }
 
@@ -1120,6 +1258,48 @@ func (u *PromotionActivityParticipationUpsertBulk) AddBonusDays(v int) *Promotio
 func (u *PromotionActivityParticipationUpsertBulk) UpdateBonusDays() *PromotionActivityParticipationUpsertBulk {
 	return u.Update(func(s *PromotionActivityParticipationUpsert) {
 		s.UpdateBonusDays()
+	})
+}
+
+// SetBonusBalance sets the "bonus_balance" field.
+func (u *PromotionActivityParticipationUpsertBulk) SetBonusBalance(v float64) *PromotionActivityParticipationUpsertBulk {
+	return u.Update(func(s *PromotionActivityParticipationUpsert) {
+		s.SetBonusBalance(v)
+	})
+}
+
+// AddBonusBalance adds v to the "bonus_balance" field.
+func (u *PromotionActivityParticipationUpsertBulk) AddBonusBalance(v float64) *PromotionActivityParticipationUpsertBulk {
+	return u.Update(func(s *PromotionActivityParticipationUpsert) {
+		s.AddBonusBalance(v)
+	})
+}
+
+// UpdateBonusBalance sets the "bonus_balance" field to the value that was provided on create.
+func (u *PromotionActivityParticipationUpsertBulk) UpdateBonusBalance() *PromotionActivityParticipationUpsertBulk {
+	return u.Update(func(s *PromotionActivityParticipationUpsert) {
+		s.UpdateBonusBalance()
+	})
+}
+
+// SetBalanceReclaimedAt sets the "balance_reclaimed_at" field.
+func (u *PromotionActivityParticipationUpsertBulk) SetBalanceReclaimedAt(v time.Time) *PromotionActivityParticipationUpsertBulk {
+	return u.Update(func(s *PromotionActivityParticipationUpsert) {
+		s.SetBalanceReclaimedAt(v)
+	})
+}
+
+// UpdateBalanceReclaimedAt sets the "balance_reclaimed_at" field to the value that was provided on create.
+func (u *PromotionActivityParticipationUpsertBulk) UpdateBalanceReclaimedAt() *PromotionActivityParticipationUpsertBulk {
+	return u.Update(func(s *PromotionActivityParticipationUpsert) {
+		s.UpdateBalanceReclaimedAt()
+	})
+}
+
+// ClearBalanceReclaimedAt clears the value of the "balance_reclaimed_at" field.
+func (u *PromotionActivityParticipationUpsertBulk) ClearBalanceReclaimedAt() *PromotionActivityParticipationUpsertBulk {
+	return u.Update(func(s *PromotionActivityParticipationUpsert) {
+		s.ClearBalanceReclaimedAt()
 	})
 }
 

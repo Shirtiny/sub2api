@@ -1,3 +1,15 @@
+export interface PresaleBalanceBenefit {
+  currency: 'USD' | 'CNY'
+  credited_amount?: number
+  version: string
+  activity_id: number
+  name: string
+  amount: number
+  starts_at: string
+  ends_at: string
+  max_uses_per_user: number
+}
+
 /**
  * Payment System Type Definitions
  */
@@ -77,6 +89,10 @@ export interface CheckoutInfoResponse {
 // ==================== Orders ====================
 
 export interface PaymentOrder {
+  presale_balance_bonus_currency?: 'USD' | 'CNY'
+  presale_balance_bonus_face_amount?: number
+  presale_balance_bonus_amount?: number
+  presale_balance_bonus_activity_id?: number
   presale_starts_at?: string
   presale_expires_at?: string
   presale_activated_at?: string
@@ -117,6 +133,7 @@ export interface PaymentOrder {
 // ==================== Plans & Channels ====================
 
 export interface SubscriptionPlan {
+  presale_balance_bonus?: PresaleBalanceBenefit
   presale_enabled?: boolean
   presale_badge?: string
   id: number
@@ -158,13 +175,15 @@ export type PromotionActivityStatus = 'disabled' | 'scheduled' | 'active' | 'end
 export interface PromotionActivityPlanBonus {
   id?: number
   plan_id: number
+  bonus_balance?: number
   bonus_days: number
 }
 
 export interface PromotionActivity {
+  bonus_currency?: 'USD' | 'CNY'
   id: number
   name: string
-  type: 'subscription_bonus_days'
+  type: 'subscription_bonus_days' | 'presale_balance'
   enabled: boolean
   status: PromotionActivityStatus
   starts_at: string
@@ -181,6 +200,7 @@ export interface PromotionActivityRecord extends PromotionActivity {
   reserved_count: number
   granted_count: number
   released_count: number
+  granted_bonus_balance?: number
   granted_bonus_days: number
 }
 
@@ -192,6 +212,7 @@ export interface PromotionActivityParticipant {
   reserved_count: number
   granted_count: number
   released_count: number
+  granted_bonus_balance?: number
   granted_bonus_days: number
   first_participated_at: string
   last_participated_at: string
@@ -216,6 +237,8 @@ export interface PromotionActivityParticipationRecord {
   subscription_days?: number
   subscription_bonus_days: number
   status: PromotionParticipationStatus
+  bonus_balance?: number
+  balance_reclaimed_at?: string
   bonus_days: number
   reserved_at: string
   granted_at?: string
@@ -232,13 +255,14 @@ export interface PromotionActivityParticipationRecord {
 }
 
 export interface UpsertPromotionActivityRequest {
+  bonus_currency?: 'USD' | 'CNY'
   name: string
-  type: 'subscription_bonus_days'
+  type: 'subscription_bonus_days' | 'presale_balance'
   enabled: boolean
   starts_at: string
   ends_at: string
   max_uses_per_user: number
-  plan_bonuses: Array<Pick<PromotionActivityPlanBonus, 'plan_id' | 'bonus_days'>>
+  plan_bonuses: Array<Pick<PromotionActivityPlanBonus, 'plan_id' | 'bonus_days' | 'bonus_balance'>>
 }
 
 export interface PaymentChannel {
@@ -281,6 +305,7 @@ export interface CreateOrderRequest {
   payment_source?: string
   cafe_coupon_code?: string
   expected_subscription_bonus_activity_id?: number
+  expected_presale_bonus_version?: string
   openid?: string
   wechat_resume_token?: string
   is_mobile?: boolean

@@ -180,6 +180,31 @@ func PresaleResetCards(v int) predicate.PaymentOrder {
 	return predicate.PaymentOrder(sql.FieldEQ(FieldPresaleResetCards, v))
 }
 
+// PresaleBalanceBonusActivityID applies equality check predicate on the "presale_balance_bonus_activity_id" field. It's identical to PresaleBalanceBonusActivityIDEQ.
+func PresaleBalanceBonusActivityID(v int64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldEQ(FieldPresaleBalanceBonusActivityID, v))
+}
+
+// PresaleBalanceBonusAmount applies equality check predicate on the "presale_balance_bonus_amount" field. It's identical to PresaleBalanceBonusAmountEQ.
+func PresaleBalanceBonusAmount(v float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldEQ(FieldPresaleBalanceBonusAmount, v))
+}
+
+// PresaleBalanceBonusCurrency applies equality check predicate on the "presale_balance_bonus_currency" field. It's identical to PresaleBalanceBonusCurrencyEQ.
+func PresaleBalanceBonusCurrency(v string) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldEQ(FieldPresaleBalanceBonusCurrency, v))
+}
+
+// PresaleBalanceBonusFaceAmount applies equality check predicate on the "presale_balance_bonus_face_amount" field. It's identical to PresaleBalanceBonusFaceAmountEQ.
+func PresaleBalanceBonusFaceAmount(v float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldEQ(FieldPresaleBalanceBonusFaceAmount, v))
+}
+
+// PresaleBalanceBonusRate applies equality check predicate on the "presale_balance_bonus_rate" field. It's identical to PresaleBalanceBonusRateEQ.
+func PresaleBalanceBonusRate(v float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldEQ(FieldPresaleBalanceBonusRate, v))
+}
+
 // SubscriptionGroupID applies equality check predicate on the "subscription_group_id" field. It's identical to SubscriptionGroupIDEQ.
 func SubscriptionGroupID(v int64) predicate.PaymentOrder {
 	return predicate.PaymentOrder(sql.FieldEQ(FieldSubscriptionGroupID, v))
@@ -1708,6 +1733,241 @@ func PresaleResetCardsLT(v int) predicate.PaymentOrder {
 // PresaleResetCardsLTE applies the LTE predicate on the "presale_reset_cards" field.
 func PresaleResetCardsLTE(v int) predicate.PaymentOrder {
 	return predicate.PaymentOrder(sql.FieldLTE(FieldPresaleResetCards, v))
+}
+
+// PresaleBalanceBonusActivityIDEQ applies the EQ predicate on the "presale_balance_bonus_activity_id" field.
+func PresaleBalanceBonusActivityIDEQ(v int64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldEQ(FieldPresaleBalanceBonusActivityID, v))
+}
+
+// PresaleBalanceBonusActivityIDNEQ applies the NEQ predicate on the "presale_balance_bonus_activity_id" field.
+func PresaleBalanceBonusActivityIDNEQ(v int64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldNEQ(FieldPresaleBalanceBonusActivityID, v))
+}
+
+// PresaleBalanceBonusActivityIDIn applies the In predicate on the "presale_balance_bonus_activity_id" field.
+func PresaleBalanceBonusActivityIDIn(vs ...int64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldIn(FieldPresaleBalanceBonusActivityID, vs...))
+}
+
+// PresaleBalanceBonusActivityIDNotIn applies the NotIn predicate on the "presale_balance_bonus_activity_id" field.
+func PresaleBalanceBonusActivityIDNotIn(vs ...int64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldNotIn(FieldPresaleBalanceBonusActivityID, vs...))
+}
+
+// PresaleBalanceBonusActivityIDGT applies the GT predicate on the "presale_balance_bonus_activity_id" field.
+func PresaleBalanceBonusActivityIDGT(v int64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldGT(FieldPresaleBalanceBonusActivityID, v))
+}
+
+// PresaleBalanceBonusActivityIDGTE applies the GTE predicate on the "presale_balance_bonus_activity_id" field.
+func PresaleBalanceBonusActivityIDGTE(v int64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldGTE(FieldPresaleBalanceBonusActivityID, v))
+}
+
+// PresaleBalanceBonusActivityIDLT applies the LT predicate on the "presale_balance_bonus_activity_id" field.
+func PresaleBalanceBonusActivityIDLT(v int64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldLT(FieldPresaleBalanceBonusActivityID, v))
+}
+
+// PresaleBalanceBonusActivityIDLTE applies the LTE predicate on the "presale_balance_bonus_activity_id" field.
+func PresaleBalanceBonusActivityIDLTE(v int64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldLTE(FieldPresaleBalanceBonusActivityID, v))
+}
+
+// PresaleBalanceBonusActivityIDIsNil applies the IsNil predicate on the "presale_balance_bonus_activity_id" field.
+func PresaleBalanceBonusActivityIDIsNil() predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldIsNull(FieldPresaleBalanceBonusActivityID))
+}
+
+// PresaleBalanceBonusActivityIDNotNil applies the NotNil predicate on the "presale_balance_bonus_activity_id" field.
+func PresaleBalanceBonusActivityIDNotNil() predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldNotNull(FieldPresaleBalanceBonusActivityID))
+}
+
+// PresaleBalanceBonusAmountEQ applies the EQ predicate on the "presale_balance_bonus_amount" field.
+func PresaleBalanceBonusAmountEQ(v float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldEQ(FieldPresaleBalanceBonusAmount, v))
+}
+
+// PresaleBalanceBonusAmountNEQ applies the NEQ predicate on the "presale_balance_bonus_amount" field.
+func PresaleBalanceBonusAmountNEQ(v float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldNEQ(FieldPresaleBalanceBonusAmount, v))
+}
+
+// PresaleBalanceBonusAmountIn applies the In predicate on the "presale_balance_bonus_amount" field.
+func PresaleBalanceBonusAmountIn(vs ...float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldIn(FieldPresaleBalanceBonusAmount, vs...))
+}
+
+// PresaleBalanceBonusAmountNotIn applies the NotIn predicate on the "presale_balance_bonus_amount" field.
+func PresaleBalanceBonusAmountNotIn(vs ...float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldNotIn(FieldPresaleBalanceBonusAmount, vs...))
+}
+
+// PresaleBalanceBonusAmountGT applies the GT predicate on the "presale_balance_bonus_amount" field.
+func PresaleBalanceBonusAmountGT(v float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldGT(FieldPresaleBalanceBonusAmount, v))
+}
+
+// PresaleBalanceBonusAmountGTE applies the GTE predicate on the "presale_balance_bonus_amount" field.
+func PresaleBalanceBonusAmountGTE(v float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldGTE(FieldPresaleBalanceBonusAmount, v))
+}
+
+// PresaleBalanceBonusAmountLT applies the LT predicate on the "presale_balance_bonus_amount" field.
+func PresaleBalanceBonusAmountLT(v float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldLT(FieldPresaleBalanceBonusAmount, v))
+}
+
+// PresaleBalanceBonusAmountLTE applies the LTE predicate on the "presale_balance_bonus_amount" field.
+func PresaleBalanceBonusAmountLTE(v float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldLTE(FieldPresaleBalanceBonusAmount, v))
+}
+
+// PresaleBalanceBonusCurrencyEQ applies the EQ predicate on the "presale_balance_bonus_currency" field.
+func PresaleBalanceBonusCurrencyEQ(v string) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldEQ(FieldPresaleBalanceBonusCurrency, v))
+}
+
+// PresaleBalanceBonusCurrencyNEQ applies the NEQ predicate on the "presale_balance_bonus_currency" field.
+func PresaleBalanceBonusCurrencyNEQ(v string) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldNEQ(FieldPresaleBalanceBonusCurrency, v))
+}
+
+// PresaleBalanceBonusCurrencyIn applies the In predicate on the "presale_balance_bonus_currency" field.
+func PresaleBalanceBonusCurrencyIn(vs ...string) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldIn(FieldPresaleBalanceBonusCurrency, vs...))
+}
+
+// PresaleBalanceBonusCurrencyNotIn applies the NotIn predicate on the "presale_balance_bonus_currency" field.
+func PresaleBalanceBonusCurrencyNotIn(vs ...string) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldNotIn(FieldPresaleBalanceBonusCurrency, vs...))
+}
+
+// PresaleBalanceBonusCurrencyGT applies the GT predicate on the "presale_balance_bonus_currency" field.
+func PresaleBalanceBonusCurrencyGT(v string) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldGT(FieldPresaleBalanceBonusCurrency, v))
+}
+
+// PresaleBalanceBonusCurrencyGTE applies the GTE predicate on the "presale_balance_bonus_currency" field.
+func PresaleBalanceBonusCurrencyGTE(v string) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldGTE(FieldPresaleBalanceBonusCurrency, v))
+}
+
+// PresaleBalanceBonusCurrencyLT applies the LT predicate on the "presale_balance_bonus_currency" field.
+func PresaleBalanceBonusCurrencyLT(v string) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldLT(FieldPresaleBalanceBonusCurrency, v))
+}
+
+// PresaleBalanceBonusCurrencyLTE applies the LTE predicate on the "presale_balance_bonus_currency" field.
+func PresaleBalanceBonusCurrencyLTE(v string) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldLTE(FieldPresaleBalanceBonusCurrency, v))
+}
+
+// PresaleBalanceBonusCurrencyContains applies the Contains predicate on the "presale_balance_bonus_currency" field.
+func PresaleBalanceBonusCurrencyContains(v string) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldContains(FieldPresaleBalanceBonusCurrency, v))
+}
+
+// PresaleBalanceBonusCurrencyHasPrefix applies the HasPrefix predicate on the "presale_balance_bonus_currency" field.
+func PresaleBalanceBonusCurrencyHasPrefix(v string) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldHasPrefix(FieldPresaleBalanceBonusCurrency, v))
+}
+
+// PresaleBalanceBonusCurrencyHasSuffix applies the HasSuffix predicate on the "presale_balance_bonus_currency" field.
+func PresaleBalanceBonusCurrencyHasSuffix(v string) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldHasSuffix(FieldPresaleBalanceBonusCurrency, v))
+}
+
+// PresaleBalanceBonusCurrencyEqualFold applies the EqualFold predicate on the "presale_balance_bonus_currency" field.
+func PresaleBalanceBonusCurrencyEqualFold(v string) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldEqualFold(FieldPresaleBalanceBonusCurrency, v))
+}
+
+// PresaleBalanceBonusCurrencyContainsFold applies the ContainsFold predicate on the "presale_balance_bonus_currency" field.
+func PresaleBalanceBonusCurrencyContainsFold(v string) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldContainsFold(FieldPresaleBalanceBonusCurrency, v))
+}
+
+// PresaleBalanceBonusFaceAmountEQ applies the EQ predicate on the "presale_balance_bonus_face_amount" field.
+func PresaleBalanceBonusFaceAmountEQ(v float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldEQ(FieldPresaleBalanceBonusFaceAmount, v))
+}
+
+// PresaleBalanceBonusFaceAmountNEQ applies the NEQ predicate on the "presale_balance_bonus_face_amount" field.
+func PresaleBalanceBonusFaceAmountNEQ(v float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldNEQ(FieldPresaleBalanceBonusFaceAmount, v))
+}
+
+// PresaleBalanceBonusFaceAmountIn applies the In predicate on the "presale_balance_bonus_face_amount" field.
+func PresaleBalanceBonusFaceAmountIn(vs ...float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldIn(FieldPresaleBalanceBonusFaceAmount, vs...))
+}
+
+// PresaleBalanceBonusFaceAmountNotIn applies the NotIn predicate on the "presale_balance_bonus_face_amount" field.
+func PresaleBalanceBonusFaceAmountNotIn(vs ...float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldNotIn(FieldPresaleBalanceBonusFaceAmount, vs...))
+}
+
+// PresaleBalanceBonusFaceAmountGT applies the GT predicate on the "presale_balance_bonus_face_amount" field.
+func PresaleBalanceBonusFaceAmountGT(v float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldGT(FieldPresaleBalanceBonusFaceAmount, v))
+}
+
+// PresaleBalanceBonusFaceAmountGTE applies the GTE predicate on the "presale_balance_bonus_face_amount" field.
+func PresaleBalanceBonusFaceAmountGTE(v float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldGTE(FieldPresaleBalanceBonusFaceAmount, v))
+}
+
+// PresaleBalanceBonusFaceAmountLT applies the LT predicate on the "presale_balance_bonus_face_amount" field.
+func PresaleBalanceBonusFaceAmountLT(v float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldLT(FieldPresaleBalanceBonusFaceAmount, v))
+}
+
+// PresaleBalanceBonusFaceAmountLTE applies the LTE predicate on the "presale_balance_bonus_face_amount" field.
+func PresaleBalanceBonusFaceAmountLTE(v float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldLTE(FieldPresaleBalanceBonusFaceAmount, v))
+}
+
+// PresaleBalanceBonusRateEQ applies the EQ predicate on the "presale_balance_bonus_rate" field.
+func PresaleBalanceBonusRateEQ(v float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldEQ(FieldPresaleBalanceBonusRate, v))
+}
+
+// PresaleBalanceBonusRateNEQ applies the NEQ predicate on the "presale_balance_bonus_rate" field.
+func PresaleBalanceBonusRateNEQ(v float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldNEQ(FieldPresaleBalanceBonusRate, v))
+}
+
+// PresaleBalanceBonusRateIn applies the In predicate on the "presale_balance_bonus_rate" field.
+func PresaleBalanceBonusRateIn(vs ...float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldIn(FieldPresaleBalanceBonusRate, vs...))
+}
+
+// PresaleBalanceBonusRateNotIn applies the NotIn predicate on the "presale_balance_bonus_rate" field.
+func PresaleBalanceBonusRateNotIn(vs ...float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldNotIn(FieldPresaleBalanceBonusRate, vs...))
+}
+
+// PresaleBalanceBonusRateGT applies the GT predicate on the "presale_balance_bonus_rate" field.
+func PresaleBalanceBonusRateGT(v float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldGT(FieldPresaleBalanceBonusRate, v))
+}
+
+// PresaleBalanceBonusRateGTE applies the GTE predicate on the "presale_balance_bonus_rate" field.
+func PresaleBalanceBonusRateGTE(v float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldGTE(FieldPresaleBalanceBonusRate, v))
+}
+
+// PresaleBalanceBonusRateLT applies the LT predicate on the "presale_balance_bonus_rate" field.
+func PresaleBalanceBonusRateLT(v float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldLT(FieldPresaleBalanceBonusRate, v))
+}
+
+// PresaleBalanceBonusRateLTE applies the LTE predicate on the "presale_balance_bonus_rate" field.
+func PresaleBalanceBonusRateLTE(v float64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldLTE(FieldPresaleBalanceBonusRate, v))
 }
 
 // SubscriptionGroupIDEQ applies the EQ predicate on the "subscription_group_id" field.

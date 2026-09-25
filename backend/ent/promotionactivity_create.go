@@ -36,6 +36,20 @@ func (_c *PromotionActivityCreate) SetActivityType(v string) *PromotionActivityC
 	return _c
 }
 
+// SetBonusCurrency sets the "bonus_currency" field.
+func (_c *PromotionActivityCreate) SetBonusCurrency(v string) *PromotionActivityCreate {
+	_c.mutation.SetBonusCurrency(v)
+	return _c
+}
+
+// SetNillableBonusCurrency sets the "bonus_currency" field if the given value is not nil.
+func (_c *PromotionActivityCreate) SetNillableBonusCurrency(v *string) *PromotionActivityCreate {
+	if v != nil {
+		_c.SetBonusCurrency(*v)
+	}
+	return _c
+}
+
 // SetEnabled sets the "enabled" field.
 func (_c *PromotionActivityCreate) SetEnabled(v bool) *PromotionActivityCreate {
 	_c.mutation.SetEnabled(v)
@@ -161,6 +175,10 @@ func (_c *PromotionActivityCreate) ExecX(ctx context.Context) {
 
 // defaults sets the default values of the builder before save.
 func (_c *PromotionActivityCreate) defaults() {
+	if _, ok := _c.mutation.BonusCurrency(); !ok {
+		v := promotionactivity.DefaultBonusCurrency
+		_c.mutation.SetBonusCurrency(v)
+	}
 	if _, ok := _c.mutation.Enabled(); !ok {
 		v := promotionactivity.DefaultEnabled
 		_c.mutation.SetEnabled(v)
@@ -191,6 +209,14 @@ func (_c *PromotionActivityCreate) check() error {
 	if v, ok := _c.mutation.ActivityType(); ok {
 		if err := promotionactivity.ActivityTypeValidator(v); err != nil {
 			return &ValidationError{Name: "activity_type", err: fmt.Errorf(`ent: validator failed for field "PromotionActivity.activity_type": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.BonusCurrency(); !ok {
+		return &ValidationError{Name: "bonus_currency", err: errors.New(`ent: missing required field "PromotionActivity.bonus_currency"`)}
+	}
+	if v, ok := _c.mutation.BonusCurrency(); ok {
+		if err := promotionactivity.BonusCurrencyValidator(v); err != nil {
+			return &ValidationError{Name: "bonus_currency", err: fmt.Errorf(`ent: validator failed for field "PromotionActivity.bonus_currency": %w`, err)}
 		}
 	}
 	if _, ok := _c.mutation.Enabled(); !ok {
@@ -250,6 +276,10 @@ func (_c *PromotionActivityCreate) createSpec() (*PromotionActivity, *sqlgraph.C
 	if value, ok := _c.mutation.ActivityType(); ok {
 		_spec.SetField(promotionactivity.FieldActivityType, field.TypeString, value)
 		_node.ActivityType = value
+	}
+	if value, ok := _c.mutation.BonusCurrency(); ok {
+		_spec.SetField(promotionactivity.FieldBonusCurrency, field.TypeString, value)
+		_node.BonusCurrency = value
 	}
 	if value, ok := _c.mutation.Enabled(); ok {
 		_spec.SetField(promotionactivity.FieldEnabled, field.TypeBool, value)
@@ -380,6 +410,18 @@ func (u *PromotionActivityUpsert) SetActivityType(v string) *PromotionActivityUp
 // UpdateActivityType sets the "activity_type" field to the value that was provided on create.
 func (u *PromotionActivityUpsert) UpdateActivityType() *PromotionActivityUpsert {
 	u.SetExcluded(promotionactivity.FieldActivityType)
+	return u
+}
+
+// SetBonusCurrency sets the "bonus_currency" field.
+func (u *PromotionActivityUpsert) SetBonusCurrency(v string) *PromotionActivityUpsert {
+	u.Set(promotionactivity.FieldBonusCurrency, v)
+	return u
+}
+
+// UpdateBonusCurrency sets the "bonus_currency" field to the value that was provided on create.
+func (u *PromotionActivityUpsert) UpdateBonusCurrency() *PromotionActivityUpsert {
+	u.SetExcluded(promotionactivity.FieldBonusCurrency)
 	return u
 }
 
@@ -519,6 +561,20 @@ func (u *PromotionActivityUpsertOne) SetActivityType(v string) *PromotionActivit
 func (u *PromotionActivityUpsertOne) UpdateActivityType() *PromotionActivityUpsertOne {
 	return u.Update(func(s *PromotionActivityUpsert) {
 		s.UpdateActivityType()
+	})
+}
+
+// SetBonusCurrency sets the "bonus_currency" field.
+func (u *PromotionActivityUpsertOne) SetBonusCurrency(v string) *PromotionActivityUpsertOne {
+	return u.Update(func(s *PromotionActivityUpsert) {
+		s.SetBonusCurrency(v)
+	})
+}
+
+// UpdateBonusCurrency sets the "bonus_currency" field to the value that was provided on create.
+func (u *PromotionActivityUpsertOne) UpdateBonusCurrency() *PromotionActivityUpsertOne {
+	return u.Update(func(s *PromotionActivityUpsert) {
+		s.UpdateBonusCurrency()
 	})
 }
 
@@ -835,6 +891,20 @@ func (u *PromotionActivityUpsertBulk) SetActivityType(v string) *PromotionActivi
 func (u *PromotionActivityUpsertBulk) UpdateActivityType() *PromotionActivityUpsertBulk {
 	return u.Update(func(s *PromotionActivityUpsert) {
 		s.UpdateActivityType()
+	})
+}
+
+// SetBonusCurrency sets the "bonus_currency" field.
+func (u *PromotionActivityUpsertBulk) SetBonusCurrency(v string) *PromotionActivityUpsertBulk {
+	return u.Update(func(s *PromotionActivityUpsert) {
+		s.SetBonusCurrency(v)
+	})
+}
+
+// UpdateBonusCurrency sets the "bonus_currency" field to the value that was provided on create.
+func (u *PromotionActivityUpsertBulk) UpdateBonusCurrency() *PromotionActivityUpsertBulk {
+	return u.Update(func(s *PromotionActivityUpsert) {
+		s.UpdateBonusCurrency()
 	})
 }
 

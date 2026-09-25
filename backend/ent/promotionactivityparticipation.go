@@ -28,6 +28,10 @@ type PromotionActivityParticipation struct {
 	PlanID int64 `json:"plan_id,omitempty"`
 	// BonusDays holds the value of the "bonus_days" field.
 	BonusDays int `json:"bonus_days,omitempty"`
+	// BonusBalance holds the value of the "bonus_balance" field.
+	BonusBalance float64 `json:"bonus_balance,omitempty"`
+	// BalanceReclaimedAt holds the value of the "balance_reclaimed_at" field.
+	BalanceReclaimedAt *time.Time `json:"balance_reclaimed_at,omitempty"`
 	// Status holds the value of the "status" field.
 	Status string `json:"status,omitempty"`
 	// ReservedAt holds the value of the "reserved_at" field.
@@ -73,11 +77,13 @@ func (*PromotionActivityParticipation) scanValues(columns []string) ([]any, erro
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case promotionactivityparticipation.FieldBonusBalance:
+			values[i] = new(sql.NullFloat64)
 		case promotionactivityparticipation.FieldID, promotionactivityparticipation.FieldActivityID, promotionactivityparticipation.FieldUserID, promotionactivityparticipation.FieldOrderID, promotionactivityparticipation.FieldPlanID, promotionactivityparticipation.FieldBonusDays:
 			values[i] = new(sql.NullInt64)
 		case promotionactivityparticipation.FieldStatus, promotionactivityparticipation.FieldReleaseReason:
 			values[i] = new(sql.NullString)
-		case promotionactivityparticipation.FieldReservedAt, promotionactivityparticipation.FieldGrantedAt, promotionactivityparticipation.FieldReleasedAt, promotionactivityparticipation.FieldCreatedAt, promotionactivityparticipation.FieldUpdatedAt:
+		case promotionactivityparticipation.FieldBalanceReclaimedAt, promotionactivityparticipation.FieldReservedAt, promotionactivityparticipation.FieldGrantedAt, promotionactivityparticipation.FieldReleasedAt, promotionactivityparticipation.FieldCreatedAt, promotionactivityparticipation.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -129,6 +135,19 @@ func (_m *PromotionActivityParticipation) assignValues(columns []string, values 
 				return fmt.Errorf("unexpected type %T for field bonus_days", values[i])
 			} else if value.Valid {
 				_m.BonusDays = int(value.Int64)
+			}
+		case promotionactivityparticipation.FieldBonusBalance:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field bonus_balance", values[i])
+			} else if value.Valid {
+				_m.BonusBalance = value.Float64
+			}
+		case promotionactivityparticipation.FieldBalanceReclaimedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field balance_reclaimed_at", values[i])
+			} else if value.Valid {
+				_m.BalanceReclaimedAt = new(time.Time)
+				*_m.BalanceReclaimedAt = value.Time
 			}
 		case promotionactivityparticipation.FieldStatus:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -230,6 +249,14 @@ func (_m *PromotionActivityParticipation) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("bonus_days=")
 	builder.WriteString(fmt.Sprintf("%v", _m.BonusDays))
+	builder.WriteString(", ")
+	builder.WriteString("bonus_balance=")
+	builder.WriteString(fmt.Sprintf("%v", _m.BonusBalance))
+	builder.WriteString(", ")
+	if v := _m.BalanceReclaimedAt; v != nil {
+		builder.WriteString("balance_reclaimed_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
 	builder.WriteString(", ")
 	builder.WriteString("status=")
 	builder.WriteString(_m.Status)

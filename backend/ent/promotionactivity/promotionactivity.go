@@ -18,6 +18,8 @@ const (
 	FieldName = "name"
 	// FieldActivityType holds the string denoting the activity_type field in the database.
 	FieldActivityType = "activity_type"
+	// FieldBonusCurrency holds the string denoting the bonus_currency field in the database.
+	FieldBonusCurrency = "bonus_currency"
 	// FieldEnabled holds the string denoting the enabled field in the database.
 	FieldEnabled = "enabled"
 	// FieldStartsAt holds the string denoting the starts_at field in the database.
@@ -57,6 +59,7 @@ var Columns = []string{
 	FieldID,
 	FieldName,
 	FieldActivityType,
+	FieldBonusCurrency,
 	FieldEnabled,
 	FieldStartsAt,
 	FieldEndsAt,
@@ -80,6 +83,10 @@ var (
 	NameValidator func(string) error
 	// ActivityTypeValidator is a validator for the "activity_type" field. It is called by the builders before save.
 	ActivityTypeValidator func(string) error
+	// DefaultBonusCurrency holds the default value on creation for the "bonus_currency" field.
+	DefaultBonusCurrency string
+	// BonusCurrencyValidator is a validator for the "bonus_currency" field. It is called by the builders before save.
+	BonusCurrencyValidator func(string) error
 	// DefaultEnabled holds the default value on creation for the "enabled" field.
 	DefaultEnabled bool
 	// MaxUsesPerUserValidator is a validator for the "max_uses_per_user" field. It is called by the builders before save.
@@ -108,6 +115,11 @@ func ByName(opts ...sql.OrderTermOption) OrderOption {
 // ByActivityType orders the results by the activity_type field.
 func ByActivityType(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldActivityType, opts...).ToFunc()
+}
+
+// ByBonusCurrency orders the results by the bonus_currency field.
+func ByBonusCurrency(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldBonusCurrency, opts...).ToFunc()
 }
 
 // ByEnabled orders the results by the enabled field.

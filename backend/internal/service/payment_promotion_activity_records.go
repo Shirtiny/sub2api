@@ -40,6 +40,7 @@ type PromotionActivityParticipationListParams struct {
 }
 
 type PromotionActivityRecordView struct {
+	GrantedBonusBalance float64 `json:"granted_bonus_balance"`
 	PromotionActivityView
 	ParticipantCount   int `json:"participant_count"`
 	ParticipationCount int `json:"participation_count"`
@@ -50,6 +51,7 @@ type PromotionActivityRecordView struct {
 }
 
 type PromotionActivityParticipantView struct {
+	GrantedBonusBalance float64   `json:"granted_bonus_balance"`
 	UserID              int64     `json:"user_id"`
 	UserEmail           string    `json:"user_email"`
 	UserName            string    `json:"user_name"`
@@ -63,6 +65,8 @@ type PromotionActivityParticipantView struct {
 }
 
 type PromotionActivityParticipationView struct {
+	BonusBalance          float64    `json:"bonus_balance"`
+	BalanceReclaimedAt    *time.Time `json:"balance_reclaimed_at,omitempty"`
 	ID                    int64      `json:"id"`
 	ActivityID            int64      `json:"activity_id"`
 	UserID                int64      `json:"user_id"`
@@ -101,11 +105,12 @@ type promotionActivityTotalRow struct {
 }
 
 type promotionActivityStatusRow struct {
-	ActivityID int64  `json:"activity_id"`
-	UserID     int64  `json:"user_id"`
-	Status     string `json:"status"`
-	Count      int    `json:"record_count"`
-	BonusDays  int    `json:"bonus_days"`
+	BonusBalance float64 `json:"bonus_balance"`
+	ActivityID   int64   `json:"activity_id"`
+	UserID       int64   `json:"user_id"`
+	Status       string  `json:"status"`
+	Count        int     `json:"record_count"`
+	BonusDays    int     `json:"bonus_days"`
 }
 
 type promotionActivityParticipantRow struct {
@@ -174,6 +179,7 @@ func (s *PaymentConfigService) AdminListPromotionActivityRecords(ctx context.Con
 		Aggregate(
 			dbent.As(dbent.Count(), "record_count"),
 			dbent.As(dbent.Sum(promotionactivityparticipation.FieldBonusDays), "bonus_days"),
+			dbent.As(dbent.Sum(promotionactivityparticipation.FieldBonusBalance), "bonus_balance"),
 		).
 		Scan(ctx, &statusRows); err != nil {
 		return nil, 0, fmt.Errorf("aggregate promotion activity statuses: %w", err)
@@ -204,6 +210,7 @@ func (s *PaymentConfigService) AdminListPromotionActivityRecords(ctx context.Con
 		case PromotionParticipationStatusGranted:
 			item.GrantedCount = row.Count
 			item.GrantedBonusDays = row.BonusDays
+			item.GrantedBonusBalance = row.BonusBalance
 		case PromotionParticipationStatusReleased:
 			item.ReleasedCount = row.Count
 		}
@@ -282,6 +289,7 @@ func (s *PaymentConfigService) AdminListPromotionActivityParticipants(ctx contex
 		Aggregate(
 			dbent.As(dbent.Count(), "record_count"),
 			dbent.As(dbent.Sum(promotionactivityparticipation.FieldBonusDays), "bonus_days"),
+			dbent.As(dbent.Sum(promotionactivityparticipation.FieldBonusBalance), "bonus_balance"),
 		).
 		Scan(ctx, &statusRows); err != nil {
 		return nil, 0, fmt.Errorf("aggregate promotion participant statuses: %w", err)
@@ -336,6 +344,7 @@ func (s *PaymentConfigService) AdminListPromotionActivityParticipants(ctx contex
 		case PromotionParticipationStatusGranted:
 			item.GrantedCount = row.Count
 			item.GrantedBonusDays = row.BonusDays
+			item.GrantedBonusBalance = row.BonusBalance
 		case PromotionParticipationStatusReleased:
 			item.ReleasedCount = row.Count
 		}
@@ -453,7 +462,7 @@ func (s *PaymentConfigService) AdminListPromotionActivityParticipations(ctx cont
 			ID: participation.ID, ActivityID: participation.ActivityID,
 			UserID: participation.UserID, OrderID: participation.OrderID,
 			PlanID: participation.PlanID, PlanName: planNames[participation.PlanID],
-			Status: participation.Status, BonusDays: participation.BonusDays,
+			Status: participation.Status, BonusDays: participation.BonusDays, BonusBalance: participation.BonusBalance, BalanceReclaimedAt: participation.BalanceReclaimedAt,
 			ReservedAt: participation.ReservedAt, GrantedAt: participation.GrantedAt,
 			ReleasedAt: participation.ReleasedAt, ReleaseReason: participation.ReleaseReason,
 			CreatedAt: participation.CreatedAt,

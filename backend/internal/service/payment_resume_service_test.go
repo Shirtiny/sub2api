@@ -269,6 +269,7 @@ func TestWeChatPaymentResumeTokenRoundTrip(t *testing.T) {
 		PlanID:                              7,
 		Multiplier:                          3,
 		ExpectedSubscriptionBonusActivityID: 91,
+		ExpectedPresaleBonusVersion:         "quoted-gift-version",
 		RedirectTo:                          "/purchase?from=wechat",
 		Scope:                               "snsapi_base",
 		IssuedAt:                            1234567890,
@@ -287,7 +288,7 @@ func TestWeChatPaymentResumeTokenRoundTrip(t *testing.T) {
 	if claims.Amount != "12.50" || claims.OrderType != payment.OrderTypeSubscription || claims.PlanID != 7 || claims.Multiplier != 3 {
 		t.Fatalf("claims payment context mismatch: %+v", claims)
 	}
-	if claims.ExpectedSubscriptionBonusActivityID != 91 {
+	if claims.ExpectedSubscriptionBonusActivityID != 91 || claims.ExpectedPresaleBonusVersion != "quoted-gift-version" {
 		t.Fatalf("claims expected bonus activity = %d, want 91", claims.ExpectedSubscriptionBonusActivityID)
 	}
 	if claims.RedirectTo != "/purchase?from=wechat" || claims.Scope != "snsapi_base" {

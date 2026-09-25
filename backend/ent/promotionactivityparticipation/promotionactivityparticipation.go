@@ -24,6 +24,10 @@ const (
 	FieldPlanID = "plan_id"
 	// FieldBonusDays holds the string denoting the bonus_days field in the database.
 	FieldBonusDays = "bonus_days"
+	// FieldBonusBalance holds the string denoting the bonus_balance field in the database.
+	FieldBonusBalance = "bonus_balance"
+	// FieldBalanceReclaimedAt holds the string denoting the balance_reclaimed_at field in the database.
+	FieldBalanceReclaimedAt = "balance_reclaimed_at"
 	// FieldStatus holds the string denoting the status field in the database.
 	FieldStatus = "status"
 	// FieldReservedAt holds the string denoting the reserved_at field in the database.
@@ -59,6 +63,8 @@ var Columns = []string{
 	FieldOrderID,
 	FieldPlanID,
 	FieldBonusDays,
+	FieldBonusBalance,
+	FieldBalanceReclaimedAt,
 	FieldStatus,
 	FieldReservedAt,
 	FieldGrantedAt,
@@ -87,8 +93,14 @@ var (
 	OrderIDValidator func(int64) error
 	// PlanIDValidator is a validator for the "plan_id" field. It is called by the builders before save.
 	PlanIDValidator func(int64) error
+	// DefaultBonusDays holds the default value on creation for the "bonus_days" field.
+	DefaultBonusDays int
 	// BonusDaysValidator is a validator for the "bonus_days" field. It is called by the builders before save.
 	BonusDaysValidator func(int) error
+	// DefaultBonusBalance holds the default value on creation for the "bonus_balance" field.
+	DefaultBonusBalance float64
+	// BonusBalanceValidator is a validator for the "bonus_balance" field. It is called by the builders before save.
+	BonusBalanceValidator func(float64) error
 	// StatusValidator is a validator for the "status" field. It is called by the builders before save.
 	StatusValidator func(string) error
 	// ReleaseReasonValidator is a validator for the "release_reason" field. It is called by the builders before save.
@@ -132,6 +144,16 @@ func ByPlanID(opts ...sql.OrderTermOption) OrderOption {
 // ByBonusDays orders the results by the bonus_days field.
 func ByBonusDays(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldBonusDays, opts...).ToFunc()
+}
+
+// ByBonusBalance orders the results by the bonus_balance field.
+func ByBonusBalance(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldBonusBalance, opts...).ToFunc()
+}
+
+// ByBalanceReclaimedAt orders the results by the balance_reclaimed_at field.
+func ByBalanceReclaimedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldBalanceReclaimedAt, opts...).ToFunc()
 }
 
 // ByStatus orders the results by the status field.

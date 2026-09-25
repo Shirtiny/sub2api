@@ -473,6 +473,7 @@ func (s *PaymentService) createOrderInTx(ctx context.Context, req CreateOrderReq
 	}
 	var presale *PresaleQuote
 	var subscriptionBonus *SubscriptionBonusBenefit
+	var balanceBonus *PresaleBalanceBenefit
 	subscriptionDays := 0
 	if plan != nil {
 		txSvc := s.withEntClient(tx.Client())
@@ -487,6 +488,22 @@ func (s *PaymentService) createOrderInTx(ctx context.Context, req CreateOrderReq
 			subscriptionBonus, err = resolveSubscriptionBonusForOrder(txCtx, tx.Client(), req.UserID, plan.ID, req.ExpectedSubscriptionBonusActivityID, time.Now())
 			if err != nil {
 				return nil, err
+			}
+		}
+		if req.PresaleMonth != "" {
+			balanceBonus, err = resolvePresaleBalanceBonus(txCtx, tx.Client(), req.UserID, plan.ID, req.ExpectedSubscriptionBonusActivityID, time.Now())
+			if err != nil {
+				return nil, err
+			}
+			if err := convertPresaleBalanceBenefit(balanceBonus, cfg.BalanceRechargeMultiplier); err != nil {
+				return nil, err
+			}
+			// Verify the displayed gift while holding the activity lock, before reserving
+			// or charging anything. Signed OAuth resumes must retain this same version.
+			if req.ExpectedSubscriptionBonusActivityID > 0 || req.ExpectedPresaleBonusVersion != "" {
+				if balanceBonus == nil || req.ExpectedSubscriptionBonusActivityID != balanceBonus.ActivityID || req.ExpectedPresaleBonusVersion != balanceBonus.Version {
+					return nil, infraerrors.Conflict("ACTIVITY_BENEFIT_CHANGED", "balance gift terms changed; refresh checkout")
+				}
 			}
 		}
 		lockedPlan, err := lockPaymentSubscriptionPlanForOrder(txCtx, tx, plan.ID, plan.UpdatedAt)
@@ -533,6 +550,9 @@ func (s *PaymentService) createOrderInTx(ctx context.Context, req CreateOrderReq
 		tm = defaultOrderTimeoutMin
 	}
 	exp := time.Now().Add(time.Duration(tm) * time.Minute)
+	if balanceBonus != nil && exp.After(balanceBonus.EndsAt) {
+		exp = balanceBonus.EndsAt
+	}
 	if presale != nil && exp.After(presale.StartsAt) {
 		exp = presale.StartsAt
 	}
@@ -604,9 +624,20 @@ func (s *PaymentService) createOrderInTx(ctx context.Context, req CreateOrderReq
 		b.SetPresaleStartsAt(presale.StartsAt).SetPresaleExpiresAt(presale.ExpiresAt).
 			SetPresaleRenewal(presale.Renewal).SetPresalePlanName(plan.Name)
 	}
+	if balanceBonus != nil {
+		rate := math.Round(normalizeBalanceRechargeMultiplier(cfg.BalanceRechargeMultiplier)*1e8) / 1e8
+		if rate <= 0 || math.IsNaN(rate) || math.IsInf(rate, 0) || rate >= 1e12 || rate < 1e-8 {
+			return nil, infraerrors.BadRequest("PRESALE_BALANCE_BONUS_RATE_INVALID", "invalid gift conversion rate")
+		}
+		b.SetPresaleBalanceBonusActivityID(balanceBonus.ActivityID).SetPresaleBalanceBonusAmount(balanceBonus.CreditedAmount).SetPresaleBalanceBonusRate(rate).
+			SetPresaleBalanceBonusCurrency(balanceBonus.Currency).SetPresaleBalanceBonusFaceAmount(balanceBonus.Amount)
+	}
 	order, err := b.Save(txCtx)
 	if err != nil {
 		return nil, fmt.Errorf("create order: %w", err)
+	}
+	if err := s.reservePresaleBalanceBonusTx(txCtx, tx.Client(), order, balanceBonus); err != nil {
+		return nil, err
 	}
 	if subscriptionBonus != nil {
 		if err := s.reserveSubscriptionBonusForOrderTx(txCtx, tx.Client(), order.ID, req.UserID, plan.ID, subscriptionBonus); err != nil {
@@ -1081,6 +1112,7 @@ func (s *PaymentService) buildWeChatOAuthRequiredResponse(ctx context.Context, r
 		Multiplier:                          req.Multiplier,
 		CafeCouponCode:                      req.CafeCouponCode,
 		ExpectedSubscriptionBonusActivityID: req.ExpectedSubscriptionBonusActivityID,
+		ExpectedPresaleBonusVersion:         req.ExpectedPresaleBonusVersion,
 		PresaleMonth:                        req.PresaleMonth,
 		RedirectTo:                          paymentRedirectPathFromURL(req.SrcURL),
 		Scope:                               "snsapi_base",

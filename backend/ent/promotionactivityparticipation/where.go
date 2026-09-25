@@ -80,6 +80,16 @@ func BonusDays(v int) predicate.PromotionActivityParticipation {
 	return predicate.PromotionActivityParticipation(sql.FieldEQ(FieldBonusDays, v))
 }
 
+// BonusBalance applies equality check predicate on the "bonus_balance" field. It's identical to BonusBalanceEQ.
+func BonusBalance(v float64) predicate.PromotionActivityParticipation {
+	return predicate.PromotionActivityParticipation(sql.FieldEQ(FieldBonusBalance, v))
+}
+
+// BalanceReclaimedAt applies equality check predicate on the "balance_reclaimed_at" field. It's identical to BalanceReclaimedAtEQ.
+func BalanceReclaimedAt(v time.Time) predicate.PromotionActivityParticipation {
+	return predicate.PromotionActivityParticipation(sql.FieldEQ(FieldBalanceReclaimedAt, v))
+}
+
 // Status applies equality check predicate on the "status" field. It's identical to StatusEQ.
 func Status(v string) predicate.PromotionActivityParticipation {
 	return predicate.PromotionActivityParticipation(sql.FieldEQ(FieldStatus, v))
@@ -293,6 +303,96 @@ func BonusDaysLT(v int) predicate.PromotionActivityParticipation {
 // BonusDaysLTE applies the LTE predicate on the "bonus_days" field.
 func BonusDaysLTE(v int) predicate.PromotionActivityParticipation {
 	return predicate.PromotionActivityParticipation(sql.FieldLTE(FieldBonusDays, v))
+}
+
+// BonusBalanceEQ applies the EQ predicate on the "bonus_balance" field.
+func BonusBalanceEQ(v float64) predicate.PromotionActivityParticipation {
+	return predicate.PromotionActivityParticipation(sql.FieldEQ(FieldBonusBalance, v))
+}
+
+// BonusBalanceNEQ applies the NEQ predicate on the "bonus_balance" field.
+func BonusBalanceNEQ(v float64) predicate.PromotionActivityParticipation {
+	return predicate.PromotionActivityParticipation(sql.FieldNEQ(FieldBonusBalance, v))
+}
+
+// BonusBalanceIn applies the In predicate on the "bonus_balance" field.
+func BonusBalanceIn(vs ...float64) predicate.PromotionActivityParticipation {
+	return predicate.PromotionActivityParticipation(sql.FieldIn(FieldBonusBalance, vs...))
+}
+
+// BonusBalanceNotIn applies the NotIn predicate on the "bonus_balance" field.
+func BonusBalanceNotIn(vs ...float64) predicate.PromotionActivityParticipation {
+	return predicate.PromotionActivityParticipation(sql.FieldNotIn(FieldBonusBalance, vs...))
+}
+
+// BonusBalanceGT applies the GT predicate on the "bonus_balance" field.
+func BonusBalanceGT(v float64) predicate.PromotionActivityParticipation {
+	return predicate.PromotionActivityParticipation(sql.FieldGT(FieldBonusBalance, v))
+}
+
+// BonusBalanceGTE applies the GTE predicate on the "bonus_balance" field.
+func BonusBalanceGTE(v float64) predicate.PromotionActivityParticipation {
+	return predicate.PromotionActivityParticipation(sql.FieldGTE(FieldBonusBalance, v))
+}
+
+// BonusBalanceLT applies the LT predicate on the "bonus_balance" field.
+func BonusBalanceLT(v float64) predicate.PromotionActivityParticipation {
+	return predicate.PromotionActivityParticipation(sql.FieldLT(FieldBonusBalance, v))
+}
+
+// BonusBalanceLTE applies the LTE predicate on the "bonus_balance" field.
+func BonusBalanceLTE(v float64) predicate.PromotionActivityParticipation {
+	return predicate.PromotionActivityParticipation(sql.FieldLTE(FieldBonusBalance, v))
+}
+
+// BalanceReclaimedAtEQ applies the EQ predicate on the "balance_reclaimed_at" field.
+func BalanceReclaimedAtEQ(v time.Time) predicate.PromotionActivityParticipation {
+	return predicate.PromotionActivityParticipation(sql.FieldEQ(FieldBalanceReclaimedAt, v))
+}
+
+// BalanceReclaimedAtNEQ applies the NEQ predicate on the "balance_reclaimed_at" field.
+func BalanceReclaimedAtNEQ(v time.Time) predicate.PromotionActivityParticipation {
+	return predicate.PromotionActivityParticipation(sql.FieldNEQ(FieldBalanceReclaimedAt, v))
+}
+
+// BalanceReclaimedAtIn applies the In predicate on the "balance_reclaimed_at" field.
+func BalanceReclaimedAtIn(vs ...time.Time) predicate.PromotionActivityParticipation {
+	return predicate.PromotionActivityParticipation(sql.FieldIn(FieldBalanceReclaimedAt, vs...))
+}
+
+// BalanceReclaimedAtNotIn applies the NotIn predicate on the "balance_reclaimed_at" field.
+func BalanceReclaimedAtNotIn(vs ...time.Time) predicate.PromotionActivityParticipation {
+	return predicate.PromotionActivityParticipation(sql.FieldNotIn(FieldBalanceReclaimedAt, vs...))
+}
+
+// BalanceReclaimedAtGT applies the GT predicate on the "balance_reclaimed_at" field.
+func BalanceReclaimedAtGT(v time.Time) predicate.PromotionActivityParticipation {
+	return predicate.PromotionActivityParticipation(sql.FieldGT(FieldBalanceReclaimedAt, v))
+}
+
+// BalanceReclaimedAtGTE applies the GTE predicate on the "balance_reclaimed_at" field.
+func BalanceReclaimedAtGTE(v time.Time) predicate.PromotionActivityParticipation {
+	return predicate.PromotionActivityParticipation(sql.FieldGTE(FieldBalanceReclaimedAt, v))
+}
+
+// BalanceReclaimedAtLT applies the LT predicate on the "balance_reclaimed_at" field.
+func BalanceReclaimedAtLT(v time.Time) predicate.PromotionActivityParticipation {
+	return predicate.PromotionActivityParticipation(sql.FieldLT(FieldBalanceReclaimedAt, v))
+}
+
+// BalanceReclaimedAtLTE applies the LTE predicate on the "balance_reclaimed_at" field.
+func BalanceReclaimedAtLTE(v time.Time) predicate.PromotionActivityParticipation {
+	return predicate.PromotionActivityParticipation(sql.FieldLTE(FieldBalanceReclaimedAt, v))
+}
+
+// BalanceReclaimedAtIsNil applies the IsNil predicate on the "balance_reclaimed_at" field.
+func BalanceReclaimedAtIsNil() predicate.PromotionActivityParticipation {
+	return predicate.PromotionActivityParticipation(sql.FieldIsNull(FieldBalanceReclaimedAt))
+}
+
+// BalanceReclaimedAtNotNil applies the NotNil predicate on the "balance_reclaimed_at" field.
+func BalanceReclaimedAtNotNil() predicate.PromotionActivityParticipation {
+	return predicate.PromotionActivityParticipation(sql.FieldNotNull(FieldBalanceReclaimedAt))
 }
 
 // StatusEQ applies the EQ predicate on the "status" field.

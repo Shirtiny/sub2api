@@ -995,6 +995,11 @@ var (
 		{Name: "presale_renewal", Type: field.TypeBool, Default: false},
 		{Name: "presale_plan_name", Type: field.TypeString, Size: 100, Default: ""},
 		{Name: "presale_reset_cards", Type: field.TypeInt, Default: 0},
+		{Name: "presale_balance_bonus_activity_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "presale_balance_bonus_amount", Type: field.TypeFloat64, Default: 0, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
+		{Name: "presale_balance_bonus_currency", Type: field.TypeString, Size: 3, Default: "USD"},
+		{Name: "presale_balance_bonus_face_amount", Type: field.TypeFloat64, Default: 0, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
+		{Name: "presale_balance_bonus_rate", Type: field.TypeFloat64, Default: 0, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
 		{Name: "subscription_group_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "subscription_days", Type: field.TypeInt, Nullable: true},
 		{Name: "subscription_bonus_activity_id", Type: field.TypeInt64, Nullable: true},
@@ -1037,7 +1042,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "payment_orders_users_payment_orders",
-				Columns:    []*schema.Column{PaymentOrdersColumns[57]},
+				Columns:    []*schema.Column{PaymentOrdersColumns[62]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -1054,32 +1059,32 @@ var (
 			{
 				Name:    "paymentorder_user_id",
 				Unique:  false,
-				Columns: []*schema.Column{PaymentOrdersColumns[57]},
+				Columns: []*schema.Column{PaymentOrdersColumns[62]},
 			},
 			{
 				Name:    "paymentorder_status",
 				Unique:  false,
-				Columns: []*schema.Column{PaymentOrdersColumns[39]},
+				Columns: []*schema.Column{PaymentOrdersColumns[44]},
 			},
 			{
 				Name:    "paymentorder_expires_at",
 				Unique:  false,
-				Columns: []*schema.Column{PaymentOrdersColumns[47]},
+				Columns: []*schema.Column{PaymentOrdersColumns[52]},
 			},
 			{
 				Name:    "paymentorder_created_at",
 				Unique:  false,
-				Columns: []*schema.Column{PaymentOrdersColumns[55]},
+				Columns: []*schema.Column{PaymentOrdersColumns[60]},
 			},
 			{
 				Name:    "paymentorder_paid_at",
 				Unique:  false,
-				Columns: []*schema.Column{PaymentOrdersColumns[48]},
+				Columns: []*schema.Column{PaymentOrdersColumns[53]},
 			},
 			{
 				Name:    "paymentorder_payment_type_paid_at",
 				Unique:  false,
-				Columns: []*schema.Column{PaymentOrdersColumns[11], PaymentOrdersColumns[48]},
+				Columns: []*schema.Column{PaymentOrdersColumns[11], PaymentOrdersColumns[53]},
 			},
 			{
 				Name:    "paymentorder_order_type",
@@ -1089,12 +1094,12 @@ var (
 			{
 				Name:    "paymentorder_presale_starts_at_status",
 				Unique:  false,
-				Columns: []*schema.Column{PaymentOrdersColumns[18], PaymentOrdersColumns[39]},
+				Columns: []*schema.Column{PaymentOrdersColumns[18], PaymentOrdersColumns[44]},
 			},
 			{
 				Name:    "paymentorder_subscription_bonus_activity_id",
 				Unique:  false,
-				Columns: []*schema.Column{PaymentOrdersColumns[27]},
+				Columns: []*schema.Column{PaymentOrdersColumns[32]},
 				Annotation: &entsql.IndexAnnotation{
 					Where: "subscription_bonus_activity_id IS NOT NULL",
 				},
@@ -1102,7 +1107,7 @@ var (
 			{
 				Name:    "paymentorder_user_id_plan_id_status_expires_at",
 				Unique:  false,
-				Columns: []*schema.Column{PaymentOrdersColumns[57], PaymentOrdersColumns[17], PaymentOrdersColumns[39], PaymentOrdersColumns[47]},
+				Columns: []*schema.Column{PaymentOrdersColumns[62], PaymentOrdersColumns[17], PaymentOrdersColumns[44], PaymentOrdersColumns[52]},
 				Annotation: &entsql.IndexAnnotation{
 					Where: "subscription_multiplier >= 1",
 				},
@@ -1290,6 +1295,7 @@ var (
 		{Name: "id", Type: field.TypeInt64, Increment: true},
 		{Name: "name", Type: field.TypeString, Size: 100},
 		{Name: "activity_type", Type: field.TypeString, Size: 50},
+		{Name: "bonus_currency", Type: field.TypeString, Size: 3, Default: "USD"},
 		{Name: "enabled", Type: field.TypeBool, Default: false},
 		{Name: "starts_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
 		{Name: "ends_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
@@ -1306,7 +1312,7 @@ var (
 			{
 				Name:    "promotionactivity_activity_type_enabled_starts_at_ends_at",
 				Unique:  false,
-				Columns: []*schema.Column{PromotionActivitiesColumns[2], PromotionActivitiesColumns[3], PromotionActivitiesColumns[4], PromotionActivitiesColumns[5]},
+				Columns: []*schema.Column{PromotionActivitiesColumns[2], PromotionActivitiesColumns[4], PromotionActivitiesColumns[5], PromotionActivitiesColumns[6]},
 			},
 		},
 	}
@@ -1316,7 +1322,9 @@ var (
 		{Name: "user_id", Type: field.TypeInt64},
 		{Name: "order_id", Type: field.TypeInt64},
 		{Name: "plan_id", Type: field.TypeInt64},
-		{Name: "bonus_days", Type: field.TypeInt},
+		{Name: "bonus_days", Type: field.TypeInt, Default: 0},
+		{Name: "bonus_balance", Type: field.TypeFloat64, Default: 0, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
+		{Name: "balance_reclaimed_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
 		{Name: "status", Type: field.TypeString, Size: 20},
 		{Name: "reserved_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
 		{Name: "granted_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
@@ -1334,7 +1342,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "promotion_activity_participations_promotion_activities_participations",
-				Columns:    []*schema.Column{PromotionActivityParticipationsColumns[12]},
+				Columns:    []*schema.Column{PromotionActivityParticipationsColumns[14]},
 				RefColumns: []*schema.Column{PromotionActivitiesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -1348,17 +1356,17 @@ var (
 			{
 				Name:    "promotionactivityparticipation_activity_id_user_id_status",
 				Unique:  false,
-				Columns: []*schema.Column{PromotionActivityParticipationsColumns[12], PromotionActivityParticipationsColumns[1], PromotionActivityParticipationsColumns[5]},
+				Columns: []*schema.Column{PromotionActivityParticipationsColumns[14], PromotionActivityParticipationsColumns[1], PromotionActivityParticipationsColumns[7]},
 			},
 			{
 				Name:    "promotionactivityparticipation_activity_id_created_at",
 				Unique:  false,
-				Columns: []*schema.Column{PromotionActivityParticipationsColumns[12], PromotionActivityParticipationsColumns[10]},
+				Columns: []*schema.Column{PromotionActivityParticipationsColumns[14], PromotionActivityParticipationsColumns[12]},
 			},
 			{
 				Name:    "promotionactivityparticipation_user_id_status",
 				Unique:  false,
-				Columns: []*schema.Column{PromotionActivityParticipationsColumns[1], PromotionActivityParticipationsColumns[5]},
+				Columns: []*schema.Column{PromotionActivityParticipationsColumns[1], PromotionActivityParticipationsColumns[7]},
 			},
 		},
 	}
@@ -1366,7 +1374,8 @@ var (
 	PromotionActivityPlansColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
 		{Name: "plan_id", Type: field.TypeInt64},
-		{Name: "bonus_days", Type: field.TypeInt},
+		{Name: "bonus_days", Type: field.TypeInt, Default: 0},
+		{Name: "bonus_balance", Type: field.TypeFloat64, Default: 0, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
 		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
 		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
 		{Name: "activity_id", Type: field.TypeInt64},
@@ -1379,7 +1388,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "promotion_activity_plans_promotion_activities_plan_bonuses",
-				Columns:    []*schema.Column{PromotionActivityPlansColumns[5]},
+				Columns:    []*schema.Column{PromotionActivityPlansColumns[6]},
 				RefColumns: []*schema.Column{PromotionActivitiesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -1388,7 +1397,7 @@ var (
 			{
 				Name:    "promotionactivityplan_activity_id_plan_id",
 				Unique:  true,
-				Columns: []*schema.Column{PromotionActivityPlansColumns[5], PromotionActivityPlansColumns[1]},
+				Columns: []*schema.Column{PromotionActivityPlansColumns[6], PromotionActivityPlansColumns[1]},
 			},
 			{
 				Name:    "promotionactivityplan_plan_id",

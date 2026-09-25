@@ -24565,6 +24565,15 @@ type PaymentOrderMutation struct {
 	presale_plan_name                         *string
 	presale_reset_cards                       *int
 	addpresale_reset_cards                    *int
+	presale_balance_bonus_activity_id         *int64
+	addpresale_balance_bonus_activity_id      *int64
+	presale_balance_bonus_amount              *float64
+	addpresale_balance_bonus_amount           *float64
+	presale_balance_bonus_currency            *string
+	presale_balance_bonus_face_amount         *float64
+	addpresale_balance_bonus_face_amount      *float64
+	presale_balance_bonus_rate                *float64
+	addpresale_balance_bonus_rate             *float64
 	subscription_group_id                     *int64
 	addsubscription_group_id                  *int64
 	subscription_days                         *int
@@ -25884,6 +25893,280 @@ func (m *PaymentOrderMutation) AddedPresaleResetCards() (r int, exists bool) {
 func (m *PaymentOrderMutation) ResetPresaleResetCards() {
 	m.presale_reset_cards = nil
 	m.addpresale_reset_cards = nil
+}
+
+// SetPresaleBalanceBonusActivityID sets the "presale_balance_bonus_activity_id" field.
+func (m *PaymentOrderMutation) SetPresaleBalanceBonusActivityID(i int64) {
+	m.presale_balance_bonus_activity_id = &i
+	m.addpresale_balance_bonus_activity_id = nil
+}
+
+// PresaleBalanceBonusActivityID returns the value of the "presale_balance_bonus_activity_id" field in the mutation.
+func (m *PaymentOrderMutation) PresaleBalanceBonusActivityID() (r int64, exists bool) {
+	v := m.presale_balance_bonus_activity_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPresaleBalanceBonusActivityID returns the old "presale_balance_bonus_activity_id" field's value of the PaymentOrder entity.
+// If the PaymentOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PaymentOrderMutation) OldPresaleBalanceBonusActivityID(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPresaleBalanceBonusActivityID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPresaleBalanceBonusActivityID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPresaleBalanceBonusActivityID: %w", err)
+	}
+	return oldValue.PresaleBalanceBonusActivityID, nil
+}
+
+// AddPresaleBalanceBonusActivityID adds i to the "presale_balance_bonus_activity_id" field.
+func (m *PaymentOrderMutation) AddPresaleBalanceBonusActivityID(i int64) {
+	if m.addpresale_balance_bonus_activity_id != nil {
+		*m.addpresale_balance_bonus_activity_id += i
+	} else {
+		m.addpresale_balance_bonus_activity_id = &i
+	}
+}
+
+// AddedPresaleBalanceBonusActivityID returns the value that was added to the "presale_balance_bonus_activity_id" field in this mutation.
+func (m *PaymentOrderMutation) AddedPresaleBalanceBonusActivityID() (r int64, exists bool) {
+	v := m.addpresale_balance_bonus_activity_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearPresaleBalanceBonusActivityID clears the value of the "presale_balance_bonus_activity_id" field.
+func (m *PaymentOrderMutation) ClearPresaleBalanceBonusActivityID() {
+	m.presale_balance_bonus_activity_id = nil
+	m.addpresale_balance_bonus_activity_id = nil
+	m.clearedFields[paymentorder.FieldPresaleBalanceBonusActivityID] = struct{}{}
+}
+
+// PresaleBalanceBonusActivityIDCleared returns if the "presale_balance_bonus_activity_id" field was cleared in this mutation.
+func (m *PaymentOrderMutation) PresaleBalanceBonusActivityIDCleared() bool {
+	_, ok := m.clearedFields[paymentorder.FieldPresaleBalanceBonusActivityID]
+	return ok
+}
+
+// ResetPresaleBalanceBonusActivityID resets all changes to the "presale_balance_bonus_activity_id" field.
+func (m *PaymentOrderMutation) ResetPresaleBalanceBonusActivityID() {
+	m.presale_balance_bonus_activity_id = nil
+	m.addpresale_balance_bonus_activity_id = nil
+	delete(m.clearedFields, paymentorder.FieldPresaleBalanceBonusActivityID)
+}
+
+// SetPresaleBalanceBonusAmount sets the "presale_balance_bonus_amount" field.
+func (m *PaymentOrderMutation) SetPresaleBalanceBonusAmount(f float64) {
+	m.presale_balance_bonus_amount = &f
+	m.addpresale_balance_bonus_amount = nil
+}
+
+// PresaleBalanceBonusAmount returns the value of the "presale_balance_bonus_amount" field in the mutation.
+func (m *PaymentOrderMutation) PresaleBalanceBonusAmount() (r float64, exists bool) {
+	v := m.presale_balance_bonus_amount
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPresaleBalanceBonusAmount returns the old "presale_balance_bonus_amount" field's value of the PaymentOrder entity.
+// If the PaymentOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PaymentOrderMutation) OldPresaleBalanceBonusAmount(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPresaleBalanceBonusAmount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPresaleBalanceBonusAmount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPresaleBalanceBonusAmount: %w", err)
+	}
+	return oldValue.PresaleBalanceBonusAmount, nil
+}
+
+// AddPresaleBalanceBonusAmount adds f to the "presale_balance_bonus_amount" field.
+func (m *PaymentOrderMutation) AddPresaleBalanceBonusAmount(f float64) {
+	if m.addpresale_balance_bonus_amount != nil {
+		*m.addpresale_balance_bonus_amount += f
+	} else {
+		m.addpresale_balance_bonus_amount = &f
+	}
+}
+
+// AddedPresaleBalanceBonusAmount returns the value that was added to the "presale_balance_bonus_amount" field in this mutation.
+func (m *PaymentOrderMutation) AddedPresaleBalanceBonusAmount() (r float64, exists bool) {
+	v := m.addpresale_balance_bonus_amount
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetPresaleBalanceBonusAmount resets all changes to the "presale_balance_bonus_amount" field.
+func (m *PaymentOrderMutation) ResetPresaleBalanceBonusAmount() {
+	m.presale_balance_bonus_amount = nil
+	m.addpresale_balance_bonus_amount = nil
+}
+
+// SetPresaleBalanceBonusCurrency sets the "presale_balance_bonus_currency" field.
+func (m *PaymentOrderMutation) SetPresaleBalanceBonusCurrency(s string) {
+	m.presale_balance_bonus_currency = &s
+}
+
+// PresaleBalanceBonusCurrency returns the value of the "presale_balance_bonus_currency" field in the mutation.
+func (m *PaymentOrderMutation) PresaleBalanceBonusCurrency() (r string, exists bool) {
+	v := m.presale_balance_bonus_currency
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPresaleBalanceBonusCurrency returns the old "presale_balance_bonus_currency" field's value of the PaymentOrder entity.
+// If the PaymentOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PaymentOrderMutation) OldPresaleBalanceBonusCurrency(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPresaleBalanceBonusCurrency is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPresaleBalanceBonusCurrency requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPresaleBalanceBonusCurrency: %w", err)
+	}
+	return oldValue.PresaleBalanceBonusCurrency, nil
+}
+
+// ResetPresaleBalanceBonusCurrency resets all changes to the "presale_balance_bonus_currency" field.
+func (m *PaymentOrderMutation) ResetPresaleBalanceBonusCurrency() {
+	m.presale_balance_bonus_currency = nil
+}
+
+// SetPresaleBalanceBonusFaceAmount sets the "presale_balance_bonus_face_amount" field.
+func (m *PaymentOrderMutation) SetPresaleBalanceBonusFaceAmount(f float64) {
+	m.presale_balance_bonus_face_amount = &f
+	m.addpresale_balance_bonus_face_amount = nil
+}
+
+// PresaleBalanceBonusFaceAmount returns the value of the "presale_balance_bonus_face_amount" field in the mutation.
+func (m *PaymentOrderMutation) PresaleBalanceBonusFaceAmount() (r float64, exists bool) {
+	v := m.presale_balance_bonus_face_amount
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPresaleBalanceBonusFaceAmount returns the old "presale_balance_bonus_face_amount" field's value of the PaymentOrder entity.
+// If the PaymentOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PaymentOrderMutation) OldPresaleBalanceBonusFaceAmount(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPresaleBalanceBonusFaceAmount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPresaleBalanceBonusFaceAmount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPresaleBalanceBonusFaceAmount: %w", err)
+	}
+	return oldValue.PresaleBalanceBonusFaceAmount, nil
+}
+
+// AddPresaleBalanceBonusFaceAmount adds f to the "presale_balance_bonus_face_amount" field.
+func (m *PaymentOrderMutation) AddPresaleBalanceBonusFaceAmount(f float64) {
+	if m.addpresale_balance_bonus_face_amount != nil {
+		*m.addpresale_balance_bonus_face_amount += f
+	} else {
+		m.addpresale_balance_bonus_face_amount = &f
+	}
+}
+
+// AddedPresaleBalanceBonusFaceAmount returns the value that was added to the "presale_balance_bonus_face_amount" field in this mutation.
+func (m *PaymentOrderMutation) AddedPresaleBalanceBonusFaceAmount() (r float64, exists bool) {
+	v := m.addpresale_balance_bonus_face_amount
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetPresaleBalanceBonusFaceAmount resets all changes to the "presale_balance_bonus_face_amount" field.
+func (m *PaymentOrderMutation) ResetPresaleBalanceBonusFaceAmount() {
+	m.presale_balance_bonus_face_amount = nil
+	m.addpresale_balance_bonus_face_amount = nil
+}
+
+// SetPresaleBalanceBonusRate sets the "presale_balance_bonus_rate" field.
+func (m *PaymentOrderMutation) SetPresaleBalanceBonusRate(f float64) {
+	m.presale_balance_bonus_rate = &f
+	m.addpresale_balance_bonus_rate = nil
+}
+
+// PresaleBalanceBonusRate returns the value of the "presale_balance_bonus_rate" field in the mutation.
+func (m *PaymentOrderMutation) PresaleBalanceBonusRate() (r float64, exists bool) {
+	v := m.presale_balance_bonus_rate
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPresaleBalanceBonusRate returns the old "presale_balance_bonus_rate" field's value of the PaymentOrder entity.
+// If the PaymentOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PaymentOrderMutation) OldPresaleBalanceBonusRate(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPresaleBalanceBonusRate is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPresaleBalanceBonusRate requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPresaleBalanceBonusRate: %w", err)
+	}
+	return oldValue.PresaleBalanceBonusRate, nil
+}
+
+// AddPresaleBalanceBonusRate adds f to the "presale_balance_bonus_rate" field.
+func (m *PaymentOrderMutation) AddPresaleBalanceBonusRate(f float64) {
+	if m.addpresale_balance_bonus_rate != nil {
+		*m.addpresale_balance_bonus_rate += f
+	} else {
+		m.addpresale_balance_bonus_rate = &f
+	}
+}
+
+// AddedPresaleBalanceBonusRate returns the value that was added to the "presale_balance_bonus_rate" field in this mutation.
+func (m *PaymentOrderMutation) AddedPresaleBalanceBonusRate() (r float64, exists bool) {
+	v := m.addpresale_balance_bonus_rate
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetPresaleBalanceBonusRate resets all changes to the "presale_balance_bonus_rate" field.
+func (m *PaymentOrderMutation) ResetPresaleBalanceBonusRate() {
+	m.presale_balance_bonus_rate = nil
+	m.addpresale_balance_bonus_rate = nil
 }
 
 // SetSubscriptionGroupID sets the "subscription_group_id" field.
@@ -27600,7 +27883,7 @@ func (m *PaymentOrderMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PaymentOrderMutation) Fields() []string {
-	fields := make([]string, 0, 57)
+	fields := make([]string, 0, 62)
 	if m.user != nil {
 		fields = append(fields, paymentorder.FieldUserID)
 	}
@@ -27675,6 +27958,21 @@ func (m *PaymentOrderMutation) Fields() []string {
 	}
 	if m.presale_reset_cards != nil {
 		fields = append(fields, paymentorder.FieldPresaleResetCards)
+	}
+	if m.presale_balance_bonus_activity_id != nil {
+		fields = append(fields, paymentorder.FieldPresaleBalanceBonusActivityID)
+	}
+	if m.presale_balance_bonus_amount != nil {
+		fields = append(fields, paymentorder.FieldPresaleBalanceBonusAmount)
+	}
+	if m.presale_balance_bonus_currency != nil {
+		fields = append(fields, paymentorder.FieldPresaleBalanceBonusCurrency)
+	}
+	if m.presale_balance_bonus_face_amount != nil {
+		fields = append(fields, paymentorder.FieldPresaleBalanceBonusFaceAmount)
+	}
+	if m.presale_balance_bonus_rate != nil {
+		fields = append(fields, paymentorder.FieldPresaleBalanceBonusRate)
 	}
 	if m.subscription_group_id != nil {
 		fields = append(fields, paymentorder.FieldSubscriptionGroupID)
@@ -27830,6 +28128,16 @@ func (m *PaymentOrderMutation) Field(name string) (ent.Value, bool) {
 		return m.PresalePlanName()
 	case paymentorder.FieldPresaleResetCards:
 		return m.PresaleResetCards()
+	case paymentorder.FieldPresaleBalanceBonusActivityID:
+		return m.PresaleBalanceBonusActivityID()
+	case paymentorder.FieldPresaleBalanceBonusAmount:
+		return m.PresaleBalanceBonusAmount()
+	case paymentorder.FieldPresaleBalanceBonusCurrency:
+		return m.PresaleBalanceBonusCurrency()
+	case paymentorder.FieldPresaleBalanceBonusFaceAmount:
+		return m.PresaleBalanceBonusFaceAmount()
+	case paymentorder.FieldPresaleBalanceBonusRate:
+		return m.PresaleBalanceBonusRate()
 	case paymentorder.FieldSubscriptionGroupID:
 		return m.SubscriptionGroupID()
 	case paymentorder.FieldSubscriptionDays:
@@ -27953,6 +28261,16 @@ func (m *PaymentOrderMutation) OldField(ctx context.Context, name string) (ent.V
 		return m.OldPresalePlanName(ctx)
 	case paymentorder.FieldPresaleResetCards:
 		return m.OldPresaleResetCards(ctx)
+	case paymentorder.FieldPresaleBalanceBonusActivityID:
+		return m.OldPresaleBalanceBonusActivityID(ctx)
+	case paymentorder.FieldPresaleBalanceBonusAmount:
+		return m.OldPresaleBalanceBonusAmount(ctx)
+	case paymentorder.FieldPresaleBalanceBonusCurrency:
+		return m.OldPresaleBalanceBonusCurrency(ctx)
+	case paymentorder.FieldPresaleBalanceBonusFaceAmount:
+		return m.OldPresaleBalanceBonusFaceAmount(ctx)
+	case paymentorder.FieldPresaleBalanceBonusRate:
+		return m.OldPresaleBalanceBonusRate(ctx)
 	case paymentorder.FieldSubscriptionGroupID:
 		return m.OldSubscriptionGroupID(ctx)
 	case paymentorder.FieldSubscriptionDays:
@@ -28200,6 +28518,41 @@ func (m *PaymentOrderMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetPresaleResetCards(v)
+		return nil
+	case paymentorder.FieldPresaleBalanceBonusActivityID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPresaleBalanceBonusActivityID(v)
+		return nil
+	case paymentorder.FieldPresaleBalanceBonusAmount:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPresaleBalanceBonusAmount(v)
+		return nil
+	case paymentorder.FieldPresaleBalanceBonusCurrency:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPresaleBalanceBonusCurrency(v)
+		return nil
+	case paymentorder.FieldPresaleBalanceBonusFaceAmount:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPresaleBalanceBonusFaceAmount(v)
+		return nil
+	case paymentorder.FieldPresaleBalanceBonusRate:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPresaleBalanceBonusRate(v)
 		return nil
 	case paymentorder.FieldSubscriptionGroupID:
 		v, ok := value.(int64)
@@ -28454,6 +28807,18 @@ func (m *PaymentOrderMutation) AddedFields() []string {
 	if m.addpresale_reset_cards != nil {
 		fields = append(fields, paymentorder.FieldPresaleResetCards)
 	}
+	if m.addpresale_balance_bonus_activity_id != nil {
+		fields = append(fields, paymentorder.FieldPresaleBalanceBonusActivityID)
+	}
+	if m.addpresale_balance_bonus_amount != nil {
+		fields = append(fields, paymentorder.FieldPresaleBalanceBonusAmount)
+	}
+	if m.addpresale_balance_bonus_face_amount != nil {
+		fields = append(fields, paymentorder.FieldPresaleBalanceBonusFaceAmount)
+	}
+	if m.addpresale_balance_bonus_rate != nil {
+		fields = append(fields, paymentorder.FieldPresaleBalanceBonusRate)
+	}
 	if m.addsubscription_group_id != nil {
 		fields = append(fields, paymentorder.FieldSubscriptionGroupID)
 	}
@@ -28509,6 +28874,14 @@ func (m *PaymentOrderMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedPresaleSubscriptionID()
 	case paymentorder.FieldPresaleResetCards:
 		return m.AddedPresaleResetCards()
+	case paymentorder.FieldPresaleBalanceBonusActivityID:
+		return m.AddedPresaleBalanceBonusActivityID()
+	case paymentorder.FieldPresaleBalanceBonusAmount:
+		return m.AddedPresaleBalanceBonusAmount()
+	case paymentorder.FieldPresaleBalanceBonusFaceAmount:
+		return m.AddedPresaleBalanceBonusFaceAmount()
+	case paymentorder.FieldPresaleBalanceBonusRate:
+		return m.AddedPresaleBalanceBonusRate()
 	case paymentorder.FieldSubscriptionGroupID:
 		return m.AddedSubscriptionGroupID()
 	case paymentorder.FieldSubscriptionDays:
@@ -28588,6 +28961,34 @@ func (m *PaymentOrderMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddPresaleResetCards(v)
+		return nil
+	case paymentorder.FieldPresaleBalanceBonusActivityID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddPresaleBalanceBonusActivityID(v)
+		return nil
+	case paymentorder.FieldPresaleBalanceBonusAmount:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddPresaleBalanceBonusAmount(v)
+		return nil
+	case paymentorder.FieldPresaleBalanceBonusFaceAmount:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddPresaleBalanceBonusFaceAmount(v)
+		return nil
+	case paymentorder.FieldPresaleBalanceBonusRate:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddPresaleBalanceBonusRate(v)
 		return nil
 	case paymentorder.FieldSubscriptionGroupID:
 		v, ok := value.(int64)
@@ -28704,6 +29105,9 @@ func (m *PaymentOrderMutation) ClearedFields() []string {
 	if m.FieldCleared(paymentorder.FieldPresaleSubscriptionID) {
 		fields = append(fields, paymentorder.FieldPresaleSubscriptionID)
 	}
+	if m.FieldCleared(paymentorder.FieldPresaleBalanceBonusActivityID) {
+		fields = append(fields, paymentorder.FieldPresaleBalanceBonusActivityID)
+	}
 	if m.FieldCleared(paymentorder.FieldSubscriptionGroupID) {
 		fields = append(fields, paymentorder.FieldSubscriptionGroupID)
 	}
@@ -28810,6 +29214,9 @@ func (m *PaymentOrderMutation) ClearField(name string) error {
 		return nil
 	case paymentorder.FieldPresaleSubscriptionID:
 		m.ClearPresaleSubscriptionID()
+		return nil
+	case paymentorder.FieldPresaleBalanceBonusActivityID:
+		m.ClearPresaleBalanceBonusActivityID()
 		return nil
 	case paymentorder.FieldSubscriptionGroupID:
 		m.ClearSubscriptionGroupID()
@@ -28956,6 +29363,21 @@ func (m *PaymentOrderMutation) ResetField(name string) error {
 		return nil
 	case paymentorder.FieldPresaleResetCards:
 		m.ResetPresaleResetCards()
+		return nil
+	case paymentorder.FieldPresaleBalanceBonusActivityID:
+		m.ResetPresaleBalanceBonusActivityID()
+		return nil
+	case paymentorder.FieldPresaleBalanceBonusAmount:
+		m.ResetPresaleBalanceBonusAmount()
+		return nil
+	case paymentorder.FieldPresaleBalanceBonusCurrency:
+		m.ResetPresaleBalanceBonusCurrency()
+		return nil
+	case paymentorder.FieldPresaleBalanceBonusFaceAmount:
+		m.ResetPresaleBalanceBonusFaceAmount()
+		return nil
+	case paymentorder.FieldPresaleBalanceBonusRate:
+		m.ResetPresaleBalanceBonusRate()
 		return nil
 	case paymentorder.FieldSubscriptionGroupID:
 		m.ResetSubscriptionGroupID()
@@ -33352,6 +33774,7 @@ type PromotionActivityMutation struct {
 	id                    *int64
 	name                  *string
 	activity_type         *string
+	bonus_currency        *string
 	enabled               *bool
 	starts_at             *time.Time
 	ends_at               *time.Time
@@ -33539,6 +33962,42 @@ func (m *PromotionActivityMutation) OldActivityType(ctx context.Context) (v stri
 // ResetActivityType resets all changes to the "activity_type" field.
 func (m *PromotionActivityMutation) ResetActivityType() {
 	m.activity_type = nil
+}
+
+// SetBonusCurrency sets the "bonus_currency" field.
+func (m *PromotionActivityMutation) SetBonusCurrency(s string) {
+	m.bonus_currency = &s
+}
+
+// BonusCurrency returns the value of the "bonus_currency" field in the mutation.
+func (m *PromotionActivityMutation) BonusCurrency() (r string, exists bool) {
+	v := m.bonus_currency
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldBonusCurrency returns the old "bonus_currency" field's value of the PromotionActivity entity.
+// If the PromotionActivity object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PromotionActivityMutation) OldBonusCurrency(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldBonusCurrency is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldBonusCurrency requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldBonusCurrency: %w", err)
+	}
+	return oldValue.BonusCurrency, nil
+}
+
+// ResetBonusCurrency resets all changes to the "bonus_currency" field.
+func (m *PromotionActivityMutation) ResetBonusCurrency() {
+	m.bonus_currency = nil
 }
 
 // SetEnabled sets the "enabled" field.
@@ -33919,12 +34378,15 @@ func (m *PromotionActivityMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PromotionActivityMutation) Fields() []string {
-	fields := make([]string, 0, 8)
+	fields := make([]string, 0, 9)
 	if m.name != nil {
 		fields = append(fields, promotionactivity.FieldName)
 	}
 	if m.activity_type != nil {
 		fields = append(fields, promotionactivity.FieldActivityType)
+	}
+	if m.bonus_currency != nil {
+		fields = append(fields, promotionactivity.FieldBonusCurrency)
 	}
 	if m.enabled != nil {
 		fields = append(fields, promotionactivity.FieldEnabled)
@@ -33956,6 +34418,8 @@ func (m *PromotionActivityMutation) Field(name string) (ent.Value, bool) {
 		return m.Name()
 	case promotionactivity.FieldActivityType:
 		return m.ActivityType()
+	case promotionactivity.FieldBonusCurrency:
+		return m.BonusCurrency()
 	case promotionactivity.FieldEnabled:
 		return m.Enabled()
 	case promotionactivity.FieldStartsAt:
@@ -33981,6 +34445,8 @@ func (m *PromotionActivityMutation) OldField(ctx context.Context, name string) (
 		return m.OldName(ctx)
 	case promotionactivity.FieldActivityType:
 		return m.OldActivityType(ctx)
+	case promotionactivity.FieldBonusCurrency:
+		return m.OldBonusCurrency(ctx)
 	case promotionactivity.FieldEnabled:
 		return m.OldEnabled(ctx)
 	case promotionactivity.FieldStartsAt:
@@ -34015,6 +34481,13 @@ func (m *PromotionActivityMutation) SetField(name string, value ent.Value) error
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetActivityType(v)
+		return nil
+	case promotionactivity.FieldBonusCurrency:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetBonusCurrency(v)
 		return nil
 	case promotionactivity.FieldEnabled:
 		v, ok := value.(bool)
@@ -34127,6 +34600,9 @@ func (m *PromotionActivityMutation) ResetField(name string) error {
 		return nil
 	case promotionactivity.FieldActivityType:
 		m.ResetActivityType()
+		return nil
+	case promotionactivity.FieldBonusCurrency:
+		m.ResetBonusCurrency()
 		return nil
 	case promotionactivity.FieldEnabled:
 		m.ResetEnabled()
@@ -34263,30 +34739,33 @@ func (m *PromotionActivityMutation) ResetEdge(name string) error {
 // PromotionActivityParticipationMutation represents an operation that mutates the PromotionActivityParticipation nodes in the graph.
 type PromotionActivityParticipationMutation struct {
 	config
-	op              Op
-	typ             string
-	id              *int64
-	user_id         *int64
-	adduser_id      *int64
-	order_id        *int64
-	addorder_id     *int64
-	plan_id         *int64
-	addplan_id      *int64
-	bonus_days      *int
-	addbonus_days   *int
-	status          *string
-	reserved_at     *time.Time
-	granted_at      *time.Time
-	released_at     *time.Time
-	release_reason  *string
-	created_at      *time.Time
-	updated_at      *time.Time
-	clearedFields   map[string]struct{}
-	activity        *int64
-	clearedactivity bool
-	done            bool
-	oldValue        func(context.Context) (*PromotionActivityParticipation, error)
-	predicates      []predicate.PromotionActivityParticipation
+	op                   Op
+	typ                  string
+	id                   *int64
+	user_id              *int64
+	adduser_id           *int64
+	order_id             *int64
+	addorder_id          *int64
+	plan_id              *int64
+	addplan_id           *int64
+	bonus_days           *int
+	addbonus_days        *int
+	bonus_balance        *float64
+	addbonus_balance     *float64
+	balance_reclaimed_at *time.Time
+	status               *string
+	reserved_at          *time.Time
+	granted_at           *time.Time
+	released_at          *time.Time
+	release_reason       *string
+	created_at           *time.Time
+	updated_at           *time.Time
+	clearedFields        map[string]struct{}
+	activity             *int64
+	clearedactivity      bool
+	done                 bool
+	oldValue             func(context.Context) (*PromotionActivityParticipation, error)
+	predicates           []predicate.PromotionActivityParticipation
 }
 
 var _ ent.Mutation = (*PromotionActivityParticipationMutation)(nil)
@@ -34647,6 +35126,111 @@ func (m *PromotionActivityParticipationMutation) ResetBonusDays() {
 	m.addbonus_days = nil
 }
 
+// SetBonusBalance sets the "bonus_balance" field.
+func (m *PromotionActivityParticipationMutation) SetBonusBalance(f float64) {
+	m.bonus_balance = &f
+	m.addbonus_balance = nil
+}
+
+// BonusBalance returns the value of the "bonus_balance" field in the mutation.
+func (m *PromotionActivityParticipationMutation) BonusBalance() (r float64, exists bool) {
+	v := m.bonus_balance
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldBonusBalance returns the old "bonus_balance" field's value of the PromotionActivityParticipation entity.
+// If the PromotionActivityParticipation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PromotionActivityParticipationMutation) OldBonusBalance(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldBonusBalance is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldBonusBalance requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldBonusBalance: %w", err)
+	}
+	return oldValue.BonusBalance, nil
+}
+
+// AddBonusBalance adds f to the "bonus_balance" field.
+func (m *PromotionActivityParticipationMutation) AddBonusBalance(f float64) {
+	if m.addbonus_balance != nil {
+		*m.addbonus_balance += f
+	} else {
+		m.addbonus_balance = &f
+	}
+}
+
+// AddedBonusBalance returns the value that was added to the "bonus_balance" field in this mutation.
+func (m *PromotionActivityParticipationMutation) AddedBonusBalance() (r float64, exists bool) {
+	v := m.addbonus_balance
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetBonusBalance resets all changes to the "bonus_balance" field.
+func (m *PromotionActivityParticipationMutation) ResetBonusBalance() {
+	m.bonus_balance = nil
+	m.addbonus_balance = nil
+}
+
+// SetBalanceReclaimedAt sets the "balance_reclaimed_at" field.
+func (m *PromotionActivityParticipationMutation) SetBalanceReclaimedAt(t time.Time) {
+	m.balance_reclaimed_at = &t
+}
+
+// BalanceReclaimedAt returns the value of the "balance_reclaimed_at" field in the mutation.
+func (m *PromotionActivityParticipationMutation) BalanceReclaimedAt() (r time.Time, exists bool) {
+	v := m.balance_reclaimed_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldBalanceReclaimedAt returns the old "balance_reclaimed_at" field's value of the PromotionActivityParticipation entity.
+// If the PromotionActivityParticipation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PromotionActivityParticipationMutation) OldBalanceReclaimedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldBalanceReclaimedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldBalanceReclaimedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldBalanceReclaimedAt: %w", err)
+	}
+	return oldValue.BalanceReclaimedAt, nil
+}
+
+// ClearBalanceReclaimedAt clears the value of the "balance_reclaimed_at" field.
+func (m *PromotionActivityParticipationMutation) ClearBalanceReclaimedAt() {
+	m.balance_reclaimed_at = nil
+	m.clearedFields[promotionactivityparticipation.FieldBalanceReclaimedAt] = struct{}{}
+}
+
+// BalanceReclaimedAtCleared returns if the "balance_reclaimed_at" field was cleared in this mutation.
+func (m *PromotionActivityParticipationMutation) BalanceReclaimedAtCleared() bool {
+	_, ok := m.clearedFields[promotionactivityparticipation.FieldBalanceReclaimedAt]
+	return ok
+}
+
+// ResetBalanceReclaimedAt resets all changes to the "balance_reclaimed_at" field.
+func (m *PromotionActivityParticipationMutation) ResetBalanceReclaimedAt() {
+	m.balance_reclaimed_at = nil
+	delete(m.clearedFields, promotionactivityparticipation.FieldBalanceReclaimedAt)
+}
+
 // SetStatus sets the "status" field.
 func (m *PromotionActivityParticipationMutation) SetStatus(s string) {
 	m.status = &s
@@ -34999,7 +35583,7 @@ func (m *PromotionActivityParticipationMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PromotionActivityParticipationMutation) Fields() []string {
-	fields := make([]string, 0, 12)
+	fields := make([]string, 0, 14)
 	if m.activity != nil {
 		fields = append(fields, promotionactivityparticipation.FieldActivityID)
 	}
@@ -35014,6 +35598,12 @@ func (m *PromotionActivityParticipationMutation) Fields() []string {
 	}
 	if m.bonus_days != nil {
 		fields = append(fields, promotionactivityparticipation.FieldBonusDays)
+	}
+	if m.bonus_balance != nil {
+		fields = append(fields, promotionactivityparticipation.FieldBonusBalance)
+	}
+	if m.balance_reclaimed_at != nil {
+		fields = append(fields, promotionactivityparticipation.FieldBalanceReclaimedAt)
 	}
 	if m.status != nil {
 		fields = append(fields, promotionactivityparticipation.FieldStatus)
@@ -35054,6 +35644,10 @@ func (m *PromotionActivityParticipationMutation) Field(name string) (ent.Value, 
 		return m.PlanID()
 	case promotionactivityparticipation.FieldBonusDays:
 		return m.BonusDays()
+	case promotionactivityparticipation.FieldBonusBalance:
+		return m.BonusBalance()
+	case promotionactivityparticipation.FieldBalanceReclaimedAt:
+		return m.BalanceReclaimedAt()
 	case promotionactivityparticipation.FieldStatus:
 		return m.Status()
 	case promotionactivityparticipation.FieldReservedAt:
@@ -35087,6 +35681,10 @@ func (m *PromotionActivityParticipationMutation) OldField(ctx context.Context, n
 		return m.OldPlanID(ctx)
 	case promotionactivityparticipation.FieldBonusDays:
 		return m.OldBonusDays(ctx)
+	case promotionactivityparticipation.FieldBonusBalance:
+		return m.OldBonusBalance(ctx)
+	case promotionactivityparticipation.FieldBalanceReclaimedAt:
+		return m.OldBalanceReclaimedAt(ctx)
 	case promotionactivityparticipation.FieldStatus:
 		return m.OldStatus(ctx)
 	case promotionactivityparticipation.FieldReservedAt:
@@ -35144,6 +35742,20 @@ func (m *PromotionActivityParticipationMutation) SetField(name string, value ent
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetBonusDays(v)
+		return nil
+	case promotionactivityparticipation.FieldBonusBalance:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetBonusBalance(v)
+		return nil
+	case promotionactivityparticipation.FieldBalanceReclaimedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetBalanceReclaimedAt(v)
 		return nil
 	case promotionactivityparticipation.FieldStatus:
 		v, ok := value.(string)
@@ -35214,6 +35826,9 @@ func (m *PromotionActivityParticipationMutation) AddedFields() []string {
 	if m.addbonus_days != nil {
 		fields = append(fields, promotionactivityparticipation.FieldBonusDays)
 	}
+	if m.addbonus_balance != nil {
+		fields = append(fields, promotionactivityparticipation.FieldBonusBalance)
+	}
 	return fields
 }
 
@@ -35230,6 +35845,8 @@ func (m *PromotionActivityParticipationMutation) AddedField(name string) (ent.Va
 		return m.AddedPlanID()
 	case promotionactivityparticipation.FieldBonusDays:
 		return m.AddedBonusDays()
+	case promotionactivityparticipation.FieldBonusBalance:
+		return m.AddedBonusBalance()
 	}
 	return nil, false
 }
@@ -35267,6 +35884,13 @@ func (m *PromotionActivityParticipationMutation) AddField(name string, value ent
 		}
 		m.AddBonusDays(v)
 		return nil
+	case promotionactivityparticipation.FieldBonusBalance:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddBonusBalance(v)
+		return nil
 	}
 	return fmt.Errorf("unknown PromotionActivityParticipation numeric field %s", name)
 }
@@ -35275,6 +35899,9 @@ func (m *PromotionActivityParticipationMutation) AddField(name string, value ent
 // mutation.
 func (m *PromotionActivityParticipationMutation) ClearedFields() []string {
 	var fields []string
+	if m.FieldCleared(promotionactivityparticipation.FieldBalanceReclaimedAt) {
+		fields = append(fields, promotionactivityparticipation.FieldBalanceReclaimedAt)
+	}
 	if m.FieldCleared(promotionactivityparticipation.FieldGrantedAt) {
 		fields = append(fields, promotionactivityparticipation.FieldGrantedAt)
 	}
@@ -35298,6 +35925,9 @@ func (m *PromotionActivityParticipationMutation) FieldCleared(name string) bool 
 // error if the field is not defined in the schema.
 func (m *PromotionActivityParticipationMutation) ClearField(name string) error {
 	switch name {
+	case promotionactivityparticipation.FieldBalanceReclaimedAt:
+		m.ClearBalanceReclaimedAt()
+		return nil
 	case promotionactivityparticipation.FieldGrantedAt:
 		m.ClearGrantedAt()
 		return nil
@@ -35329,6 +35959,12 @@ func (m *PromotionActivityParticipationMutation) ResetField(name string) error {
 		return nil
 	case promotionactivityparticipation.FieldBonusDays:
 		m.ResetBonusDays()
+		return nil
+	case promotionactivityparticipation.FieldBonusBalance:
+		m.ResetBonusBalance()
+		return nil
+	case promotionactivityparticipation.FieldBalanceReclaimedAt:
+		m.ResetBalanceReclaimedAt()
 		return nil
 	case promotionactivityparticipation.FieldStatus:
 		m.ResetStatus()
@@ -35432,21 +36068,23 @@ func (m *PromotionActivityParticipationMutation) ResetEdge(name string) error {
 // PromotionActivityPlanMutation represents an operation that mutates the PromotionActivityPlan nodes in the graph.
 type PromotionActivityPlanMutation struct {
 	config
-	op              Op
-	typ             string
-	id              *int64
-	plan_id         *int64
-	addplan_id      *int64
-	bonus_days      *int
-	addbonus_days   *int
-	created_at      *time.Time
-	updated_at      *time.Time
-	clearedFields   map[string]struct{}
-	activity        *int64
-	clearedactivity bool
-	done            bool
-	oldValue        func(context.Context) (*PromotionActivityPlan, error)
-	predicates      []predicate.PromotionActivityPlan
+	op               Op
+	typ              string
+	id               *int64
+	plan_id          *int64
+	addplan_id       *int64
+	bonus_days       *int
+	addbonus_days    *int
+	bonus_balance    *float64
+	addbonus_balance *float64
+	created_at       *time.Time
+	updated_at       *time.Time
+	clearedFields    map[string]struct{}
+	activity         *int64
+	clearedactivity  bool
+	done             bool
+	oldValue         func(context.Context) (*PromotionActivityPlan, error)
+	predicates       []predicate.PromotionActivityPlan
 }
 
 var _ ent.Mutation = (*PromotionActivityPlanMutation)(nil)
@@ -35695,6 +36333,62 @@ func (m *PromotionActivityPlanMutation) ResetBonusDays() {
 	m.addbonus_days = nil
 }
 
+// SetBonusBalance sets the "bonus_balance" field.
+func (m *PromotionActivityPlanMutation) SetBonusBalance(f float64) {
+	m.bonus_balance = &f
+	m.addbonus_balance = nil
+}
+
+// BonusBalance returns the value of the "bonus_balance" field in the mutation.
+func (m *PromotionActivityPlanMutation) BonusBalance() (r float64, exists bool) {
+	v := m.bonus_balance
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldBonusBalance returns the old "bonus_balance" field's value of the PromotionActivityPlan entity.
+// If the PromotionActivityPlan object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PromotionActivityPlanMutation) OldBonusBalance(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldBonusBalance is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldBonusBalance requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldBonusBalance: %w", err)
+	}
+	return oldValue.BonusBalance, nil
+}
+
+// AddBonusBalance adds f to the "bonus_balance" field.
+func (m *PromotionActivityPlanMutation) AddBonusBalance(f float64) {
+	if m.addbonus_balance != nil {
+		*m.addbonus_balance += f
+	} else {
+		m.addbonus_balance = &f
+	}
+}
+
+// AddedBonusBalance returns the value that was added to the "bonus_balance" field in this mutation.
+func (m *PromotionActivityPlanMutation) AddedBonusBalance() (r float64, exists bool) {
+	v := m.addbonus_balance
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetBonusBalance resets all changes to the "bonus_balance" field.
+func (m *PromotionActivityPlanMutation) ResetBonusBalance() {
+	m.bonus_balance = nil
+	m.addbonus_balance = nil
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (m *PromotionActivityPlanMutation) SetCreatedAt(t time.Time) {
 	m.created_at = &t
@@ -35828,7 +36522,7 @@ func (m *PromotionActivityPlanMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PromotionActivityPlanMutation) Fields() []string {
-	fields := make([]string, 0, 5)
+	fields := make([]string, 0, 6)
 	if m.activity != nil {
 		fields = append(fields, promotionactivityplan.FieldActivityID)
 	}
@@ -35837,6 +36531,9 @@ func (m *PromotionActivityPlanMutation) Fields() []string {
 	}
 	if m.bonus_days != nil {
 		fields = append(fields, promotionactivityplan.FieldBonusDays)
+	}
+	if m.bonus_balance != nil {
+		fields = append(fields, promotionactivityplan.FieldBonusBalance)
 	}
 	if m.created_at != nil {
 		fields = append(fields, promotionactivityplan.FieldCreatedAt)
@@ -35858,6 +36555,8 @@ func (m *PromotionActivityPlanMutation) Field(name string) (ent.Value, bool) {
 		return m.PlanID()
 	case promotionactivityplan.FieldBonusDays:
 		return m.BonusDays()
+	case promotionactivityplan.FieldBonusBalance:
+		return m.BonusBalance()
 	case promotionactivityplan.FieldCreatedAt:
 		return m.CreatedAt()
 	case promotionactivityplan.FieldUpdatedAt:
@@ -35877,6 +36576,8 @@ func (m *PromotionActivityPlanMutation) OldField(ctx context.Context, name strin
 		return m.OldPlanID(ctx)
 	case promotionactivityplan.FieldBonusDays:
 		return m.OldBonusDays(ctx)
+	case promotionactivityplan.FieldBonusBalance:
+		return m.OldBonusBalance(ctx)
 	case promotionactivityplan.FieldCreatedAt:
 		return m.OldCreatedAt(ctx)
 	case promotionactivityplan.FieldUpdatedAt:
@@ -35911,6 +36612,13 @@ func (m *PromotionActivityPlanMutation) SetField(name string, value ent.Value) e
 		}
 		m.SetBonusDays(v)
 		return nil
+	case promotionactivityplan.FieldBonusBalance:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetBonusBalance(v)
+		return nil
 	case promotionactivityplan.FieldCreatedAt:
 		v, ok := value.(time.Time)
 		if !ok {
@@ -35939,6 +36647,9 @@ func (m *PromotionActivityPlanMutation) AddedFields() []string {
 	if m.addbonus_days != nil {
 		fields = append(fields, promotionactivityplan.FieldBonusDays)
 	}
+	if m.addbonus_balance != nil {
+		fields = append(fields, promotionactivityplan.FieldBonusBalance)
+	}
 	return fields
 }
 
@@ -35951,6 +36662,8 @@ func (m *PromotionActivityPlanMutation) AddedField(name string) (ent.Value, bool
 		return m.AddedPlanID()
 	case promotionactivityplan.FieldBonusDays:
 		return m.AddedBonusDays()
+	case promotionactivityplan.FieldBonusBalance:
+		return m.AddedBonusBalance()
 	}
 	return nil, false
 }
@@ -35973,6 +36686,13 @@ func (m *PromotionActivityPlanMutation) AddField(name string, value ent.Value) e
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddBonusDays(v)
+		return nil
+	case promotionactivityplan.FieldBonusBalance:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddBonusBalance(v)
 		return nil
 	}
 	return fmt.Errorf("unknown PromotionActivityPlan numeric field %s", name)
@@ -36009,6 +36729,9 @@ func (m *PromotionActivityPlanMutation) ResetField(name string) error {
 		return nil
 	case promotionactivityplan.FieldBonusDays:
 		m.ResetBonusDays()
+		return nil
+	case promotionactivityplan.FieldBonusBalance:
+		m.ResetBonusBalance()
 		return nil
 	case promotionactivityplan.FieldCreatedAt:
 		m.ResetCreatedAt()

@@ -163,6 +163,12 @@
                     +{{ selectedSubscriptionBonusDays }}{{ t('payment.days') }}
                   </span>
                 </div>
+                <div v-if="props.presalePlanId && presaleQuote?.balance_bonus" class="mt-4 rounded-xl border border-amber-500/20 bg-amber-500/5 p-4" data-test="checkout-balance-gift">
+                  <div class="flex items-center justify-between gap-4 text-sm"><span class="text-content-secondary">{{ t('presale.gift.eligible') }}</span><strong class="text-amber-800 dark:text-amber-200">{{ formatPaymentAmount(presaleQuote.balance_bonus.amount, presaleQuote.balance_bonus.currency || 'USD') }}</strong></div>
+                  <p v-if="presaleQuote.balance_bonus.currency === 'CNY'" class="mt-2 text-xs text-content-tertiary">{{ t('presale.gift.creditHint', { amount: presaleQuote.balance_bonus.credited_amount?.toLocaleString(undefined, { maximumFractionDigits: 8 }) }) }}</p>
+                  <p class="mt-2 text-xs text-content-secondary">{{ t('presale.gift.fixed') }} · {{ t('presale.gift.stack') }}</p>
+                  <p class="mt-2 text-xs leading-relaxed text-content-tertiary">{{ t('presale.gift.refundRule') }}</p>
+                </div>
                 <!-- Description -->
                 <p v-if="selectedPlan.description" class="mt-2 text-sm leading-relaxed text-gray-500 dark:text-gray-400">
                   {{ selectedPlan.description }}
@@ -361,7 +367,7 @@ import { usePaymentStore } from '@/stores/payment'
 import { useSubscriptionStore } from '@/stores/subscriptions'
 import { useAppStore } from '@/stores'
 import { createPaymentOrderIdempotencyKey, paymentAPI } from '@/api/payment'
-import { extractApiErrorMessage, extractI18nErrorMessage } from '@/utils/apiError'
+import { extractApiErrorCode, extractApiErrorMessage, extractI18nErrorMessage } from '@/utils/apiError'
 import { isMobileDevice } from '@/utils/device'
 import type { SubscriptionPlan, CheckoutInfoResponse, CreateOrderResult, OrderType, CafeCouponSummary, PaymentOrder } from '@/types/payment'
 import type { UserSubscription } from '@/types'
@@ -428,7 +434,7 @@ const amount = ref<number | null>(null)
 const selectedMethod = ref('')
 const selectedPlan = ref<SubscriptionPlan | null>(null)
 const selectedSubscriptionMultiplier = ref(1)
-const selectedSubscriptionBonusDays = computed(() => selectedPlan.value?.subscription_bonus?.days ?? 0)
+const selectedSubscriptionBonusDays = computed(() => props.presalePlanId ? 0 : selectedPlan.value?.subscription_bonus?.days ?? 0)
 const previewImage = ref('')
 const cafeCouponCode = ref('')
 const cafeCouponAppliedCode = ref('')
@@ -1334,7 +1340,8 @@ async function createOrder(orderAmount: number, orderType: OrderType, planId?: n
     })
     if (orderType === 'subscription' && props.presalePlanId) {
       payload.presale_month = props.presaleMonth
-      delete payload.expected_subscription_bonus_activity_id
+      payload.expected_subscription_bonus_activity_id = presaleQuote.value?.balance_bonus?.activity_id
+      payload.expected_presale_bonus_version = presaleQuote.value?.balance_bonus?.version
     }
     if (options.openid) {
       payload.openid = options.openid
@@ -1464,6 +1471,7 @@ async function createOrder(orderAmount: number, orderType: OrderType, planId?: n
       openWindow(decision.paymentState.payUrl)
     }
   } catch (err: unknown) {
+    if (await refreshChangedPresaleBenefit(err)) return
     const apiErr = err as Record<string, unknown>
     if (apiErr.reason === 'TOO_MANY_PENDING') {
       const metadata = apiErr.metadata as Record<string, unknown> | undefined
@@ -1584,7 +1592,8 @@ async function attemptMobileQrFallback(err: unknown, context: MobileQrFallbackCo
     })
     if (context.orderType === 'subscription' && props.presalePlanId) {
       payload.presale_month = props.presaleMonth
-      delete payload.expected_subscription_bonus_activity_id
+      payload.expected_subscription_bonus_activity_id = presaleQuote.value?.balance_bonus?.activity_id
+      payload.expected_presale_bonus_version = presaleQuote.value?.balance_bonus?.version
     }
     const result = await paymentStore.createOrder(payload) as CreateOrderResult & { resume_token?: string }
     const stripeMethod = visibleMethod === 'wxpay' ? 'wechat_pay' : 'alipay'
@@ -1627,9 +1636,25 @@ async function attemptMobileQrFallback(err: unknown, context: MobileQrFallbackCo
     persistRecoverySnapshot(decision.recovery)
     appStore.showWarning(t('payment.errors.mobilePaymentFallbackToQr'))
     return true
-  } catch {
+  } catch (err: unknown) {
+    if (await refreshChangedPresaleBenefit(err)) return true
     return false
   }
+}
+
+// Never silently retry payment after the advertised gift changes. Update the
+// visible quote, show the conflict, and require another explicit confirmation.
+async function refreshChangedPresaleBenefit(err: unknown): Promise<boolean> {
+  if (!props.presalePlanId || extractApiErrorCode(err) !== 'ACTIVITY_BENEFIT_CHANGED') return false
+  presaleQuote.value = null
+  try {
+    const { data } = await presaleAPI.quote(props.presalePlanId)
+    if (data.month === props.presaleMonth) presaleQuote.value = data
+  } catch { /* Keep checkout disabled until it can obtain a current quote. */ }
+  errorMessage.value = t('presale.errors.ACTIVITY_BENEFIT_CHANGED')
+  errorHintMessage.value = ''
+  appStore.showError(errorMessage.value)
+  return true
 }
 
 function applyScenarioError(err: unknown, paymentMethod: string): boolean {

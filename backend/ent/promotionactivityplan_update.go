@@ -85,6 +85,27 @@ func (_u *PromotionActivityPlanUpdate) AddBonusDays(v int) *PromotionActivityPla
 	return _u
 }
 
+// SetBonusBalance sets the "bonus_balance" field.
+func (_u *PromotionActivityPlanUpdate) SetBonusBalance(v float64) *PromotionActivityPlanUpdate {
+	_u.mutation.ResetBonusBalance()
+	_u.mutation.SetBonusBalance(v)
+	return _u
+}
+
+// SetNillableBonusBalance sets the "bonus_balance" field if the given value is not nil.
+func (_u *PromotionActivityPlanUpdate) SetNillableBonusBalance(v *float64) *PromotionActivityPlanUpdate {
+	if v != nil {
+		_u.SetBonusBalance(*v)
+	}
+	return _u
+}
+
+// AddBonusBalance adds value to the "bonus_balance" field.
+func (_u *PromotionActivityPlanUpdate) AddBonusBalance(v float64) *PromotionActivityPlanUpdate {
+	_u.mutation.AddBonusBalance(v)
+	return _u
+}
+
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *PromotionActivityPlanUpdate) SetUpdatedAt(v time.Time) *PromotionActivityPlanUpdate {
 	_u.mutation.SetUpdatedAt(v)
@@ -160,6 +181,11 @@ func (_u *PromotionActivityPlanUpdate) check() error {
 			return &ValidationError{Name: "bonus_days", err: fmt.Errorf(`ent: validator failed for field "PromotionActivityPlan.bonus_days": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.BonusBalance(); ok {
+		if err := promotionactivityplan.BonusBalanceValidator(v); err != nil {
+			return &ValidationError{Name: "bonus_balance", err: fmt.Errorf(`ent: validator failed for field "PromotionActivityPlan.bonus_balance": %w`, err)}
+		}
+	}
 	if _u.mutation.ActivityCleared() && len(_u.mutation.ActivityIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "PromotionActivityPlan.activity"`)
 	}
@@ -189,6 +215,12 @@ func (_u *PromotionActivityPlanUpdate) sqlSave(ctx context.Context) (_node int, 
 	}
 	if value, ok := _u.mutation.AddedBonusDays(); ok {
 		_spec.AddField(promotionactivityplan.FieldBonusDays, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.BonusBalance(); ok {
+		_spec.SetField(promotionactivityplan.FieldBonusBalance, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedBonusBalance(); ok {
+		_spec.AddField(promotionactivityplan.FieldBonusBalance, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(promotionactivityplan.FieldUpdatedAt, field.TypeTime, value)
@@ -298,6 +330,27 @@ func (_u *PromotionActivityPlanUpdateOne) AddBonusDays(v int) *PromotionActivity
 	return _u
 }
 
+// SetBonusBalance sets the "bonus_balance" field.
+func (_u *PromotionActivityPlanUpdateOne) SetBonusBalance(v float64) *PromotionActivityPlanUpdateOne {
+	_u.mutation.ResetBonusBalance()
+	_u.mutation.SetBonusBalance(v)
+	return _u
+}
+
+// SetNillableBonusBalance sets the "bonus_balance" field if the given value is not nil.
+func (_u *PromotionActivityPlanUpdateOne) SetNillableBonusBalance(v *float64) *PromotionActivityPlanUpdateOne {
+	if v != nil {
+		_u.SetBonusBalance(*v)
+	}
+	return _u
+}
+
+// AddBonusBalance adds value to the "bonus_balance" field.
+func (_u *PromotionActivityPlanUpdateOne) AddBonusBalance(v float64) *PromotionActivityPlanUpdateOne {
+	_u.mutation.AddBonusBalance(v)
+	return _u
+}
+
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *PromotionActivityPlanUpdateOne) SetUpdatedAt(v time.Time) *PromotionActivityPlanUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
@@ -386,6 +439,11 @@ func (_u *PromotionActivityPlanUpdateOne) check() error {
 			return &ValidationError{Name: "bonus_days", err: fmt.Errorf(`ent: validator failed for field "PromotionActivityPlan.bonus_days": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.BonusBalance(); ok {
+		if err := promotionactivityplan.BonusBalanceValidator(v); err != nil {
+			return &ValidationError{Name: "bonus_balance", err: fmt.Errorf(`ent: validator failed for field "PromotionActivityPlan.bonus_balance": %w`, err)}
+		}
+	}
 	if _u.mutation.ActivityCleared() && len(_u.mutation.ActivityIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "PromotionActivityPlan.activity"`)
 	}
@@ -432,6 +490,12 @@ func (_u *PromotionActivityPlanUpdateOne) sqlSave(ctx context.Context) (_node *P
 	}
 	if value, ok := _u.mutation.AddedBonusDays(); ok {
 		_spec.AddField(promotionactivityplan.FieldBonusDays, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.BonusBalance(); ok {
+		_spec.SetField(promotionactivityplan.FieldBonusBalance, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedBonusBalance(); ok {
+		_spec.AddField(promotionactivityplan.FieldBonusBalance, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(promotionactivityplan.FieldUpdatedAt, field.TypeTime, value)

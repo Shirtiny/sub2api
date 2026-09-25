@@ -27,6 +27,7 @@ func (PromotionActivity) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("name").MaxLen(100).NotEmpty(),
 		field.String("activity_type").MaxLen(50).NotEmpty(),
+		field.String("bonus_currency").Default("USD").MaxLen(3),
 		field.Bool("enabled").Default(false),
 		field.Time("starts_at").SchemaType(map[string]string{dialect.Postgres: "timestamptz"}),
 		field.Time("ends_at").SchemaType(map[string]string{dialect.Postgres: "timestamptz"}),

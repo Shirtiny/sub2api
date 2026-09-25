@@ -10,21 +10,26 @@ import (
 )
 
 type PresaleOrderInfo struct {
-	PresaleStartsAt    *time.Time `json:"presale_starts_at,omitempty"`
-	PresaleExpiresAt   *time.Time `json:"presale_expires_at,omitempty"`
-	PresaleActivatedAt *time.Time `json:"presale_activated_at,omitempty"`
-	PresaleRenewal     bool       `json:"presale_renewal,omitempty"`
-	PresalePlanName    string     `json:"presale_plan_name,omitempty"`
-	PresaleResetCards  int        `json:"presale_reset_cards,omitempty"`
+	PresaleBalanceBonusCurrency   string     `json:"presale_balance_bonus_currency,omitempty"`
+	PresaleBalanceBonusFaceAmount float64    `json:"presale_balance_bonus_face_amount,omitempty"`
+	PresaleBalanceBonusAmount     float64    `json:"presale_balance_bonus_amount,omitempty"`
+	PresaleBalanceBonusActivityID *int64     `json:"presale_balance_bonus_activity_id,omitempty"`
+	PresaleStartsAt               *time.Time `json:"presale_starts_at,omitempty"`
+	PresaleExpiresAt              *time.Time `json:"presale_expires_at,omitempty"`
+	PresaleActivatedAt            *time.Time `json:"presale_activated_at,omitempty"`
+	PresaleRenewal                bool       `json:"presale_renewal,omitempty"`
+	PresalePlanName               string     `json:"presale_plan_name,omitempty"`
+	PresaleResetCards             int        `json:"presale_reset_cards,omitempty"`
 }
 
 func presaleOrderInfo(o *dbent.PaymentOrder) PresaleOrderInfo {
-	return PresaleOrderInfo{o.PresaleStartsAt, o.PresaleExpiresAt, o.PresaleActivatedAt, o.PresaleRenewal, o.PresalePlanName, o.PresaleResetCards}
+	return PresaleOrderInfo{PresaleBalanceBonusCurrency: o.PresaleBalanceBonusCurrency, PresaleBalanceBonusFaceAmount: o.PresaleBalanceBonusFaceAmount, PresaleStartsAt: o.PresaleStartsAt, PresaleExpiresAt: o.PresaleExpiresAt, PresaleActivatedAt: o.PresaleActivatedAt, PresaleRenewal: o.PresaleRenewal, PresalePlanName: o.PresalePlanName, PresaleResetCards: o.PresaleResetCards, PresaleBalanceBonusAmount: o.PresaleBalanceBonusAmount, PresaleBalanceBonusActivityID: o.PresaleBalanceBonusActivityID}
 }
 
 type presaleCatalogPlan struct {
 	checkoutPlan
-	Badge string `json:"presale_badge"`
+	Badge        string                         `json:"presale_badge"`
+	BalanceBonus *service.PresaleBalanceBenefit `json:"presale_balance_bonus,omitempty"`
 }
 
 func (h *PaymentHandler) GetPresaleCatalog(c *gin.Context) {
@@ -35,6 +40,15 @@ func (h *PaymentHandler) GetPresaleCatalog(c *gin.Context) {
 		return
 	}
 	plans, err := h.configService.ListPresalePlans(ctx)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	ids := make([]int64, 0, len(plans))
+	for _, p := range plans {
+		ids = append(ids, p.ID)
+	}
+	benefits, err := h.configService.PublicPresaleBalanceBenefits(ctx, ids)
 	if err != nil {
 		response.ErrorFrom(c, err)
 		return
@@ -51,9 +65,21 @@ func (h *PaymentHandler) GetPresaleCatalog(c *gin.Context) {
 			DailyLimitUSD: gi.DailyLimitUSD, WeeklyLimitUSD: gi.WeeklyLimitUSD, MonthlyLimitUSD: gi.MonthlyLimitUSD, ModelScopes: gi.ModelScopes,
 			Name: p.Name, Description: p.Description, Price: p.Price, OriginalPrice: p.OriginalPrice, ValidityDays: 1, ValidityUnit: "months", Concurrency: p.Concurrency,
 			Features: parseFeatures(p.Features), CustomMultiplierEnabled: p.CustomMultiplierEnabled, CustomMultiplierMin: p.CustomMultiplierMin, CustomMultiplierMax: p.CustomMultiplierMax, PresaleEnabled: true,
-		}, Badge: p.PresaleBadge})
+		}, Badge: p.PresaleBadge, BalanceBonus: benefits[p.ID]})
 	}
-	response.Success(c, gin.H{"period": service.NextPresalePeriod(time.Now()), "plans": result, "enabled": cfg.Enabled && len(result) > 0, "server_time": time.Now()})
+	now := time.Now()
+	visibleIDs := make([]int64, 0, len(result))
+	if cfg.Enabled {
+		for _, p := range result {
+			visibleIDs = append(visibleIDs, p.ID)
+		}
+	}
+	activities, err := h.configService.PublicPresaleActivities(ctx, visibleIDs, now)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, gin.H{"period": service.NextPresalePeriod(now), "plans": result, "activities": activities, "enabled": cfg.Enabled && len(result) > 0, "server_time": now})
 }
 func (h *PaymentHandler) GetPresaleQuote(c *gin.Context) {
 	subject, ok := requireAuth(c)

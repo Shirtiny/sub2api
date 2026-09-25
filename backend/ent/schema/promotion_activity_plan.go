@@ -27,7 +27,8 @@ func (PromotionActivityPlan) Fields() []ent.Field {
 	return []ent.Field{
 		field.Int64("activity_id").Positive(),
 		field.Int64("plan_id").Positive(),
-		field.Int("bonus_days").Positive().Max(36500),
+		field.Int("bonus_days").Default(0).Min(0).Max(36500),
+		field.Float("bonus_balance").Default(0).Min(0).SchemaType(map[string]string{dialect.Postgres: "decimal(20,8)"}),
 		field.Time("created_at").Immutable().Default(time.Now).SchemaType(map[string]string{dialect.Postgres: "timestamptz"}),
 		field.Time("updated_at").Default(time.Now).UpdateDefault(time.Now).SchemaType(map[string]string{dialect.Postgres: "timestamptz"}),
 	}
