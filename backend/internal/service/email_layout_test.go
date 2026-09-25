@@ -14,6 +14,7 @@ func requireEmailLetter(t *testing.T, body string) {
 	t.Helper()
 	require.Equal(t, 1, strings.Count(body, "<!doctype html>"))
 	require.Equal(t, 1, strings.Count(body, `class="masthead"`))
+	require.Equal(t, 1, strings.Count(body, `class="brand"`))
 	require.Equal(t, 1, strings.Count(body, `class="paper"`))
 	require.Contains(t, body, "#30251d")
 	require.Contains(t, body, "#faf7f2")
@@ -29,6 +30,21 @@ func requireEmailLetter(t *testing.T, body string) {
 	visit = func(n *xhtml.Node) {
 		if n.Type == xhtml.ElementNode {
 			require.NotContains(t, []string{"script", "img", "svg", "iframe", "link", "form"}, n.Data)
+			var class, style string
+			for _, attr := range n.Attr {
+				switch attr.Key {
+				case "class":
+					class = attr.Val
+				case "style":
+					style = attr.Val
+				}
+			}
+			if class == "brand" {
+				require.Contains(t, style, "font-family:Georgia,")
+				require.Contains(t, style, ",serif;")
+				require.Contains(t, style, "font-weight:400;")
+				require.Contains(t, style, "font-style:normal;")
+			}
 		}
 		for child := n.FirstChild; child != nil; child = child.NextSibling {
 			visit(child)
