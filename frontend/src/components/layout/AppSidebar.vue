@@ -8,17 +8,15 @@
   >
     <!-- Logo/Brand -->
     <div class="sidebar-header" :class="{ 'sidebar-header-collapsed': sidebarCollapsed }">
-      <!-- Custom Logo or Default Logo -->
-      <div class="sidebar-logo flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl shadow-glow">
-        <img v-if="settingsLoaded" :src="siteLogo || '/logo.png'" alt="Logo" class="h-full w-full object-contain" />
-      </div>
-      <div class="sidebar-brand" :class="{ 'sidebar-brand-collapsed': sidebarCollapsed }" :aria-hidden="sidebarCollapsed ? 'true' : 'false'">
-        <span class="sidebar-brand-title text-lg font-bold text-content-primary">
-          {{ siteName }}
-        </span>
-        <!-- TEMP HIDE: Version badge hidden on request. Restore by uncommenting VersionBadge. -->
-        <!-- <VersionBadge :version="siteVersion" /> -->
-      </div>
+      <RouterLink to="/home" class="sidebar-logo flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl shadow-glow" :title="siteName" :aria-label="siteName" @click="closeMobile">
+        <img v-if="settingsLoaded" :src="siteLogo || '/logo.png'" alt="" class="h-full w-full object-contain" />
+      </RouterLink>
+      <HomeBrand
+        v-if="!sidebarCollapsed"
+        class="sidebar-brand"
+        :site-name="siteName"
+        @click="closeMobile"
+      />
     </div>
 
     <!-- Navigation -->
@@ -187,6 +185,7 @@ import { useAdminSettingsStore, useAppStore, useAuthStore, useOnboardingStore } 
 import { sanitizeSvg } from '@/utils/sanitize'
 import { initializeTheme } from '@/utils/theme'
 import { FeatureFlags, makeSidebarFlag } from '@/utils/featureFlags'
+import HomeBrand from '@/components/home/HomeBrand.vue'
 
 interface NavItem {
   path: string
@@ -886,41 +885,26 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.sidebar-logo {
-  flex: 0 0 2.25rem;
-  min-width: 2.25rem;
-}
-
 .sidebar-header-collapsed {
   gap: 0;
   padding-left: 1.125rem;
   padding-right: 1.125rem;
 }
 
-.sidebar-brand {
-  min-width: 0;
-  flex: 1 1 auto;
-  white-space: nowrap;
-  transition:
-    max-width 0.22s ease,
-    opacity 0.14s ease,
-    transform 0.14s ease;
-  max-width: 12rem;
+.sidebar-header .sidebar-brand {
+  --brand-name-scale: .35;
+  --brand-tool-size: 16px;
+  --cafe-ink: rgb(var(--color-content-primary));
+  --cafe-accent: rgb(var(--color-stroke-brand));
 }
 
-.sidebar-brand-collapsed {
-  max-width: 0;
-  overflow: hidden;
-  opacity: 0;
-  transform: translateX(-4px);
-  pointer-events: none;
+.sidebar-logo:focus-visible {
+  outline: 2px solid rgb(var(--color-stroke-brand));
+  outline-offset: 4px;
 }
 
-.sidebar-brand-title {
-  display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+@media (max-width: 767px) {
+  .sidebar-header .sidebar-brand { --brand-name-scale: .31; --brand-tool-size: 14px; }
 }
 
 .sidebar-link-collapsed {

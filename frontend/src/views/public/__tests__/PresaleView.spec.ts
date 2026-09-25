@@ -20,7 +20,7 @@ vi.mock('@/api/presale' , () => ({ presaleAPI: { catalog: mocks.catalog, quote: 
 vi.mock('@/stores/app', () => ({ useAppStore: () => ({ siteName: 'Café Shop', docUrl: 'https://docs.example.com/guide', publicSettingsLoaded: true }) }))
 vi.mock('@/stores/auth', () => ({ useAuthStore: () => reactive(mocks.auth) }))
 vi.mock('@/stores/subscriptions', () => ({ useSubscriptionStore: () => ({ activeSubscriptions: mocks.activeSubscriptions, fetchActiveSubscriptions: mocks.fetchSubscriptions }) }))
-vi.mock('vue-router', () => ({ useRoute: () => mocks.route, useRouter: () => ({ push: mocks.push, replace: mocks.replace }) }))
+vi.mock('vue-router', () => ({ useRoute: () => reactive(mocks.route), useRouter: () => ({ push: mocks.push, replace: mocks.replace }) }))
 vi.mock('@/views/user/PaymentView.vue', () => ({ default: { props: ['presalePlanId','presaleMonth','presaleMultiplier'], template: '<div class="checkout-fixture" :data-multiplier="presaleMultiplier">{{ presalePlanId }} / {{ presaleMonth }}</div>' } }))
 const fixture = () => ({ enabled: true, server_time: '2026-09-23T00:00:00Z', period: { month: '2026-10', timezone: 'Asia/Shanghai', starts_at: '2026-10-01T00:00:00+08:00', expires_at: '2026-11-01T00:00:00+08:00', full_refund_before: '2026-09-28T00:00:00+08:00' }, plans: [{ id: 12, group_id: 3, group_platform: 'openai', name: 'Astra Monthly', description: 'Focus for a month', price: 300, concurrency: 2, features: ['Codex + Pi'], presale_enabled: true, presale_reset_cards: 2 }] })
 function render(locale = 'zh') {
@@ -29,6 +29,68 @@ function render(locale = 'zh') {
 }
 beforeEach(() => { vi.clearAllMocks(); localStorage.removeItem(PAYMENT_RECOVERY_STORAGE_KEY); mocks.activeSubscriptions.length = 0; mocks.fetchSubscriptions.mockResolvedValue([]); mocks.auth.isAuthenticated = false; mocks.auth.user = null; mocks.route.query = {}; mocks.route.hash = ''; mocks.catalog.mockResolvedValue({ data: fixture() }); mocks.quote.mockReset().mockResolvedValue({ data: { ...fixture().period, plan_id: 12, renewal: false } }) })
 describe('presale landing', () => {
+  it('does not reload or remount checkout when the same account profile is refreshed', async () => {
+    mocks.auth.isAuthenticated = true; mocks.auth.user = { id: 1 }
+    mocks.route.query = { plan: '12' }
+    const w = render(); await flushPromises()
+    const checkout = w.get('.checkout-fixture').element
+    reactive(mocks.auth).user = { id: 1 }; await flushPromises()
+    expect(mocks.catalog).toHaveBeenCalledTimes(1)
+    expect(mocks.quote).toHaveBeenCalledTimes(1)
+    expect(w.get('.checkout-fixture').element).toBe(checkout)
+  })
+
+  it('keeps a dismissed checkout closed when a slow initial check finishes before URL cleanup', async () => {
+    mocks.auth.isAuthenticated = true
+    mocks.route.query = { plan: '12' }
+    const data = fixture(); data.plans.push({ ...data.plans[0], id: 13, group_id: 4 })
+    mocks.catalog.mockResolvedValue({ data })
+    let finishSlow!: (value: unknown) => void
+    let first = true
+    mocks.quote.mockImplementation((id: number) => {
+      if (id === 13 && first) { first = false; return new Promise(resolve => { finishSlow = resolve }) }
+      return Promise.resolve({ data: { ...data.period, plan_id: id } })
+    })
+    const w = render(); await flushPromises()
+    await w.findAll('.plan-buy')[0].trigger('click')
+    expect(w.find('.checkout-fixture').exists()).toBe(true)
+    w.getComponent({ name: 'BaseDialog' }).vm.$emit('close'); await flushPromises()
+    expect(w.find('.checkout-fixture').exists()).toBe(false)
+    finishSlow({ data: { ...data.period, plan_id: 13 } }); await flushPromises()
+    expect(w.find('.checkout-fixture').exists()).toBe(false)
+    window.dispatchEvent(new Event('focus')); await flushPromises()
+    expect(w.find('.checkout-fixture').exists()).toBe(false)
+    await w.findAll('.plan-buy')[0].trigger('click'); await flushPromises()
+    expect(w.find('.checkout-fixture').exists()).toBe(true)
+  })
+
+  it('does not revive a dismissed checkout when stale route parameters are cleaned up', async () => {
+    mocks.auth.isAuthenticated = true
+    mocks.route.query = { plan: '12', multiplier: '2' }
+    const w = render(); await flushPromises()
+    w.getComponent({ name: 'BaseDialog' }).vm.$emit('close'); await flushPromises()
+    reactive(mocks.route).query = { plan: '12' }; await flushPromises()
+    expect(w.find('.checkout-fixture').exists()).toBe(false)
+  })
+  it('still restores a first login return when authentication becomes ready', async () => {
+    mocks.route.query = { plan: '12' }
+    const w = render(); await flushPromises()
+    expect(w.find('.checkout-fixture').exists()).toBe(false)
+    Object.assign(reactive(mocks.auth), { isAuthenticated: true, user: { id: 1 } })
+    await flushPromises()
+    expect(w.find('.checkout-fixture').exists()).toBe(true)
+    expect(mocks.quote).toHaveBeenCalledTimes(1)
+  })
+  it('closes the previous checkout on an actual account switch without replaying its URL intent', async () => {
+    mocks.auth.isAuthenticated = true; mocks.auth.user = { id: 1 }
+    mocks.route.query = { plan: '12' }
+    const w = render(); await flushPromises()
+    expect(w.find('.checkout-fixture').exists()).toBe(true)
+    reactive(mocks.auth).user = { id: 2 }; await flushPromises()
+    expect(mocks.catalog).toHaveBeenCalledTimes(2)
+    expect(mocks.quote).toHaveBeenCalledTimes(2)
+    expect(w.find('.checkout-fixture').exists()).toBe(false)
+  })
   it('keeps reservation disabled until the authoritative check finishes, including login-return links', async () => {
     mocks.auth.isAuthenticated = true
     mocks.route.query = { plan: '12' }
@@ -178,16 +240,20 @@ describe('presale landing', () => {
     expect(mocks.quote).toHaveBeenCalledTimes(2)
     w.unmount()
   })
-  it('refreshes after returning from another tab and ignores an older in-flight result', async () => {
+  it('coalesces focus and visibility checks while a request is in flight, then refreshes cards without opening checkout', async () => {
     mocks.auth.isAuthenticated = true
     let finishOld!: (value: unknown) => void
     mocks.quote.mockImplementationOnce(() => new Promise(resolve => { finishOld = resolve }))
     const w = render(); await flushPromises()
     mocks.quote.mockRejectedValue({ reason: 'PRESALE_ALREADY_RESERVED', metadata: { order_status: 'COMPLETED' } })
-    window.dispatchEvent(new Event('focus')); await flushPromises()
-    expect(w.get('.plan-availability').attributes('data-state')).toBe('reserved')
+    window.dispatchEvent(new Event('focus')); document.dispatchEvent(new Event('visibilitychange')); await flushPromises()
+    expect(mocks.quote).toHaveBeenCalledTimes(1)
     finishOld({ data: { ...fixture().period } }); await flushPromises()
+    expect(w.get('.plan-buy').attributes('disabled')).toBeUndefined()
+    window.dispatchEvent(new Event('focus')); document.dispatchEvent(new Event('visibilitychange')); await flushPromises()
+    expect(mocks.quote).toHaveBeenCalledTimes(2)
     expect(w.get('.plan-availability').attributes('data-state')).toBe('reserved')
+    expect(w.find('.checkout-fixture').exists()).toBe(false)
     w.unmount()
     window.dispatchEvent(new Event('focus')); await flushPromises()
     expect(mocks.quote).toHaveBeenCalledTimes(2)

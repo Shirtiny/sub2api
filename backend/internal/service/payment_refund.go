@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	dbent "github.com/Wei-Shaw/sub2api/ent"
 	"github.com/Wei-Shaw/sub2api/ent/paymentauditlog"
@@ -158,6 +159,13 @@ func (s *PaymentService) RequestRefund(ctx context.Context, oid, uid int64, reas
 		return err
 	}
 	if o.PresaleStartsAt != nil {
+		reason = strings.TrimSpace(reason)
+		if reason == "" {
+			return infraerrors.BadRequest("PRESALE_REFUND_REASON_REQUIRED", "a refund reason is required")
+		}
+		if utf8.RuneCountInString(reason) > 500 {
+			return infraerrors.BadRequest("PRESALE_REFUND_REASON_TOO_LONG", "refund reason must not exceed 500 characters").WithMetadata(map[string]string{"max": "500"})
+		}
 		if len(expectedRefundAmount) != 1 || math.IsNaN(expectedRefundAmount[0]) || math.IsInf(expectedRefundAmount[0], 0) {
 			return infraerrors.BadRequest("PRESALE_REFUND_AMOUNT_CHANGED", "review the refund quote before requesting a presale refund")
 		}

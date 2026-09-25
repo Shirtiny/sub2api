@@ -29,7 +29,7 @@ describe('AppSidebar custom SVG styles', () => {
 })
 
 describe('AppSidebar header styles', () => {
-  it('does not clip the version badge dropdown', () => {
+  it('does not clip the shared SVG brand or its steam', () => {
     const sidebarHeaderBlockMatch = styleSource.match(/\.sidebar-header\s*\{[\s\S]*?\n {2}\}/)
     const sidebarBrandBlockMatch = componentSource.match(/\.sidebar-brand\s*\{[\s\S]*?\n\}/)
 
@@ -37,5 +37,19 @@ describe('AppSidebar header styles', () => {
     expect(sidebarBrandBlockMatch).not.toBeNull()
     expect(sidebarHeaderBlockMatch?.[0]).not.toContain('@apply overflow-hidden;')
     expect(sidebarBrandBlockMatch?.[0]).not.toContain('overflow: hidden;')
+  })
+
+  it('reuses the homepage brand and closes the mobile drawer when it is clicked', () => {
+    expect(componentSource).toContain("import HomeBrand from '@/components/home/HomeBrand.vue'")
+    expect(componentSource).toMatch(/<HomeBrand\s+v-if="!sidebarCollapsed"[\s\S]*?:site-name="siteName"[\s\S]*?@click="closeMobile"/)
+    expect(componentSource).toContain('const siteName = computed(() => appStore.siteName)')
+    const header = componentSource.slice(componentSource.indexOf('<!-- Logo/Brand -->'), componentSource.indexOf('<!-- Navigation -->'))
+    expect(header).toContain(':src="siteLogo || \'/logo.png\'"')
+    expect(header).toMatch(/<RouterLink to="\/home"[^>]*class="sidebar-logo[^>]*@click="closeMobile"/)
+    expect(header).not.toMatch(/:compact|VersionBadge|sidebar-brand-title/)
+    expect(componentSource).toContain('const siteLogo = computed(() => appStore.siteLogo)')
+    expect(componentSource).toContain('--cafe-ink: rgb(var(--color-content-primary));')
+    expect(componentSource).toContain('--brand-name-scale: .35;')
+    expect(componentSource).toContain('--brand-name-scale: .31;')
   })
 })

@@ -11,6 +11,7 @@ export default {
   user: '用户', order: '订单', useStatus: '用券状态', used: '已使用', reserved: '待付款占用', released: '可重新使用', noUses: '暂无用券记录',
   copied: '优惠码已复制', failed: '操作失败，请刷新后重试。',
   errors: {
+    CAFE_CAMPAIGN_USAGE_LIMIT: '无法应用，该券码每人只能使用 {limit} 次。',
     CAFE_CAMPAIGN_PAYMENT_EXPIRED: '优惠订单超过支付期限，款项需要核对，请联系支持。',
     CAFE_CAMPAIGN_INVALID: '请填写有效的优惠码、活动名称、1–99 的减免百分比及起止日期。',
     CAFE_CAMPAIGN_EXISTS: '该优惠码已存在，请使用不同的优惠码。',

@@ -21,6 +21,11 @@ across plans and source groups. There is no global issuance cap. This is an acco
 limit, not proof of a unique physical person. Normal registration/access controls
 continue to apply. It cannot stack with another café coupon (one checkout code).
 
+A consumed account slot returns `CAFE_CAMPAIGN_USAGE_LIMIT` with `limit: "1"`
+metadata. Checkout explains the per-account limit instead of implying that the
+shared code is exhausted for everyone. Personal membership coupons retain their
+existing error codes and behavior.
+
 Codes, percentage and dates are immutable after creation. To correct a mistake,
 pause it and create a different code; codes are not deleted or recycled. Enable /
 pause requires a fresh version and explicit administrator confirmation. These
@@ -61,6 +66,14 @@ already prevents new use. Provider callbacks and fulfillment retries are idempot
 Refunds (including offline recording) and paid reservation cancellation do not
 clear the binding/consumed timestamp or grant a second use. Payment failures keep
 their payment facts; no money is silently converted to balance or erased.
+
+User presale refund requests require a nonblank reason (at most 500 Unicode
+characters after trimming); the server enforces this before cancelling any
+entitlement. The actual reason is stored in the existing refund-request field
+and is visible in the administrator order detail. The private refund quote also
+returns `coupon_applied`, derived from the immutable order snapshot, so the user
+is warned that the coupon cannot be returned. This
+informational flag does not alter the refund amounts or fee rules.
 
 Callback retries never overwrite the first verified payment timestamp, amount or
 trade reference: a database predicate, not a stale in-memory snapshot, protects

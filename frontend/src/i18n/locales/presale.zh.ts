@@ -52,6 +52,7 @@ export default {
   refundNotice: '提交后，该预售对应的订阅将停止使用或不再生效。退款由管理员按原支付渠道处理；到账时间以支付渠道为准。',
   refundAmount: '预计退回', refundSubmitted: '退款申请已提交，该预售订阅已取消生效。',
   refundFeeApplied: '退款金额已扣除 {percent}% 手续费。',
+  refundCouponNotice: '退款后，下单时使用的优惠券无法退还。',
   viewOrders: '查看订单', viewSubscriptions: '查看我的订阅', back: '返回首页',
   admin: { title: '订阅预售', enabled: '启用预售', badge: '展示标签', unpublished: '未开放预售' },
   cancelled: '预订已取消',
@@ -67,6 +68,8 @@ export default {
   },
   errors: {
     ...cafeCampaign.errors,
+    PRESALE_REFUND_REASON_REQUIRED: '请填写退款原因。',
+    PRESALE_REFUND_REASON_TOO_LONG: '退款原因不能超过 {max} 个字。',
     PRESALE_OFFLINE_INVALID: '请确认操作，并填写有效的原因、金额与线下凭据。',
     PRESALE_OFFLINE_NOT_PAID: '仅已支付的预售订阅支持线下处理。',
     PRESALE_OFFLINE_AMOUNT: '实退金额不能超过原实付金额，且须符合支付币种精度。',

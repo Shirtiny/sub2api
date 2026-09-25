@@ -1,8 +1,8 @@
 <template>
-  <div class="flex min-h-0 flex-1 flex-col gap-5" data-test="campaign-layout">
-    <div class="flex shrink-0 flex-wrap items-center justify-between gap-4">
+  <div class="flex min-h-0 min-w-0 flex-1 flex-col" data-test="campaign-layout">
+    <div class="flex shrink-0 flex-wrap items-center justify-between gap-4 border-b border-stroke-default px-4 py-5 sm:px-6" data-test="campaign-toolbar">
       <p class="max-w-2xl text-sm leading-relaxed text-content-secondary">{{ t('cafeCampaign.intro') }}</p>
-      <div class="flex gap-2"><button class="btn btn-secondary" :disabled="loading" @click="load">{{ t('common.refresh') }}</button><button class="btn btn-primary" @click="openCreate">{{ t('cafeCampaign.create') }}</button></div>
+      <div class="flex shrink-0 gap-2"><button class="btn btn-secondary" :disabled="loading" @click="load">{{ t('common.refresh') }}</button><button class="btn btn-primary" @click="openCreate">{{ t('cafeCampaign.create') }}</button></div>
     </div>
     <DataTable :columns="columns" :data="rows" :loading="loading">
       <template #cell-code="{ row }"><div class="space-y-1"><p class="font-medium">{{ row.name }}</p><button class="font-mono text-xs text-content-secondary hover:text-content-primary" :title="t('keys.copyToClipboard')" @click="copy(row.code)">{{ row.code }}</button></div></template>
@@ -12,13 +12,28 @@
       <template #cell-actions="{ row }"><div class="flex gap-2"><button class="btn btn-secondary btn-sm" :disabled="changing" @click="toggleTarget = row">{{ t(row.enabled ? 'cafeCampaign.disable' : 'cafeCampaign.enable') }}</button><button class="btn btn-secondary btn-sm" @click="openUses(row)">{{ t('cafeCampaign.uses') }}</button></div></template>
     </DataTable>
     <Pagination v-if="total" class="shrink-0" :page="page" :total="total" :page-size="20" :show-page-size-selector="false" @update:page="changePage" />
-    <p class="shrink-0 text-xs leading-relaxed text-content-tertiary">{{ t('cafeCampaign.policy') }}</p>
+    <p class="shrink-0 border-t border-stroke-default px-4 py-4 text-xs leading-relaxed text-content-tertiary sm:px-6" data-test="campaign-policy">{{ t('cafeCampaign.policy') }}</p>
 
     <BaseDialog :show="showCreate" :title="t('cafeCampaign.create')" @close="closeCreate">
       <form id="cafe-campaign-form" class="space-y-4" @submit.prevent="create">
         <fieldset :disabled="creating" class="space-y-4">
           <label class="block text-sm"><span class="flex items-center justify-between gap-2">{{ t('cafeCampaign.name') }}<span class="text-xs tabular-nums" :class="nameLength > 100 ? 'text-red-500' : 'text-content-tertiary'">{{ nameLength }}/100</span></span><input v-model="form.name" class="input mt-2" required :aria-invalid="nameLength > 100 || undefined" data-test="campaign-name" /></label>
-          <label class="block text-sm">{{ t('cafeCampaign.code') }}<div class="mt-2 flex items-center rounded-xl border border-stroke bg-surface-secondary"><span class="pl-3 font-mono text-xs text-content-tertiary">CAFE-PUBLIC-</span><input v-model="form.code" class="input min-w-0 border-0 bg-transparent font-mono uppercase" required pattern="[A-Za-z0-9][A-Za-z0-9-]{0,35}" maxlength="36" placeholder="SEP40" data-test="campaign-code" /></div></label>
+          <div class="space-y-2">
+            <label for="campaign-code" class="block text-sm">{{ t('cafeCampaign.code') }}</label>
+            <div class="input flex items-center p-0 focus-within:border-stroke-brand focus-within:ring-2 focus-within:ring-primary-500/30">
+              <span class="shrink-0 whitespace-nowrap pl-4 font-mono text-xs text-content-tertiary" data-test="campaign-code-prefix">CAFE-PUBLIC-</span>
+              <input
+                id="campaign-code"
+                v-model="form.code"
+                class="min-w-0 w-0 flex-1 rounded-r-xl bg-transparent py-2.5 pl-1 pr-4 font-mono text-sm uppercase text-content-primary outline-none placeholder:text-content-tertiary disabled:cursor-not-allowed"
+                required
+                pattern="[A-Za-z0-9][A-Za-z0-9-]{0,35}"
+                maxlength="36"
+                placeholder="SEP40"
+                data-test="campaign-code"
+              />
+            </div>
+          </div>
           <label class="block text-sm">{{ t('cafeCampaign.discount') }}<input v-model.number="form.discount_percent" class="input mt-2" type="number" min="1" max="99" step="1" required data-test="campaign-discount" /></label>
           <p class="text-sm text-content-secondary">{{ t('cafeCampaign.payable', { percent: 100 - (Number(form.discount_percent) || 0) }) }}</p>
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-2"><label class="text-sm">{{ t('cafeCampaign.starts') }}<input v-model="form.start_date" class="input mt-2" type="date" required data-test="campaign-start" /></label><label class="text-sm">{{ t('cafeCampaign.ends') }}<input v-model="form.end_date" class="input mt-2" type="date" :min="form.start_date" required data-test="campaign-end" /></label></div>
@@ -82,7 +97,7 @@ const valid = computed(() => nameLength.value > 0 && nameLength.value <= 100 && 
 function failure(err: unknown) { return extractI18nErrorMessage(err, t, 'cafeCampaign.errors', t('cafeCampaign.failed')) }
 function campaignStatus(row: CafeCampaign) { return t(`cafeCampaign.${!row.enabled ? 'disabled' : Date.now() < Date.parse(row.starts_at) ? 'upcoming' : Date.now() >= Date.parse(row.expires_at) ? 'expired' : 'active'}`) }
 function useStatus(row: CafeCampaignUse) { return t(`cafeCampaign.${row.used_at || row.paid_at ? 'used' : ['CANCELLED', 'EXPIRED', 'FAILED'].includes(row.order_status) || Date.parse(row.expires_at) <= Date.now() ? 'released' : 'reserved'}`) }
-async function copy(code: string) { if (await copyToClipboard(code)) app.showSuccess(t('cafeCampaign.copied')) }
+function copy(code: string) { return copyToClipboard(code, t('cafeCampaign.copied')) }
 async function load() {
   const seq = ++listSeq; loading.value = true
   try { const { data } = await cafeCampaignAPI.list(page.value); if (seq === listSeq) { rows.value = data.items || []; total.value = data.total } }

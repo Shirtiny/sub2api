@@ -114,7 +114,8 @@ func TestCafeCampaignPreviewAndRealCheckout(t *testing.T) {
 	_, err = s.ProcessPresaleOffline(ctx, o.ID, 99, offlineRequest(o, "refund"))
 	require.NoError(t, err)
 	_, err = s.PreviewCafeCouponForOrder(ctx, req)
-	require.Equal(t, "CAFE_COUPON_USED", infraerrors.Reason(err))
+	require.Equal(t, "CAFE_CAMPAIGN_USAGE_LIMIT", infraerrors.Reason(err))
+	require.Equal(t, "1", infraerrors.FromError(err).Metadata["limit"])
 	require.NoError(t, s.toPaid(ctx, o, "duplicate-paid", 180, payment.TypeAlipay))
 	require.Equal(t, 1, s.entClient.PaymentAuditLog.Query().Where(paymentauditlog.ActionEQ("CAFE_CAMPAIGN_USED")).CountX(ctx))
 }
@@ -157,7 +158,8 @@ func TestCafeCampaignCrossGroupAndAccountIsolation(t *testing.T) {
 	// A payment confirmed before fulfillment already closes the usage slot.
 	s.entClient.PaymentOrder.UpdateOneID(first.ID).SetPaidAt(time.Now()).SetStatus(OrderStatusFailed).ExecX(ctx)
 	_, err = cafeCampaignOrder(t, s, u, other, c)
-	require.Equal(t, "CAFE_COUPON_USED", infraerrors.Reason(err))
+	require.Equal(t, "CAFE_CAMPAIGN_USAGE_LIMIT", infraerrors.Reason(err))
+	require.Equal(t, "1", infraerrors.FromError(err).Metadata["limit"])
 }
 func TestCafeCampaignDisableAndExpiryHonorBoundPayment(t *testing.T) {
 	ctx := context.Background()
@@ -254,7 +256,7 @@ func TestCafeCampaignConsumeAuditIsAtomic(t *testing.T) {
 	require.Nil(t, s.entClient.CafeCampaignUse.Query().OnlyX(ctx).UsedAt)
 	require.Zero(t, s.entClient.User.GetX(ctx, u.ID).TotalRecharged)
 	_, err = s.cafeCampaignInfo(ctx, u.ID, c.Code)
-	require.Equal(t, "CAFE_COUPON_USED", infraerrors.Reason(err), "paid facts already prevent another discounted order")
+	require.Equal(t, "CAFE_CAMPAIGN_USAGE_LIMIT", infraerrors.Reason(err), "paid facts already prevent another discounted order")
 	fail = false
 	require.NoError(t, s.RetryFulfillment(ctx, o.ID))
 	require.NotNil(t, s.entClient.CafeCampaignUse.Query().OnlyX(ctx).UsedAt)

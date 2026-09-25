@@ -11,6 +11,7 @@ export default {
   user: 'Customer', order: 'Order', useStatus: 'Coupon status', used: 'Used', reserved: 'Awaiting payment', released: 'Available again', noUses: 'No usage records yet',
   copied: 'Code copied', failed: 'Operation failed. Refresh and try again.',
   errors: {
+    CAFE_CAMPAIGN_USAGE_LIMIT: 'Cannot apply this code. Each account may use it at most {limit} time(s).',
     CAFE_CAMPAIGN_PAYMENT_EXPIRED: 'Payment arrived after the discounted order deadline. Contact support to reconcile the payment.',
     CAFE_CAMPAIGN_INVALID: 'Enter a valid code, name, discount from 1 to 99 percent and date range.',
     CAFE_CAMPAIGN_EXISTS: 'This code already exists. Choose a different code.',

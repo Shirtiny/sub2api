@@ -51,6 +51,7 @@ export default {
   refundNotice: 'Submitting stops this presale term or prevents its activation. An administrator processes the refund through the original payment channel; arrival time depends on that channel.',
   refundAmount: 'Estimated refund', refundSubmitted: 'Refund requested. This presale term has been cancelled.',
   refundFeeApplied: 'The refund amount shown includes a {percent}% processing fee deduction.',
+  refundCouponNotice: 'The coupon used for this order cannot be returned after a refund.',
   viewOrders: 'View orders', viewSubscriptions: 'My subscriptions', back: 'Back to home',
   admin: { title: 'Subscription presale', enabled: 'Enable presales', badge: 'Display badge', unpublished: 'Presale closed' },
   cancelled: 'Reservation cancelled',
@@ -66,6 +67,8 @@ export default {
   },
   errors: {
     ...cafeCampaign.errors,
+    PRESALE_REFUND_REASON_REQUIRED: 'Please enter a reason for your refund.',
+    PRESALE_REFUND_REASON_TOO_LONG: 'The refund reason must not exceed {max} characters.',
     PRESALE_OFFLINE_INVALID: 'Confirm the action and enter a valid reason, amount and offline reference.',
     PRESALE_OFFLINE_NOT_PAID: 'Only paid presale subscriptions support offline handling.',
     PRESALE_OFFLINE_AMOUNT: 'The returned amount must not exceed the original payment and must match the currency precision.',

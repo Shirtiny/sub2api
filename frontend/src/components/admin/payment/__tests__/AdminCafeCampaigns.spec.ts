@@ -11,14 +11,14 @@ const mocks = vi.hoisted(() => ({ error: vi.fn(), success: vi.fn() }))
 vi.mock('@/api/admin/cafeCampaigns', () => ({ cafeCampaignAPI: { list: vi.fn(), create: vi.fn(), setEnabled: vi.fn(), uses: vi.fn() } }))
 vi.mock('@/api/admin/payment', () => ({ adminPaymentAPI: { getOrder: vi.fn() } }))
 vi.mock('@/stores/app', () => ({ useAppStore: () => ({ showSuccess: mocks.success, showError: mocks.error }) }))
-vi.mock('@/composables/useClipboard', () => ({ useClipboard: () => ({ copyToClipboard: vi.fn().mockResolvedValue(true) }) }))
+vi.mock('@/i18n', () => ({ i18n: { global: { t: (key: string) => key } } }))
 vi.mock('vue-i18n', async () => { const { ref } = await import('vue'); return { useI18n: () => ({ locale: ref('zh'), t: (key: string, args: Record<string, unknown> = {}) => {
  let value: unknown = zh
  for (const part of key.split('.')) value = value && typeof value === 'object' ? (value as Record<string, unknown>)[part] : undefined
  return typeof value === 'string' ? value.replace(/\{(\w+)\}/g, (_, n) => String(args[n] ?? '')) : key
  } }) } })
 enableAutoUnmount(afterEach)
-afterEach(() => vi.useRealTimers())
+afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals() })
 const row = { id: 1, code: 'CAFE-PUBLIC-SEP40', name: 'September', discount_percent: 40, enabled: false, starts_at: '2026-09-24T16:00:00Z', expires_at: '2026-09-30T16:00:00Z', updated_at: '2026-09-25T00:00:00Z', created_at: '', created_by: 99 }
 function render(realOrderDetail = false) {
  return mount(AdminCafeCampaigns, { global: { stubs: {
@@ -35,6 +35,45 @@ beforeEach(() => {
  vi.mocked(cafeCampaignAPI.uses).mockResolvedValue({ data: { items: [], total: 0 } } as never)
 })
 describe('shared café campaign administration', () => {
+ it('insets campaign explanations and actions without breaking table scrolling', async () => {
+  const w = render(); await flushPromises()
+  expect(w.get('[data-test="campaign-toolbar"]').classes()).toEqual(expect.arrayContaining(['px-4', 'py-5', 'sm:px-6']))
+  expect(w.get('[data-test="campaign-policy"]').classes()).toEqual(expect.arrayContaining(['px-4', 'py-4', 'sm:px-6', 'leading-relaxed']))
+ })
+ it('reserves an unbroken code prefix while allowing the suffix input to shrink', async () => {
+  const w = render(); await flushPromises(); await click(w, '创建通用券')
+  expect(w.get('[data-test="campaign-code-prefix"]').classes()).toEqual(expect.arrayContaining(['shrink-0', 'whitespace-nowrap']))
+  expect(w.get('[data-test="campaign-code"]').classes()).toEqual(expect.arrayContaining(['min-w-0', 'flex-1', 'w-0']))
+ })
+ it.each([true, false])('shows exactly one result toast when copying on secure context=%s', async secure => {
+  vi.useFakeTimers()
+  const writeText = vi.fn().mockResolvedValue(undefined)
+  const execCommand = vi.fn().mockReturnValue(true)
+  vi.stubGlobal('isSecureContext', secure)
+  vi.stubGlobal('navigator', { clipboard: { writeText } })
+  Object.defineProperty(document, 'execCommand', { configurable: true, value: execCommand })
+  try {
+   const w = render(); await flushPromises(); await click(w, row.code); await flushPromises()
+   expect(mocks.success).toHaveBeenCalledTimes(1)
+   expect(mocks.success).toHaveBeenCalledWith(zh.cafeCampaign.copied)
+   expect(mocks.error).not.toHaveBeenCalled()
+   if (secure) {
+    expect(writeText).toHaveBeenCalledTimes(1); expect(writeText).toHaveBeenCalledWith(row.code)
+   } else {
+    expect(execCommand).toHaveBeenCalledTimes(1); expect(execCommand).toHaveBeenCalledWith('copy')
+   }
+   vi.runOnlyPendingTimers()
+  } finally { Reflect.deleteProperty(document, 'execCommand') }
+ })
+ it('does not announce success when copying fails', async () => {
+  vi.stubGlobal('isSecureContext', false)
+  Object.defineProperty(document, 'execCommand', { configurable: true, value: vi.fn().mockReturnValue(false) })
+  try {
+   const w = render(); await flushPromises(); await click(w, row.code); await flushPromises()
+   expect(mocks.success).not.toHaveBeenCalled()
+   expect(mocks.error).toHaveBeenCalledTimes(1); expect(mocks.error).toHaveBeenCalledWith('common.copyFailed')
+  } finally { Reflect.deleteProperty(document, 'execCommand') }
+ })
  it('preserves the constrained flex scrolling chain and fixed-size pagination', async () => {
   const w = render(); await flushPromises()
   expect(w.get('[data-test="campaign-layout"]').classes()).toEqual(expect.arrayContaining(['flex', 'flex-col', 'min-h-0', 'flex-1']))

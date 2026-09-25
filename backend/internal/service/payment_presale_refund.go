@@ -27,6 +27,7 @@ type PresaleRefundQuote struct {
 	UnusedDays    int     `json:"unused_days"`
 	Policy        string  `json:"policy"`
 	Currency      string  `json:"currency"`
+	CouponApplied bool    `json:"coupon_applied"`
 }
 
 func PresaleRefundQuoteForOrder(o *dbent.PaymentOrder, now time.Time) (*PresaleRefundQuote, error) {
@@ -55,6 +56,7 @@ func presaleRefundQuoteForTerm(o *dbent.PaymentOrder, now, effectiveEnd time.Tim
 		end = effectiveEnd
 	}
 	q := &PresaleRefundQuote{Policy: "full", Currency: PaymentOrderCurrency(o), UnusedDays: days}
+	q.CouponApplied = strings.TrimSpace(psStringValue(o.CafeCouponCode)) != "" || o.CafeCouponDiscount > 0
 	ratio := 1.0
 	switch {
 	// A paid order never activated because of a service failure remains
@@ -115,6 +117,8 @@ func (s *PaymentService) GetPresaleRefundQuote(ctx context.Context, o *dbent.Pay
 		}
 		if accepted.Quote != nil {
 			// Never reprice an accepted cancellation using the new delay policy.
+			// Old quote snapshots may predate this informational flag.
+			accepted.Quote.CouponApplied = base.CouponApplied
 			return accepted.Quote, nil
 		}
 		// Legacy requests predate the daily refund fee and full quote snapshots.

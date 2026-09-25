@@ -19,6 +19,8 @@ import (
 
 const cafeCampaignPrefix = "CAFE-PUBLIC-"
 
+var errCafeCampaignUsageLimit = infraerrors.Conflict("CAFE_CAMPAIGN_USAGE_LIMIT", "cannot apply this code: each account may use it only once").WithMetadata(map[string]string{"limit": "1"})
+
 func isCafeCampaignCode(code string) bool {
 	return strings.HasPrefix(strings.ToUpper(strings.TrimSpace(code)), cafeCampaignPrefix)
 }
@@ -224,14 +226,14 @@ func cafeCampaignSlot(ctx context.Context, client *dbent.Client, id, userID int6
 		return nil, err
 	}
 	if u.UsedAt != nil {
-		return nil, infraerrors.Conflict("CAFE_COUPON_USED", "this account has already used this code")
+		return nil, errCafeCampaignUsageLimit
 	}
 	order, err := client.PaymentOrder.Get(ctx, u.OrderID)
 	if err != nil {
 		return nil, err
 	}
 	if order.PaidAt != nil {
-		return nil, infraerrors.Conflict("CAFE_COUPON_USED", "this account has already used this code")
+		return nil, errCafeCampaignUsageLimit
 	}
 	if order.Status == OrderStatusCancelled || order.Status == OrderStatusExpired || order.Status == OrderStatusFailed || (order.Status == OrderStatusPending && !order.ExpiresAt.After(now)) {
 		return u, nil

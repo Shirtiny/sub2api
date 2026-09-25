@@ -67,8 +67,23 @@
       </div>
     </section>
     <BaseDialog :show="!!refundOrder" :title="t('presale.refundTitle')" @close="!busy && (refundOrder = null)">
-      <div v-if="quote" class="space-y-4"><p class="text-sm leading-relaxed text-content-secondary">{{ t('presale.refundNotice') }}</p><div class="rounded-lg bg-surface-hover p-4"><p class="text-xs text-content-tertiary">{{ t('presale.refundAmount') }}</p><strong class="mt-2 block text-xl text-content-primary">{{ formatPaymentAmount(quote.gateway_amount, quote.currency) }}</strong><p v-if="quote.fee_percent" class="mt-2 text-xs text-content-secondary">{{ t('presale.refundFeeApplied', { percent: quote.fee_percent }) }}</p></div></div>
-      <template #footer><button class="btn btn-secondary" :disabled="busy" @click="refundOrder = null">{{ t('common.cancel') }}</button><button class="btn btn-primary ml-3" :disabled="busy || !quote" @click="requestRefund">{{ t('presale.refundConfirm') }}</button></template>
+      <form v-if="quote" id="presale-refund-form" class="space-y-5" @submit.prevent="requestRefund">
+        <p class="text-sm leading-relaxed text-content-secondary">{{ t('presale.refundNotice') }}</p>
+        <div class="rounded-xl bg-surface-hover p-4">
+          <p class="text-xs text-content-tertiary">{{ t('presale.refundAmount') }}</p>
+          <strong class="mt-2 block text-xl text-content-primary">{{ formatPaymentAmount(quote.gateway_amount, quote.currency) }}</strong>
+          <p v-if="quote.fee_percent" class="mt-2 text-xs text-content-secondary">{{ t('presale.refundFeeApplied', { percent: quote.fee_percent }) }}</p>
+        </div>
+        <p v-if="quote.coupon_applied" class="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 text-sm leading-relaxed text-content-secondary" data-test="refund-coupon-notice">{{ t('presale.refundCouponNotice') }}</p>
+        <div class="space-y-2">
+          <div class="flex items-center justify-between gap-3">
+            <label for="presale-refund-reason" class="text-sm font-medium text-content-primary">{{ t('payment.refundReason') }} <span aria-hidden="true" class="text-status-error">*</span></label>
+            <span id="presale-refund-reason-count" class="text-xs tabular-nums" :class="refundReasonLength > refundReasonMaxLength ? 'text-status-error' : 'text-content-tertiary'">{{ refundReasonLength }}/{{ refundReasonMaxLength }}</span>
+          </div>
+          <textarea id="presale-refund-reason" v-model="refundReason" class="input min-h-24 resize-y" rows="3" required :disabled="busy" :placeholder="t('payment.refundReasonPlaceholder')" :aria-invalid="refundReasonLength > refundReasonMaxLength || undefined" aria-describedby="presale-refund-reason-count" />
+        </div>
+      </form>
+      <template #footer><button class="btn btn-secondary" :disabled="busy" @click="refundOrder = null">{{ t('common.cancel') }}</button><button class="btn btn-primary ml-3" form="presale-refund-form" type="submit" :disabled="busy || !quote || !validRefundReason">{{ t('presale.refundConfirm') }}</button></template>
     </BaseDialog>
   </div>
 </template>
@@ -90,6 +105,9 @@ const emit = defineEmits<{ refunded: [] }>()
 const orders = ref<PaymentOrder[]>([]), loadError = ref(false), busy = ref(false)
 const showRecords = ref(false)
 const refundOrder = ref<PaymentOrder | null>(null), quote = ref<PresaleRefundQuote | null>(null)
+const refundReason = ref(''), refundReasonMaxLength = 500
+const refundReasonLength = computed(() => Array.from(refundReason.value.trim()).length)
+const validRefundReason = computed(() => refundReasonLength.value > 0 && refundReasonLength.value <= refundReasonMaxLength)
 const dateFormatter = new Intl.DateTimeFormat('en-GB', {
   timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit',
   hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
@@ -123,16 +141,19 @@ async function load() {
   catch { loadError.value = true }
 }
 async function openRefund(order: PaymentOrder) {
+  if (busy.value) return
+  quote.value = null
+  refundReason.value = ''
   busy.value = true
   try { quote.value = (await presaleAPI.refundQuote(order.id)).data; refundOrder.value = order }
   catch (err) { app.showError(extractI18nErrorMessage(err, t, 'presale.errors', t('common.error'))) }
   finally { busy.value = false }
 }
 async function requestRefund() {
-  if (!refundOrder.value || !quote.value || busy.value) return
+  if (!refundOrder.value || !quote.value || busy.value || !validRefundReason.value) return
   busy.value = true
   try {
-    await paymentAPI.requestRefund(refundOrder.value.id, { reason: t('presale.requestRefund'), expected_refund_amount: quote.value.gateway_amount })
+    await paymentAPI.requestRefund(refundOrder.value.id, { reason: refundReason.value.trim(), expected_refund_amount: quote.value.gateway_amount })
     refundOrder.value = null
     app.showSuccess(t('presale.refundSubmitted'))
     emit('refunded')

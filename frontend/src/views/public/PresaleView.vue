@@ -165,6 +165,7 @@ interface PlanAvailability { kind: AvailabilityKind; reason?: string; orderId?: 
 const planAvailability = ref<Record<number, PlanAvailability>>({})
 const recovery = ref<PaymentRecoverySnapshot | null>(null)
 let loadRequest = 0, availabilityRequest = 0
+let availabilityLoading = false, routeCheckoutHandled = false
 function availability(plan: SubscriptionPlan): PlanAvailability {
   if (!auth.isAuthenticated) return { kind: 'available' }
   return planAvailability.value[plan.id] ?? { kind: 'checking' }
@@ -185,10 +186,12 @@ function availabilityMessage(plan: SubscriptionPlan): string {
 }
 async function refreshAvailability() {
   const request = ++availabilityRequest
+  availabilityLoading = false
   planAvailability.value = {}
   try { recovery.value = readPaymentRecoverySnapshot(localStorage.getItem(PAYMENT_RECOVERY_STORAGE_KEY)) }
   catch { recovery.value = null }
   if (!auth.isAuthenticated || !catalog.value?.enabled) return
+  availabilityLoading = true
   const month = catalog.value.period.month
   await Promise.all(catalog.value.plans.map(async plan => {
     let state: PlanAvailability
@@ -212,7 +215,7 @@ async function refreshAvailability() {
       }
     }
     if (request === availabilityRequest) planAvailability.value[plan.id] = state
-  }))
+  })).finally(() => { if (request === availabilityRequest) availabilityLoading = false })
 }
 const selectedPlanMultiplier = computed(() => {
   const plan = catalog.value?.plans.find(p => p.id === selectedPlanId.value)
@@ -269,18 +272,26 @@ function selectPlan(plan: SubscriptionPlan) {
   if (plan.custom_multiplier_enabled) query.multiplier = String(planMultiplier(plan))
   const redirect = `/presale?${new URLSearchParams(query)}`
   if (!auth.isAuthenticated) { void router.push({ path: '/login', query: { redirect } }); return }
+  routeCheckoutHandled = true
   selectedPlanId.value = plan.id
   void router.replace({ path: '/presale', query, hash: route.hash })
 }
 function restoreSelection() {
+  // A return-link is a one-shot intent, not a command to reopen after every refresh.
+  if (routeCheckoutHandled) return
   const plan = catalog.value?.enabled && catalog.value.plans.find(p => p.id === Number(route.query.plan))
   if (!plan) return
   if (route.query.multiplier != null) planMultipliers.value[plan.id] = Number(route.query.multiplier)
   // Login-return links wait for the same eligibility check as the cards.
   // Provider returns still resume inside PaymentView's server-side guards.
-  if (auth.isAuthenticated && (canReserve(plan) || canResume(plan) || hasWechatResumeQuery(route.query))) selectedPlanId.value = plan.id
+  if (auth.isAuthenticated && (canReserve(plan) || canResume(plan) || hasWechatResumeQuery(route.query))) {
+    routeCheckoutHandled = true
+    selectedPlanId.value = plan.id
+  }
 }
 function closeCheckout() {
+  // Take effect synchronously, even while URL cleanup or older checks are pending.
+  routeCheckoutHandled = true
   selectedPlanId.value = null
   void router.replace({ path: '/presale', hash: route.hash })
   void refreshAvailability()
@@ -305,10 +316,11 @@ async function load() {
   catch { if (request === loadRequest) error.value = t('presale.failed') }
   finally { if (request === loadRequest) loading.value = false }
 }
-watch(() => [route.query.plan, route.query.multiplier], restoreSelection)
-watch(() => [auth.isAuthenticated, auth.user?.id], () => { selectedPlanId.value = null; void load() })
+watch([() => route.query.plan, () => route.query.multiplier], restoreSelection)
+// Compare scalar identities, not a fresh array on every user-profile replacement.
+watch([() => auth.isAuthenticated, () => auth.user?.id], () => { selectedPlanId.value = null; void load() })
 function refreshOnReturn() {
-  if (!document.hidden && !loading.value && selectedPlanId.value == null) void refreshAvailability()
+  if (!document.hidden && !loading.value && !availabilityLoading && selectedPlanId.value == null) void refreshAvailability()
 }
 useEventListener(window, 'focus', refreshOnReturn)
 useEventListener(document, 'visibilitychange', refreshOnReturn)

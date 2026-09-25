@@ -26,6 +26,7 @@ export interface PresaleRefundQuote {
   fee_percent: number
   unused_days: number
   currency: string
+  coupon_applied: boolean
   policy: 'full' | 'preparation' | 'unused_days' | 'unfulfilled'
 }
 export const presaleAPI = {
