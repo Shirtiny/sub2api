@@ -163,12 +163,17 @@ func calculateStatsCost(pricing *ChannelModelPricing, tokens UsageTokens, reques
 	if pricing == nil {
 		return nil
 	}
+	var cost *float64
 	switch pricing.BillingMode {
 	case BillingModePerRequest, BillingModeImage:
-		return calculatePerRequestStatsCost(pricing, requestCount)
+		cost = calculatePerRequestStatsCost(pricing, requestCount)
 	default:
-		return calculateTokenStatsCost(pricing, tokens)
+		cost = calculateTokenStatsCost(pricing, tokens)
 	}
+	if cost != nil {
+		*cost *= pricing.EffectivePriceMultiplier()
+	}
+	return cost
 }
 
 // calculatePerRequestStatsCost 按次/图片计费。

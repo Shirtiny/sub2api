@@ -77,3 +77,11 @@ describe('validateIntervals', () => {
     })
   })
 })
+
+describe('model list-price multiplier', () => {
+  it('allows legacy defaults, discounts and markups but rejects unsafe/empty values', async () => {
+    const { validPriceMultiplier } = await import('../types')
+    for (const value of [undefined, 1, .1, '5', 1000]) expect(validPriceMultiplier(value)).toBe(true)
+    for (const value of [null, '', 0, -1, NaN, Infinity, 'invalid', 1001]) expect(validPriceMultiplier(value)).toBe(false)
+  })
+})

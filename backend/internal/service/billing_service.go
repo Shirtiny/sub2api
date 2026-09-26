@@ -161,6 +161,18 @@ type CostBreakdown struct {
 	BillingMode       string  // 计费模式（"token"/"per_request"/"image"），由 CalculateCostUnified 填充
 }
 
+// applyPriceMultiplier applies the model list-price factor to every cost component.
+// ActualCost already includes the independent group/user multiplier.
+func (c *CostBreakdown) applyPriceMultiplier(multiplier float64) {
+	c.InputCost *= multiplier
+	c.OutputCost *= multiplier
+	c.ImageOutputCost *= multiplier
+	c.CacheCreationCost *= multiplier
+	c.CacheReadCost *= multiplier
+	c.TotalCost *= multiplier
+	c.ActualCost *= multiplier
+}
+
 // ErrModelPricingUnavailable indicates that none of the configured pricing
 // sources can price the requested model.
 var ErrModelPricingUnavailable = errors.New("pricing not found")
@@ -501,6 +513,8 @@ func (s *BillingService) GetModelPricingWithChannel(model string, channelPricing
 	if channelPricing == nil {
 		return pricing, nil
 	}
+	cloned := *pricing
+	pricing = &cloned
 	if channelPricing.InputPrice != nil {
 		pricing.InputPricePerToken = *channelPricing.InputPrice
 		pricing.InputPricePerTokenPriority = *channelPricing.InputPrice
@@ -526,6 +540,18 @@ func (s *BillingService) GetModelPricingWithChannel(model string, channelPricing
 		pricing.ImageOutputPricePerToken = 0
 	}
 	pricing.ImageOutputPriceExplicit = true
+	multiplier := channelPricing.EffectivePriceMultiplier()
+	pricing.InputPricePerToken *= multiplier
+	pricing.InputPricePerTokenPriority *= multiplier
+	pricing.OutputPricePerToken *= multiplier
+	pricing.OutputPricePerTokenPriority *= multiplier
+	pricing.CacheCreationPricePerToken *= multiplier
+	pricing.CacheCreationPricePerTokenPriority *= multiplier
+	pricing.CacheReadPricePerToken *= multiplier
+	pricing.CacheReadPricePerTokenPriority *= multiplier
+	pricing.CacheCreation5mPrice *= multiplier
+	pricing.CacheCreation1hPrice *= multiplier
+	pricing.ImageOutputPricePerToken *= multiplier
 	return pricing, nil
 }
 
@@ -576,6 +602,7 @@ func (s *BillingService) CalculateCostUnified(input CostInput) (*CostBreakdown, 
 		breakdown, err = s.calculateTokenCost(resolved, input)
 	}
 	if err == nil && breakdown != nil {
+		breakdown.applyPriceMultiplier(resolved.channelPricing.EffectivePriceMultiplier())
 		breakdown.BillingMode = string(resolved.Mode)
 		if breakdown.BillingMode == "" {
 			breakdown.BillingMode = string(BillingModeToken)

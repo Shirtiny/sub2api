@@ -15,6 +15,7 @@ export interface IntervalFormEntry {
 export interface PricingFormEntry {
   models: string[]
   billing_mode: BillingMode
+  price_multiplier?: number | string | null
   input_price: number | string | null
   output_price: number | string | null
   cache_write_price: number | string | null
@@ -211,4 +212,11 @@ export function getPlatformTextClass(platform: string): string {
     case 'grok': return 'text-slate-700 dark:text-slate-300'
     default: return ''
   }
+}
+
+/** Missing legacy values are 1x; an explicitly empty/invalid editor value is not. */
+export function validPriceMultiplier(value: PricingFormEntry['price_multiplier']): boolean {
+  if (value === undefined) return true
+  const n = Number(value)
+  return Number.isFinite(n) && n > 0 && n <= 1000
 }

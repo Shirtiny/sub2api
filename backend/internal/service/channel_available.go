@@ -162,6 +162,7 @@ func synthesizePricingFromLiteLLM(lp *LiteLLMModelPricing, existing *ChannelMode
 		return existing
 	}
 
+	multiplier := existing.EffectivePriceMultiplier()
 	mode := BillingModeToken
 	switch {
 	case existing != nil && existing.BillingMode != "":
@@ -173,6 +174,7 @@ func synthesizePricingFromLiteLLM(lp *LiteLLMModelPricing, existing *ChannelMode
 	if mode == BillingModeImage || mode == BillingModePerRequest {
 		return &ChannelModelPricing{
 			BillingMode:      mode,
+			PriceMultiplier:  &multiplier,
 			PerRequestPrice:  nonZeroPtr(lp.OutputCostPerImage),
 			ImageOutputPrice: nonZeroPtr(lp.OutputCostPerImageToken),
 			InputPrice:       nonZeroPtr(lp.InputCostPerToken),
@@ -181,6 +183,7 @@ func synthesizePricingFromLiteLLM(lp *LiteLLMModelPricing, existing *ChannelMode
 	}
 	return &ChannelModelPricing{
 		BillingMode:      mode,
+		PriceMultiplier:  &multiplier,
 		InputPrice:       nonZeroPtr(lp.InputCostPerToken),
 		OutputPrice:      nonZeroPtr(lp.OutputCostPerToken),
 		CacheWritePrice:  nonZeroPtr(lp.CacheCreationInputTokenCost),

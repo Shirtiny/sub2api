@@ -88,6 +88,7 @@ type ChannelModelPricing struct {
 	Platform         string            // 所属平台（anthropic/openai/gemini/...）
 	Models           []string          // 绑定的模型列表
 	BillingMode      BillingMode       // 计费模式
+	PriceMultiplier  *float64          // 原价倍率；nil 为 1，独立于分组/用户倍率
 	InputPrice       *float64          // 每 token 输入价格（USD）— 向后兼容 flat 定价
 	OutputPrice      *float64          // 每 token 输出价格（USD）
 	CacheWritePrice  *float64          // 缓存写入价格
@@ -97,6 +98,14 @@ type ChannelModelPricing struct {
 	Intervals        []PricingInterval // 区间定价列表
 	CreatedAt        time.Time
 	UpdatedAt        time.Time
+}
+
+// EffectivePriceMultiplier preserves existing prices when no multiplier is set.
+func (p *ChannelModelPricing) EffectivePriceMultiplier() float64 {
+	if p == nil || p.PriceMultiplier == nil {
+		return 1
+	}
+	return *p.PriceMultiplier
 }
 
 // PricingInterval 定价区间（token 区间 / 按次分层 / 图片分辨率分层）

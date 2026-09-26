@@ -26,6 +26,7 @@
         {{ model.platform }}
       </span>
       {{ model.name }}
+      <span v-if="model.pricing && multiplier !== 1" class="ml-1 tabular-nums">{{ multiplier }}×</span>
     </span>
 
     <!-- Teleport to body so the popover is not clipped by card/overflow-hidden
@@ -70,32 +71,32 @@
                 :label="t(prefixKey('inputPrice'))"
                 :value="model.pricing.input_price"
                 :unit="t(prefixKey('unitPerMillion'))"
-                :scale="perMillionScale"
+                :scale="perMillionScale * multiplier"
               />
               <PricingRow
                 :label="t(prefixKey('outputPrice'))"
                 :value="model.pricing.output_price"
                 :unit="t(prefixKey('unitPerMillion'))"
-                :scale="perMillionScale"
+                :scale="perMillionScale * multiplier"
               />
               <PricingRow
                 :label="t(prefixKey('cacheWritePrice'))"
                 :value="model.pricing.cache_write_price"
                 :unit="t(prefixKey('unitPerMillion'))"
-                :scale="perMillionScale"
+                :scale="perMillionScale * multiplier"
               />
               <PricingRow
                 :label="t(prefixKey('cacheReadPrice'))"
                 :value="model.pricing.cache_read_price"
                 :unit="t(prefixKey('unitPerMillion'))"
-                :scale="perMillionScale"
+                :scale="perMillionScale * multiplier"
               />
               <PricingRow
                 v-if="model.pricing.image_output_price != null && model.pricing.image_output_price > 0"
                 :label="t(prefixKey('imageOutputPrice'))"
                 :value="model.pricing.image_output_price"
                 :unit="t(prefixKey('unitPerMillion'))"
-                :scale="perMillionScale"
+                :scale="perMillionScale * multiplier"
               />
             </template>
 
@@ -107,18 +108,18 @@
               :label="t(prefixKey('perRequestPrice'))"
               :value="model.pricing.per_request_price"
               :unit="t(prefixKey('unitPerRequest'))"
-              :scale="1"
+              :scale="multiplier"
             />
 
             <PricingRow
               v-if="
                 model.pricing.billing_mode === BILLING_MODE_IMAGE &&
-                model.pricing.image_output_price != null
+                model.pricing.per_request_price != null
               "
               :label="t(prefixKey('imageOutputPrice'))"
-              :value="model.pricing.image_output_price"
+              :value="model.pricing.per_request_price"
               :unit="t(prefixKey('unitPerRequest'))"
-              :scale="1"
+              :scale="multiplier"
             />
 
             <div
@@ -195,6 +196,7 @@ const { t } = useI18n()
 
 /** 按 token 定价展示时的换算单位：每百万 token。 */
 const perMillionScale = 1_000_000
+const multiplier = computed(() => props.model.pricing?.price_multiplier ?? 1)
 
 // Popover border + header classes echo the platform theme so each card reads
 // at a glance which model family it belongs to.
@@ -234,10 +236,10 @@ function formatRange(min: number, max: number | null): string {
 
 function formatInterval(iv: UserPricingInterval, mode: BillingMode): string {
   if (mode === BILLING_MODE_PER_REQUEST || mode === BILLING_MODE_IMAGE) {
-    return formatScaled(iv.per_request_price, 1)
+    return formatScaled(iv.per_request_price, multiplier.value)
   }
-  const input = formatScaled(iv.input_price, perMillionScale)
-  const output = formatScaled(iv.output_price, perMillionScale)
+  const input = formatScaled(iv.input_price, perMillionScale * multiplier.value)
+  const output = formatScaled(iv.output_price, perMillionScale * multiplier.value)
   return `${input} / ${output}`
 }
 

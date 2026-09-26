@@ -39,6 +39,9 @@
         </div>
 
         <!-- Billing mode badge -->
+        <span class="shrink-0 rounded-full border border-primary-200 px-2 py-0.5 text-xs tabular-nums text-primary-700 dark:border-primary-800 dark:text-primary-300">
+          {{ entry.price_multiplier ?? 1 }}×
+        </span>
         <span
           class="flex-shrink-0 rounded-full bg-primary-100 px-2 py-0.5 text-xs font-medium text-primary-700 dark:bg-primary-900/30 dark:text-primary-300"
         >
@@ -92,6 +95,26 @@
               class="mt-1"
             />
           </div>
+        </div>
+
+        <div class="mt-4 flex flex-col gap-3 rounded-lg border border-primary-200/60 bg-primary-50/40 p-4 dark:border-primary-800/40 dark:bg-primary-900/10 sm:flex-row sm:items-center">
+          <div class="min-w-0 flex-1">
+            <p class="text-sm font-medium text-content-primary">{{ t('admin.channels.form.listPrices') }}</p>
+            <p class="mt-1 text-xs leading-relaxed text-content-secondary">{{ t('admin.channels.form.priceMultiplierHint') }}</p>
+          </div>
+          <label class="block shrink-0 text-xs text-content-secondary">
+            {{ t('admin.channels.form.priceMultiplier') }}
+            <div class="relative mt-1 w-32">
+              <input
+                :value="entry.price_multiplier === undefined ? 1 : entry.price_multiplier"
+                type="number" min="0" max="1000" step="any" required
+                class="input pr-8 tabular-nums"
+                :aria-label="t('admin.channels.form.priceMultiplier')"
+                @input="emitField('price_multiplier', ($event.target as HTMLInputElement).value)"
+              />
+              <span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">×</span>
+            </div>
+          </label>
         </div>
 
         <!-- Token mode -->

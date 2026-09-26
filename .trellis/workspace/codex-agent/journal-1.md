@@ -474,3 +474,50 @@ only the authorized 4178 preview; local/external HTTP 200. See verification log.
   custom-presale activation clear/set collision with exclusive Ent mutation
   branches. User authorized source/tag publication as `cafecode-v0.0.85`, not a
   production update; final results and safety boundaries are in the verification.
+
+## 2026-09-26 — Available model collection and list-price multiplier
+
+- Replaced the user-facing channel matrix with a home-palette model collection, roomy model cards, exact-ID copy actions, model/group search, visible unit pricing and expandable cache/tier details. Channel/group visibility is still enforced by the existing authenticated API.
+- Added per-pricing-entry `price_multiplier` (default 1) to channel and account-stat pricing, admin editors, user DTOs and both pricing displays. Stored prices remain list prices; the factor is applied once to all billing components, separately from the group/personal rate.
+- Added migration 206 with positive, finite bounded multiplier constraints. API/service/UI validation rejects empty, zero, negative and non-finite values. No production or shared test DB migration was run.
+- Corrected configured flat-price fallback outside token intervals and ensured channel overrides never mutate shared fallback prices.
+- Verification: frontend full suite 177 files / 1442 tests; production frontend build/typecheck; ESLint (only 12 pre-existing warnings); full backend unit suite; isolated PostgreSQL integration round trip and constraint checks; Playwright desktop/mobile (320/390/1440), dark/light, zh/en, clipboard, filtering, price disclosure and admin saving 5x without modifying list prices.
+- Browser fixtures are mocked, not live customer data. Screenshots and logs: `/var/tmp/offerings-preview/`, `/var/tmp/offerings-*.log`.
+- Not committed, tagged, pushed or deployed. Shared preview 4178 was not updated. Local private browser preview used 127.0.0.1:4181 only.
+
+### Follow-up — standing test-update authorization
+
+- User explicitly requested always keeping the isolated test environment current, without asking again. Recorded this repository-scoped rule in AGENTS.md; production still needs explicit authorization.
+- Updated both test frontend and app to `0.0.100-local-model-pricing` (HEAD + current worktree), applied migration 206 automatically. Before/after migration count: 234 → 235; all previous checksums unchanged.
+- Read-only copied the sole production channel's display/pricing config into the previously empty test channel tables (15 models), linking the same 7 existing test group IDs while preserving their test names/rates. Enabled only the available-channels feature. No production writes; no live customer/credential/account copying.
+- Preserved 6 test users and 15 orders. Fake payment switch, absent mail credentials and internal-only network verified. Only test app recreated; test DB/Redis and local production container IDs, start times and health unchanged.
+- Real 4178 browser verification: 1440/390/320 widths, zh/en, dark/light, all 15 models, clipboard fallback, filtering, admin editing; no browser errors or horizontal overflow. The temporary edited multiplier was not saved; imported model rates remain 1x.
+- Backup and evidence: `/opt/stacks/sub2api-test/artifacts/model-catalog-update-20260926T012858Z`. Current preview: http://152.53.90.186:4178/available-channels . No commit/tag/push in this turn.
+
+### Follow-up — compact catalog and separate price details
+
+- Removed the introductory model-collection copy/art and visible copy-ID caption while retaining exact-ID copying, accessible labels and copy feedback.
+- Replaced inline cache/tier expansion with the shared dialog: grouped supplemental prices, compact tier comparison, sticky column headings and a bounded scroll region. Opening details no longer changes the model card height; narrow screens scroll the table without overflowing the dialog.
+- Targeted frontend tests: 9/9; scoped ESLint, typecheck and production build passed. Live-test Playwright verified desktop/mobile (1440/390/320), zh/en, dark/light, unchanged card heights, copying, closing dialogs and a browser-only 25-tier stress fixture. No pricing/configuration writes during browser checks.
+- Refreshed only the isolated test frontend, verified `/health`; test data, backend, payment/mail isolation and production are unchanged. Evidence: `/opt/stacks/sub2api-test/artifacts/model-catalog-trim-and-dialog-20260926/`. Not committed, tagged or pushed.
+
+### Follow-up — catalog copy refinements
+
+- Simplified the collection label to “模型列表” / “Model list” and all pricing entry buttons to “查看详情” / “View details”. Removed the pricing footnote and its border/unused translations.
+- Replaced mathematical context intervals with exact compact labels (“272k 及以下”, “超过 272k”); retained named tiers and covered bounded, unbounded and fractional-k thresholds without rounding.
+- Targeted frontend tests: 15/15; scoped ESLint passed. Only the isolated test frontend is refreshed; no pricing/billing behavior or production changes.
+- Live-test browser verification also passed at 1440/390/320 widths in zh/en and dark/light, including the new exact context labels and removed footnote; typecheck/build/health passed.
+
+### Follow-up — verify model multiplier reaches actual billing
+
+- Traced channel persistence and cache invalidation through the pricing resolver, OpenAI usage recording, atomic billing command and balance/subscription SQL deductions. Model price multipliers apply once; the effective group/personal rate remains separate.
+- Added eight regression cases exercising `RecordUsage` through the billing repository boundary with 0.1x/5x model factors, flat/tiered pricing, cache read/write, personal rate overriding group default, balance/subscription and API-key quota amounts. Targeted service tests passed.
+- Disposable PostgreSQL integration tests passed for multiplier round trips/constraints and real balance/subscription deductions with idempotency. No real upstream requests, live charges, shared test data changes or production writes.
+- Existing exception retained: separately configured group image/video prices take precedence over channel pricing. No runtime code changed in this verification; test frontend/backend are already current.
+
+### Publication — cafecode-v0.0.101
+
+- User authorized commit/tag/push of the model catalog and price multiplier work. Publish on `custom-prod` as `cafecode-v0.0.101`; image version comes from the release tag, not the upstream VERSION file.
+- Final checks: full backend unit suite in UTC passed; backend diff lint 0 issues; frontend 177 files / 1449 tests passed; frontend lint 0 errors (12 existing warnings). Typecheck/build, disposable-Postgres multiplier/billing integration and responsive browser verification also passed.
+- Migration 206 is additive and preserves current list prices with a default 1x multiplier. Its checksum remains unchanged from the test environment. No production migration/deployment was performed.
+- Excluded unrelated untracked artwork, historical operations exports and scratch files. Test preview remains current; remote Actions builds the release artifact, production update requires separate authorization.

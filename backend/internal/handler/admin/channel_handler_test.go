@@ -475,3 +475,14 @@ func TestSyncPricingModels_ValidPlatform_EmptyService(t *testing.T) {
 		require.NotNil(t, body.Data.Models, "models must not be null for platform=%s", platform)
 	}
 }
+
+func TestChannelPricingMultiplierRoundTrip(t *testing.T) {
+	for _, multiplier := range []*float64{nil, float64Ptr(.1), float64Ptr(5)} {
+		original := 2e-6
+		converted := pricingRequestToService([]channelModelPricingRequest{{Models: []string{"model"}, PriceMultiplier: multiplier, InputPrice: &original}})
+		require.Len(t, converted, 1)
+		response := pricingToResponse(&converted[0])
+		require.Equal(t, converted[0].EffectivePriceMultiplier(), response.PriceMultiplier)
+		require.Equal(t, original, *response.InputPrice)
+	}
+}

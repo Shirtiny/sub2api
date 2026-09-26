@@ -16,3 +16,14 @@ Use `@/.trellis/` to learn:
 Keep this managed block so 'trellis update' can refresh the instructions.
 
 <!-- TRELLIS:END -->
+
+## Local Test Environment
+
+- After completing changes, update and verify the isolated test environment at
+  `/opt/stacks/sub2api-test` (`http://152.53.90.186:4178`) by default. The user has
+  authorized keeping it current; do not ask again whether to update this environment.
+- Preserve existing test data and the no-real-payment/no-email isolation. Apply
+  necessary test migrations and update only the test app/frontend; verify health
+  and the changed flows before reporting completion.
+- This standing authorization does **not** cover production. Never update the
+  local production stack or Netherlands production without explicit authorization.

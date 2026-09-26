@@ -57,6 +57,7 @@ type updateChannelRequest struct {
 }
 
 type channelModelPricingRequest struct {
+	PriceMultiplier  *float64                 `json:"price_multiplier" binding:"omitempty,gt=0,lte=1000"`
 	Platform         string                   `json:"platform" binding:"omitempty,max=50"`
 	Models           []string                 `json:"models" binding:"required,min=1,max=100"`
 	BillingMode      string                   `json:"billing_mode" binding:"omitempty,oneof=token per_request image"`
@@ -107,6 +108,7 @@ type channelResponse struct {
 }
 
 type channelModelPricingResponse struct {
+	PriceMultiplier  float64                   `json:"price_multiplier"`
 	ID               int64                     `json:"id"`
 	Platform         string                    `json:"platform"`
 	Models           []string                  `json:"models"`
@@ -215,6 +217,7 @@ func pricingToResponse(p *service.ChannelModelPricing) channelModelPricingRespon
 	}
 	return channelModelPricingResponse{
 		ID:               p.ID,
+		PriceMultiplier:  p.EffectivePriceMultiplier(),
 		Platform:         platform,
 		Models:           models,
 		BillingMode:      billingMode,
@@ -267,6 +270,7 @@ func pricingRequestToService(reqs []channelModelPricingRequest) []service.Channe
 		}
 		result = append(result, service.ChannelModelPricing{
 			Platform:         platform,
+			PriceMultiplier:  r.PriceMultiplier,
 			Models:           r.Models,
 			BillingMode:      billingMode,
 			InputPrice:       r.InputPrice,

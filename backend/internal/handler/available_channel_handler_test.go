@@ -155,3 +155,14 @@ func TestBuildPlatformSections_GroupsByPlatform(t *testing.T) {
 	require.Len(t, sections[0].SupportedModels, 1)
 	require.Equal(t, "claude-sonnet-4-6", sections[0].SupportedModels[0].Name)
 }
+
+func TestUserPricingExposesOriginalAndMultiplier(t *testing.T) {
+	price, multiplier := 2e-6, .1
+	pricing := toUserPricing(&service.ChannelModelPricing{InputPrice: &price, PriceMultiplier: &multiplier})
+	require.Equal(t, price, *pricing.InputPrice)
+	require.Equal(t, multiplier, pricing.PriceMultiplier)
+	require.Equal(t, 1.0, toUserPricing(&service.ChannelModelPricing{}).PriceMultiplier)
+	encoded, err := json.Marshal(pricing)
+	require.NoError(t, err)
+	require.Contains(t, string(encoded), `"price_multiplier":0.1`)
+}

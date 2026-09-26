@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"math"
 	"sort"
 	"strings"
 	"sync/atomic"
@@ -659,6 +660,10 @@ func validatePricingEntries(pricing []ChannelModelPricing) error {
 // validatePricingBillingMode 校验计费模式配置：按次/图片模式必须配价格或区间，所有价格字段不能为负，区间至少有一个价格字段。
 func validatePricingBillingMode(pricing []ChannelModelPricing) error {
 	for _, p := range pricing {
+		multiplier := p.EffectivePriceMultiplier()
+		if math.IsNaN(multiplier) || math.IsInf(multiplier, 0) || multiplier <= 0 || multiplier > 1000 {
+			return infraerrors.BadRequest("INVALID_PRICE_MULTIPLIER", "price_multiplier must be greater than 0 and at most 1000")
+		}
 		if err := checkBillingModeRequirements(p); err != nil {
 			return err
 		}
