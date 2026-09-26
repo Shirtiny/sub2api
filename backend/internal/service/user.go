@@ -20,6 +20,9 @@ type User struct {
 	Role           string
 	Balance        float64
 	Concurrency    int
+
+	// Resolved at request admission, never persisted in user/auth snapshots.
+	BalanceConcurrencyRules []BalanceConcurrencyRule
 	// Subscription snapshots are not stored on users. Only currently effective
 	// terms count; pending presales do not grant concurrency.
 	PlanConcurrencyEntitlements []PlanConcurrencyEntitlement
@@ -88,14 +91,7 @@ type SubscriptionPeriod struct {
 // BalanceConcurrency uses the actual account balance, not cumulative recharge
 // amounts or an exchange-rate conversion. The threshold values are inclusive.
 func BalanceConcurrency(balance float64) int {
-	switch {
-	case balance >= 100:
-		return 3
-	case balance >= 20:
-		return 2
-	default:
-		return 1
-	}
+	return balanceConcurrencyWithRules(balance, nil)
 }
 
 // EffectiveConcurrencyAt gives active subscriptions priority over balance.
@@ -107,7 +103,7 @@ func (u *User) EffectiveConcurrencyAt(now time.Time) int {
 	if concurrency := u.ActiveSubscriptionConcurrencyAt(now); concurrency > 0 {
 		return concurrency
 	}
-	return BalanceConcurrency(u.Balance)
+	return balanceConcurrencyWithRules(u.Balance, u.BalanceConcurrencyRules)
 }
 
 // ActiveSubscriptionConcurrencyAt takes the maximum across subscriptions, not

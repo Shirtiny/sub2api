@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -30,11 +31,19 @@ import (
 )
 
 type userRepository struct {
-	client *dbent.Client
-	sql    sqlExecutor
+	concurrencySettings *service.SettingService
+	client              *dbent.Client
+	sql                 sqlExecutor
 }
 
 var _ service.RedeemUserAdjustmentRepository = (*userRepository)(nil)
+
+// ProvideUserRepository attaches the shared policy cache without changing test constructors.
+func ProvideUserRepository(client *dbent.Client, sqlDB *sql.DB, settings *service.SettingService) service.UserRepository {
+	r := newUserRepositoryWithSQL(client, sqlDB)
+	r.concurrencySettings = settings
+	return r
+}
 
 func NewUserRepository(client *dbent.Client, sqlDB *sql.DB) service.UserRepository {
 	return newUserRepositoryWithSQL(client, sqlDB)
@@ -48,6 +57,12 @@ func (r *userRepository) Create(ctx context.Context, userIn *service.User) error
 	if userIn == nil {
 		return nil
 	}
+
+	rules, err := r.concurrencySettings.GetUserConcurrencyRules(ctx)
+	if err != nil {
+		return err
+	}
+	userIn.BalanceConcurrencyRules = rules.BalanceTiers
 
 	// 统一使用 ent 的事务：保证用户与允许分组的更新原子化，
 	// 并避免基于 *sql.Tx 手动构造 ent client 导致的 ExecQuerier 断言错误。
@@ -500,10 +515,14 @@ func (r *userRepository) ListWithFilters(ctx context.Context, params pagination.
 		return nil, nil, err
 	}
 
+	rules, err := r.concurrencySettings.GetUserConcurrencyRules(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
 	usersQuery := q.
 		Offset(params.Offset()).
 		Limit(params.Limit())
-	for _, order := range userListOrder(params) {
+	for _, order := range userListOrder(params, rules.BalanceTiers) {
 		usersQuery = usersQuery.Order(order)
 	}
 
@@ -566,6 +585,13 @@ func (r *userRepository) ListWithFilters(ctx context.Context, params pagination.
 func (r *userRepository) hydratePlanConcurrencyEntitlements(ctx context.Context, users map[int64]*service.User) error {
 	if len(users) == 0 {
 		return nil
+	}
+	rules, err := r.concurrencySettings.GetUserConcurrencyRules(ctx)
+	if err != nil {
+		return err
+	}
+	for _, user := range users {
+		user.BalanceConcurrencyRules = rules.BalanceTiers
 	}
 	userIDs := make([]int64, 0, len(users))
 	for userID := range users {
@@ -642,7 +668,7 @@ func (r *userRepository) hydratePlanConcurrencyEntitlements(ctx context.Context,
 	return nil
 }
 
-func userListOrder(params pagination.PaginationParams) []func(*entsql.Selector) {
+func userListOrder(params pagination.PaginationParams, rules []service.BalanceConcurrencyRule) []func(*entsql.Selector) {
 	sortBy := strings.ToLower(strings.TrimSpace(params.SortBy))
 	sortOrder := params.NormalizedSortOrder(pagination.SortOrderDesc)
 
@@ -650,7 +676,7 @@ func userListOrder(params pagination.PaginationParams) []func(*entsql.Selector) 
 		return userLastUsedAtOrder(sortOrder)
 	}
 	if sortBy == "concurrency" {
-		return userEffectiveConcurrencyOrder(sortOrder)
+		return userEffectiveConcurrencyOrder(sortOrder, rules)
 	}
 
 	var field string
@@ -710,7 +736,7 @@ func userListOrder(params pagination.PaginationParams) []func(*entsql.Selector) 
 	return []func(*entsql.Selector){dbent.Desc(field), dbent.Desc(dbuser.FieldID)}
 }
 
-func userEffectiveConcurrencyOrder(sortOrder string) []func(*entsql.Selector) {
+func userEffectiveConcurrencyOrder(sortOrder string, rules []service.BalanceConcurrencyRule) []func(*entsql.Selector) {
 	return []func(*entsql.Selector){func(s *entsql.Selector) {
 		userID := s.C(dbuser.FieldID)
 		balance := s.C(dbuser.FieldBalance)
@@ -828,8 +854,21 @@ func userEffectiveConcurrencyOrder(sortOrder string) []func(*entsql.Selector) {
 			timestampExpr("sce.starts_at"), nowExpr, timestampExpr("sce.expires_at"), nowExpr,
 			timestampExpr("us.custom_expires_at"), nowExpr)
 		planLimit := fmt.Sprintf("%s(%s, CASE WHEN %s THEN %d ELSE 0 END)", greatest, activePlanConcurrency, unconfiguredSubscription, service.DefaultUserConcurrency)
-		fallback := fmt.Sprintf("CASE WHEN %s THEN %d WHEN %s >= 100 THEN 3 WHEN %s >= 20 THEN 2 ELSE 1 END",
-			activeSubscription, service.DefaultUserConcurrency, balance, balance)
+		if len(rules) == 0 {
+			rules = service.DefaultBalanceConcurrencyRules()
+		}
+		// Thresholds originate only from the validated settings service, never SQL input.
+		balanceLimit := strconv.Itoa(rules[0].Concurrency)
+		if len(rules) > 1 {
+			var balanceCase strings.Builder
+			_, _ = balanceCase.WriteString("CASE")
+			for i := len(rules) - 1; i > 0; i-- {
+				fmt.Fprintf(&balanceCase, " WHEN %s >= %s THEN %d", balance, strconv.FormatFloat(rules[i].MinBalance, 'f', -1, 64), rules[i].Concurrency)
+			}
+			fmt.Fprintf(&balanceCase, " ELSE %d END", rules[0].Concurrency)
+			balanceLimit = balanceCase.String()
+		}
+		fallback := fmt.Sprintf("CASE WHEN %s THEN %d ELSE %s END", activeSubscription, service.DefaultUserConcurrency, balanceLimit)
 		s.OrderExpr(entsql.Expr(fmt.Sprintf("COALESCE(NULLIF(%s, 0), %s) %s", planLimit, fallback, direction)))
 		s.OrderBy(tieOrder(userID))
 	}}

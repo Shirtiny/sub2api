@@ -6,23 +6,25 @@ import (
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/domain"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 )
 
 type User struct {
-	ID                   int64      `json:"id"`
-	Email                string     `json:"email"`
-	Username             string     `json:"username"`
-	Role                 string     `json:"role"`
-	Balance              float64    `json:"balance"`
-	Concurrency          int        `json:"concurrency"`
-	BaseConcurrency      int        `json:"base_concurrency"`
-	EffectiveConcurrency int        `json:"effective_concurrency"`
-	Status               string     `json:"status"`
-	AllowedGroups        []int64    `json:"allowed_groups"`
-	LastActiveAt         *time.Time `json:"last_active_at,omitempty"`
-	CreatedAt            time.Time  `json:"created_at"`
-	UpdatedAt            time.Time  `json:"updated_at"`
-	DeletedAt            *time.Time `json:"deleted_at,omitempty"`
+	ID                      int64                            `json:"id"`
+	Email                   string                           `json:"email"`
+	Username                string                           `json:"username"`
+	Role                    string                           `json:"role"`
+	Balance                 float64                          `json:"balance"`
+	Concurrency             int                              `json:"concurrency"`
+	BaseConcurrency         int                              `json:"base_concurrency"`
+	BalanceConcurrencyRules []service.BalanceConcurrencyRule `json:"balance_concurrency_rules"`
+	EffectiveConcurrency    int                              `json:"effective_concurrency"`
+	Status                  string                           `json:"status"`
+	AllowedGroups           []int64                          `json:"allowed_groups"`
+	LastActiveAt            *time.Time                       `json:"last_active_at,omitempty"`
+	CreatedAt               time.Time                        `json:"created_at"`
+	UpdatedAt               time.Time                        `json:"updated_at"`
+	DeletedAt               *time.Time                       `json:"deleted_at,omitempty"`
 
 	// 余额不足通知
 	BalanceNotifyEnabled       bool               `json:"balance_notify_enabled"`

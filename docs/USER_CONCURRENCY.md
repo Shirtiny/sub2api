@@ -12,7 +12,8 @@ independently; a concurrency limit does not guarantee upstream capacity.
    of the same subscription, the latest started term wins. Custom subscription
    multipliers do not multiply concurrency. Legacy/admin subscriptions without
    a configured grant use 2.
-3. Without an effective subscription, use the current account balance:
+3. Without an effective subscription, use configured current-balance tiers
+   (administrator-configurable; defaults below):
    - balance >= 100: 3
    - 20 <= balance < 100: 2
    - balance < 20: 1
@@ -45,3 +46,39 @@ Migration 207 is a one-time user-configuration normalization. Before an authoriz
 production update, save user concurrency/default-setting values with the normal
 deployment backup. Do not reset production values separately ahead of the code
 release. Updating the isolated test environment is not production authorization.
+
+## Administrator-configurable balance tiers
+
+Users → Concurrency rules edits the site-wide balance fallback without changing
+subscription concurrency. The initial policy is still 0/20/100 → 1/2/3. Each
+inclusive lower bound runs up to (but excludes) the next bound. The first row
+starts at 0, also covers negative balances, and the last row has no upper bound.
+Separate billing eligibility checks continue to reject insufficient funds.
+
+- Admin-only `GET` / `PUT /api/v1/admin/users/concurrency-rules` uses
+  `{ "balance_tiers": [{ "min_balance": 0, "concurrency": 1 }, ...] }`.
+- The entire policy is stored atomically in `settings.user_concurrency_rules`.
+  No schema migration, balance rewrite or per-user concurrency write is needed.
+- Accept 1–20 rows, finite strictly increasing thresholds in [0, 1e12] with first
+  threshold 0, and integer limits in [1, 1000]. Invalid/oversized/unknown-field
+  requests are rejected without changing persisted or cached settings. Missing
+  settings use the original policy; malformed stored settings fail closed.
+- Rules use **profile balance units**, not RMB recharge amounts. Users receive
+  `balance_concurrency_rules` in their user DTO for the dynamic help tooltip.
+- One per-process settings cache is shared by user hydration/sorting, HTTP auth
+  and retained WS admission. It is separate from per-key auth snapshots. Saves
+  update it immediately, and a context-aware gate prevents older reads
+  overwriting saves. Both gate wait and database IO are timeout-bounded.
+- A lifecycle-managed worker checks the 5-second TTL every 2.5 seconds, keeping
+  idle instances and long-lived WebSocket connections fresh without traffic.
+  Other instances observe changes on their next refresh. Concurrent refreshes
+  share one bounded read; individual waiters can cancel independently, and
+  failed reads have a 1-second retry cooldown to prevent database stampedes.
+- HTTP refresh failure rejects balance-based admission; active subscriptions
+  bypass both balance-rule and balance lookups. Expired subscriptions return
+  to the balance path. WS refresh is asynchronous and deduplicated, never a blocking DB
+  fallback on the retained turn. WS can use known rules while refreshing for at
+  most 30 seconds since the last successful read, then rejects new admission
+  until rules reload. In-flight work is never cancelled by a rule change.
+- Existing active subscription precedence, presale start/end timing, maximum
+  rather than sum, and multiplier handling are unchanged.

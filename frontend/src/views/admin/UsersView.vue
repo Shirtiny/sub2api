@@ -114,6 +114,14 @@
 
           <!-- Right: Actions and Settings -->
           <div class="flex flex-wrap items-center justify-end gap-2">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-testid="concurrency-rules-button"
+              @click="showConcurrencyRulesModal = true"
+            >
+              {{ t('admin.users.concurrencyRules.title') }}
+            </button>
             <!-- Mobile: Secondary buttons (icon only) -->
             <div class="flex items-center gap-2 md:contents">
               <!-- Refresh Button -->
@@ -405,9 +413,9 @@
                   ${{ value.toFixed(2) }}
                 </button>
                 <!-- Instant tooltip -->
-                <div class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-1.5 -translate-x-1/2 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white opacity-0 shadow-lg transition-opacity duration-75 group-hover:opacity-100 dark:bg-dark-600">
+                <div class="pointer-events-none absolute bottom-full right-0 z-50 mb-1.5 whitespace-nowrap sm:left-1/2 sm:right-auto sm:-translate-x-1/2 rounded bg-gray-900 px-2 py-1 text-xs text-white opacity-0 shadow-lg transition-opacity duration-75 group-hover:opacity-100 dark:bg-dark-600">
                   {{ t('admin.users.balanceHistoryTip') }}
-                  <div class="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-gray-900 dark:border-t-dark-600"></div>
+                  <div class="absolute right-4 top-full border-4 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 border-transparent border-t-gray-900 dark:border-t-dark-600"></div>
                 </div>
               </div>
               <button
@@ -432,9 +440,9 @@
                 >
                   {{ (row.total_recharged ?? 0).toFixed(2) }} {{ t('admin.users.membershipPointsUnit') }}
                 </button>
-                <div class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-1.5 -translate-x-1/2 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white opacity-0 shadow-lg transition-opacity duration-75 group-hover:opacity-100 dark:bg-dark-600">
+                <div class="pointer-events-none absolute bottom-full right-0 z-50 mb-1.5 whitespace-nowrap sm:left-1/2 sm:right-auto sm:-translate-x-1/2 rounded bg-gray-900 px-2 py-1 text-xs text-white opacity-0 shadow-lg transition-opacity duration-75 group-hover:opacity-100 dark:bg-dark-600">
                   {{ t('admin.users.membershipPointsTip') }}
-                  <div class="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-gray-900 dark:border-t-dark-600"></div>
+                  <div class="absolute right-4 top-full border-4 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 border-transparent border-t-gray-900 dark:border-t-dark-600"></div>
                 </div>
               </div>
             </div>
@@ -750,6 +758,11 @@
 
     <ConfirmDialog :show="showDeleteDialog" :title="t('admin.users.deleteUser')" :message="t('admin.users.deleteConfirm', { email: deletingUser?.email })" :danger="true" @confirm="confirmDelete" @cancel="showDeleteDialog = false" />
     <UserCreateModal :show="showCreateModal" @close="showCreateModal = false" @success="loadUsers" />
+    <UserConcurrencyRulesModal
+      :show="showConcurrencyRulesModal"
+      @close="showConcurrencyRulesModal = false"
+      @success="loadUsers"
+    />
     <UserEditModal :show="showEditModal" :user="editingUser" @close="closeEditModal" @success="loadUsers" />
     <UserPlatformQuotaModal
       :show="showPlatformQuotaModal"
@@ -795,6 +808,7 @@ import PlatformUsageBreakdown from '@/components/user/PlatformUsageBreakdown.vue
 import PlatformCostCell from '@/components/user/PlatformCostCell.vue'
 import UserPlatformQuotaCell from '@/components/user/UserPlatformQuotaCell.vue'
 import UserCreateModal from '@/components/admin/user/UserCreateModal.vue'
+import UserConcurrencyRulesModal from '@/components/admin/user/UserConcurrencyRulesModal.vue'
 import UserEditModal from '@/components/admin/user/UserEditModal.vue'
 import UserPlatformQuotaModal from '@/components/admin/user/UserPlatformQuotaModal.vue'
 import UserApiKeysModal from '@/components/admin/user/UserApiKeysModal.vue'
@@ -1262,6 +1276,7 @@ const pagination = reactive({
 })
 
 const showCreateModal = ref(false)
+const showConcurrencyRulesModal = ref(false)
 const showEditModal = ref(false)
 const showDeleteDialog = ref(false)
 const showApiKeysModal = ref(false)

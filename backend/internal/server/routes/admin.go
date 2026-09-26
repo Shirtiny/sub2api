@@ -241,6 +241,8 @@ func registerUserManagementRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
 	users := admin.Group("/users")
 	{
 		users.GET("", h.Admin.User.List)
+		users.GET("/concurrency-rules", h.Admin.Setting.GetUserConcurrencyRules)
+		users.PUT("/concurrency-rules", h.Admin.Setting.UpdateUserConcurrencyRules)
 		users.GET("/:id", h.Admin.User.GetByID)
 		users.POST("/:id/auth-identities", h.Admin.User.BindAuthIdentity)
 		users.POST("", h.Admin.User.Create)

@@ -1,8 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { flushPromises, mount } from '@vue/test-utils'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { enableAutoUnmount, flushPromises, mount, shallowMount } from '@vue/test-utils'
 
 import type { AdminUser } from '@/types'
 import UsersView from '../UsersView.vue'
+import UserConcurrencyRulesModal from '@/components/admin/user/UserConcurrencyRulesModal.vue'
+
+enableAutoUnmount(afterEach)
 
 const {
   listUsers,
@@ -110,6 +113,29 @@ describe('admin UsersView', () => {
     getBatchUsersUsage.mockResolvedValue({ stats: {} })
     listEnabledDefinitions.mockResolvedValue([])
     getBatchUserAttributes.mockResolvedValue({ values: {} })
+  })
+
+  it('opens global rules from the toolbar and refreshes the list after saving', async () => {
+    const wrapper = shallowMount(UsersView, {
+      global: {
+        stubs: {
+          AppLayout: { template: '<div><slot /></div>' },
+          TablePageLayout: { template: '<div><slot name="filters" /></div>' }
+        }
+      }
+    })
+    await flushPromises()
+    const modal = wrapper.getComponent(UserConcurrencyRulesModal)
+    expect(modal.props('show')).toBe(false)
+    await wrapper.get('[data-testid="concurrency-rules-button"]').trigger('click')
+    expect(modal.props('show')).toBe(true)
+    listUsers.mockClear()
+    modal.vm.$emit('success')
+    await flushPromises()
+    expect(listUsers).toHaveBeenCalledTimes(1)
+    modal.vm.$emit('close')
+    await flushPromises()
+    expect(modal.props('show')).toBe(false)
   })
 
   it('shows active, used, and created activity columns in order and requests last_used_at sort', async () => {

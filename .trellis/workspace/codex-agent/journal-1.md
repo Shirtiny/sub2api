@@ -542,3 +542,53 @@ only the authorized 4178 preview; local/external HTTP 200. See verification log.
 - User authorized commit/tag/push of the subscription-first and balance-tier concurrency implementation and the simplified bilingual tooltip. Publish the reviewed work on custom-prod as cafecode-v0.0.102.
 - Existing full UTC backend tests, PostgreSQL/Redis integration and backend diff lint passed. Frontend full suite plus final tooltip/profile regressions, lint, typecheck/build and desktop/mobile bilingual browser checks passed. Migration 207 matches the already-applied isolated-test checksum.
 - Isolated test environment remains current and healthy; no runtime changes in this publication step. Exclude unrelated artwork, scratch files and operational exports. No production deployment is authorized by this publication request.
+
+## 2026-09-26 — Administrator-configurable balance concurrency
+
+- Added Users → Concurrency rules with contiguous lower-bound tiers, admin-only
+  GET/PUT, strict input validation, atomic JSON settings persistence, and dynamic
+  profile tooltip. Defaults remain 0/20/100 → 1/2/3; active subscription priority
+  and legacy fallback are unchanged. No schema migration or mass user updates.
+- Shared per-instance policy cache feeds profile/admin sorting/HTTP auth and
+  retained WS turns; rule updates bypass old auth snapshots. Serialized reads and
+  writes prevent a delayed refresh overwriting a successful save. WS refreshes
+  asynchronously, rejects after 30 seconds of stale settings, and does not block
+  admission on a database fallback.
+- Tests: full backend unit suite (UTC), focused race tests, PostgreSQL/Redis
+  integration and single-tier sorting all passed; backend lint 0 issues. Frontend
+  full 179 files / 1483 tests passed; final focused 40 tests, typecheck/build and
+  lint passed (12 existing unrelated lint warnings). Browser verifies admin-only
+  access, failed writes, persistence, actual profile limit update, defaults restore,
+  desktop/mobile zh/en and dark/light. Corrected mobile users-page inline tooltip
+  overflow discovered during browser verification.
+- Isolated 4178 backend/frontend updated to 0.0.102-local-concurrency-rules.
+  Six users, 15 orders, balances, unrelated settings and 236 migrations retained;
+  test DB/Redis not restarted. Fake payments/no-mail/internal network preserved.
+  Production untouched; no commit/tag/push requested.
+- Evidence/backups: /opt/stacks/sub2api-test/artifacts/concurrency-rules-20260926T060607Z/.
+
+### Follow-up — concurrency-rule review fixes
+
+- Fixed healthy idle WS disconnections by proactively refreshing policy on a
+  service-lifecycle worker. A virtual-clock test advances a full idle minute and
+  observes a remote limit reduction; genuine failures still cannot extend the
+  30-second last-success deadline, and retained turns never wait on database IO.
+- Coalesced concurrent refreshes with independent 3-second contexts, cancelable
+  caller waits and a 1-second error cooldown. Context-aware read/write exclusion
+  preserves immediate saves without unbounded mutex waits. Covered initiating
+  caller/follower cancellation, failure recovery, save cancellation/races and
+  idempotent background shutdown.
+- HTTP auth now skips balance rules and balance reads for active subscriptions;
+  cold and cached auth preserve subscription priority. Expiry returns to current
+  rules and live balance without mutating shared auth snapshots.
+- Checks passed: full UTC backend unit suite, focused race tests repeated three
+  times, disposable PostgreSQL/Redis integration, backend lint (0 issues), and
+  test-browser admin authorization/validation/save/profile/sorting checks at
+  1440px zh/dark and 390px zh/dark + en/light.
+- Updated only isolated test app to 0.0.102-local-concurrency-rules-fix. Existing
+  frontend already matches the working tree and its hash is unchanged. Six users,
+  15 orders, 236 migrations, balances and all settings (including the user's
+  0/20/100/300 → 1/2/3/4 policy) are preserved. DB/Redis not restarted; internal
+  network, fake payments and no-email isolation verified. Production untouched;
+  no commit/tag/push requested.
+- Evidence/backups: /opt/stacks/sub2api-test/artifacts/concurrency-rules-fix-20260926T075620Z/.

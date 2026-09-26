@@ -221,6 +221,7 @@ type RateLimitCacheInvalidator interface {
 }
 
 type APIKeyService struct {
+	concurrencySettings   *SettingService
 	apiKeyRepo            APIKeyRepository
 	userRepo              UserRepository
 	groupRepo             GroupRepository
@@ -362,16 +363,27 @@ func (s *APIKeyService) SetUserBalanceReader(reader UserBalanceReader) {
 // Auth snapshots can outlive many usage deductions. Resolve balance tiers from
 // the billing cache (DB fallback on a miss), never from a stale auth snapshot.
 func (s *APIKeyService) refreshConcurrencyBalance(ctx context.Context, apiKey *APIKey) error {
-	if s.userBalanceReader == nil || apiKey == nil || apiKey.User == nil ||
-		apiKey.User.ActiveSubscriptionConcurrencyAt(time.Now()) > 0 {
+	if apiKey == nil || apiKey.User == nil {
 		return nil
 	}
-	balance, err := s.userBalanceReader.GetUserBalance(ctx, apiKey.User.ID)
+	// Active subscriptions own their concurrency policy. A balance-rules outage
+	// must not reject these users; expired subscriptions take the balance path.
+	if apiKey.User.ActiveSubscriptionConcurrencyAt(time.Now()) > 0 {
+		return nil
+	}
+	rules, err := s.concurrencySettings.GetUserConcurrencyRules(ctx)
 	if err != nil {
-		return fmt.Errorf("resolve concurrency balance: %w", err)
+		return err
 	}
 	user := *apiKey.User
-	user.Balance = balance
+	user.BalanceConcurrencyRules = rules.BalanceTiers
+	if s.userBalanceReader != nil {
+		balance, err := s.userBalanceReader.GetUserBalance(ctx, user.ID)
+		if err != nil {
+			return fmt.Errorf("resolve concurrency balance: %w", err)
+		}
+		user.Balance = balance
+	}
 	apiKey.User = &user
 	return nil
 }

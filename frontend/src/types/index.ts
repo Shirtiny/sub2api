@@ -63,6 +63,11 @@ export interface UserProfileSourceContext {
   provider_label?: string | null
 }
 
+export interface BalanceConcurrencyTier {
+  min_balance: number
+  concurrency: number
+}
+
 export interface User {
   id: number
   username: string
@@ -90,7 +95,8 @@ export interface User {
   membership_level?: number // Membership level derived from points
   concurrency: number // Current allowed concurrent requests
   base_concurrency?: number // Persisted per-user limit set by admins or concurrency redeem codes
-  effective_concurrency?: number // Current limit: max of base_concurrency and active plan entitlements
+  effective_concurrency?: number // Current limit: active subscription priority, otherwise balance rules
+  balance_concurrency_rules?: BalanceConcurrencyTier[] // Current global balance policy; balance uses account $ units
   rpm_limit?: number // User-level RPM cap (0 = unlimited); effective as fallback when group has no rpm_limit
   status: 'active' | 'disabled' // Account status
   allowed_groups: number[] | null // Allowed group IDs (null = all non-exclusive groups)

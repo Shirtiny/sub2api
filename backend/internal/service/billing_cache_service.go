@@ -99,6 +99,7 @@ type apiKeyRateLimitLoader interface {
 // BillingCacheService 计费缓存服务
 // 负责余额和订阅数据的缓存管理，提供高性能的计费资格检查
 type BillingCacheService struct {
+	concurrencySettings   *SettingService
 	cache                 BillingCache
 	userRepo              UserRepository
 	subRepo               UserSubscriptionRepository
@@ -303,7 +304,7 @@ func (s *BillingCacheService) logCacheWriteDrop(task cacheWriteTask, reason stri
 // ============================================
 
 // EffectiveConcurrencyCacheOnly re-evaluates each retained WebSocket turn
-// without a DB read or mutating its shared authentication snapshot. A missing
+// without blocking on a DB read or mutating its shared authentication snapshot. A missing
 // balance requires reconnect/cold hydration rather than granting stale slots.
 func (s *BillingCacheService) EffectiveConcurrencyCacheOnly(ctx context.Context, user *User, now time.Time) (int, error) {
 	if user == nil {
@@ -312,8 +313,16 @@ func (s *BillingCacheService) EffectiveConcurrencyCacheOnly(ctx context.Context,
 	if concurrency := user.ActiveSubscriptionConcurrencyAt(now); concurrency > 0 {
 		return concurrency, nil
 	}
+	var settings *SettingService
+	if s != nil {
+		settings = s.concurrencySettings
+	}
+	rules, err := settings.CachedUserConcurrencyRules()
+	if err != nil {
+		return 0, billingCacheOnlyUnavailable("concurrency rules cache miss", err)
+	}
 	if s != nil && s.cfg != nil && s.cfg.RunMode == config.RunModeSimple {
-		return user.EffectiveConcurrencyAt(now), nil
+		return balanceConcurrencyWithRules(user.Balance, rules.BalanceTiers), nil
 	}
 	if s == nil || s.cache == nil {
 		return 0, billingCacheOnlyUnavailable("billing cache is unavailable", nil)
@@ -322,7 +331,7 @@ func (s *BillingCacheService) EffectiveConcurrencyCacheOnly(ctx context.Context,
 	if err != nil {
 		return 0, billingCacheOnlyUnavailable("balance cache miss", err)
 	}
-	return BalanceConcurrency(balance), nil
+	return balanceConcurrencyWithRules(balance, rules.BalanceTiers), nil
 }
 
 // GetUserBalance 获取用户余额（优先从缓存读取）

@@ -1,7 +1,13 @@
-import { mount } from '@vue/test-utils'
-import { describe, expect, it, vi } from 'vitest'
+import { enableAutoUnmount, mount } from '@vue/test-utils'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import ProfileInfoCard from '@/components/user/profile/ProfileInfoCard.vue'
 import type { User } from '@/types'
+import en from '@/i18n/locales/en'
+import zh from '@/i18n/locales/zh'
+
+enableAutoUnmount(afterEach)
+let testLocale: 'en' | 'zh' = 'en'
+afterEach(() => { testLocale = 'en'; vi.useRealTimers() })
 
 vi.mock('vue-router', () => ({
   useRoute: () => ({
@@ -28,6 +34,11 @@ vi.mock('vue-i18n', async (importOriginal) => {
     ...actual,
     useI18n: () => ({
       t: (key: string, params?: Record<string, string>) => {
+        if (key.startsWith('profile.concurrencyRules.')) {
+          const messages = (testLocale === 'zh' ? zh : en).profile.concurrencyRules
+          const message = messages[key.split('.').pop() as keyof typeof messages]
+          return message.replace(/\{(\w+)\}/g, (_, name: string) => params?.[name] ?? '')
+        }
         if (key === 'profile.accountBalance') return 'Account Balance'
         if (key === 'profile.concurrencyLimit') return 'Concurrency Limit'
         if (key === 'profile.memberSince') return 'Member Since'
@@ -77,7 +88,7 @@ describe('ProfileInfoCard', () => {
       global: { stubs: { Icon: true } }
     })
     const help = wrapper.get('[data-testid="profile-concurrency-help"]')
-    expect(help.attributes('aria-label')).toBe('profile.concurrencyRules.title')
+    expect(help.attributes('aria-label')).toBe('Concurrency rules')
     expect(wrapper.get('[data-testid="profile-overview-metric-concurrency"]').text()).toContain('1')
     const rules = document.querySelector('[data-testid="profile-concurrency-rules"]')!
     const tooltip = rules.closest('[role="tooltip"]') as HTMLElement
@@ -85,11 +96,49 @@ describe('ProfileInfoCard', () => {
     help.element.parentElement!.dispatchEvent(new MouseEvent('mouseenter'))
     await vi.advanceTimersByTimeAsync(100)
     expect(tooltip.style.display).not.toBe('none')
-    for (const key of ['subscription', 'balance', 'high', 'medium', 'low', 'note']) {
-      expect(rules.textContent).toContain(`profile.concurrencyRules.${key}`)
+    for (const key of ['subscription', 'balance', 'note'] as const) {
+      expect(rules.textContent).toContain(en.profile.concurrencyRules[key])
     }
+    expect(rules.textContent).toContain('$0 ≤ balance < $20')
+    expect(rules.textContent).toContain('$20 ≤ balance < $100')
+    expect(rules.textContent).toContain('Balance ≥ $100 (no upper bound)')
     wrapper.unmount()
     vi.useRealTimers()
+  })
+
+  it.each(['en', 'zh'] as const)('shows custom bounds and concurrency in %s using account dollars, with subscription priority', async locale => {
+    testLocale = locale
+    const wrapper = mount(ProfileInfoCard, {
+      props: { user: createUser({ balance_concurrency_rules: [
+        { min_balance: 0, concurrency: 4 }, { min_balance: 7.125, concurrency: 9 }, { min_balance: 250, concurrency: 16 }
+      ] }) },
+      global: { stubs: { Icon: true } }
+    })
+    // Click works on touch devices as well as with the keyboard-activatable button.
+    await wrapper.get('[data-testid="profile-concurrency-help"]').trigger('click')
+    const rules = document.querySelector('[data-testid="profile-concurrency-rules"]')!
+    const tiers = Array.from(rules.querySelectorAll('[data-testid="profile-concurrency-tier"]'))
+    expect(tiers).toHaveLength(3)
+    expect(tiers[0].textContent).toContain(locale === 'en' ? '$0 ≤ balance < $7.125' : '$0 ≤ 余额 < $7.125')
+    expect(tiers[1].textContent).toContain(locale === 'en' ? '$7.125 ≤ balance < $250' : '$7.125 ≤ 余额 < $250')
+    expect(tiers[2].textContent).toContain(locale === 'en' ? 'Balance ≥ $250 (no upper bound)' : '余额 ≥ $250（无上限）')
+    expect(tiers.map(tier => tier.lastElementChild?.textContent)).toEqual(['4', '9', '16'])
+    expect(rules.textContent).toContain((locale === 'en' ? en : zh).profile.concurrencyRules.subscription)
+    expect(rules.textContent).not.toMatch(/legacy|历史订阅|旧订阅|RMB|人民币|¥|\$20\b|\$100\b/)
+    expect((rules.closest('[role="tooltip"]') as HTMLElement).style.display).not.toBe('none')
+
+    await wrapper.setProps({ user: createUser({ balance_concurrency_rules: [{ min_balance: 0, concurrency: 30 }] }) })
+    expect(rules.querySelectorAll('[data-testid="profile-concurrency-tier"]')).toHaveLength(1)
+    expect(rules.textContent).toContain(locale === 'en' ? 'Balance ≥ $0 (no upper bound)' : '余额 ≥ $0（无上限）')
+    expect(rules.textContent).toContain('30')
+  })
+
+  it('does not substitute legacy defaults for an explicitly present empty rules array', () => {
+    mount(ProfileInfoCard, {
+      props: { user: createUser({ balance_concurrency_rules: [] }) },
+      global: { stubs: { Icon: true } }
+    })
+    expect(document.querySelectorAll('[data-testid="profile-concurrency-tier"]')).toHaveLength(0)
   })
 
   it('renders basic account information inside the new overview shell', () => {

@@ -4,7 +4,21 @@
  */
 
 import { apiClient } from '../client'
-import type { AdminUser, UpdateUserRequest, PaginatedResponse, ApiKey } from '@/types'
+import type { AdminUser, UpdateUserRequest, PaginatedResponse, ApiKey, BalanceConcurrencyTier } from '@/types'
+
+export interface BalanceConcurrencyRules {
+  balance_tiers: BalanceConcurrencyTier[]
+}
+
+export async function getConcurrencyRules(signal?: AbortSignal): Promise<BalanceConcurrencyRules> {
+  const { data } = await apiClient.get<BalanceConcurrencyRules>('/admin/users/concurrency-rules', { signal })
+  return data
+}
+
+export async function updateConcurrencyRules(rules: BalanceConcurrencyRules): Promise<BalanceConcurrencyRules> {
+  const { data } = await apiClient.put<BalanceConcurrencyRules>('/admin/users/concurrency-rules', rules)
+  return data
+}
 
 export interface AdminBindAuthIdentityChannelRequest {
   channel: string
@@ -419,6 +433,8 @@ export const usersAPI = {
   updateBalance,
   updateMembershipPoints,
   updateConcurrency,
+  getConcurrencyRules,
+  updateConcurrencyRules,
   toggleStatus,
   getUserApiKeys,
   getUserUsageStats,

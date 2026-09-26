@@ -11,3 +11,5 @@
 - Journal 1: model collection redesign and channel list-price multipliers (2026-09-26; release cafecode-v0.0.101, test updated, production not deployed).
 
 - Journal 1: subscription-first and dynamic balance-tier concurrency; profile tooltip; isolated test refreshed, production unchanged (2026-09-26, release cafecode-v0.0.102).
+- Journal 1: configurable global balance concurrency in Users; backend enforcement and dynamic profile tooltip; isolated test verified, production untouched (2026-09-26).
+- Journal 1: concurrency review fixes — proactive idle refresh, cancelable/coalesced failure handling, subscription isolation; test refreshed and verified (2026-09-26).

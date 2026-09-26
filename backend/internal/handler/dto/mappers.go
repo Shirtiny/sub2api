@@ -13,6 +13,10 @@ func UserFromServiceShallow(u *service.User) *User {
 		return nil
 	}
 	effectiveConcurrency := u.EffectiveConcurrencyAt(time.Now())
+	rules := u.BalanceConcurrencyRules
+	if len(rules) == 0 {
+		rules = service.DefaultBalanceConcurrencyRules()
+	}
 	return &User{
 		ID:                         u.ID,
 		Email:                      u.Email,
@@ -22,6 +26,7 @@ func UserFromServiceShallow(u *service.User) *User {
 		Concurrency:                u.Concurrency,
 		BaseConcurrency:            u.Concurrency,
 		EffectiveConcurrency:       effectiveConcurrency,
+		BalanceConcurrencyRules:    rules,
 		Status:                     u.Status,
 		AllowedGroups:              u.AllowedGroups,
 		LastActiveAt:               u.LastActiveAt,

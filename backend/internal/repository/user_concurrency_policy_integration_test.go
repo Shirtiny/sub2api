@@ -120,3 +120,63 @@ func TestUserConcurrencyPolicyPostgresAndRedis(t *testing.T) {
 		})
 	}
 }
+
+func TestConfiguredConcurrencyRulesPostgresSortAndHydration(t *testing.T) {
+	ctx := context.Background()
+	repo := newUserRepositoryWithSQL(integrationEntClient, integrationDB)
+	settings := service.NewSettingService(NewSettingRepository(integrationEntClient), nil)
+	repo.concurrencySettings = settings
+	previous, previousErr := NewSettingRepository(integrationEntClient).GetValue(ctx, service.SettingKeyUserConcurrencyRules)
+	t.Cleanup(func() {
+		if previousErr == nil {
+			_ = NewSettingRepository(integrationEntClient).Set(ctx, service.SettingKeyUserConcurrencyRules, previous)
+		} else {
+			_ = NewSettingRepository(integrationEntClient).Delete(ctx, service.SettingKeyUserConcurrencyRules)
+		}
+	})
+	rules := service.UserConcurrencyRules{BalanceTiers: []service.BalanceConcurrencyRule{{MinBalance: 0, Concurrency: 6}, {MinBalance: 20, Concurrency: 2}, {MinBalance: 100, Concurrency: 4}}}
+	require.NoError(t, settings.SetUserConcurrencyRules(ctx, rules))
+	prefix := fmt.Sprintf("configured-policy-%d", time.Now().UnixNano())
+	for i, balance := range []float64{0, 19.99, 20, 99.99, 100} {
+		user := &service.User{Email: fmt.Sprintf("%s-%d@example.com", prefix, i), PasswordHash: "hash", Role: service.RoleUser, Status: service.StatusActive, Balance: balance, Concurrency: 32}
+		require.NoError(t, repo.Create(ctx, user))
+		t.Cleanup(func() { _, _ = integrationDB.ExecContext(ctx, "DELETE FROM users WHERE id=$1", user.ID) })
+		require.Equal(t, rules.BalanceTiers, user.BalanceConcurrencyRules)
+		got, err := repo.GetByID(ctx, user.ID)
+		require.NoError(t, err)
+		want := []int{6, 6, 2, 2, 4}[i]
+		require.Equal(t, want, got.EffectiveConcurrencyAt(time.Now()))
+		require.Equal(t, rules.BalanceTiers, got.BalanceConcurrencyRules)
+	}
+	for _, direction := range []string{"asc", "desc"} {
+		users, _, err := repo.ListWithFilters(ctx, pagination.PaginationParams{Page: 1, PageSize: 100, SortBy: "concurrency", SortOrder: direction}, service.UserListFilters{Search: prefix})
+		require.NoError(t, err)
+		require.Len(t, users, 5)
+		for i := 1; i < len(users); i++ {
+			a, b := users[i-1].EffectiveConcurrencyAt(time.Now()), users[i].EffectiveConcurrencyAt(time.Now())
+			if direction == "asc" {
+				require.LessOrEqual(t, a, b)
+			} else {
+				require.GreaterOrEqual(t, a, b)
+			}
+		}
+	}
+}
+
+func TestSingleConfiguredConcurrencyTierSort(t *testing.T) {
+	ctx := context.Background()
+	settings := service.NewSettingService(NewSettingRepository(integrationEntClient), nil)
+	repo := newUserRepositoryWithSQL(integrationEntClient, integrationDB)
+	repo.concurrencySettings = settings
+	previous, err := NewSettingRepository(integrationEntClient).GetValue(ctx, service.SettingKeyUserConcurrencyRules)
+	t.Cleanup(func() {
+		if err == nil {
+			_ = NewSettingRepository(integrationEntClient).Set(ctx, service.SettingKeyUserConcurrencyRules, previous)
+		} else {
+			_ = NewSettingRepository(integrationEntClient).Delete(ctx, service.SettingKeyUserConcurrencyRules)
+		}
+	})
+	require.NoError(t, settings.SetUserConcurrencyRules(ctx, service.UserConcurrencyRules{BalanceTiers: []service.BalanceConcurrencyRule{{MinBalance: 0, Concurrency: 3}}}))
+	_, _, sortErr := repo.ListWithFilters(ctx, pagination.PaginationParams{Page: 1, PageSize: 1, SortBy: "concurrency"}, service.UserListFilters{})
+	require.NoError(t, sortErr)
+}

@@ -82,19 +82,20 @@
                         type="button"
                         data-testid="profile-concurrency-help"
                         :aria-label="t('profile.concurrencyRules.title')"
+                        aria-describedby="profile-concurrency-rules-content"
                         class="inline-flex cursor-help rounded-full p-0.5 text-content-tertiary transition-colors hover:text-content-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
                       >
                         <Icon name="questionCircle" size="sm" />
                       </button>
                     </template>
-                    <div class="space-y-2.5 normal-case tracking-normal" data-testid="profile-concurrency-rules">
+                    <div id="profile-concurrency-rules-content" class="max-h-[60vh] space-y-2.5 overflow-y-auto normal-case tracking-normal" data-testid="profile-concurrency-rules">
                       <p class="font-semibold">{{ t('profile.concurrencyRules.title') }}</p>
                       <p>{{ t('profile.concurrencyRules.subscription') }}</p>
                       <div class="border-t border-white/15 pt-2">
                         <p class="mb-1.5 text-gray-300">{{ t('profile.concurrencyRules.balance') }}</p>
-                        <div v-for="tier in ['high', 'medium', 'low'] as const" :key="tier" class="flex justify-between gap-3 py-0.5">
-                          <span>{{ t(`profile.concurrencyRules.${tier}`) }}</span>
-                          <span class="font-semibold tabular-nums">{{ tier === 'high' ? 3 : tier === 'medium' ? 2 : 1 }}</span>
+                        <div v-for="tier in balanceConcurrencyTiers" :key="tier.min_balance" class="flex justify-between gap-3 py-0.5" data-testid="profile-concurrency-tier">
+                          <span>{{ tier.label }}</span>
+                          <span class="shrink-0 font-semibold tabular-nums">{{ tier.concurrency }}</span>
                         </div>
                       </div>
                       <p class="border-t border-white/15 pt-2 text-gray-300">{{ t('profile.concurrencyRules.note') }}</p>
@@ -233,6 +234,20 @@ const props = withDefaults(defineProps<{
 })
 
 const { t } = useI18n()
+
+const balanceConcurrencyTiers = computed(() => {
+  // Compatibility with older profile responses only; an explicit array is authoritative.
+  const tiers = props.user?.balance_concurrency_rules === undefined
+    ? [{ min_balance: 0, concurrency: 1 }, { min_balance: 20, concurrency: 2 }, { min_balance: 100, concurrency: 3 }]
+    : props.user.balance_concurrency_rules
+  return tiers.map((tier, index) => ({
+    ...tier,
+    label: t(index + 1 < tiers.length ? 'profile.concurrencyRules.interval' : 'profile.concurrencyRules.unbounded', {
+      min: `$${tier.min_balance}`,
+      max: index + 1 < tiers.length ? `$${tiers[index + 1].min_balance}` : ''
+    })
+  }))
+})
 
 function normalizeBindingStatus(binding: boolean | UserAuthBindingStatus | undefined): boolean | null {
   if (typeof binding === 'boolean') {
