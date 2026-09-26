@@ -196,16 +196,12 @@ func (r *apiKeyRepository) GetByKeyForAuth(ctx context.Context, key string) (*se
 					usersubscription.StatusEQ(service.SubscriptionStatusActive),
 					usersubscription.ExpiresAtGT(now),
 					usersubscription.DeletedAtIsNil(),
-					usersubscription.PlanConcurrencyNotNil(),
-					usersubscription.Or(
-						usersubscription.PlanConcurrencyExpiresAtIsNil(),
-						usersubscription.PlanConcurrencyExpiresAtGT(now),
-					),
 				).Select(
 					usersubscription.FieldStartsAt,
 					usersubscription.FieldExpiresAt,
 					usersubscription.FieldPlanConcurrency,
 					usersubscription.FieldPlanConcurrencyExpiresAt,
+					usersubscription.FieldCustomExpiresAt,
 				)
 			}).WithSubscriptionConcurrencyEntitlements(func(eq *dbent.SubscriptionConcurrencyEntitlementQuery) {
 				eq.Where(
@@ -222,6 +218,7 @@ func (r *apiKeyRepository) GetByKeyForAuth(ctx context.Context, key string) (*se
 					subscriptionconcurrencyentitlement.FieldExpiresAt,
 				).WithSubscription(func(sq *dbent.UserSubscriptionQuery) {
 					sq.Select(
+						usersubscription.FieldStartsAt,
 						usersubscription.FieldExpiresAt,
 						usersubscription.FieldCustomExpiresAt,
 					)
@@ -1022,6 +1019,9 @@ func userEntityToService(u *dbent.User) *service.User {
 		out.BalanceNotifyExtraEmails = service.ParseNotifyEmails(u.BalanceNotifyExtraEmails)
 	}
 	for _, sub := range u.Edges.Subscriptions {
+		out.SubscriptionPeriods = append(out.SubscriptionPeriods, service.SubscriptionPeriod{
+			SubscriptionID: sub.ID, StartsAt: sub.StartsAt, ExpiresAt: normalizeSubscriptionExpiresAt(sub.ExpiresAt),
+		})
 		if sub.PlanConcurrency == nil || *sub.PlanConcurrency <= 0 {
 			continue
 		}

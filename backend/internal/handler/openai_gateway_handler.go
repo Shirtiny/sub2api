@@ -1894,12 +1894,16 @@ func (h *OpenAIGatewayHandler) ResponsesWebSocket(c *gin.Context) {
 				if err := turnFinalizer.WaitPreviousRelease(ctx); err != nil {
 					return service.NewOpenAIWSClientCloseError(coderws.StatusTryAgainLater, "previous websocket turn finalization failed", err)
 				}
+				concurrency, err := h.billingCacheService.EffectiveConcurrencyCacheOnly(ctx, apiKey.User, time.Now())
+				if err != nil {
+					return service.NewOpenAIWSClientCloseError(coderws.StatusTryAgainLater, "concurrency balance unavailable; reconnect", err)
+				}
 				if err := turnFinalizer.Reserve(ctx, h.usageRecordWorkerPool); err != nil {
 					return service.NewOpenAIWSClientCloseError(coderws.StatusTryAgainLater, "websocket usage finalizer is busy", err)
 				}
 				// Non-first turns reacquire both slots only after finalizer capacity
 				// is reserved; idle sockets therefore hold no inference permits.
-				userReleaseFunc, userAcquired, err := h.concurrencyHelper.TryAcquireUserSlot(ctx, subject.UserID, apiKey.User.EffectiveConcurrencyAt(time.Now()))
+				userReleaseFunc, userAcquired, err := h.concurrencyHelper.TryAcquireUserSlot(ctx, subject.UserID, concurrency)
 				if err != nil {
 					turnFinalizer.AbortCurrent()
 					return service.NewOpenAIWSClientCloseError(coderws.StatusInternalError, "failed to acquire user concurrency slot", err)

@@ -90,6 +90,19 @@ Key conventions observed in the codebase:
 - Host and client IP must be captured using the configured trusted proxy chain before asynchronous usage recording. See `docs/USAGE_REQUEST_ORIGIN.md` for the cross-layer contract and rollout prerequisites.
 - Users may see `request_host` and `ip_address` only for their own usage rows. Keep existing ownership checks and all unrelated administrator-only metadata boundaries intact.
 
+## Effective user concurrency
+
+- Active subscription grants determine the maximum (not their sum); only without
+  active subscriptions do current-balance tiers apply. The persisted user field
+  is not an override or minimum. See `docs/USER_CONCURRENCY.md`.
+- Keep profile/admin sorting and API-key/WS enforcement aligned. Auth snapshots
+  must retain subscription dates, while balance-based admission reads the billing
+  cache rather than an old auth snapshot. Retained WS turns remain DB-free and
+  fail closed on a missing required cache entry.
+- User configuration normalization belongs in a new migration with a deployment
+  backup; never alter subscription quotas, balances or historical grant windows
+  merely to change the concurrency policy.
+
 ## Calendar-month presale entitlements
 
 - A completed presale payment is a pending entitlement, not an immediately usable

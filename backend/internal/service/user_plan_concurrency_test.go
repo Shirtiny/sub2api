@@ -22,7 +22,7 @@ func TestUserEffectiveConcurrencyAtUsesHighestActivePlan(t *testing.T) {
 	require.Equal(t, 8, user.EffectiveConcurrencyAt(now))
 }
 
-func TestUserEffectiveConcurrencyAtKeepsHigherUserConcurrency(t *testing.T) {
+func TestUserEffectiveConcurrencyAtSubscriptionReplacesUserConcurrency(t *testing.T) {
 	now := time.Date(2026, 7, 21, 12, 0, 0, 0, time.UTC)
 	user := &User{
 		Concurrency: 32,
@@ -31,7 +31,7 @@ func TestUserEffectiveConcurrencyAtKeepsHigherUserConcurrency(t *testing.T) {
 		},
 	}
 
-	require.Equal(t, 32, user.EffectiveConcurrencyAt(now))
+	require.Equal(t, 4, user.EffectiveConcurrencyAt(now))
 }
 
 func TestUserEffectiveConcurrencyAtUsesLatestTermPerSubscription(t *testing.T) {
@@ -51,10 +51,11 @@ func TestUserEffectiveConcurrencyAtUsesLatestTermPerSubscription(t *testing.T) {
 	require.Equal(t, 8, user.EffectiveConcurrencyAt(now))
 }
 
-func TestUserEffectiveConcurrencyAtFallsBackAfterPlanExpiry(t *testing.T) {
+func TestUserEffectiveConcurrencyAtFallsBackToBalanceAfterPlanExpiry(t *testing.T) {
 	now := time.Date(2026, 7, 21, 12, 0, 0, 0, time.UTC)
 	user := &User{
-		Concurrency: 3,
+		Concurrency: 32,
+		Balance:     100,
 		PlanConcurrencyEntitlements: []PlanConcurrencyEntitlement{
 			{Concurrency: 10, StartsAt: now.Add(-2 * time.Hour), ExpiresAt: now},
 			{Concurrency: 20, StartsAt: now.Add(time.Minute), ExpiresAt: now.Add(time.Hour)},

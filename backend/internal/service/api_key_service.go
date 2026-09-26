@@ -228,6 +228,7 @@ type APIKeyService struct {
 	userGroupRateRepo     UserGroupRateRepository
 	cache                 APIKeyCache
 	rateLimitCacheInvalid RateLimitCacheInvalidator // optional: invalidate Redis rate limit cache
+	userBalanceReader     UserBalanceReader
 	cfg                   *config.Config
 	authCacheL1           *ristretto.Cache
 	authCacheEpochs       sync.Map // cache key -> *atomic.Uint64
@@ -348,6 +349,31 @@ func NewAPIKeyService(
 // Called after construction (e.g. in wire) to avoid circular dependencies.
 func (s *APIKeyService) SetRateLimitCacheInvalidator(inv RateLimitCacheInvalidator) {
 	s.rateLimitCacheInvalid = inv
+}
+
+type UserBalanceReader interface {
+	GetUserBalance(ctx context.Context, userID int64) (float64, error)
+}
+
+func (s *APIKeyService) SetUserBalanceReader(reader UserBalanceReader) {
+	s.userBalanceReader = reader
+}
+
+// Auth snapshots can outlive many usage deductions. Resolve balance tiers from
+// the billing cache (DB fallback on a miss), never from a stale auth snapshot.
+func (s *APIKeyService) refreshConcurrencyBalance(ctx context.Context, apiKey *APIKey) error {
+	if s.userBalanceReader == nil || apiKey == nil || apiKey.User == nil ||
+		apiKey.User.ActiveSubscriptionConcurrencyAt(time.Now()) > 0 {
+		return nil
+	}
+	balance, err := s.userBalanceReader.GetUserBalance(ctx, apiKey.User.ID)
+	if err != nil {
+		return fmt.Errorf("resolve concurrency balance: %w", err)
+	}
+	user := *apiKey.User
+	user.Balance = balance
+	apiKey.User = &user
+	return nil
 }
 
 func (s *APIKeyService) compileAPIKeyIPRules(apiKey *APIKey) {
@@ -614,7 +640,14 @@ func (s *APIKeyService) GetByID(ctx context.Context, id int64) (*APIKey, error) 
 }
 
 func (s *APIKeyService) GetByKey(ctx context.Context, key string) (*APIKey, error) {
-	return s.getByKeyOnce(ctx, key)
+	apiKey, err := s.getByKeyOnce(ctx, key)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.refreshConcurrencyBalance(ctx, apiKey); err != nil {
+		return nil, err
+	}
+	return apiKey, nil
 }
 
 // GetByKeyWithAuthEpochLease is the WS-only cold admission path. It fences a
@@ -642,6 +675,9 @@ func (s *APIKeyService) GetByKeyWithAuthEpochLease(ctx context.Context, key stri
 			return nil, fmt.Errorf("validate persistent auth epoch: %w", validateErr)
 		}
 		if valid {
+			if err := s.refreshConcurrencyBalance(ctx, apiKey); err != nil {
+				return nil, err
+			}
 			apiKey.AuthEpochLease = lease
 			return apiKey, nil
 		}

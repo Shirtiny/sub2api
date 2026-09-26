@@ -20,11 +20,10 @@ type User struct {
 	Role           string
 	Balance        float64
 	Concurrency    int
-	// PlanConcurrencyEntitlements are transient auth-time snapshots. They are
-	// not stored on users; active subscription terms raise the effective limit
-	// above Concurrency and automatically stop applying at their own expiration
-	// time. They never lower it — see EffectiveConcurrencyAt.
+	// Subscription snapshots are not stored on users. Only currently effective
+	// terms count; pending presales do not grant concurrency.
 	PlanConcurrencyEntitlements []PlanConcurrencyEntitlement
+	SubscriptionPeriods         []SubscriptionPeriod
 	Status                      string
 	AllowedGroups               []int64
 	TokenVersion                int64 // Incremented on password change to invalidate existing tokens
@@ -76,13 +75,47 @@ type PlanConcurrencyEntitlement struct {
 	ExpiresAt      time.Time `json:"expires_at"`
 }
 
-// EffectiveConcurrencyAt returns the highest of the user's persisted
-// concurrency and every active plan entitlement. Plan entitlements are a floor,
-// not a cap: admin adjustments and concurrency redeem codes write the persisted
-// value, so a plan must never shrink a limit that was granted per user.
+const DefaultUserConcurrency = 2
+
+// SubscriptionPeriod also represents legacy/admin-assigned subscriptions that
+// do not have a plan concurrency grant. Those subscriptions use the default 2.
+type SubscriptionPeriod struct {
+	SubscriptionID int64     `json:"subscription_id"`
+	StartsAt       time.Time `json:"starts_at"`
+	ExpiresAt      time.Time `json:"expires_at"`
+}
+
+// BalanceConcurrency uses the actual account balance, not cumulative recharge
+// amounts or an exchange-rate conversion. The threshold values are inclusive.
+func BalanceConcurrency(balance float64) int {
+	switch {
+	case balance >= 100:
+		return 3
+	case balance >= 20:
+		return 2
+	default:
+		return 1
+	}
+}
+
+// EffectiveConcurrencyAt gives active subscriptions priority over balance.
+// Persisted per-user concurrency is administrative metadata, not an override.
 func (u *User) EffectiveConcurrencyAt(now time.Time) int {
 	if u == nil {
 		return 1
+	}
+	if concurrency := u.ActiveSubscriptionConcurrencyAt(now); concurrency > 0 {
+		return concurrency
+	}
+	return BalanceConcurrency(u.Balance)
+}
+
+// ActiveSubscriptionConcurrencyAt takes the maximum across subscriptions, not
+// the sum. A renewal replaces the earlier term of the same subscription.
+// Zero means there is no active subscription and balance tiers should apply.
+func (u *User) ActiveSubscriptionConcurrencyAt(now time.Time) int {
+	if u == nil {
+		return 0
 	}
 	effective := 0
 	type currentSubscriptionEntitlement struct {
@@ -114,13 +147,14 @@ func (u *User) EffectiveConcurrencyAt(now time.Time) int {
 			effective = entitlement.concurrency
 		}
 	}
-	if u.Concurrency > effective {
-		effective = u.Concurrency
+	for _, period := range u.SubscriptionPeriods {
+		if !now.Before(period.StartsAt) && now.Before(period.ExpiresAt) {
+			if _, hasGrant := currentBySubscription[period.SubscriptionID]; !hasGrant && effective < DefaultUserConcurrency {
+				effective = DefaultUserConcurrency
+			}
+		}
 	}
-	if effective > 0 {
-		return effective
-	}
-	return 1
+	return effective
 }
 
 func (u *User) IsAdmin() bool {

@@ -10,8 +10,11 @@ func planConcurrencyEntitlementToService(entitlement *dbent.SubscriptionConcurre
 		return service.PlanConcurrencyEntitlement{}, false
 	}
 
-	expiresAt := entitlement.ExpiresAt
+	startsAt, expiresAt := entitlement.StartsAt, entitlement.ExpiresAt
 	if subscription := entitlement.Edges.Subscription; subscription != nil {
+		if subscription.StartsAt.After(startsAt) {
+			startsAt = subscription.StartsAt
+		}
 		subscriptionExpiresAt := normalizeSubscriptionExpiresAt(subscription.ExpiresAt)
 		if subscriptionExpiresAt.Before(expiresAt) {
 			expiresAt = subscriptionExpiresAt
@@ -20,14 +23,14 @@ func planConcurrencyEntitlementToService(entitlement *dbent.SubscriptionConcurre
 			expiresAt = *subscription.CustomExpiresAt
 		}
 	}
-	if !entitlement.StartsAt.Before(expiresAt) {
+	if !startsAt.Before(expiresAt) {
 		return service.PlanConcurrencyEntitlement{}, false
 	}
 
 	return service.PlanConcurrencyEntitlement{
 		SubscriptionID: entitlement.SubscriptionID,
 		Concurrency:    entitlement.Concurrency,
-		StartsAt:       entitlement.StartsAt,
+		StartsAt:       startsAt,
 		ExpiresAt:      expiresAt,
 	}, true
 }

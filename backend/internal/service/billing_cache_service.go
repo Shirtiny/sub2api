@@ -302,6 +302,29 @@ func (s *BillingCacheService) logCacheWriteDrop(task cacheWriteTask, reason stri
 // 余额缓存方法
 // ============================================
 
+// EffectiveConcurrencyCacheOnly re-evaluates each retained WebSocket turn
+// without a DB read or mutating its shared authentication snapshot. A missing
+// balance requires reconnect/cold hydration rather than granting stale slots.
+func (s *BillingCacheService) EffectiveConcurrencyCacheOnly(ctx context.Context, user *User, now time.Time) (int, error) {
+	if user == nil {
+		return 0, billingCacheOnlyUnavailable("user is unavailable", nil)
+	}
+	if concurrency := user.ActiveSubscriptionConcurrencyAt(now); concurrency > 0 {
+		return concurrency, nil
+	}
+	if s != nil && s.cfg != nil && s.cfg.RunMode == config.RunModeSimple {
+		return user.EffectiveConcurrencyAt(now), nil
+	}
+	if s == nil || s.cache == nil {
+		return 0, billingCacheOnlyUnavailable("billing cache is unavailable", nil)
+	}
+	balance, err := s.cache.GetUserBalance(ctx, user.ID)
+	if err != nil {
+		return 0, billingCacheOnlyUnavailable("balance cache miss", err)
+	}
+	return BalanceConcurrency(balance), nil
+}
+
 // GetUserBalance 获取用户余额（优先从缓存读取）
 func (s *BillingCacheService) GetUserBalance(ctx context.Context, userID int64) (float64, error) {
 	if s.cache == nil {

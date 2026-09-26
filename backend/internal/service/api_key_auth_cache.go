@@ -36,6 +36,7 @@ type APIKeyAuthUserSnapshot struct {
 	Balance                     float64                      `json:"balance"`
 	Concurrency                 int                          `json:"concurrency"`
 	PlanConcurrencyEntitlements []PlanConcurrencyEntitlement `json:"plan_concurrency_entitlements,omitempty"`
+	SubscriptionPeriods         []SubscriptionPeriod         `json:"subscription_periods,omitempty"`
 
 	// Balance notification fields (required for CheckBalanceAfterDeduction)
 	Email                      string             `json:"email"`

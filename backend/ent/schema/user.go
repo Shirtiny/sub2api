@@ -50,7 +50,7 @@ func (User) Fields() []ent.Field {
 			SchemaType(map[string]string{dialect.Postgres: "decimal(20,8)"}).
 			Default(0),
 		field.Int("concurrency").
-			Default(5),
+			Default(2),
 		field.String("status").
 			MaxLen(20).
 			Default(domain.StatusActive),

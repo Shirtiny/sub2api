@@ -483,7 +483,7 @@ func TestAPIKeyService_SnapshotRoundTrip_PreservesMessagesDispatchModelConfig(t 
 	require.Equal(t, apiKey.Group.MessagesDispatchModelConfig, roundTrip.Group.MessagesDispatchModelConfig)
 }
 
-func TestAPIKeyService_SnapshotRoundTripPreservesBaseConcurrencyAcrossPlanExpiry(t *testing.T) {
+func TestAPIKeyService_SnapshotRoundTripUsesBalanceAfterSubscriptionExpiry(t *testing.T) {
 	svc := NewAPIKeyService(nil, nil, nil, nil, nil, nil, &config.Config{})
 	now := time.Now()
 	apiKey := &APIKey{
@@ -505,7 +505,7 @@ func TestAPIKeyService_SnapshotRoundTripPreservesBaseConcurrencyAcrossPlanExpiry
 	require.Equal(t, 5, roundTrip.User.Concurrency)
 	require.Equal(t, int64(42), roundTrip.User.PlanConcurrencyEntitlements[0].SubscriptionID)
 	require.Equal(t, 16, roundTrip.User.EffectiveConcurrencyAt(now))
-	require.Equal(t, 5, roundTrip.User.EffectiveConcurrencyAt(now.Add(2*time.Minute)))
+	require.Equal(t, 1, roundTrip.User.EffectiveConcurrencyAt(now.Add(2*time.Minute)))
 }
 
 func TestAPIKeyService_GetByKey_IgnoresLegacyAuthCacheSnapshotWithoutMessagesDispatchConfig(t *testing.T) {

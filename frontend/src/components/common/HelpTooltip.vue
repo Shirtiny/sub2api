@@ -14,6 +14,8 @@ const show = ref(false)
 const triggerRef = useTemplateRef<HTMLElement>('trigger')
 const tooltipRef = useTemplateRef<HTMLElement>('tooltip')
 const tooltipStyle = ref({ top: '0px', left: '0px' })
+const placement = ref<'top' | 'bottom'>('top')
+const arrowLeft = ref('50%')
 const openDelay = 80
 const closeDelay = 180
 let openTimer: number | null = null
@@ -90,7 +92,6 @@ function onTooltipLeave() {
 }
 
 function onClick(event: MouseEvent) {
-  if (props.trigger !== 'click') return
   event.stopPropagation()
   if (show.value) {
     closeTooltip()
@@ -100,7 +101,7 @@ function onClick(event: MouseEvent) {
 }
 
 function onDocumentClick(event: MouseEvent) {
-  if (props.trigger !== 'click' || !show.value) return
+  if (!show.value) return
   const target = event.target as Node | null
   if (!target) return
   if (triggerRef.value?.contains(target) || tooltipRef.value?.contains(target)) return
@@ -108,7 +109,6 @@ function onDocumentClick(event: MouseEvent) {
 }
 
 function onDocumentKeydown(event: KeyboardEvent) {
-  if (props.trigger !== 'click') return
   if (event.key === 'Escape') {
     closeTooltip()
   }
@@ -121,12 +121,22 @@ function onViewportChange() {
 
 function updatePosition() {
   const el = triggerRef.value
-  if (!el) return
+  const tooltip = tooltipRef.value
+  if (!el || !tooltip) return
   const rect = el.getBoundingClientRect()
+  const gap = 8
+  const width = tooltip.offsetWidth
+  const height = tooltip.offsetHeight
+  const center = rect.left + rect.width / 2
+  const left = Math.max(gap, Math.min(center - width / 2, window.innerWidth - width - gap))
+  placement.value = rect.top >= height + gap * 2 ? 'top' : 'bottom'
+  const top = placement.value === 'top' ? rect.top - height - gap : rect.bottom + gap
+  // Fixed positioning uses viewport coordinates; do not add page scroll offsets.
   tooltipStyle.value = {
-    top: `${rect.top + window.scrollY}px`,
-    left: `${rect.left + rect.width / 2 + window.scrollX}px`,
+    top: `${Math.max(gap, Math.min(top, window.innerHeight - height - gap))}px`,
+    left: `${left}px`,
   }
+  arrowLeft.value = `${Math.max(12, Math.min(center - left, width - 12))}px`
 }
 
 onMounted(() => {
@@ -151,6 +161,8 @@ onBeforeUnmount(() => {
     class="group relative ml-1 inline-flex items-center align-middle"
     @mouseenter="onEnter"
     @mouseleave="onLeave"
+    @focusin="onEnter"
+    @focusout="onLeave"
     @click="onClick"
   >
     <!-- Trigger Icon -->
@@ -177,10 +189,10 @@ onBeforeUnmount(() => {
         v-show="show"
         role="tooltip"
         :class="[
-          'fixed z-[99999] -translate-x-1/2 -translate-y-full rounded-lg bg-gray-900 p-3 text-xs leading-relaxed text-white shadow-xl ring-1 ring-white/10 dark:bg-gray-800',
+          'fixed z-[99999] max-w-[calc(100vw-1rem)] rounded-lg bg-gray-900 p-3 text-xs leading-relaxed text-white shadow-xl ring-1 ring-white/10 dark:bg-gray-800',
           props.widthClass,
         ]"
-        :style="{ top: `calc(${tooltipStyle.top} - 8px)`, left: tooltipStyle.left }"
+        :style="tooltipStyle"
         @mouseenter="onTooltipEnter"
         @mouseleave="onTooltipLeave"
         @click.stop
@@ -197,7 +209,11 @@ onBeforeUnmount(() => {
           </svg>
         </button>
         <slot>{{ content }}</slot>
-        <div class="absolute -bottom-1 left-1/2 h-2 w-2 -translate-x-1/2 rotate-45 bg-gray-900 dark:bg-gray-800"></div>
+        <div
+          class="absolute h-2 w-2 -translate-x-1/2 rotate-45 bg-gray-900 dark:bg-gray-800"
+          :class="placement === 'top' ? '-bottom-1' : '-top-1'"
+          :style="{ left: arrowLeft }"
+        ></div>
       </div>
     </Teleport>
   </div>

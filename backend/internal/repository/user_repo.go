@@ -585,6 +585,7 @@ func (r *userRepository) hydratePlanConcurrencyEntitlements(ctx context.Context,
 		).
 		WithSubscription(func(q *dbent.UserSubscriptionQuery) {
 			q.Select(
+				usersubscription.FieldStartsAt,
 				usersubscription.FieldExpiresAt,
 				usersubscription.FieldCustomExpiresAt,
 			)
@@ -607,18 +608,19 @@ func (r *userRepository) hydratePlanConcurrencyEntitlements(ctx context.Context,
 			usersubscription.StatusEQ(service.SubscriptionStatusActive),
 			usersubscription.ExpiresAtGT(now),
 			usersubscription.DeletedAtIsNil(),
-			usersubscription.PlanConcurrencyNotNil(),
-			usersubscription.Or(
-				usersubscription.PlanConcurrencyExpiresAtIsNil(),
-				usersubscription.PlanConcurrencyExpiresAtGT(now),
-			),
 		).
 		All(ctx)
 	if err != nil {
 		return err
 	}
 	for _, subscription := range legacySubscriptions {
-		if user := users[subscription.UserID]; user != nil && subscription.PlanConcurrency != nil {
+		if user := users[subscription.UserID]; user != nil {
+			user.SubscriptionPeriods = append(user.SubscriptionPeriods, service.SubscriptionPeriod{
+				SubscriptionID: subscription.ID, StartsAt: subscription.StartsAt, ExpiresAt: normalizeSubscriptionExpiresAt(subscription.ExpiresAt),
+			})
+			if subscription.PlanConcurrency == nil {
+				continue
+			}
 			expiresAt := normalizeSubscriptionExpiresAt(subscription.ExpiresAt)
 			if subscription.PlanConcurrencyExpiresAt != nil && subscription.PlanConcurrencyExpiresAt.Before(expiresAt) {
 				expiresAt = *subscription.PlanConcurrencyExpiresAt
@@ -711,7 +713,7 @@ func userListOrder(params pagination.PaginationParams) []func(*entsql.Selector) 
 func userEffectiveConcurrencyOrder(sortOrder string) []func(*entsql.Selector) {
 	return []func(*entsql.Selector){func(s *entsql.Selector) {
 		userID := s.C(dbuser.FieldID)
-		baseConcurrency := s.C(dbuser.FieldConcurrency)
+		balance := s.C(dbuser.FieldBalance)
 		nowExpr := "CURRENT_TIMESTAMP"
 		timestampExpr := func(column string) string { return column }
 		if s.Dialect() == entdialect.SQLite {
@@ -771,12 +773,19 @@ func userEffectiveConcurrencyOrder(sortOrder string) []func(*entsql.Selector) {
 			  AND us.plan_concurrency > 0
 			  AND (us.plan_concurrency_expires_at IS NULL OR %s > %s)
 			  AND (us.custom_expires_at IS NULL OR %s > %s)
+			  AND NOT EXISTS (
+				SELECT 1 FROM subscription_concurrency_entitlements newer
+				WHERE newer.subscription_id = us.id AND newer.concurrency > 0
+				AND %s <= %s AND %s > %s AND %s > %s
+			  )
 		)`,
 			userID,
 			timestampExpr("us.starts_at"), nowExpr,
 			timestampExpr("us.expires_at"), nowExpr,
 			timestampExpr("us.plan_concurrency_expires_at"), nowExpr,
 			timestampExpr("us.custom_expires_at"), nowExpr,
+			timestampExpr("newer.starts_at"), nowExpr, timestampExpr("newer.expires_at"), nowExpr,
+			timestampExpr("newer.starts_at"), timestampExpr("us.starts_at"),
 		)
 		greatest := "GREATEST"
 		if s.Dialect() == entdialect.SQLite {
@@ -794,10 +803,34 @@ func userEffectiveConcurrencyOrder(sortOrder string) []func(*entsql.Selector) {
 			direction = "ASC"
 			tieOrder = entsql.Asc
 		}
-		// Mirrors service.User.EffectiveConcurrencyAt: plan entitlements raise the
-		// limit but never lower the per-user value, so sorting takes the maximum
-		// instead of letting an active plan replace the base concurrency.
-		s.OrderExpr(entsql.Expr(fmt.Sprintf("%s(%s, COALESCE(%s, 0)) %s", greatest, activePlanConcurrency, baseConcurrency, direction)))
+		// Match the gateway/profile policy, including active legacy subscriptions
+		// without a concurrency grant. Base user values are not an override.
+		activeSubscription := fmt.Sprintf(`EXISTS (
+			SELECT 1 FROM user_subscriptions us WHERE us.user_id = %s
+			AND us.status = 'active' AND us.deleted_at IS NULL
+			AND %s <= %s AND %s > %s
+		)`, userID, timestampExpr("us.starts_at"), nowExpr, timestampExpr("us.expires_at"), nowExpr)
+		unconfiguredSubscription := fmt.Sprintf(`EXISTS (
+			SELECT 1 FROM user_subscriptions us WHERE us.user_id = %s
+			AND us.status = 'active' AND us.deleted_at IS NULL
+			AND %s <= %s AND %s > %s
+			AND NOT (COALESCE(us.plan_concurrency, 0) > 0
+				AND (us.plan_concurrency_expires_at IS NULL OR %s > %s)
+				AND (us.custom_expires_at IS NULL OR %s > %s))
+			AND NOT EXISTS (
+				SELECT 1 FROM subscription_concurrency_entitlements sce
+				WHERE sce.subscription_id = us.id AND sce.concurrency > 0
+				AND %s <= %s AND %s > %s
+				AND (us.custom_expires_at IS NULL OR %s > %s)
+			)
+		)`, userID, timestampExpr("us.starts_at"), nowExpr, timestampExpr("us.expires_at"), nowExpr,
+			timestampExpr("us.plan_concurrency_expires_at"), nowExpr, timestampExpr("us.custom_expires_at"), nowExpr,
+			timestampExpr("sce.starts_at"), nowExpr, timestampExpr("sce.expires_at"), nowExpr,
+			timestampExpr("us.custom_expires_at"), nowExpr)
+		planLimit := fmt.Sprintf("%s(%s, CASE WHEN %s THEN %d ELSE 0 END)", greatest, activePlanConcurrency, unconfiguredSubscription, service.DefaultUserConcurrency)
+		fallback := fmt.Sprintf("CASE WHEN %s THEN %d WHEN %s >= 100 THEN 3 WHEN %s >= 20 THEN 2 ELSE 1 END",
+			activeSubscription, service.DefaultUserConcurrency, balance, balance)
+		s.OrderExpr(entsql.Expr(fmt.Sprintf("COALESCE(NULLIF(%s, 0), %s) %s", planLimit, fallback, direction)))
 		s.OrderBy(tieOrder(userID))
 	}}
 }

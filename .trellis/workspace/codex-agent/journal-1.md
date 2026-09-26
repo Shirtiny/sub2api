@@ -521,3 +521,24 @@ only the authorized 4178 preview; local/external HTTP 200. See verification log.
 - Final checks: full backend unit suite in UTC passed; backend diff lint 0 issues; frontend 177 files / 1449 tests passed; frontend lint 0 errors (12 existing warnings). Typecheck/build, disposable-Postgres multiplier/billing integration and responsive browser verification also passed.
 - Migration 206 is additive and preserves current list prices with a default 1x multiplier. Its checksum remains unchanged from the test environment. No production migration/deployment was performed.
 - Excluded unrelated untracked artwork, historical operations exports and scratch files. Test preview remains current; remote Actions builds the release artifact, production update requires separate authorization.
+
+## 2026-09-26 — subscription-first, balance-tier user concurrency
+
+- User requested base concurrency 2 across users; effective limits now use the highest active subscription grant (not a sum or a per-user override), otherwise current balance >=100 → 3, >=20 → 2, below20 → 1. Legacy active subscriptions without a grant use 2; pending presales and expired/cancelled terms do not grant capacity.
+- Kept auth/profile/admin/ops values and user-list sorting aligned; subscription periods now survive auth caching (snapshot v18). Live HTTP balance reads use the billing cache, and retained WS turns re-evaluate time/balance using cache-only reads with fail-closed reconnect on a cache miss.
+- Added immutable migration 207 to normalize base values/defaults to 2, without changing balances, orders, plan grants, dates or quota counters. Updated the Ent/config defaults. Production was only inspected read-only (511 users; mixed old base values), not modified or deployed.
+- Profile now shows a bilingual question-mark rules tooltip; shared tooltip supports hover, focus and tap, with outside/Escape dismissal. Documented policy and rollout boundaries in docs/USER_CONCURRENCY.md.
+- Checks: full backend UTC unit suite passed; disposable PostgreSQL/Redis policy/migration/admission integration tests passed; backend diff lint 0 issues. Frontend full suite and focused tooltip/profile checks passed; final build/browser checks recorded in the isolated test artifact folder.
+- Isolated test app updated to 0.0.101-local-concurrency, migration 207 applied (236 migrations total). Six users and fifteen orders preserved, balances unchanged, all base values now 2. Fake-payment sentinel, no email credentials and internal-only Docker network preserved; no other containers restarted. Test backups/evidence: /opt/stacks/sub2api-test/artifacts/user-concurrency-20260926T042339Z/.
+- No commit/tag/push or production update requested for this change.
+- Final UI acceptance: 1440px zh/dark, 390px zh/dark and 320px en/light passed against the updated test backend; displayed limits match auth/me, hover/tap rules and Escape dismissal work without page errors/overflow. Fixed tooltip placement to flip below a trigger near the top and clamp within the viewport, with a dedicated regression test. Last full frontend run: 177 files / 1451 tests passed; final tooltip/profile regression set: 12 passed. Final typecheck/build and lint passed (12 pre-existing full-frontend lint warnings).
+
+### Follow-up — simplify the concurrency tooltip
+
+- Removed the legacy subscription fallback sentence from both Chinese and English user-facing tooltip text as requested. The backend rule and migration remain unchanged; only the isolated preview frontend is refreshed.
+
+### Publication — cafecode-v0.0.102
+
+- User authorized commit/tag/push of the subscription-first and balance-tier concurrency implementation and the simplified bilingual tooltip. Publish the reviewed work on custom-prod as cafecode-v0.0.102.
+- Existing full UTC backend tests, PostgreSQL/Redis integration and backend diff lint passed. Frontend full suite plus final tooltip/profile regressions, lint, typecheck/build and desktop/mobile bilingual browser checks passed. Migration 207 matches the already-applied isolated-test checksum.
+- Isolated test environment remains current and healthy; no runtime changes in this publication step. Exclude unrelated artwork, scratch files and operational exports. No production deployment is authorized by this publication request.

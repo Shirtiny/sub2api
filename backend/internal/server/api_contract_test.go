@@ -56,7 +56,7 @@ func TestAPIContracts(t *testing.T) {
 					"balance": 12.5,
 					"concurrency": 5,
 					"base_concurrency": 5,
-					"effective_concurrency": 5,
+					"effective_concurrency": 1,
 					"rpm_limit": 0,
 					"status": "active",
 					"allowed_groups": null,

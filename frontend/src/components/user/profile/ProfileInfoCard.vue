@@ -74,9 +74,33 @@
                 data-testid="profile-overview-metric-concurrency"
                 class="rounded-2xl bg-surface-secondary/80 px-4 py-3 shadow-sm ring-1 ring-stroke-subtle"
               >
-                <p class="text-xs font-medium uppercase tracking-[0.16em] text-content-tertiary">
-                  {{ t('profile.concurrencyLimit') }}
-                </p>
+                <div class="flex items-center gap-1 text-xs font-medium text-content-tertiary">
+                  <span class="uppercase tracking-[0.16em]">{{ t('profile.concurrencyLimit') }}</span>
+                  <HelpTooltip width-class="w-64 max-w-[calc(100vw-2rem)]">
+                    <template #trigger>
+                      <button
+                        type="button"
+                        data-testid="profile-concurrency-help"
+                        :aria-label="t('profile.concurrencyRules.title')"
+                        class="inline-flex cursor-help rounded-full p-0.5 text-content-tertiary transition-colors hover:text-content-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+                      >
+                        <Icon name="questionCircle" size="sm" />
+                      </button>
+                    </template>
+                    <div class="space-y-2.5 normal-case tracking-normal" data-testid="profile-concurrency-rules">
+                      <p class="font-semibold">{{ t('profile.concurrencyRules.title') }}</p>
+                      <p>{{ t('profile.concurrencyRules.subscription') }}</p>
+                      <div class="border-t border-white/15 pt-2">
+                        <p class="mb-1.5 text-gray-300">{{ t('profile.concurrencyRules.balance') }}</p>
+                        <div v-for="tier in ['high', 'medium', 'low'] as const" :key="tier" class="flex justify-between gap-3 py-0.5">
+                          <span>{{ t(`profile.concurrencyRules.${tier}`) }}</span>
+                          <span class="font-semibold tabular-nums">{{ tier === 'high' ? 3 : tier === 'medium' ? 2 : 1 }}</span>
+                        </div>
+                      </div>
+                      <p class="border-t border-white/15 pt-2 text-gray-300">{{ t('profile.concurrencyRules.note') }}</p>
+                    </div>
+                  </HelpTooltip>
+                </div>
                 <p class="mt-1 text-lg font-semibold text-content-primary">
                   {{ user?.effective_concurrency ?? user?.concurrency ?? 0 }}
                 </p>
@@ -183,6 +207,7 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Icon from '@/components/icons/Icon.vue'
+import HelpTooltip from '@/components/common/HelpTooltip.vue'
 import ProfileAvatarCard from '@/components/user/profile/ProfileAvatarCard.vue'
 import ProfileEditForm from '@/components/user/profile/ProfileEditForm.vue'
 import ProfileIdentityBindingsSection from '@/components/user/profile/ProfileIdentityBindingsSection.vue'

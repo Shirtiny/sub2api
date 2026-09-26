@@ -70,6 +70,28 @@ function createUser(overrides: Partial<User> = {}): User {
 }
 
 describe('ProfileInfoCard', () => {
+  it('shows concurrency rules from the question mark beside the effective limit', async () => {
+    vi.useFakeTimers()
+    const wrapper = mount(ProfileInfoCard, {
+      props: { user: createUser({ concurrency: 32, effective_concurrency: 1 }) },
+      global: { stubs: { Icon: true } }
+    })
+    const help = wrapper.get('[data-testid="profile-concurrency-help"]')
+    expect(help.attributes('aria-label')).toBe('profile.concurrencyRules.title')
+    expect(wrapper.get('[data-testid="profile-overview-metric-concurrency"]').text()).toContain('1')
+    const rules = document.querySelector('[data-testid="profile-concurrency-rules"]')!
+    const tooltip = rules.closest('[role="tooltip"]') as HTMLElement
+    expect(tooltip.style.display).toBe('none')
+    help.element.parentElement!.dispatchEvent(new MouseEvent('mouseenter'))
+    await vi.advanceTimersByTimeAsync(100)
+    expect(tooltip.style.display).not.toBe('none')
+    for (const key of ['subscription', 'balance', 'high', 'medium', 'low', 'note']) {
+      expect(rules.textContent).toContain(`profile.concurrencyRules.${key}`)
+    }
+    wrapper.unmount()
+    vi.useRealTimers()
+  })
+
   it('renders basic account information inside the new overview shell', () => {
     const wrapper = mount(ProfileInfoCard, {
       props: {

@@ -97,23 +97,22 @@ func TestUserRepositoryLoadsEffectivePlanConcurrencyForDetailAndList(t *testing.
 	ascending, _, err := repo.List(ctx, pagination.PaginationParams{Page: 1, PageSize: 10, SortBy: "concurrency", SortOrder: "asc"})
 	require.NoError(t, err)
 	require.Len(t, ascending, 2)
-	require.Equal(t, user.ID, ascending[0].ID)
-	require.Equal(t, baseOnlyUser.ID, ascending[1].ID)
+	require.Equal(t, baseOnlyUser.ID, ascending[0].ID)
+	require.Equal(t, user.ID, ascending[1].ID)
 
 	descending, _, err := repo.List(ctx, pagination.PaginationParams{Page: 1, PageSize: 10, SortBy: "concurrency", SortOrder: "desc"})
 	require.NoError(t, err)
 	require.Len(t, descending, 2)
-	require.Equal(t, baseOnlyUser.ID, descending[0].ID)
-	require.Equal(t, user.ID, descending[1].ID)
+	require.Equal(t, user.ID, descending[0].ID)
+	require.Equal(t, baseOnlyUser.ID, descending[1].ID)
 
-	// Base concurrency above the active plan entitlement must drive both the
-	// effective value and the sort order.
+	// Old per-user overrides must affect neither effective values nor sorting.
 	_, err = client.User.UpdateOneID(user.ID).SetConcurrency(32).Save(ctx)
 	require.NoError(t, err)
 
 	boosted, err := repo.GetByID(ctx, user.ID)
 	require.NoError(t, err)
-	require.Equal(t, 32, boosted.EffectiveConcurrencyAt(now))
+	require.Equal(t, 8, boosted.EffectiveConcurrencyAt(now))
 
 	descending, _, err = repo.List(ctx, pagination.PaginationParams{Page: 1, PageSize: 10, SortBy: "concurrency", SortOrder: "desc"})
 	require.NoError(t, err)
